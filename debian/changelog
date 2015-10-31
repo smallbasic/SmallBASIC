@@ -1,13 +1,18 @@
+smallbasic (0.12.1) unstable; urgency=low
+  * Various - see web site
+
+ -- Chris Warren-Smith <cwarrensmith@gmail.com>  Sat, 17 Sep 2015 09:45:25 +1000
+
 smallbasic (0.12.0) unstable; urgency=low
   * Various - see web site
 
- -- Chris Warren-Smith <cwarrensmith@gmail.com>  Sat, 17 Sept 2015 09:45:25 +1000
+ -- Chris Warren-Smith <cwarrensmith@gmail.com>  Sat, 17 Sep 2015 09:45:25 +1000
 
 smallbasic (0.11.17) unstable; urgency=low
   * Fix compiler ignoring unused assignment values
   * Implement  IMAGE
 
- -- Chris Warren-Smith <cwarrensmith@gmail.com>  Sat, 4 October 2014 09:45:25 +1000
+ -- Chris Warren-Smith <cwarrensmith@gmail.com>  Sat, 4 Oct 2014 09:45:25 +1000
 
 smallbasic (0.11.16) unstable; urgency=low
   * Add support for unary operators on array elements
@@ -15,42 +20,42 @@ smallbasic (0.11.16) unstable; urgency=low
   * Fix INKEY Backspace in FLTK
   * Fix FOR/NEXT using float increments
 
- -- Chris Warren-Smith <cwarrensmith@gmail.com>  Sat, 13 Sept 2014 09:45:25 +1000
+ -- Chris Warren-Smith <cwarrensmith@gmail.com>  Sat, 13 Sep 2014 09:45:25 +1000
 
 smallbasic (0.11.15) unstable; urgency=low
   * RTE renamed THROW
 
- -- Chris Warren-Smith <cwarrensmith@gmail.com>  Sat, 6 Sept 2014 09:45:25 +1000
+ -- Chris Warren-Smith <cwarrensmith@gmail.com>  Sat, 6 Sep 2014 09:45:25 +1000
 
 smallbasic (0.11.14) unstable; urgency=low
   * Added reference variable type
 
- -- Chris Warren-Smith <cwarrensmith@gmail.com>  Sat, 30 August 2014 09:45:25 +1000
+ -- Chris Warren-Smith <cwarrensmith@gmail.com>  Sat, 30 Aug 2014 09:45:25 +1000
 
 smallbasic (0.11.13) unstable; urgency=low
   * Fixed UDS handling
 
- -- Chris Warren-Smith <cwarrensmith@gmail.com>  Sun, 24 August 2014 09:45:25 +1000
+ -- Chris Warren-Smith <cwarrensmith@gmail.com>  Sun, 24 Aug 2014 09:45:25 +1000
 
 smallbasic (0.11.12) unstable; urgency=low
   * Fixed/implemented INCLUDE command
 
- -- Chris Warren-Smith <cwarrensmith@gmail.com>  Sat, 11 August 2014 09:45:25 +1000
+ -- Chris Warren-Smith <cwarrensmith@gmail.com>  Sat, 11 Aug 2014 09:45:25 +1000
 
 smallbasic (0.11.11) unstable; urgency=low
   * Built using common code from the android project and SDL
 
- -- Chris Warren-Smith <cwarrensmith@gmail.com>  Sat, 19 July 2014 09:45:25 +1000
+ -- Chris Warren-Smith <cwarrensmith@gmail.com>  Sat, 19 Jul 2014 09:45:25 +1000
 
 smallbasic (0.11.10) unstable; urgency=low
   * Built using common code from the android project and SDL
 
- -- Chris Warren-Smith <cwarrensmith@gmail.com>  Sat, 19 July 2014 09:45:25 +1000
+ -- Chris Warren-Smith <cwarrensmith@gmail.com>  Sat, 19 Jul 2014 09:45:25 +1000
 
 smallbasic (0.10.8) unstable; urgency=low
   * Fix misc issues with const char* uncovered with new gcc
 
- -- Chris Warren-Smith <cwarrensmith@gmail.com>  Sat, 31 July 2010 09:45:25 +1000
+ -- Chris Warren-Smith <cwarrensmith@gmail.com>  Sat, 31 Jul 2010 09:45:25 +1000
 
 smallbasic (0.10.7) unstable; urgency=low
   * Added defineKey and fixed delay problems with the inkey command

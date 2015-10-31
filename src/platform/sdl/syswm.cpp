@@ -80,7 +80,7 @@ void launchDebug(const char *file) {
     // child process
     sprintf(port, "-p %d", g_debugPort);
     if (execl(g_appPath, g_appPath, port, "-d", file, (char *)0) == -1) {
-      fprintf(stderr, "exec failed %s\n", strerror(errno));
+      fprintf(stderr, "exec failed [%s] %s\n", strerror(errno), g_appPath);
       exit(1);
     }
     break;

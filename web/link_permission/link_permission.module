@@ -14,7 +14,8 @@ function block_spammer($user, $body) {
   $result = true;
   if ($user->uid && // logged in
       !user_access('post hyperlinks') && // not permitted
-      (preg_match("@(http://|https://|ftp://|mailto:|smb://|afp://|file://|gopher://|news://|ssl://|sslv2://|sslv3://|tls://|tcp://|udp://)+@se", $body) || 
+      (strlen($body) > 3000 ||
+       preg_match("@(http://|https://|ftp://|mailto:|smb://|afp://|file://|gopher://|news://|ssl://|sslv2://|sslv3://|tls://|tcp://|udp://)+@se", $body) || 
        preg_match("@(www\.[a-zA-Z0-9\@:%_+*~#?&=.,/;-]*[a-zA-Z0-9\@:%_+~#\&=/;-])+@se", $body))) {
     // perform block operation
     watchdog('action', 'Blocked spammer.', array('%name' => check_plain($user->name)));
@@ -60,3 +61,4 @@ function link_permission_node_validate($node, $form, &$form_state) {
   $text = $node->body[$node->language][0]['value'];
   block_spammer($user, $text);
 }
+

@@ -16,7 +16,8 @@
 #include "ui/kwp.h"
 
 #define STB_TEXTEDIT_IS_SPACE(ch) IS_WHITE(ch)
-#define STB_TEXTEDIT_IS_PUNCT(ch) ispunct(ch)
+#define STB_TEXTEDIT_IS_PUNCT(ch) (ch != '_' && ch != '$' && ispunct(ch))
+#define IS_VAR_CHAR(ch) (ch == '_' || ch == '$' || isalpha(ch) || isdigit(ch))
 #define STB_TEXTEDIT_IMPLEMENTATION
 #include "lib/stb_textedit.h"
 
@@ -1203,7 +1204,7 @@ char *TextEditInput::getSelection(int *start, int *end) {
   } else {
     *start = wordStart();
     int i = _state.cursor;
-    while (!IS_WHITE(_buf._buffer[i]) && !ispunct(_buf._buffer[i]) && i < _buf._len) {
+    while (IS_VAR_CHAR(_buf._buffer[i]) && i < _buf._len) {
       i++;
     }
     *end = i;
@@ -1587,7 +1588,7 @@ void TextEditHelpWidget::createCompletionHelp() {
     const char *found = strstr(_editor->getText(), selection);
     while (found != NULL) {
       const char *end = found;
-      while (!IS_WHITE(*end) && !ispunct(*end) && *end != '\0') {
+      while (IS_VAR_CHAR(*end) && *end != '\0') {
         end++;
       }
       if (end - found > len) {

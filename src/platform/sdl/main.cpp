@@ -222,6 +222,16 @@ void setupAppPath(const char *path) {
     strcpy(g_appPath, cwd);
     strcat(g_appPath, "/");
     strcat(g_appPath, path);
+#if defined(__linux__)
+    if (access(g_appPath, X_OK) != 0) {
+      // launched via PATH, retrieve full path
+      ssize_t len = ::readlink("/proc/self/exe", g_appPath, sizeof(g_appPath));
+      if (len == -1 || len == sizeof(g_appPath)) {
+        len = 0;
+      }
+      g_appPath[len] = '\0';
+    }
+#endif
   }
 }
 
