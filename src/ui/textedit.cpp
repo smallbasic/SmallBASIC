@@ -35,6 +35,11 @@
 #define HELP_BG 0x73c990
 #define HELP_FG 0x20242a
 
+#if defined(_Win32)
+#include <shlwapi.h>
+#define strcasestr StrStrI
+#endif
+
 int g_themeId = 0;
 int g_lineMarker[MAX_MARKERS] = {
   -1, -1, -1, -1, -1, -1, -1, -1, -1, -1
@@ -663,14 +668,14 @@ bool TextEditInput::edit(int key, int screenWidth, int charWidth) {
 bool TextEditInput::find(const char *word, bool next) {
   bool result = false;
   if (_buf._buffer != NULL && word != NULL) {
-    const char *found = strstr(_buf._buffer + _state.cursor, word);
+    const char *found = strcasestr(_buf._buffer + _state.cursor, word);
     if (next && found != NULL) {
       // skip to next word
-      found = strstr(found + strlen(word), word);
+      found = strcasestr(found + strlen(word), word);
     }
     if (found == NULL) {
       // start over
-      found = strstr(_buf._buffer, word);
+      found = strcasestr(_buf._buffer, word);
     }
     if (found != NULL) {
       result = true;
@@ -1585,14 +1590,15 @@ void TextEditHelpWidget::createCompletionHelp() {
         _buf.append("\n", 1);
       }
     }
-    const char *found = strstr(_editor->getText(), selection);
+    const char *text = _editor->getText();
+    const char *found = strcasestr(text, selection);
     while (found != NULL) {
       const char *end = found;
-      const char *pre = found - 1;
+      const char pre = found > text ? *(found - 1) : ' ';
       while (IS_VAR_CHAR(*end) && *end != '\0') {
         end++;
       }
-      if (end - found > len && (IS_WHITE(*pre) || *pre == '.')) {
+      if (end - found > len && (IS_WHITE(pre) || pre == '.')) {
         String next;
         next.append(found, end - found);
         if (!words.exists(next)) {
@@ -1601,7 +1607,7 @@ void TextEditHelpWidget::createCompletionHelp() {
           _buf.append("\n", 1);
         }
       }
-      found = strstr(end, selection);
+      found = strcasestr(end, selection);
     }
   } else {
     const char *package = NULL;

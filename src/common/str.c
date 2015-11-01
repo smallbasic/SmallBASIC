@@ -135,24 +135,6 @@ int strcaselessn(const char *s1, const char *s2, int len) {
 }
 
 /**
- * strstr with ignore case
- */
-char *stristr(const char *s1, const char *s2) {
-  char *p;
-  int l2;
-
-  p = (char *) s1;
-  l2 = strlen(s2);
-  while (*p) {
-    if (strcaselessn(p, s2, l2) == 0) {
-      return p;
-    }
-    p++;
-  }
-  return NULL;
-}
-
-/**
  *
  */
 char *transdup(const char *src, const char *what, const char *with) {
@@ -344,48 +326,6 @@ char *strlower(char *str) {
     p++;
   }
   return str;
-}
-
-/**
- *
- */
-char *get_keyword(char *text, char *dest) {
-  char *p = (char *) text;
-  char *d = dest;
-
-  if (p == NULL) {
-    *dest = '\0';
-    return 0;
-  }
-
-  while (is_space(*p)) {
-    p++;
-  }
-  while (is_alnum(*p) || (*p == '_')) {
-    *d = to_upper(*p);
-    d++;
-    p++;
-  }
-
-  // Code to kill the $
-  // if ( *p == '$' )
-  // p ++;
-
-  if (*p == '$') {
-    *d++ = *p++;
-  }
-  *d = '\0';
-  while (is_space(*p)) {
-    p++;
-  }
-  // special case, something wrong, jump to next char
-  if (p == text) {
-    *dest = *p;
-    *(dest + 1) = '\0';
-    p++;
-  }
-
-  return p;
 }
 
 /**
@@ -831,60 +771,6 @@ char *ltostr(var_int_t num, char *dest) {
 }
 
 /**
- * newdir must ends with dirsep
- * new_ext must starts with .
- */
-char *chgfilename(char *dest, char *source, char *newdir, char *prefix, char *new_ext, char *suffix) {
-  char *plast_dir;
-  char *plast_point;
-
-  dest[0] = '\0';
-  plast_dir = strrchr(source, OS_DIRSEP);
-  if (!plast_dir) {
-    plast_dir = source;
-  } else {
-    plast_dir++;
-  }
-  plast_point = strrchr(source, '.');
-
-  if (newdir) {
-    strcat(dest, newdir);
-  }
-  if (prefix) {
-    strcat(dest, prefix);
-  }
-  if (new_ext) {
-    *plast_point = '\0';
-  }
-  strcat(dest, plast_dir);
-
-  if (suffix) {
-    strcat(dest, suffix);
-  }
-  if (new_ext) {
-    strcat(dest, new_ext);
-    *plast_point = '.';
-  }
-  return dest;
-}
-
-/**
- *
- */
-char *xbasename(char *dest, const char *source) {
-  char *p;
-
-  p = strrchr(source, OS_DIRSEP);
-  if (!p) {
-    p = (char *) source;
-  } else {
-    p++;
-  }
-  strcpy(dest, p);
-  return dest;
-}
-
-/**
  * returns whether the character is whitespace
  */
 int is_wspace(int c) {
@@ -1226,15 +1112,4 @@ const char *baseof(const char *source, int delim) {
   return source;
 }
 
-/**
- *
- */
-char char_table_replace(const char *what_table, int ch, const char *replace_table) {
-  const char *p;
 
-  p = strchr(what_table, ch);
-  if (!p) {
-    return ch;
-  }
-  return *(replace_table + (p - what_table));
-}
