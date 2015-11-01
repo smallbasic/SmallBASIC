@@ -1588,10 +1588,11 @@ void TextEditHelpWidget::createCompletionHelp() {
     const char *found = strstr(_editor->getText(), selection);
     while (found != NULL) {
       const char *end = found;
+      const char *pre = found - 1;
       while (IS_VAR_CHAR(*end) && *end != '\0') {
         end++;
       }
-      if (end - found > len) {
+      if (end - found > len && (IS_WHITE(*pre) || *pre == '.')) {
         String next;
         next.append(found, end - found);
         if (!words.exists(next)) {
@@ -1600,7 +1601,7 @@ void TextEditHelpWidget::createCompletionHelp() {
           _buf.append("\n", 1);
         }
       }
-      found = strstr(found + len, selection);
+      found = strstr(end, selection);
     }
   } else {
     const char *package = NULL;
