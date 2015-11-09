@@ -190,6 +190,10 @@ void Graphics::drawRGB(const MAPoint2d *dstPoint, const void *src,
   size_t scale = 1;
   int w = bytesPerLine;
 
+  if (opacity > 0 && opacity < 100) {
+    // higher opacity values should make the image less transparent
+    opacity = 100 - opacity;
+  }
   for (int y = srcRect->top; y < srcRect->height; y += scale) {
     int dY = dstPoint->y + y;
     if (dY >= _drawTarget->y() &&

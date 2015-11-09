@@ -23,6 +23,10 @@
 #include "common/smbas.h"
 #include "common/keymap.h"
 
+extern int g_themeId;
+extern int g_user_theme[];
+#define THEME_COLOURS 17
+
 struct TextEditInput;
 
 struct EditTheme {

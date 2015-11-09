@@ -1,6 +1,7 @@
 2015-11-01
 	Fix debugger launch in linux build
 	Fix editor variable handling
+	Fix image drawing
 
 2015-10-20
 	Fix LET when assigning a value to a MAP/ARRAY field

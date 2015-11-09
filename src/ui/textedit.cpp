@@ -25,7 +25,7 @@
 #define LINE_BUFFER_SIZE 200
 #define INDENT_LEVEL 2
 #define HELP_WIDTH 22
-#define NUM_THEMES 4
+#define NUM_THEMES 5
 #define TWISTY1_OPEN  "> "
 #define TWISTY1_CLOSE "< "
 #define TWISTY2_OPEN  "  > "
@@ -64,13 +64,19 @@ const int theme3[] = {
 };
 
 const int theme4[] = {
+  0x222228, 0x222228, 0xa7aebc, 0x484f5f, 0xa7aebc, 0x00bb00,
+  0xf4f9f4, 0xe1e1e1, 0xefeff0, 0x1f51eb, 0x000000, 0xebedef,
+  0x0083f8, 0xff9d00, 0x0000ff, 0xc679dd, 0x0083f8, 0
+};
+
+int g_user_theme[] = {
   0xc8cedb, 0xa7aebc, 0x484f5f, 0xa7aebc, 0xa7aebc, 0x00bb00,
   0x2e3436, 0x888a85, 0x000000, 0x4d483b, 0x000000, 0x2b313a,
   0x0083f8, 0xff9d00, 0x31ccac, 0xc679dd, 0x0083f8
 };
 
 const int* themes[] = {
-  theme1, theme2, theme3, theme4
+  theme1, theme2, theme3, theme4, g_user_theme
 };
 
 const char *helpText =

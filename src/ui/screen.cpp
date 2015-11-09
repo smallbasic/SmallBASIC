@@ -18,7 +18,7 @@
 #define DRAW_SHAPE \
   Shape *rect = (*it); \
   if (rect->_y >= _scrollY && \
-      rect->_y + rect->_height <= _scrollY + _height) \
+      rect->_y <= _scrollY + _height) \
     rect->draw(_x + rect->_x, _y + rect->_y - _scrollY, w(), h(), _charWidth)
 
 int compareZIndex(const void *p1, const void *p2) {
