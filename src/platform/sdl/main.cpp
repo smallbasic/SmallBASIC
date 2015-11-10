@@ -359,6 +359,7 @@ int main(int argc, char* argv[]) {
   if (window != NULL) {
     String font, fontBold;
     if (getFontFiles(fontFamily, font, fontBold)) {
+      SDL_StartTextInput();
       loadIcon(window);
       Runtime *runtime = new Runtime(window);
       runtime->construct(font.c_str(), fontBold.c_str());

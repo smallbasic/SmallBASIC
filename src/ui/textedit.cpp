@@ -663,7 +663,8 @@ bool TextEditInput::edit(int key, int screenWidth, int charWidth) {
     }
   } else {
     int pageRows = _height / _charHeight;
-    if (_cursorRow - _scroll > pageRows) {
+    if (_cursorRow - _scroll > pageRows || _cursorRow < _scroll) {
+      // scroll for cursor outside of current frame
       updateScroll();
     }
   }

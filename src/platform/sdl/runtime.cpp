@@ -325,14 +325,6 @@ char *Runtime::loadResource(const char *fileName) {
 }
 
 void Runtime::handleKeyEvent(MAEvent &event) {
-  int lenMap = sizeof(keymap) / sizeof(keymap[0]);
-  for (int i = 0; i < lenMap && event.key != -1; i++) {
-    if (event.key == keymap[i][0]) {
-      event.key = keymap[i][1];
-      break;
-    }
-  }
-
   // handle keypad keys
   if (event.key != -1) {
     if (event.key == SDLK_NUMLOCKCLEAR) {
@@ -368,23 +360,7 @@ void Runtime::handleKeyEvent(MAEvent &event) {
     } else if (event.nativeKey & KMOD_ALT) {
       event.key = SB_KEY_ALT(event.key);
     } else if (event.nativeKey & KMOD_SHIFT) {
-      bool shifted = false;
-      if (event.key >= SDLK_a && event.key <= SDLK_z) {
-        event.key = 'A' + (event.key - SDLK_a);
-        shifted = true;
-      } else {
-        lenMap = sizeof(shiftmap) / sizeof(shiftmap[0]);
-        for (int i = 0; i < lenMap; i++) {
-          if (shiftmap[i][0] == event.key) {
-            event.key = shiftmap[i][1];
-            shifted = true;
-            break;
-          }
-        }
-      }
-      if (!shifted) {
-        event.key = SB_KEY_SHIFT(event.key);
-      }
+      event.key = SB_KEY_SHIFT(event.key);
     }
   }
 
@@ -425,9 +401,24 @@ void Runtime::pause(int timeout) {
 void Runtime::pollEvents(bool blocking) {
   if (isActive() && !isRestart()) {
     SDL_Event ev;
+    SDL_Keymod mod;
     if (blocking ? SDL_WaitEvent(&ev) : SDL_PollEvent(&ev)) {
       MAEvent *maEvent = NULL;
       switch (ev.type) {
+      case SDL_TEXTINPUT:
+        // pre-transformed/composted text
+        mod = SDL_GetModState();
+        if (!mod || (mod & KMOD_SHIFT)) {
+          // ALT + CTRL keys handled in SDL_KEYDOWN
+          for (int i = 0; ev.text.text[i] != 0; i++) {
+            MAEvent *keyEvent = new MAEvent();
+            keyEvent->type = EVENT_TYPE_KEY_PRESSED;
+            keyEvent->key = ev.text.text[i];
+            keyEvent->nativeKey = 0;
+            pushEvent(keyEvent);
+          }
+        }
+        break;
       case SDL_QUIT:
         setExit(true);
         break;
@@ -458,10 +449,25 @@ void Runtime::pollEvents(bool blocking) {
         } else if (ev.key.keysym.sym == SDLK_p && (ev.key.keysym.mod & KMOD_CTRL)) {
           ::screen_dump();
         } else {
-          maEvent = new MAEvent();
-          maEvent->type = EVENT_TYPE_KEY_PRESSED;
-          maEvent->key = ev.key.keysym.sym;
-          maEvent->nativeKey = ev.key.keysym.mod;
+          int lenMap = sizeof(keymap) / sizeof(keymap[0]);
+          for (int i = 0; i < lenMap; i++) {
+            if (ev.key.keysym.sym == keymap[i][0]) {
+              maEvent = new MAEvent();
+              maEvent->type = EVENT_TYPE_KEY_PRESSED;
+              maEvent->key = keymap[i][1];
+              maEvent->nativeKey = ev.key.keysym.mod;
+              break;
+            }
+          }
+          if (maEvent == NULL &&
+              ((ev.key.keysym.sym >= SDLK_KP_1 && ev.key.keysym.sym <= SDLK_KP_9) ||
+               (ev.key.keysym.mod & KMOD_CTRL) ||
+               (ev.key.keysym.mod & KMOD_ALT))) {
+            maEvent = new MAEvent();
+            maEvent->type = EVENT_TYPE_KEY_PRESSED;
+            maEvent->key = ev.key.keysym.sym;
+            maEvent->nativeKey = ev.key.keysym.mod;
+          }
         }
         break;
       case SDL_MOUSEBUTTONDOWN:
