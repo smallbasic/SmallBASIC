@@ -59,7 +59,11 @@ void System::editSource(strlib::String &loadPath) {
   _output->clearScreen();
   _output->addInput(editWidget);
   _output->addInput(helpWidget);
-  _output->setStatus(cleanFile);
+  if (gsb_last_error && !isBack()) {
+    _output->setStatus("Error. Esc=Close");
+  } else {
+    _output->setStatus(cleanFile);
+  }
   _output->redraw();
   _state = kEditState;
 

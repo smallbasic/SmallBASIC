@@ -10,13 +10,6 @@
 #define KEYMAP
 
 const int keymap[][2] = {
-  {SDLK_CAPSLOCK,  -1},
-  {SDLK_LSHIFT, -1},
-  {SDLK_RSHIFT, -1},
-  {SDLK_LALT, -1},
-  {SDLK_RALT, -1},
-  {SDLK_LCTRL, -1},
-  {SDLK_RCTRL, -1},
   {SDLK_RETURN, SB_KEY_ENTER},
   {SDLK_ESCAPE, SB_KEY_ESCAPE},
   {SDLK_KP_PERIOD, SB_KEY_KP_DEL},

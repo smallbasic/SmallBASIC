@@ -489,6 +489,9 @@ void Runtime::pollEvents(bool blocking) {
         break;
       case SDL_WINDOWEVENT:
         switch (ev.window.event) {
+        case SDL_WINDOWEVENT_FOCUS_GAINED:
+          SDL_SetModState(KMOD_NONE);
+          break;
         case SDL_WINDOWEVENT_RESIZED:
           onResize(ev.window.data1, ev.window.data2);
           break;
@@ -509,7 +512,7 @@ void Runtime::pollEvents(bool blocking) {
         if (!_output->scroll(ev.wheel.y == 1, false)) {
           maEvent = new MAEvent();
           maEvent->type = EVENT_TYPE_KEY_PRESSED;
-          maEvent->key = ev.wheel.y == 1 ? SDLK_UP : SDLK_DOWN;
+          maEvent->key = ev.wheel.y == 1 ? SB_KEY_UP : SB_KEY_DN;
           maEvent->nativeKey = KMOD_CTRL;
         }
         break;
