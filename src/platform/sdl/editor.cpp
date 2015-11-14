@@ -11,6 +11,17 @@
 #include "common/sbapp.h"
 #include "ui/system.h"
 #include "ui/textedit.h"
+#include "platform/sdl/syswm.h"
+
+void onlineHelp(const char *nodeId) {
+  if (nodeId != NULL) {
+    char path[100];
+    sprintf(path, "http://smallbasic.sf.net/?q=node/%s", nodeId);
+    browseFile(path);
+  } else {
+    browseFile("http://smallbasic.sourceforge.net/");
+  }
+}
 
 void System::editSource(strlib::String &loadPath) {
   logEntered();
@@ -90,7 +101,6 @@ void System::editSource(strlib::String &loadPath) {
       }
 
       switch (event.key) {
-      case SB_KEY_F(2):
       case SB_KEY_F(3):
       case SB_KEY_F(8):
       case SB_KEY_F(10):
@@ -130,6 +140,10 @@ void System::editSource(strlib::String &loadPath) {
         widget = helpWidget;
         helpWidget->createKeywordIndex();
         helpWidget->show();
+        break;
+      case SB_KEY_F(2):
+        redraw = false;
+        onlineHelp(widget->getNodeId());
         break;
       case SB_KEY_F(5):
         saveFile(editWidget, loadPath);

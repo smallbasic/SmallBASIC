@@ -106,6 +106,7 @@ struct TextEditInput : public FormEditInput {
   bool isDirty() { return _dirty && _state.undostate.undo_point > 0; }
   void setDirty(bool dirty) { _dirty = dirty; }
   void resize(int w, int h) { _width = w; _height = h; }
+  const char *getNodeId();
   char *getWordBeforeCursor();
   bool replaceNext(const char *text);
   int  getCompletions(StringList *list, int max);

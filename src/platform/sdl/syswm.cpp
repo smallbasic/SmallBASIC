@@ -57,6 +57,21 @@ void launchDebug(const char *file) {
   }
 }
 
+#if defined(WIN32)
+#include <windows.h>
+#include <fltk/Window.h>
+#include <fltk/win32.h>
+#endif
+
+void browseFile(const char *url) {
+  SDL_SysWMinfo wminfo;
+  SDL_VERSION(&wminfo.version);
+  if (SDL_GetWindowWMInfo(window, &wminfo) == 1) {
+    HWND hwnd = wminfo.info.win.window;
+    ShellExecute(hwnd, "open", url, 0, 0, SW_SHOWNORMAL);
+  }
+}
+
 #else
 #include <unistd.h>
 #include <errno.h>
@@ -87,6 +102,21 @@ void launchDebug(const char *file) {
   default:
     // parent process - continue
     break;
+  }
+}
+
+void browseFile(const char *url) {
+  if (fork() == 0) {
+    fclose(stderr);
+    fclose(stdin);
+    fclose(stdout);
+    execlp("htmlview", "htmlview", url, NULL);
+    execlp("google-chrome", "google-chrome", url, NULL);
+    execlp("chromium-browser", "chromium-browser", url, NULL);
+    execlp("firefox", "firefox", url, NULL);
+    execlp("mozilla", "mozilla", url, NULL);
+    // exit in case exec failed
+    ::exit(0);
   }
 }
 

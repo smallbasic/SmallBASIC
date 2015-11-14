@@ -1221,6 +1221,21 @@ char *TextEditInput::getSelection(int *start, int *end) {
   return result;
 }
 
+const char *TextEditInput::getNodeId() {
+  char *selection = getWordBeforeCursor();
+  const char *result = NULL;
+  int len = selection != NULL ? strlen(selection) : 0;
+  if (len > 0) {
+    for (int i = 0; i < keyword_help_len && !result; i++) {
+      if (strcasecmp(selection, keyword_help[i].keyword) == 0) {
+        result = keyword_help[i].nodeId;
+      }
+    }
+  }
+  free(selection);
+  return result;
+}
+
 char *TextEditInput::getWordBeforeCursor() {
   char *result;
   if (_state.select_start == _state.select_end) {

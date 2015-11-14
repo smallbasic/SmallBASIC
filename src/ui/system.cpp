@@ -412,13 +412,16 @@ char *System::loadResource(const char *fileName) {
     _output->setStatus("Loading...");
     _output->redraw();
     if (dev_fopen(handle, fileName, 0)) {
-      http_read(f, var_p);
-      int len = var_p->v.p.size;
-      buffer = (char *)malloc(len + 1);
-      memcpy(buffer, var_p->v.p.ptr, len);
-      buffer[len] = '\0';
+      if (http_read(f, var_p) == 0) {
+        systemPrint("\nfailed to read %s\n", fileName);
+      } else {
+        int len = var_p->v.p.size;
+        buffer = (char *)malloc(len + 1);
+        memcpy(buffer, var_p->v.p.ptr, len);
+        buffer[len] = '\0';
+      }
     } else {
-      systemPrint("\nfailed to open %s", fileName);
+      systemPrint("\nfailed to open %s\n", fileName);
     }
     _output->setStatus(NULL);
     dev_fclose(handle);

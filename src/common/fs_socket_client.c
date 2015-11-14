@@ -18,7 +18,7 @@ int sockcl_open(dev_file_t *f) {
   int port;
   char server[129];
 
-  // open "SOCL:smallbasic.sf.net:80" as #1 
+  // open "SOCL:smallbasic.sf.net:80" as #1
   // open "SOCL:80" as #2
   f->drv_dw[0] = 1;
   p = strchr(f->name + 5, ':');
@@ -132,7 +132,10 @@ int http_read(dev_file_t *f, var_t *var_p) {
 
   while (1) {
     int bytes = net_read(f->handle, (char *) rxbuff, sizeof(rxbuff));
-    if (bytes == 0) {
+    if (bytes == -1) {
+      httpOK = 0;
+      break;
+    } else if (bytes == 0) {
       break;                    // no more data
     }
     // assumes http header < 1024 bytes
