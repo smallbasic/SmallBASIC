@@ -18,8 +18,6 @@ void onlineHelp(const char *nodeId) {
     char path[100];
     sprintf(path, "http://smallbasic.sf.net/?q=node/%s", nodeId);
     browseFile(path);
-  } else {
-    browseFile("http://smallbasic.sourceforge.net/");
   }
 }
 

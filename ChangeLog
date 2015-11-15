@@ -1,11 +1,13 @@
 2015-11-01
 	Fix debugger launch in linux build
-	Fix editor variable handling
-	Fix image drawing
+	Fix editor display issue with keyword completion
+	Fix editor case insensitive search
+	Fix image drawing for large images
 	Fix PAINT infinite loop
 	Fix keyboard handling for non-us keymaps
 	Fix Ctrl+Home editor keystroke handler
 	Fix crash with online command if site is down
+	Implemented editor F2 command to display online help
 
 2015-10-20
 	Fix LET when assigning a value to a MAP/ARRAY field
