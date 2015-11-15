@@ -106,7 +106,7 @@ const char *helpText =
   "SHIFT-<arrow> select\n"
   "TAB indent line\n"
   "F1,A-h keyword help\n"
-  "F2, online help\n"
+  "F2 online help\n"
   "F5 debug\n"
   "F9, C-r run\n";
 

@@ -107,16 +107,20 @@ void launchDebug(const char *file) {
 
 void browseFile(const char *url) {
   if (fork() == 0) {
-    fclose(stderr);
-    fclose(stdin);
-    fclose(stdout);
-    execlp("htmlview", "htmlview", url, NULL);
-    execlp("google-chrome", "google-chrome", url, NULL);
-    execlp("chromium-browser", "chromium-browser", url, NULL);
-    execlp("firefox", "firefox", url, NULL);
-    execlp("mozilla", "mozilla", url, NULL);
-    // exit in case exec failed
-    ::exit(0);
+    const char *browser[] = {
+      "sensible-browser",
+      "xdg-open",
+      "gnome-open",
+      "htmlview",
+      "firefox",
+      "google-chrome",
+      NULL
+    };
+    for (int i = 0; browser[i] != NULL; i++) {
+      execlp(browser[i], browser[i], url, NULL);
+    }
+    fprintf(stderr, "exec browser failed for %s\n", url);
+    ::exit(1);
   }
 }
 
