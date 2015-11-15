@@ -1285,13 +1285,25 @@ void TextEditInput::gotoNextMarker() {
   }
 }
 
-void TextEditInput::lineNavigate(bool lineDown) {
-  if (lineDown) {
+void TextEditInput::lineNavigate(bool arrowDown) {
+  if (arrowDown) {
+    // starting from the cursor position (relative to the screen),
+    // count the number of rows to the bottom of the document.
+    int rowCount = _cursorLine - _scroll;
     for (int i = _state.cursor; i < _buf._len; i++) {
-      if (_buf._buffer[i] == '\n' && i + 1 < _buf._len) {
-        _state.cursor = i + 1;
-        _scroll += 1;
-        break;
+      if (_buf._buffer[i] == '\n') {
+        rowCount++;
+      }
+    }
+    int pageRows = (_height / _charHeight) - 1;
+    if (rowCount >= pageRows) {
+      // rows exist below end of page to pull up
+      for (int i = _state.cursor; i < _buf._len; i++) {
+        if (_buf._buffer[i] == '\n' && i + 1 < _buf._len) {
+          _state.cursor = i + 1;
+          _scroll += 1;
+          break;
+        }
       }
     }
   } else if (_scroll > 0) {

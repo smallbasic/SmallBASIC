@@ -13,12 +13,21 @@
 #include "ui/textedit.h"
 #include "platform/sdl/syswm.h"
 
-void onlineHelp(const char *nodeId) {
-  if (nodeId != NULL) {
-    char path[100];
+void onlineHelp(TextEditInput *widget) {
+  char path[100];
+  const char *nodeId = widget->getNodeId();
+  if (nodeId != NULL && nodeId[0] != '0') {
     sprintf(path, "http://smallbasic.sf.net/?q=node/%s", nodeId);
-    browseFile(path);
+  } else {
+    char *selection = widget->getWordBeforeCursor();
+    if (selection != NULL) {
+      sprintf(path, "http://smallbasic.sf.net/?q=search/node/%s", selection);
+      free(selection);
+    } else {
+      sprintf(path, "http://smallbasic.sf.net");
+    }
   }
+  browseFile(path);
 }
 
 void System::editSource(strlib::String &loadPath) {
@@ -141,7 +150,7 @@ void System::editSource(strlib::String &loadPath) {
         break;
       case SB_KEY_F(2):
         redraw = false;
-        onlineHelp(widget->getNodeId());
+        onlineHelp(editWidget);
         break;
       case SB_KEY_F(5):
         saveFile(editWidget, loadPath);

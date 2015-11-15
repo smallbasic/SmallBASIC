@@ -7,6 +7,7 @@
 	Fix keyboard handling for non-us keymaps
 	Fix Ctrl+Home editor keystroke handler
 	Fix crash with online command if site is down
+	Fix over scroll issue with line number widget
 	Implemented editor F2 command to display online help
 
 2015-10-20
