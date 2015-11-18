@@ -363,7 +363,11 @@ void screen_dump() {
 #endif
     for (int i = 0; i < 1000; i++) {
       char file[OS_PATHNAME_SIZE];
-      sprintf(file, "%ssbasic_dump_%d.png", path, i);
+      if (strstr(path, "://") != NULL) {
+        sprintf(file, "sbasic_dump_%d.png", i);
+      } else {
+        sprintf(file, "%ssbasic_dump_%d.png", path, i);
+      }
       if (access(file, R_OK) != 0) {
         g_system->systemPrint("Saving screen to %s\n", file);
         lodepng_encode32_file(file, image, width, height);
