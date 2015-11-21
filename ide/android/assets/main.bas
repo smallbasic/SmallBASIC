@@ -183,7 +183,7 @@ sub listFiles(byref frm, path, byref basList, byref dirList)
     name = ent
     if (isdir(path + name)) then
       dirList << name
-    else if (right(ent, 4) == ".bas") then
+    else if (lower(right(ent, 4)) == ".bas") then
       basList << name
     endif
   next ent

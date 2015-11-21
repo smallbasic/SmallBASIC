@@ -8,8 +8,9 @@
 	Fix Ctrl+Home editor keystroke handler
 	Fix crash with online command if site is down
 	Fix over scroll issue with line number widget
-	Implemented editor F2 command to display online help
 	Fix screen dump invalid file name for online files
+	Fix file manager .bas file case sensitivity
+	Implemented editor F2 command to display online help
 
 2015-10-20
 	Fix LET when assigning a value to a MAP/ARRAY field
