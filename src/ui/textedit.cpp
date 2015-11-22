@@ -1133,7 +1133,8 @@ uint32_t TextEditInput::getHash(const char *str, int offs, int &count) {
         // non keyword character
         while (isalnum(ch) || ch == '.' || ch == '_') {
           // skip any program variable characters
-          ch = str[offs + count++];
+          count++;
+          ch = str[offs + count];
         }
         break;
       }
