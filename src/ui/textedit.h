@@ -110,6 +110,7 @@ struct TextEditInput : public FormEditInput {
   char *getWordBeforeCursor();
   bool replaceNext(const char *text);
   int  getCompletions(StringList *list, int max);
+  void selectNavigate(bool up);
 
 protected:
   enum SyntaxState {
@@ -233,8 +234,8 @@ private:
 #define STB_TEXTEDIT_K_PGUP       SB_KEY_PGUP
 #define STB_TEXTEDIT_K_PGDOWN     SB_KEY_PGDN
 #define STB_TEXTEDIT_NEWLINE      '\n'
-#define STB_TEXTEDIT_K_CONTROL    0xF1000000
-#define STB_TEXTEDIT_K_SHIFT      0xF8000000
+#define STB_TEXTEDIT_K_CONTROL    SB_KEY_CTRL(0)
+#define STB_TEXTEDIT_K_SHIFT      SB_KEY_SHIFT(0)
 #define STB_TEXTEDIT_GETWIDTH_NEWLINE 0.0f
 #define STB_TEXTEDIT_KEYTOTEXT(k) k
 #define STB_TEXTEDIT_STRINGLEN(o) o->_len

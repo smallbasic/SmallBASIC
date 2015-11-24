@@ -644,6 +644,12 @@ bool TextEditInput::edit(int key, int screenWidth, int charWidth) {
   case SB_KEY_ENTER:
     editEnter();
     break;
+  case SB_KEY_SHIFT_CTRL(SB_KEY_LEFT):
+    selectNavigate(true);
+    break;
+  case SB_KEY_SHIFT_CTRL(SB_KEY_RIGHT):
+    selectNavigate(false);
+    break;
   case -1:
     return false;
     break;
@@ -794,6 +800,14 @@ bool TextEditInput::selected(MAPoint2d pt, int scrollX, int scrollY, bool &redra
     }
   }
   return focus;
+}
+
+void TextEditInput::selectNavigate(bool up) {
+  int start = _state.select_start == _state.select_end ? _state.cursor : _state.select_start;
+  _state.select_start = _state.select_end = _state.cursor;
+  stb_textedit_key(&_buf, &_state, up ? STB_TEXTEDIT_K_WORDLEFT : STB_TEXTEDIT_K_WORDRIGHT);
+  _state.select_start = start;
+  _state.select_end = _state.cursor;
 }
 
 char *TextEditInput::copy(bool cut) {

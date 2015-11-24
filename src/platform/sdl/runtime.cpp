@@ -355,6 +355,9 @@ void Runtime::handleKeyEvent(MAEvent &event) {
     if ((event.nativeKey & KMOD_CTRL) &&
         (event.nativeKey & KMOD_ALT)) {
       event.key = SB_KEY_CTRL_ALT(event.key);
+    } else if ((event.nativeKey & KMOD_CTRL) &&
+               (event.nativeKey & KMOD_SHIFT)) {
+      event.key = SB_KEY_SHIFT_CTRL(event.key);
     } else if (event.nativeKey & KMOD_CTRL) {
       event.key = SB_KEY_CTRL(event.key);
     } else if (event.nativeKey & KMOD_ALT) {
@@ -461,7 +464,11 @@ void Runtime::pollEvents(bool blocking) {
           }
           if (maEvent == NULL &&
               ((ev.key.keysym.sym >= SDLK_KP_1 && ev.key.keysym.sym <= SDLK_KP_9) ||
-               (ev.key.keysym.mod & KMOD_CTRL) ||
+               ((ev.key.keysym.mod & KMOD_CTRL) &&
+                ev.key.keysym.sym != SDLK_LSHIFT &&
+                ev.key.keysym.sym != SDLK_RSHIFT &&
+                ev.key.keysym.sym != SDLK_LCTRL &&
+                ev.key.keysym.sym != SDLK_RCTRL) ||
                (ev.key.keysym.mod & KMOD_ALT))) {
             maEvent = new MAEvent();
             maEvent->type = EVENT_TYPE_KEY_PRESSED;

@@ -51,10 +51,11 @@ extern "C" {
 #define SB_KEY_SF(x)    (0xFFE0+(x))
 
 // Control & Alt keys (parameter = capital character)
-#define SB_KEY_CTRL(c)     (0xF1000000 + (c))
-#define SB_KEY_ALT(c)      (0xF2000000 + (c))
-#define SB_KEY_CTRL_ALT(c) (0xF4000000 + (c))
-#define SB_KEY_SHIFT(c)    (0xF8000000 + (c))
+#define SB_KEY_CTRL(c)       (0xF1000000 + (c))
+#define SB_KEY_ALT(c)        (0xF2000000 + (c))
+#define SB_KEY_CTRL_ALT(c)   (0xF3000000 + (c))
+#define SB_KEY_SHIFT(c)      (0xF4000000 + (c))
+#define SB_KEY_SHIFT_CTRL(c) (0xF5000000 + (c))
 
 // keypad
 #define SB_KEY_KP_DIV     0xFFDA
