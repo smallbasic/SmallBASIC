@@ -11,6 +11,7 @@
 	Fix screen dump invalid file name for online files
 	Fix file manager .bas file case sensitivity
 	Fix editor markup on map fields that look like keywords
+	Fix scanner inserting line-no bytecode for empty or comment lines
 	Implemented editor F2 command to display online help
 	Implemented calling IMAGE with another image variable
 
