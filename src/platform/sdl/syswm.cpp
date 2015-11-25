@@ -19,6 +19,7 @@ void appLog(const char *format, ...);
 
 #if defined(_Win32)
 #include <SDL_syswm.h>
+#include <shellapi.h>
 
 void loadIcon(SDL_Window *window) {
   HINSTANCE handle = ::GetModuleHandle(NULL);
@@ -57,18 +58,12 @@ void launchDebug(const char *file) {
   }
 }
 
-#if defined(WIN32)
-#include <windows.h>
-#include <fltk/Window.h>
-#include <fltk/win32.h>
-#endif
-
-void browseFile(const char *url) {
+void browseFile(SDL_Window *window, const char *url) {
   SDL_SysWMinfo wminfo;
   SDL_VERSION(&wminfo.version);
   if (SDL_GetWindowWMInfo(window, &wminfo) == 1) {
     HWND hwnd = wminfo.info.win.window;
-    ShellExecute(hwnd, "open", url, 0, 0, SW_SHOWNORMAL);
+    ::ShellExecute(hwnd, "open", url, 0, 0, SW_SHOWNORMAL);
   }
 }
 
@@ -77,6 +72,7 @@ void browseFile(const char *url) {
 #include <errno.h>
 
 void loadIcon(SDL_Window *window) {
+  // handled via smallbasic.desktop
 }
 
 int getStartupFontSize(SDL_Window *window) {
@@ -105,7 +101,7 @@ void launchDebug(const char *file) {
   }
 }
 
-void browseFile(const char *url) {
+void browseFile(SDL_Window *window, const char *url) {
   if (fork() == 0) {
     const char *browser[] = {
       "sensible-browser",

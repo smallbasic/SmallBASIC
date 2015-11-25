@@ -9,11 +9,10 @@
 #include "config.h"
 
 #include "common/sbapp.h"
-#include "ui/system.h"
 #include "ui/textedit.h"
-#include "platform/sdl/syswm.h"
+#include "platform/sdl/runtime.h"
 
-void onlineHelp(TextEditInput *widget) {
+void onlineHelp(Runtime *runtime, TextEditInput *widget) {
   char path[100];
   const char *nodeId = widget->getNodeId();
   if (nodeId != NULL && nodeId[0] != '0') {
@@ -27,7 +26,7 @@ void onlineHelp(TextEditInput *widget) {
       sprintf(path, "http://smallbasic.sf.net");
     }
   }
-  browseFile(path);
+  runtime->browseFile(path);
 }
 
 void System::editSource(strlib::String &loadPath) {
@@ -150,7 +149,7 @@ void System::editSource(strlib::String &loadPath) {
         break;
       case SB_KEY_F(2):
         redraw = false;
-        onlineHelp(editWidget);
+        onlineHelp((Runtime *)this, editWidget);
         break;
       case SB_KEY_F(5):
         saveFile(editWidget, loadPath);

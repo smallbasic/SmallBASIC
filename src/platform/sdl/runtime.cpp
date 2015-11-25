@@ -130,6 +130,10 @@ int Runtime::ask(const char *title, const char *prompt, bool cancel) {
   return buttonId;
 }
 
+void Runtime::browseFile(const char *url) {
+  ::browseFile(_window, url);
+}
+
 void Runtime::construct(const char *font, const char *boldFont) {
   logEntered();
   _state = kClosingState;
