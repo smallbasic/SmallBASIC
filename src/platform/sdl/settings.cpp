@@ -15,9 +15,8 @@
 
 #include "platform/sdl/settings.h"
 #include "ui/utils.h"
+#include "ui/textedit.h"
 #include "common/smbas.h"
-
-extern int g_themeId;
 
 static const char *ENV_VARS[] = {
   "APPDATA", "HOME", "TMP", "TEMP", "TMPDIR"
@@ -80,6 +79,21 @@ int nextInteger(FILE *fp, int def) {
 }
 
 //
+// returns the next hex value from the file
+//
+int nextHex(FILE *fp, int def) {
+  int result = 0;
+  for (int c = fgetc(fp); c != EOF && c != ',' && c != '\n'; c = fgetc(fp)) {
+    int val = (c >= 'a') ? (10 + (c - 'a')) : (c - '0');
+    result = (result * 16) + val;
+  }
+  if (!result) {
+    result = def;
+  }
+  return result;
+}
+
+//
 // restore window position
 //
 void restoreSettings(SDL_Rect &rect, int &fontScale, bool debug) {
@@ -93,6 +107,9 @@ void restoreSettings(SDL_Rect &rect, int &fontScale, bool debug) {
     opt_mute_audio = nextInteger(fp, 0);
     opt_ide = nextInteger(fp, 0);
     g_themeId = nextInteger(fp, 0);
+    for (int i = 0; i < THEME_COLOURS; i++) {
+      g_user_theme[i] = nextHex(fp, g_user_theme[i]);
+    }
     fclose(fp);
   } else {
     rect.x = SDL_WINDOWPOS_UNDEFINED;
@@ -117,6 +134,11 @@ void saveSettings(SDL_Window *window, int fontScale, bool debug) {
     SDL_GetWindowSize(window, &w, &h);
     fprintf(fp, "%d,%d,%d,%d,%d,%d,%d,%d\n", x, y, w, h,
             fontScale, opt_mute_audio, opt_ide, g_themeId);
+    // print user theme colours on the second line
+    for (int i = 0; i < THEME_COLOURS; i++) {
+      fprintf(fp, (i + 1 < THEME_COLOURS ? "%06x," : "%06x"), g_user_theme[i]);
+    }
+    fprintf(fp, "\n");
     fclose(fp);
   }
 }

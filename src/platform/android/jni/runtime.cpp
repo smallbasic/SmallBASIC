@@ -191,7 +191,7 @@ void Runtime::alert(const char *title, const char *message) {
   _app->activity->vm->DetachCurrentThread();
 }
 
-void Runtime::alert(const char *title, int duration) {
+void Runtime::alert(const char *title, bool longDuration) {
   logEntered();
 
   JNIEnv *env;
@@ -199,8 +199,8 @@ void Runtime::alert(const char *title, int duration) {
   jstring titleString = env->NewStringUTF(title);
   jclass clazz = env->GetObjectClass(_app->activity->clazz);
   jmethodID method = env->GetMethodID(clazz, "showToast",
-                                      "(Ljava/lang/String;I)V");
-  env->CallVoidMethod(_app->activity->clazz, method, titleString, duration);
+                                      "(Ljava/lang/String;Z)V");
+  env->CallVoidMethod(_app->activity->clazz, method, titleString, longDuration);
   env->DeleteLocalRef(clazz);
   env->DeleteLocalRef(titleString);
   _app->activity->vm->DetachCurrentThread();

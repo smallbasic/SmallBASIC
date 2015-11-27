@@ -106,6 +106,22 @@ void ImageDisplay::draw(int x, int y, int w, int h, int cw) {
   maDrawRGB(&dstPoint, _buffer->_image, &srcRect, _opacity, _buffer->_width);
 }
 
+// share image buffer from another image variable
+ImageBuffer *load_image(var_t *map) {
+  ImageBuffer *result = NULL;
+  int bid = map->type == V_MAP ? map_get_int(map, IMG_BID, -1) : -1;
+  if (bid != -1) {
+    List_each(ImageBuffer *, it, cache) {
+      ImageBuffer *next = (*it);
+      if (next->_bid == (unsigned)bid) {
+        result = next;
+        break;
+      }
+    }
+  }
+  return result;
+}
+
 ImageBuffer *load_image(dev_file_t *filep) {
   ImageBuffer *result = NULL;
   List_each(ImageBuffer *, it, cache) {
@@ -294,7 +310,7 @@ void create_image(var_p_t var, ImageBuffer *image) {
   map_add_var(var, IMG_OFFSET_TOP, 0);
   map_add_var(var, IMG_OFFSET_LEFT, 0);
   map_add_var(var, IMG_ZINDEX, 1);
-  map_add_var(var, IMG_OPACITY, 1);
+  map_add_var(var, IMG_OPACITY, 0);
   map_add_var(var, IMG_ID, ++nextId);
 
   if (image != NULL) {
@@ -363,7 +379,11 @@ void screen_dump() {
 #endif
     for (int i = 0; i < 1000; i++) {
       char file[OS_PATHNAME_SIZE];
-      sprintf(file, "%ssbasic_dump_%d.png", path, i);
+      if (strstr(path, "://") != NULL) {
+        sprintf(file, "sbasic_dump_%d.png", i);
+      } else {
+        sprintf(file, "%ssbasic_dump_%d.png", path, i);
+      }
       if (access(file, R_OK) != 0) {
         g_system->systemPrint("Saving screen to %s\n", file);
         lodepng_encode32_file(file, image, width, height);
@@ -412,6 +432,8 @@ extern "C" void v_create_image(var_p_t var) {
       }
       image = load_xpm_image(data);
       delete [] data;
+    } else {
+      image = load_image(&arg);
     }
     v_free(&arg);
     break;

@@ -16,7 +16,8 @@
 #include "ui/kwp.h"
 
 #define STB_TEXTEDIT_IS_SPACE(ch) IS_WHITE(ch)
-#define STB_TEXTEDIT_IS_PUNCT(ch) ispunct(ch)
+#define STB_TEXTEDIT_IS_PUNCT(ch) (ch != '_' && ch != '$' && ispunct(ch))
+#define IS_VAR_CHAR(ch) (ch == '_' || ch == '$' || isalpha(ch) || isdigit(ch))
 #define STB_TEXTEDIT_IMPLEMENTATION
 #include "lib/stb_textedit.h"
 
@@ -24,7 +25,7 @@
 #define LINE_BUFFER_SIZE 200
 #define INDENT_LEVEL 2
 #define HELP_WIDTH 22
-#define NUM_THEMES 4
+#define NUM_THEMES 5
 #define TWISTY1_OPEN  "> "
 #define TWISTY1_CLOSE "< "
 #define TWISTY2_OPEN  "  > "
@@ -33,6 +34,11 @@
 #define TWISTY2_LEN 4
 #define HELP_BG 0x73c990
 #define HELP_FG 0x20242a
+
+#if defined(_Win32)
+#include <shlwapi.h>
+#define strcasestr StrStrI
+#endif
 
 int g_themeId = 0;
 int g_lineMarker[MAX_MARKERS] = {
@@ -58,13 +64,19 @@ const int theme3[] = {
 };
 
 const int theme4[] = {
+  0x4f4a44, 0x222228, 0x77839b, 0x484f5f, 0xa7aebc, 0x5f9e59,
+  0xcdc0b0, 0xe1e1e1, 0xefeff0, 0x1f51eb, 0x000000, 0xcbb8a2,
+  0x4c9f9a, 0xaf5fd6, 0x0000ff, 0xc679dd, 0x0083f8, 0
+};
+
+int g_user_theme[] = {
   0xc8cedb, 0xa7aebc, 0x484f5f, 0xa7aebc, 0xa7aebc, 0x00bb00,
   0x2e3436, 0x888a85, 0x000000, 0x4d483b, 0x000000, 0x2b313a,
   0x0083f8, 0xff9d00, 0x31ccac, 0xc679dd, 0x0083f8
 };
 
 const int* themes[] = {
-  theme1, theme2, theme3, theme4
+  theme1, theme2, theme3, theme4, g_user_theme
 };
 
 const char *helpText =
@@ -94,6 +106,7 @@ const char *helpText =
   "SHIFT-<arrow> select\n"
   "TAB indent line\n"
   "F1,A-h keyword help\n"
+  "F2 online help\n"
   "F5 debug\n"
   "F9, C-r run\n";
 
@@ -116,10 +129,6 @@ int compareIntegers(const void *p1, const void *p2) {
   int i1 = *((int *)p1);
   int i2 = *((int *)p2);
   return i1 < i2 ? -1 : i1 == i2 ? 0 : 1;
-}
-
-void init_edit_markers() {
-
 }
 
 //
@@ -635,6 +644,12 @@ bool TextEditInput::edit(int key, int screenWidth, int charWidth) {
   case SB_KEY_ENTER:
     editEnter();
     break;
+  case SB_KEY_SHIFT_CTRL(SB_KEY_LEFT):
+    selectNavigate(true);
+    break;
+  case SB_KEY_SHIFT_CTRL(SB_KEY_RIGHT):
+    selectNavigate(false);
+    break;
   case -1:
     return false;
     break;
@@ -651,7 +666,8 @@ bool TextEditInput::edit(int key, int screenWidth, int charWidth) {
     }
   } else {
     int pageRows = _height / _charHeight;
-    if (_cursorRow - _scroll > pageRows) {
+    if (_cursorRow - _scroll > pageRows || _cursorRow < _scroll) {
+      // scroll for cursor outside of current frame
       updateScroll();
     }
   }
@@ -662,14 +678,14 @@ bool TextEditInput::edit(int key, int screenWidth, int charWidth) {
 bool TextEditInput::find(const char *word, bool next) {
   bool result = false;
   if (_buf._buffer != NULL && word != NULL) {
-    const char *found = strstr(_buf._buffer + _state.cursor, word);
+    const char *found = strcasestr(_buf._buffer + _state.cursor, word);
     if (next && found != NULL) {
       // skip to next word
-      found = strstr(found + strlen(word), word);
+      found = strcasestr(found + strlen(word), word);
     }
     if (found == NULL) {
       // start over
-      found = strstr(_buf._buffer, word);
+      found = strcasestr(_buf._buffer, word);
     }
     if (found != NULL) {
       result = true;
@@ -784,6 +800,14 @@ bool TextEditInput::selected(MAPoint2d pt, int scrollX, int scrollY, bool &redra
     }
   }
   return focus;
+}
+
+void TextEditInput::selectNavigate(bool up) {
+  int start = _state.select_start == _state.select_end ? _state.cursor : _state.select_start;
+  _state.select_start = _state.select_end = _state.cursor;
+  stb_textedit_key(&_buf, &_state, up ? STB_TEXTEDIT_K_WORDLEFT : STB_TEXTEDIT_K_WORDRIGHT);
+  _state.select_start = start;
+  _state.select_end = _state.cursor;
 }
 
 char *TextEditInput::copy(bool cut) {
@@ -1120,6 +1144,12 @@ uint32_t TextEditInput::getHash(const char *str, int offs, int &count) {
     for (count = 0; count < keyword_max_len; count++) {
       char ch = str[offs + count];
       if (!isalpha(ch) && ch != '_') {
+        // non keyword character
+        while (isalnum(ch) || ch == '.' || ch == '_') {
+          // skip any program variable characters
+          count++;
+          ch = str[offs + count];
+        }
         break;
       }
       result += tolower(str[offs + count]);
@@ -1203,12 +1233,27 @@ char *TextEditInput::getSelection(int *start, int *end) {
   } else {
     *start = wordStart();
     int i = _state.cursor;
-    while (!IS_WHITE(_buf._buffer[i]) && !ispunct(_buf._buffer[i]) && i < _buf._len) {
+    while (IS_VAR_CHAR(_buf._buffer[i]) && i < _buf._len) {
       i++;
     }
     *end = i;
     result = _buf.textRange(*start, *end);
   }
+  return result;
+}
+
+const char *TextEditInput::getNodeId() {
+  char *selection = getWordBeforeCursor();
+  const char *result = NULL;
+  int len = selection != NULL ? strlen(selection) : 0;
+  if (len > 0) {
+    for (int i = 0; i < keyword_help_len && !result; i++) {
+      if (strcasecmp(selection, keyword_help[i].keyword) == 0) {
+        result = keyword_help[i].nodeId;
+      }
+    }
+  }
+  free(selection);
   return result;
 }
 
@@ -1260,13 +1305,25 @@ void TextEditInput::gotoNextMarker() {
   }
 }
 
-void TextEditInput::lineNavigate(bool lineDown) {
-  if (lineDown) {
+void TextEditInput::lineNavigate(bool arrowDown) {
+  if (arrowDown) {
+    // starting from the cursor position (relative to the screen),
+    // count the number of rows to the bottom of the document.
+    int rowCount = _cursorLine - _scroll;
     for (int i = _state.cursor; i < _buf._len; i++) {
-      if (_buf._buffer[i] == '\n' && i + 1 < _buf._len) {
-        _state.cursor = i + 1;
-        _scroll += 1;
-        break;
+      if (_buf._buffer[i] == '\n') {
+        rowCount++;
+      }
+    }
+    int pageRows = (_height / _charHeight) - 1;
+    if (rowCount >= pageRows) {
+      // rows exist below end of page to pull up
+      for (int i = _state.cursor; i < _buf._len; i++) {
+        if (_buf._buffer[i] == '\n' && i + 1 < _buf._len) {
+          _state.cursor = i + 1;
+          _scroll += 1;
+          break;
+        }
       }
     }
   } else if (_scroll > 0) {
@@ -1584,13 +1641,15 @@ void TextEditHelpWidget::createCompletionHelp() {
         _buf.append("\n", 1);
       }
     }
-    const char *found = strstr(_editor->getText(), selection);
+    const char *text = _editor->getText();
+    const char *found = strcasestr(text, selection);
     while (found != NULL) {
       const char *end = found;
-      while (!IS_WHITE(*end) && !ispunct(*end) && *end != '\0') {
+      const char pre = found > text ? *(found - 1) : ' ';
+      while (IS_VAR_CHAR(*end) && *end != '\0') {
         end++;
       }
-      if (end - found > len) {
+      if (end - found > len && (IS_WHITE(pre) || pre == '.')) {
         String next;
         next.append(found, end - found);
         if (!words.exists(next)) {
@@ -1599,7 +1658,7 @@ void TextEditHelpWidget::createCompletionHelp() {
           _buf.append("\n", 1);
         }
       }
-      found = strstr(found + len, selection);
+      found = strcasestr(end, selection);
     }
   } else {
     const char *package = NULL;

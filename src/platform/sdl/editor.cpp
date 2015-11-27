@@ -9,8 +9,25 @@
 #include "config.h"
 
 #include "common/sbapp.h"
-#include "ui/system.h"
 #include "ui/textedit.h"
+#include "platform/sdl/runtime.h"
+
+void onlineHelp(Runtime *runtime, TextEditInput *widget) {
+  char path[100];
+  const char *nodeId = widget->getNodeId();
+  if (nodeId != NULL && nodeId[0] != '0') {
+    sprintf(path, "http://smallbasic.sf.net/?q=node/%s", nodeId);
+  } else {
+    char *selection = widget->getWordBeforeCursor();
+    if (selection != NULL) {
+      sprintf(path, "http://smallbasic.sf.net/?q=search/node/%s", selection);
+      free(selection);
+    } else {
+      sprintf(path, "http://smallbasic.sf.net");
+    }
+  }
+  runtime->browseFile(path);
+}
 
 void System::editSource(strlib::String &loadPath) {
   logEntered();
@@ -59,7 +76,11 @@ void System::editSource(strlib::String &loadPath) {
   _output->clearScreen();
   _output->addInput(editWidget);
   _output->addInput(helpWidget);
-  _output->setStatus(cleanFile);
+  if (gsb_last_error && !isBack()) {
+    _output->setStatus("Error. Esc=Close");
+  } else {
+    _output->setStatus(cleanFile);
+  }
   _output->redraw();
   _state = kEditState;
 
@@ -86,7 +107,6 @@ void System::editSource(strlib::String &loadPath) {
       }
 
       switch (event.key) {
-      case SB_KEY_F(2):
       case SB_KEY_F(3):
       case SB_KEY_F(8):
       case SB_KEY_F(10):
@@ -126,6 +146,10 @@ void System::editSource(strlib::String &loadPath) {
         widget = helpWidget;
         helpWidget->createKeywordIndex();
         helpWidget->show();
+        break;
+      case SB_KEY_F(2):
+        redraw = false;
+        onlineHelp((Runtime *)this, editWidget);
         break;
       case SB_KEY_F(5):
         saveFile(editWidget, loadPath);

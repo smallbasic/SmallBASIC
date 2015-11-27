@@ -301,10 +301,12 @@ public class MainActivity extends NativeActivity {
     });
   }
 
-  public void showToast(final String message, final int duration) {
+  public void showToast(final String message, final boolean longDurarion) {
+    Log.i(TAG, "toast longDuration: " + longDurarion);
     final Activity activity = this;
     runOnUiThread(new Runnable() {
       public void run() {
+        int duration = longDurarion ? Toast.LENGTH_LONG : Toast.LENGTH_SHORT;
         Toast.makeText(activity, message, duration).show();
       }
     });

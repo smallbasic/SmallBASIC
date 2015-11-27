@@ -19,6 +19,7 @@ void appLog(const char *format, ...);
 
 #if defined(_Win32)
 #include <SDL_syswm.h>
+#include <shellapi.h>
 
 void loadIcon(SDL_Window *window) {
   HINSTANCE handle = ::GetModuleHandle(NULL);
@@ -57,11 +58,21 @@ void launchDebug(const char *file) {
   }
 }
 
+void browseFile(SDL_Window *window, const char *url) {
+  SDL_SysWMinfo wminfo;
+  SDL_VERSION(&wminfo.version);
+  if (SDL_GetWindowWMInfo(window, &wminfo) == 1) {
+    HWND hwnd = wminfo.info.win.window;
+    ::ShellExecute(hwnd, "open", url, 0, 0, SW_SHOWNORMAL);
+  }
+}
+
 #else
 #include <unistd.h>
 #include <errno.h>
 
 void loadIcon(SDL_Window *window) {
+  // handled via smallbasic.desktop
 }
 
 int getStartupFontSize(SDL_Window *window) {
@@ -80,13 +91,32 @@ void launchDebug(const char *file) {
     // child process
     sprintf(port, "-p %d", g_debugPort);
     if (execl(g_appPath, g_appPath, port, "-d", file, (char *)0) == -1) {
-      fprintf(stderr, "exec failed %s\n", strerror(errno));
+      fprintf(stderr, "exec failed [%s] %s\n", strerror(errno), g_appPath);
       exit(1);
     }
     break;
   default:
     // parent process - continue
     break;
+  }
+}
+
+void browseFile(SDL_Window *window, const char *url) {
+  if (fork() == 0) {
+    const char *browser[] = {
+      "sensible-browser",
+      "xdg-open",
+      "gnome-open",
+      "htmlview",
+      "firefox",
+      "google-chrome",
+      NULL
+    };
+    for (int i = 0; browser[i] != NULL; i++) {
+      execlp(browser[i], browser[i], url, NULL);
+    }
+    fprintf(stderr, "exec browser failed for %s\n", url);
+    ::exit(1);
   }
 }
 

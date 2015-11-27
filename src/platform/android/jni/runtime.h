@@ -22,7 +22,7 @@ struct Runtime : public System {
   virtual ~Runtime();
 
   void alert(const char *title, const char *message);
-  void alert(const char *title, int duration = 5000);
+  void alert(const char *title, bool longDuration=true);
   int ask(const char *title, const char *prompt, bool cancel);
   void clearSoundQueue();
   void construct();

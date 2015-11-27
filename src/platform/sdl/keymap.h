@@ -10,13 +10,6 @@
 #define KEYMAP
 
 const int keymap[][2] = {
-  {SDLK_CAPSLOCK,  -1},
-  {SDLK_LSHIFT, -1},
-  {SDLK_RSHIFT, -1},
-  {SDLK_LALT, -1},
-  {SDLK_RALT, -1},
-  {SDLK_LCTRL, -1},
-  {SDLK_RCTRL, -1},
   {SDLK_RETURN, SB_KEY_ENTER},
   {SDLK_ESCAPE, SB_KEY_ESCAPE},
   {SDLK_KP_PERIOD, SB_KEY_KP_DEL},
@@ -26,6 +19,7 @@ const int keymap[][2] = {
   {SDLK_KP_MINUS, SB_KEY_KP_MINUS},
   {SDLK_KP_PLUS, SB_KEY_KP_PLUS},
   {SDLK_KP_EQUALS, '='},
+  {SDLK_TAB, SB_KEY_TAB},
   {SDLK_BACKSPACE, SB_KEY_BACKSPACE},
   {SDLK_DELETE, SB_KEY_DELETE},
   {SDLK_UP, SB_KEY_UP},
@@ -49,30 +43,6 @@ const int keymap[][2] = {
   {SDLK_F10, SB_KEY_F(10)},
   {SDLK_F11, SB_KEY_F(11)},
   {SDLK_F12, SB_KEY_F(12)}
-};
-
-const int shiftmap[][2] = {
-  {'`', '~'},
-  {'1', '!'},
-  {'2', '@'},
-  {'3', '#'},
-  {'4', '$'},
-  {'5', '%'},
-  {'6', '^'},
-  {'7', '&'},
-  {'8', '*'},
-  {'9', '('},
-  {'0', ')'},
-  {'-', '_'},
-  {'=', '+'},
-  {'[', '{'},
-  {']', '}'},
-  {'\\', '|'},
-  {';', ':'},
-  {'\'', '"'},
-  {',', '<'},
-  {'.', '>'},
-  {'/', '?'},
 };
 
 #endif

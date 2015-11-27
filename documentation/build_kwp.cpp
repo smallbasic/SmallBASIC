@@ -240,14 +240,15 @@ int main(int argc, char *argv[]) {
   fprintf(stdout, "  const char *package;\n");
   fprintf(stdout, "  const char *keyword;\n");
   fprintf(stdout, "  const char *signature;\n");
+  fprintf(stdout, "  const char *nodeId;\n");
   fprintf(stdout, "  const char *help;\n");
   fprintf(stdout, "} keyword_help[] = {\n");
 
   int max_keyword_len = 0;
   List_each(HelpItem *, it, helpItems) {
     HelpItem *item = (*it);
-    fprintf(stdout, "{\"%s\",\"%s\",\"%s\",\"%s\"},\n", item->package,
-            item->keyword, item->signature, item->help);
+    fprintf(stdout, "{\"%s\",\"%s\",\"%s\",\"%s\",\"%s\"},\n", item->package,
+            item->keyword, item->signature, item->id, item->help);
     int len = strlen(item->keyword);
     if (len > max_keyword_len) {
       max_keyword_len = len;

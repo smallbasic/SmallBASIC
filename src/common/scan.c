@@ -20,7 +20,7 @@
 #include "languages/keywords.en.c"
 
 char *comp_array_uds_field(char *p, bc_t *bc);
-void comp_text_line(char *text);
+void comp_text_line(char *text, int addLineNo);
 bcip_t comp_search_bc(bcip_t ip, code_t code);
 extern void expr_parser(bc_t *bc);
 extern void sc_raise2(const char *fmt, int line, const char *buff); // sberr
@@ -1332,7 +1332,7 @@ void comp_expression(char *expr, byte no_parser) {
 
   // do additional steps
   if (kw_exec_more) {
-    comp_text_line(comp_bc_tmp2);
+    comp_text_line(comp_bc_tmp2, 0);
   }
 }
 
@@ -1589,7 +1589,7 @@ int comp_single_line_if(char *text) {
               *pelse = '\0';
 
               // scan the commands before ELSE
-              comp_text_line(buf);
+              comp_text_line(buf, 0);
               // add EOC
               bc_eoc(&comp_prog);
 
@@ -1612,8 +1612,8 @@ int comp_single_line_if(char *text) {
             }
           } while (pelse != NULL);
         }
-        // scan the rest commands
-        comp_text_line(buf);
+        // scan the remaining commands
+        comp_text_line(buf, 0);
         // add EOC
         bc_eoc(&comp_prog);
 
@@ -2081,7 +2081,7 @@ void comp_text_line_func(long idx, int decl) {
             char *macro = malloc(SB_SOURCELINE_SIZE + 1);
             sprintf(macro, "%s=%s:%s", pname, eq_ptr, LCN_END);
             // run comp_text_line again
-            comp_text_line(macro);
+            comp_text_line(macro, 0);
             free(macro);
           } else {
             sc_raise(MSG_MISSING_UDP_BODY);
@@ -2334,9 +2334,7 @@ int comp_text_line_command(long idx, int decl, int sharp, char *last_cmd) {
       comp_prepare_name(vname, pars[i], SB_KEYWORD_SIZE);
       if (strlen(vname) != strlen(pars[i])) {
         // kwTYPE_LINE is required for executor
-        bc_add_code(&comp_prog, kwTYPE_LINE);
-        bc_add_addr(&comp_prog, comp_line);
-        comp_text_line(pars[i]);
+        comp_text_line(pars[i], 1);
       }
     }
     break;
@@ -2553,7 +2551,7 @@ int comp_text_line_command(long idx, int decl, int sharp, char *last_cmd) {
 /*
  * Pass 1: scan source line
  */
-void comp_text_line(char *text) {
+void comp_text_line(char *text, int addLineNo) {
   long idx;
   int decl = 0;
 
@@ -2566,7 +2564,7 @@ void comp_text_line(char *text) {
   // EOL
   if (*p == ':') {
     p++;
-    comp_text_line(p);
+    comp_text_line(p, 0);
     return;
   }
   // remark
@@ -2607,6 +2605,11 @@ void comp_text_line(char *text) {
   if (idx == kwREM) {
     return;
   }
+  if (addLineNo) {
+    // add debug info: line-number
+    bc_add_code(&comp_prog, kwTYPE_LINE);
+    bc_add_addr(&comp_prog, comp_line);
+  }
   if (idx == -1) {
     idx = comp_is_proc(comp_bc_name);
     if (idx != -1) {
@@ -2631,7 +2634,7 @@ void comp_text_line(char *text) {
       if (*p == ':') {          // command separator
         bc_eoc(&comp_prog);
         p++;
-        comp_text_line(p);
+        comp_text_line(p, 0);
       }
       return;
     }
@@ -2691,7 +2694,7 @@ void comp_text_line(char *text) {
     // command separator
     bc_eoc(&comp_prog);
     p++;
-    comp_text_line(p);
+    comp_text_line(p, 0);
   }
 }
 
@@ -4231,12 +4234,8 @@ int comp_pass1(const char *section, const char *text) {
           }
         }
 
-        // add debug info: line-number
-        bc_add_code(&comp_prog, kwTYPE_LINE);
-        bc_add_addr(&comp_prog, comp_line);
-
         strcpy(code_line, ps);
-        comp_text_line(code_line);
+        comp_text_line(code_line, 1);
         if (comp_error) {
           break;
         }
