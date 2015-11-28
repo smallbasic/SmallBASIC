@@ -11,7 +11,7 @@
 
 #include <SDL.h>
 
-void restoreSettings(SDL_Rect &rect, int &fontScale, bool debug);
+void restoreSettings(SDL_Rect &rect, int &fontScale, bool debug, bool restoreDir);
 void saveSettings(SDL_Window *window, int fontScale, bool debug);
 
 #endif

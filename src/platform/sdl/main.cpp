@@ -263,6 +263,7 @@ int main(int argc, char* argv[]) {
   char *fontFamily = NULL;
   char *runFile = NULL;
   bool debug = false;
+  bool restoreDir = true;
   int fontScale;
   int ide_option = -1;
   SDL_Rect rect;
@@ -280,7 +281,9 @@ int main(int argc, char* argv[]) {
               && ((strcasecmp(s + len - 4, ".bas") == 0 && access(s, 0) == 0)
                   || (strstr(s, "://") != NULL))) {
             runFile = strdup(s);
-          } else if (chdir(s) != 0) {
+          } else if (chdir(s) == 0) {
+            restoreDir = false;
+          } else {
             strcpy(opt_command, s);
           }
         }
@@ -344,7 +347,7 @@ int main(int argc, char* argv[]) {
     }
   }
 
-  restoreSettings(rect, fontScale, debug);
+  restoreSettings(rect, fontScale, debug, restoreDir);
   if (ide_option != -1) {
     opt_ide = ide_option;
   }
