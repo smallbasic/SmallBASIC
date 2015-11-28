@@ -22,8 +22,8 @@ static const char *ENV_VARS[] = {
   "APPDATA", "HOME", "TMP", "TEMP", "TMPDIR"
 };
 
-#if !defined(PATH_MAX)
-  #define PATH_MAX 256
+#if !defined(FILENAME_MAX)
+  #define FILENAME_MAX 256
 #endif
 
 #define DEFAULT_WIDTH 640
@@ -38,7 +38,7 @@ static const char *ENV_VARS[] = {
 
 FILE *openConfig(const char *flags, bool debug) {
   FILE *result = NULL;
-  char path[PATH_MAX];
+  char path[FILENAME_MAX];
   int vars_len = sizeof(ENV_VARS) / sizeof(ENV_VARS[0]);
 
   path[0] = 0;
@@ -94,9 +94,26 @@ int nextHex(FILE *fp, int def) {
 }
 
 //
+// sets the next string in the file as the current working directory
+//
+void restorePath(FILE *fp) {
+  int pos = ftell(fp);
+  int len = 0;
+  for (int c = fgetc(fp); c != EOF && c != ',' && c != '\n'; c = fgetc(fp)) {
+    len++;
+  }
+  fseek(fp, pos, SEEK_SET);
+  if (len > 0) {
+    String path;
+    path.append(fp, len);
+    chdir(path.c_str());
+  }
+}
+
+//
 // restore window position
 //
-void restoreSettings(SDL_Rect &rect, int &fontScale, bool debug) {
+void restoreSettings(SDL_Rect &rect, int &fontScale, bool debug, bool restoreDir) {
   FILE *fp = openConfig("r", debug);
   if (fp) {
     rect.x = nextInteger(fp, SDL_WINDOWPOS_UNDEFINED);
@@ -109,6 +126,9 @@ void restoreSettings(SDL_Rect &rect, int &fontScale, bool debug) {
     g_themeId = nextInteger(fp, 0);
     for (int i = 0; i < THEME_COLOURS; i++) {
       g_user_theme[i] = nextHex(fp, g_user_theme[i]);
+    }
+    if (restoreDir) {
+      restorePath(fp);
     }
     fclose(fp);
   } else {
@@ -138,7 +158,20 @@ void saveSettings(SDL_Window *window, int fontScale, bool debug) {
     for (int i = 0; i < THEME_COLOURS; i++) {
       fprintf(fp, (i + 1 < THEME_COLOURS ? "%06x," : "%06x"), g_user_theme[i]);
     }
-    fprintf(fp, "\n");
+
+    // save the current working directory
+    char path[FILENAME_MAX + 1];
+    getcwd(path, FILENAME_MAX);
+    if (path[1] == ':' && path[2] == '\\') {
+      for (int i = 2; path[i] != '\0'; i++) {
+        if (path[i] == '\\') {
+          path[i] = '/';
+        }
+      }
+      fprintf(fp, "\n%s\n", path);
+    } else {
+      fprintf(fp, "\n%s\n", path);
+    }
     fclose(fp);
   }
 }
