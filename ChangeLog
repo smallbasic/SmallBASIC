@@ -1,3 +1,9 @@
+2015-12-05
+	Implemented loading recent files via ALT+1 .. ALT+9
+	Fix potential editor crash with empty support widget
+	Fix potential crash with debug target
+	Fix restore path to only function when no other arguments supplied
+
 2015-11-01
 	Fix debugger launch in linux build
 	Fix editor display issue with keyword completion

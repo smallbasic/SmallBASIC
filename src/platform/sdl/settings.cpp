@@ -13,10 +13,10 @@
 #include <ctype.h>
 #include <sys/stat.h>
 
-#include "platform/sdl/settings.h"
 #include "ui/utils.h"
 #include "ui/textedit.h"
 #include "common/smbas.h"
+#include "platform/sdl/settings.h"
 
 static const char *ENV_VARS[] = {
   "APPDATA", "HOME", "TMP", "TEMP", "TMPDIR"
@@ -29,12 +29,16 @@ static const char *ENV_VARS[] = {
 #define DEFAULT_WIDTH 640
 #define DEFAULT_HEIGHT 480
 #define DEFAULT_SCALE 100
+#define NUM_RECENT_ITEMS 9
 
 #if defined(__MINGW32__)
 #define makedir(f) mkdir(f)
 #else
 #define makedir(f) mkdir(f, 0700)
 #endif
+
+strlib::String recentPath[NUM_RECENT_ITEMS];
+int recentPosition[NUM_RECENT_ITEMS];
 
 FILE *openConfig(const char *flags, bool debug) {
   FILE *result = NULL;
@@ -94,19 +98,39 @@ int nextHex(FILE *fp, int def) {
 }
 
 //
-// sets the next string in the file as the current working directory
+// returns the length of the next string
 //
-void restorePath(FILE *fp) {
+int nextString(FILE *fp) {
   int pos = ftell(fp);
   int len = 0;
-  for (int c = fgetc(fp); c != EOF && c != ',' && c != '\n'; c = fgetc(fp)) {
+  for (int c = fgetc(fp); c != EOF; c = fgetc(fp)) {
+    if (c == '\n') {
+      if (len > 0) {
+        // string terminator
+        break;
+      } else {
+        // skip previous terminator
+        pos++;
+        continue;
+      }
+    }
     len++;
   }
   fseek(fp, pos, SEEK_SET);
+  return len;
+}
+
+//
+// sets the next string in the file as the current working directory
+//
+void restorePath(FILE *fp, bool restoreDir) {
+  int len = nextString(fp);
   if (len > 0) {
     String path;
     path.append(fp, len);
-    chdir(path.c_str());
+    if (restoreDir) {
+      chdir(path.c_str());
+    }
   }
 }
 
@@ -127,8 +151,17 @@ void restoreSettings(SDL_Rect &rect, int &fontScale, bool debug, bool restoreDir
     for (int i = 0; i < THEME_COLOURS; i++) {
       g_user_theme[i] = nextHex(fp, g_user_theme[i]);
     }
-    if (restoreDir) {
-      restorePath(fp);
+    restorePath(fp, restoreDir);
+
+    // restore recent paths
+    for (int i = 0; i < NUM_RECENT_ITEMS; i++) {
+      int len = nextString(fp);
+      if (len > 1) {
+        recentPath[i].empty();
+        recentPath[i].append(fp, len);
+      } else {
+        break;
+      }
     }
     fclose(fp);
   } else {
@@ -158,6 +191,7 @@ void saveSettings(SDL_Window *window, int fontScale, bool debug) {
     for (int i = 0; i < THEME_COLOURS; i++) {
       fprintf(fp, (i + 1 < THEME_COLOURS ? "%06x," : "%06x"), g_user_theme[i]);
     }
+    fprintf(fp, "\n");
 
     // save the current working directory
     char path[FILENAME_MAX + 1];
@@ -168,11 +202,47 @@ void saveSettings(SDL_Window *window, int fontScale, bool debug) {
           path[i] = '/';
         }
       }
-      fprintf(fp, "\n%s\n", path);
-    } else {
-      fprintf(fp, "\n%s\n", path);
     }
+    fprintf(fp, "%s\n", path);
+
+    // save the recent editor paths
+    for (int i = 0; i < NUM_RECENT_ITEMS; i++) {
+      if (recentPath[i].length() > 0) {
+        fprintf(fp, "%s\n", recentPath[i].c_str());
+      }
+    }
+
     fclose(fp);
   }
 }
 
+bool getRecentFile(strlib::String &path, unsigned position) {
+  bool result = false;
+  if (position < NUM_RECENT_ITEMS && recentPath[position].length() > 0 &&
+      !recentPath[position].equals(path)) {
+    path.empty();
+    path.append(recentPath[position]);
+    result = true;
+  }
+  return result;
+}
+
+void setRecentFile(const char *filename) {
+  bool found = false;
+  for (int i = 0; i < NUM_RECENT_ITEMS && !found; i++) {
+    if (recentPath[i].equals(filename, false)) {
+      found = true;
+    }
+  }
+  if (!found) {
+    // shift items downwards
+    for (int i = NUM_RECENT_ITEMS - 1; i > 0; i--) {
+      recentPath[i].empty();
+      recentPath[i].append(recentPath[i - 1]);
+    }
+
+    // create new item in first position
+    recentPath[0].empty();
+    recentPath[0].append(filename);
+  }
+}

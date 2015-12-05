@@ -13,6 +13,8 @@
 
 void restoreSettings(SDL_Rect &rect, int &fontScale, bool debug, bool restoreDir);
 void saveSettings(SDL_Window *window, int fontScale, bool debug);
+void setRecentFile(const char *path);
+bool getRecentFile(strlib::String &path, unsigned position);
 
 #endif
 
