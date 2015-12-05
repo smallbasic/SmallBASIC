@@ -304,4 +304,4 @@ Graphics,command,SHOWPAGE,0,"SHOWPAGE","This command is used to display pending 
 Data,function,ISMAP,0,"ISMAP (x)","Returns true if x is an MAP variable type. A MAP provides value-key pair access along with array or dotted notation. The MAP can be initialized from a String variable using the ARRAY command"
 Data,function,ISREF,0,"ISREF (x)","Returns true if x is a reference variable type. The REF variable type is a ""reference"" to another variable (like a pointer in c). You create a reference by assigning a variable with the BYREF keyword (or @ symbol)."
 Data,function,ARRAY,0,"ARRAY [var | expr]","Creates a ARRAY or MAP variable from the given string or expression"
-Console,command,FORM,0,"FORM","Create a form widget. "
+Console,command,FORM,0,"FORM","Creates a form object from a MAP variable. This provides access to the following sub-commands: doEvents, close, refresh. The form MAP may contain the following properties: value, inputs, focusColor. Inputs is an array of MAP, each may contain the following properties: x, y, width, height, value, label, name, type, backgroundColor, color, visible, isExit, selectedIndex, length, noFocus, onclick"

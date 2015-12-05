@@ -906,16 +906,22 @@ int debugThread(void *data) {
         break;
       case 'v':
         // variables
-        net_print(socket, "Variables:\n");
-        for (unsigned i = SYSVAR_COUNT; i < prog_varcount; i++) {
-          if (!v_isempty(tvar[i])) {
-            pv_writevar(tvar[i], PV_NET, socket);
-            net_print(socket, "\n");
+        SDL_LockMutex(g_lock);
+        if (!runtime->isRunning()) {
+          net_printf(socket, "\n");
+        } else {
+          net_print(socket, "Variables:\n");
+          for (unsigned i = SYSVAR_COUNT; i < prog_varcount; i++) {
+            if (!v_isempty(tvar[i])) {
+              pv_writevar(tvar[i], PV_NET, socket);
+              net_print(socket, "\n");
+            }
           }
+          net_print(socket, "Stack:\n");
+          dumpStack(socket);
+          net_print(socket, "\1");
         }
-        net_print(socket, "Stack:\n");
-        dumpStack(socket);
-        net_print(socket, "\1");
+        SDL_UnlockMutex(g_lock);
         break;
       case 'b':
         // set breakpoint

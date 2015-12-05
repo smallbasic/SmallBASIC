@@ -103,6 +103,7 @@ const char *helpText =
   "A-g goto line\n"
   "A-n trim line-endings\n"
   "A-t select theme\n"
+  "A-<n> recent file\n"
   "SHIFT-<arrow> select\n"
   "TAB indent line\n"
   "F1,A-h keyword help\n"
@@ -1259,7 +1260,7 @@ const char *TextEditInput::getNodeId() {
 
 char *TextEditInput::getWordBeforeCursor() {
   char *result;
-  if (_state.select_start == _state.select_end) {
+  if (_state.select_start == _state.select_end && _buf._len > 0) {
     int start, end;
     result = getSelection(&start, &end);
   } else {

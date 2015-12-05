@@ -11,6 +11,9 @@
 #include "common/sbapp.h"
 #include "ui/textedit.h"
 #include "platform/sdl/runtime.h"
+#include "platform/sdl/settings.h"
+
+using namespace strlib;
 
 void onlineHelp(Runtime *runtime, TextEditInput *widget) {
   char path[100];
@@ -29,26 +32,36 @@ void onlineHelp(Runtime *runtime, TextEditInput *widget) {
   runtime->browseFile(path);
 }
 
-void System::editSource(strlib::String &loadPath) {
-  logEntered();
-
-  strlib::String fileName;
+void setupStatus(String &dirtyFile, String &cleanFile, String &loadPath) {
+  const char *help = " Ctrl+h (C-h)=Help";
+  String fileName;
   int i = loadPath.lastIndexOf('/', 0);
   if (i != -1) {
     fileName = loadPath.substring(i + 1);
   } else {
     fileName = loadPath;
   }
-
-  const char *help = " Ctrl+h (C-h)=Help";
-  strlib::String dirtyFile;
+  dirtyFile.empty();
   dirtyFile.append(" * ");
   dirtyFile.append(fileName);
   dirtyFile.append(help);
-  strlib::String cleanFile;
+  cleanFile.empty();
   cleanFile.append(" - ");
   cleanFile.append(fileName);
   cleanFile.append(help);
+}
+
+void showRecentFiles(TextEditHelpWidget *helpWidget) {
+  helpWidget->createMessage();
+  helpWidget->show();
+  helpWidget->reload(NULL);
+  String fileList;
+  getRecentFileList(fileList);
+  helpWidget->setText(fileList);
+}
+
+void System::editSource(String &loadPath) {
+  logEntered();
 
   int w = _output->getWidth();
   int h = _output->getHeight();
@@ -58,8 +71,11 @@ void System::editSource(strlib::String &loadPath) {
   TextEditInput *editWidget = new TextEditInput(_programSrc, charWidth, charHeight, 0, 0, w, h);
   TextEditHelpWidget *helpWidget = new TextEditHelpWidget(editWidget, charWidth, charHeight);
   TextEditInput *widget = editWidget;
-  _modifiedTime = getModifiedTime();
+  String dirtyFile;
+  String cleanFile;
 
+  setupStatus(dirtyFile, cleanFile, loadPath);
+  _modifiedTime = getModifiedTime();
   editWidget->updateUI(NULL, NULL);
   editWidget->setLineNumbers();
   editWidget->setFocus(true);
@@ -85,6 +101,7 @@ void System::editSource(strlib::String &loadPath) {
   _state = kEditState;
 
   showCursor(kIBeam);
+  setRecentFile(loadPath.c_str());
 
   while (_state == kEditState) {
     MAEvent event = getNextEvent();
@@ -215,6 +232,31 @@ void System::editSource(strlib::String &loadPath) {
         waitForBack();
         _output->selectScreen(SOURCE_SCREEN);
         _state = kEditState;
+        break;
+      case SB_KEY_ALT('0'):
+        _output->setStatus("Recent files. Esc=Close");
+        widget = helpWidget;
+        showRecentFiles(helpWidget);
+        break;
+      case SB_KEY_ALT('1'):
+      case SB_KEY_ALT('2'):
+      case SB_KEY_ALT('3'):
+      case SB_KEY_ALT('4'):
+      case SB_KEY_ALT('5'):
+      case SB_KEY_ALT('6'):
+      case SB_KEY_ALT('7'):
+      case SB_KEY_ALT('8'):
+      case SB_KEY_ALT('9'):
+        if (editWidget->isDirty()) {
+          saveFile(editWidget, loadPath);
+        }
+        if (getRecentFile(loadPath, event.key - SB_KEY_ALT('1'))) {
+          loadSource(loadPath.c_str());
+          editWidget->reload(_programSrc);
+          dirty = !editWidget->isDirty();
+          setupStatus(dirtyFile, cleanFile, loadPath);
+          _modifiedTime = getModifiedTime();
+        }
         break;
       default:
         redraw = widget->edit(event.key, sw, charWidth);
