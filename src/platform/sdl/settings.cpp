@@ -18,6 +18,8 @@
 #include "common/smbas.h"
 #include "platform/sdl/settings.h"
 
+using namespace strlib;
+
 static const char *ENV_VARS[] = {
   "APPDATA", "HOME", "TMP", "TEMP", "TMPDIR"
 };
@@ -37,7 +39,7 @@ static const char *ENV_VARS[] = {
 #define makedir(f) mkdir(f, 0700)
 #endif
 
-strlib::String recentPath[NUM_RECENT_ITEMS];
+String recentPath[NUM_RECENT_ITEMS];
 int recentPosition[NUM_RECENT_ITEMS];
 
 FILE *openConfig(const char *flags, bool debug) {
@@ -216,7 +218,7 @@ void saveSettings(SDL_Window *window, int fontScale, bool debug) {
   }
 }
 
-bool getRecentFile(strlib::String &path, unsigned position) {
+bool getRecentFile(String &path, unsigned position) {
   bool result = false;
   if (position < NUM_RECENT_ITEMS && recentPath[position].length() > 0 &&
       !recentPath[position].equals(path)) {
@@ -225,6 +227,15 @@ bool getRecentFile(strlib::String &path, unsigned position) {
     result = true;
   }
   return result;
+}
+
+void getRecentFileList(String &fileList) {
+  for (int i = 0; i < NUM_RECENT_ITEMS; i++) {
+    if (recentPath[i].length() > 0) {
+      fileList.append(i + 1).append(" ");
+      fileList.append(recentPath[i]).append("\n\n");
+    }
+  }
 }
 
 void setRecentFile(const char *filename) {

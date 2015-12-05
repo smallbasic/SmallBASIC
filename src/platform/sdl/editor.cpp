@@ -51,6 +51,15 @@ void setupStatus(String &dirtyFile, String &cleanFile, String &loadPath) {
   cleanFile.append(help);
 }
 
+void showRecentFiles(TextEditHelpWidget *helpWidget) {
+  helpWidget->createMessage();
+  helpWidget->show();
+  helpWidget->reload(NULL);
+  String fileList;
+  getRecentFileList(fileList);
+  helpWidget->setText(fileList);
+}
+
 void System::editSource(String &loadPath) {
   logEntered();
 
@@ -223,6 +232,11 @@ void System::editSource(String &loadPath) {
         waitForBack();
         _output->selectScreen(SOURCE_SCREEN);
         _state = kEditState;
+        break;
+      case SB_KEY_ALT('0'):
+        _output->setStatus("Recent files. Esc=Close");
+        widget = helpWidget;
+        showRecentFiles(helpWidget);
         break;
       case SB_KEY_ALT('1'):
       case SB_KEY_ALT('2'):
