@@ -229,9 +229,12 @@ bool getRecentFile(String &path, unsigned position) {
   return result;
 }
 
-void getRecentFileList(String &fileList) {
+void getRecentFileList(String &fileList, String &current) {
   for (int i = 0; i < NUM_RECENT_ITEMS; i++) {
     if (recentPath[i].length() > 0) {
+      if (recentPath[i].equals(current)) {
+        fileList.append(">> ");
+      }
       fileList.append(i + 1).append(" ");
       fileList.append(recentPath[i]).append("\n\n");
     }

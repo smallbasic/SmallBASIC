@@ -51,12 +51,12 @@ void setupStatus(String &dirtyFile, String &cleanFile, String &loadPath) {
   cleanFile.append(help);
 }
 
-void showRecentFiles(TextEditHelpWidget *helpWidget) {
+void showRecentFiles(TextEditHelpWidget *helpWidget, String &loadPath) {
   helpWidget->createMessage();
   helpWidget->show();
   helpWidget->reload(NULL);
   String fileList;
-  getRecentFileList(fileList);
+  getRecentFileList(fileList, loadPath);
   helpWidget->setText(fileList);
 }
 
@@ -236,7 +236,7 @@ void System::editSource(String &loadPath) {
       case SB_KEY_ALT('0'):
         _output->setStatus("Recent files. Esc=Close");
         widget = helpWidget;
-        showRecentFiles(helpWidget);
+        showRecentFiles(helpWidget, loadPath);
         break;
       case SB_KEY_ALT('1'):
       case SB_KEY_ALT('2'):
@@ -256,6 +256,9 @@ void System::editSource(String &loadPath) {
           dirty = !editWidget->isDirty();
           setupStatus(dirtyFile, cleanFile, loadPath);
           _modifiedTime = getModifiedTime();
+          if (helpWidget->messageMode() && helpWidget->isVisible()) {
+            showRecentFiles(helpWidget, loadPath);
+          }
         }
         break;
       default:

@@ -198,6 +198,7 @@ struct TextEditHelpWidget : public TextEditInput {
   void resize(int w, int h) { _x = w - _width; _height = h; }
   void reset(HelpMode mode);
   bool closeOnEnter() const;
+  bool messageMode() const { return _mode == kMessage; }
   bool replaceMode() const { return _mode == kReplace; }
   bool replaceDoneMode() const { return _mode == kReplaceDone; }
   bool selected(MAPoint2d pt, int scrollX, int scrollY, bool &redraw);
