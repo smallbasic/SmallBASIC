@@ -140,7 +140,7 @@ void restorePath(FILE *fp, bool restoreDir) {
 // restore window position
 //
 void restoreSettings(SDL_Rect &rect, int &fontScale, bool debug, bool restoreDir) {
-  FILE *fp = openConfig("r", debug);
+  FILE *fp = openConfig("rb", debug);
   if (fp) {
     rect.x = nextInteger(fp, SDL_WINDOWPOS_UNDEFINED);
     rect.y = nextInteger(fp, SDL_WINDOWPOS_UNDEFINED);
@@ -182,7 +182,7 @@ void restoreSettings(SDL_Rect &rect, int &fontScale, bool debug, bool restoreDir
 // save the window position
 //
 void saveSettings(SDL_Window *window, int fontScale, bool debug) {
-  FILE *fp = openConfig("w", debug);
+  FILE *fp = openConfig("wb", debug);
   if (fp) {
     int x, y, w, h;
     SDL_GetWindowPosition(window, &x, &y);
