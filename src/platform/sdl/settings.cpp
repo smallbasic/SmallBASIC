@@ -76,7 +76,9 @@ FILE *openConfig(const char *flags, bool debug) {
 int nextInteger(FILE *fp, int def) {
   int result = 0;
   for (int c = fgetc(fp); c != EOF && c != ',' && c != '\n'; c = fgetc(fp)) {
-    result = (result * 10) + (c - '0');
+    if (c != '\r') {
+      result = (result * 10) + (c - '0');
+    }
   }
   if (!result) {
     result = def;
@@ -90,8 +92,10 @@ int nextInteger(FILE *fp, int def) {
 int nextHex(FILE *fp, int def) {
   int result = 0;
   for (int c = fgetc(fp); c != EOF && c != ',' && c != '\n'; c = fgetc(fp)) {
-    int val = (c >= 'a') ? (10 + (c - 'a')) : (c - '0');
-    result = (result * 16) + val;
+    if (c != '\r') {
+      int val = (c >= 'a') ? (10 + (c - 'a')) : (c - '0');
+      result = (result * 16) + val;
+    }
   }
   if (!result) {
     result = def;
@@ -106,7 +110,7 @@ int nextString(FILE *fp) {
   int pos = ftell(fp);
   int len = 0;
   for (int c = fgetc(fp); c != EOF; c = fgetc(fp)) {
-    if (c == '\n') {
+    if (c == '\n' || c == '\r') {
       if (len > 0) {
         // string terminator
         break;
@@ -140,7 +144,7 @@ void restorePath(FILE *fp, bool restoreDir) {
 // restore window position
 //
 void restoreSettings(SDL_Rect &rect, int &fontScale, bool debug, bool restoreDir) {
-  FILE *fp = openConfig("r", debug);
+  FILE *fp = openConfig("rb", debug);
   if (fp) {
     rect.x = nextInteger(fp, SDL_WINDOWPOS_UNDEFINED);
     rect.y = nextInteger(fp, SDL_WINDOWPOS_UNDEFINED);
@@ -182,7 +186,7 @@ void restoreSettings(SDL_Rect &rect, int &fontScale, bool debug, bool restoreDir
 // save the window position
 //
 void saveSettings(SDL_Window *window, int fontScale, bool debug) {
-  FILE *fp = openConfig("w", debug);
+  FILE *fp = openConfig("wb", debug);
   if (fp) {
     int x, y, w, h;
     SDL_GetWindowPosition(window, &x, &y);
@@ -229,9 +233,12 @@ bool getRecentFile(String &path, unsigned position) {
   return result;
 }
 
-void getRecentFileList(String &fileList) {
+void getRecentFileList(String &fileList, String &current) {
   for (int i = 0; i < NUM_RECENT_ITEMS; i++) {
     if (recentPath[i].length() > 0) {
+      if (recentPath[i].equals(current)) {
+        fileList.append(">> ");
+      }
       fileList.append(i + 1).append(" ");
       fileList.append(recentPath[i]).append("\n\n");
     }

@@ -40,7 +40,7 @@
 #define strcasestr StrStrI
 #endif
 
-int g_themeId = 0;
+unsigned g_themeId = 0;
 int g_lineMarker[MAX_MARKERS] = {
   -1, -1, -1, -1, -1, -1, -1, -1, -1, -1
 };
@@ -136,6 +136,9 @@ int compareIntegers(const void *p1, const void *p2) {
 // EditTheme
 //
 EditTheme::EditTheme() {
+  if (g_themeId >= (sizeof(themes) / sizeof(themes[0]))) {
+    g_themeId = 0;
+  }
   selectTheme(themes[g_themeId]);
 }
 
