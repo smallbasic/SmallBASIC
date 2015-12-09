@@ -76,7 +76,9 @@ FILE *openConfig(const char *flags, bool debug) {
 int nextInteger(FILE *fp, int def) {
   int result = 0;
   for (int c = fgetc(fp); c != EOF && c != ',' && c != '\n'; c = fgetc(fp)) {
-    result = (result * 10) + (c - '0');
+    if (c != '\r') {
+      result = (result * 10) + (c - '0');
+    }
   }
   if (!result) {
     result = def;
@@ -90,8 +92,10 @@ int nextInteger(FILE *fp, int def) {
 int nextHex(FILE *fp, int def) {
   int result = 0;
   for (int c = fgetc(fp); c != EOF && c != ',' && c != '\n'; c = fgetc(fp)) {
-    int val = (c >= 'a') ? (10 + (c - 'a')) : (c - '0');
-    result = (result * 16) + val;
+    if (c != '\r') {
+      int val = (c >= 'a') ? (10 + (c - 'a')) : (c - '0');
+      result = (result * 16) + val;
+    }
   }
   if (!result) {
     result = def;
@@ -106,7 +110,7 @@ int nextString(FILE *fp) {
   int pos = ftell(fp);
   int len = 0;
   for (int c = fgetc(fp); c != EOF; c = fgetc(fp)) {
-    if (c == '\n') {
+    if (c == '\n' || c == '\r') {
       if (len > 0) {
         // string terminator
         break;

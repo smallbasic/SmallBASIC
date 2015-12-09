@@ -23,7 +23,7 @@
 #include "common/smbas.h"
 #include "common/keymap.h"
 
-extern int g_themeId;
+extern unsigned g_themeId;
 extern int g_user_theme[];
 #define THEME_COLOURS 17
 
