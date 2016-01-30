@@ -18,6 +18,12 @@
   #include "platform/fltk/system.h"
 #else
 
+struct Cache : public strlib::Properties {
+  Cache(int size) : Properties(size * 2), _index(0) {}
+  void add(const char *key, const char *value);
+  int _index;
+};
+
 struct System {
   System();
   virtual ~System();
@@ -107,8 +113,10 @@ protected:
     kDoneState     // thread has terminated
   } _state;
 
+  strlib::Stack<String *> _history;
   strlib::String _loadPath;
   strlib::String _activeFile;
+  Cache _cache;
   int _lastEventTime;
   int _eventTicks;
   int _touchX;
