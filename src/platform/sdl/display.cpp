@@ -111,21 +111,26 @@ bool Graphics::construct(const char *font, const char *boldFont) {
   logEntered();
 
   int w, h;
-  bool result = false;
+  bool result = true;
   SDL_GetWindowSize(_window, &w, &h);
 
   SDL_Surface *surface = SDL_GetWindowSurface(_window);
-  if (surface->format->format != PIXELFORMAT) {
+  if (surface == NULL) {
+    fprintf(stderr, "SDL surface is null\n");
+    result = false;
+  } else if (surface->format == NULL) {
+    fprintf(stderr, "SDL surface format is null\n");
+    result = false;
+  } else if (surface->format->format != PIXELFORMAT) {
     deviceLog("Unexpected window surface format %d", surface->format->format);
     _surface = surface;
   }
 
-  if (loadFonts(font, boldFont)) {
+  if (result && loadFonts(font, boldFont)) {
     _screen = new Canvas();
     if (_screen != NULL) {
       if (_surface == NULL) {
         _screen->setSurface(SDL_GetWindowSurface(_window), w, h);
-        result = true;
       } else {
         result = _screen->create(w, h);
       }

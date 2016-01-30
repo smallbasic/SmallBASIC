@@ -81,17 +81,18 @@ void handleCommand(android_app *app, int32_t cmd) {
   trace("handleCommand = %d", cmd);
   switch (cmd) {
   case APP_CMD_INIT_WINDOW:
-    // thread is ready to start
-    runtime->construct();
-    break;
-  case APP_CMD_TERM_WINDOW:
-    if (runtime) {
-      // thread is ending
-      runtime->setExit(true);
+    // thread is ready to start or resume
+    if (runtime->isInitial()) {
+      runtime->construct();
     }
     break;
+  case APP_CMD_GAINED_FOCUS:
+    trace("gainedFocus");
+    runtime->setFocus(true);
+    break;
   case APP_CMD_LOST_FOCUS:
-    // display menu or exit
+    trace("lostFocus");
+    runtime->setFocus(false);
     break;
   }
 }
@@ -150,6 +151,7 @@ void onContentRectChanged(ANativeActivity *activity, const ARect *rect) {
 Runtime::Runtime(android_app *app) :
   System(),
   _keypadActive(false),
+  _hasFocus(false),
   _graphics(NULL),
   _app(app),
   _eventQueue(NULL) {
@@ -603,7 +605,7 @@ void Runtime::pause(int timeout) {
 void Runtime::pollEvents(bool blocking) {
   int events;
   android_poll_source *source;
-  ALooper_pollAll(blocking ? -1 : 0, NULL, &events, (void **)&source);
+  ALooper_pollAll(blocking || !_hasFocus ? -1 : 0, NULL, &events, (void **)&source);
   if (source != NULL) {
     source->process(_app, source);
   }

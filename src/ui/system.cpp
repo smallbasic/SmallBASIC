@@ -47,6 +47,7 @@
 #define MENU_COMPETION_2  (MENU_SIZE + 3)
 #define MENU_COMPETION_3  (MENU_SIZE + 4)
 #define MAX_COMPLETIONS 4
+#define MAX_CACHE 8
 
 #define FONT_SCALE_INTERVAL 10
 #define FONT_MIN 20
@@ -56,9 +57,23 @@
 
 System *g_system;
 
+void Cache::add(const char *key, const char *value) {
+  if (_size == _count) {
+    // overwrite at next index position
+    _head[_index]->empty();
+    _head[_index]->append(key);
+    _head[_index + 1]->empty();
+    _head[_index + 1]->append(value);
+    _index = (_index + 2) % _size;
+  } else {
+    Properties::put(key, value);
+  }
+}
+
 System::System() :
   _output(NULL),
   _state(kInitState),
+  _cache(MAX_CACHE),
   _lastEventTime(0),
   _eventTicks(0),
   _touchX(-1),
@@ -406,27 +421,35 @@ void System::handleEvent(MAEvent &event) {
 char *System::loadResource(const char *fileName) {
   char *buffer = NULL;
   if (strstr(fileName, "://") != NULL) {
-    int handle = 1;
-    var_t *var_p = v_new();
-    dev_file_t *f = dev_getfileptr(handle);
-    _output->setStatus("Loading...");
-    _output->redraw();
-    if (dev_fopen(handle, fileName, 0)) {
-      if (http_read(f, var_p) == 0) {
-        systemPrint("\nfailed to read %s\n", fileName);
-      } else {
-        int len = var_p->v.p.size;
-        buffer = (char *)malloc(len + 1);
-        memcpy(buffer, var_p->v.p.ptr, len);
-        buffer[len] = '\0';
-      }
+    String *cached = _cache.get(fileName);
+    if (cached != NULL) {
+      int len = cached->length();
+      buffer = (char *)malloc(len + 1);
+      memcpy(buffer, cached->c_str(), len);
     } else {
-      systemPrint("\nfailed to open %s\n", fileName);
+      int handle = 1;
+      var_t *var_p = v_new();
+      dev_file_t *f = dev_getfileptr(handle);
+      _output->setStatus("Loading...");
+      _output->redraw();
+      if (dev_fopen(handle, fileName, 0)) {
+        if (http_read(f, var_p) == 0) {
+          systemPrint("\nfailed to read %s\n", fileName);
+        } else {
+          int len = var_p->v.p.size;
+          buffer = (char *)malloc(len + 1);
+          memcpy(buffer, var_p->v.p.ptr, len);
+          buffer[len] = '\0';
+          _cache.add(fileName, buffer);
+        }
+      } else {
+        systemPrint("\nfailed to open %s\n", fileName);
+      }
+      _output->setStatus(NULL);
+      dev_fclose(handle);
+      v_free(var_p);
+      free(var_p);
     }
-    _output->setStatus(NULL);
-    dev_fclose(handle);
-    v_free(var_p);
-    free(var_p);
   }
   return buffer;
 }
@@ -612,14 +635,25 @@ void System::setBack() {
     _output->selectBackScreen(_userScreenId);
     _output->selectFrontScreen(_userScreenId);
     _userScreenId = -1;
-  } else {
-    // quit app when shell is active
-    setExit(_mainBas);
+  }
+
+  // quit app when shell is active
+  setExit(_mainBas);
+
+  // follow history when available and not exiting
+  if (!_mainBas) {
+    // remove the current item
+    _history.pop();
+    if (_history.peek() != NULL) {
+      _loadPath.empty();
+      _loadPath.append(_history.peek());
+    }
   }
 }
 
 void System::setLoadBreak(const char *path) {
   _loadPath = path;
+  _history.push(new strlib::String(path));
   _state = kBreakState;
   brun_break();
 }

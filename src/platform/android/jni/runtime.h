@@ -57,9 +57,11 @@ struct Runtime : public System {
   void runPath(const char *path);
   void setClipboardText(const char *text);
   char *getClipboardText();
+  void setFocus(bool focus) { _hasFocus = focus; }
 
 private:
   bool _keypadActive;
+  bool _hasFocus;
   Graphics *_graphics;
   android_app *_app;
   Stack<MAEvent *> *_eventQueue;

@@ -55,7 +55,7 @@ sub do_about()
   print "(_ ._ _  _.|||_) /\ (_ |/ "
   print "__)| | |(_||||_)/--\__)|\_"
   print
-  print "Version 0.12.2"
+  print "Version 0.12.3"
   print
   print "Copyright (c) 2002-2015 Chris Warren-Smith"
   print "Copyright (c) 1999-2006 Nic Christopoulos" + chr(10)
@@ -155,6 +155,12 @@ sub serverInfo()
   fi
 end
 
+func fileCmpFunc(l, r)
+  local f1 = lower(l)
+  local f2 = lower(r)
+  fileCmpFunc = IFF(f1 == f2, 0, IFF(f1 > f2, 1, -1))
+end
+
 sub listFiles(byref frm, path, byref basList, byref dirList)
   local fileList, ent, name, lastItem, bn, bn_back
 
@@ -181,15 +187,15 @@ sub listFiles(byref frm, path, byref basList, byref dirList)
 
   for ent in fileList
     name = ent
-    if (isdir(path + name)) then
+    if (isdir(path + name) && left(name, 1) != ".") then
       dirList << name
     else if (lower(right(ent, 4)) == ".bas") then
       basList << name
     endif
   next ent
 
-  sort dirList
-  sort basList
+  sort dirList use fileCmpFunc(x,y)
+  sort basList use filecmpfunc(x,y)
 
   lastItem = len(dirList) - 1
 
