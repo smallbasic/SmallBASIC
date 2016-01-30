@@ -89,6 +89,7 @@ void handleCommand(android_app *app, int32_t cmd) {
   case APP_CMD_GAINED_FOCUS:
     trace("gainedFocus");
     runtime->setFocus(true);
+    runtime->redraw();
     break;
   case APP_CMD_LOST_FOCUS:
     trace("lostFocus");
