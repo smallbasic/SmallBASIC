@@ -2,8 +2,8 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
           package="net.sourceforge.smallbasic"
           android:installLocation="preferExternal"
-          android:versionCode="17"
-          android:versionName="0.12.3">
+          android:versionCode="18"
+          android:versionName="0.12.4">
   <!-- This is the platform API where NativeActivity was introduced. -->
   <uses-sdk android:minSdkVersion="9"/>
 

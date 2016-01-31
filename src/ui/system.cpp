@@ -631,22 +631,22 @@ void System::saveFile(TextEditInput *edit, strlib::String &path) {
 
 void System::setBack() {
   if (_userScreenId != -1) {
-    // restore user screen
+    // return (back) from user screen, (view source)
     _output->selectBackScreen(_userScreenId);
     _output->selectFrontScreen(_userScreenId);
     _userScreenId = -1;
-  }
+  } else {
+    // quit app when shell is active
+    setExit(_mainBas);
 
-  // quit app when shell is active
-  setExit(_mainBas);
-
-  // follow history when available and not exiting
-  if (!_mainBas) {
-    // remove the current item
-    _history.pop();
-    if (_history.peek() != NULL) {
-      _loadPath.empty();
-      _loadPath.append(_history.peek());
+    // follow history when available and not exiting
+    if (!_mainBas) {
+      // remove the current item
+      _history.pop();
+      if (_history.peek() != NULL) {
+        _loadPath.empty();
+        _loadPath.append(_history.peek());
+      }
     }
   }
 }
