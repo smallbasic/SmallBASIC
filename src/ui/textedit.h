@@ -181,13 +181,15 @@ struct TextEditHelpWidget : public TextEditInput {
     kReplace,
     kReplaceDone,
     kGotoLine,
-    kMessage
+    kMessage,
+    kLineEdit
   };
 
   void clicked(int x, int y, bool pressed);
   void createCompletionHelp();
   void createGotoLine();
   void createHelp();
+  void createLineEdit(const char *value);
   void createKeywordIndex();
   void createMessage() { reset(kMessage); }
   void createOutline();
@@ -198,6 +200,7 @@ struct TextEditHelpWidget : public TextEditInput {
   void resize(int w, int h) { _x = w - _width; _height = h; }
   void reset(HelpMode mode);
   bool closeOnEnter() const;
+  bool lineEditMode() const { return _mode == kLineEdit; }
   bool messageMode() const { return _mode == kMessage; }
   bool replaceMode() const { return _mode == kReplace; }
   bool replaceDoneMode() const { return _mode == kReplaceDone; }
