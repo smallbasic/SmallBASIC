@@ -177,6 +177,19 @@ Runtime::~Runtime() {
   pthread_mutex_destroy(&_mutex);
 }
 
+void Runtime::addShortcut(const char *path) {
+  JNIEnv *env;
+  _app->activity->vm->AttachCurrentThread(&env, NULL);
+  jclass clazz = env->GetObjectClass(_app->activity->clazz);
+  jstring pathString = env->NewStringUTF(path);
+  jmethodID methodId = env->GetMethodID(clazz, "addShortcut",
+                                        "(Ljava/lang/String;)V");
+  env->CallVoidMethod(_app->activity->clazz, methodId, pathString);
+  env->DeleteLocalRef(clazz);
+  env->DeleteLocalRef(pathString);
+  _app->activity->vm->DetachCurrentThread();
+}
+
 void Runtime::alert(const char *title, const char *message) {
   logEntered();
 
@@ -817,6 +830,9 @@ void System::editSource(strlib::String &loadPath) {
         if (editWidget->isDirty()) {
           saveFile(editWidget, loadPath);
         }
+        break;
+      case SB_KEY_F(10):
+        runtime->addShortcut(loadPath.c_str());
         break;
       case SB_KEY_CTRL('s'):
         saveFile(editWidget, loadPath);

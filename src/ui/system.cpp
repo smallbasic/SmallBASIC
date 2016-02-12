@@ -41,7 +41,8 @@
 #define MENU_DEBUG      18
 #define MENU_OUTPUT     19
 #define MENU_HELP       20
-#define MENU_SIZE       21
+#define MENU_SHORTCUT   21
+#define MENU_SIZE       22
 #define MENU_COMPETION_0  (MENU_SIZE + 1)
 #define MENU_COMPETION_1  (MENU_SIZE + 2)
 #define MENU_COMPETION_2  (MENU_SIZE + 3)
@@ -341,6 +342,10 @@ void System::handleMenu(MAEvent &event) {
   case MENU_HELP:
     event.type = EVENT_TYPE_KEY_PRESSED;
     event.key = SB_KEY_F(1);
+    break;
+  case MENU_SHORTCUT:
+    event.type = EVENT_TYPE_KEY_PRESSED;
+    event.key = SB_KEY_F(10);
     break;
   case MENU_COMPETION_0:
     completeKeyword(0);
@@ -834,6 +839,9 @@ void System::showMenu() {
         sprintf(buffer, "Control Mode [%s]", (controlMode ? "ON" : "OFF"));
         items->add(new String(buffer));
         _systemMenu[index++] = MENU_CTRL_MODE;
+      } else {
+        items->add(new String("Desktop Shortcut"));
+        _systemMenu[index++] = MENU_SHORTCUT;
       }
 #endif
     } else {

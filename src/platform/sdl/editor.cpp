@@ -9,6 +9,7 @@
 #include "config.h"
 
 #include "common/sbapp.h"
+#include "common/fs_socket_client.h"
 #include "ui/textedit.h"
 #include "platform/sdl/runtime.h"
 #include "platform/sdl/settings.h"
@@ -64,23 +65,24 @@ void showRecentFiles(TextEditHelpWidget *helpWidget, String &loadPath) {
 }
 
 void exportBuffer(AnsiWidget *out, const char *text, String &dest, String &token) {
-  int handle = 1;
   char buffer[PATH_MAX];
+  dev_file_t f;
+  memset(&f, 0, sizeof(dev_file_t));
 
-  sprintf(buffer, "SOCL:%s\n", dest.c_str());
-  if (dev_fopen(handle, buffer, DEV_FILE_OUTPUT)) {
+  sprintf(f.name, "SOCL:%s\n", dest.c_str());
+  if (dest.indexOf(':', 0) != -1 && sockcl_open(&f)) {
     sprintf(buffer, "# %s\n", token.c_str());
-    dev_fwrite(handle, (byte *)buffer, strlen(buffer));
-    if (!dev_fwrite(handle, (byte *)text, strlen(text))) {
+    sockcl_write(&f, (byte *)buffer, strlen(buffer));
+    if (!sockcl_write(&f, (byte *)text, strlen(text))) {
       sprintf(buffer, "Failed to write: %s", dest.c_str());
     } else {
       sprintf(buffer, "Exported file to %s", dest.c_str());
     }
+    sockcl_close(&f);
   } else {
     sprintf(buffer, "Failed to open: %s", dest.c_str());
   }
   out->setStatus(buffer);
-  dev_fclose(handle);
 }
 
 void System::editSource(String &loadPath) {
@@ -193,6 +195,12 @@ void System::editSource(String &loadPath) {
         redraw = false;
         onlineHelp((Runtime *)this, editWidget);
         break;
+      case SB_KEY_F(4):
+        if (editWidget->getTextLength() && g_exportAddr.length() && g_exportToken.length()) {
+          exportBuffer(_output, editWidget->getText(), g_exportAddr, g_exportToken);
+          break;
+        }
+        // else fallthru to F3 handler
       case SB_KEY_F(3):
         if (editWidget->getTextLength()) {
           saveFile(editWidget, loadPath);
@@ -313,8 +321,6 @@ void System::editSource(String &loadPath) {
             _output->setStatus("Enter token. Esc=Close");
             break;
           case kExportToken:
-            _output->setStatus("Sending ...");
-            _output->redraw();
             g_exportToken = helpWidget->getText();
             inputMode = kInit;
             widget = editWidget;

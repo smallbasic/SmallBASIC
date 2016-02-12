@@ -314,6 +314,11 @@ int Graphics::getPixel(Canvas *canvas, int posX, int posY) {
       && posY < canvas->_h - 1) {
     pixel_t *line = canvas->getLine(posY);
     result = line[posX];
+#if defined(PIXELFORMAT_RGBA8888)
+    uint8_t r,g,b;
+    GET_RGB2(result, r, g, b);
+    result = SET_RGB(r, g, b);
+#endif
   }
   return result;
 }

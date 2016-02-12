@@ -84,6 +84,21 @@ public class MainActivity extends NativeActivity {
   public static native void onResize(int width, int height);
   public static native void runFile(String fileName);
 
+  public void addShortcut(final String path) {
+    Intent intent = new Intent(getApplicationContext(), MainActivity.class);
+    intent.setAction(Intent.ACTION_MAIN);
+    Intent addIntent = new Intent();
+    addIntent.putExtra(Intent.EXTRA_SHORTCUT_INTENT, intent);
+    addIntent.putExtra(Intent.EXTRA_SHORTCUT_NAME, "SmallBASIC");
+    addIntent.putExtra(Intent.EXTRA_SHORTCUT_ICON_RESOURCE,
+                       Intent.ShortcutIconResource.fromContext(getApplicationContext(),
+                                                               R.drawable.ic_launcher));
+    addIntent.putExtra("duplicate", false);
+    addIntent.setAction("com.android.launcher.action.INSTALL_SHORTCUT");
+    getApplicationContext().sendBroadcast(addIntent);
+    showToast("The shortcut was created and has been placed on your home screen", true);
+  }
+
   public int ask(final String title, final String prompt, final boolean cancel) {
     final AskResult result = new AskResult();
     final Activity activity = this;

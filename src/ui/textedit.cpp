@@ -108,7 +108,7 @@ const char *helpText =
   "TAB indent line\n"
   "F1,A-h keyword help\n"
   "F2 online help\n"
-  "F3 export\n"
+  "F3,F4 export\n"
   "F5 debug\n"
   "F9, C-r run\n";
 

@@ -21,6 +21,7 @@ struct Runtime : public System {
   Runtime(android_app *app);
   virtual ~Runtime();
 
+  void addShortcut(const char *path);
   void alert(const char *title, const char *message);
   void alert(const char *title, bool longDuration=true);
   int ask(const char *title, const char *prompt, bool cancel);
