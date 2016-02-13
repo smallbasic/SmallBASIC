@@ -17,7 +17,7 @@ test: ant-build-test
 	(cd ../../../ide/android && \
    adb -a logcat -c && \
    adb -a shell am start net.sourceforge.smallbasic/net.sourceforge.smallbasic.MainActivity && \
-   adb -a logcat)
+   adb -a logcat DEBUG:I smallbasic:I AndroidRuntime:E *:S)
 
 clean-ant:
 	(cd ../../../ide/android && ant -quiet clean)

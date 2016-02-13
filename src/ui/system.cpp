@@ -41,7 +41,8 @@
 #define MENU_DEBUG      18
 #define MENU_OUTPUT     19
 #define MENU_HELP       20
-#define MENU_SIZE       21
+#define MENU_SHORTCUT   21
+#define MENU_SIZE       22
 #define MENU_COMPETION_0  (MENU_SIZE + 1)
 #define MENU_COMPETION_1  (MENU_SIZE + 2)
 #define MENU_COMPETION_2  (MENU_SIZE + 3)
@@ -342,6 +343,11 @@ void System::handleMenu(MAEvent &event) {
     event.type = EVENT_TYPE_KEY_PRESSED;
     event.key = SB_KEY_F(1);
     break;
+  case MENU_SHORTCUT:
+    if (_activeFile.length() > 0) {
+      addShortcut(_activeFile.c_str());
+    }
+    break;
   case MENU_COMPETION_0:
     completeKeyword(0);
     break;
@@ -631,22 +637,22 @@ void System::saveFile(TextEditInput *edit, strlib::String &path) {
 
 void System::setBack() {
   if (_userScreenId != -1) {
-    // restore user screen
+    // return (back) from user screen, (view source)
     _output->selectBackScreen(_userScreenId);
     _output->selectFrontScreen(_userScreenId);
     _userScreenId = -1;
-  }
+  } else {
+    // quit app when shell is active
+    setExit(_mainBas);
 
-  // quit app when shell is active
-  setExit(_mainBas);
-
-  // follow history when available and not exiting
-  if (!_mainBas) {
-    // remove the current item
-    _history.pop();
-    if (_history.peek() != NULL) {
-      _loadPath.empty();
-      _loadPath.append(_history.peek());
+    // follow history when available and not exiting
+    if (!_mainBas) {
+      // remove the current item
+      _history.pop();
+      if (_history.peek() != NULL) {
+        _loadPath.empty();
+        _loadPath.append(_history.peek());
+      }
     }
   }
 }
@@ -865,6 +871,12 @@ void System::showMenu() {
         items->add(new String(buffer));
         _systemMenu[index++] = MENU_EDITMODE;
       }
+#if !defined(_SDL)
+      if (!_mainBas && _activeFile.length() > 0) {
+        items->add(new String("Desktop Shortcut"));
+        _systemMenu[index++] = MENU_SHORTCUT;
+      }
+#endif
       sprintf(buffer, "Audio [%s]", (opt_mute_audio ? "OFF" : "ON"));
       items->add(new String(buffer));
       _systemMenu[index++] = MENU_AUDIO;

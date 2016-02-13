@@ -53,6 +53,7 @@ struct System {
     kHand, kArrow, kIBeam
   };
 
+  virtual void addShortcut(const char *path) = 0;
   virtual void alert(const char *title, const char *message) = 0;
   virtual int ask(const char *title, const char *prompt, bool cancel=true) = 0;
   virtual void debugStart(TextEditInput *edit, const char *file) = 0;

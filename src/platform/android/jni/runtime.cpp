@@ -89,6 +89,7 @@ void handleCommand(android_app *app, int32_t cmd) {
   case APP_CMD_GAINED_FOCUS:
     trace("gainedFocus");
     runtime->setFocus(true);
+    runtime->redraw();
     break;
   case APP_CMD_LOST_FOCUS:
     trace("lostFocus");
@@ -138,7 +139,7 @@ extern "C" JNIEXPORT void JNICALL Java_net_sourceforge_smallbasic_MainActivity_r
 
 extern "C" JNIEXPORT void JNICALL Java_net_sourceforge_smallbasic_MainActivity_onResize
   (JNIEnv *env, jclass jclazz, jint width, jint height) {
-  if (runtime != NULL && runtime->isActive() && os_graphics) {
+  if (runtime != NULL && !runtime->isClosing() && runtime->isActive() && os_graphics) {
     runtime->onResize(width, height);
   }
 }
@@ -176,6 +177,10 @@ Runtime::~Runtime() {
   pthread_mutex_destroy(&_mutex);
 }
 
+void Runtime::addShortcut(const char *path) {
+  setString("addShortcut", path);
+}
+
 void Runtime::alert(const char *title, const char *message) {
   logEntered();
 
@@ -200,8 +205,7 @@ void Runtime::alert(const char *title, bool longDuration) {
   _app->activity->vm->AttachCurrentThread(&env, NULL);
   jstring titleString = env->NewStringUTF(title);
   jclass clazz = env->GetObjectClass(_app->activity->clazz);
-  jmethodID method = env->GetMethodID(clazz, "showToast",
-                                      "(Ljava/lang/String;Z)V");
+  jmethodID method = env->GetMethodID(clazz, "showToast", "(Ljava/lang/String;Z)V");
   env->CallVoidMethod(_app->activity->clazz, method, titleString, longDuration);
   env->DeleteLocalRef(clazz);
   env->DeleteLocalRef(titleString);

@@ -108,6 +108,7 @@ const char *helpText =
   "TAB indent line\n"
   "F1,A-h keyword help\n"
   "F2 online help\n"
+  "F3,F4 export\n"
   "F5 debug\n"
   "F9, C-r run\n";
 
@@ -1528,7 +1529,6 @@ bool TextEditHelpWidget::closeOnEnter() const {
 
 bool TextEditHelpWidget::edit(int key, int screenWidth, int charWidth) {
   bool result = false;
-
   switch (_mode) {
   case kSearch:
     result = TextEditInput::edit(key, screenWidth, charWidth);
@@ -1556,6 +1556,11 @@ bool TextEditHelpWidget::edit(int key, int screenWidth, int charWidth) {
     result = TextEditInput::edit(key, screenWidth, charWidth);
     if (key == SB_KEY_ENTER) {
       _editor->gotoLine(_buf._buffer);
+    }
+    break;
+  case kLineEdit:
+    if (key != SB_KEY_ENTER) {
+      result = TextEditInput::edit(key, screenWidth, charWidth);
     }
     break;
   default:
@@ -1688,6 +1693,13 @@ void TextEditHelpWidget::createGotoLine() {
 void TextEditHelpWidget::createHelp() {
   reset(kHelp);
   _buf.append(helpText, strlen(helpText));
+}
+
+void TextEditHelpWidget::createLineEdit(const char *value) {
+  reset(kLineEdit);
+  if (value && value[0]) {
+    _buf.append(value, strlen(value));
+  }
 }
 
 void TextEditHelpWidget::createKeywordIndex() {

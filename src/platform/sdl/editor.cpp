@@ -9,11 +9,15 @@
 #include "config.h"
 
 #include "common/sbapp.h"
+#include "common/fs_socket_client.h"
 #include "ui/textedit.h"
 #include "platform/sdl/runtime.h"
 #include "platform/sdl/settings.h"
 
 using namespace strlib;
+
+String g_exportAddr;
+String g_exportToken;
 
 void onlineHelp(Runtime *runtime, TextEditInput *widget) {
   char path[100];
@@ -60,6 +64,27 @@ void showRecentFiles(TextEditHelpWidget *helpWidget, String &loadPath) {
   helpWidget->setText(fileList);
 }
 
+void exportBuffer(AnsiWidget *out, const char *text, String &dest, String &token) {
+  char buffer[PATH_MAX];
+  dev_file_t f;
+  memset(&f, 0, sizeof(dev_file_t));
+
+  sprintf(f.name, "SOCL:%s\n", dest.c_str());
+  if (dest.indexOf(':', 0) != -1 && sockcl_open(&f)) {
+    sprintf(buffer, "# %s\n", token.c_str());
+    sockcl_write(&f, (byte *)buffer, strlen(buffer));
+    if (!sockcl_write(&f, (byte *)text, strlen(text))) {
+      sprintf(buffer, "Failed to write: %s", dest.c_str());
+    } else {
+      sprintf(buffer, "Exported file to %s", dest.c_str());
+    }
+    sockcl_close(&f);
+  } else {
+    sprintf(buffer, "Failed to open: %s", dest.c_str());
+  }
+  out->setStatus(buffer);
+}
+
 void System::editSource(String &loadPath) {
   logEntered();
 
@@ -73,6 +98,9 @@ void System::editSource(String &loadPath) {
   TextEditInput *widget = editWidget;
   String dirtyFile;
   String cleanFile;
+  enum InputMode {
+    kInit, kExportAddr, kExportToken
+  } inputMode = kInit;
 
   setupStatus(dirtyFile, cleanFile, loadPath);
   _modifiedTime = getModifiedTime();
@@ -124,7 +152,6 @@ void System::editSource(String &loadPath) {
       }
 
       switch (event.key) {
-      case SB_KEY_F(3):
       case SB_KEY_F(8):
       case SB_KEY_F(10):
       case SB_KEY_F(11):
@@ -167,6 +194,22 @@ void System::editSource(String &loadPath) {
       case SB_KEY_F(2):
         redraw = false;
         onlineHelp((Runtime *)this, editWidget);
+        break;
+      case SB_KEY_F(4):
+        if (editWidget->getTextLength() && g_exportAddr.length() && g_exportToken.length()) {
+          exportBuffer(_output, editWidget->getText(), g_exportAddr, g_exportToken);
+          break;
+        }
+        // else fallthru to F3 handler
+      case SB_KEY_F(3):
+        if (editWidget->getTextLength()) {
+          saveFile(editWidget, loadPath);
+          _output->setStatus("Export to mobile SmallBASIC. Enter <IP>:<Port>");
+          widget = helpWidget;
+          helpWidget->createLineEdit(g_exportAddr);
+          helpWidget->show();
+          inputMode = kExportAddr;
+        }
         break;
       case SB_KEY_F(5):
         saveFile(editWidget, loadPath);
@@ -269,6 +312,25 @@ void System::editSource(String &loadPath) {
         if (helpWidget->replaceMode()) {
           _output->setStatus("Replace string with. Esc=Close");
           dirty = editWidget->isDirty();
+        } else if (helpWidget->lineEditMode() && helpWidget->getTextLength()) {
+          switch (inputMode) {
+          case kExportAddr:
+            g_exportAddr = helpWidget->getText();
+            inputMode = kExportToken;
+            helpWidget->createLineEdit(g_exportToken);
+            _output->setStatus("Enter token. Esc=Close");
+            break;
+          case kExportToken:
+            g_exportToken = helpWidget->getText();
+            inputMode = kInit;
+            widget = editWidget;
+            exportBuffer(_output, editWidget->getText(), g_exportAddr, g_exportToken);
+            helpWidget->hide();
+            break;
+          default:
+            break;
+          }
+          redraw = true;
         } else if (helpWidget->closeOnEnter() && helpWidget->isVisible()) {
           if (helpWidget->replaceDoneMode()) {
             _output->setStatus(dirtyFile);

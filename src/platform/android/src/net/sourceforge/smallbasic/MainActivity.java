@@ -84,6 +84,23 @@ public class MainActivity extends NativeActivity {
   public static native void onResize(int width, int height);
   public static native void runFile(String fileName);
 
+  public void addShortcut(final String path) {
+    Intent shortcut = new Intent(getApplicationContext(), MainActivity.class);
+    shortcut.setAction(Intent.ACTION_MAIN);
+    shortcut.setData(Uri.parse("smallbasic://" + path));
+    Intent intent = new Intent();
+    int index = path.lastIndexOf('/');
+    String name = (index == -1) ? path : path.substring(index + 1);
+    intent.putExtra(Intent.EXTRA_SHORTCUT_INTENT, shortcut);
+    intent.putExtra(Intent.EXTRA_SHORTCUT_NAME, name);
+    intent.putExtra(Intent.EXTRA_SHORTCUT_ICON_RESOURCE,
+                    Intent.ShortcutIconResource.fromContext(getApplicationContext(),
+                                                            R.drawable.ic_launcher));
+    intent.putExtra("duplicate", false);
+    intent.setAction("com.android.launcher.action.INSTALL_SHORTCUT");
+    getApplicationContext().sendBroadcast(intent);
+  }
+
   public int ask(final String title, final String prompt, final boolean cancel) {
     final AskResult result = new AskResult();
     final Activity activity = this;

@@ -1,3 +1,7 @@
+2016-02-11
+	Added export to mobile command (SDL)
+	Added Desktop shortcut command (android)
+
 2015-12-05
 	Implemented loading recent files via ALT+1 .. ALT+9
 	Fix potential editor crash with empty support widget
