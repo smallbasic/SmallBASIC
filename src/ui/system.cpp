@@ -344,8 +344,9 @@ void System::handleMenu(MAEvent &event) {
     event.key = SB_KEY_F(1);
     break;
   case MENU_SHORTCUT:
-    event.type = EVENT_TYPE_KEY_PRESSED;
-    event.key = SB_KEY_F(10);
+    if (_activeFile.length() > 0) {
+      addShortcut(_activeFile.c_str());
+    }
     break;
   case MENU_COMPETION_0:
     completeKeyword(0);
@@ -839,9 +840,6 @@ void System::showMenu() {
         sprintf(buffer, "Control Mode [%s]", (controlMode ? "ON" : "OFF"));
         items->add(new String(buffer));
         _systemMenu[index++] = MENU_CTRL_MODE;
-      } else {
-        items->add(new String("Desktop Shortcut"));
-        _systemMenu[index++] = MENU_SHORTCUT;
       }
 #endif
     } else {
@@ -879,6 +877,11 @@ void System::showMenu() {
 #if defined(_SDL)
       items->add(new String("Back"));
       _systemMenu[index++] = MENU_BACK;
+#else
+      if (!_mainBas && _activeFile.length() > 0) {
+        items->add(new String("Desktop Shortcut"));
+        _systemMenu[index++] = MENU_SHORTCUT;
+      }
 #endif
     }
     optionsBox(items);

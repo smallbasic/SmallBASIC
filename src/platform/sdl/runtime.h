@@ -21,6 +21,7 @@ struct Runtime : public System {
   Runtime(SDL_Window *window);
   virtual ~Runtime();
 
+  void addShortcut(const char *) {}
   void alert(const char *title, const char *message);
   int ask(const char *title, const char *prompt, bool cancel);
   void browseFile(const char *url);

@@ -139,7 +139,7 @@ extern "C" JNIEXPORT void JNICALL Java_net_sourceforge_smallbasic_MainActivity_r
 
 extern "C" JNIEXPORT void JNICALL Java_net_sourceforge_smallbasic_MainActivity_onResize
   (JNIEnv *env, jclass jclazz, jint width, jint height) {
-  if (runtime != NULL && runtime->isActive() && os_graphics) {
+  if (runtime != NULL && !runtime->isClosing() && runtime->isActive() && os_graphics) {
     runtime->onResize(width, height);
   }
 }
@@ -830,9 +830,6 @@ void System::editSource(strlib::String &loadPath) {
         if (editWidget->isDirty()) {
           saveFile(editWidget, loadPath);
         }
-        break;
-      case SB_KEY_F(10):
-        runtime->addShortcut(loadPath.c_str());
         break;
       case SB_KEY_CTRL('s'):
         saveFile(editWidget, loadPath);
