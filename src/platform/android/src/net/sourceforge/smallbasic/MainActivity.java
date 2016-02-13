@@ -99,7 +99,6 @@ public class MainActivity extends NativeActivity {
     intent.putExtra("duplicate", false);
     intent.setAction("com.android.launcher.action.INSTALL_SHORTCUT");
     getApplicationContext().sendBroadcast(intent);
-    showToast("The shortcut " + name + " was created and has been placed on your home screen", true);
   }
 
   public int ask(final String title, final String prompt, final boolean cancel) {

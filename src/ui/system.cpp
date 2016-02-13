@@ -871,17 +871,18 @@ void System::showMenu() {
         items->add(new String(buffer));
         _systemMenu[index++] = MENU_EDITMODE;
       }
+#if !defined(_SDL)
+      if (!_mainBas && _activeFile.length() > 0) {
+        items->add(new String("Desktop Shortcut"));
+        _systemMenu[index++] = MENU_SHORTCUT;
+      }
+#endif
       sprintf(buffer, "Audio [%s]", (opt_mute_audio ? "OFF" : "ON"));
       items->add(new String(buffer));
       _systemMenu[index++] = MENU_AUDIO;
 #if defined(_SDL)
       items->add(new String("Back"));
       _systemMenu[index++] = MENU_BACK;
-#else
-      if (!_mainBas && _activeFile.length() > 0) {
-        items->add(new String("Desktop Shortcut"));
-        _systemMenu[index++] = MENU_SHORTCUT;
-      }
 #endif
     }
     optionsBox(items);

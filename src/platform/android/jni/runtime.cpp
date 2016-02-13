@@ -178,16 +178,7 @@ Runtime::~Runtime() {
 }
 
 void Runtime::addShortcut(const char *path) {
-  JNIEnv *env;
-  _app->activity->vm->AttachCurrentThread(&env, NULL);
-  jclass clazz = env->GetObjectClass(_app->activity->clazz);
-  jstring pathString = env->NewStringUTF(path);
-  jmethodID methodId = env->GetMethodID(clazz, "addShortcut",
-                                        "(Ljava/lang/String;)V");
-  env->CallVoidMethod(_app->activity->clazz, methodId, pathString);
-  env->DeleteLocalRef(clazz);
-  env->DeleteLocalRef(pathString);
-  _app->activity->vm->DetachCurrentThread();
+  setString("addShortcut", path);
 }
 
 void Runtime::alert(const char *title, const char *message) {
@@ -214,8 +205,7 @@ void Runtime::alert(const char *title, bool longDuration) {
   _app->activity->vm->AttachCurrentThread(&env, NULL);
   jstring titleString = env->NewStringUTF(title);
   jclass clazz = env->GetObjectClass(_app->activity->clazz);
-  jmethodID method = env->GetMethodID(clazz, "showToast",
-                                      "(Ljava/lang/String;Z)V");
+  jmethodID method = env->GetMethodID(clazz, "showToast", "(Ljava/lang/String;Z)V");
   env->CallVoidMethod(_app->activity->clazz, method, titleString, longDuration);
   env->DeleteLocalRef(clazz);
   env->DeleteLocalRef(titleString);
