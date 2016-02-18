@@ -1,3 +1,7 @@
+2016-02-18
+	Removed TICKSPERSEC, TICKS now returns millisecond intervals
+	Refactor eval() for performance
+
 2016-02-11
 	Added export to mobile command (SDL)
 	Added Desktop shortcut command (android)

@@ -747,37 +747,7 @@ var_int_t cmd_imath1(long funcCode, var_t *arg) {
     //
     // int <- TICKS // clock()
     //
-#if defined(_Win32)
-    {
-      __int64 start, freq;
-      QueryPerformanceFrequency((LARGE_INTEGER *) & freq);
-      QueryPerformanceCounter((LARGE_INTEGER *) & start);
-      if (freq > 100000)
-      r = start / 1000;
-      else
-      r = start;
-    }
-#else
-    r = clock();
-#endif
-    break;
-  case kwTICKSPERSEC:
-    //
-    // int <- TICKSPERSEC
-    //
-#if defined(_Win32)
-    {
-      __int64 freq;
-      QueryPerformanceFrequency((LARGE_INTEGER *) & freq);
-      if (freq > 100000)
-      r = freq / 1000;
-      else
-      r = freq;
-    }
-    //              r = 1; // fake! but the GetTickCount() returns the number of ms from the start
-#else
-    r = CLOCKS_PER_SEC;
-#endif
+    r = dev_get_millisecond_count();
     break;
   case kwPROGLINE:
     //

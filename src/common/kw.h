@@ -374,7 +374,6 @@ enum func_keywords {
   kwFORMAT,
   kwFREEFILE,
   kwTICKS,
-  kwTICKSPERSEC,
   kwTIMER,
   kwPROGLINE,
   kwINPUTF,

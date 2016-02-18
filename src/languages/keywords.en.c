@@ -320,7 +320,6 @@ struct func_keyword_s func_table[] = {
 { "FORMAT",                     kwFORMAT },
 { "FREEFILE",                   kwFREEFILE },
 { "TICKS",                      kwTICKS },
-{ "TICKSPERSEC",                kwTICKSPERSEC },
 { "TIMER",                      kwTIMER }, 
 { "PROGLINE",                   kwPROGLINE },
 { "RUN",                        kwRUNF },
