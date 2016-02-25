@@ -227,7 +227,7 @@ struct FormLineInput : public FormEditInput {
   void draw(int x, int y, int w, int h, int chw);
   bool edit(int key, int screenWidth, int charWidth);
   const char *getText() const { return _buffer; }
-  void setText(const char *text) {}
+  void setText(const char *text);
   void clicked(int x, int y, bool pressed);
   void updateField(var_p_t form);
   bool selected(MAPoint2d pt, int scrollX, int scrollY, bool &redraw);

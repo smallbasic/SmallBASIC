@@ -85,7 +85,6 @@ protected:
   bool setParentPath();
   void setDimensions();
   void showCompletion(bool success);
-  void showError();
   void checkLoadError();
   void printErrorLine();
   void printSource();

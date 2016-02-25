@@ -593,8 +593,6 @@ void System::runMain(const char *mainBasPath) {
         showCompletion(success);
       }
       if (!success) {
-        // highlight the error
-        showError();
         if (_mainBas) {
           // unexpected error in main.bas
           alert("", gsb_last_errmsg);
@@ -602,6 +600,7 @@ void System::runMain(const char *mainBasPath) {
         } else {
           // don't reload
           _loadPath.empty();
+          _state = kActiveState;
         }
       }
       if (!_mainBas && !networkFile) {
@@ -748,14 +747,6 @@ void System::showCompletion(bool success) {
     showSystemScreen(true);
   }
   _output->flush(true);
-}
-
-void System::showError() {
-  _state = kActiveState;
-  if (_mainBas) {
-    _loadPath.empty();
-  }
-  showSystemScreen(false);
 }
 
 // detect when we have been called too frequently

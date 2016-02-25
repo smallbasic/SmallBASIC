@@ -623,6 +623,15 @@ void FormLineInput::selectAll() {
   _mark = _buffer == NULL ? -0 : strlen(_buffer);
 }
 
+void FormLineInput::setText(const char *value) {
+  if (value) {
+    int len = MIN(strlen(value), (unsigned)_size);
+    memcpy(_buffer, value, len);
+    _buffer[len] = '\0';
+    _mark = _point = len;
+  }
+}
+
 void FormLineInput::updateField(var_p_t form) {
   var_p_t field = getField(form);
   if (field != NULL) {

@@ -68,7 +68,7 @@ struct Screen : public Shape {
   void setFont(bool bold, bool italic, int size);
   void setScroll(int x, int y) { _scrollX = x; _scrollY = y; }
   void setTextColor(long fg, long bg);
-  void updateInputs(var_p_t form);
+  void updateInputs(var_p_t form, bool setUI);
 
   MAHandle _font;
   int _fontSize;
