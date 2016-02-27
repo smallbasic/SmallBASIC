@@ -814,6 +814,7 @@ FormList::~FormList() {
 void FormList::optionSelected(int index) {
   if (index > -1 && index < _model->rows()) {
     _model->selected(index);
+    _activeIndex = index;
   }
 }
 
@@ -848,7 +849,6 @@ bool FormList::updateUI(var_p_t form, var_p_t field) {
   var = map_get(field, FORM_INPUT_INDEX);
   if (var != NULL && var->type == V_INT) {
     optionSelected(var->v.i);
-    setFocus(true);
     updated = true;
   }
   return updated;
