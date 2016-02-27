@@ -359,10 +359,12 @@ FormInput *Screen::getNextField(FormInput *field) {
   return result;
 }
 
-void Screen::updateInputs(var_p_t form, bool setUI) {
+void Screen::updateInputs(var_p_t form, bool setVars) {
   List_each(FormInput *, it, _inputs) {
     FormInput *next = (*it);
-    if (setUI) {
+    if (setVars) {
+      next->updateField(form);
+    } else {
       var_p_t field = next->getField(form);
       if (field == NULL) {
         _inputs.remove(it);
@@ -371,8 +373,6 @@ void Screen::updateInputs(var_p_t form, bool setUI) {
       } else if (next->updateUI(form, field)) {
         setDirty();
       }
-    } else {
-      next->updateField(form);
     }
   }
 }

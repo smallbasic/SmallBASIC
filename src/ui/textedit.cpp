@@ -749,6 +749,13 @@ void TextEditInput::setCursor(int cursor) {
   updateScroll();
 }
 
+void TextEditInput::setCursorPos(int pos) {
+  _state.cursor = pos;
+  _cursorRow = getCursorRow();
+  _matchingBrace = -1;
+  updateScroll();
+}
+
 void TextEditInput::setCursorRow(int row) {
   int len = _buf._len;
   StbTexteditRow r;

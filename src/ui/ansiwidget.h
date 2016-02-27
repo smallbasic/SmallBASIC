@@ -91,7 +91,7 @@ struct AnsiWidget {
   void setXY(int x, int y);
   void setScrollSize(int scrollSize);
   int  textHeight(void) { return _back->_charHeight; }
-  void updateInputs(var_p_t form, bool setUI) { _back->updateInputs(form, setUI); }
+  void updateInputs(var_p_t form, bool setv) { _back->updateInputs(form, setv); }
 
 private:
   Screen *createScreen(int screenId);

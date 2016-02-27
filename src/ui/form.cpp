@@ -152,11 +152,14 @@ void cmd_form_close(var_s *self) {
 }
 
 void cmd_form_refresh(var_s *self) {
-  g_system->getOutput()->updateInputs(self, true);
-}
-
-void cmd_form_update(var_s *self) {
-  g_system->getOutput()->updateInputs(self, false);
+  bool setVars = false;
+  var_t arg;
+  v_init(&arg);
+  eval(&arg);
+  if (arg.type == V_INT && !prog_error) {
+    setVars = (arg.v.i == -1);
+  }
+  g_system->getOutput()->updateInputs(self, setVars);
 }
 
 void cmd_form_do_events(var_s *self) {
@@ -331,7 +334,6 @@ extern "C" void v_create_form(var_p_t var) {
     create_func(var, "doEvents", cmd_form_do_events);
     create_func(var, "close", cmd_form_close);
     create_func(var, "refresh", cmd_form_refresh);
-    create_func(var, "update", cmd_form_update);
   } else {
     err_form_input();
   }

@@ -89,7 +89,7 @@ struct TextEditInput : public FormEditInput {
   void reload(const char *text);
   bool save(const char *filePath);
   void setCursor(int pos);
-  void setCursorPos(int pos) { _state.cursor = pos; }
+  void setCursorPos(int pos);
   void setCursorRow(int row);
   void setLineNumbers() { _marginWidth = 1 + (_charWidth * MARGIN_CHARS); }
   void setText(const char *text) { _buf.clear(); _buf.append(text); }

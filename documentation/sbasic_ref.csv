@@ -91,7 +91,6 @@ File,command,SEEK,597,"SEEK #fileN; pos","Sets file position for the next read/w
 File,command,TLOAD,598,"TLOAD file, BYREF var [, type]","Loads a text file into array variable. Each text-line is an array element. type 0 = load into array (default), 1 = load into string."
 File,command,TSAVE,599,"TSAVE file, var","Writes an array to a text file. Each array element is a text-line."
 File,command,WRITE,600,"WRITE #fileN; var1 [, ...]","Store variables to a file as binary data."
-File,function,ACCESS,601,"ACCESS (file)","Returns the access rights of the file."
 File,function,BGETC,602,"BGETC (fileN)","Reads and returns a byte from file or device (Binary mode) ."
 File,function,EOF,603,"EOF (fileN)","Returns true if the file pointer is at end of the file. For COMx and SOCL VFS returns true if the connection is broken."
 File,function,EXIST,604,"EXIST (file)","Returns true if file exists."

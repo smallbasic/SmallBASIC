@@ -623,21 +623,28 @@ void FormLineInput::selectAll() {
   _mark = _buffer == NULL ? -0 : strlen(_buffer);
 }
 
-void FormLineInput::setText(const char *value) {
-  if (value) {
-    int len = MIN(strlen(value), (unsigned)_size);
-    memcpy(_buffer, value, len);
-    _buffer[len] = '\0';
-    _mark = _point = len;
-  }
-}
-
 void FormLineInput::updateField(var_p_t form) {
   var_p_t field = getField(form);
   if (field != NULL) {
     var_p_t value = map_get(field, FORM_INPUT_VALUE);
     v_setstr(value, _buffer);
   }
+}
+
+bool FormLineInput::updateUI(var_p_t form, var_p_t field) {
+  bool updated = FormInput::updateUI(form, field);
+  var_p_t var = map_get(field, FORM_INPUT_VALUE);
+  if (var != NULL && var->type == V_STR) {
+    const char *value = var->v.p.ptr;
+    if (value && strcmp(value, _buffer) != 0) {
+      int len = MIN(strlen(value), (unsigned)_size);
+      memcpy(_buffer, value, len);
+      _buffer[len] = '\0';
+      _mark = _point = len;
+      updated = true;
+    }
+  }
+  return updated;
 }
 
 char *FormLineInput::copy(bool cut) {
@@ -816,7 +823,7 @@ bool FormList::updateUI(var_p_t form, var_p_t field) {
   if (var != NULL) {
     if (var->type == V_INT) {
       // update list control with new int variable
-      _model->selected(var->v.i);
+      optionSelected(var->v.i);
       updated = true;
     } else if (var->type == V_ARRAY) {
       // update list control with new array variable
@@ -831,12 +838,18 @@ bool FormList::updateUI(var_p_t form, var_p_t field) {
         _model->create(var);
       } else {
         int selection = _model->getIndex((const char *)var->v.p.ptr);
-        if (selection != -1) {
-          _model->selected(selection);
-        }
+        optionSelected(selection);
       }
       updated = true;
     }
+  }
+
+  // set the selectedIndex
+  var = map_get(field, FORM_INPUT_INDEX);
+  if (var != NULL && var->type == V_INT) {
+    optionSelected(var->v.i);
+    setFocus(true);
+    updated = true;
   }
   return updated;
 }
