@@ -34,22 +34,6 @@ void set_focus(FormInput *focus) {
   }
 }
 
-struct FormTextInput : public TextEditInput {
-  FormTextInput(const char *text, int chW, int chH, int x, int y, int w, int h):
-    TextEditInput(text, chW, chH, x, y, w, h) {
-  }
-
-  void clicked(int x, int y, bool pressed) {
-    TextEditInput::clicked(x, y, pressed);
-    if (pressed && g_system->isRunning()) {
-      set_focus(this);
-      updateForm(form);
-      mode = m_selected;
-      g_system->getOutput()->setDirty();
-    }
-  }
-};
-
 // returns setBG when the program colours are default
 int FormInput::getBackground(int buttonColor) const {
   int result = _bg;
@@ -264,7 +248,7 @@ FormInput *create_input(var_p_t v_field) {
         text = value->v.p.ptr;
       }
       if (h * 2 >= charHeight) {
-        widget = new FormTextInput(text, charWidth, charHeight, x, y, w, h);
+        widget = new TextEditInput(text, charWidth, charHeight, x, y, w, h);
       } else {
         widget = new FormLineInput(text, maxSize, false, x, y, w, h);
       }

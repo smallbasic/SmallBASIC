@@ -262,7 +262,9 @@ struct FormList : public FormInput {
 
 protected:
   ListModel *_model;
+  // scroll offset
   int _topIndex;
+  // zero is first display item
   int _activeIndex;
 };
 

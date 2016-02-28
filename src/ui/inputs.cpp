@@ -230,7 +230,7 @@ void FormInput::drawText(const char *caption, int dx, int dy, int sw, int chw) {
       maDrawText(dx, dy, buffer, len);
       delete [] buffer;
     }
-  } else {
+  } else if (strWidth) {
     maDrawText(dx, dy, caption, strlen(caption));
   }
 }
@@ -272,8 +272,8 @@ bool FormInput::updateUI(var_p_t form, var_p_t field) {
   if (var == NULL) {
     var = map_get(form, FORM_INPUT_LABEL);
   }
-  if (var != NULL && var->type == V_STR) {
-    setText(var->v.p.ptr);
+  if (var != NULL) {
+    setText(v_getstr(var));
     updated = true;
   }
 
@@ -634,8 +634,8 @@ void FormLineInput::updateField(var_p_t form) {
 bool FormLineInput::updateUI(var_p_t form, var_p_t field) {
   bool updated = FormInput::updateUI(form, field);
   var_p_t var = map_get(field, FORM_INPUT_VALUE);
-  if (var != NULL && var->type == V_STR) {
-    const char *value = var->v.p.ptr;
+  if (var != NULL) {
+    const char *value = v_getstr(var);
     if (value && strcmp(value, _buffer) != 0) {
       int len = MIN(strlen(value), (unsigned)_size);
       memcpy(_buffer, value, len);
@@ -814,7 +814,6 @@ FormList::~FormList() {
 void FormList::optionSelected(int index) {
   if (index > -1 && index < _model->rows()) {
     _model->selected(index);
-    _activeIndex = index;
   }
 }
 
@@ -822,34 +821,38 @@ bool FormList::updateUI(var_p_t form, var_p_t field) {
   bool updated = FormInput::updateUI(form, field);
   var_p_t var = map_get(field, FORM_INPUT_VALUE);
   if (var != NULL) {
-    if (var->type == V_INT) {
-      // update list control with new int variable
-      optionSelected(var->v.i);
-      updated = true;
-    } else if (var->type == V_ARRAY) {
+    if (var->type == V_ARRAY) {
       // update list control with new array variable
       _model->clear();
       _model->create(var);
       updated = true;
-    } else if (var->type == V_STR) {
+    } else if (var->type == V_STR &&
+               strchr((const char *)var->v.p.ptr, '|')) {
       // update list control with new string variable
-      if (strchr((const char *)var->v.p.ptr, '|')) {
-        // create a new list of items
-        _model->clear();
-        _model->create(var);
-      } else {
-        int selection = _model->getIndex((const char *)var->v.p.ptr);
-        optionSelected(selection);
-      }
+      _model->clear();
+      _model->create(var);
       updated = true;
     }
   }
 
   // set the selectedIndex
   var = map_get(field, FORM_INPUT_INDEX);
-  if (var != NULL && var->type == V_INT) {
-    optionSelected(var->v.i);
-    updated = true;
+  if (var != NULL) {
+    int index = v_getint(var);
+    if (index > -1 && index < _model->rows()) {
+      MAExtent textSize = maGetTextSize(_model->getTextAt(0));
+      int rowHeight = EXTENT_Y(textSize) + 1;
+      int visibleRows = getListHeight() / rowHeight;
+      if (index < visibleRows) {
+        _activeIndex = index;
+        _topIndex = 0;
+      } else {
+        _topIndex = index - visibleRows + 1;
+        _activeIndex = index - _topIndex;
+      }
+      _model->selected(index);
+      updated = true;
+    }
   }
   return updated;
 }
