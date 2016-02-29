@@ -136,13 +136,11 @@ void cmd_form_close(var_s *self) {
 }
 
 void cmd_form_refresh(var_s *self) {
-  bool setVars = false;
   var_t arg;
   v_init(&arg);
   eval(&arg);
-  if (arg.type == V_INT && !prog_error) {
-    setVars = (arg.v.i == -1);
-  }
+  bool setVars = v_getint(&arg) == -1;
+  v_free(&arg);
   g_system->getOutput()->updateInputs(self, setVars);
 }
 

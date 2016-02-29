@@ -647,7 +647,10 @@ void System::setBack() {
     // follow history when available and not exiting
     if (!_mainBas) {
       // remove the current item
-      _history.pop();
+      strlib::String *old = _history.pop();
+      if (old) {
+        delete old;
+      }
       if (_history.peek() != NULL) {
         _loadPath.empty();
         _loadPath.append(_history.peek());

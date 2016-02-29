@@ -71,7 +71,7 @@ struct AnsiWidget {
   void removeHover();
   void removeImage(int imageId) { _back->removeImage(imageId); }
   void removeInput(FormInput *input) { _back->removeInput(input); }
-  void removeInputs() { _back->removeInputs(); _activeButton = NULL; }
+  void removeInputs();
   void resetScroll() { _back->resetScroll(); }
   void reset();
   void resetFont() { _back->reset(_fontSize); _back->updateFont(); }

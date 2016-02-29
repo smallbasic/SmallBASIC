@@ -254,6 +254,18 @@ void AnsiWidget::removeHover() {
   }
 }
 
+void AnsiWidget::removeInputs() {
+  List_each(FormInput*, it, _back->_inputs) {
+    FormInput *widget = (FormInput *)(*it);
+    if (widget == _activeButton) {
+      _activeButton = NULL;
+    } else if (widget == _hoverInput) {
+      _hoverInput = NULL;
+    }
+  }
+  _back->removeInputs();
+}
+
 bool AnsiWidget::scroll(bool up, bool page) {
   int h = page ? _front->_height - _front->_charHeight : _front->_charHeight;
   int vscroll = _front->_scrollY + (up ? - h : h);
