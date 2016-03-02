@@ -530,6 +530,9 @@ bool FormLineInput::edit(int key, int screenWidth, int charWidth) {
   key = getControlKey(key);
   if (key >= SB_KEY_SPACE && key < SB_KEY_DELETE && !_controlMode) {
     // insert
+    if (_mark != _point) {
+      cut();
+    }
     if (len < _size - 1) {
       int j = len;
       int point = _scroll + _point;
@@ -885,6 +888,8 @@ bool FormList::edit(int key, int screenWidth, int charWidth) {
     MAExtent textSize = maGetTextSize(_model->getTextAt(0));
     int rowHeight = EXTENT_Y(textSize) + 1;
     int visibleRows = getListHeight() / rowHeight;
+    int activeIndex = _activeIndex;
+    int topIndex = _topIndex;
 
     if (key == SB_KEY_UP) {
       if (_activeIndex > 0) {
@@ -899,6 +904,10 @@ bool FormList::edit(int key, int screenWidth, int charWidth) {
       } else {
         _activeIndex++;
       }
+    }
+    if (activeIndex != _activeIndex || topIndex != _topIndex) {
+      _model->selected(_topIndex + _activeIndex);
+      selected();
     }
   } else if (key == SB_KEY_ENTER) {
     clicked(-1, -1, false);

@@ -133,6 +133,7 @@ struct FormInput : public Shape {
   bool isVisible() { return _visible; }
   bool isNoFocus() { return _noFocus; }
   void setColor(int bg, int fg) { _bg = bg; _fg = fg; }
+  void selected();
   void show() { _visible = true; }
   bool _pressed;
 

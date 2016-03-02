@@ -1,8 +1,11 @@
 const app = "main.bas?"
 const boldOn = chr(27) + "[1m"
 const boldOff = chr(27) + "[21m"
-const lineSpacing = 2 + txth("Q")
+const char_h = txth("Q")
+const lineSpacing = 2 + char_h
 const onlineUrl = "http://smallbasic.sourceforge.net/?q=export/code/1243"
+const idxEdit = 5
+const idxFiles = 6
 
 func spaced(s)
   local ch, len_s
@@ -78,40 +81,6 @@ sub do_about()
   frm.inputs << button
   frm = form(frm)
   frm.doEvents()
-  cls
-end
-
-sub do_newfile()
-  color 3, 0
-  cls
-  print boldOn + "Create new program."
-  print boldOff + "To enable editing, display the menu then select Editor [ON]."
-  print "Press <enter> to leave this screen without making any changes."
-  print
-  local valid_file = false
-  while (!valid_file)
-    input "Enter file name: ", file
-    if (len(file) == 0) then
-      exit loop
-    endif
-    if (leftoflast(file, ".bas") == 0) then
-      file += ".bas"
-    endif
-    try
-      if (exist(file)) then
-        print "File " + file + " already exists"
-      else
-        dim text
-        text << "REM SmallBASIC"
-        text << "REM created: " + date
-        tsave file, text
-        valid_file = true
-      endif
-    catch e
-      print "Error creating file: " e
-    end try
-  wend
-  color 7, 0
   cls
 end
 
@@ -214,6 +183,183 @@ sub listFiles(byref frm, path, byref basList, byref dirList)
   next ent
 end
 
+func getFiles()
+  local list = files("*.*")
+  local entry
+
+  dim result
+  for entry in list
+    if (lower(right(entry, 4)) == ".bas") then
+      result << entry
+    endIf
+  next entry
+
+  sort result use fileCmpFunc(x,y)
+  getFiles = result
+end
+
+sub createNewFile(byref f, byref wnd)
+  f.refresh(true)
+  local newFile = f.inputs(idxEdit).value
+  if (len(newFile) == 0) then
+    exit sub
+  endIf
+  if (lower(right(newFile, 4)) != ".bas") then
+    newFile += ".bas"
+  endIf
+  try
+    if (exist(newFile)) then
+      wnd.alert("File " + newFile + " already exists", "Duplicate File")
+    else
+      dim text
+      text << "REM SmallBASIC"
+      text << "REM created: " + date
+      tsave newFile, text
+    endif
+  catch e
+    wnd.alert("Error creating file: " + e)
+  end try
+end
+
+sub manageFiles()
+  local f, wnd, bn_edit, bn_files
+  const renameId = "__bn_rename__"
+  const deleteId = "__bn_delete__"
+  const newId = "__bn_new__"
+  const viewId = "__bn_view__"
+  const closeId = "__bn_close__"
+
+  sub mk_item(x, lab, value)
+    local bn
+    bn.x = x
+    bn.y = 0
+    bn.label = lab
+    bn.value = value
+    bn.backgroundColor = 1
+    bn.type = "tab"
+    f.inputs << bn
+  end
+
+  sub createUI()
+    cls
+    rect 0, 0, xmax, lineSpacing COLOR 1 filled
+    mk_item( 0, "View", viewId)
+    mk_item(-1, "Rename", renameId)
+    mk_item(-1, "New", newId)
+    mk_item(-1, "Delete", deleteId)
+    mk_item(-1, "Back", closeId)
+    bn_edit.x = 0
+    bn_edit.y = char_h + 4
+    bn_edit.width = xmax
+    bn_edit.type = "text"
+    bn_edit.color = "white"
+    bn_files.x = x1
+    bn_files.y = bn_edit.y + char_h + 2
+    bn_files.height = ymax - bn_files.y
+    bn_files.width = xmax - x1
+    bn_files.color = 2
+    bn_files.type = "list"
+    f.inputs << bn_edit
+    f.inputs << bn_files
+    f.focusColor = "white"
+    f = form(f)
+    f.value = bn_edit.value
+  end
+
+  sub reloadList(selectedIndex)
+    local f_list = getFiles()
+    if (selectedIndex == len(f_list)) then
+      selectedIndex--
+    endif
+    selectedFile = f_list(selectedIndex)
+    f.inputs(idxFiles).value = f_list
+    f.inputs(idxFiles).selectedIndex = selectedIndex
+    f.inputs(idxEdit).value = selectedFile
+    f.refresh(false)
+  end
+
+  sub deleteFile()
+    wnd.ask("Are you sure you wish to delete " + selectedFile + "?", "Delete File")
+    if (wnd.answer == 0) then
+      f.refresh(true)
+      local selectedIndex = f.inputs(idxFiles).selectedIndex
+      kill selectedFile
+      reloadList(selectedIndex)
+    endif
+    f.value = ""
+  end
+
+  sub renameFile()
+    ' retrieve the edit value
+    f.refresh(true)
+    local newFile = f.inputs(idxEdit).value
+    local selectedIndex = f.inputs(idxFiles).selectedIndex
+    if (lower(right(newFile, 4)) != ".bas") then
+      newFile += ".bas"
+    endIf
+
+    if (exist(selectedFile) and selectedFile != newFile) then
+      rename selectedFile, newFile
+      reloadList(selectedIndex)
+    endif
+    f.value = selectedFile
+  end
+
+  sub viewFile()
+    local frm, button
+
+    if (!exist(selectedFile)) then
+      wnd.alert("Select a file and try again")
+    else
+      tload selectedFile, buffer
+      wnd.graphicsScreen2()
+      cls
+      len_buffer = len(buffer) - 1
+      for i = 0 to len_buffer
+        print buffer(i)
+      next i
+      button.label = "Close"
+      button.backgroundColor = "cyan"
+      button.x = txtw("W") * 3
+      frm.inputs << button
+      frm = form(frm)
+      print " --- End of listing --- "
+      print
+      frm.doEvents()
+      frm.close()
+      wnd.graphicsScreen1()
+      f.value = selectedFile
+    endIf
+  end
+
+  createUI()
+  reloadList(0)
+  wnd = window()
+
+  while 1
+    f.doEvents()
+    select case f.value
+    case renameId
+      renameFile()
+    case deleteId
+      deleteFile()
+    case newId
+      createNewFile(f, wnd)
+      reloadList(0)
+    case viewId
+      viewFile()
+    case closeId
+      exit loop
+    case else
+      ' set the edit value
+      f.inputs(idxEdit).value = f.value
+      f.refresh(false)
+      selectedFile = f.value
+    end select
+  wend
+  cls
+end
+
 sub main
   local basList, dirList, path
   local frm, bn_about, bn_online, bn_new
@@ -222,19 +368,19 @@ sub main
   dim basList
   dim dirList
 
-  bn_setup = mk_menu("_setup", "Setup", -1)
-  bn_new = mk_menu("_new", "New", -1)
-  bn_about = mk_menu("_about", "About", -1)
   bn_online = mk_menu(onlineUrl, "Online", 0)
+  bn_setup = mk_menu("_setup", "Setup", -1)
+  bn_files = mk_menu("_files", "File", -1)
+  bn_about = mk_menu("_about", "About", -1)
   bn_online.isExit = true
 
-  func make_ui(path, welcome)
+  func makeUI(path, welcome)
     local frm
     frm.inputs << bn_online
     if (osname != "SDL") then
-     frm.inputs << bn_setup
+      frm.inputs << bn_setup
     endif
-    frm.inputs << bn_new
+    frm.inputs << bn_files
     frm.inputs << bn_about
 
     if (welcome) then
@@ -245,7 +391,8 @@ sub main
     frm.color = 10
     rect 0, 0, xmax, lineSpacing COLOR 1 filled
     at 0, 0
-    make_ui = form(frm)
+    frm = form(frm)
+    makeUI = frm
   end
 
   sub go_back
@@ -271,7 +418,7 @@ sub main
     do_intro = true
   fi
   path = cwd
-  frm = make_ui(path, do_intro)
+  frm = makeUI(path, do_intro)
 
   while 1
     frm.doEvents()
@@ -280,23 +427,23 @@ sub main
       frm.close()
       path = frm.value
       chdir path
-      frm = make_ui(path, false)
+      frm = makeUI(path, false)
     elif frm.value == "_about" then
       frm.close()
       do_about()
-      frm = make_ui(path, false)
+      frm = makeUI(path, false)
     elif frm.value == "_setup" then
       frm.close()
       do_setup()
-      frm = make_ui(path, false)
-    elif frm.value == "_new" then
+      frm = makeUI(path, false)
+    elif frm.value == "_files" then
       frm.close()
-      do_newfile()
-      frm = make_ui(path, false)
+      managefiles()
+      frm = makeUI(path, false)
     elif frm.value == "_back" then
       frm.close()
-      go_back
-      frm = make_ui(path, false)
+      go_back()
+      frm = makeUI(path, false)
     fi
   wend
 end

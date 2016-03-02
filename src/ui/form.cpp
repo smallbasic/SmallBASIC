@@ -75,6 +75,15 @@ void FormInput::clicked(int x, int y, bool pressed) {
   }
 }
 
+void FormInput::selected() {
+  if (form != NULL && g_system->isRunning()) {
+    set_focus(this);
+    updateForm(form);
+    mode = m_selected;
+    g_system->getOutput()->setDirty();
+  }
+}
+
 void FormLineInput::clicked(int x, int y, bool pressed) {
   if (pressed && g_system->isRunning()) {
     AnsiWidget *out = g_system->getOutput();
@@ -114,8 +123,10 @@ void FormDropList::clicked(int x, int y, bool pressed) {
   if (form != NULL && !pressed && g_system->isRunning()) {
     set_focus(this);
     updateForm(form);
-    mode = m_selected;
     _listActive = !_listActive;
+    if (!_listActive) {
+      mode = m_selected;
+    }
     g_system->getOutput()->setDirty();
   }
 }
