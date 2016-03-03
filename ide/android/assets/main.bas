@@ -51,8 +51,20 @@ sub intro(byref frm)
   frm.inputs << bn
 end
 
-sub do_about()
+sub do_okay_button()
   local frm, button
+  button.x = xmax / 2
+  button.y = -1
+  button.label = "Close"
+  button.backgroundColor = "blue"
+  button.color = "white"
+  frm.inputs << button
+  frm = form(frm)
+  print
+  frm.doEvents()
+end
+
+sub do_about()
   cls
   print " __           _      ___ _"
   print "(_ ._ _  _.|||_) /\ (_ |/ "
@@ -71,16 +83,8 @@ sub do_about()
   print "Envy Code R Font v0.8 used with permission ";
   print "http://damieng.com/envy-code-r" + chr(10)
   print
-  serverInfo
-
-  button.x = xmax / 2
-  button.y = ypos * lineSpacing
-  button.label = "Close"
-  button.backgroundColor = 8
-  button.color = 10
-  frm.inputs << button
-  frm = form(frm)
-  frm.doEvents()
+  server_info()
+  do_okay_button()
   cls
 end
 
@@ -112,7 +116,7 @@ sub do_setup()
   cls
 end
 
-sub serverInfo()
+sub server_info()
   local serverSocket = env("serverSocket")
   local ipAddr = env("IP_ADDR")
 
@@ -236,6 +240,7 @@ sub manageFiles()
     bn.label = lab
     bn.value = value
     bn.backgroundColor = 1
+    bn.color = 7
     bn.type = "tab"
     f.inputs << bn
   end
@@ -243,11 +248,11 @@ sub manageFiles()
   sub createUI()
     cls
     rect 0, 0, xmax, lineSpacing COLOR 1 filled
-    mk_item( 0, "View", viewId)
+    mk_item( 0, "Home", closeId)
+    mk_item(-1, "View", viewId)
     mk_item(-1, "Rename", renameId)
     mk_item(-1, "New", newId)
     mk_item(-1, "Delete", deleteId)
-    mk_item(-1, "Back", closeId)
     bn_edit.x = 0
     bn_edit.y = char_h + 4
     bn_edit.width = xmax
@@ -268,11 +273,18 @@ sub manageFiles()
 
   sub reloadList(selectedIndex)
     local f_list = getFiles()
-    if (selectedIndex == len(f_list)) then
-      selectedIndex--
+    local f_list_len=len(f_list)
+    if (f_list_len == 0) then
+      selectedFile = ""
+      f.inputs(idxFiles).value = ""
+      selectedIndex = 0
+    else
+      if (selectedIndex == f_list_len) then
+        selectedIndex--
+      endif
+      selectedFile = f_list(selectedIndex)
+      f.inputs(idxFiles).value = f_list
     endif
-    selectedFile = f_list(selectedIndex)
-    f.inputs(idxFiles).value = f_list
     f.inputs(idxFiles).selectedIndex = selectedIndex
     f.inputs(idxEdit).value = selectedFile
     f.refresh(false)
@@ -318,15 +330,7 @@ sub manageFiles()
       for i = 0 to len_buffer
         print buffer(i)
       next i
-      button.label = "Close"
-      button.backgroundColor = "cyan"
-      button.x = txtw("W") * 3
-      frm.inputs << button
-      frm = form(frm)
-      print " --- End of listing --- "
-      print
-      frm.doEvents()
-      frm.close()
+      do_okay_button
       wnd.graphicsScreen1()
       f.value = selectedFile
     endIf
@@ -351,10 +355,12 @@ sub manageFiles()
     case closeId
       exit loop
     case else
-      ' set the edit value
-      f.inputs(idxEdit).value = f.value
-      f.refresh(false)
-      selectedFile = f.value
+      if (len(f.value) > 0) then
+        ' set the edit value
+        f.inputs(idxEdit).value = f.value
+        f.refresh(false)
+        selectedFile = f.value
+      endif
     end select
   wend
   cls
@@ -368,19 +374,19 @@ sub main
   dim basList
   dim dirList
 
-  bn_online = mk_menu(onlineUrl, "Online", 0)
+  bn_files = mk_menu("_files", "File", 0)
+  bn_online = mk_menu(onlineUrl, "Online", -1)
   bn_setup = mk_menu("_setup", "Setup", -1)
-  bn_files = mk_menu("_files", "File", -1)
   bn_about = mk_menu("_about", "About", -1)
   bn_online.isExit = true
 
   func makeUI(path, welcome)
     local frm
+    frm.inputs << bn_files
     frm.inputs << bn_online
     if (osname != "SDL") then
       frm.inputs << bn_setup
     endif
-    frm.inputs << bn_files
     frm.inputs << bn_about
 
     if (welcome) then

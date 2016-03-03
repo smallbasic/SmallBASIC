@@ -823,19 +823,11 @@ void FormList::optionSelected(int index) {
 bool FormList::updateUI(var_p_t form, var_p_t field) {
   bool updated = FormInput::updateUI(form, field);
   var_p_t var = map_get(field, FORM_INPUT_VALUE);
-  if (var != NULL) {
-    if (var->type == V_ARRAY) {
-      // update list control with new array variable
-      _model->clear();
-      _model->create(var);
-      updated = true;
-    } else if (var->type == V_STR &&
-               strchr((const char *)var->v.p.ptr, '|')) {
-      // update list control with new string variable
-      _model->clear();
-      _model->create(var);
-      updated = true;
-    }
+  if (var != NULL && (var->type == V_ARRAY || var->type == V_STR)) {
+    // update list control with new array or string variable
+    _model->clear();
+    _model->create(var);
+    updated = true;
   }
 
   // set the selectedIndex
