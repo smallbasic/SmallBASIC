@@ -209,8 +209,8 @@ void FormInput::drawButton(const char *caption, int dx, int dy,
     maLine(r-1, dy+1, r-1, b-1); // right
   }
 
-  maSetColor(_fg);
   if (caption && caption[0]) {
+    setTextColor();
     maDrawText(textX, textY, caption, strlen(caption));
   }
 }
@@ -1019,6 +1019,9 @@ FormDropList::FormDropList(ListModel *model, int x, int y, int w, int h) :
 }
 
 void FormDropList::draw(int x, int y, int w, int h, int chw) {
+  if (!hasFocus()) {
+    _listActive = false;
+  }
   bool pressed = _listActive ? false : _pressed;
   drawButton(getText(), x, y, _width - CHOICE_BN_W, _height, pressed);
   drawButton("", x + _width - CHOICE_BN_W, y, CHOICE_BN_W, _height, false);

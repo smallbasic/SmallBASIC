@@ -54,14 +54,9 @@ void FormInput::clicked(int x, int y, bool pressed) {
         g_system->setLoadBreak(text != NULL ? text : getText());
       }
       else {
-        if (focusInput != NULL) {
-          focusInput->updateField(form);
-        }
-        updateForm(form);
-        mode = m_selected;
+        selected();
       }
     }
-    set_focus(this);
   }
 }
 
@@ -69,6 +64,9 @@ void FormInput::selected() {
   if (form != NULL && g_system->isRunning()) {
     set_focus(this);
     updateForm(form);
+    if (focusInput != NULL) {
+      focusInput->updateField(form);
+    }
     mode = m_selected;
     g_system->getOutput()->setDirty();
   }
@@ -304,7 +302,7 @@ extern "C" void v_create_form(var_p_t var) {
         FormInput *widget = create_input(elem);
         widget->construct(var, elem, i);
         out->addInput(widget);
-        if (i_focus == i) {
+        if (i_focus == i || inputs->v.a.size == 1) {
           set_focus(widget);
         }
       }
