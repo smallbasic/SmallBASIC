@@ -78,6 +78,21 @@ int get_color(var_p_t value, int def) {
   return result;
 }
 
+int lerp(int c0, int c1, float weight) {
+  int result;
+  if (weight <= 0) {
+    result = c0;
+  } else if (weight >= 1) {
+    result = c1;
+  } else {
+    uint8_t r = ((uint8_t)(c1 >> 24)) * weight + ((uint8_t)(c0 >> 24)) * (1 - weight);
+    uint8_t g = ((uint8_t)(c1 >> 16)) * weight + ((uint8_t)(c0 >> 16)) * (1 - weight);
+    uint8_t b = ((uint8_t)(c1 >>  8)) * weight + ((uint8_t)(c0 >>  8)) * (1 - weight);
+    result = (r << 24) + (g << 16) + (b << 8);
+  }
+  return result;
+}
+
 //
 // FormInput
 //
@@ -167,7 +182,7 @@ void FormInput::drawButton(const char *caption, int dx, int dy,
   int textX = dx + (w - textW - 1) / 2;
   int textY = dy + (h - textH - 1) / 2;
 
-  maSetColor(getBackground(GRAY_BG_COL));
+  maSetColor(_bg);
   maFillRect(dx, dy, r-dx, b-dy);
 
   if (pressed) {
@@ -245,6 +260,10 @@ bool FormInput::overlaps(MAPoint2d pt, int offsX, int offsY) {
 
 bool FormInput::selected(MAPoint2d pt, int scrollX, int scrollY, bool &redraw) {
   return FormInput::overlaps(pt, scrollX, scrollY);
+}
+
+void FormInput::setTextColor() {
+  maSetColor(hasFocus() ? _fg : lerp(_bg, _fg, 0.7));
 }
 
 // returns the field var attached to the field
@@ -401,6 +420,7 @@ void FormTab::draw(int x, int y, int w, int h, int chw) {
 
   maSetColor(_fg);
   drawText(_link, x + (BN_W / 2), y, w, chw);
+  setTextColor();
   maLine(x_end, y + 4, x_end, y + _height - 4);
 
   x_end -= (BN_W / 2);
@@ -496,9 +516,9 @@ FormLineInput::~FormLineInput() {
 }
 
 void FormLineInput::draw(int x, int y, int w, int h, int chw) {
-  maSetColor(getBackground(GRAY_BG_COL));
+  maSetColor(_bg);
   maFillRect(x, y, _width, _height);
-  maSetColor(_fg);
+  setTextColor();
 
   int len = strlen(_buffer + _scroll);
   if (len * chw >= _width) {
@@ -511,15 +531,15 @@ void FormLineInput::draw(int x, int y, int w, int h, int chw) {
     int start = MIN(_mark, _point);
     int width = chars * chw;
     int px = x + (start * chw);
-    maSetColor(_fg);
+    setTextColor();
     maFillRect(px, y, width, _height);
-    maSetColor(getBackground(GRAY_BG_COL));
+    maSetColor(_bg);
     maDrawText(px, y, _buffer + _scroll + start, chars);
   } else {
     int px = x + (_point * chw);
     maFillRect(px, y, chw, _height);
     if (_point < len) {
-      maSetColor(getBackground(GRAY_BG_COL));
+      maSetColor(_bg);
       maDrawText(px, y, _buffer + _scroll + _point, 1);
     }
   }
@@ -915,7 +935,7 @@ FormListBox::FormListBox(ListModel *model, int x, int y, int w, int h) :
 }
 
 void FormListBox::draw(int x, int y, int w, int h, int chw) {
-  maSetColor(getBackground(GRAY_BG_COL));
+  maSetColor(_bg);
   maFillRect(x, y, _width, _height);
   MAExtent textSize = maGetTextSize(_model->getTextAt(0));
   int rowHeight = EXTENT_Y(textSize) + 1;
@@ -926,12 +946,12 @@ void FormListBox::draw(int x, int y, int w, int h, int chw) {
       break;
     }
     if (i == _activeIndex) {
-      maSetColor(_fg);
+      setTextColor();
       maFillRect(x, textY, _width, rowHeight);
-      maSetColor(getBackground(GRAY_BG_COL));
+      maSetColor(_bg);
       drawText(str, x, textY, w, chw);
     } else {
-      maSetColor(_fg);
+      setTextColor();
       drawText(str, x, textY, w, chw);
     }
     textY += rowHeight;
@@ -1005,17 +1025,17 @@ void FormDropList::drawList(int dx, int dy, int sh) {
     _listHeight += textHeight;
     _visibleRows++;
   }
-  maSetColor(getBackground(GRAY_BG_COL));
+  maSetColor(_bg);
   maFillRect(dx, dy + _height, _listWidth, _listHeight);
   for (int i = 0; i < _visibleRows; i++) {
     const char *str = _model->getTextAt(i + _topIndex);
     if (i == _activeIndex) {
-      maSetColor(_fg);
+      setTextColor();
       maFillRect(dx, textY, _listWidth, textHeight);
-      maSetColor(getBackground(GRAY_BG_COL));
+      maSetColor(_bg);
       maDrawText(dx, textY, str, strlen(str));
     } else {
-      maSetColor(_fg);
+      setTextColor();
       maDrawText(dx, textY, str, strlen(str));
     }
     textY += textHeight;
@@ -1076,7 +1096,7 @@ FormImage::~FormImage() {
 void FormImage::draw(int x, int y, int w, int h, int chw) {
   int dx = _pressed ? x + 1 : x;
   int dy = _pressed ? y + 1 : y;
-  maSetColor(getBackground(GRAY_BG_COL));
+  maSetColor(_bg);
   maFillRect(x, y, _width, _height);
   _image->draw(dx + 1, dy + 1, w, h, chw);
 }

@@ -66,6 +66,7 @@ end
 
 sub do_about()
   cls
+  color 2,0
   print " __           _      ___ _"
   print "(_ ._ _  _.|||_) /\ (_ |/ "
   print "__)| | |(_||||_)/--\__)|\_"
@@ -248,7 +249,7 @@ sub manageFiles()
   sub createUI()
     cls
     rect 0, 0, xmax, lineSpacing COLOR 1 filled
-    mk_item( 0, "Home", closeId)
+    mk_item( 0, "<<", closeId)
     mk_item(-1, "View", viewId)
     mk_item(-1, "Rename", renameId)
     mk_item(-1, "New", newId)
@@ -264,9 +265,9 @@ sub manageFiles()
     bn_files.width = xmax - x1
     bn_files.color = 2
     bn_files.type = "list"
+    f.focus = idxfiles
     f.inputs << bn_edit
     f.inputs << bn_files
-    f.focusColor = "white"
     f = form(f)
     f.value = bn_edit.value
   end
@@ -326,6 +327,7 @@ sub manageFiles()
       tload selectedFile, buffer
       wnd.graphicsScreen2()
       cls
+      color 2,0
       len_buffer = len(buffer) - 1
       for i = 0 to len_buffer
         print buffer(i)

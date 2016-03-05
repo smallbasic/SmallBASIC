@@ -16,7 +16,6 @@ extern System *g_system;
 extern FormInput *focusInput;
 extern FormLineInput *focusEdit;
 var_p_t form = NULL;
-int focusColor = FOCUS_COLOR;
 
 enum Mode {
   m_init,
@@ -32,15 +31,6 @@ void set_focus(FormInput *focus) {
     }
     focusInput = focus;
   }
-}
-
-// returns setBG when the program colours are default
-int FormInput::getBackground(int buttonColor) const {
-  int result = _bg;
-  if (_fg == DEFAULT_FOREGROUND && _bg == DEFAULT_BACKGROUND) {
-    result = hasFocus() ? focusColor : buttonColor;
-  }
-  return result;
 }
 
 void FormInput::clicked(int x, int y, bool pressed) {
@@ -305,6 +295,8 @@ extern "C" void v_create_form(var_p_t var) {
 
   if (hasInputs) {
     map_set(var, arg);
+    var_p_t v_focus = map_get(var, FORM_FOCUS);
+    int i_focus = v_focus != NULL ? v_getint(v_focus) : -1;
     var_p_t inputs = map_get(var, FORM_INPUTS);
     for (int i = 0; i < inputs->v.a.size; i++) {
       var_p_t elem = v_elem(inputs, i);
@@ -312,17 +304,13 @@ extern "C" void v_create_form(var_p_t var) {
         FormInput *widget = create_input(elem);
         widget->construct(var, elem, i);
         out->addInput(widget);
+        if (i_focus == i) {
+          set_focus(widget);
+        }
       }
     }
 
-    focusInput = out->getNextField(NULL);
     out->setDirty();
-
-    var_p_t v_fc = map_get(var, FORM_FOCUS_COLOR);
-    if (v_fc != NULL) {
-      focusColor = get_color(v_fc, FOCUS_COLOR);
-    }
-
     v_zerostr(map_add_var(var, FORM_VALUE, 0));
     create_func(var, "doEvents", cmd_form_do_events);
     create_func(var, "close", cmd_form_close);
