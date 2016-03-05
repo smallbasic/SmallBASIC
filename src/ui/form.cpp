@@ -34,6 +34,7 @@ void set_focus(FormInput *focus) {
 }
 
 void FormInput::clicked(int x, int y, bool pressed) {
+  set_focus(this);
   if (!pressed && g_system->isRunning()) {
     if (_onclick) {
       bcip_t ip = prog_ip;
