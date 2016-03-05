@@ -840,6 +840,22 @@ void FormList::optionSelected(int index) {
   }
 }
 
+void FormList::selectIndex(int index) {
+  if (index > -1 && index < _model->rows()) {
+    MAExtent textSize = maGetTextSize(_model->getTextAt(0));
+    int rowHeight = EXTENT_Y(textSize) + 1;
+    int visibleRows = getListHeight() / rowHeight;
+    if (index < visibleRows) {
+      _activeIndex = index;
+      _topIndex = 0;
+    } else {
+      _topIndex = index - visibleRows + 1;
+      _activeIndex = index - _topIndex;
+    }
+    _model->selected(index);
+  }
+}
+
 bool FormList::updateUI(var_p_t form, var_p_t field) {
   bool updated = FormInput::updateUI(form, field);
   var_p_t var = map_get(field, FORM_INPUT_VALUE);
@@ -853,21 +869,8 @@ bool FormList::updateUI(var_p_t form, var_p_t field) {
   // set the selectedIndex
   var = map_get(field, FORM_INPUT_INDEX);
   if (var != NULL) {
-    int index = v_getint(var);
-    if (index > -1 && index < _model->rows()) {
-      MAExtent textSize = maGetTextSize(_model->getTextAt(0));
-      int rowHeight = EXTENT_Y(textSize) + 1;
-      int visibleRows = getListHeight() / rowHeight;
-      if (index < visibleRows) {
-        _activeIndex = index;
-        _topIndex = 0;
-      } else {
-        _topIndex = index - visibleRows + 1;
-        _activeIndex = index - _topIndex;
-      }
-      _model->selected(index);
-      updated = true;
-    }
+    selectIndex(v_getint(var));
+    updated = true;
   }
   return updated;
 }
@@ -923,6 +926,27 @@ bool FormList::edit(int key, int screenWidth, int charWidth) {
     }
   } else if (key == SB_KEY_ENTER) {
     clicked(-1, -1, false);
+  } else {
+    // match by keystroke
+    int firstIndex = -1;
+    int lastIndex = -1;
+    for (int index = 0; index < _model->rows(); index++) {
+      const char *text = _model->getTextAt(index);
+      if (text && tolower(text[0]) == tolower(key)) {
+        if (firstIndex == -1) {
+          firstIndex = index;
+        }
+        if (index > _activeIndex + _topIndex) {
+          lastIndex = index;
+          break;
+        }
+      }
+    }
+    int index = lastIndex != -1 ? lastIndex : firstIndex;
+    if (index != -1) {
+      selectIndex(index);
+      selected();
+    }
   }
   return true;
 }

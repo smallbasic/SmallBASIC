@@ -261,6 +261,8 @@ struct FormList : public FormInput {
   virtual int getListHeight() const { return _height; }
 
 protected:
+  void selectIndex(int index);
+
   ListModel *_model;
   // scroll offset
   int _topIndex;
