@@ -146,6 +146,7 @@ sub mk_bn(byref f, fgc, bgc, x, y, w, h, caption)
   button.label = caption
   button.color = fgc
   button.backgroundColor = bgc
+  button.noFocus = true
   f.inputs << button
 end
 

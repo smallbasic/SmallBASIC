@@ -9,7 +9,7 @@
 #include "config.h"
 
 #include "common/sys.h"
-#include "common/smbas.h"
+#include "common/sbapp.h"
 #include "common/keymap.h"
 #include "ui/utils.h"
 #include "ui/inputs.h"
@@ -263,7 +263,7 @@ bool FormInput::selected(MAPoint2d pt, int scrollX, int scrollY, bool &redraw) {
 }
 
 void FormInput::setTextColor() {
-  maSetColor(hasFocus() ? _fg : lerp(_bg, _fg, 0.7));
+  maSetColor(hasFocus() || _noFocus ? _fg : lerp(_bg, _fg, 0.7));
 }
 
 // returns the field var attached to the field
@@ -355,11 +355,10 @@ bool FormInput::hasFocus() const {
 }
 
 void FormInput::setFocus(bool focus) {
-  if (!isNoFocus()) {
-    if (focus == (focusInput != this)) {
-      focusInput = focus ? this : NULL;
-      g_system->getOutput()->setDirty();
-    }
+  focusEdit = NULL;
+  if (!_noFocus && focus == (focusInput != this)) {
+    focusInput = focus ? this : NULL;
+    g_system->getOutput()->setDirty();
   }
 }
 
@@ -479,12 +478,10 @@ int FormEditInput::getControlKey(int key) {
 }
 
 void FormEditInput::setFocus(bool focus) {
-  if (!isNoFocus()) {
-    if (focus == (focusInput != this)) {
-      focusInput = focus ? this : NULL;
-      focusEdit = focus ? this : NULL;
-      g_system->getOutput()->setDirty();
-    }
+  if (!_noFocus && focus == (focusInput != this)) {
+    focusInput = focus ? this : NULL;
+    focusEdit = focus ? this : NULL;
+    g_system->getOutput()->setDirty();
   }
 }
 
@@ -513,6 +510,26 @@ FormLineInput::FormLineInput(const char *value, int size, bool grow,
 FormLineInput::~FormLineInput() {
   delete [] _buffer;
   _buffer = NULL;
+}
+
+void FormLineInput::clicked(int x, int y, bool pressed) {
+  if (pressed && g_system->isRunning()) {
+    AnsiWidget *out = g_system->getOutput();
+    dev_clrkb();
+    setFocus(true);
+    focusEdit = this;
+    int charWidth = out->getCharWidth();
+    int selected = (x - _x) / charWidth;
+    int len = strlen(_buffer);
+    if (selected > len) {
+      selected = len;
+      _mark = selected;
+    }
+    if (selected > -1) {
+      _point = selected;
+      out->setDirty();
+    }
+  }
 }
 
 void FormLineInput::draw(int x, int y, int w, int h, int chw) {

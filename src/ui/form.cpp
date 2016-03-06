@@ -6,6 +6,8 @@
 // Download the GNU Public License (GPL) from www.gnu.org
 //
 
+#include "config.h"
+
 #include "common/sys.h"
 #include "common/sbapp.h"
 #include "common/keymap.h"
@@ -14,7 +16,6 @@
 
 extern System *g_system;
 extern FormInput *focusInput;
-extern FormLineInput *focusEdit;
 var_p_t form = NULL;
 
 enum Mode {
@@ -23,18 +24,8 @@ enum Mode {
   m_selected
 } mode = m_init;
 
-void set_focus(FormInput *focus) {
-  focusEdit = NULL;
-  if (!focus->isNoFocus()) {
-    if (focusInput != focus) {
-      g_system->getOutput()->setDirty();
-    }
-    focusInput = focus;
-  }
-}
-
 void FormInput::clicked(int x, int y, bool pressed) {
-  set_focus(this);
+  setFocus(true);
   if (!pressed && g_system->isRunning()) {
     if (_onclick) {
       bcip_t ip = prog_ip;
@@ -63,33 +54,13 @@ void FormInput::clicked(int x, int y, bool pressed) {
 
 void FormInput::selected() {
   if (form != NULL && g_system->isRunning()) {
-    set_focus(this);
+    setFocus(true);
     updateForm(form);
     if (focusInput != NULL) {
       focusInput->updateField(form);
     }
     mode = m_selected;
     g_system->getOutput()->setDirty();
-  }
-}
-
-void FormLineInput::clicked(int x, int y, bool pressed) {
-  if (pressed && g_system->isRunning()) {
-    AnsiWidget *out = g_system->getOutput();
-    dev_clrkb();
-    set_focus(this);
-    focusEdit = this;
-    int charWidth = out->getCharWidth();
-    int selected = (x - _x) / charWidth;
-    int len = strlen(_buffer);
-    if (selected > len) {
-      selected = len;
-      _mark = selected;
-    }
-    if (selected > -1) {
-      _point = selected;
-      out->setDirty();
-    }
   }
 }
 
@@ -110,7 +81,7 @@ bool FormLineInput::selected(MAPoint2d pt, int scrollX, int scrollY, bool &redra
 
 void FormDropList::clicked(int x, int y, bool pressed) {
   if (form != NULL && !pressed && g_system->isRunning()) {
-    set_focus(this);
+    setFocus(true);
     updateForm(form);
     _listActive = !_listActive;
     if (!_listActive) {
@@ -122,7 +93,7 @@ void FormDropList::clicked(int x, int y, bool pressed) {
 
 void FormListBox::clicked(int x, int y, bool pressed) {
   if (form != NULL && !pressed && g_system->isRunning()) {
-    set_focus(this);
+    setFocus(true);
     if (_activeIndex != -1) {
       optionSelected(_activeIndex + _topIndex);
     }
@@ -304,7 +275,7 @@ extern "C" void v_create_form(var_p_t var) {
         widget->construct(var, elem, i);
         out->addInput(widget);
         if (i_focus == i || inputs->v.a.size == 1) {
-          set_focus(widget);
+          widget->setFocus(true);
         }
       }
     }
