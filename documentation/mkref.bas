@@ -44,11 +44,12 @@ func fix_comments(comments)
   comments = translate(comments, "&nbsp;", " ")
   comments = translate(comments, "<code>", "--Example--" + chr(10))
   comments = translate(comments, "</code>", chr(10) + "--End Of Example--")
-  comments = translate(comments, NL, chr(10))
+  comments = translate(comments, "\\r\\n", chr(10))
   fix_comments = comments
 end
 
 sub mk_help(byref in_map)
+  local i, row, group, type, keyword, syntax, brief
   local in_map_len = len(in_map) - 1
   for i = 0 to in_map_len
     row = in_map(i).body_value
@@ -62,7 +63,7 @@ sub mk_help(byref in_map)
 end
 
 sub mk_text_reference(byref in_map)
-  local NL = "\\r\\n"
+  local i, row, group, type, keyword, syntax, brief, comments
   local in_map_len = len(in_map) - 1
   local end_block = "<!-- end heading block -->"
 
