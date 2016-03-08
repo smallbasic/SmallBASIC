@@ -35,6 +35,19 @@ func get_field(row, key)
   get_field = result
 end
 
+func fix_comments(comments)
+  comments = translate(comments, "p. ", "")
+  comments = translate(comments, "bq. ", "")
+  comments = translate(comments, "bc. ", "")
+  comments = translate(comments, "bc.. ", "")
+  comments = translate(comments, "\\\"", "\"")
+  comments = translate(comments, "&nbsp;", " ")
+  comments = translate(comments, "<code>", "--Example--" + chr(10))
+  comments = translate(comments, "</code>", chr(10) + "--End Of Example--")
+  comments = translate(comments, NL, chr(10))
+  fix_comments = comments
+end
+
 sub mk_help(byref in_map)
   local in_map_len = len(in_map) - 1
   for i = 0 to in_map_len
@@ -51,6 +64,7 @@ end
 sub mk_text_reference(byref in_map)
   local NL = "\\r\\n"
   local in_map_len = len(in_map) - 1
+  local end_block = "<!-- end heading block -->"
 
   ? "SmallBASIC Language reference"
   ? "See: http://smallbasic.sourceforge.net/?q=node/201"
@@ -69,13 +83,13 @@ sub mk_text_reference(byref in_map)
     ?
     ? brief
     ?
+    pos = instr(row, end_block) + len(end_block)
+    if (pos < len(row)) then
+      ? fix_comments(mid(row, pos))
+    endif
     comments = in_map(i).comment_body_value
     if (comments != "NULL") then
-      comments = translate(comments, "&nbsp;", " ")
-      comments = translate(comments, "<code>", "--Example--" + chr(10))
-      comments = translate(comments, "</code>", chr(10) + "--End Of Example--")
-      comments = translate(comments, NL, chr(10))
-      ? comments
+      ? fix_comments(comments)
     endif
   next i
 end
