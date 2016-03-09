@@ -14,7 +14,7 @@
 split trim(command), " ", args
 tload args(0), in_str, 1
 
-# cleanup the mysq json
+# cleanup the mysql json
 in_str = translate(in_str, "\'", "'")
 in_str = translate(in_str, "'entity_id' :", "\"entity_id\":")
 in_str = translate(in_str, "'body_value' :", "\"body_value\":")
@@ -35,15 +35,17 @@ func get_field(row, key)
   get_field = result
 end
 
-func fix_comments(comments)
+func fix_comments(comments, keyword)
   comments = translate(comments, "p. ", "")
   comments = translate(comments, "bq. ", "")
   comments = translate(comments, "bc. ", "")
   comments = translate(comments, "bc.. ", "")
-  comments = translate(comments, "\\\"", "\"")
+  comments = translate(comments, "__", "")
+  comments = translate(comments, "**", "")
   comments = translate(comments, "&nbsp;", " ")
-  comments = translate(comments, "<code>", "--Example--" + chr(10))
-  comments = translate(comments, "</code>", chr(10) + "--End Of Example--")
+  comments = translate(comments, "\\\"", "\"")
+  comments = translate(comments, "<code>", "----[ " + keyword + " example. cut here ]----" + chr(10))
+  comments = translate(comments, "</code>", chr(10) + "----[ cut here ]----")
   comments = translate(comments, "\\r\\n", chr(10))
   fix_comments = comments
 end
@@ -57,7 +59,10 @@ sub mk_help(byref in_map)
     type = get_field(row, "type=")
     keyword = get_field(row, "keyword=")
     syntax = get_field(row, "syntax=")
-    brief = get_field(row, "brief=")
+    brief = translate(get_field(row, "brief="), "\\\"", "\"\"")
+    while (i + 1 < in_map_len && in_map(i).entity_id == in_map(i + 1).entity_id)
+      i++
+    wend
     ? group + "," + type + "," + keyword + "," + in_map(i).entity_id + ",\"" + syntax + "\",\"" + brief + "\""
   next i
 end
@@ -67,8 +72,16 @@ sub mk_text_reference(byref in_map)
   local in_map_len = len(in_map) - 1
   local end_block = "<!-- end heading block -->"
 
+
   ? "SmallBASIC Language reference"
   ? "See: http://smallbasic.sourceforge.net/?q=node/201"
+  ?
+  ? "   _____                 _ _ ____           _____ _____ _____
+  ? " / ____|               | | |  _ \   /\    / ____|_   _/ ____|
+  ? " | (___  _ __ ___   __ _| | | |_) | /  \  | (___   | || |
+  ? "  \___ \| '_ ` _ \ / _` | | |  _ < / /\ \  \___ \  | || |
+  ? "  ____) | | | | | | (_| | | | |_) / ____ \ ____) |_| || |____
+  ? " |_____/|_| |_| |_|\__,_|_|_|____/_/    \_\_____/|_____\_____|
   ?
 
   for i = 0 to in_map_len
@@ -77,7 +90,8 @@ sub mk_text_reference(byref in_map)
     type = get_field(row, "type=")
     keyword = get_field(row, "keyword=")
     syntax = get_field(row, "syntax=")
-    brief = get_field(row, "brief=")
+    brief = translate(get_field(row, "brief="), "\\\"", "\"")
+
     ? (i+1) + ". (" + group + ") " + keyword
     ?
     ? syntax
@@ -86,11 +100,15 @@ sub mk_text_reference(byref in_map)
     ?
     pos = instr(row, end_block) + len(end_block)
     if (pos < len(row)) then
-      ? fix_comments(mid(row, pos))
+      ? fix_comments(mid(row, pos), keyword)
     endif
     comments = in_map(i).comment_body_value
     if (comments != "NULL") then
-      ? fix_comments(comments)
+      ? fix_comments(comments, keyword)
     endif
+    while (i + 1 < in_map_len && in_map(i).entity_id == in_map(i + 1).entity_id)
+      i++
+      ? fix_comments(in_map(i).comment_body_value, keyword)
+    wend
   next i
 end
