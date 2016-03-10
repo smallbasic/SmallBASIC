@@ -6,7 +6,7 @@
 # left outer join d7_comment as C on C.nid = FDB.entity_id
 # left outer join d7_field_data_comment_body as FDCB on FDCB.entity_id = C.cid
 # where FDB.body_value like '%sbasic reference%'
-# order by FDB.body_value
+# order by FDB.body_value, FDB.entity_id
 #
 # Then export the results in JSON format
 #
@@ -35,6 +35,13 @@ func get_field(row, key)
   get_field = result
 end
 
+func get_help_field(row, key)
+  local result
+  result = get_field(row, key)
+  result = translate(result, "\\\"", "\"\"")
+  get_help_field = result
+end
+
 func fix_comments(comments, keyword)
   comments = translate(comments, "p. ", "")
   comments = translate(comments, "bq. ", "")
@@ -55,11 +62,11 @@ sub mk_help(byref in_map)
   local in_map_len = len(in_map) - 1
   for i = 0 to in_map_len
     row = in_map(i).body_value
-    group = get_field(row, "group=")
-    type = get_field(row, "type=")
-    keyword = get_field(row, "keyword=")
-    syntax = get_field(row, "syntax=")
-    brief = translate(get_field(row, "brief="), "\\\"", "\"\"")
+    group = get_help_field(row, "group=")
+    type = get_help_field(row, "type=")
+    keyword = get_help_field(row, "keyword=")
+    syntax = get_help_field(row, "syntax=")
+    brief = get_help_field(row, "brief=")
     while (i + 1 < in_map_len && in_map(i).entity_id == in_map(i + 1).entity_id)
       i++
     wend
@@ -71,7 +78,6 @@ sub mk_text_reference(byref in_map)
   local i, row, group, type, keyword, syntax, brief, comments
   local in_map_len = len(in_map) - 1
   local end_block = "<!-- end heading block -->"
-
 
   ? "SmallBASIC Language reference"
   ? "See: http://smallbasic.sourceforge.net/?q=node/201"
