@@ -545,7 +545,6 @@ var_num_t cmd_math1(long funcCode, var_t *arg) {
   case kwACSCH:
     r = log((ZSGN(x) * sqrt(x * x + 1.0) + 1.0) / x);
     break;
-
   case kwCOT:
     r = 1.0 / tan(x);
     break;
@@ -558,7 +557,6 @@ var_num_t cmd_math1(long funcCode, var_t *arg) {
   case kwACOTH:
     r = log((x + 1.0) / (x - 1.0)) / 2.0;
     break;
-
   case kwSQR:
     r = sqrt(x);
     break;
@@ -747,37 +745,7 @@ var_int_t cmd_imath1(long funcCode, var_t *arg) {
     //
     // int <- TICKS // clock()
     //
-#if defined(_Win32)
-    {
-      __int64 start, freq;
-      QueryPerformanceFrequency((LARGE_INTEGER *) & freq);
-      QueryPerformanceCounter((LARGE_INTEGER *) & start);
-      if (freq > 100000)
-      r = start / 1000;
-      else
-      r = start;
-    }
-#else
-    r = clock();
-#endif
-    break;
-  case kwTICKSPERSEC:
-    //
-    // int <- TICKSPERSEC
-    //
-#if defined(_Win32)
-    {
-      __int64 freq;
-      QueryPerformanceFrequency((LARGE_INTEGER *) & freq);
-      if (freq > 100000)
-      r = freq / 1000;
-      else
-      r = freq;
-    }
-    //              r = 1; // fake! but the GetTickCount() returns the number of ms from the start
-#else
-    r = CLOCKS_PER_SEC;
-#endif
+    r = dev_get_millisecond_count();
     break;
   case kwPROGLINE:
     //
@@ -924,19 +892,6 @@ void cmd_str1(long funcCode, var_t *arg, var_t *r) {
   var_int_t l, i;
 
   switch (funcCode) {
-  case kwBALLOC:
-    //
-    // ptr <- BALLOC(size)
-    //
-    l = v_getint(arg);
-    if (l > 0) {
-      r->v.p.ptr = malloc(l);
-      memset(r->v.p.ptr, 0, l);
-      r->v.p.size = l;
-    } else {
-      rt_raise("BALLOC size %d <= 0", l);
-    }
-    break;
   case kwCHR:
     //
     // str <- CHR$(n)
@@ -1149,19 +1104,11 @@ void cmd_str1(long funcCode, var_t *arg, var_t *r) {
     r->v.p.size = strlen(r->v.p.ptr) + 1;
     break;
   case kwTAB:
-    // TODO: use calctab
     l = v_igetval(arg);
     r->v.p.ptr = malloc(16);
     *r->v.p.ptr = '\0';
     r->v.p.size = 16;
-
-#if defined (_FRANKLIN_EBM) || defined (_FLTK)
-    // based on quick basic documentation for tab()
-    // move to the n/80th pixel of screen
-    sprintf(r->v.p.ptr, "\033[%dT", (int)l);
-#else
     sprintf(r->v.p.ptr, "\033[%dG", (int) l);
-#endif
     break;
   case kwSPACE:
     //

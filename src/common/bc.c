@@ -38,8 +38,13 @@ void bc_destroy(bc_t *bc) {
  * Resize a bytecode segment
  */
 void bc_resize(bc_t *bc, dword new_size) {
-  bc->ptr = realloc(bc->ptr, new_size);
-  bc->size = new_size;
+  if (new_size != bc->size) {
+    bc->ptr = realloc(bc->ptr, new_size);
+    bc->size = new_size;
+    if (new_size == 1) {
+      bc->count = 0;
+    }
+  }
 }
 
 /*

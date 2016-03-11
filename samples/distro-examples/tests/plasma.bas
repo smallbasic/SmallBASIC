@@ -27,7 +27,7 @@ for iter = 1 to 10
       pset x,y
     NEXT x
   NEXT y
-   fps=TICKSPERSEC/(TICKS-t)
+   fps=1000(TICKS-t)
    at bw+10,0
    print format("Fps:  ###.##", fps)
    at bw+10,20

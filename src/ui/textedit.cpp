@@ -52,9 +52,9 @@ const int theme1[] = {
 };
 
 const int theme2[] = {
-  0xc8cedb, 0x002b36, 0x3d4350, 0xa7aebc, 0xa7aebc, 0x00bb00,
-  0x002b36, 0x657b83, 0x073642, 0x9f7d18, 0x2b313a, 0x073642,
-  0x0083f8, 0xff9d00, 0x31ccac, 0xc679dd, 0x0083f8
+  0xcccccc, 0x000077, 0x333333, 0xa7aebc, 0x0000aa, 0x008888,
+  0x010101, 0xeeeeee, 0x010101, 0xffff00, 0x00ff00, 0x010101,
+  0x00ffff, 0xff00ff, 0xffffff, 0x00ffff, 0x007777
 };
 
 const int theme3[] = {
@@ -744,6 +744,13 @@ void TextEditInput::selectAll() {
 
 void TextEditInput::setCursor(int cursor) {
   _state.cursor = lineStart(cursor);
+  _cursorRow = getCursorRow();
+  _matchingBrace = -1;
+  updateScroll();
+}
+
+void TextEditInput::setCursorPos(int pos) {
+  _state.cursor = pos;
   _cursorRow = getCursorRow();
   _matchingBrace = -1;
   updateScroll();

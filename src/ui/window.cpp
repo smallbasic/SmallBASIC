@@ -105,7 +105,7 @@ void cmd_window_ask(var_s *self) {
   if (!prog_error && items->size() > 0) {
     const char *message = items->size() > 0 ? (*items)[0]->c_str() : "";
     const char *title   = items->size() > 1 ? (*items)[1]->c_str() : "";
-    map_set_int(self, WINDOW_ASK_RTN, g_system->ask(title, message));
+    map_set_int(self, WINDOW_ASK_RTN, g_system->ask(title, message, false));
   }
   delete items;
 }

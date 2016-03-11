@@ -71,7 +71,7 @@ struct AnsiWidget {
   void removeHover();
   void removeImage(int imageId) { _back->removeImage(imageId); }
   void removeInput(FormInput *input) { _back->removeInput(input); }
-  void removeInputs() { _back->removeInputs(); _activeButton = NULL; }
+  void removeInputs();
   void resetScroll() { _back->resetScroll(); }
   void reset();
   void resetFont() { _back->reset(_fontSize); _back->updateFont(); }
@@ -91,7 +91,7 @@ struct AnsiWidget {
   void setXY(int x, int y);
   void setScrollSize(int scrollSize);
   int  textHeight(void) { return _back->_charHeight; }
-  void updateInputs(var_p_t form) { _back->updateInputs(form); }
+  void updateInputs(var_p_t form, bool setv) { _back->updateInputs(form, setv); }
 
 private:
   Screen *createScreen(int screenId);

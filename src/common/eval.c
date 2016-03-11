@@ -733,32 +733,196 @@ static inline void eval_extf(var_t *r) {
   }
 }
 
-static inline void eval_callf(var_t *r) {
-  long fcode = code_getaddr();
+static inline void eval_callf_str1(long fcode, var_t *r) {
   var_t vtmp;
-
-  switch (fcode) {
-  case kwVADDR:
-    // Variable's address
-    V_FREE(r);
-    if (CODE_PEEK() != kwTYPE_LEVEL_BEGIN) {
-      err_missing_lp();
-    } else {
-      var_t *vp;
-      IP++;
-      vp = code_getvarptr();
-      if (!prog_error) {
-        r->type = V_INT;
-        r->v.i = (intptr_t) vp->v.p.ptr;
-      }
+  // str FUNC(any)
+  if (CODE_PEEK() != kwTYPE_LEVEL_BEGIN) {
+    err_missing_lp();
+  } else {
+    IP++;
+    v_init(&vtmp);
+    eval(&vtmp);
+    if (!prog_error) {
+      r->type = V_STR;
+      r->v.p.ptr = NULL;
+      cmd_str1(fcode, &vtmp, r);
+      v_free(&vtmp);
       if (CODE_PEEK() != kwTYPE_LEVEL_END) {
         err_missing_rp();
       } else {
         IP++;
       }
     }
-    break;
+  }
+}
 
+static inline void eval_callf_strn(long fcode, var_t *r) {
+  // str FUNC(...)
+  if (CODE_PEEK() != kwTYPE_LEVEL_BEGIN) {
+    err_missing_lp();
+  } else {
+    r->type = V_STR;
+    r->v.p.ptr = NULL;
+    IP++;                 // '('
+    cmd_strN(fcode, r);
+    if (!prog_error) {
+      if (CODE_PEEK() == kwTYPE_SEP) {
+        IP++;             // ','
+      } else if (CODE_PEEK() == kwTYPE_LEVEL_END) {
+        IP++;             // ')'
+      } else {
+        err_missing_rp();
+      }
+    }
+  }
+}
+
+static inline void eval_callf_int(long fcode, var_t *r) {
+  // int FUNC(...)
+  if (CODE_PEEK() != kwTYPE_LEVEL_BEGIN) {
+    err_missing_lp();
+  } else {
+    r->type = V_INT;
+    IP++;                 // '('
+    cmd_intN(fcode, r);
+    if (!prog_error) {
+      if (CODE_PEEK() == kwTYPE_SEP) {
+        IP++;             // ','
+      } else if (CODE_PEEK() == kwTYPE_LEVEL_END) {
+        IP++;             // ')'
+      } else {
+        err_missing_sep();
+      }
+    }
+  }
+}
+
+static inline void eval_callf_num(long fcode, var_t *r) {
+  // num FUNC(STR)
+  var_t vtmp;
+  if (CODE_PEEK() != kwTYPE_LEVEL_BEGIN) {
+    err_missing_lp();
+  } else {
+    IP++;
+    v_init(&vtmp);
+    eval(&vtmp);
+    if (!prog_error) {
+      cmd_ns1(fcode, &vtmp, r);
+      v_free(&vtmp);
+      if (CODE_PEEK() != kwTYPE_LEVEL_END) {
+        err_missing_rp();
+      } else {
+        IP++;
+      }
+    }
+  }
+}
+
+static inline void eval_callf_numN(long fcode, var_t *r) {
+  // fp FUNC(...)
+  if (CODE_PEEK() != kwTYPE_LEVEL_BEGIN) {
+    err_missing_lp();
+  } else {
+    r->type = V_NUM;
+    IP++;                 // '('
+    cmd_numN(fcode, r);
+    if (!prog_error) {
+      if (CODE_PEEK() == kwTYPE_SEP) {
+        IP++;             // ','
+      } else if (CODE_PEEK() == kwTYPE_LEVEL_END) {
+        IP++;             // ')' level
+      } else {
+        err_missing_sep();
+      }
+    }
+  }
+}
+
+static inline void eval_callf_imathI1(long fcode, var_t *r) {
+  // int FUNC(fp)
+  var_t vtmp;
+  if (CODE_PEEK() != kwTYPE_LEVEL_BEGIN) {
+    err_missing_lp();
+  } else {
+    IP++;
+    v_init(&vtmp);
+    eval(&vtmp);
+    if (!prog_error) {
+      r->type = V_INT;
+      r->v.i = cmd_imath1(fcode, &vtmp);
+      if (CODE_PEEK() != kwTYPE_LEVEL_END) {
+        err_missing_rp();
+      } else {
+        IP++;
+      }
+    }
+  }
+}
+
+static inline void eval_callf_imathI2(long fcode, var_t *r) {
+  var_t vtmp;
+  // int FUNC(void)
+  vtmp.type = V_INT;
+  vtmp.v.i = 0;
+  r->type = V_INT;
+  r->v.i = cmd_imath1(fcode, &vtmp);
+}
+
+static inline void eval_callf_mathN1(long fcode, var_t *r) {
+  var_t vtmp;
+  if (CODE_PEEK() != kwTYPE_LEVEL_BEGIN) {
+    err_missing_lp();
+  } else {
+    IP++;
+    v_init(&vtmp);
+    eval(&vtmp);
+    if (!prog_error) {
+      r->type = V_NUM;
+      r->v.n = cmd_math1(fcode, &vtmp);
+      v_free(&vtmp);
+      if (!prog_error) {
+        if (CODE_PEEK() != kwTYPE_LEVEL_END) {
+          err_missing_rp();
+        } else {
+          IP++;
+        }
+      }
+    }
+  }
+}
+
+static inline void eval_callf_mathN2(long fcode, var_t *r) {
+  // fp FUNC(void)
+  var_t vtmp;
+  vtmp.type = V_NUM;
+  vtmp.v.n = 0;
+  r->type = V_NUM;
+  r->v.n = cmd_math1(fcode, &vtmp);
+}
+
+static inline void eval_callf_genfunc(long fcode, var_t *r) {
+  // any FUNC(...)
+  if (CODE_PEEK() != kwTYPE_LEVEL_BEGIN) {
+    err_missing_lp();
+  } else {
+    IP++;
+    cmd_genfunc(fcode, r);
+    if (!prog_error && CODE_PEEK() == kwTYPE_LEVEL_END) {
+      IP++;
+    }
+  }
+}
+
+static inline void eval_callf_free(var_t *r) {
+  r->type = V_INT;
+  r->v.i = dev_freefilehandle();
+}
+
+static inline void eval_callf(var_t *r) {
+  long fcode = code_getaddr();
+  V_FREE(r);
+
+  switch (fcode) {
   case kwASC:
   case kwVAL:
   case kwTEXTWIDTH:
@@ -768,26 +932,8 @@ static inline void eval_callf(var_t *r) {
   case kwISDIR:
   case kwISLINK:
   case kwACCESSF:
-    // num FUNC(STR)
-    V_FREE(r);
-    if (CODE_PEEK() != kwTYPE_LEVEL_BEGIN) {
-      err_missing_lp();
-    } else {
-      IP++;
-      v_init(&vtmp);
-      eval(&vtmp);
-      if (!prog_error) {
-        cmd_ns1(fcode, &vtmp, r);
-        v_free(&vtmp);
-        if (CODE_PEEK() != kwTYPE_LEVEL_END) {
-          err_missing_rp();
-        } else {
-          IP++;
-        }
-      }
-    }
+    eval_callf_num(fcode, r);
     break;
-
   case kwCHR:
   case kwSTR:
   case kwOCT:
@@ -802,32 +948,10 @@ static inline void eval_callf(var_t *r) {
   case kwCAT:
   case kwENVIRONF:
   case kwTRIM:
-  case kwBALLOC:
   case kwBCS:
   case kwCBS:
-    // str FUNC(any)
-    V_FREE(r);
-    if (CODE_PEEK() != kwTYPE_LEVEL_BEGIN) {
-      err_missing_lp();
-    } else {
-      IP++;
-      v_init(&vtmp);
-      eval(&vtmp);
-      if (!prog_error) {
-        r->type = V_STR;
-        r->v.p.ptr = NULL;
-        cmd_str1(fcode, &vtmp, r);
-        v_free(&vtmp);
-
-        if (CODE_PEEK() != kwTYPE_LEVEL_END) {
-          err_missing_rp();
-        } else {
-          IP++;
-        }
-      }
-    }
+    eval_callf_str1(fcode, r);
     break;
-
   case kwTRANSLATEF:
   case kwSTRING:
   case kwSQUEEZE:
@@ -843,36 +967,13 @@ static inline void eval_callf(var_t *r) {
   case kwRUNF:
   case kwENCLOSE:
   case kwDISCLOSE:
-    // str FUNC(...)
-    V_FREE(r);
-    if (CODE_PEEK() != kwTYPE_LEVEL_BEGIN) {
-      err_missing_lp();
-    } else {
-      r->type = V_STR;
-      r->v.p.ptr = NULL;
-
-      IP++;                 // '('
-      cmd_strN(fcode, r);
-      if (!prog_error) {
-        if (CODE_PEEK() == kwTYPE_SEP) {
-          IP++;             // ','
-        } else if (CODE_PEEK() == kwTYPE_LEVEL_END) {
-          IP++;             // ')'
-        } else {
-          err_missing_rp();
-        }
-      }
-    }
+    eval_callf_strn(fcode, r);
     break;
-
   case kwINKEY:
   case kwTIME:
   case kwDATE:
-    // str FUNC(void)
-    V_FREE(r);
     cmd_str0(fcode, r);
     break;
-
   case kwINSTR:
   case kwRINSTR:
   case kwLBOUND:
@@ -886,49 +987,13 @@ static inline void eval_callf(var_t *r) {
   case kwISSTRING:
   case kwRGB:
   case kwRGBF:
-    // int FUNC(...)
-    V_FREE(r);
-    if (CODE_PEEK() != kwTYPE_LEVEL_BEGIN) {
-      err_missing_lp();
-    } else {
-      r->type = V_INT;
-      IP++;                 // '('
-      cmd_intN(fcode, r);
-      if (!prog_error) {
-        if (CODE_PEEK() == kwTYPE_SEP) {
-          IP++;             // ','
-        } else if (CODE_PEEK() == kwTYPE_LEVEL_END) {
-          IP++;             // ')'
-        } else {
-          err_missing_sep();
-        }
-      }
-    }
+    eval_callf_int(fcode, r);
     break;
-
   case kwATAN2:
   case kwPOW:
   case kwROUND:
-    // fp FUNC(...)
-    V_FREE(r);
-    if (CODE_PEEK() != kwTYPE_LEVEL_BEGIN) {
-      err_missing_lp();
-    } else {
-      r->type = V_NUM;
-      IP++;                 // '('
-      cmd_numN(fcode, r);
-      if (!prog_error) {
-        if (CODE_PEEK() == kwTYPE_SEP) {
-          IP++;             // ','
-        } else if (CODE_PEEK() == kwTYPE_LEVEL_END) {
-          IP++;             // ')' level
-        } else {
-          err_missing_sep();
-        }
-      }
-    }
+    eval_callf_numN(fcode, r);
     break;
-
   case kwCOS:
   case kwSIN:
   case kwTAN:
@@ -967,65 +1032,21 @@ static inline void eval_callf(var_t *r) {
   case kwFLOOR:
   case kwCEIL:
   case kwFRAC:
-    V_FREE(r);
-    if (CODE_PEEK() != kwTYPE_LEVEL_BEGIN) {
-      err_missing_lp();
-    } else {
-      IP++;
-      v_init(&vtmp);
-      eval(&vtmp);
-      if (!prog_error) {
-        r->type = V_NUM;
-        r->v.n = cmd_math1(fcode, &vtmp);
-        v_free(&vtmp);
-        if (!prog_error) {
-          if (CODE_PEEK() != kwTYPE_LEVEL_END) {
-            err_missing_rp();
-          } else {
-            IP++;
-          }
-        }
-      }
-    }
+    eval_callf_mathN1(fcode, r);
     break;
-
   case kwFRE:
   case kwSGN:
   case kwCINT:
   case kwEOF:
   case kwSEEKF:
   case kwLOF:
-    // int FUNC(fp)
-    V_FREE(r);
-    if (CODE_PEEK() != kwTYPE_LEVEL_BEGIN) {
-      err_missing_lp();
-    } else {
-      IP++;
-      v_init(&vtmp);
-      eval(&vtmp);
-      if (!prog_error) {
-        r->type = V_INT;
-        r->v.i = cmd_imath1(fcode, &vtmp);
-        if (CODE_PEEK() != kwTYPE_LEVEL_END) {
-          err_missing_rp();
-        } else {
-          IP++;
-        }
-      }
-    }
+    eval_callf_imathI1(fcode, r);
     break;
-
   case kwXPOS:
   case kwYPOS:
   case kwRND:
-    // fp FUNC(void)
-    V_FREE(r);
-    vtmp.type = V_NUM;
-    vtmp.v.n = 0;
-    r->type = V_NUM;
-    r->v.n = cmd_math1(fcode, &vtmp);
+    eval_callf_mathN2(fcode, r);
     break;
-
   case kwMAX:
   case kwMIN:
   case kwABSMAX:
@@ -1061,42 +1082,19 @@ static inline void eval_callf(var_t *r) {
   case kwIMAGE:
   case kwFORM:
   case kwWINDOW:
-    // any FUNC(...)
-    V_FREE(r);
-    if (CODE_PEEK() != kwTYPE_LEVEL_BEGIN) {
-      err_missing_lp();
-    } else {
-      IP++;
-      cmd_genfunc(fcode, r);
-      if (!prog_error && CODE_PEEK() == kwTYPE_LEVEL_END) {
-        IP++;
-      }
-    }
+    eval_callf_genfunc(fcode, r);
     break;
-
   case kwTICKS:
-  case kwTICKSPERSEC:
   case kwTIMER:
   case kwPROGLINE:
-    // int FUNC(void)
-    V_FREE(r);
-    vtmp.type = V_INT;
-    vtmp.v.i = 0;
-    r->type = V_INT;
-    r->v.i = cmd_imath1(fcode, &vtmp);
+    eval_callf_imathI2(fcode, r);
     break;
-
   case kwFREEFILE:
-    V_FREE(r);
-    r->type = V_INT;
-    r->v.i = dev_freefilehandle();
+    eval_callf_free(r);
     break;
-
   case kwARRAY:
-    V_FREE(r);
     map_from_str(r);
     break;
-
   default:
     err_bfn_err(fcode);
   }

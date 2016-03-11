@@ -18,6 +18,7 @@ using namespace strlib;
 
 String g_exportAddr;
 String g_exportToken;
+int cursorPos;
 
 void onlineHelp(Runtime *runtime, TextEditInput *widget) {
   char path[100];
@@ -107,9 +108,9 @@ void System::editSource(String &loadPath) {
   editWidget->updateUI(NULL, NULL);
   editWidget->setLineNumbers();
   editWidget->setFocus(true);
-  if (strcmp(gsb_last_file, loadPath.c_str()) == 0) {
-    editWidget->setCursorRow(gsb_last_line - 1);
-  }
+  editWidget->setCursorPos(cursorPos);
+  cursorPos = 0;
+
   if (gsb_last_error && !isBack()) {
     editWidget->setCursorRow(gsb_last_line - 1);
     helpWidget->setText(gsb_last_errmsg);
@@ -168,6 +169,7 @@ void System::editSource(String &loadPath) {
       case SB_KEY_F(9):
       case SB_KEY_CTRL('r'):
         _state = kRunState;
+        cursorPos = editWidget->getCursorPos();
         if (editWidget->isDirty()) {
           saveFile(editWidget, loadPath);
         }

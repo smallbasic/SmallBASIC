@@ -44,11 +44,10 @@ using namespace strlib;
 #define CHOICE_BN_W 6
 #define GRAY_BG_COL    0x4e4c46
 #define LABEL_TEXT_COL 0xdfdbd2
-#define FOCUS_COLOR    0x444999
 
 #define FORM_VALUE "value"
 #define FORM_INPUTS "inputs"
-#define FORM_FOCUS_COLOR "focusColor"
+#define FORM_FOCUS "focus"
 #define FORM_INPUT_ID "ID"
 #define FORM_INPUT_X "x"
 #define FORM_INPUT_Y "y"
@@ -127,12 +126,13 @@ struct FormInput : public Shape {
   bool overlaps(MAPoint2d pt, int scrollX, int scrollY);
   bool hasFocus() const;
   void hide() { _visible = false; }
-  int  getBackground(int buttonColor) const;
   int  getId() { return _id; }
   var_p_t getField(var_p_t form);
   bool isVisible() { return _visible; }
   bool isNoFocus() { return _noFocus; }
   void setColor(int bg, int fg) { _bg = bg; _fg = fg; }
+  void setTextColor();
+  void selected();
   void show() { _visible = true; }
   bool _pressed;
 
@@ -230,6 +230,7 @@ struct FormLineInput : public FormEditInput {
   void setText(const char *text) {}
   void clicked(int x, int y, bool pressed);
   void updateField(var_p_t form);
+  bool updateUI(var_p_t form, var_p_t field);
   bool selected(MAPoint2d pt, int scrollX, int scrollY, bool &redraw);
   int padding(bool) const { return 0; }
   char *copy(bool cut);
@@ -260,8 +261,12 @@ struct FormList : public FormInput {
   virtual int getListHeight() const { return _height; }
 
 protected:
+  void selectIndex(int index);
+
   ListModel *_model;
+  // scroll offset
   int _topIndex;
+  // zero is first display item
   int _activeIndex;
 };
 

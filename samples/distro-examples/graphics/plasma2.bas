@@ -29,7 +29,7 @@ while 1
   NEXT x
  NEXT y
 
- fps=TICKSPERSEC/(TICKS-t)
+ fps=1000/(TICKS-t)
  iter++
  at bw+10,0
  print format("Fps:  ###.##", fps)

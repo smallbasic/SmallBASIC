@@ -6,6 +6,8 @@
 // Download the GNU Public License (GPL) from www.gnu.org
 //
 
+#include "config.h"
+
 #include "common/sys.h"
 #include "common/sbapp.h"
 #include "common/keymap.h"
@@ -14,9 +16,7 @@
 
 extern System *g_system;
 extern FormInput *focusInput;
-extern FormLineInput *focusEdit;
 var_p_t form = NULL;
-int focusColor = FOCUS_COLOR;
 
 enum Mode {
   m_init,
@@ -24,42 +24,8 @@ enum Mode {
   m_selected
 } mode = m_init;
 
-void set_focus(FormInput *focus) {
-  focusEdit = NULL;
-  if (!focus->isNoFocus()) {
-    if (focusInput != focus) {
-      g_system->getOutput()->setDirty();
-    }
-    focusInput = focus;
-  }
-}
-
-struct FormTextInput : public TextEditInput {
-  FormTextInput(const char *text, int chW, int chH, int x, int y, int w, int h):
-    TextEditInput(text, chW, chH, x, y, w, h) {
-  }
-
-  void clicked(int x, int y, bool pressed) {
-    TextEditInput::clicked(x, y, pressed);
-    if (pressed && g_system->isRunning()) {
-      set_focus(this);
-      updateForm(form);
-      mode = m_selected;
-      g_system->getOutput()->setDirty();
-    }
-  }
-};
-
-// returns setBG when the program colours are default
-int FormInput::getBackground(int buttonColor) const {
-  int result = _bg;
-  if (_fg == DEFAULT_FOREGROUND && _bg == DEFAULT_BACKGROUND) {
-    result = hasFocus() ? focusColor : buttonColor;
-  }
-  return result;
-}
-
 void FormInput::clicked(int x, int y, bool pressed) {
+  setFocus(true);
   if (!pressed && g_system->isRunning()) {
     if (_onclick) {
       bcip_t ip = prog_ip;
@@ -80,34 +46,21 @@ void FormInput::clicked(int x, int y, bool pressed) {
         g_system->setLoadBreak(text != NULL ? text : getText());
       }
       else {
-        if (focusInput != NULL) {
-          focusInput->updateField(form);
-        }
-        updateForm(form);
-        mode = m_selected;
+        selected();
       }
     }
-    set_focus(this);
   }
 }
 
-void FormLineInput::clicked(int x, int y, bool pressed) {
-  if (pressed && g_system->isRunning()) {
-    AnsiWidget *out = g_system->getOutput();
-    dev_clrkb();
-    set_focus(this);
-    focusEdit = this;
-    int charWidth = out->getCharWidth();
-    int selected = (x - _x) / charWidth;
-    int len = strlen(_buffer);
-    if (selected > len) {
-      selected = len;
-      _mark = selected;
+void FormInput::selected() {
+  if (form != NULL && g_system->isRunning()) {
+    setFocus(true);
+    updateForm(form);
+    if (focusInput != NULL) {
+      focusInput->updateField(form);
     }
-    if (selected > -1) {
-      _point = selected;
-      out->setDirty();
-    }
+    mode = m_selected;
+    g_system->getOutput()->setDirty();
   }
 }
 
@@ -128,17 +81,19 @@ bool FormLineInput::selected(MAPoint2d pt, int scrollX, int scrollY, bool &redra
 
 void FormDropList::clicked(int x, int y, bool pressed) {
   if (form != NULL && !pressed && g_system->isRunning()) {
-    set_focus(this);
+    setFocus(true);
     updateForm(form);
-    mode = m_selected;
     _listActive = !_listActive;
+    if (!_listActive) {
+      mode = m_selected;
+    }
     g_system->getOutput()->setDirty();
   }
 }
 
 void FormListBox::clicked(int x, int y, bool pressed) {
   if (form != NULL && !pressed && g_system->isRunning()) {
-    set_focus(this);
+    setFocus(true);
     if (_activeIndex != -1) {
       optionSelected(_activeIndex + _topIndex);
     }
@@ -152,7 +107,12 @@ void cmd_form_close(var_s *self) {
 }
 
 void cmd_form_refresh(var_s *self) {
-  g_system->getOutput()->updateInputs(self);
+  var_t arg;
+  v_init(&arg);
+  eval(&arg);
+  bool setVars = v_getint(&arg) == -1;
+  v_free(&arg);
+  g_system->getOutput()->updateInputs(self, setVars);
 }
 
 void cmd_form_do_events(var_s *self) {
@@ -257,7 +217,7 @@ FormInput *create_input(var_p_t v_field) {
         text = value->v.p.ptr;
       }
       if (h * 2 >= charHeight) {
-        widget = new FormTextInput(text, charWidth, charHeight, x, y, w, h);
+        widget = new TextEditInput(text, charWidth, charHeight, x, y, w, h);
       } else {
         widget = new FormLineInput(text, maxSize, false, x, y, w, h);
       }
@@ -305,6 +265,8 @@ extern "C" void v_create_form(var_p_t var) {
 
   if (hasInputs) {
     map_set(var, arg);
+    var_p_t v_focus = map_get(var, FORM_FOCUS);
+    int i_focus = v_focus != NULL ? v_getint(v_focus) : -1;
     var_p_t inputs = map_get(var, FORM_INPUTS);
     for (int i = 0; i < inputs->v.a.size; i++) {
       var_p_t elem = v_elem(inputs, i);
@@ -312,17 +274,13 @@ extern "C" void v_create_form(var_p_t var) {
         FormInput *widget = create_input(elem);
         widget->construct(var, elem, i);
         out->addInput(widget);
+        if (i_focus == i || inputs->v.a.size == 1) {
+          widget->setFocus(true);
+        }
       }
     }
 
-    focusInput = out->getNextField(NULL);
     out->setDirty();
-
-    var_p_t v_fc = map_get(var, FORM_FOCUS_COLOR);
-    if (v_fc != NULL) {
-      focusColor = get_color(v_fc, FOCUS_COLOR);
-    }
-
     v_zerostr(map_add_var(var, FORM_VALUE, 0));
     create_func(var, "doEvents", cmd_form_do_events);
     create_func(var, "close", cmd_form_close);

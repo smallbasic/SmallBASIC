@@ -9,7 +9,7 @@
 #include "config.h"
 
 #include "common/sys.h"
-#include "common/smbas.h"
+#include "common/sbapp.h"
 #include "common/keymap.h"
 #include "ui/utils.h"
 #include "ui/inputs.h"
@@ -74,6 +74,21 @@ int get_color(var_p_t value, int def) {
                strcasecmp(n, "grey") == 0) {
       result = 0x808080;
     }
+  }
+  return result;
+}
+
+int lerp(int c0, int c1, float weight) {
+  int result;
+  if (weight <= 0) {
+    result = c0;
+  } else if (weight >= 1) {
+    result = c1;
+  } else {
+    uint8_t r = ((uint8_t)(c1 >> 24)) * weight + ((uint8_t)(c0 >> 24)) * (1 - weight);
+    uint8_t g = ((uint8_t)(c1 >> 16)) * weight + ((uint8_t)(c0 >> 16)) * (1 - weight);
+    uint8_t b = ((uint8_t)(c1 >>  8)) * weight + ((uint8_t)(c0 >>  8)) * (1 - weight);
+    result = (r << 24) + (g << 16) + (b << 8);
   }
   return result;
 }
@@ -167,7 +182,7 @@ void FormInput::drawButton(const char *caption, int dx, int dy,
   int textX = dx + (w - textW - 1) / 2;
   int textY = dy + (h - textH - 1) / 2;
 
-  maSetColor(getBackground(GRAY_BG_COL));
+  maSetColor(_bg);
   maFillRect(dx, dy, r-dx, b-dy);
 
   if (pressed) {
@@ -194,8 +209,8 @@ void FormInput::drawButton(const char *caption, int dx, int dy,
     maLine(r-1, dy+1, r-1, b-1); // right
   }
 
-  maSetColor(_fg);
   if (caption && caption[0]) {
+    setTextColor();
     maDrawText(textX, textY, caption, strlen(caption));
   }
 }
@@ -230,7 +245,7 @@ void FormInput::drawText(const char *caption, int dx, int dy, int sw, int chw) {
       maDrawText(dx, dy, buffer, len);
       delete [] buffer;
     }
-  } else {
+  } else if (strWidth) {
     maDrawText(dx, dy, caption, strlen(caption));
   }
 }
@@ -245,6 +260,10 @@ bool FormInput::overlaps(MAPoint2d pt, int offsX, int offsY) {
 
 bool FormInput::selected(MAPoint2d pt, int scrollX, int scrollY, bool &redraw) {
   return FormInput::overlaps(pt, scrollX, scrollY);
+}
+
+void FormInput::setTextColor() {
+  maSetColor(hasFocus() || _noFocus ? _fg : lerp(_bg, _fg, 0.7));
 }
 
 // returns the field var attached to the field
@@ -272,8 +291,8 @@ bool FormInput::updateUI(var_p_t form, var_p_t field) {
   if (var == NULL) {
     var = map_get(form, FORM_INPUT_LABEL);
   }
-  if (var != NULL && var->type == V_STR) {
-    setText(var->v.p.ptr);
+  if (var != NULL) {
+    setText(v_getstr(var));
     updated = true;
   }
 
@@ -336,11 +355,10 @@ bool FormInput::hasFocus() const {
 }
 
 void FormInput::setFocus(bool focus) {
-  if (!isNoFocus()) {
-    if (focus == (focusInput != this)) {
-      focusInput = focus ? this : NULL;
-      g_system->getOutput()->setDirty();
-    }
+  focusEdit = NULL;
+  if (!_noFocus && focus == (focusInput != this)) {
+    focusInput = focus ? this : NULL;
+    g_system->getOutput()->setDirty();
   }
 }
 
@@ -401,6 +419,7 @@ void FormTab::draw(int x, int y, int w, int h, int chw) {
 
   maSetColor(_fg);
   drawText(_link, x + (BN_W / 2), y, w, chw);
+  setTextColor();
   maLine(x_end, y + 4, x_end, y + _height - 4);
 
   x_end -= (BN_W / 2);
@@ -459,12 +478,10 @@ int FormEditInput::getControlKey(int key) {
 }
 
 void FormEditInput::setFocus(bool focus) {
-  if (!isNoFocus()) {
-    if (focus == (focusInput != this)) {
-      focusInput = focus ? this : NULL;
-      focusEdit = focus ? this : NULL;
-      g_system->getOutput()->setDirty();
-    }
+  if (!_noFocus && focus == (focusInput != this)) {
+    focusInput = focus ? this : NULL;
+    focusEdit = focus ? this : NULL;
+    g_system->getOutput()->setDirty();
   }
 }
 
@@ -495,10 +512,30 @@ FormLineInput::~FormLineInput() {
   _buffer = NULL;
 }
 
+void FormLineInput::clicked(int x, int y, bool pressed) {
+  if (pressed && g_system->isRunning()) {
+    AnsiWidget *out = g_system->getOutput();
+    dev_clrkb();
+    setFocus(true);
+    focusEdit = this;
+    int charWidth = out->getCharWidth();
+    int selected = (x - _x) / charWidth;
+    int len = strlen(_buffer);
+    if (selected > len) {
+      selected = len;
+      _mark = selected;
+    }
+    if (selected > -1) {
+      _point = selected;
+      out->setDirty();
+    }
+  }
+}
+
 void FormLineInput::draw(int x, int y, int w, int h, int chw) {
-  maSetColor(getBackground(GRAY_BG_COL));
+  maSetColor(_bg);
   maFillRect(x, y, _width, _height);
-  maSetColor(_fg);
+  setTextColor();
 
   int len = strlen(_buffer + _scroll);
   if (len * chw >= _width) {
@@ -511,15 +548,15 @@ void FormLineInput::draw(int x, int y, int w, int h, int chw) {
     int start = MIN(_mark, _point);
     int width = chars * chw;
     int px = x + (start * chw);
-    maSetColor(_fg);
+    setTextColor();
     maFillRect(px, y, width, _height);
-    maSetColor(getBackground(GRAY_BG_COL));
+    maSetColor(_bg);
     maDrawText(px, y, _buffer + _scroll + start, chars);
   } else {
     int px = x + (_point * chw);
     maFillRect(px, y, chw, _height);
     if (_point < len) {
-      maSetColor(getBackground(GRAY_BG_COL));
+      maSetColor(_bg);
       maDrawText(px, y, _buffer + _scroll + _point, 1);
     }
   }
@@ -530,6 +567,9 @@ bool FormLineInput::edit(int key, int screenWidth, int charWidth) {
   key = getControlKey(key);
   if (key >= SB_KEY_SPACE && key < SB_KEY_DELETE && !_controlMode) {
     // insert
+    if (_mark != _point) {
+      cut();
+    }
     if (len < _size - 1) {
       int j = len;
       int point = _scroll + _point;
@@ -629,6 +669,22 @@ void FormLineInput::updateField(var_p_t form) {
     var_p_t value = map_get(field, FORM_INPUT_VALUE);
     v_setstr(value, _buffer);
   }
+}
+
+bool FormLineInput::updateUI(var_p_t form, var_p_t field) {
+  bool updated = FormInput::updateUI(form, field);
+  var_p_t var = map_get(field, FORM_INPUT_VALUE);
+  if (var != NULL) {
+    const char *value = v_getstr(var);
+    if (value && strcmp(value, _buffer) != 0) {
+      int len = MIN(strlen(value), (unsigned)_size);
+      memcpy(_buffer, value, len);
+      _buffer[len] = '\0';
+      _mark = _point = len;
+      updated = true;
+    }
+  }
+  return updated;
 }
 
 char *FormLineInput::copy(bool cut) {
@@ -801,33 +857,37 @@ void FormList::optionSelected(int index) {
   }
 }
 
+void FormList::selectIndex(int index) {
+  if (index > -1 && index < _model->rows()) {
+    MAExtent textSize = maGetTextSize(_model->getTextAt(0));
+    int rowHeight = EXTENT_Y(textSize) + 1;
+    int visibleRows = getListHeight() / rowHeight;
+    if (index < visibleRows) {
+      _activeIndex = index;
+      _topIndex = 0;
+    } else {
+      _topIndex = index - visibleRows + 1;
+      _activeIndex = index - _topIndex;
+    }
+    _model->selected(index);
+  }
+}
+
 bool FormList::updateUI(var_p_t form, var_p_t field) {
   bool updated = FormInput::updateUI(form, field);
   var_p_t var = map_get(field, FORM_INPUT_VALUE);
+  if (var != NULL && (var->type == V_ARRAY || var->type == V_STR)) {
+    // update list control with new array or string variable
+    _model->clear();
+    _model->create(var);
+    updated = true;
+  }
+
+  // set the selectedIndex
+  var = map_get(field, FORM_INPUT_INDEX);
   if (var != NULL) {
-    if (var->type == V_INT) {
-      // update list control with new int variable
-      _model->selected(var->v.i);
-      updated = true;
-    } else if (var->type == V_ARRAY) {
-      // update list control with new array variable
-      _model->clear();
-      _model->create(var);
-      updated = true;
-    } else if (var->type == V_STR) {
-      // update list control with new string variable
-      if (strchr((const char *)var->v.p.ptr, '|')) {
-        // create a new list of items
-        _model->clear();
-        _model->create(var);
-      } else {
-        int selection = _model->getIndex((const char *)var->v.p.ptr);
-        if (selection != -1) {
-          _model->selected(selection);
-        }
-      }
-      updated = true;
-    }
+    selectIndex(v_getint(var));
+    updated = true;
   }
   return updated;
 }
@@ -860,6 +920,8 @@ bool FormList::edit(int key, int screenWidth, int charWidth) {
     MAExtent textSize = maGetTextSize(_model->getTextAt(0));
     int rowHeight = EXTENT_Y(textSize) + 1;
     int visibleRows = getListHeight() / rowHeight;
+    int activeIndex = _activeIndex;
+    int topIndex = _topIndex;
 
     if (key == SB_KEY_UP) {
       if (_activeIndex > 0) {
@@ -875,8 +937,33 @@ bool FormList::edit(int key, int screenWidth, int charWidth) {
         _activeIndex++;
       }
     }
+    if (activeIndex != _activeIndex || topIndex != _topIndex) {
+      _model->selected(_topIndex + _activeIndex);
+      selected();
+    }
   } else if (key == SB_KEY_ENTER) {
     clicked(-1, -1, false);
+  } else {
+    // match by keystroke
+    int firstIndex = -1;
+    int lastIndex = -1;
+    for (int index = 0; index < _model->rows(); index++) {
+      const char *text = _model->getTextAt(index);
+      if (text && tolower(text[0]) == tolower(key)) {
+        if (firstIndex == -1) {
+          firstIndex = index;
+        }
+        if (index > _activeIndex + _topIndex) {
+          lastIndex = index;
+          break;
+        }
+      }
+    }
+    int index = lastIndex != -1 ? lastIndex : firstIndex;
+    if (index != -1) {
+      selectIndex(index);
+      selected();
+    }
   }
   return true;
 }
@@ -889,7 +976,7 @@ FormListBox::FormListBox(ListModel *model, int x, int y, int w, int h) :
 }
 
 void FormListBox::draw(int x, int y, int w, int h, int chw) {
-  maSetColor(getBackground(GRAY_BG_COL));
+  maSetColor(_bg);
   maFillRect(x, y, _width, _height);
   MAExtent textSize = maGetTextSize(_model->getTextAt(0));
   int rowHeight = EXTENT_Y(textSize) + 1;
@@ -900,12 +987,12 @@ void FormListBox::draw(int x, int y, int w, int h, int chw) {
       break;
     }
     if (i == _activeIndex) {
-      maSetColor(_fg);
+      setTextColor();
       maFillRect(x, textY, _width, rowHeight);
-      maSetColor(getBackground(GRAY_BG_COL));
+      maSetColor(_bg);
       drawText(str, x, textY, w, chw);
     } else {
-      maSetColor(_fg);
+      setTextColor();
       drawText(str, x, textY, w, chw);
     }
     textY += rowHeight;
@@ -949,6 +1036,9 @@ FormDropList::FormDropList(ListModel *model, int x, int y, int w, int h) :
 }
 
 void FormDropList::draw(int x, int y, int w, int h, int chw) {
+  if (!hasFocus()) {
+    _listActive = false;
+  }
   bool pressed = _listActive ? false : _pressed;
   drawButton(getText(), x, y, _width - CHOICE_BN_W, _height, pressed);
   drawButton("", x + _width - CHOICE_BN_W, y, CHOICE_BN_W, _height, false);
@@ -979,17 +1069,17 @@ void FormDropList::drawList(int dx, int dy, int sh) {
     _listHeight += textHeight;
     _visibleRows++;
   }
-  maSetColor(getBackground(GRAY_BG_COL));
+  maSetColor(_bg);
   maFillRect(dx, dy + _height, _listWidth, _listHeight);
   for (int i = 0; i < _visibleRows; i++) {
     const char *str = _model->getTextAt(i + _topIndex);
     if (i == _activeIndex) {
-      maSetColor(_fg);
+      setTextColor();
       maFillRect(dx, textY, _listWidth, textHeight);
-      maSetColor(getBackground(GRAY_BG_COL));
+      maSetColor(_bg);
       maDrawText(dx, textY, str, strlen(str));
     } else {
-      maSetColor(_fg);
+      setTextColor();
       maDrawText(dx, textY, str, strlen(str));
     }
     textY += textHeight;
@@ -1050,7 +1140,7 @@ FormImage::~FormImage() {
 void FormImage::draw(int x, int y, int w, int h, int chw) {
   int dx = _pressed ? x + 1 : x;
   int dy = _pressed ? y + 1 : y;
-  maSetColor(getBackground(GRAY_BG_COL));
+  maSetColor(_bg);
   maFillRect(x, y, _width, _height);
   _image->draw(dx + 1, dy + 1, w, h, chw);
 }

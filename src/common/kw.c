@@ -44,7 +44,6 @@ fcode_t kw_noarg_func_table[] = {
   kwTIME,
   kwDATE,
   kwTICKS,
-  kwTICKSPERSEC,
   kwTIMER,
   kwPROGLINE,
   kwFREEFILE,
