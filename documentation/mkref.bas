@@ -74,7 +74,7 @@ sub mk_help(byref in_map)
 end
 
 sub mk_text_reference(byref in_map)
-  local i, row, group, type, keyword, syntax, brief, comments
+  local i, row, group, type, keyword, syntax, brief, comments, counter
   local in_map_len = len(in_map) - 1
   local end_block = "<!-- end heading block -->"
 
@@ -95,6 +95,7 @@ sub mk_text_reference(byref in_map)
   ?
   ?
 
+  counter = 0
   for i = 0 to in_map_len
     row = in_map(i).body_value
     group = get_field(row, "group=", false)
@@ -102,8 +103,9 @@ sub mk_text_reference(byref in_map)
     keyword = get_field(row, "keyword=", false)
     syntax = get_field(row, "syntax=", false)
     brief = get_field(row, "brief=", false)
+    counter++
 
-    ? (i+1) + ". (" + group + ") " + keyword
+    ? counter + ". (" + group + ") " + keyword
     ?
     ? syntax
     ?
