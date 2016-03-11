@@ -733,26 +733,6 @@ static inline void eval_extf(var_t *r) {
   }
 }
 
-static inline void eval_callf_addr(var_t *r) {
-  // Variable's address
-  if (CODE_PEEK() != kwTYPE_LEVEL_BEGIN) {
-    err_missing_lp();
-  } else {
-    var_t *vp;
-    IP++;
-    vp = code_getvarptr();
-    if (!prog_error) {
-      r->type = V_INT;
-      r->v.i = (intptr_t) vp->v.p.ptr;
-    }
-    if (CODE_PEEK() != kwTYPE_LEVEL_END) {
-      err_missing_rp();
-    } else {
-      IP++;
-    }
-  }
-}
-
 static inline void eval_callf_str1(long fcode, var_t *r) {
   var_t vtmp;
   // str FUNC(any)
@@ -943,9 +923,6 @@ static inline void eval_callf(var_t *r) {
   V_FREE(r);
 
   switch (fcode) {
-  case kwVADDR:
-    eval_callf_addr(r);
-    break;
   case kwASC:
   case kwVAL:
   case kwTEXTWIDTH:
@@ -971,7 +948,6 @@ static inline void eval_callf(var_t *r) {
   case kwCAT:
   case kwENVIRONF:
   case kwTRIM:
-  case kwBALLOC:
   case kwBCS:
   case kwCBS:
     eval_callf_str1(fcode, r);

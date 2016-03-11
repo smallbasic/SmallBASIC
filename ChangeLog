@@ -6,6 +6,7 @@
 	Added "industrial" editor theme from Shian (slot 2)
 	Runtime errors now show source screen with red error highlighter
 	Form refresh command now takes an boolean arg, true=push ui state to vars
+	Removed BALLOC, MALLOC and VADR keywords
 
 2016-02-11
 	Added export to mobile command (SDL)

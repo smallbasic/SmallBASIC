@@ -395,8 +395,6 @@ enum func_keywords {
   kwTRANSLATEF,
   kwCHOP,
   kwBGETC,
-  kwBALLOC,
-  kwVADDR,
   kwSEQ,
   kwCBS,
   kwBCS,
