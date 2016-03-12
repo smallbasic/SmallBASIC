@@ -296,6 +296,13 @@ void AnsiWidget::setColor(long fg) {
   _back->setColor(fg);
 }
 
+// sets the font
+void AnsiWidget::setFont(int size, bool bold, bool italic) {
+  _back->setGraphicsRendition('m', bold ? 1 : 21, 0);
+  _back->setGraphicsRendition('m', italic ? 3 : 23, 0);
+  _back->updateFont(size);
+}
+
 // sets the text font size
 void AnsiWidget::setFontSize(int fontSize) {
   this->_fontSize = fontSize;
@@ -512,20 +519,7 @@ bool AnsiWidget::doEscape(const char *&p, int textHeight) {
     p++;
   }
 
-  if (*p == ' ') {
-    p++;
-    switch (*p) {
-    case 'C':
-      // GSS Graphic Size Selection
-      _back->_fontSize = escValue;
-      _back->updateFont();
-      break;
-    }
-    if (p[1] == ';') {
-      // advance to the separator
-      p++;
-    }
-  } else if (_back->setGraphicsRendition(*p, escValue, textHeight)) {
+  if (_back->setGraphicsRendition(*p, escValue, textHeight)) {
     _back->updateFont();
   }
 

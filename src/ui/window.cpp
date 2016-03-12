@@ -16,6 +16,7 @@
 #include "ui/system.h"
 
 extern System *g_system;
+void create_func(var_p_t form, const char *name, method cb);
 
 #define WINDOW_SCREEN1  "graphicsScreen1"
 #define WINDOW_SCREEN2  "graphicsScreen2"
@@ -27,6 +28,7 @@ extern System *g_system;
 #define WINDOW_MESSAGE  "message"
 #define WINDOW_VKEYPAD  "showKeypad"
 #define WINDOW_INSET    "insetTextScreen"
+#define WINDOW_SETFONT  "setFont"
 
 // returns the next set of string variable arguments as a String list
 StringList *get_items() {
@@ -90,6 +92,18 @@ void cmd_window_inset(var_s *self) {
   }
 }
 
+void cmd_window_setfont(var_s *self) {
+  var_num_t size;
+  var_int_t bold, italic;
+  char *unit = NULL;
+  par_massget("FSII", &size, &unit, &bold, &italic);
+  if (unit != NULL && strcmp(unit, "em") == 0) {
+    size *= g_system->getOutput()->getFontSize();
+  }
+  g_system->getOutput()->setFont(size, bold, italic);
+  pfree(unit);
+}
+
 void cmd_window_alert(var_s *self) {
   StringList *items = get_items();
   if (!prog_error && items->size() > 0) {
@@ -130,51 +144,16 @@ void cmd_window_message(var_s *self) {
 
 extern "C" void v_create_window(var_p_t var) {
   map_init(var);
-
-  var_p_t v_select_screen1 = map_add_var(var, WINDOW_SCREEN1, 0);
-  v_select_screen1->type = V_FUNC;
-  v_select_screen1->v.fn.self = var;
-  v_select_screen1->v.fn.cb = cmd_window_select_screen1;
-
-  var_p_t v_select_screen2 = map_add_var(var, WINDOW_SCREEN2, 0);
-  v_select_screen2->type = V_FUNC;
-  v_select_screen2->v.fn.self = var;
-  v_select_screen2->v.fn.cb = cmd_window_select_screen2;
-
-  var_p_t v_select_screen3 = map_add_var(var, WINDOW_SCREEN3, 0);
-  v_select_screen3->type = V_FUNC;
-  v_select_screen3->v.fn.self = var;
-  v_select_screen3->v.fn.cb = cmd_window_select_screen3;
-
-  var_p_t v_alert = map_add_var(var, WINDOW_ALERT, 0);
-  v_alert->type = V_FUNC;
-  v_alert->v.fn.self = var;
-  v_alert->v.fn.cb = cmd_window_alert;
-
-  var_p_t v_ask = map_add_var(var, WINDOW_ASK, 0);
-  v_ask->type = V_FUNC;
-  v_ask->v.fn.self = var;
-  v_ask->v.fn.cb = cmd_window_ask;
-
-  var_p_t v_message = map_add_var(var, WINDOW_MESSAGE, 0);
-  v_message->type = V_FUNC;
-  v_message->v.fn.self = var;
-  v_message->v.fn.cb = cmd_window_message;
-
-  var_p_t v_menu = map_add_var(var, WINDOW_MENU, 0);
-  v_menu->type = V_FUNC;
-  v_menu->v.fn.self = var;
-  v_menu->v.fn.cb = cmd_window_menu;
-
-  var_p_t v_vkeypad = map_add_var(var, WINDOW_VKEYPAD, 0);
-  v_vkeypad->type = V_FUNC;
-  v_vkeypad->v.fn.self = var;
-  v_vkeypad->v.fn.cb = cmd_window_show_keypad;
-
-  var_p_t v_inset = map_add_var(var, WINDOW_INSET, 0);
-  v_inset->type = V_FUNC;
-  v_inset->v.fn.self = var;
-  v_inset->v.fn.cb = cmd_window_inset;
+  create_func(var, WINDOW_SCREEN1, cmd_window_select_screen1);
+  create_func(var, WINDOW_SCREEN2, cmd_window_select_screen2);
+  create_func(var, WINDOW_SCREEN3, cmd_window_select_screen3);
+  create_func(var, WINDOW_ALERT, cmd_window_alert);
+  create_func(var, WINDOW_ASK, cmd_window_ask);
+  create_func(var, WINDOW_MESSAGE, cmd_window_message);
+  create_func(var, WINDOW_MENU, cmd_window_menu);
+  create_func(var, WINDOW_VKEYPAD, cmd_window_show_keypad);
+  create_func(var, WINDOW_INSET, cmd_window_inset);
+  create_func(var, WINDOW_SETFONT, cmd_window_setfont);
 }
 
 extern "C" void dev_show_page() {

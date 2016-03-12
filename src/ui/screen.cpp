@@ -669,6 +669,10 @@ void GraphicScreen::resize(int newWidth, int newHeight, int oldWidth,
   }
 }
 
+void GraphicScreen::updateFont(int size) {
+  setFont(_bold, _italic, size > 0 ? size : _fontSize);
+}
+
 // handles the given escape character. Returns whether the font has changed
 bool GraphicScreen::setGraphicsRendition(const char c, int escValue, int lineHeight) {
   switch (c) {

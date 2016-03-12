@@ -44,7 +44,7 @@ struct Screen : public Shape {
   virtual void reset(int fontSize);
   virtual void resize(int newWidth, int newHeight, int oldWidth,
                       int oldHeight, int lineHeight) = 0;
-  virtual void updateFont() = 0;
+  virtual void updateFont(int size=-1) = 0;
   virtual int  getMaxHScroll() = 0;
 
   void add(Shape *button);
@@ -109,7 +109,7 @@ struct GraphicScreen : public Screen {
   void setPixel(int x, int y, int c);
   void resize(int newWidth, int newHeight, int oldWidth,
               int oldHeight, int lineHeight);
-  void updateFont() { setFont(_bold, _italic, _fontSize); }
+  void updateFont(int size);
   int  getPixel(int x, int y);
   int  getMaxHScroll() { return 0; }
 
@@ -327,7 +327,7 @@ struct TextScreen : public Screen {
   bool setGraphicsRendition(const char c, int escValue, int lineHeight);
   void setOver(Screen *over) { _over = over; }
   void setPixel(int x, int y, int c) {}
-  void updateFont() {}
+  void updateFont(int size) {}
   int  getMaxHScroll() { return (_cols * _charWidth) - w(); }
 
 private:
