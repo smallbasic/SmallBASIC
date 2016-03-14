@@ -415,7 +415,7 @@ void Runtime::pollEvents(bool blocking) {
       case SDL_TEXTINPUT:
         // pre-transformed/composted text
         mod = SDL_GetModState();
-        if (!mod || (mod & KMOD_SHIFT)) {
+        if (!mod || (mod & (KMOD_SHIFT|KMOD_CAPS))) {
           // ALT + CTRL keys handled in SDL_KEYDOWN
           for (int i = 0; ev.text.text[i] != 0; i++) {
             MAEvent *keyEvent = new MAEvent();
