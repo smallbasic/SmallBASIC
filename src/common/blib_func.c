@@ -918,7 +918,6 @@ void cmd_str1(long funcCode, var_t *arg, var_t *r) {
     r->v.p.ptr = cstrdup(arg->v.p.ptr);
     r->v.p.size = strlen(r->v.p.ptr) + 1;
     break;
-
   case kwBCS:
     //
     // str <- BCS$(str)
@@ -930,7 +929,6 @@ void cmd_str1(long funcCode, var_t *arg, var_t *r) {
     r->v.p.ptr = bstrdup(arg->v.p.ptr);
     r->v.p.size = strlen(r->v.p.ptr) + 1;
     break;
-
   case kwOCT:
     //
     // str <- OCT$(n)
@@ -1165,6 +1163,13 @@ void cmd_str1(long funcCode, var_t *arg, var_t *r) {
       }
     }
     break;
+  case kwTIMESTAMP:
+    //
+    // str <- TIMESTAMP(file)
+    //
+    r->v.p.size = dev_filemtime(arg->v.p.ptr, &r->v.p.ptr);
+    break;
+
   default:
     rt_raise("Unsupported built-in function call %ld, please report this bug (5)", funcCode);
   };

@@ -69,8 +69,9 @@ struct System {
 
 protected:
   void checkModifiedTime();
-  void editSource(strlib::String &loadPath);
+  void editSource(strlib::String loadPath);
   bool execute(const char *bas);
+  bool fileExists(strlib::String &path);
   MAEvent getNextEvent() { return processEvents(1); }
   uint32_t getModifiedTime();
   void handleEvent(MAEvent &event);
@@ -81,7 +82,7 @@ protected:
   void runMain(const char *mainBasPath);
   void runOnce(const char *startupBas);
   void saveFile(TextEditInput *edit, strlib::String &path);
-  void setPath(const char *filename);
+  void setupPath();
   bool setParentPath();
   void setDimensions();
   void showCompletion(bool success);

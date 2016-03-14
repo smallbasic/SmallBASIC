@@ -749,7 +749,7 @@ void System::completeKeyword(int index) {
   }
 }
 
-void System::editSource(strlib::String &loadPath) {
+void System::editSource(strlib::String loadPath) {
   logEntered();
 
   strlib::String fileName;

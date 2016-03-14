@@ -743,14 +743,14 @@ static inline void eval_callf_str1(long fcode, var_t *r) {
     v_init(&vtmp);
     eval(&vtmp);
     if (!prog_error) {
-      r->type = V_STR;
-      r->v.p.ptr = NULL;
-      cmd_str1(fcode, &vtmp, r);
-      v_free(&vtmp);
       if (CODE_PEEK() != kwTYPE_LEVEL_END) {
         err_missing_rp();
       } else {
         IP++;
+        r->type = V_STR;
+        r->v.p.ptr = NULL;
+        cmd_str1(fcode, &vtmp, r);
+        v_free(&vtmp);
       }
     }
   }
@@ -807,12 +807,12 @@ static inline void eval_callf_num(long fcode, var_t *r) {
     v_init(&vtmp);
     eval(&vtmp);
     if (!prog_error) {
-      cmd_ns1(fcode, &vtmp, r);
-      v_free(&vtmp);
       if (CODE_PEEK() != kwTYPE_LEVEL_END) {
         err_missing_rp();
       } else {
         IP++;
+        cmd_ns1(fcode, &vtmp, r);
+        v_free(&vtmp);
       }
     }
   }
@@ -848,12 +848,12 @@ static inline void eval_callf_imathI1(long fcode, var_t *r) {
     v_init(&vtmp);
     eval(&vtmp);
     if (!prog_error) {
-      r->type = V_INT;
-      r->v.i = cmd_imath1(fcode, &vtmp);
       if (CODE_PEEK() != kwTYPE_LEVEL_END) {
         err_missing_rp();
       } else {
         IP++;
+        r->type = V_INT;
+        r->v.i = cmd_imath1(fcode, &vtmp);
       }
     }
   }
@@ -877,15 +877,13 @@ static inline void eval_callf_mathN1(long fcode, var_t *r) {
     v_init(&vtmp);
     eval(&vtmp);
     if (!prog_error) {
-      r->type = V_NUM;
-      r->v.n = cmd_math1(fcode, &vtmp);
-      v_free(&vtmp);
-      if (!prog_error) {
-        if (CODE_PEEK() != kwTYPE_LEVEL_END) {
-          err_missing_rp();
-        } else {
-          IP++;
-        }
+      if (CODE_PEEK() != kwTYPE_LEVEL_END) {
+        err_missing_rp();
+      } else {
+        IP++;
+        r->type = V_NUM;
+        r->v.n = cmd_math1(fcode, &vtmp);
+        v_free(&vtmp);
       }
     }
   }
@@ -950,6 +948,7 @@ static inline void eval_callf(var_t *r) {
   case kwTRIM:
   case kwBCS:
   case kwCBS:
+  case kwTIMESTAMP:
     eval_callf_str1(fcode, r);
     break;
   case kwTRANSLATEF:

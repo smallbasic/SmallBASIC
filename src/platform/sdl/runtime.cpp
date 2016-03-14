@@ -974,6 +974,8 @@ extern "C" void dev_trace_line(int lineNo) {
           break;
         }
       }
+    } else if (!g_breakPoints.size()) {
+      runtime->systemPrint("Trace line: %d", lineNo);
     }
   } else {
     runtime->setExit(true);

@@ -127,7 +127,6 @@ bool System::execute(const char *bas) {
   setWindowTitle(bas);
   showCursor(kArrow);
   int result = ::sbasic_main(bas);
-
   if (isRunning()) {
     _state = kActiveState;
   }
@@ -135,6 +134,15 @@ bool System::execute(const char *bas) {
   opt_command[0] = '\0';
   _output->resetFont();
   _output->flush(true);
+  return result;
+}
+
+bool System::fileExists(strlib::String &path) {
+  bool result = false;
+  if (path.length() > 0) {
+    struct stat st_file;
+    result = stat(path.c_str(), &st_file) == 0;
+  }
   return result;
 }
 
@@ -556,10 +564,10 @@ void System::runMain(const char *mainBasPath) {
       _loadPath = activePath;
       _state = kActiveState;
     } else {
-      if (_loadPath.length() > 0) {
+      if (fileExists(_loadPath)) {
         _mainBas = false;
         activePath = _loadPath;
-        setPath(_loadPath);
+        setupPath();
       } else {
         _mainBas = true;
         _loadPath = mainBasPath;
@@ -694,7 +702,8 @@ bool System::setParentPath() {
   return result;
 }
 
-void System::setPath(const char *filename) {
+void System::setupPath() {
+  const char *filename = _loadPath;
   if (strstr(filename, "://") == NULL) {
     const char *slash = strrchr(filename, '/');
     if (!slash) {
@@ -703,10 +712,18 @@ void System::setPath(const char *filename) {
     if (slash) {
       int len = slash - filename;
       if (len > 0) {
-        char path[1024];
+        // change to the loadPath directory
+        char path[FILENAME_MAX + 1];
         strncpy(path, filename, len);
         path[len] = 0;
         chdir(path);
+        struct stat st_file;
+        if (stat(_loadPath.c_str(), &st_file) < 0) {
+          // reset relative path back to full path
+          getcwd(path, FILENAME_MAX);
+          strcat(path, filename + len);
+          _loadPath = path;
+        }
       }
     }
   }

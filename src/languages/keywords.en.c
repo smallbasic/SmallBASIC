@@ -168,10 +168,8 @@ struct spopr_keyword_s spopr_table[] = {
 { "INPUT",              kwINPUTSEP },
 { "OUTPUT",             kwOUTPUTSEP },
 { "APPEND",             kwAPPENDSEP },
-{ "ACCESS",             kwACCESS },
 { "USING",              kwUSING },
 { "USG",                kwUSING },
-{ "SHARED",             kwSHARED },
 { "AS",                 kwAS },
 { "TO",                 kwTO },
 { "DO",                 kwDO },
@@ -208,7 +206,6 @@ struct func_keyword_s func_table[] = {
 { "SPC",                        kwSPACE }, 
 { "TAB",                        kwTAB },
 { "CAT",                        kwCAT },
-{ "ENVIRON",                    kwENVIRONF },
 { "ENV",                        kwENVIRONF },
 { "TRIM",                       kwTRIM },
 { "STRING",                     kwSTRING },
@@ -348,6 +345,7 @@ struct func_keyword_s func_table[] = {
 { "ARRAY",                      kwARRAY },
 { "FORM",                       kwFORM },
 { "WINDOW",                     kwWINDOW },
+{ "TIMESTAMP",                  kwTIMESTAMP },
 { "", 0 }
 };
 
@@ -357,7 +355,6 @@ struct func_keyword_s func_table[] = {
 struct proc_keyword_s proc_table[] = {
 { "CLS",                kwCLS },
 { "THROW",              kwTHROW },
-{ "ENVIRON",            kwENVIRON },
 { "ENV",                kwENVIRON },
 { "LOCATE",             kwLOCATE },
 { "AT",                 kwAT },

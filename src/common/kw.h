@@ -159,8 +159,6 @@ enum keyword {                // line 50
   kwCLOSE,
   kwSCRMODE,
   kwSEEK,
-  kwACCESS,
-  kwSHARED,
   kwTYPE,
   kwSPRINT,
   kwDO,
@@ -402,6 +400,7 @@ enum func_keywords {
   kwARRAY,
   kwIMAGE,
   kwFORM,
+  kwTIMESTAMP,
   kwNULLFUNC
 };
 

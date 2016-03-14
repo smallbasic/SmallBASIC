@@ -756,6 +756,17 @@ int dev_faccess(const char *file);
  */
 int dev_fattr(const char *file);
 
+/**
+ * @ingroup dev_f
+ *
+ * returns the last-modified time for a file as a string
+ *
+ * @param file is the filename
+ * @param buffer the result text
+ * @return number of characters returned in buffer
+ */
+int dev_filemtime(const char *file, char **buffer);
+
 /*
  *
  * FILE I/O
