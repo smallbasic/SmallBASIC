@@ -301,7 +301,7 @@ void System::editSource(String loadPath) {
             loadSource(recentFile.c_str())) {
           editWidget->reload(_programSrc);
           dirty = !editWidget->isDirty();
-          setupStatus(dirtyFile, cleanFile, loadPath);
+          setupStatus(dirtyFile, cleanFile, recentFile);
           setLoadPath(recentFile);
           setWindowTitle(recentFile);
           loadPath = recentFile;

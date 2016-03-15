@@ -3459,12 +3459,10 @@ void comp_init() {
   bc_create(&comp_data);
 
   // create system variables
-  comp_vartable[comp_var_getID(LCN_SV_OSNAME)].dolar_sup = 1;
   comp_var_getID(LCN_SV_SBVER);
   comp_var_getID(LCN_SV_PI);
   comp_var_getID(LCN_SV_XMAX);
   comp_var_getID(LCN_SV_YMAX);
-  comp_var_getID(LCN_SV_BPP);
   comp_var_getID(LCN_SV_TRUE);
   comp_var_getID(LCN_SV_FALSE);
   comp_var_getID(LCN_SV_LINECHART);
@@ -3475,7 +3473,6 @@ void comp_init() {
   comp_var_getID(LCN_SV_X);     // USE keyword
   comp_var_getID(LCN_SV_Y);     // USE keyword
   comp_var_getID(LCN_SV_Z);     // USE keyword
-  comp_var_getID(LCN_SV_VADR);
 }
 
 /*

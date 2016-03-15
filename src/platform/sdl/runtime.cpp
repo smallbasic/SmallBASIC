@@ -819,7 +819,6 @@ void flush_queue() {
 // sbasic implementation
 //
 int osd_devinit(void) {
-  setsysvar_str(SYSVAR_OSNAME, "SDL");
   runtime->setRunning(true);
   osd_clear_sound_queue();
   return 1;

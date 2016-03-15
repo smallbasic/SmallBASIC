@@ -478,26 +478,20 @@ struct proc_keyword_s proc_table[] = {
 #define LCN_ANTIALIAS           "ANTIALIAS"
 
 /* system variables */
-#define LCN_SV_OSNAME           "OSNAME"
 #define LCN_SV_SBVER            "SBVER"
 #define LCN_SV_PI               "PI"
 #define LCN_SV_XMAX             "XMAX"
 #define LCN_SV_YMAX             "YMAX"
-#define LCN_SV_BPP              "BPP"   // Bits Per Pixel
 #define LCN_SV_TRUE             "TRUE"
 #define LCN_SV_FALSE            "FALSE"
 #define LCN_SV_LINECHART        "LINECHART"
 #define LCN_SV_BARCHART         "BARCHART"
-#define LCN_SV_CWD              "CWD"   // Current Working Directory
-#define LCN_SV_HOME             "HOME"  // home directory (user's personal directory)
+#define LCN_SV_CWD              "CWD"
+#define LCN_SV_HOME             "HOME"
 #define LCN_SV_COMMAND          "COMMAND"
-
-// x,y,z (USE keyword parameters)
 #define LCN_SV_X                "X"
 #define LCN_SV_Y                "Y"
 #define LCN_SV_Z                "Z"
-
-#define LCN_SV_VADR             "VIDADR" // video-ram address
 
 // fast cut of comments (pp)
 #define LCN_REM_1               ":rem "

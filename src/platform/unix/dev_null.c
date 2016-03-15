@@ -16,7 +16,6 @@ int osd_devinit() {
   os_color_depth = 1;           // bits per pixel = monochrome
   os_graf_mx = 80;              // screen width in "pixels" (characters =
   os_graf_my = 25;              // screen height in "pixels" (characters =
-  setsysvar_str(SYSVAR_OSNAME, "CONSOLE");
   osd_cls();
   return 1;
 }
