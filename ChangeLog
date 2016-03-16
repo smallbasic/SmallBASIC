@@ -2,7 +2,7 @@
 	Removed TICKSPERSEC
 	Removed BALLOC, MALLOC and VADR keywords. Removed duplicate ENVIRON
 	Added TIMESTAMP to return the modified-datetime of a file
-	Removed system constants BPP and VIDADR, OSNAME
+	Removed system constants BPP and VIDADR, OSNAME, LINECHART, BARCHART
 	TICKS now returns millisecond intervals
 	Refactor eval() for performance
 	Fixed some memory leaks in the ui handler

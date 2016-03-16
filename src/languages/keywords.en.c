@@ -484,8 +484,6 @@ struct proc_keyword_s proc_table[] = {
 #define LCN_SV_YMAX             "YMAX"
 #define LCN_SV_TRUE             "TRUE"
 #define LCN_SV_FALSE            "FALSE"
-#define LCN_SV_LINECHART        "LINECHART"
-#define LCN_SV_BARCHART         "BARCHART"
 #define LCN_SV_CWD              "CWD"
 #define LCN_SV_HOME             "HOME"
 #define LCN_SV_COMMAND          "COMMAND"

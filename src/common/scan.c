@@ -3465,8 +3465,6 @@ void comp_init() {
   comp_var_getID(LCN_SV_YMAX);
   comp_var_getID(LCN_SV_TRUE);
   comp_var_getID(LCN_SV_FALSE);
-  comp_var_getID(LCN_SV_LINECHART);
-  comp_var_getID(LCN_SV_BARCHART);
   comp_vartable[comp_var_getID(LCN_SV_CWD)].dolar_sup = 1;
   comp_vartable[comp_var_getID(LCN_SV_HOME)].dolar_sup = 1;
   comp_vartable[comp_var_getID(LCN_SV_COMMAND)].dolar_sup = 1;

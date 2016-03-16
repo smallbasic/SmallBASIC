@@ -48,14 +48,13 @@
 #define SYSVAR_YMAX         3  /**< system variable, YMAX      @ingroup var */
 #define SYSVAR_TRUE         4  /**< system variable, TRUE      @ingroup var */
 #define SYSVAR_FALSE        5  /**< system variable, FALSE     @ingroup var */
-#define SYSVAR_LINECHART    6  /**< system variable, LINECHART @ingroup var */
-#define SYSVAR_BARCHART     7  /**< system variable, BARCHART  @ingroup var */
-#define SYSVAR_PWD          8  /**< system variable, PWD$      @ingroup var */
-#define SYSVAR_HOME         9  /**< system variable, HOME$     @ingroup var */
-#define SYSVAR_COMMAND      10 /**< system variable, COMMAND$  @ingroup var */
-#define SYSVAR_X            11 /**< system variable, X         @ingroup var */
-#define SYSVAR_Y            12 /**< system variable, Y         @ingroup var */
-#define SYSVAR_Z            13 /**< system variable, Z         @ingroup var */
+#define SYSVAR_PWD          6  /**< system variable, PWD$      @ingroup var */
+#define SYSVAR_HOME         7  /**< system variable, HOME$     @ingroup var */
+#define SYSVAR_COMMAND      8  /**< system variable, COMMAND$  @ingroup var */
+#define SYSVAR_X            9  /**< system variable, X         @ingroup var */
+#define SYSVAR_Y            10 /**< system variable, Y         @ingroup var */
+#define SYSVAR_Z            11 /**< system variable, Z         @ingroup var */
+#define SYSVAR_COUNT        12
 
 /**
  * @ingroup var

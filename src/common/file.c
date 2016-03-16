@@ -786,7 +786,6 @@ int dev_faccess(const char *file) {
  * returns the last-modified time for a file as a string
  */
 int dev_filemtime(const char *file, char **buffer) {
-
   int size = 0;
   struct stat st;
 
