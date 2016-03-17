@@ -1165,8 +1165,8 @@ uint32_t TextEditInput::getHash(const char *str, int offs, int &count) {
         break;
       }
       result += tolower(str[offs + count]);
-      result += (result << 3);
-      result ^= (result >> 1);
+      result += (result << 4);
+      result ^= (result >> 2);
     }
   }
   return result;
