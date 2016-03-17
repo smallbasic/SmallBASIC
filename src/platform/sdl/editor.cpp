@@ -297,19 +297,22 @@ void System::editSource(String loadPath) {
         if (editWidget->isDirty()) {
           saveFile(editWidget, loadPath);
         }
-        if (getRecentFile(recentFile, event.key - SB_KEY_ALT('1')) &&
-            loadSource(recentFile.c_str())) {
-          editWidget->reload(_programSrc);
-          dirty = !editWidget->isDirty();
-          setupStatus(dirtyFile, cleanFile, recentFile);
-          setLoadPath(recentFile);
-          setWindowTitle(recentFile);
-          loadPath = recentFile;
-          if (helpWidget->messageMode() && helpWidget->isVisible()) {
-            showRecentFiles(helpWidget, loadPath);
+        if (getRecentFile(recentFile, event.key - SB_KEY_ALT('1'))) {
+          if (loadSource(recentFile.c_str())) {
+            editWidget->reload(_programSrc);
+            dirty = !editWidget->isDirty();
+            setupStatus(dirtyFile, cleanFile, recentFile);
+            setLoadPath(recentFile);
+            setWindowTitle(recentFile);
+            loadPath = recentFile;
+            if (helpWidget->messageMode() && helpWidget->isVisible()) {
+              showRecentFiles(helpWidget, loadPath);
+            }
+          } else {
+            String message("Failed to load recent file: ");
+            message.append(recentFile);
+            _output->setStatus(message);
           }
-        } else {
-          _output->setStatus("Failed to load recent file");
         }
         _modifiedTime = getModifiedTime();
         break;

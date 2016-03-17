@@ -139,7 +139,9 @@ bool System::execute(const char *bas) {
 
 bool System::fileExists(strlib::String &path) {
   bool result = false;
-  if (path.length() > 0) {
+  if (path.indexOf("://", 1) != -1) {
+    result = true;
+  } else if (path.length() > 0) {
     struct stat st_file;
     result = stat(path.c_str(), &st_file) == 0;
   }
