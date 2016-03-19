@@ -492,8 +492,8 @@ char *get_param_sect(char *text, const char *delim, char *dest) {
 
   while (*p) {
     if (quotes) {
-      if (*p == '\\' && *(p + 1) == '\"') {
-        // add the escaped quote and continue
+      if (*p == '\\' && (*(p + 1) == '\"' || *(p + 1) == '\\')) {
+        // add the escaped quote or slash and continue
         *d++ = *p++;
       } else if (*p == '\"') {
         quotes = 0;
@@ -1791,7 +1791,7 @@ void bc_store_exports(const char *slist) {
   if (comp_exptable.count) {
     offset = comp_exptable.count;
     comp_exptable.count += count;
-    comp_exptable.elem = (unit_sym_t **)realloc(comp_exptable.elem, 
+    comp_exptable.elem = (unit_sym_t **)realloc(comp_exptable.elem,
                                                 comp_exptable.count * sizeof(unit_sym_t **));
   } else {
     offset = 0;
@@ -3684,8 +3684,8 @@ char *comp_format_text(const char *source) {
       }
     } else {
       // in quotes
-      if (*p == '\\' && *(p + 1) == '\"') {
-        // add the escaped quote and continue
+      if (*p == '\\' && (*(p + 1) == '\"' || *(p + 1) == '\\')) {
+        // add the escaped quote or slash and continue
         *ps++ = *p++;
       } else if (*p == '\"' || *p == '\n') {
         // new line auto-ends the quoted string

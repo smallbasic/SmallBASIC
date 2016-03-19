@@ -71,7 +71,7 @@ sub do_about()
   print "(_ ._ _  _.|||_) /\ (_ |/ "
   print "__)| | |(_||||_)/--\__)|\_"
   print
-  print "Version 0.12.5"
+  print "Version 0.12.6"
   print
   print "Copyright (c) 2002-2015 Chris Warren-Smith"
   print "Copyright (c) 1999-2006 Nic Christopoulos" + chr(10)
@@ -386,7 +386,7 @@ sub main
     local frm
     frm.inputs << bn_files
     frm.inputs << bn_online
-    if (osname != "SDL") then
+    if (instr(sbver, "SDL") == 0) then
       frm.inputs << bn_setup
     endif
     frm.inputs << bn_about

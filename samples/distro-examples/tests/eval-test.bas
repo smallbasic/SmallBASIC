@@ -98,3 +98,22 @@ for i = 1 to end_el step 0.1
 next
 expected = 1 + ((end_el-1) * 10)
 if (expected != steps) then throw "incorrect step count:" + steps + " " + expected
+
+rem test fix for http://smallbasic.sourceforge.net/?q=node/1444
+func assertEq(a, b)
+  if a != b
+    throw "result: '" + a + "' != expected: '" + b + "'"
+  endif
+end
+
+assertEq format("\\ \\", "abcde"),   "abc"
+assertEq format(" \\ \\", "abcde"),  " abc"
+assertEq format("\\ \\ ", "abcde"),  "abc "
+assertEq format(" \\ \\ ", "abcde"), " abc "
+assertEq format("\\ $ \\", "abcde"), "ab$cd"
+assertEq format(" \\$\\", "abcde"),  " a$b"
+assertEq format("\\$\\ ", "abcde"),  "a$b "
+assertEq format(" \\$\\ ", "abcde"), " a$b "
+assertEq format(" \\$\\ ", "abcde"), " a$b "
+assertEq format("\\abcde\\", "ABbcde"),  "AabcdeB"
+
