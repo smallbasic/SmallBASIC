@@ -281,7 +281,7 @@ void exec_setup_predefined_variables() {
   setsysvar_num(SYSVAR_PI, SB_PI);
   setsysvar_int(SYSVAR_XMAX, os_graf_mx - 1);
   setsysvar_int(SYSVAR_YMAX, os_graf_my - 1);
-  setsysvar_int(SYSVAR_TRUE, -1);
+  setsysvar_int(SYSVAR_TRUE, 1);
   setsysvar_int(SYSVAR_FALSE, 0);
   setsysvar_str(SYSVAR_PWD, dev_getcwd());
   setsysvar_str(SYSVAR_COMMAND, opt_command);

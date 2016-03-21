@@ -466,9 +466,9 @@ static inline void oper_unary(var_t *r, byte op) {
 static inline void oper_log(var_t *r, var_t *left, byte op) {
   var_int_t li;
   var_int_t ri;
-  int i;
   var_int_t a, b;
   var_int_t ba, bb;
+  int i;
 
   if (op != OPLOG_IN) {
     li = v_igetval(left);
@@ -480,10 +480,10 @@ static inline void oper_log(var_t *r, var_t *left, byte op) {
 
   switch (op) {
   case OPLOG_AND:
-    ri = (li && ri) ? -1 : 0;
+    ri = (li && ri) ? 1 : 0;
     break;
   case OPLOG_OR:
-    ri = (li || ri) ? -1 : 0;
+    ri = (li || ri) ? 1 : 0;
     break;
   case OPLOG_EQV:
     a = li;

@@ -145,7 +145,7 @@ struct opr_keyword_s opr_table[] = {
 { "IMP",   kwTYPE_LOGOPR, OPLOG_IMP },
 { "NAND",  kwTYPE_LOGOPR, OPLOG_NAND },
 { "NOR",   kwTYPE_LOGOPR, OPLOG_NOR },
-{ "XNOR",  kwTYPE_LOGOPR, OPLOG_NOR },
+{ "XNOR",  kwTYPE_LOGOPR, OPLOG_XNOR },
 { "IN",    kwTYPE_CMPOPR, OPLOG_IN },
 { "LIKE",  kwTYPE_CMPOPR, OPLOG_LIKE },
 { "", 0, 0 }

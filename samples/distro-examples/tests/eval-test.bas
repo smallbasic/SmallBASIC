@@ -100,20 +100,93 @@ expected = 1 + ((end_el-1) * 10)
 if (expected != steps) then throw "incorrect step count:" + steps + " " + expected
 
 rem test fix for http://smallbasic.sourceforge.net/?q=node/1444
-func assertEq(a, b)
+func assertEq(a, b, pline)
   if a != b
-    throw "result: '" + a + "' != expected: '" + b + "'"
+    throw "Line: " + pline + " result: '" + a + "' != expected: '" + b + "'"
   endif
 end
 
-assertEq format("\\ \\", "abcde"),   "abc"
-assertEq format(" \\ \\", "abcde"),  " abc"
-assertEq format("\\ \\ ", "abcde"),  "abc "
-assertEq format(" \\ \\ ", "abcde"), " abc "
-assertEq format("\\ $ \\", "abcde"), "ab$cd"
-assertEq format(" \\$\\", "abcde"),  " a$b"
-assertEq format("\\$\\ ", "abcde"),  "a$b "
-assertEq format(" \\$\\ ", "abcde"), " a$b "
-assertEq format(" \\$\\ ", "abcde"), " a$b "
-assertEq format("\\abcde\\", "ABbcde"),  "AabcdeB"
+assertEq format("\\ \\", "abcde"),   "abc",  PROGLINE
+assertEq format(" \\ \\", "abcde"),  " abc", PROGLINE
+assertEq format("\\ \\ ", "abcde"),  "abc ", PROGLINE
+assertEq format(" \\ \\ ", "abcde"), " abc ",PROGLINE
+assertEq format("\\ $ \\", "abcde"), "ab$cd",PROGLINE
+assertEq format(" \\$\\", "abcde"),  " a$b", PROGLINE
+assertEq format("\\$\\ ", "abcde"),  "a$b ", PROGLINE
+assertEq format(" \\$\\ ", "abcde"), " a$b ",PROGLINE
+assertEq format(" \\$\\ ", "abcde"), " a$b ",PROGLINE
+assertEq format("\\abcde\\", "ABbcde"),  "AabcdeB",PROGLINE
 
+rem http://smallbasic.sourceforge.net/?q=node/1445
+rem http://smallbasic.sourceforge.net/?q=node/1461
+rem https://en.wikipedia.org/wiki/XOR_gate
+rem https://en.wikipedia.org/wiki/XNOR_gate
+
+rem Logical
+assertEq 0 OR 0,  FALSE, PROGLINE
+assertEq 0 OR 1,  TRUE,  PROGLINE
+assertEq 1 OR 0,  TRUE,  PROGLINE
+assertEq 1 OR 1,  TRUE,  PROGLINE
+assertEq 0 == 0,  TRUE,  PROGLINE
+assertEq 0 == 1,  FALSE, PROGLINE
+assertEq 1 == 0,  FALSE, PROGLINE
+assertEq 1 == 1,  TRUE,  PROGLINE
+assertEq 0 != 0,  FALSE, PROGLINE
+assertEq 0 != 1,  TRUE,  PROGLINE
+assertEq 1 != 0,  TRUE,  PROGLINE
+assertEq 1 != 1,  FALSE, PROGLINE
+assertEq 0 AND 0, FALSE, PROGLINE
+assertEq 0 AND 1, FALSE, PROGLINE
+assertEq 1 AND 0, FALSE, PROGLINE
+assertEq 1 AND 1, TRUE,  PROGLINE
+
+rem Bitwise
+assertEq 0 BOR 0,  0, PROGLINE
+assertEq 7 BOR 6,  7, PROGLINE
+assertEq 100 BOR   0, 100, PROGLINE
+assertEq 1 BOR 1,  1, PROGLINE
+assertEq 0 BAND 0, 0, PROGLINE
+assertEq 0 BAND 1, 0, PROGLINE
+assertEq 1 BAND 0, 0, PROGLINE
+assertEq 1 BAND 1, 1, PROGLINE
+assertEq 0 NAND 0, 0xffffffffffffffff, PROGLINE
+assertEq 0 NAND 1, 0xffffffffffffffff, PROGLINE
+assertEq 1 NAND 0, 0xffffffffffffffff, PROGLINE
+assertEq 1 NAND 1, 0xfffffffffffffffe, PROGLINE
+assertEq 0 NOR 0,  0xffffffffffffffff, PROGLINE
+assertEq 0 NOR 1,  0xfffffffffffffffe, PROGLINE
+assertEq 1 NOR 0,  0xfffffffffffffffe, PROGLINE
+assertEq 1 NOR 1,  0xfffffffffffffffe, PROGLINE
+assertEq 0 XOR 0,  0, PROGLINE
+assertEq 0 XOR 1,  1,  PROGLINE
+assertEq 1 XOR 0,  1,  PROGLINE
+assertEq 1 XOR 1,  0, PROGLINE
+assertEq 0 XNOR 0, 0xffffffffffffffff,  PROGLINE
+assertEq 0 XNOR 1, 0xfffffffffffffffe, PROGLINE
+assertEq 1 XNOR 0, 0xfffffffffffffffe, PROGLINE
+assertEq 1 XNOR 1, 0xffffffffffffffff,  PROGLINE
+
+' mixed
+assertEq FALSE,   0, PROGLINE
+assertEq TRUE,    1, PROGLINE
+assertEq !FALSE,  1, PROGLINE
+assertEq 0 AND 0, 0, PROGLINE
+assertEq 0 AND 1, 0, PROGLINE
+assertEq 1 AND 1, 1, PROGLINE
+assertEq 0 OR 0,  0, PROGLINE
+assertEq 0 OR 1,  1, PROGLINE
+assertEq 1 OR 1,  1, PROGLINE
+assertEq NOT 0,   1, PROGLINE
+assertEq NOT 1,   0, PROGLINE
+assertEq 0 <> 0,  0, PROGLINE
+assertEq 0 <> 1,  1, PROGLINE
+assertEq 1 <> 1,  0, PROGLINE
+
+assertEq 0 IMP 0, 255, PROGLINE
+assertEq 0 IMP 1, 255, PROGLINE
+assertEq 1 IMP 0, 254, PROGLINE
+assertEq 1 IMP 1, 255, PROGLINE
+assertEq 0 EQV 0, 255, PROGLINE
+assertEq 0 EQV 1, 254, PROGLINE
+assertEq 1 EQV 0, 254, PROGLINE
+assertEq 1 EQV 1, 255, PROGLINE

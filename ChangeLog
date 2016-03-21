@@ -1,8 +1,8 @@
 2016-02-18
 	Removed TICKSPERSEC
 	Removed BALLOC, MALLOC and VADR keywords. Removed duplicate ENVIRON
-	Added TIMESTAMP to return the modified-datetime of a file
 	Removed system constants BPP and VIDADR, OSNAME, LINECHART, BARCHART
+	Added TIMESTAMP to return the modified-datetime of a file
 	SBVER now includes build information
 	TICKS now returns millisecond intervals
 	Refactor eval() for performance
@@ -15,6 +15,8 @@
 	Added window.setFont command to set font size, bold and italic. example:
            w = window():w.setFont(10, "pt", false, true)
 	Fix problem with escaped chars using FORMAT
+	Fix problem with XNOR command result
+	TRUE is now always returned as 1
 
 2016-02-11
 	Added export to mobile command (SDL)
