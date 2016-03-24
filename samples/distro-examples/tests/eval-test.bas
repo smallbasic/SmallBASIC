@@ -182,11 +182,24 @@ assertEq 0 <> 0,  0, PROGLINE
 assertEq 0 <> 1,  1, PROGLINE
 assertEq 1 <> 1,  0, PROGLINE
 
-assertEq 0 IMP 0, 255, PROGLINE
-assertEq 0 IMP 1, 255, PROGLINE
-assertEq 1 IMP 0, 254, PROGLINE
-assertEq 1 IMP 1, 255, PROGLINE
-assertEq 0 EQV 0, 255, PROGLINE
-assertEq 0 EQV 1, 254, PROGLINE
-assertEq 1 EQV 0, 254, PROGLINE
-assertEq 1 EQV 1, 255, PROGLINE
+' The IMP operator returns 0 if the first operand is 1 and its second operand is 0.  In all other
+' cases, it returns 1. The operation is perform on each bit position in the two arguments.
+' !a || b
+' 1100
+' 1010
+' 1011
+assertEq 0xcccccccccccccccc Imp 0xaaaaaaaaaaaaaaaa, 0xbbbbbbbbbbbbbbbb, PROGLINE
+assertEq 0xcccccccc Imp 0xaaaaaaaa, 0xbbbbbbbb, PROGLINE
+assertEq 0xcccc Imp 0xaaaa, 0xbbbb, PROGLINE
+assertEq 0xcc Imp 0xaa, 0xbb, PROGLINE
+assertEq 0xc Imp 0xa, 0xb, PROGLINE
+
+' The Eqv operator returns 1 if and only if both inputs are equal.
+' 1100
+' 1010
+' 1001
+assertEq 0xcccccccccccccccc Eqv 0xaaaaaaaaaaaaaaaa, 0x9999999999999999, PROGLINE
+assertEq 0xcccccccc Eqv 0xaaaaaaaa, 0x99999999, PROGLINE
+assertEq 0xcccc Eqv 0xaaaa, 0x9999, PROGLINE
+assertEq 0xcc Eqv 0xaa, 0x99, PROGLINE
+assertEq 0xc Eqv 0xa, 0x9, PROGLINE

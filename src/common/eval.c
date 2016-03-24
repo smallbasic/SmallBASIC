@@ -467,8 +467,7 @@ static inline void oper_log(var_t *r, var_t *left, byte op) {
   var_int_t li;
   var_int_t ri;
   var_int_t a, b;
-  var_int_t ba, bb;
-  int i;
+  int i, set;
 
   if (op != OPLOG_IN) {
     li = v_igetval(left);
@@ -489,11 +488,15 @@ static inline void oper_log(var_t *r, var_t *left, byte op) {
     a = li;
     b = ri;
     ri = 0;
-    for (i = 0; i < sizeof(var_int_t); i++) {
-      ba = a & (1 << i);
-      bb = b & (1 << i);
-      if ((ba && bb) || (!ba && !bb)) {
-        ri |= (1 << i);
+    set = 0;
+    for (i = (sizeof(var_int_t) * 8) - 1; i >= 0; i--) {
+      int ba = ((a >> i) & 1);
+      int bb = ((b >> i) & 1);
+      if (ba || bb) {
+        set = 1;
+      }
+      if (set && ba == bb) {
+        ri |= (((var_int_t)1) << i);
       }
     }
     break;
@@ -501,11 +504,15 @@ static inline void oper_log(var_t *r, var_t *left, byte op) {
     a = li;
     b = ri;
     ri = 0;
-    for (i = 0; i < sizeof(var_int_t); i++) {
-      ba = a & (1 << i);
-      bb = b & (1 << i);
-      if (!(ba && !bb)) {
-        ri |= (1 << i);
+    set = 0;
+    for (i = (sizeof(var_int_t) * 8) - 1; i >= 0; i--) {
+      int ba = ((a >> i) & 1);
+      int bb = ((b >> i) & 1);
+      if (ba || bb) {
+        set = 1;
+      }
+      if (set && (!ba || bb)) {
+        ri |= (((var_int_t)1) << i);
       }
     }
     break;
