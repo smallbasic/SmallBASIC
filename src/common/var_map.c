@@ -209,10 +209,10 @@ int map_get_bool(var_p_t base, const char *name) {
   if (var != NULL) {
     switch (var->type) {
     case V_INT:
-      result = (var->v.i == -1);
+      result = (var->v.i != 0);
       break;
     case V_NUM:
-      result = (var->v.n == -1);
+      result = (var->v.n != 0);
       break;
     case V_STR:
       result = (strncasecmp(var->v.p.ptr, "true", 4));
