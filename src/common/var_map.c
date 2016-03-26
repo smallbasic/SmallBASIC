@@ -710,7 +710,7 @@ void map_from_str(var_p_t dest) {
       jsmntok_t *tokens = malloc(sizeof(jsmntok_t) * num_tokens);
       const char *js = arg.v.p.ptr;
       size_t len = arg.v.p.size;
-      jsmnerr_t result;
+      int result;
       jsmn_parser parser;
 
       jsmn_init(&parser);
