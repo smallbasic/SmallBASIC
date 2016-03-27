@@ -10,13 +10,18 @@
 	Editor now restores cursor when returning from run
 	Editor now displays the correct filename in the title bar
 	Added "industrial" editor theme from Shian (slot 2)
+	Fixed editor highlighting
 	Runtime errors now show source screen with red error highlighter
 	Form refresh command now takes an boolean arg, true=push ui state to vars
 	Added window.setFont command to set font size, bold and italic. example:
            w = window():w.setFont(10, "pt", false, true)
-	Fix problem with escaped chars using FORMAT
-	Fix problem with XNOR command result
+	Fixed problem with escaped chars using FORMAT
+	Fixed problem with XNOR command result
 	TRUE is now always returned as 1
+	Fixed problem with IMP and EQV command result
+	Fixed problem with INKEY command
+	Fixed capslock handling
+	Added file manager to main shell program
 
 2016-02-11
 	Added export to mobile command (SDL)

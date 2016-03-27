@@ -203,9 +203,10 @@ func getFiles()
   getFiles = result
 end
 
-sub createNewFile(byref f, byref wnd)
+sub createNewFile(byref f, byref wnd, byref selectedFile)
   f.refresh(true)
   local newFile = f.inputs(idxEdit).value
+
   if (len(newFile) == 0) then
     exit sub
   endIf
@@ -220,6 +221,19 @@ sub createNewFile(byref f, byref wnd)
       text << "REM SmallBASIC"
       text << "REM created: " + date
       tsave newFile, text
+
+      local f_list = getFiles()
+      local f_list_len=len(f_list) - 1
+      local i
+      for i = 0 to f_list_len
+        if (f_list(i) == newFile) then
+          f.inputs(idxFiles).selectedIndex = i
+          exit for
+        endif
+      next i
+      f.inputs(idxFiles).value = f_list
+      f.refresh(false)
+      selectedFile = newfile
     endif
   catch e
     wnd.alert("Error creating file: " + e)
@@ -227,7 +241,7 @@ sub createNewFile(byref f, byref wnd)
 end
 
 sub manageFiles()
-  local f, wnd, bn_edit, bn_files
+  local f, wnd, bn_edit, bn_files, selectedFile
   const renameId = "__bn_rename__"
   const deleteId = "__bn_delete__"
   const newId = "__bn_new__"
@@ -327,7 +341,7 @@ sub manageFiles()
       tload selectedFile, buffer
       wnd.graphicsScreen2()
       cls
-      color 2,0
+      color 7,0
       len_buffer = len(buffer) - 1
       for i = 0 to len_buffer
         print buffer(i)
@@ -350,8 +364,7 @@ sub manageFiles()
     case deleteId
       deleteFile()
     case newId
-      createNewFile(f, wnd)
-      reloadList(0)
+      createNewFile(f, wnd, selectedFile)
     case viewId
       viewFile()
     case closeId

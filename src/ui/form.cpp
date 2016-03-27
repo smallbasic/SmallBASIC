@@ -110,7 +110,7 @@ void cmd_form_refresh(var_s *self) {
   var_t arg;
   v_init(&arg);
   eval(&arg);
-  bool setVars = v_getint(&arg) == -1;
+  bool setVars = v_getint(&arg) != 0;
   v_free(&arg);
   g_system->getOutput()->updateInputs(self, setVars);
 }
