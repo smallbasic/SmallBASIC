@@ -1179,7 +1179,7 @@ void cmd_str1(long funcCode, var_t *arg, var_t *r) {
 // str <- FUNC (void)
 //
 void cmd_str0(long funcCode, var_t *r) {
-  word ch;
+  dword ch;
   char tmp[3];
   struct tm tms;
   time_t now;
@@ -1191,14 +1191,25 @@ void cmd_str0(long funcCode, var_t *r) {
     // str <- INKEY$
     //
     if (!dev_kbhit()) {
-      dev_events(2);
+      dev_events(1);
     }
     if (dev_kbhit()) {
       ch = dev_getch();
-      // MultiByte - dev_getchr() must return the extended code (2 bytes char)
       if ((ch & 0xFF00) == 0xFF00) {
-        // hardware keys
+        // keypad or mouse keys
         tmp[0] = '\033';
+        tmp[1] = ch & 0xFF;
+        tmp[2] = '\0';
+      } else if ((ch & SB_KEY_CTRL_ALT(0)) == SB_KEY_CTRL_ALT(0)) {
+        tmp[0] = '\4';
+        tmp[1] = ch & 0xFF;
+        tmp[2] = '\0';
+      } else if ((ch & SB_KEY_ALT_SHIFT(0)) == SB_KEY_ALT_SHIFT(0)) {
+        tmp[0] = '\5';
+        tmp[1] = ch & 0xFF;
+        tmp[2] = '\0';
+      } else if ((ch & SB_KEY_SHIFT_CTRL(0)) == SB_KEY_SHIFT_CTRL(0)) {
+        tmp[0] = '\6';
         tmp[1] = ch & 0xFF;
         tmp[2] = '\0';
       } else if ((ch & SB_KEY_CTRL(0)) == SB_KEY_CTRL(0)) {
@@ -1209,7 +1220,7 @@ void cmd_str0(long funcCode, var_t *r) {
         tmp[0] = '\2';
         tmp[1] = ch & 0xFF;
         tmp[2] = '\0';
-      } else if ((ch & SB_KEY_CTRL_ALT(0)) == SB_KEY_CTRL_ALT(0)) {
+      } else if ((ch & SB_KEY_SHIFT(0)) == SB_KEY_SHIFT(0)) {
         tmp[0] = '\3';
         tmp[1] = ch & 0xFF;
         tmp[2] = '\0';
@@ -1225,7 +1236,6 @@ void cmd_str0(long funcCode, var_t *r) {
             tmp[1] = '\0';
           }
           break;
-
         case enc_big5:         // China
           if (IsBig5Font(ch)) {
             tmp[0] = ch >> 8;
@@ -1236,7 +1246,6 @@ void cmd_str0(long funcCode, var_t *r) {
             tmp[1] = '\0';
           }
           break;
-
         case enc_gmb:          // Generic multibyte
           if (IsGMBFont(ch)) {
             tmp[0] = ch >> 8;
@@ -1247,13 +1256,11 @@ void cmd_str0(long funcCode, var_t *r) {
             tmp[1] = '\0';
           }
           break;
-
         case enc_unicode:      // Unicode
           tmp[0] = ch >> 8;
           tmp[1] = ch & 0xFF;
           tmp[2] = '\0';
           break;
-
         default:               // Europe 8bit
           tmp[0] = ch;
           tmp[1] = '\0';

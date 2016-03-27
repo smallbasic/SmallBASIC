@@ -53,8 +53,6 @@
 #define FONT_SCALE_INTERVAL 10
 #define FONT_MIN 20
 #define FONT_MAX 200
-#define EVENT_CHECK_EVERY 2000
-#define EVENT_MAX_BURN_TIME 30
 
 System *g_system;
 
@@ -75,15 +73,12 @@ System::System() :
   _output(NULL),
   _state(kInitState),
   _cache(MAX_CACHE),
-  _lastEventTime(0),
-  _eventTicks(0),
   _touchX(-1),
   _touchY(-1),
   _touchCurX(-1),
   _touchCurY(-1),
   _initialFontSize(0),
   _fontScale(100),
-  _overruns(0),
   _userScreenId(-1),
   _systemMenu(NULL),
   _mainBas(false),
@@ -591,9 +586,6 @@ void System::runMain(const char *mainBasPath) {
 
     bool success = execute(_loadPath);
     bool networkFile = (_loadPath.indexOf("://", 1) != -1);
-    if (!isClosing() && _overruns) {
-      systemPrint("\nOverruns: %d\n", _overruns);
-    }
     if (!isBack() && !isClosing() &&
         (opt_ide != IDE_INTERNAL || success || networkFile)) {
       // when editing, only pause here when successful, otherwise the editor shows
@@ -750,9 +742,6 @@ void System::setRunning(bool running) {
         _loadPath.indexOf("://", 1) != -1) {
       _loadPath.empty();
     }
-    _lastEventTime = maGetMilliSecondCount();
-    _eventTicks = 0;
-    _overruns = 0;
     _userScreenId = -1;
   } else if (!isClosing() && !isRestart() && !isBack()) {
     _state = kActiveState;
@@ -769,20 +758,6 @@ void System::showCompletion(bool success) {
     showSystemScreen(true);
   }
   _output->flush(true);
-}
-
-// detect when we have been called too frequently
-void System::checkLoadError() {
-  int now = maGetMilliSecondCount();
-  _eventTicks++;
-  if (now - _lastEventTime >= EVENT_CHECK_EVERY) {
-    // next time inspection interval
-    if (_eventTicks >= EVENT_MAX_BURN_TIME) {
-      _overruns++;
-    }
-    _lastEventTime = now;
-    _eventTicks = 0;
-  }
 }
 
 void System::showMenu() {
@@ -856,12 +831,10 @@ void System::showMenu() {
       }
 #endif
     } else {
-      if (_overruns == 0) {
-        items->add(new String("Console"));
-        items->add(new String("View source"));
-        _systemMenu[index++] = MENU_CONSOLE;
-        _systemMenu[index++] = MENU_SOURCE;
-      }
+      items->add(new String("Console"));
+      items->add(new String("View source"));
+      _systemMenu[index++] = MENU_CONSOLE;
+      _systemMenu[index++] = MENU_SOURCE;
       if (!isEditing()) {
         items->add(new String("Restart"));
         _systemMenu[index++] = MENU_RESTART;

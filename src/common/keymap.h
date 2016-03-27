@@ -56,6 +56,7 @@ extern "C" {
 #define SB_KEY_CTRL_ALT(c)   (0xF3000000 + (c))
 #define SB_KEY_SHIFT(c)      (0xF4000000 + (c))
 #define SB_KEY_SHIFT_CTRL(c) (0xF5000000 + (c))
+#define SB_KEY_ALT_SHIFT(c)  (0xF6000000 + (c))
 
 // keypad
 #define SB_KEY_KP_DIV     0xFFDA
@@ -85,8 +86,8 @@ extern "C" {
 
 void keymap_init();
 void keymap_free();
-void keymap_add(int key, bcip_t ip);
-int keymap_invoke(word key);
+void keymap_add(dword key, bcip_t ip);
+int keymap_invoke(dword key);
 int keymap_kbhit();
 int keymap_kbpeek();
 

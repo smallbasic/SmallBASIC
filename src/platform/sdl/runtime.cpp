@@ -362,6 +362,9 @@ void Runtime::handleKeyEvent(MAEvent &event) {
     } else if ((event.nativeKey & KMOD_CTRL) &&
                (event.nativeKey & KMOD_SHIFT)) {
       event.key = SB_KEY_SHIFT_CTRL(event.key);
+    } else if ((event.nativeKey & KMOD_ALT) &&
+               (event.nativeKey & KMOD_SHIFT)) {
+      event.key = SB_KEY_ALT_SHIFT(event.key);
     } else if (event.nativeKey & KMOD_CTRL) {
       event.key = SB_KEY_CTRL(event.key);
     } else if (event.nativeKey & KMOD_ALT) {
@@ -548,7 +551,6 @@ MAEvent Runtime::processEvents(int waitFlag) {
     break;
   default:
     pollEvents(false);
-    checkLoadError();
   }
 
   MAEvent event;

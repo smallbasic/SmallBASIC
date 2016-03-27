@@ -86,7 +86,6 @@ protected:
   bool setParentPath();
   void setDimensions();
   void showCompletion(bool success);
-  void checkLoadError();
   void printErrorLine();
   void printSource();
   void printSourceLine(char *text, int line, bool last);
@@ -118,15 +117,12 @@ protected:
   strlib::String _loadPath;
   strlib::String _activeFile;
   Cache _cache;
-  int _lastEventTime;
-  int _eventTicks;
   int _touchX;
   int _touchY;
   int _touchCurX;
   int _touchCurY;
   int _initialFontSize;
   int _fontScale;
-  int _overruns;
   int _userScreenId;
   int *_systemMenu;
   bool _mainBas;

@@ -632,7 +632,6 @@ MAEvent Runtime::processEvents(int waitFlag) {
     break;
   default:
     pollEvents(false);
-    checkLoadError();
   }
 
   MAEvent event;

@@ -197,7 +197,7 @@ int dev_restore(void);
  *
  * @param ch the key-code
  */
-void dev_pushkey(word ch);
+void dev_pushkey(dword ch);
 
 /**
  * @ingroup dev_i
