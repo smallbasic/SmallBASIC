@@ -72,6 +72,7 @@ void cmd_poke16(void);
 void cmd_poke32(void);
 void cmd_bcopy(void);
 void cmd_calladr(void);
+void cmd_try();
 void cmd_catch();
 void cmd_call_vfunc();
 void cmd_timer();

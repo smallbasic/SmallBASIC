@@ -209,6 +209,13 @@ struct stknode_s {
       word vcheck; /**< checks (1=BYVAL ONLY, 3=BYVAL|BYREF, 2=BYREF ONLY) */
       var_t *res; /**< variable pointer (for BYVAL this is a clone) */
     } param;
+
+    /**
+     * try/catch
+     */
+    struct {
+      bcip_t catch_ip;
+    } vtry;
   } x;
 };
 typedef struct stknode_s stknode_t;

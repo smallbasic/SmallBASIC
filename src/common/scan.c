@@ -2446,7 +2446,6 @@ int comp_text_line_command(long idx, int decl, int sharp, char *last_cmd) {
   case kwCATCH:
     comp_push(comp_prog.count);
     bc_add_ctrl(&comp_prog, idx, 0, 0);
-    bc_add_code(&comp_prog, comp_block_level);
     comp_expression(comp_bc_parm, 0);
     break;
 
@@ -2783,10 +2782,8 @@ bcip_t comp_next_bc_cmd(bcip_t ip) {
   case kwCASE:
   case kwCASE_ELSE:
   case kwENDSELECT:
-    ip += BC_CTRLSZ;
-    break;
   case kwCATCH:
-    ip += BC_CTRLSZ + 1;
+    ip += BC_CTRLSZ;
     break;
   case kwTYPE_EVAL_SC:
     ip += 2;                    // kwTYPE_LOGOPR+op
@@ -2867,34 +2864,6 @@ bcip_t comp_search_bc_stack_backward(bcip_t start, code_t code, byte level, bid_
     }
   }
   return INVALID_ADDR;
-}
-
-/*
- * search stack for the next inner catch
- */
-bcip_t comp_search_inner_catch(bcip_t start, byte level) {
-  bcip_t result = INVALID_ADDR;
-  if (level > 1) {
-    byte nextLevel = level - 1;
-    do {
-      bcip_t i;
-      comp_pass_node_t *node;
-      for (i = start; i < comp_sp; i++) {
-        node = comp_stack.elem[i];
-        if (node->level == nextLevel) {
-          if (comp_prog.ptr[node->pos] == kwTRY) {
-            // next CATCH has own block
-            break;
-          } else if (comp_prog.ptr[node->pos] == kwCATCH) {
-            result = node->pos;
-            break;
-          }
-        }
-      }
-      --nextLevel;
-    } while (result == INVALID_ADDR && nextLevel > 0);
-  }
-  return result;
 }
 
 /*
@@ -3383,17 +3352,16 @@ void comp_pass2_scan() {
         print_pass2_stack(i, kwENDTRY, node->level);
         return;
       }
+      // address of the end-try
       memcpy(comp_prog.ptr + node->pos + 1, &true_ip, ADDRSZ);
 
+      // address of the next catch in the same block
       false_ip = comp_search_bc_stack(i + 1, kwCATCH, node->level, node->block_id);
-      if (false_ip != INVALID_ADDR && false_ip < true_ip) {
-        // another catch in the same block
-        memcpy(comp_prog.ptr + node->pos + (ADDRSZ + 1), &false_ip, ADDRSZ);
-      } else {
-        // store the address of the next outer catch (or store INVALID_ADDR if not found)
-        false_ip = comp_search_inner_catch(i + 1, node->level);
-        memcpy(comp_prog.ptr + node->pos + (ADDRSZ + 1), &false_ip, ADDRSZ);
+      if (false_ip > true_ip) {
+        // not valid if found after end-try
+        false_ip = INVALID_ADDR;
       }
+      memcpy(comp_prog.ptr + node->pos + (ADDRSZ + 1), &false_ip, ADDRSZ);
       break;
     };
   }

@@ -203,43 +203,6 @@ func getFiles()
   getFiles = result
 end
 
-sub createNewFile(byref f, byref wnd, byref selectedFile)
-  f.refresh(true)
-  local newFile = f.inputs(idxEdit).value
-
-  if (len(newFile) == 0) then
-    exit sub
-  endIf
-  if (lower(right(newFile, 4)) != ".bas") then
-    newFile += ".bas"
-  endIf
-  try
-    if (exist(newFile)) then
-      wnd.alert("File " + newFile + " already exists", "Duplicate File")
-    else
-      dim text
-      text << "REM SmallBASIC"
-      text << "REM created: " + date
-      tsave newFile, text
-
-      local f_list = getFiles()
-      local f_list_len=len(f_list) - 1
-      local i
-      for i = 0 to f_list_len
-        if (f_list(i) == newFile) then
-          f.inputs(idxFiles).selectedIndex = i
-          exit for
-        endif
-      next i
-      f.inputs(idxFiles).value = f_list
-      f.refresh(false)
-      selectedFile = newfile
-    endif
-  catch e
-    wnd.alert("Error creating file: " + e)
-  end try
-end
-
 sub manageFiles()
   local f, wnd, bn_edit, bn_files, selectedFile
   const renameId = "__bn_rename__"
@@ -352,6 +315,42 @@ sub manageFiles()
     endIf
   end
 
+  sub createNewFile()
+    f.refresh(true)
+    local newFile = f.inputs(idxEdit).value
+
+    if (len(newFile) == 0) then
+      exit sub
+    endIf
+    if (lower(right(newFile, 4)) != ".bas") then
+      newFile += ".bas"
+    endIf
+    try
+      if (exist(newFile)) then
+        wnd.alert("File " + newFile + " already exists", "Duplicate File")
+      else
+        dim text
+        text << "REM SmallBASIC"
+        text << "REM created: " + date
+        tsave newFile, text
+        local f_list = getFiles()
+        local f_list_len=len(f_list) - 1
+        local i
+        for i = 0 to f_list_len
+          if (f_list(i) == newFile) then
+            f.inputs(idxFiles).selectedIndex = i
+            exit for
+          endif
+        next i
+        f.inputs(idxFiles).value = f_list
+        f.refresh(false)
+        selectedFile = newfile
+      endif
+    catch e
+      wnd.alert("Error creating file: " + e)
+    end try
+  end
+
   createUI()
   reloadList(0)
   wnd = window()
@@ -364,7 +363,7 @@ sub manageFiles()
     case deleteId
       deleteFile()
     case newId
-      createNewFile(f, wnd, selectedFile)
+      createNewFile()
     case viewId
       viewFile()
     case closeId

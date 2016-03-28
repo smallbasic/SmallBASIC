@@ -1046,7 +1046,7 @@ void bc_loop(int isf) {
         cmd_run(0);
         break;
       case kwTRY:
-        prog_catch_ip = code_getaddr();
+        cmd_try();
         IF_ERR_BREAK;
         continue;
       case kwCATCH:
@@ -1268,7 +1268,6 @@ int brun_create_task(const char *filename, byte *preloaded_bc, int libf) {
   prog_stack_alloc = SB_EXEC_STACK_SIZE;
   prog_stack = malloc(sizeof(stknode_t) * prog_stack_alloc);
   prog_stack_count = 0;
-  prog_catch_ip = INVALID_ADDR;
   prog_timer = NULL;
 
   // create eval's stack

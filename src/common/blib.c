@@ -2748,20 +2748,27 @@ void cmd_definekey(void) {
 }
 
 /**
+ * Try handler for try/catch
+ */
+void cmd_try() {
+  stknode_t node;
+  node.x.vtry.catch_ip = code_getaddr();
+  node.type = kwTRY;
+  code_push(&node);
+}
+
+/**
  * Handler for unthrown/uncaught exceptions
  */
 void cmd_catch() {
-  bcip_t end_try_ip = code_getaddr();
-  bcip_t outer_catch_ip = code_getaddr();
-
-  // skip level code
-  prog_ip += 1;
-
-  // skip to end-try
-  code_jump(end_try_ip);
-
-  // restore outer try/catch level
-  prog_catch_ip = outer_catch_ip;
+  stknode_t node;
+  code_pop_and_free(&node);
+  if (node.type != kwTRY) {
+    err_stackmess();
+  } else {
+    // skip to end-try
+    code_jump(code_getaddr());
+  }
 }
 
 /**

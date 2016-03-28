@@ -148,7 +148,6 @@ typedef struct {
       bc_lib_rec_t *libtable; /**< import-libraries table                */
       bc_symbol_rec_t *symtable; /**< import-symbols table               */
       unit_sym_t *exptable; /**< export-symbols table                    */
-      bcip_t catch_ip; /** try/catch ip                                  */
       timer_s *timer;  /** timer linked list                             */
     } exec;
   } sbe;
