@@ -385,7 +385,7 @@ void err_throw_str(const char *err) {
   int try_sp = err_find_try(throw_sp);
   int reset_sp;
 
-  if (!prog_error && try_sp != -1 && prog_stack[try_sp].x.vtry.catch_ip > prog_ip) {
+  if (!prog_error && try_sp != -1) {
     bcip_t catch_ip = prog_stack[try_sp].x.vtry.catch_ip;
     // position after kwCATCH
     code_jump(catch_ip + 1);
@@ -399,7 +399,7 @@ void err_throw_str(const char *err) {
     caught = err_throw_catch(err);
     reset_sp = try_sp;
 
-    while (!caught && catch_ip != INVALID_ADDR) {
+    while (!caught && (catch_ip != INVALID_ADDR || try_sp != -1)) {
       // find in the current block
       while (!caught && catch_ip != INVALID_ADDR) {
         code_jump(catch_ip + 1);

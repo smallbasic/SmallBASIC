@@ -2009,22 +2009,10 @@ void cmd_locate() {
  * PAUSE [secs]
  */
 void cmd_pause() {
-  int x = 0, evc;
+  int evc;
   long start, now;
 
-  byte code = code_peek();
-  if (code == kwTYPE_VAR) {
-    x = par_getint();
-    if (prog_error) {
-      return;
-    }
-  } else if (code == kwTYPE_INT) {
-    code_skipnext();
-    x = code_getint();
-  } else if (code == kwTYPE_NUM) {
-    code_skipnext();
-    x = code_getreal();
-  }
+  var_int_t x = par_getval(0);
   if (x == 0) {
     while (dev_kbhit() == 0) {
       switch (dev_events(2)) {

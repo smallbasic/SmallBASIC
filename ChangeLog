@@ -1,4 +1,4 @@
-2016-02-18
+2016-03-29 (0.12.6)
 	Removed TICKSPERSEC
 	Removed BALLOC, MALLOC and VADR keywords. Removed duplicate ENVIRON
 	Removed system constants BPP and VIDADR, OSNAME, LINECHART, BARCHART
@@ -22,6 +22,7 @@
 	Fixed problem with INKEY command
 	Fixed capslock handling
 	Added file manager to main shell program
+	Fixed issues with TRY/CATCH
 
 2016-02-11
 	Added export to mobile command (SDL)

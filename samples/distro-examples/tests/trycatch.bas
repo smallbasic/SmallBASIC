@@ -88,3 +88,46 @@ try
 catch "okay"
  REM okay
 end try
+
+sub s1(err)
+  try
+    s2(err)
+  catch "err1"
+    ? "err1"
+  catch "err2"
+    ? "err2"
+  catch "err3"
+    ? "err3"
+  end try
+end
+sub s2(err)
+  try
+    s3(err)
+  catch "err4"
+    ? "err4"
+  catch "err5"
+    ? "err5"
+  catch "err6"
+    ? "err6"
+  end try
+end
+sub s3(err)
+  if 1==1 then
+    if 1==1 then
+      if 1==1 then
+         throw err
+      endif
+    endif
+  endif
+end
+
+caughtError = FALSE
+try
+  s1("some string")
+catch "some"
+  caughtError = TRUE
+end try
+
+if (!caughtError) then
+  throw "Error not caught!!!"
+endif

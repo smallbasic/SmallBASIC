@@ -503,6 +503,23 @@ var_num_t par_getnum() {
   return f;
 }
 
+var_int_t par_getval(var_int_t def) {
+  var_int_t result;
+  byte code = code_peek();
+  if (code == kwTYPE_VAR) {
+    result = par_getint();
+  } else if (code == kwTYPE_INT) {
+    code_skipnext();
+    result = code_getint();
+  } else if (code == kwTYPE_NUM) {
+    code_skipnext();
+    result = code_getreal();
+  } else {
+    result = def;
+  }
+  return result;
+}
+
 /*
  * no-error if the next byte is separator
  * returns the separator
