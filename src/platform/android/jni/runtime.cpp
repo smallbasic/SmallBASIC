@@ -386,6 +386,7 @@ void Runtime::loadConfig() {
   _output->setTextColor(DEFAULT_FOREGROUND, DEFAULT_BACKGROUND);
   _output->setFontSize(fontSize);
   _initialFontSize = _output->getFontSize();
+  chdir("/sdcard");
 
   path.append(_app->activity->internalDataPath);
   path.append(CONFIG_FILE);

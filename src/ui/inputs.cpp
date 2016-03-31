@@ -103,6 +103,7 @@ FormInput::FormInput(int x, int y, int w, int h) :
   _exit(false),
   _visible(true),
   _noFocus(false),
+  _resizable(false),
   _bg(DEFAULT_BACKGROUND),
   _fg(DEFAULT_FOREGROUND),
   _onclick(0) {
@@ -320,10 +321,16 @@ bool FormInput::updateUI(var_p_t form, var_p_t field) {
     }
   }
 
-  bool visible = map_get_int(field, FORM_INPUT_VISIBLE, -1) != 0;
+  bool visible = map_get_int(field, FORM_INPUT_VISIBLE, 1) != 0;
   if (visible != _visible) {
     updated = true;
     _visible = visible;
+  }
+
+  bool resizable = map_get_bool(field, FORM_INPUT_RESIZABLE);
+  if (resizable != _resizable) {
+    updated = true;
+    _resizable = resizable;
   }
 
   return updated;
@@ -415,16 +422,21 @@ FormTab::FormTab(const char *link, int x, int y, int w, int h) :
 }
 
 void FormTab::draw(int x, int y, int w, int h, int chw) {
+  int x_begin = chw;
   int x_end = x + MIN(w, _width);
 
   maSetColor(_fg);
-  drawText(_link, x + (BN_W / 2), y, w, chw);
+  drawText(_link, x + x_begin, y, w, chw);
   setTextColor();
   maLine(x_end, y + 4, x_end, y + _height - 4);
 
-  x_end -= (BN_W / 2);
+  x_end -= x_begin;
   maSetColor(_pressed ? _fg : _bg);
-  maLine(x + (BN_W / 2), y + _height - 2, x_end, y + _height - 2);
+  maLine(x + x_begin, y + _height - 2, x_end, y + _height - 2);
+}
+
+int FormTab::padding(bool vert) const {
+  return vert ? 0 : g_system->getOutput()->getCharWidth() * 2;
 }
 
 //

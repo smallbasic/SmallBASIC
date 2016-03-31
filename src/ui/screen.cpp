@@ -219,6 +219,44 @@ FormInput *Screen::getMenu(FormInput *prev, int px, int py) {
   return result;
 }
 
+void Screen::layoutInputs(int newWidth, int newHeight) {
+  List_each(FormInput *, it, _inputs) {
+    FormInput *r1 = (*it);
+    if (r1->isResizable()) {
+      bool right = true;
+      bool bottom = true;
+      List_each(FormInput *, subIt, _inputs) {
+        FormInput *r2 = (*subIt);
+        if (r1 != r2) {
+          if (r2->_x >  r1->_x &&
+              r2->_y >= r1->_y &&
+              r2->_y <= r1->_y + _height) {
+            // cant resize over right side sibling
+            right = false;
+          }
+          if (r2->_y >  r1->_y &&
+              r2->_x >= r1->_x &&
+              r2->_x <= r1->_x + _width) {
+            // cant resize over lower side sibling
+            bottom = false;
+          }
+        }
+      }
+      if (right) {
+        r1->_width = newWidth - r1->_x;
+      }
+      if (bottom) {
+        r1->_height = newHeight - r1->_y;
+      }
+    }
+  }
+}
+
+// whether the given point overlaps with the screen rectangle
+bool Screen::overlaps(int px, int py) {
+  return (!OUTSIDE_RECT(px, py, _x, _y, _width, _height));
+}
+
 int Screen::print(const char *p, int lineHeight, bool allChars) {
   // print minimum of one character
   int numChars = 1;
@@ -238,11 +276,6 @@ int Screen::print(const char *p, int lineHeight, bool allChars) {
 
   _curX += cx;
   return numChars;
-}
-
-// whether the given point overlaps with the screen rectangle
-bool Screen::overlaps(int px, int py) {
-  return (!OUTSIDE_RECT(px, py, _x, _y, _width, _height));
 }
 
 // remove the button from the list
@@ -663,10 +696,7 @@ void GraphicScreen::resize(int newWidth, int newHeight, int oldWidth,
   if (!fullscreen) {
     drawBase(false);
   }
-  List_each(FormInput *, it, _inputs) {
-    FormInput *next = (*it);
-    next->resize(newWidth, newHeight);
-  }
+  layoutInputs(newWidth, newHeight);
 }
 
 void GraphicScreen::updateFont(int size) {
@@ -1018,6 +1048,7 @@ void TextScreen::resize(int newWidth, int newHeight, int, int, int) {
     _width = newWidth;
     _height = newHeight;
   }
+  layoutInputs(newWidth, newHeight);
 }
 
 //

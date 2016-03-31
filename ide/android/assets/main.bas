@@ -236,13 +236,15 @@ sub manageFiles()
     bn_edit.width = xmax
     bn_edit.type = "text"
     bn_edit.color = "white"
+    bn_edit.resizable = TRUE
     bn_files.x = x1
     bn_files.y = bn_edit.y + char_h + 2
     bn_files.height = ymax - bn_files.y
     bn_files.width = xmax - x1
     bn_files.color = 2
     bn_files.type = "list"
-    f.focus = idxfiles
+    bn_files.resizable = TRUE
+    f.focus = idxEdit
     f.inputs << bn_edit
     f.inputs << bn_files
     f = form(f)
@@ -354,6 +356,7 @@ sub manageFiles()
   createUI()
   reloadList(0)
   wnd = window()
+  wnd.showKeypad()
 
   while 1
     f.doEvents()

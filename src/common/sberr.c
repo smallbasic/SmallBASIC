@@ -423,7 +423,8 @@ void err_throw_str(const char *err) {
 
     // cleanup the stack
     stknode_t node;
-    for (int sp = throw_sp; sp > reset_sp; sp--) {
+    int sp;
+    for (sp = throw_sp; sp > reset_sp; sp--) {
       code_pop_and_free(&node);
     }
     if (node.type != kwTRY) {
