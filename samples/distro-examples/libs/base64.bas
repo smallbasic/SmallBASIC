@@ -9,6 +9,12 @@ Export encode
 const alphabet="ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
 const padding="="
 
+dim index(128)
+for i = 0 to 63
+  index(asc(mid(alphabet, i + 1, 1))) = i
+next i
+index(asc(padding)) = 0
+
 func encode(message)
   local result=""
   local in_len = len(message)
@@ -47,9 +53,25 @@ func encode(message)
   wend
   encode = result
 end
-  
+
 func decode(message)
   local result = ""
+  local in_len = len(message)
+  local i, b_a, b_b, b_c, b_d
+
+  if (in_len % 4 != 0) then
+     throw "Invalid base64 message length"
+  endif
+
+  for i = 1 to in_len step 4
+    b_a = index(asc(mid(message, i, 1)))
+    b_b = index(asc(mid(message, i + 1, 1)))
+    b_c = index(asc(mid(message, i + 2, 1)))
+    b_d = index(asc(mid(message, i + 3, 1)))
+    result += chr(((b_a lshift 2) + (b_b rshift 4)))
+    result += chr(((b_b band 0xf) lshift 4) + (b_c rshift 2))
+    result += chr(((b_c band 0x3) lshift 6) + b_d)
+  next offset
   decode = result
 end
 
@@ -66,9 +88,15 @@ sub test
   if (encode("This result will end with two equals.") != "VGhpcyByZXN1bHQgd2lsbCBlbmQgd2l0aCB0d28gZXF1YWxzLg==") then
     throw "base64 encoding error 3"
   endif
-'  if (base64_dec("Zm9vYmEy") != "foobar") then
-'    throw "base64 encoding error"
-'  endif
+  if (decode("Zm9vYmFy") != "foobar") then
+    throw "base64 encoding error 4"
+  endif
+  if (decode("VGhpcyBpcyBhIGxvbmdlciBzdHJpbmc=") != "This is a longer string") then
+    throw "base64 encoding error 5"
+  endif
+  if (decode("VGhpcyByZXN1bHQgd2lsbCBlbmQgd2l0aCB0d28gZXF1YWxzLg==") != "This result will end with two equals.") then
+    throw "base64 encoding error 6"
+  endif
 end
 
 test
