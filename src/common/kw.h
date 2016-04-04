@@ -42,6 +42,9 @@ extern "C" {
 #define OPLOG_MOD       'M'     // MOD (remain)
 #define OPLOG_MDL       'L'     // MDL (modulus)
 #define OPLOG_LIKE      'W'     // LIKE wc
+#define OPLOG_LSHIFT    'X'     // LSHIFT
+#define OPLOG_RSHIFT    'Y'     // RSHIFT
+
 /**
  * @ingroup sys
  * @enum keyword

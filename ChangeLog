@@ -3,6 +3,7 @@
 	Removed BALLOC, MALLOC and VADR keywords. Removed duplicate ENVIRON
 	Removed system constants BPP and VIDADR, OSNAME, LINECHART, BARCHART
 	Added TIMESTAMP to return the modified-datetime of a file
+	Added LSHIFT and RSHIFT bit shift operators
 	SBVER now includes build information
 	TICKS now returns millisecond intervals
 	Refactor eval() for performance

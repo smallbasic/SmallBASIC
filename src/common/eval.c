@@ -534,6 +534,12 @@ static inline void oper_log(var_t *r, var_t *left, byte op) {
   case OPLOG_XOR:
     ri = li ^ ri;
     break;
+  case OPLOG_LSHIFT:
+    ri = li << ri;
+    break;
+  case OPLOG_RSHIFT:
+    ri = li >> ri;
+    break;
   }
 
   // cleanup

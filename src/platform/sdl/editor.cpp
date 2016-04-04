@@ -190,7 +190,7 @@ void System::editSource(String loadPath) {
         break;
       case SB_KEY_F(1):
       case SB_KEY_ALT('h'):
-        _output->setStatus("Keyword Help. Esc=Close");
+        _output->setStatus("Keyword Help. F2=online, Esc=Close");
         widget = helpWidget;
         helpWidget->createKeywordIndex();
         helpWidget->show();

@@ -133,21 +133,23 @@ struct keyword_s keyword_table[] = {
  * OPERATORS (not the symbols)
  */
 struct opr_keyword_s opr_table[] = {
-{ "AND",   kwTYPE_LOGOPR, '&' },
-{ "OR",    kwTYPE_LOGOPR, '|' },
-{ "BAND",  kwTYPE_LOGOPR, OPLOG_BAND },
-{ "BOR",   kwTYPE_LOGOPR, OPLOG_BOR },
-{ "XOR",   kwTYPE_LOGOPR, '~' },
-{ "NOT",   kwTYPE_UNROPR, '!' },
-{ "MOD",   kwTYPE_MULOPR, OPLOG_MOD },
-{ "MDL",   kwTYPE_MULOPR, OPLOG_MDL },
-{ "EQV",   kwTYPE_LOGOPR, OPLOG_EQV },
-{ "IMP",   kwTYPE_LOGOPR, OPLOG_IMP },
-{ "NAND",  kwTYPE_LOGOPR, OPLOG_NAND },
-{ "NOR",   kwTYPE_LOGOPR, OPLOG_NOR },
-{ "XNOR",  kwTYPE_LOGOPR, OPLOG_XNOR },
-{ "IN",    kwTYPE_CMPOPR, OPLOG_IN },
-{ "LIKE",  kwTYPE_CMPOPR, OPLOG_LIKE },
+{ "AND",    kwTYPE_LOGOPR, '&' },
+{ "OR",     kwTYPE_LOGOPR, '|' },
+{ "BAND",   kwTYPE_LOGOPR, OPLOG_BAND },
+{ "BOR",    kwTYPE_LOGOPR, OPLOG_BOR },
+{ "XOR",    kwTYPE_LOGOPR, '~' },
+{ "NOT",    kwTYPE_UNROPR, '!' },
+{ "MOD",    kwTYPE_MULOPR, OPLOG_MOD },
+{ "MDL",    kwTYPE_MULOPR, OPLOG_MDL },
+{ "EQV",    kwTYPE_LOGOPR, OPLOG_EQV },
+{ "IMP",    kwTYPE_LOGOPR, OPLOG_IMP },
+{ "NAND",   kwTYPE_LOGOPR, OPLOG_NAND },
+{ "NOR",    kwTYPE_LOGOPR, OPLOG_NOR },
+{ "XNOR",   kwTYPE_LOGOPR, OPLOG_XNOR },
+{ "IN",     kwTYPE_CMPOPR, OPLOG_IN },
+{ "LIKE",   kwTYPE_CMPOPR, OPLOG_LIKE },
+{ "LSHIFT", kwTYPE_LOGOPR, OPLOG_LSHIFT },
+{ "RSHIFT", kwTYPE_LOGOPR, OPLOG_RSHIFT },
 { "", 0, 0 }
 };
 
