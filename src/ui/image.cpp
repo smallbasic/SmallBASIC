@@ -122,6 +122,27 @@ ImageBuffer *load_image(var_t *map) {
   return result;
 }
 
+ImageBuffer *load_image(const unsigned char* buffer, int32_t size) {
+  ImageBuffer *result = NULL;
+  unsigned w, h;
+  unsigned char *image;
+  unsigned error = 0;
+
+  error = lodepng_decode32(&image, &w, &h, buffer, size);
+  if (!error) {
+    result = new ImageBuffer();
+    result->_bid = ++nextId;
+    result->_width = w;
+    result->_height = h;
+    result->_filename = NULL;
+    result->_image = image;
+    cache.add(result);
+  } else {
+    err_throw(ERR_IMAGE_LOAD, lodepng_error_text(error));
+  }
+  return result;
+}
+
 ImageBuffer *load_image(dev_file_t *filep) {
   ImageBuffer *result = NULL;
   List_each(ImageBuffer *, it, cache) {
@@ -424,14 +445,25 @@ extern "C" void v_create_image(var_p_t var) {
       strcpy(file.name, arg.v.p.ptr);
       file.type = ft_stream;
       image = load_image(&file);
-    } else if (arg.type == V_ARRAY && !prog_error) {
-      char **data = new char*[arg.v.a.size];
-      for (int i = 0; i < arg.v.a.size; i++) {
-        var_p_t elem = v_elem(&arg, i);
-        data[i] = elem->v.p.ptr;
+    } else if (arg.type == V_ARRAY && arg.v.a.size > 0 && !prog_error) {
+      var_p_t elem0 = v_elem(&arg, 0);
+      if (elem0->type == V_STR) {
+        char **data = new char*[arg.v.a.size];
+        for (int i = 0; i < arg.v.a.size; i++) {
+          var_p_t elem = v_elem(&arg, i);
+          data[i] = elem->v.p.ptr;
+        }
+        image = load_xpm_image(data);
+        delete [] data;
+      } else if (elem0->type == V_INT) {
+        unsigned char *data = new unsigned char[arg.v.a.size];
+        for (int i = 0; i < arg.v.a.size; i++) {
+          var_p_t elem = v_elem(&arg, i);
+          data[i] = (unsigned char)elem->v.i;
+        }
+        image = load_image(data, arg.v.a.size);
+        delete [] data;
       }
-      image = load_xpm_image(data);
-      delete [] data;
     } else {
       image = load_image(&arg);
     }

@@ -248,6 +248,8 @@ void Screen::layoutInputs(int newWidth, int newHeight) {
       if (bottom) {
         r1->_height = newHeight - r1->_y;
       }
+    } else {
+      r1->layout(newWidth, newHeight);
     }
   }
 }

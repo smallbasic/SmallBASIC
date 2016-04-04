@@ -106,7 +106,7 @@ struct TextEditInput : public FormEditInput {
   void selectAll();
   bool isDirty() { return _dirty && _state.undostate.undo_point > 0; }
   void setDirty(bool dirty) { _dirty = dirty; }
-  void resize(int w, int h) { _width = w; _height = h; }
+  void layout(int w, int h) { _width = w; _height = h; }
   const char *getNodeId();
   char *getWordBeforeCursor();
   bool replaceNext(const char *text);
@@ -198,7 +198,7 @@ struct TextEditHelpWidget : public TextEditInput {
   bool edit(int key, int screenWidth, int charWidth);
   void paste(const char *text) {}
   bool isDrawTop() { return true; }
-  void resize(int w, int h) { _x = w - _width; _height = h; }
+  void layout(int w, int h) { _x = w - _width; _height = h; }
   void reset(HelpMode mode);
   bool closeOnEnter() const;
   bool lineEditMode() const { return _mode == kLineEdit; }
