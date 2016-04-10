@@ -56,7 +56,7 @@ sub do_okay_button()
   button.x = xmax / 2
   button.y = -1
   button.label = "Close"
-  button.backgroundColor = "blue"
+  button.backgroundColor = "green"
   button.color = "white"
   frm.inputs << button
   frm = form(frm)
@@ -66,7 +66,7 @@ end
 
 sub do_about()
   cls
-  color 2,0
+  color 7,0
   print " __           _      ___ _"
   print "(_ ._ _  _.|||_) /\ (_ |/ "
   print "__)| | |(_||||_)/--\__)|\_"

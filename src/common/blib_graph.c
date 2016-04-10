@@ -102,7 +102,8 @@ void cmd_window() {
 //  PSET [STEP] x, y [, color | COLOR color]
 //
 void cmd_pset() {
-  int32_t color = dev_fgcolor, step1 = 0;
+  long color = dev_fgcolor;
+  int32_t step1 = 0;
   ipt_t pt;
 
   /*

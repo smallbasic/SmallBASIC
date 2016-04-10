@@ -24,6 +24,7 @@
 	Fixed capslock handling
 	Added file manager to main shell program
 	Fixed issues with TRY/CATCH
+	Fixed using POINT to retrieve IMAGE data
 
 2016-02-11
 	Added export to mobile command (SDL)

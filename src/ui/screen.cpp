@@ -509,22 +509,6 @@ void GraphicScreen::drawRectFilled(int x1, int y1, int x2, int y2) {
   maFillRect(x1, y1, x2 - x1, y2 - y1);
 }
 
-// returns the color of the pixel at the given xy location
-int GraphicScreen::getPixel(int x, int y) {
-  MARect rc;
-  rc.left = x;
-  rc.top = y;
-  rc.width = 1;
-  rc.height = 1;
-
-  int data[1];
-  int result;
-
-  maGetImageData(_image, &data, &rc, 1);
-  result = -(data[0] & 0x00FFFFFF);
-  return result;
-}
-
 // extend the image to allow for additional content on the newline
 void GraphicScreen::imageAppend(MAHandle newImage) {
   MARect srcRect;

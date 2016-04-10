@@ -1072,7 +1072,17 @@ int osd_getpen(int mode) {
 }
 
 long osd_getpixel(int x, int y) {
-  return g_system->getOutput()->getPixel(x, y);
+  g_system->getOutput()->redraw();
+
+  MARect rc;
+  int data[1];
+  rc.left = x;
+  rc.top = y;
+  rc.width = 1;
+  rc.height = 1;
+  maGetImageData(HANDLE_SCREEN, &data, &rc, 1);
+  int result = -(data[0] & 0x00FFFFFF);
+  return result;
 }
 
 int osd_getx(void) {

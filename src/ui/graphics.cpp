@@ -307,6 +307,9 @@ void Graphics::getImageData(Canvas *canvas, uint8_t *image,
 
 int Graphics::getPixel(Canvas *canvas, int posX, int posY) {
   int result = 0;
+  if (canvas == HANDLE_SCREEN) {
+    canvas = _screen;
+  }
   if (canvas
       && posX > -1
       && posY > -1

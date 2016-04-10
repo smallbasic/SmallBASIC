@@ -36,7 +36,6 @@ struct Screen : public Shape {
   virtual void drawLine(int x1, int y1, int x2, int y2) = 0;
   virtual void drawRect(int x1, int y1, int x2, int y2) = 0;
   virtual void drawRectFilled(int x1, int y1, int x2, int y2) = 0;
-  virtual int  getPixel(int x, int y) = 0;
   virtual void newLine(int lineHeight) = 0;
   virtual int  print(const char *p, int lineHeight, bool allChars=false);
   virtual bool setGraphicsRendition(const char c, int escValue, int lineHeight) = 0;
@@ -111,7 +110,6 @@ struct GraphicScreen : public Screen {
   void resize(int newWidth, int newHeight, int oldWidth,
               int oldHeight, int lineHeight);
   void updateFont(int size);
-  int  getPixel(int x, int y);
   int  getMaxHScroll() { return 0; }
 
   MAHandle _image;
@@ -319,7 +317,6 @@ struct TextScreen : public Screen {
   void drawLine(int x1, int y1, int x2, int y2);
   void drawRect(int x1, int y1, int x2, int y2);
   void drawRectFilled(int x1, int y1, int x2, int y2);
-  int  getPixel(int x, int y) { return 0; }
   void inset(int x, int y, int w, int h, Screen *over);
   void newLine(int lineHeight);
   int  print(const char *p, int lineHeight, bool allChars=false);

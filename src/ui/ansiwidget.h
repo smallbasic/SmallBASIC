@@ -51,7 +51,6 @@ struct AnsiWidget {
   int  getColor() { return _back->_fg; }
   int  getFontSize() { return _fontSize; }
   FormInput *getNextField(FormInput *field) { return _back->getNextField(field); }
-  int  getPixel(int x, int y) { return _back->getPixel(x, y); }
   int  getScreenWidth()  { return _back->_width; }
   void getScroll(int &x, int &y) { _back->getScroll(x, y); }
   int  getHeight() { return _height; }
