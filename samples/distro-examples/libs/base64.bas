@@ -75,6 +75,28 @@ func decode(message)
   decode = result
 end
 
+func decodeBin(message)
+  dim result
+  local in_len = len(message)
+  local i, b_a, b_b, b_c, b_d
+
+  if (in_len % 4 != 0) then
+     throw "Invalid base64 message length"
+  endif
+
+  for i = 1 to in_len step 4
+    b_a = index(asc(mid(message, i, 1)))
+    b_b = index(asc(mid(message, i + 1, 1)))
+    b_c = index(asc(mid(message, i + 2, 1)))
+    b_d = index(asc(mid(message, i + 3, 1)))
+    result << (((b_a lshift 2) + (b_b rshift 4)))
+    result << (((b_b band 0xf) lshift 4) + (b_c rshift 2))
+    result << (((b_c band 0x3) lshift 6) + b_d)
+  next offset
+  decode = result
+end
+
+
 sub test
   if (len(alphabet) != 64) then
     throw "Invalid alphaet length"

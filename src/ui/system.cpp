@@ -19,6 +19,7 @@
 #include "common/keymap.h"
 #include "ui/system.h"
 #include "ui/inputs.h"
+#include "ui/image.h"
 
 #define MENU_CONSOLE    0
 #define MENU_SOURCE     1
@@ -107,6 +108,7 @@ void System::checkModifiedTime() {
 
 bool System::execute(const char *bas) {
   _output->reset();
+  reset_image_cache();
 
   // reset program controlled options
   opt_antialias = true;
