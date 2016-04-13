@@ -236,13 +236,6 @@ FormInput *create_input(var_p_t v_field) {
   return widget;
 }
 
-void create_func(var_p_t form, const char *name, method cb) {
-  var_p_t v_func = map_add_var(form, name, 0);
-  v_func->type = V_FUNC;
-  v_func->v.fn.self = form;
-  v_func->v.fn.cb = cb;
-}
-
 // creates a new form using the given map
 extern "C" void v_create_form(var_p_t var) {
   bool hasInputs = false;

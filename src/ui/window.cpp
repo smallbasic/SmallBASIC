@@ -16,7 +16,6 @@
 #include "ui/system.h"
 
 extern System *g_system;
-void create_func(var_p_t form, const char *name, method cb);
 
 #define WINDOW_SCREEN1  "graphicsScreen1"
 #define WINDOW_SCREEN2  "graphicsScreen2"

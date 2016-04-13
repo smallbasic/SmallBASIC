@@ -16,7 +16,9 @@
 #include "common/var.h"
 #include "common/var_map.h"
 #include "lib/maapi.h"
+#include "ui/image.h"
 #include "ui/system.h"
+#include "ui/graphics.h"
 
 #if !defined(LODEPNG_NO_COMPILE_CPP)
   #define LODEPNG_NO_COMPILE_CPP
@@ -39,8 +41,6 @@ extern "C" {
 extern System *g_system;
 unsigned nextId = 0;
 strlib::List<ImageBuffer *> cache;
-
-void create_func(var_p_t form, const char *name, method cb);
 
 void reset_image_cache() {
   cache.removeAll();
@@ -129,7 +129,7 @@ uint8_t *get_image_data(int x, int y, int w, int h) {
   rc.top = y;
   rc.width = w;
   rc.height = h;
-  int size = w * 4 * h * 4;
+  int size = w * h * 4;
   uint8_t *result = (uint8_t *)malloc(size);
   if (result != NULL) {
     g_system->getOutput()->redraw();
@@ -188,13 +188,21 @@ ImageBuffer *load_image(var_t *var) {
   } else if (var->type == V_ARRAY && var->v.a.maxdim == 2) {
     int w = ABS(var->v.a.lbound[0] - var->v.a.ubound[0]) + 1;
     int h = ABS(var->v.a.lbound[1] - var->v.a.ubound[1]) + 1;
-    unsigned char *image = (unsigned char *)malloc(w * h);
+    int size = w * h * 4;
+    unsigned char *image = (unsigned char *)malloc(size);
     for (int y = 0; y < h; y++) {
+      int yoffs = (4 * y * w);
       for (int x = 0; x < w; x++) {
         int pos = y * w + x;
         var_t *elem = (var_t *) (var->v.a.ptr + (sizeof(var_t) * pos));
-        // TODO combine RGBA from next four bytes of image[pos]
-        //image[pos] = v_getint(elem);
+        pixel_t px = v_getint(elem);
+        uint8_t r, g, b;
+        GET_RGB2(px, r, g, b);
+        int offs = yoffs + (4 * x);
+        image[offs + 0] = r;
+        image[offs + 1] = g;
+        image[offs + 2] = b;
+        image[offs + 3] = 255;
       }
     }
     result = new ImageBuffer();
@@ -385,11 +393,16 @@ void cmd_image_save(var_s *self) {
     } else if (array != NULL) {
       v_tomatrix(array, w, h);
       for (int y = 0; y < h; y++) {
+        int yoffs = (4 * y * w);
         for (int x = 0; x < w; x++) {
+          int offs = yoffs + (4 * x);
+          uint8_t r = image->_image[offs + 0];
+          uint8_t g = image->_image[offs + 1];
+          uint8_t b = image->_image[offs + 2];
+          pixel_t px = SET_RGB(r, g, b);
           int pos = y * w + x;
           var_t *elem = (var_t *) (array->v.a.ptr + (sizeof(var_t) * pos));
-          // TODO combine RGBA from next four bytes of image[pos]
-          //v_setint(elem, image->_image[pos]);
+          v_setint(elem, px);
         }
       }
       saved = true;

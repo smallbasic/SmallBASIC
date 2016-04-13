@@ -18,6 +18,9 @@
   #include "platform/fltk/system.h"
 #else
 
+void create_func(var_p_t form, const char *name, method cb);
+void reset_image_cache();
+
 struct Cache : public strlib::Properties {
   Cache(int size) : Properties(size * 2), _index(0) {}
   void add(const char *key, const char *value);

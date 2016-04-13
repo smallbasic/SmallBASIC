@@ -283,18 +283,20 @@ void Graphics::drawText(int left, int top, const char *str, int len) {
 void Graphics::getImageData(Canvas *canvas, uint8_t *image,
                             const MARect *srcRect, int bytesPerLine) {
   size_t scale = 1;
-  int w = bytesPerLine;
+  int x_end = srcRect->left + srcRect->width;
+  int y_end = srcRect->top + srcRect->height;
   if (canvas == HANDLE_SCREEN) {
     canvas = _screen;
   }
-  for (int dy = 0, y = srcRect->top; y < srcRect->height; y += scale, dy++) {
-    if (y >= canvas->y() && y <  canvas->h()) {
+  for (int dy = 0, y = srcRect->top; y < y_end; y += scale, dy++) {
+    if (y >= canvas->y() && y < canvas->h()) {
       pixel_t *line = canvas->getLine(y);
-      for (int dx = 0, x = srcRect->left; x < srcRect->width; x += scale, dx++) {
+      int yoffs = (dy * bytesPerLine * 4);
+      for (int dx = 0, x = srcRect->left; x < x_end; x += scale, dx++) {
         if (x >= canvas->x() && x < canvas->w()) {
-          uint8_t r,g,b;
+          uint8_t r, g, b;
           GET_RGB2(line[x], r, g, b);
-          int offs = (4 * dy * w) + (4 * dx);
+          int offs = yoffs + (dx * 4);
           image[offs + 0] = r;
           image[offs + 1] = g;
           image[offs + 2] = b;
