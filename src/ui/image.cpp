@@ -195,7 +195,7 @@ ImageBuffer *load_image(var_t *var) {
       for (int x = 0; x < w; x++) {
         int pos = y * w + x;
         var_t *elem = (var_t *) (var->v.a.ptr + (sizeof(var_t) * pos));
-        pixel_t px = v_getint(elem);
+        pixel_t px = -v_getint(elem);
         uint8_t r, g, b;
         GET_RGB2(px, r, g, b);
         int offs = yoffs + (4 * x);
@@ -402,7 +402,7 @@ void cmd_image_save(var_s *self) {
           pixel_t px = SET_RGB(r, g, b);
           int pos = y * w + x;
           var_t *elem = (var_t *) (array->v.a.ptr + (sizeof(var_t) * pos));
-          v_setint(elem, px);
+          v_setint(elem, -px);
         }
       }
       saved = true;
