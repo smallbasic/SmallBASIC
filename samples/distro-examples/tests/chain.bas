@@ -1,11 +1,19 @@
-code = "print \"hello\""
-chain code
+'
+' Tests for CHAIN
+'
+
+chain "print \"error1\""
+chain "throw \"error2\""
+chain "throw \"error3\""
+chain "throw \"error4\""
 
 dim ar_code
 ar_code << "for i=0 to 10"
 ar_code << " print i"
 ar_code << "next i"
 chain ar_code
+
+chain "throw \"error5\""
 
 Const FILENAME = "chain.tmp"
 
@@ -34,8 +42,10 @@ Chain FILENAME
 ' BUG?: prints 16 (reads ONLY the first line,
 '      should read file as Array - not as String...):
 open_1
+? #1, "Print \"POW 2,4\""
 ? #1, "Print Pow(2, 4)"
 ? #1, "Print Pow(2, 5)"
+? #1, "Print \"done\""
 Close #1
 Chain FILENAME
 
@@ -56,3 +66,4 @@ Chain FILENAME
 ' BUG?: does not report an ERROR (entering endless/long loop - ONLY IF previous "Chain FILENAME" is uncommented):
 Chain "Print Power(2, 1)" ' using a "string" instead of filename.
 
+kill FILENAME

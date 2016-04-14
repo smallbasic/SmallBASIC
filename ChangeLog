@@ -14,18 +14,22 @@
 	Fixed editor highlighting
 	Runtime errors now show source screen with red error highlighter
 	Form refresh command now takes an boolean arg, true=push ui state to vars
+	The IMAGE argument can now be PNG data stored in an INT array
+	The IMAGE argument can now be x,y,w,h screen corordinates
+	The IMAGE argument can now be a 2-D array of POINTS
+	Updated IMAGE sub-command to save 2-D array of POINT
 	Added window.setFont command to set font size, bold and italic. example:
            w = window():w.setFont(10, "pt", false, true)
+	TRUE is now always returned as 1
+	Added file manager to main shell program
 	Fixed problem with escaped chars using FORMAT
 	Fixed problem with XNOR command result
-	TRUE is now always returned as 1
 	Fixed problem with IMP and EQV command result
 	Fixed problem with INKEY command
 	Fixed capslock handling
-	Added file manager to main shell program
 	Fixed issues with TRY/CATCH
 	Fixed using POINT to retrieve IMAGE data
-	The IMAGE argument can now be PNG data stored in an INT array
+	Fixed issues with CHAIN
 
 2016-02-11
 	Added export to mobile command (SDL)

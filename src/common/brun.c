@@ -366,8 +366,7 @@ void brun_break() {
  */
 void cmd_chain(void) {
   var_t var;
-  const char *code = NULL;
-  char *code_alloc = NULL;
+  char *code = NULL;
 
   v_init(&var);
   eval(&var);
@@ -380,20 +379,18 @@ void cmd_chain(void) {
   if (var.type == V_STR) {
     if (access(var.v.p.ptr, R_OK) == 0) {
       // argument is a file name
-      FILE *f = fopen(var.v.p.ptr, "r");
-      if (!fseek(f, 0, SEEK_END)) {
-        int len = ftell(f);
-        fseek(f, 0, SEEK_SET);
-        if (len) {
-          code_alloc = malloc(len + 1);
-          fgets(code_alloc, len, f);
-          code = code_alloc;
-        }
+      int h = open(var.v.p.ptr, O_BINARY | O_RDONLY, 0644);
+      if (h != -1) {
+        int len = lseek(h, 0, SEEK_END);
+        lseek(h, 0, SEEK_SET);
+        code = (char *)malloc(len + 1);
+        len = read(h, code, len);
+        code[len] = '\0';
+        close(h);
       }
-      fclose(f);
     }
     if (!code) {
-      code = var.v.p.ptr;
+      code = strdup(var.v.p.ptr);
     }
   } else if (var.type == V_ARRAY) {
     int el;
@@ -403,18 +400,15 @@ void cmd_chain(void) {
       if (el_p->type == V_STR) {
         int str_len = strlen(el_p->v.p.ptr) + 2;
         if (len) {
-          code_alloc = realloc(code_alloc, len + str_len);
-          strcat(code_alloc, el_p->v.p.ptr);
+          code = realloc(code, len + str_len);
+          strcat(code, el_p->v.p.ptr);
         } else {
-          code_alloc = malloc(str_len);
-          strcpy(code_alloc, el_p->v.p.ptr);
+          code = malloc(str_len);
+          strcpy(code, el_p->v.p.ptr);
         }
-        strcat(code_alloc, "\n");
+        strcat(code, "\n");
         len += str_len + 1;
       }
-    }
-    if (len) {
-      code = code_alloc;
     }
   }
 
@@ -424,6 +418,8 @@ void cmd_chain(void) {
     return;
   }
 
+  v_free(&var);
+
   int tid_base = create_task("CH_BASE");
   int tid_prev = activate_task(tid_base);
 
@@ -431,16 +427,20 @@ void cmd_chain(void) {
   sys_before_comp();
   int success = comp_compile_buffer(code);
 
-  v_free(&var);
-  if (code_alloc) {
-    free(code_alloc);
-  }
+  free(code);
+  code = NULL;
+
   if (success == 0) {
     close_task(tid_base);
     activate_task(tid_prev);
     prog_error = 1;
     return;
   }
+
+  char last_file[OS_PATHNAME_SIZE + 1];
+  char bas_dir[OS_PATHNAME_SIZE + 1];
+  strcpy(last_file, gsb_last_file);
+  strcpy(bas_dir, gsb_bas_dir);
 
   int tid_main = brun_create_task("CH_MAIN", ctask->bytecode, 0);
   exec_sync_variables(0);
@@ -451,6 +451,13 @@ void cmd_chain(void) {
   close_task(tid_main);         // cleanup task container
   close_task(tid_base);         // cleanup task container
   activate_task(tid_prev);      // resume calling task
+
+  // reset globals
+  gsb_last_line = 0;
+  gsb_last_error = 0;
+  strcpy(gsb_last_file, last_file);
+  strcpy(gsb_bas_dir, bas_dir);
+  strcpy(gsb_last_errmsg, "");
 
   if (success == 0) {
     prog_error = 1;

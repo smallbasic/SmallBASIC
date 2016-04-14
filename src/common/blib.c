@@ -2767,14 +2767,12 @@ void cmd_call_vfunc() {
   if (v_func == NULL || v_func->type != V_FUNC) {
     rt_raise(ERR_NO_FUNC);
   } else {
-    if (code_peek() != kwTYPE_LEVEL_BEGIN) {
-      err_missing_lp();
-    } else {
+    if (code_peek() == kwTYPE_LEVEL_BEGIN) {
       code_skipnext();
-      v_func->v.fn.cb(v_func->v.fn.self);
-      if (!prog_error && code_peek() != kwTYPE_LEVEL_END) {
-        err_missing_rp();
-      }
+    }
+    v_func->v.fn.cb(v_func->v.fn.self);
+    if (code_peek() == kwTYPE_LEVEL_END) {
+      code_skipnext();
     }
   }
 }
