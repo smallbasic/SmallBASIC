@@ -25,12 +25,13 @@
 	Fixed problem with escaped chars using FORMAT
 	Fixed problem with XNOR command result
 	Fixed problem with IMP and EQV command result
-	Fixed problem with INKEY command
+	Fixed issues with INKEY command to allow ALT/SHIFT/CTRL states to be returned
 	Fixed capslock handling
 	Fixed issues with TRY/CATCH
 	Fixed using POINT to retrieve IMAGE data
 	Fixed issues with CHAIN
 	Fixed TLOAD to work correctly with TRY/CATCH
+	Fixed XPOS and YPOS to return 0 based values
 
 2016-02-11
 	Added export to mobile command (SDL)

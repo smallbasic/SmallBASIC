@@ -519,7 +519,6 @@ var_num_t cmd_math1(long funcCode, var_t *arg) {
     r = atanh(x);
 #endif
     break;
-
   case kwSEC:
     r = 1.0 / cos(x);
     break;
@@ -532,7 +531,6 @@ var_num_t cmd_math1(long funcCode, var_t *arg) {
   case kwASECH:
     r = log((1.0 + sqrt(1.0 - x * x)) / x);
     break;
-
   case kwCSC:
     r = 1.0 / sin(x);
     break;
@@ -597,18 +595,18 @@ var_num_t cmd_math1(long funcCode, var_t *arg) {
     r = x;
     break;
   case kwXPOS:
-    if (os_graphics)
+    if (os_graphics) {
       r = dev_getx() / dev_textwidth("0");
-    else
+    } else {
       r = dev_getx();
-    r++;
+    }
     break;
   case kwYPOS:
-    if (os_graphics)
+    if (os_graphics) {
       r = dev_gety() / dev_textheight("0");
-    else
+    } else {
       r = dev_gety();
-    r++;
+    }
     break;
   case kwRND:
     r = ((var_num_t) rand()) / (RAND_MAX + 1.0);
