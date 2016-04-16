@@ -14,6 +14,8 @@
 #include <string.h>
 #include <errno.h>
 
+int error_caught;
+
 /**
  * common message handler
  */
@@ -143,18 +145,6 @@ void err_syntax(int keyword, const char *fmt) {
 
 void err_parm_num(int found, int expected) {
   rt_raise(ERR_PARAM_NUM, found, expected);
-}
-
-void err_file(dword code) {
-  char buf[1024], *p;
-
-  strcpy(buf, strerror(code));
-  p = buf;
-  while (*p) {
-    *p = to_upper(*p);
-    p++;
-  }
-  err_throw(FSERR_FMT, code, buf);
 }
 
 void err_stackoverflow(void) {
@@ -435,6 +425,7 @@ void err_throw_str(const char *err) {
     prog_error = 0x80;
     err_common_msg(WORD_RTE, prog_file, prog_line, err);
   }
+  error_caught = caught;
 }
 
 // throw internal error
@@ -468,3 +459,36 @@ void cmd_throw() {
   }
 }
 
+void err_file(dword code) {
+  if (!gsb_last_error) {
+    char *err = malloc(SB_TEXTLINE_SIZE + 1);
+    sprintf(err, FSERR_FMT, code, strerror(code));
+    strupper(err);
+    err_throw_str(err);
+    free(err);
+  }
+}
+
+void err_reset() {
+  error_caught = 0;
+}
+
+int err_has_error() {
+  return error_caught || prog_error;
+}
+
+int err_handle_error(const char *err, var_p_t var) {
+  int result;
+  if (error_caught == 1) {
+    result = 1;
+  } else if (prog_error) {
+    rt_raise(err);
+    result = 1;
+  } else {
+    result = 0;
+  }
+  if (result && var) {
+    v_free(var);
+  }
+  return result;
+}

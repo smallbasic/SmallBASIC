@@ -551,19 +551,9 @@ void cmd_mkdir() {
  */
 #define LDLN_INC    256
 #define GROW_SIZE   1024
-#define BUFMAX       256
-
-#define CHK_ERR_CLEANUP(s)                      \
-  if (prog_error) {                             \
-    v_free(&file_name);                         \
-    rt_raise(s);                                \
-    return;                                     \
-  }
-#define CHK_ERR(s)                              \
-  if (prog_error) {                             \
-    rt_raise(s);                                \
-    return;                                     \
-  }
+#define BUFMAX      256
+#define CHK_ERR_CLEANUP(s) if (err_handle_error(s, &file_name)) return;
+#define CHK_ERR(s) if (err_handle_error(s, NULL)) return;
 
 void cmd_floadln() {
   var_t file_name, *array_p = NULL, *var_p = NULL;
@@ -574,6 +564,7 @@ void cmd_floadln() {
   int eof, eol, bufLen, bufIndex;
   dword unreadBytes;
 
+  err_reset();
   if (code_peek() == kwTYPE_SEP) {
     // "filename" is an already open file number
     flags = 0;
@@ -655,7 +646,7 @@ void cmd_floadln() {
           unreadBytes -= bufLen;
 
           dev_fread(handle, (byte *)buf, bufLen);
-          if (prog_error) {
+          if (err_has_error()) {
             eof = 1;
             break;
           }
@@ -675,7 +666,8 @@ void cmd_floadln() {
         }
       }                         // read line
 
-      if (prog_error) {         // clear & exit
+      if (err_has_error()) {
+        // clear & exit
         v_free(array_p);
         v_init(array_p);
         break;
@@ -724,6 +716,7 @@ void cmd_fsaveln() {
   int flags = DEV_FILE_OUTPUT;
   int handle, i;
 
+  err_reset();
   if (code_peek() == kwTYPE_SEP) {
     // "filename" is an already open file number
     flags = 0;

@@ -131,3 +131,62 @@ end try
 if (!caughtError) then
   throw "Error not caught!!!"
 endif
+
+' some more tests from Shain
+
+Found = 0
+
+Try
+  Tload "__xyz__abc__0123", lines
+  ? "Error"
+Catch err
+  Found++
+End Try
+
+Try
+  Tsave ":foo-name:/~~~", lines
+  ? "Error"
+Catch err
+  Found++
+End Try
+
+' catch file error outside sub or function
+Try
+  Open "xyz__xyz__012" For Input As #1
+  ? "Error"
+Catch err
+  Found++
+End Try
+
+' catch file error within function
+Func open_safe(filename)
+  Local fn = Freefile
+  Try
+    Open filename For Input As #fn
+    open_safe = fn
+    ? "Error!"
+  Catch err
+    Found++
+    open_safe = 0
+  End Try
+End Func
+
+' catch file error within nested function:
+Func call_safe(filename)
+  Local fn
+  fn = open_safe(filename)
+  call_safe = fn
+End Func
+
+' catch file error within function:
+fn = open_safe("xyz__xyz__012")
+
+' catch file error within nested functions
+fn = call_safe("xyz__xyz__012")
+
+if (Found != 5) then
+  throw "Failed: " + Found
+endif
+
+
+
