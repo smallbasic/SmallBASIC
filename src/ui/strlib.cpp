@@ -121,9 +121,17 @@ void String::empty() {
 }
 
 bool String::equals(const String &s, bool ignoreCase) const {
-  return (_buffer == 0 ? s._buffer == 0 : ignoreCase ?
-          strcasecmp(_buffer, s._buffer) == 0 : 
-          strcmp(_buffer, s._buffer) == 0);
+  bool result;
+  if (_buffer == s._buffer) {
+    result = true;
+  } else if (_buffer == NULL || s._buffer == NULL) {
+    result = _buffer == s._buffer;
+  } else if (ignoreCase) {
+    result = strcasecmp(_buffer, s._buffer) == 0;
+  } else {
+    result = strcmp(_buffer, s._buffer) == 0;
+  }
+  return result;
 }
 
 bool String::equals(const char *s, bool ignoreCase) const {

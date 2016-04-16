@@ -59,8 +59,9 @@ using namespace strlib;
 #define FORM_INPUT_TYPE "type"
 #define FORM_INPUT_BG "backgroundColor"
 #define FORM_INPUT_FG "color"
-#define FORM_INPUT_VISIBLE "visible"
 #define FORM_INPUT_IS_EXIT "isExit"
+#define FORM_INPUT_RESIZABLE "resizable"
+#define FORM_INPUT_VISIBLE "visible"
 #define FORM_INPUT_INDEX "selectedIndex"
 #define FORM_INPUT_LENGTH "length"
 #define FORM_INPUT_NO_FOCUS "noFocus"
@@ -115,7 +116,7 @@ struct FormInput : public Shape {
   virtual bool isDrawTop() { return false; }
   virtual bool hasHover() { return false; }
   virtual void setFocus(bool focus);
-  virtual void resize(int w, int h) {}
+  virtual void layout(int w, int h) {}
 
   void construct(var_p_t form, var_p_t field, int id);
   void drawButton(const char *caption, int x, int y, int w, int h, bool pressed);
@@ -128,8 +129,9 @@ struct FormInput : public Shape {
   void hide() { _visible = false; }
   int  getId() { return _id; }
   var_p_t getField(var_p_t form);
-  bool isVisible() { return _visible; }
   bool isNoFocus() { return _noFocus; }
+  bool isResizable() { return _resizable; }
+  bool isVisible() { return _visible; }
   void setColor(int bg, int fg) { _bg = bg; _fg = fg; }
   void setTextColor();
   void selected();
@@ -141,6 +143,7 @@ protected:
   bool _exit;
   bool _visible;
   bool _noFocus;
+  bool _resizable;
   int _bg;
   int _fg;
   bcip_t _onclick;
@@ -197,7 +200,7 @@ struct FormTab : public FormLink {
   virtual ~FormTab() {}
 
   void draw(int x, int y, int w, int h, int chw);
-  int padding(bool vert) const { return vert ? 0 : BN_W; }
+  int padding(bool vert) const;
 };
 
 struct FormEditInput : public FormInput {

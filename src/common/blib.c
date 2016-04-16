@@ -2009,22 +2009,10 @@ void cmd_locate() {
  * PAUSE [secs]
  */
 void cmd_pause() {
-  int x = 0, evc;
+  int evc;
   long start, now;
 
-  byte code = code_peek();
-  if (code == kwTYPE_VAR) {
-    x = par_getint();
-    if (prog_error) {
-      return;
-    }
-  } else if (code == kwTYPE_INT) {
-    code_skipnext();
-    x = code_getint();
-  } else if (code == kwTYPE_NUM) {
-    code_skipnext();
-    x = code_getreal();
-  }
+  var_int_t x = par_getval(0);
   if (x == 0) {
     while (dev_kbhit() == 0) {
       switch (dev_events(2)) {
@@ -2748,20 +2736,27 @@ void cmd_definekey(void) {
 }
 
 /**
+ * Try handler for try/catch
+ */
+void cmd_try() {
+  stknode_t node;
+  node.x.vtry.catch_ip = code_getaddr();
+  node.type = kwTRY;
+  code_push(&node);
+}
+
+/**
  * Handler for unthrown/uncaught exceptions
  */
 void cmd_catch() {
-  bcip_t end_try_ip = code_getaddr();
-  bcip_t outer_catch_ip = code_getaddr();
-
-  // skip level code
-  prog_ip += 1;
-
-  // skip to end-try
-  code_jump(end_try_ip);
-
-  // restore outer try/catch level
-  prog_catch_ip = outer_catch_ip;
+  stknode_t node;
+  code_pop_and_free(&node);
+  if (node.type != kwTRY) {
+    err_stackmess();
+  } else {
+    // skip to end-try
+    code_jump(code_getaddr());
+  }
 }
 
 /**
@@ -2772,7 +2767,13 @@ void cmd_call_vfunc() {
   if (v_func == NULL || v_func->type != V_FUNC) {
     rt_raise(ERR_NO_FUNC);
   } else {
+    if (code_peek() == kwTYPE_LEVEL_BEGIN) {
+      code_skipnext();
+    }
     v_func->v.fn.cb(v_func->v.fn.self);
+    if (code_peek() == kwTYPE_LEVEL_END) {
+      code_skipnext();
+    }
   }
 }
 

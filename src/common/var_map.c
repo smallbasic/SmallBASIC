@@ -209,10 +209,10 @@ int map_get_bool(var_p_t base, const char *name) {
   if (var != NULL) {
     switch (var->type) {
     case V_INT:
-      result = (var->v.i == -1);
+      result = (var->v.i != 0);
       break;
     case V_NUM:
-      result = (var->v.n == -1);
+      result = (var->v.n != 0);
       break;
     case V_STR:
       result = (strncasecmp(var->v.p.ptr, "true", 4));
@@ -710,7 +710,7 @@ void map_from_str(var_p_t dest) {
       jsmntok_t *tokens = malloc(sizeof(jsmntok_t) * num_tokens);
       const char *js = arg.v.p.ptr;
       size_t len = arg.v.p.size;
-      jsmnerr_t result;
+      int result;
       jsmn_parser parser;
 
       jsmn_init(&parser);

@@ -56,7 +56,7 @@ sub do_okay_button()
   button.x = xmax / 2
   button.y = -1
   button.label = "Close"
-  button.backgroundColor = "blue"
+  button.backgroundColor = "green"
   button.color = "white"
   frm.inputs << button
   frm = form(frm)
@@ -66,12 +66,12 @@ end
 
 sub do_about()
   cls
-  color 2,0
+  color 7,0
   print " __           _      ___ _"
   print "(_ ._ _  _.|||_) /\ (_ |/ "
   print "__)| | |(_||||_)/--\__)|\_"
   print
-  print "Version 0.12.5"
+  print "Version "; sbver
   print
   print "Copyright (c) 2002-2015 Chris Warren-Smith"
   print "Copyright (c) 1999-2006 Nic Christopoulos" + chr(10)
@@ -203,31 +203,8 @@ func getFiles()
   getFiles = result
 end
 
-sub createNewFile(byref f, byref wnd)
-  f.refresh(true)
-  local newFile = f.inputs(idxEdit).value
-  if (len(newFile) == 0) then
-    exit sub
-  endIf
-  if (lower(right(newFile, 4)) != ".bas") then
-    newFile += ".bas"
-  endIf
-  try
-    if (exist(newFile)) then
-      wnd.alert("File " + newFile + " already exists", "Duplicate File")
-    else
-      dim text
-      text << "REM SmallBASIC"
-      text << "REM created: " + date
-      tsave newFile, text
-    endif
-  catch e
-    wnd.alert("Error creating file: " + e)
-  end try
-end
-
 sub manageFiles()
-  local f, wnd, bn_edit, bn_files
+  local f, wnd, bn_edit, bn_files, selectedFile
   const renameId = "__bn_rename__"
   const deleteId = "__bn_delete__"
   const newId = "__bn_new__"
@@ -259,13 +236,15 @@ sub manageFiles()
     bn_edit.width = xmax
     bn_edit.type = "text"
     bn_edit.color = "white"
+    bn_edit.resizable = TRUE
     bn_files.x = x1
     bn_files.y = bn_edit.y + char_h + 2
     bn_files.height = ymax - bn_files.y
     bn_files.width = xmax - x1
     bn_files.color = 2
     bn_files.type = "list"
-    f.focus = idxfiles
+    bn_files.resizable = TRUE
+    f.focus = idxEdit
     f.inputs << bn_edit
     f.inputs << bn_files
     f = form(f)
@@ -327,7 +306,7 @@ sub manageFiles()
       tload selectedFile, buffer
       wnd.graphicsScreen2()
       cls
-      color 2,0
+      color 7,0
       len_buffer = len(buffer) - 1
       for i = 0 to len_buffer
         print buffer(i)
@@ -338,9 +317,46 @@ sub manageFiles()
     endIf
   end
 
+  sub createNewFile()
+    f.refresh(true)
+    local newFile = f.inputs(idxEdit).value
+
+    if (len(newFile) == 0) then
+      exit sub
+    endIf
+    if (lower(right(newFile, 4)) != ".bas") then
+      newFile += ".bas"
+    endIf
+    try
+      if (exist(newFile)) then
+        wnd.alert("File " + newFile + " already exists", "Duplicate File")
+      else
+        dim text
+        text << "REM SmallBASIC"
+        text << "REM created: " + date
+        tsave newFile, text
+        local f_list = getFiles()
+        local f_list_len=len(f_list) - 1
+        local i
+        for i = 0 to f_list_len
+          if (f_list(i) == newFile) then
+            f.inputs(idxFiles).selectedIndex = i
+            exit for
+          endif
+        next i
+        f.inputs(idxFiles).value = f_list
+        f.refresh(false)
+        selectedFile = newfile
+      endif
+    catch e
+      wnd.alert("Error creating file: " + e)
+    end try
+  end
+
   createUI()
   reloadList(0)
   wnd = window()
+  wnd.showKeypad()
 
   while 1
     f.doEvents()
@@ -350,8 +366,7 @@ sub manageFiles()
     case deleteId
       deleteFile()
     case newId
-      createNewFile(f, wnd)
-      reloadList(0)
+      createNewFile()
     case viewId
       viewFile()
     case closeId
@@ -386,7 +401,7 @@ sub main
     local frm
     frm.inputs << bn_files
     frm.inputs << bn_online
-    if (osname != "SDL") then
+    if (instr(sbver, "SDL") == 0) then
       frm.inputs << bn_setup
     endif
     frm.inputs << bn_about

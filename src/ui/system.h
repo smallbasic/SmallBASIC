@@ -18,6 +18,9 @@
   #include "platform/fltk/system.h"
 #else
 
+void create_func(var_p_t form, const char *name, method cb);
+void reset_image_cache();
+
 struct Cache : public strlib::Properties {
   Cache(int size) : Properties(size * 2), _index(0) {}
   void add(const char *key, const char *value);
@@ -69,8 +72,9 @@ struct System {
 
 protected:
   void checkModifiedTime();
-  void editSource(strlib::String &loadPath);
+  void editSource(strlib::String loadPath);
   bool execute(const char *bas);
+  bool fileExists(strlib::String &path);
   MAEvent getNextEvent() { return processEvents(1); }
   uint32_t getModifiedTime();
   void handleEvent(MAEvent &event);
@@ -81,11 +85,10 @@ protected:
   void runMain(const char *mainBasPath);
   void runOnce(const char *startupBas);
   void saveFile(TextEditInput *edit, strlib::String &path);
-  void setPath(const char *filename);
+  void setupPath();
   bool setParentPath();
   void setDimensions();
   void showCompletion(bool success);
-  void checkLoadError();
   void printErrorLine();
   void printSource();
   void printSourceLine(char *text, int line, bool last);
@@ -117,15 +120,12 @@ protected:
   strlib::String _loadPath;
   strlib::String _activeFile;
   Cache _cache;
-  int _lastEventTime;
-  int _eventTicks;
   int _touchX;
   int _touchY;
   int _touchCurX;
   int _touchCurY;
   int _initialFontSize;
   int _fontScale;
-  int _overruns;
   int _userScreenId;
   int *_systemMenu;
   bool _mainBas;

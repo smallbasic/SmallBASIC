@@ -386,6 +386,7 @@ void Runtime::loadConfig() {
   _output->setTextColor(DEFAULT_FOREGROUND, DEFAULT_BACKGROUND);
   _output->setFontSize(fontSize);
   _initialFontSize = _output->getFontSize();
+  chdir("/sdcard");
 
   path.append(_app->activity->internalDataPath);
   path.append(CONFIG_FILE);
@@ -632,7 +633,6 @@ MAEvent Runtime::processEvents(int waitFlag) {
     break;
   default:
     pollEvents(false);
-    checkLoadError();
   }
 
   MAEvent event;
@@ -749,7 +749,7 @@ void System::completeKeyword(int index) {
   }
 }
 
-void System::editSource(strlib::String &loadPath) {
+void System::editSource(strlib::String loadPath) {
   logEntered();
 
   strlib::String fileName;

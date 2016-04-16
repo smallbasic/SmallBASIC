@@ -139,6 +139,8 @@ bool Graphics::construct(const char *font, const char *boldFont) {
       _drawTarget = _screen;
       maSetColor(DEFAULT_BACKGROUND);
     }
+  } else {
+    result = false;
   }
   return result;
 }

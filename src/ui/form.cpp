@@ -110,7 +110,7 @@ void cmd_form_refresh(var_s *self) {
   var_t arg;
   v_init(&arg);
   eval(&arg);
-  bool setVars = v_getint(&arg) == -1;
+  bool setVars = v_getint(&arg) != 0;
   v_free(&arg);
   g_system->getOutput()->updateInputs(self, setVars);
 }
@@ -144,7 +144,8 @@ void cmd_form_do_events(var_s *self) {
                    focusInput->edit(event.key, sw, charWidth)) {
           dev_clrkb();
           out->setDirty();
-        } else if (event.key == SB_KEY_MK_PUSH || event.key == SB_KEY_MK_RELEASE) {
+        } else if (event.key == SB_KEY_MK_PUSH || event.key == SB_KEY_MK_RELEASE ||
+                   SB_KEY_CTRL(SB_KEY_UP) || SB_KEY_CTRL(SB_KEY_DOWN)) {
           // no exit on mouse events
           dev_clrkb();
         } else {
@@ -233,13 +234,6 @@ FormInput *create_input(var_p_t v_field) {
     widget = new FormButton(label, x, y, w, h);
   }
   return widget;
-}
-
-void create_func(var_p_t form, const char *name, method cb) {
-  var_p_t v_func = map_add_var(form, name, 0);
-  v_func->type = V_FUNC;
-  v_func->v.fn.self = form;
-  v_func->v.fn.cb = cb;
 }
 
 // creates a new form using the given map

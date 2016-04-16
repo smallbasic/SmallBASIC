@@ -1,4 +1,22 @@
-hello
+error1
+
+
+ * RTE-ERROR AT CH_MAIN:1 * 
+Description:
+error2
+
+
+
+ * RTE-ERROR AT CH_MAIN:1 * 
+Description:
+error3
+
+
+
+ * RTE-ERROR AT CH_MAIN:1 * 
+Description:
+error4
+
 0
 1
 2
@@ -10,3 +28,31 @@ hello
 8
 9
 10
+
+
+ * RTE-ERROR AT CH_MAIN:1 * 
+Description:
+error5
+
+2
+4
+8
+POW 2,4
+16
+32
+done
+
+64
+128
+
+
+ * RTE-ERROR AT CH_MAIN:1 * 
+Description:
+Expr/RT: Variable is NOT an array (Use DIM)
+
+
+
+ * RTE-ERROR AT CH_MAIN:1 * 
+Description:
+Expr/RT: Variable is NOT an array (Use DIM)
+

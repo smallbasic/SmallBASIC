@@ -95,6 +95,15 @@ bool isKeyword(const char *keyword) {
     }
   }
 
+  const char* constants[] = {
+    "SBVER", "PI", "XMAX", "YMAX", "TRUE", "FALSE", "CWD", "HOME", "COMMAND", ""
+  };
+  for (int i = 0; !result && constants[i] != '\0'; i++) {
+    if (strcasecmp(constants[i], keyword) == 0) {
+      result = true;
+    }
+  }
+
   return result;
 }
 
@@ -223,8 +232,8 @@ uint32_t getHash(const char *key) {
   uint32_t hash, i;
   for (hash = i = 0; key[i] != '\0'; i++) {
     hash += tolower(key[i]);
-    hash += (hash << 3);
-    hash ^= (hash >> 1);
+    hash += (hash << 4);
+    hash ^= (hash >> 2);
   }
   return hash;
 }
@@ -264,7 +273,7 @@ int main(int argc, char *argv[]) {
     HelpItem *item = (*it);
     if (strcasecmp(item->package, "Language") == 0) {
       count++;
-      fprintf(stdout, " %uu,\n", getHash(item->keyword));
+      fprintf(stdout, " %uu, //%s\n", getHash(item->keyword), item->keyword);
     }
   }
   fprintf(stdout, "};\n");
@@ -276,7 +285,7 @@ int main(int argc, char *argv[]) {
     HelpItem *item = (*it);
     if (strcasecmp(item->package, "Language") != 0) {
       count++;
-      fprintf(stdout, " %uu,\n", getHash(item->keyword));
+      fprintf(stdout, " %uu, //%s\n", getHash(item->keyword), item->keyword);
     }
   }
   fprintf(stdout, "};\n");

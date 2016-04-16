@@ -36,7 +36,6 @@ struct Screen : public Shape {
   virtual void drawLine(int x1, int y1, int x2, int y2) = 0;
   virtual void drawRect(int x1, int y1, int x2, int y2) = 0;
   virtual void drawRectFilled(int x1, int y1, int x2, int y2) = 0;
-  virtual int  getPixel(int x, int y) = 0;
   virtual void newLine(int lineHeight) = 0;
   virtual int  print(const char *p, int lineHeight, bool allChars=false);
   virtual bool setGraphicsRendition(const char c, int escValue, int lineHeight) = 0;
@@ -44,7 +43,7 @@ struct Screen : public Shape {
   virtual void reset(int fontSize);
   virtual void resize(int newWidth, int newHeight, int oldWidth,
                       int oldHeight, int lineHeight) = 0;
-  virtual void updateFont() = 0;
+  virtual void updateFont(int size=-1) = 0;
   virtual int  getMaxHScroll() = 0;
 
   void add(Shape *button);
@@ -56,6 +55,7 @@ struct Screen : public Shape {
   FormInput *getMenu(FormInput *prev, int px, int py);
   FormInput *getNextField(FormInput *field);
   void getScroll(int &x, int &y) { x = _scrollX; y = _scrollY; }
+  void layoutInputs(int newWidth, int newHeight);
   bool overlaps(int px, int py);
   void remove(Shape *button);
   void removeImage(unsigned imageId);
@@ -109,8 +109,7 @@ struct GraphicScreen : public Screen {
   void setPixel(int x, int y, int c);
   void resize(int newWidth, int newHeight, int oldWidth,
               int oldHeight, int lineHeight);
-  void updateFont() { setFont(_bold, _italic, _fontSize); }
-  int  getPixel(int x, int y);
+  void updateFont(int size);
   int  getMaxHScroll() { return 0; }
 
   MAHandle _image;
@@ -318,7 +317,6 @@ struct TextScreen : public Screen {
   void drawLine(int x1, int y1, int x2, int y2);
   void drawRect(int x1, int y1, int x2, int y2);
   void drawRectFilled(int x1, int y1, int x2, int y2);
-  int  getPixel(int x, int y) { return 0; }
   void inset(int x, int y, int w, int h, Screen *over);
   void newLine(int lineHeight);
   int  print(const char *p, int lineHeight, bool allChars=false);
@@ -327,7 +325,7 @@ struct TextScreen : public Screen {
   bool setGraphicsRendition(const char c, int escValue, int lineHeight);
   void setOver(Screen *over) { _over = over; }
   void setPixel(int x, int y, int c) {}
-  void updateFont() {}
+  void updateFont(int size) {}
   int  getMaxHScroll() { return (_cols * _charWidth) - w(); }
 
 private:

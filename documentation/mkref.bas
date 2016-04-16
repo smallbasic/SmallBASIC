@@ -23,6 +23,8 @@ in_map = array(in_str)
 
 if (len(args) == 2 && args(1) == "txt") then
   mk_text_reference(in_map)
+elif (len(args) == 2 && args(1) == "bas") then
+  mk_bas(in_map)
 else
   mk_help(in_map)
 fi
@@ -54,6 +56,20 @@ func fix_comments(comments, keyword)
   comments = translate(comments, "\\r\\n\\r\\n", chr(10))
   comments = translate(comments, "\\r\\n", chr(10))
   fix_comments = comments
+end
+
+sub mk_bas(byref in_map)
+  local i, row, group, keyword
+  local in_map_len = len(in_map) - 1
+  for i = 0 to in_map_len
+    row = in_map(i).body_value
+    keyword = get_field(row, "keyword=", true)
+    group = get_field(row, "group=", true)
+    ? group + " " + keyword
+    while (i + 1 < in_map_len && in_map(i).entity_id == in_map(i + 1).entity_id)
+      i++
+    wend
+  next i
 end
 
 sub mk_help(byref in_map)

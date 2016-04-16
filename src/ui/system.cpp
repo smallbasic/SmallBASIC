@@ -53,8 +53,6 @@
 #define FONT_SCALE_INTERVAL 10
 #define FONT_MIN 20
 #define FONT_MAX 200
-#define EVENT_CHECK_EVERY 2000
-#define EVENT_MAX_BURN_TIME 30
 
 System *g_system;
 
@@ -75,15 +73,12 @@ System::System() :
   _output(NULL),
   _state(kInitState),
   _cache(MAX_CACHE),
-  _lastEventTime(0),
-  _eventTicks(0),
   _touchX(-1),
   _touchY(-1),
   _touchCurX(-1),
   _touchCurY(-1),
   _initialFontSize(0),
   _fontScale(100),
-  _overruns(0),
   _userScreenId(-1),
   _systemMenu(NULL),
   _mainBas(false),
@@ -112,6 +107,7 @@ void System::checkModifiedTime() {
 
 bool System::execute(const char *bas) {
   _output->reset();
+  reset_image_cache();
 
   // reset program controlled options
   opt_antialias = true;
@@ -127,7 +123,6 @@ bool System::execute(const char *bas) {
   setWindowTitle(bas);
   showCursor(kArrow);
   int result = ::sbasic_main(bas);
-
   if (isRunning()) {
     _state = kActiveState;
   }
@@ -135,6 +130,17 @@ bool System::execute(const char *bas) {
   opt_command[0] = '\0';
   _output->resetFont();
   _output->flush(true);
+  return result;
+}
+
+bool System::fileExists(strlib::String &path) {
+  bool result = false;
+  if (path.indexOf("://", 1) != -1) {
+    result = true;
+  } else if (path.length() > 0) {
+    struct stat st_file;
+    result = stat(path.c_str(), &st_file) == 0;
+  }
   return result;
 }
 
@@ -556,10 +562,10 @@ void System::runMain(const char *mainBasPath) {
       _loadPath = activePath;
       _state = kActiveState;
     } else {
-      if (_loadPath.length() > 0) {
+      if (fileExists(_loadPath)) {
         _mainBas = false;
         activePath = _loadPath;
-        setPath(_loadPath);
+        setupPath();
       } else {
         _mainBas = true;
         _loadPath = mainBasPath;
@@ -581,9 +587,6 @@ void System::runMain(const char *mainBasPath) {
 
     bool success = execute(_loadPath);
     bool networkFile = (_loadPath.indexOf("://", 1) != -1);
-    if (!isClosing() && _overruns) {
-      systemPrint("\nOverruns: %d\n", _overruns);
-    }
     if (!isBack() && !isClosing() &&
         (opt_ide != IDE_INTERNAL || success || networkFile)) {
       // when editing, only pause here when successful, otherwise the editor shows
@@ -694,7 +697,8 @@ bool System::setParentPath() {
   return result;
 }
 
-void System::setPath(const char *filename) {
+void System::setupPath() {
+  const char *filename = _loadPath;
   if (strstr(filename, "://") == NULL) {
     const char *slash = strrchr(filename, '/');
     if (!slash) {
@@ -703,10 +707,18 @@ void System::setPath(const char *filename) {
     if (slash) {
       int len = slash - filename;
       if (len > 0) {
-        char path[1024];
+        // change to the loadPath directory
+        char path[FILENAME_MAX + 1];
         strncpy(path, filename, len);
         path[len] = 0;
         chdir(path);
+        struct stat st_file;
+        if (stat(_loadPath.c_str(), &st_file) < 0) {
+          // reset relative path back to full path
+          getcwd(path, FILENAME_MAX);
+          strcat(path, filename + len);
+          _loadPath = path;
+        }
       }
     }
   }
@@ -731,9 +743,6 @@ void System::setRunning(bool running) {
         _loadPath.indexOf("://", 1) != -1) {
       _loadPath.empty();
     }
-    _lastEventTime = maGetMilliSecondCount();
-    _eventTicks = 0;
-    _overruns = 0;
     _userScreenId = -1;
   } else if (!isClosing() && !isRestart() && !isBack()) {
     _state = kActiveState;
@@ -750,20 +759,6 @@ void System::showCompletion(bool success) {
     showSystemScreen(true);
   }
   _output->flush(true);
-}
-
-// detect when we have been called too frequently
-void System::checkLoadError() {
-  int now = maGetMilliSecondCount();
-  _eventTicks++;
-  if (now - _lastEventTime >= EVENT_CHECK_EVERY) {
-    // next time inspection interval
-    if (_eventTicks >= EVENT_MAX_BURN_TIME) {
-      _overruns++;
-    }
-    _lastEventTime = now;
-    _eventTicks = 0;
-  }
 }
 
 void System::showMenu() {
@@ -837,12 +832,10 @@ void System::showMenu() {
       }
 #endif
     } else {
-      if (_overruns == 0) {
-        items->add(new String("Console"));
-        items->add(new String("View source"));
-        _systemMenu[index++] = MENU_CONSOLE;
-        _systemMenu[index++] = MENU_SOURCE;
-      }
+      items->add(new String("Console"));
+      items->add(new String("View source"));
+      _systemMenu[index++] = MENU_CONSOLE;
+      _systemMenu[index++] = MENU_SOURCE;
       if (!isEditing()) {
         items->add(new String("Restart"));
         _systemMenu[index++] = MENU_RESTART;
@@ -1080,7 +1073,17 @@ int osd_getpen(int mode) {
 }
 
 long osd_getpixel(int x, int y) {
-  return g_system->getOutput()->getPixel(x, y);
+  g_system->getOutput()->redraw();
+
+  MARect rc;
+  int data[1];
+  rc.left = x;
+  rc.top = y;
+  rc.width = 1;
+  rc.height = 1;
+  maGetImageData(HANDLE_SCREEN, &data, &rc, 1);
+  int result = -(data[0] & 0x00FFFFFF);
+  return result;
 }
 
 int osd_getx(void) {
@@ -1169,3 +1172,9 @@ int maGetMilliSecondCount(void) {
   return dev_get_millisecond_count();
 }
 
+void create_func(var_p_t form, const char *name, method cb) {
+  var_p_t v_func = map_add_var(form, name, 0);
+  v_func->type = V_FUNC;
+  v_func->v.fn.self = form;
+  v_func->v.fn.cb = cb;
+}

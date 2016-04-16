@@ -86,7 +86,7 @@ void exportBuffer(AnsiWidget *out, const char *text, String &dest, String &token
   out->setStatus(buffer);
 }
 
-void System::editSource(String &loadPath) {
+void System::editSource(String loadPath) {
   logEntered();
 
   int w = _output->getWidth();
@@ -99,6 +99,7 @@ void System::editSource(String &loadPath) {
   TextEditInput *widget = editWidget;
   String dirtyFile;
   String cleanFile;
+  String recentFile;
   enum InputMode {
     kInit, kExportAddr, kExportToken
   } inputMode = kInit;
@@ -131,6 +132,7 @@ void System::editSource(String &loadPath) {
 
   showCursor(kIBeam);
   setRecentFile(loadPath.c_str());
+  setWindowTitle(loadPath);
 
   while (_state == kEditState) {
     MAEvent event = getNextEvent();
@@ -188,7 +190,7 @@ void System::editSource(String &loadPath) {
         break;
       case SB_KEY_F(1):
       case SB_KEY_ALT('h'):
-        _output->setStatus("Keyword Help. Esc=Close");
+        _output->setStatus("Keyword Help. F2=online, Esc=Close");
         widget = helpWidget;
         helpWidget->createKeywordIndex();
         helpWidget->show();
@@ -295,16 +297,24 @@ void System::editSource(String &loadPath) {
         if (editWidget->isDirty()) {
           saveFile(editWidget, loadPath);
         }
-        if (getRecentFile(loadPath, event.key - SB_KEY_ALT('1'))) {
-          loadSource(loadPath.c_str());
-          editWidget->reload(_programSrc);
-          dirty = !editWidget->isDirty();
-          setupStatus(dirtyFile, cleanFile, loadPath);
-          _modifiedTime = getModifiedTime();
-          if (helpWidget->messageMode() && helpWidget->isVisible()) {
-            showRecentFiles(helpWidget, loadPath);
+        if (getRecentFile(recentFile, event.key - SB_KEY_ALT('1'))) {
+          if (loadSource(recentFile.c_str())) {
+            editWidget->reload(_programSrc);
+            dirty = !editWidget->isDirty();
+            setupStatus(dirtyFile, cleanFile, recentFile);
+            setLoadPath(recentFile);
+            setWindowTitle(recentFile);
+            loadPath = recentFile;
+            if (helpWidget->messageMode() && helpWidget->isVisible()) {
+              showRecentFiles(helpWidget, loadPath);
+            }
+          } else {
+            String message("Failed to load recent file: ");
+            message.append(recentFile);
+            _output->setStatus(message);
           }
         }
+        _modifiedTime = getModifiedTime();
         break;
       default:
         redraw = widget->edit(event.key, sw, charWidth);

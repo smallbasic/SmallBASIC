@@ -16,7 +16,9 @@
 #include "common/var.h"
 #include "common/var_map.h"
 #include "lib/maapi.h"
+#include "ui/image.h"
 #include "ui/system.h"
+#include "ui/graphics.h"
 
 #if !defined(LODEPNG_NO_COMPILE_CPP)
   #define LODEPNG_NO_COMPILE_CPP
@@ -35,11 +37,14 @@ extern "C" {
 #define IMG_OPACITY "opacity"
 #define IMG_ID "ID"
 #define IMG_BID "BID"
-#define IMG_HANDLE "HANDLE"
 
 extern System *g_system;
 unsigned nextId = 0;
 strlib::List<ImageBuffer *> cache;
+
+void reset_image_cache() {
+  cache.removeAll();
+}
 
 ImageBuffer::ImageBuffer() :
   _bid(0),
@@ -106,18 +111,128 @@ void ImageDisplay::draw(int x, int y, int w, int h, int cw) {
   maDrawRGB(&dstPoint, _buffer->_image, &srcRect, _opacity, _buffer->_width);
 }
 
-// share image buffer from another image variable
-ImageBuffer *load_image(var_t *map) {
+dev_file_t *eval_filep() {
+  dev_file_t *result = NULL;
+  code_skipnext();
+  if (code_getnext() == '#') {
+    int handle = par_getint();
+    if (!prog_error) {
+      result = dev_getfileptr(handle);
+    }
+  }
+  return result;
+}
+
+uint8_t *get_image_data(int x, int y, int w, int h) {
+  MARect rc;
+  rc.left = x;
+  rc.top = y;
+  rc.width = w;
+  rc.height = h;
+  int size = w * h * 4;
+  uint8_t *result = (uint8_t *)malloc(size);
+  if (result != NULL) {
+    g_system->getOutput()->redraw();
+    maGetImageData(HANDLE_SCREEN, result, &rc, w);
+  }
+  return result;
+}
+
+ImageBuffer *load_image(var_int_t x) {
+  var_int_t y, w, h;
+  int count = par_massget("iii", &y, &w, &h);
+  int width = g_system->getOutput()->getWidth();
+  int height = g_system->getOutput()->getHeight();
   ImageBuffer *result = NULL;
-  int bid = map->type == V_MAP ? map_get_int(map, IMG_BID, -1) : -1;
-  if (bid != -1) {
-    List_each(ImageBuffer *, it, cache) {
-      ImageBuffer *next = (*it);
-      if (next->_bid == (unsigned)bid) {
-        result = next;
-        break;
+
+  if (prog_error || count == 0 || count == 2) {
+    err_throw(ERR_PARAM);
+  } else {
+    if (count == 1) {
+      w = width;
+      h = height;
+    } else {
+      w = MIN(w, width);
+      h = MIN(h, height);
+    }
+    uint8_t* image = get_image_data(x, y, w, h);
+    if (image == NULL) {
+      err_throw(ERR_IMAGE_LOAD, "Failed to load screen image");
+    } else {
+      result = new ImageBuffer();
+      result->_bid = ++nextId;
+      result->_width = w;
+      result->_height = h;
+      result->_filename = NULL;
+      result->_image = image;
+      cache.add(result);
+    }
+  }
+  return result;
+}
+
+// share image buffer from another image variable
+ImageBuffer *load_image(var_t *var) {
+  ImageBuffer *result = NULL;
+  if (var->type == V_MAP) {
+    int bid = map_get_int(var, IMG_BID, -1);
+    if (bid != -1) {
+      List_each(ImageBuffer *, it, cache) {
+        ImageBuffer *next = (*it);
+        if (next->_bid == (unsigned)bid) {
+          result = next;
+          break;
+        }
       }
     }
+  } else if (var->type == V_ARRAY && var->v.a.maxdim == 2) {
+    int w = ABS(var->v.a.lbound[0] - var->v.a.ubound[0]) + 1;
+    int h = ABS(var->v.a.lbound[1] - var->v.a.ubound[1]) + 1;
+    int size = w * h * 4;
+    unsigned char *image = (unsigned char *)malloc(size);
+    for (int y = 0; y < h; y++) {
+      int yoffs = (4 * y * w);
+      for (int x = 0; x < w; x++) {
+        int pos = y * w + x;
+        var_t *elem = (var_t *) (var->v.a.ptr + (sizeof(var_t) * pos));
+        pixel_t px = -v_getint(elem);
+        uint8_t r, g, b;
+        GET_RGB2(px, r, g, b);
+        int offs = yoffs + (4 * x);
+        image[offs + 0] = r;
+        image[offs + 1] = g;
+        image[offs + 2] = b;
+        image[offs + 3] = 255;
+      }
+    }
+    result = new ImageBuffer();
+    result->_bid = ++nextId;
+    result->_width = w;
+    result->_height = h;
+    result->_filename = NULL;
+    result->_image = image;
+    cache.add(result);
+  }
+  return result;
+}
+
+ImageBuffer *load_image(const unsigned char* buffer, int32_t size) {
+  ImageBuffer *result = NULL;
+  unsigned w, h;
+  unsigned char *image;
+  unsigned error = 0;
+
+  error = lodepng_decode32(&image, &w, &h, buffer, size);
+  if (!error) {
+    result = new ImageBuffer();
+    result->_bid = ++nextId;
+    result->_width = w;
+    result->_height = h;
+    result->_filename = NULL;
+    result->_image = image;
+    cache.add(result);
+  } else {
+    err_throw(ERR_IMAGE_LOAD, lodepng_error_text(error));
   }
   return result;
 }
@@ -189,21 +304,6 @@ ImageBuffer *load_xpm_image(char **data) {
   return result;
 }
 
-uint8_t *get_image_data(int x, int y, int w, int h) {
-  MARect rc;
-  rc.left = x;
-  rc.top = y;
-  rc.width = w;
-  rc.height = h;
-  int size = w * 4 * h * 4;
-  uint8_t *result = (uint8_t *)malloc(size);
-  if (result != NULL) {
-    g_system->getOutput()->flushNow();
-    maGetImageData(HANDLE_SCREEN, result, &rc, w);
-  }
-  return result;
-}
-
 void cmd_image_show(var_s *self) {
   ImageDisplay image;
   image._bid = map_get_int(self, IMG_BID, -1);
@@ -260,44 +360,55 @@ void cmd_image_hide(var_s *self) {
 }
 
 void cmd_image_save(var_s *self) {
-  var_int_t x, y, w, h;
-  int count = par_massget("iiii", &x, &y, &w, &h);
-  int width = g_system->getOutput()->getWidth();
-  int height = g_system->getOutput()->getHeight();
+  unsigned id = map_get_int(self, IMG_BID, -1);
+  ImageBuffer *image = NULL;
+  List_each(ImageBuffer *, it, cache) {
+    ImageBuffer *next = (*it);
+    if (next->_bid == id) {
+      image = next;
+      break;
+    }
+  }
 
-  if (count == 0 && !prog_error) {
-    // save entire screen
-    x = 0;
-    y = 0;
-    w = width;
-    h = height;
-  } else if (count == 2) {
-    // save width + height at 0, 0
-    w = MIN(x, width);
-    h = MIN(y, height);
-    x = 0;
-    y = 0;
-  } else if (count == 4) {
-    w = MIN(w, width);
-    h = MIN(h, height);
-  } else {
-    err_throw(ERR_PARAM);
+  var_t *array = NULL;
+  dev_file_t *filep = NULL;
+  byte code = code_peek();
+  switch (code) {
+  case kwTYPE_SEP:
+    filep = eval_filep();
+    break;
+  default:
+    array = par_getvar_ptr();
+    break;
   }
 
   bool saved = false;
-  int handle = map_get_int((var_p_t)self, IMG_HANDLE, -1);
-  if (!prog_error && handle != -1) {
-    dev_file_t *filep = dev_getfileptr(handle);
-    if (filep != NULL) {
-      uint8_t* image = get_image_data(x, y, w, h);
-      if (image != NULL) {
-        if (!lodepng_encode32_file(filep->name, image, w, h)) {
-          saved = true;
-        }
-        free(image);
+  if (!prog_error && image != NULL) {
+    int w = image->_width;
+    int h = image->_height;
+    if (filep != NULL && filep->open_flags == DEV_FILE_OUTPUT) {
+      if (!lodepng_encode32_file(filep->name, image->_image, w, h)) {
+        saved = true;
       }
+    } else if (array != NULL) {
+      v_tomatrix(array, w, h);
+      for (int y = 0; y < h; y++) {
+        int yoffs = (4 * y * w);
+        for (int x = 0; x < w; x++) {
+          int offs = yoffs + (4 * x);
+          uint8_t r = image->_image[offs + 0];
+          uint8_t g = image->_image[offs + 1];
+          uint8_t b = image->_image[offs + 2];
+          pixel_t px = SET_RGB(r, g, b);
+          int pos = y * w + x;
+          var_t *elem = (var_t *) (array->v.a.ptr + (sizeof(var_t) * pos));
+          v_setint(elem, -px);
+        }
+      }
+      saved = true;
     }
   }
+
   if (!saved) {
     err_throw(ERR_IMAGE_SAVE);
   }
@@ -312,27 +423,12 @@ void create_image(var_p_t var, ImageBuffer *image) {
   map_add_var(var, IMG_ZINDEX, 1);
   map_add_var(var, IMG_OPACITY, 0);
   map_add_var(var, IMG_ID, ++nextId);
-
-  if (image != NULL) {
-    map_add_var(var, IMG_WIDTH, image->_width);
-    map_add_var(var, IMG_HEIGHT, image->_height);
-    map_add_var(var, IMG_BID, image->_bid);
-
-    var_p_t v_show = map_add_var(var, "show", 0);
-    v_show->type = V_FUNC;
-    v_show->v.fn.self = var;
-    v_show->v.fn.cb = cmd_image_show;
-
-    var_p_t v_hide = map_add_var(var, "hide", 0);
-    v_hide->type = V_FUNC;
-    v_hide->v.fn.self = var;
-    v_hide->v.fn.cb = cmd_image_hide;
-  } else {
-    var_p_t v_save = map_add_var(var, "save", 0);
-    v_save->type = V_FUNC;
-    v_save->v.fn.self = var;
-    v_save->v.fn.cb = cmd_image_save;
-  }
+  map_add_var(var, IMG_WIDTH, image->_width);
+  map_add_var(var, IMG_HEIGHT, image->_height);
+  map_add_var(var, IMG_BID, image->_bid);
+  create_func(var, "show", cmd_image_show);
+  create_func(var, "hide", cmd_image_hide);
+  create_func(var, "save", cmd_image_save);
 }
 
 // loads an image for the form image input type
@@ -396,19 +492,15 @@ void screen_dump() {
 
 extern "C" void v_create_image(var_p_t var) {
   var_t arg;
-  int handle = -1;
   ImageBuffer *image = NULL;
   dev_file_t *filep = NULL;
 
   byte code = code_peek();
   switch (code) {
   case kwTYPE_SEP:
-    code_skipnext();
-    if (code_getnext() == '#') {
-      handle = par_getint();
-      if (!prog_error) {
-        filep = dev_getfileptr(handle);
-      }
+    filep = eval_filep();
+    if (filep != NULL) {
+      image = load_image(filep);
     }
     break;
 
@@ -424,14 +516,30 @@ extern "C" void v_create_image(var_p_t var) {
       strcpy(file.name, arg.v.p.ptr);
       file.type = ft_stream;
       image = load_image(&file);
-    } else if (arg.type == V_ARRAY && !prog_error) {
-      char **data = new char*[arg.v.a.size];
-      for (int i = 0; i < arg.v.a.size; i++) {
-        var_p_t elem = v_elem(&arg, i);
-        data[i] = elem->v.p.ptr;
+    } else if (arg.type == V_ARRAY && arg.v.a.size > 0 && !prog_error) {
+      var_p_t elem0 = v_elem(&arg, 0);
+      if (elem0->type == V_STR) {
+        char **data = new char*[arg.v.a.size];
+        for (int i = 0; i < arg.v.a.size; i++) {
+          var_p_t elem = v_elem(&arg, i);
+          data[i] = elem->v.p.ptr;
+        }
+        image = load_xpm_image(data);
+        delete [] data;
+      } else if (arg.v.a.maxdim == 2) {
+        // load from 2d array
+        image = load_image(&arg);
+      } else if (elem0->type == V_INT) {
+        unsigned char *data = new unsigned char[arg.v.a.size];
+        for (int i = 0; i < arg.v.a.size; i++) {
+          var_p_t elem = v_elem(&arg, i);
+          data[i] = (unsigned char)elem->v.i;
+        }
+        image = load_image(data, arg.v.a.size);
+        delete [] data;
       }
-      image = load_xpm_image(data);
-      delete [] data;
+    } else if (arg.type == V_INT && !prog_error) {
+      image = load_image(arg.v.i);
     } else {
       image = load_image(&arg);
     }
@@ -439,20 +547,9 @@ extern "C" void v_create_image(var_p_t var) {
     break;
   };
 
-  if (image == NULL && filep != NULL) {
-    if (filep->open_flags == DEV_FILE_OUTPUT) {
-      create_image(var, NULL);
-      map_add_var(var, IMG_HANDLE, handle);
-    } else {
-      handle = -1;
-      image = load_image(filep);
-    }
-  }
-
   if (image != NULL) {
     create_image(var, image);
-  } else if (handle == -1) {
+  } else {
     err_throw(ERR_BAD_FILE_HANDLE);
   }
 }
-

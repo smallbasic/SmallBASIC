@@ -71,14 +71,13 @@ void err_ref_var();
 void err_ref_circ_var();
 void err_array();
 void err_form_input();
-
-#define err_type_mismatch() err_typemismatch()
-
 void inf_done(void);
 void inf_break(int pline);
-
 void err_throw(const char *fmt, ...);
 void cmd_throw();
+void err_reset();
+int  err_handle_error(const char *err, var_p_t var);
+int  err_has_error();
 
 #if defined(__cplusplus)
   }

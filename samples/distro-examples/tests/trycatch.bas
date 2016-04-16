@@ -88,3 +88,105 @@ try
 catch "okay"
  REM okay
 end try
+
+sub s1(err)
+  try
+    s2(err)
+  catch "err1"
+    ? "err1"
+  catch "err2"
+    ? "err2"
+  catch "err3"
+    ? "err3"
+  end try
+end
+sub s2(err)
+  try
+    s3(err)
+  catch "err4"
+    ? "err4"
+  catch "err5"
+    ? "err5"
+  catch "err6"
+    ? "err6"
+  end try
+end
+sub s3(err)
+  if 1==1 then
+    if 1==1 then
+      if 1==1 then
+         throw err
+      endif
+    endif
+  endif
+end
+
+caughtError = FALSE
+try
+  s1("some string")
+catch "some"
+  caughtError = TRUE
+end try
+
+if (!caughtError) then
+  throw "Error not caught!!!"
+endif
+
+' some more tests from Shain
+
+Found = 0
+
+Try
+  Tload "__xyz__abc__0123", lines
+  ? "Error"
+Catch err
+  Found++
+End Try
+
+Try
+  Tsave ":foo-name:/~~~", lines
+  ? "Error"
+Catch err
+  Found++
+End Try
+
+' catch file error outside sub or function
+Try
+  Open "xyz__xyz__012" For Input As #1
+  ? "Error"
+Catch err
+  Found++
+End Try
+
+' catch file error within function
+Func open_safe(filename)
+  Local fn = Freefile
+  Try
+    Open filename For Input As #fn
+    open_safe = fn
+    ? "Error!"
+  Catch err
+    Found++
+    open_safe = 0
+  End Try
+End Func
+
+' catch file error within nested function:
+Func call_safe(filename)
+  Local fn
+  fn = open_safe(filename)
+  call_safe = fn
+End Func
+
+' catch file error within function:
+fn = open_safe("xyz__xyz__012")
+
+' catch file error within nested functions
+fn = call_safe("xyz__xyz__012")
+
+if (Found != 5) then
+  throw "Failed: " + Found
+endif
+
+
+

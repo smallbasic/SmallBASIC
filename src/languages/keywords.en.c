@@ -133,21 +133,23 @@ struct keyword_s keyword_table[] = {
  * OPERATORS (not the symbols)
  */
 struct opr_keyword_s opr_table[] = {
-{ "AND",   kwTYPE_LOGOPR, '&' },
-{ "OR",    kwTYPE_LOGOPR, '|' },
-{ "BAND",  kwTYPE_LOGOPR, OPLOG_BAND },
-{ "BOR",   kwTYPE_LOGOPR, OPLOG_BOR },
-{ "XOR",   kwTYPE_LOGOPR, '~' },
-{ "NOT",   kwTYPE_UNROPR, '!' },
-{ "MOD",   kwTYPE_MULOPR, OPLOG_MOD },
-{ "MDL",   kwTYPE_MULOPR, OPLOG_MDL },
-{ "EQV",   kwTYPE_LOGOPR, OPLOG_EQV },
-{ "IMP",   kwTYPE_LOGOPR, OPLOG_IMP },
-{ "NAND",  kwTYPE_LOGOPR, OPLOG_NAND },
-{ "NOR",   kwTYPE_LOGOPR, OPLOG_NOR },
-{ "XNOR",  kwTYPE_LOGOPR, OPLOG_NOR },
-{ "IN",    kwTYPE_CMPOPR, OPLOG_IN },
-{ "LIKE",  kwTYPE_CMPOPR, OPLOG_LIKE },
+{ "AND",    kwTYPE_LOGOPR, '&' },
+{ "OR",     kwTYPE_LOGOPR, '|' },
+{ "BAND",   kwTYPE_LOGOPR, OPLOG_BAND },
+{ "BOR",    kwTYPE_LOGOPR, OPLOG_BOR },
+{ "XOR",    kwTYPE_LOGOPR, '~' },
+{ "NOT",    kwTYPE_UNROPR, '!' },
+{ "MOD",    kwTYPE_MULOPR, OPLOG_MOD },
+{ "MDL",    kwTYPE_MULOPR, OPLOG_MDL },
+{ "EQV",    kwTYPE_LOGOPR, OPLOG_EQV },
+{ "IMP",    kwTYPE_LOGOPR, OPLOG_IMP },
+{ "NAND",   kwTYPE_LOGOPR, OPLOG_NAND },
+{ "NOR",    kwTYPE_LOGOPR, OPLOG_NOR },
+{ "XNOR",   kwTYPE_LOGOPR, OPLOG_XNOR },
+{ "IN",     kwTYPE_CMPOPR, OPLOG_IN },
+{ "LIKE",   kwTYPE_CMPOPR, OPLOG_LIKE },
+{ "LSHIFT", kwTYPE_LOGOPR, OPLOG_LSHIFT },
+{ "RSHIFT", kwTYPE_LOGOPR, OPLOG_RSHIFT },
 { "", 0, 0 }
 };
 
@@ -168,10 +170,8 @@ struct spopr_keyword_s spopr_table[] = {
 { "INPUT",              kwINPUTSEP },
 { "OUTPUT",             kwOUTPUTSEP },
 { "APPEND",             kwAPPENDSEP },
-{ "ACCESS",             kwACCESS },
 { "USING",              kwUSING },
 { "USG",                kwUSING },
-{ "SHARED",             kwSHARED },
 { "AS",                 kwAS },
 { "TO",                 kwTO },
 { "DO",                 kwDO },
@@ -208,7 +208,6 @@ struct func_keyword_s func_table[] = {
 { "SPC",                        kwSPACE }, 
 { "TAB",                        kwTAB },
 { "CAT",                        kwCAT },
-{ "ENVIRON",                    kwENVIRONF },
 { "ENV",                        kwENVIRONF },
 { "TRIM",                       kwTRIM },
 { "STRING",                     kwSTRING },
@@ -348,6 +347,7 @@ struct func_keyword_s func_table[] = {
 { "ARRAY",                      kwARRAY },
 { "FORM",                       kwFORM },
 { "WINDOW",                     kwWINDOW },
+{ "TIMESTAMP",                  kwTIMESTAMP },
 { "", 0 }
 };
 
@@ -357,7 +357,6 @@ struct func_keyword_s func_table[] = {
 struct proc_keyword_s proc_table[] = {
 { "CLS",                kwCLS },
 { "THROW",              kwTHROW },
-{ "ENVIRON",            kwENVIRON },
 { "ENV",                kwENVIRON },
 { "LOCATE",             kwLOCATE },
 { "AT",                 kwAT },
@@ -481,26 +480,18 @@ struct proc_keyword_s proc_table[] = {
 #define LCN_ANTIALIAS           "ANTIALIAS"
 
 /* system variables */
-#define LCN_SV_OSNAME           "OSNAME"
 #define LCN_SV_SBVER            "SBVER"
 #define LCN_SV_PI               "PI"
 #define LCN_SV_XMAX             "XMAX"
 #define LCN_SV_YMAX             "YMAX"
-#define LCN_SV_BPP              "BPP"   // Bits Per Pixel
 #define LCN_SV_TRUE             "TRUE"
 #define LCN_SV_FALSE            "FALSE"
-#define LCN_SV_LINECHART        "LINECHART"
-#define LCN_SV_BARCHART         "BARCHART"
-#define LCN_SV_CWD              "CWD"   // Current Working Directory
-#define LCN_SV_HOME             "HOME"  // home directory (user's personal directory)
+#define LCN_SV_CWD              "CWD"
+#define LCN_SV_HOME             "HOME"
 #define LCN_SV_COMMAND          "COMMAND"
-
-// x,y,z (USE keyword parameters)
 #define LCN_SV_X                "X"
 #define LCN_SV_Y                "Y"
 #define LCN_SV_Z                "Z"
-
-#define LCN_SV_VADR             "VIDADR" // video-ram address
 
 // fast cut of comments (pp)
 #define LCN_REM_1               ":rem "

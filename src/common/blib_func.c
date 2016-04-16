@@ -82,7 +82,7 @@ void cmd_pen() {
 
 /*
  * ARRAY ROUTINES - First element
- * funcCode is the function code, r is the return value of the 
+ * funcCode is the function code, r is the return value of the
  * function, elem_p is the element
  */
 void dar_first(long funcCode, var_t *r, var_t *elem_p) {
@@ -114,7 +114,7 @@ void dar_first(long funcCode, var_t *r, var_t *elem_p) {
 
 /*
  * ARRAY ROUTINES - Next (each) element
- * funcCode is the function code, r is the return value of 
+ * funcCode is the function code, r is the return value of
  * the function, elem_p is the current element
  */
 void dar_next(long funcCode, var_t *r, var_t *elem_p) {
@@ -160,7 +160,7 @@ void dar_next(long funcCode, var_t *r, var_t *elem_p) {
 
 /*
  * ARRAY ROUTINES - Last element
- * funcCode is the function code, r is the return value of 
+ * funcCode is the function code, r is the return value of
  * the function, elem_p is the element
  */
 void dar_final(long funcCode, var_t *r, int count) {
@@ -519,7 +519,6 @@ var_num_t cmd_math1(long funcCode, var_t *arg) {
     r = atanh(x);
 #endif
     break;
-
   case kwSEC:
     r = 1.0 / cos(x);
     break;
@@ -532,7 +531,6 @@ var_num_t cmd_math1(long funcCode, var_t *arg) {
   case kwASECH:
     r = log((1.0 + sqrt(1.0 - x * x)) / x);
     break;
-
   case kwCSC:
     r = 1.0 / sin(x);
     break;
@@ -597,18 +595,18 @@ var_num_t cmd_math1(long funcCode, var_t *arg) {
     r = x;
     break;
   case kwXPOS:
-    if (os_graphics)
+    if (os_graphics) {
       r = dev_getx() / dev_textwidth("0");
-    else
+    } else {
       r = dev_getx();
-    r++;
+    }
     break;
   case kwYPOS:
-    if (os_graphics)
+    if (os_graphics) {
       r = dev_gety() / dev_textheight("0");
-    else
+    } else {
       r = dev_gety();
-    r++;
+    }
     break;
   case kwRND:
     r = ((var_num_t) rand()) / (RAND_MAX + 1.0);
@@ -689,7 +687,7 @@ var_int_t cmd_fre(var_int_t arg) {
         while (n != 0 && ch == ' ') {
           n = read(memfd, &ch, sizeof(ch));
         }
-        
+
         // read the value
         long long val = 0;
         while (n != 0 && isdigit(ch)) {
@@ -918,7 +916,6 @@ void cmd_str1(long funcCode, var_t *arg, var_t *r) {
     r->v.p.ptr = cstrdup(arg->v.p.ptr);
     r->v.p.size = strlen(r->v.p.ptr) + 1;
     break;
-
   case kwBCS:
     //
     // str <- BCS$(str)
@@ -930,7 +927,6 @@ void cmd_str1(long funcCode, var_t *arg, var_t *r) {
     r->v.p.ptr = bstrdup(arg->v.p.ptr);
     r->v.p.size = strlen(r->v.p.ptr) + 1;
     break;
-
   case kwOCT:
     //
     // str <- OCT$(n)
@@ -1165,6 +1161,13 @@ void cmd_str1(long funcCode, var_t *arg, var_t *r) {
       }
     }
     break;
+  case kwTIMESTAMP:
+    //
+    // str <- TIMESTAMP(file)
+    //
+    r->v.p.size = dev_filemtime(arg->v.p.ptr, &r->v.p.ptr);
+    break;
+
   default:
     rt_raise("Unsupported built-in function call %ld, please report this bug (5)", funcCode);
   };
@@ -1174,7 +1177,7 @@ void cmd_str1(long funcCode, var_t *arg, var_t *r) {
 // str <- FUNC (void)
 //
 void cmd_str0(long funcCode, var_t *r) {
-  word ch;
+  dword ch;
   char tmp[3];
   struct tm tms;
   time_t now;
@@ -1186,14 +1189,25 @@ void cmd_str0(long funcCode, var_t *r) {
     // str <- INKEY$
     //
     if (!dev_kbhit()) {
-      dev_events(2);
+      dev_events(par_getval(2));
     }
     if (dev_kbhit()) {
       ch = dev_getch();
-      // MultiByte - dev_getchr() must return the extended code (2 bytes char)
       if ((ch & 0xFF00) == 0xFF00) {
-        // hardware keys
+        // keypad or mouse keys
         tmp[0] = '\033';
+        tmp[1] = ch & 0xFF;
+        tmp[2] = '\0';
+      } else if ((ch & SB_KEY_CTRL_ALT(0)) == SB_KEY_CTRL_ALT(0)) {
+        tmp[0] = '\4';
+        tmp[1] = ch & 0xFF;
+        tmp[2] = '\0';
+      } else if ((ch & SB_KEY_ALT_SHIFT(0)) == SB_KEY_ALT_SHIFT(0)) {
+        tmp[0] = '\5';
+        tmp[1] = ch & 0xFF;
+        tmp[2] = '\0';
+      } else if ((ch & SB_KEY_SHIFT_CTRL(0)) == SB_KEY_SHIFT_CTRL(0)) {
+        tmp[0] = '\6';
         tmp[1] = ch & 0xFF;
         tmp[2] = '\0';
       } else if ((ch & SB_KEY_CTRL(0)) == SB_KEY_CTRL(0)) {
@@ -1204,7 +1218,7 @@ void cmd_str0(long funcCode, var_t *r) {
         tmp[0] = '\2';
         tmp[1] = ch & 0xFF;
         tmp[2] = '\0';
-      } else if ((ch & SB_KEY_CTRL_ALT(0)) == SB_KEY_CTRL_ALT(0)) {
+      } else if ((ch & SB_KEY_SHIFT(0)) == SB_KEY_SHIFT(0)) {
         tmp[0] = '\3';
         tmp[1] = ch & 0xFF;
         tmp[2] = '\0';
@@ -1220,7 +1234,6 @@ void cmd_str0(long funcCode, var_t *r) {
             tmp[1] = '\0';
           }
           break;
-
         case enc_big5:         // China
           if (IsBig5Font(ch)) {
             tmp[0] = ch >> 8;
@@ -1231,7 +1244,6 @@ void cmd_str0(long funcCode, var_t *r) {
             tmp[1] = '\0';
           }
           break;
-
         case enc_gmb:          // Generic multibyte
           if (IsGMBFont(ch)) {
             tmp[0] = ch >> 8;
@@ -1242,13 +1254,11 @@ void cmd_str0(long funcCode, var_t *r) {
             tmp[1] = '\0';
           }
           break;
-
         case enc_unicode:      // Unicode
           tmp[0] = ch >> 8;
           tmp[1] = ch & 0xFF;
           tmp[2] = '\0';
           break;
-
         default:               // Europe 8bit
           tmp[0] = ch;
           tmp[1] = '\0';

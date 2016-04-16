@@ -14,6 +14,8 @@
 #include <string.h>
 #include <errno.h>
 
+int error_caught;
+
 /**
  * common message handler
  */
@@ -143,18 +145,6 @@ void err_syntax(int keyword, const char *fmt) {
 
 void err_parm_num(int found, int expected) {
   rt_raise(ERR_PARAM_NUM, found, expected);
-}
-
-void err_file(dword code) {
-  char buf[1024], *p;
-
-  strcpy(buf, strerror(code));
-  p = buf;
-  while (*p) {
-    *p = to_upper(*p);
-    p++;
-  }
-  err_throw(FSERR_FMT, code, buf);
 }
 
 void err_stackoverflow(void) {
@@ -325,18 +315,7 @@ void err_form_input() {
  * the DONE message
  */
 void inf_done() {
-#if USE_TERM_IO
-  if (!isatty(STDOUT_FILENO)) {
-    fprintf(stdout, "\n* %s *\n", WORD_DONE);
-  }
-  else {
-#endif
-
   dev_printf("\n\033[0m\033[80m\033[7m * %s * \033[0m\n", WORD_DONE);
-
-#if USE_TERM_IO
-}
-#endif
 }
 
 // the BREAK message
@@ -355,7 +334,6 @@ int err_throw_catch(const char *err) {
   var_t *arg;
   var_t v_catch;
   int caught = 1;
-
   switch (code_peek()) {
   case kwTYPE_VAR:
     arg = code_getvarptr();
@@ -378,37 +356,76 @@ int err_throw_catch(const char *err) {
   return caught;
 }
 
+// returns the position for the most TRY in the stack
+int err_find_try(int position) {
+  int result = -1;
+  while (position) {
+    if (prog_stack[--position].type == kwTRY) {
+      result = position;
+      break;
+    }
+  }
+  return result;
+}
+
 // throw string
 void err_throw_str(const char *err) {
   int caught = 0;
-  if (!prog_error && prog_catch_ip != INVALID_ADDR && prog_catch_ip > prog_ip) {
+  int throw_sp = prog_stack_count;
+  int try_sp = err_find_try(throw_sp);
+  int reset_sp;
+
+  if (!prog_error && try_sp != -1) {
+    bcip_t catch_ip = prog_stack[try_sp].x.vtry.catch_ip;
     // position after kwCATCH
-    code_jump(prog_catch_ip + 1);
+    code_jump(catch_ip + 1);
+
     // skip "end try" address
     code_getaddr();
-    // restore outer level
-    prog_catch_ip = code_getaddr();
-    // get the stack level
-    byte level = code_getnext();
+
+    // fetch next catch in the current block
+    catch_ip = code_getaddr();
 
     caught = err_throw_catch(err);
-    while (!caught && prog_catch_ip != INVALID_ADDR) {
-      code_jump(prog_catch_ip + 1);
-      code_getaddr();
-      prog_catch_ip = code_getaddr();
-      level = code_getnext();
-      caught = err_throw_catch(err);
+    reset_sp = try_sp;
+
+    while (!caught && (catch_ip != INVALID_ADDR || try_sp != -1)) {
+      // find in the current block
+      while (!caught && catch_ip != INVALID_ADDR) {
+        code_jump(catch_ip + 1);
+        code_getaddr();
+        catch_ip = code_getaddr();
+        caught = err_throw_catch(err);
+      }
+      // find in the next outer block
+      if (!caught && try_sp != -1) {
+        try_sp = err_find_try(try_sp);
+        if (try_sp != -1) {
+          reset_sp = try_sp;
+          catch_ip = prog_stack[try_sp].x.vtry.catch_ip;
+          code_jump(catch_ip + 1);
+          code_getaddr();
+          catch_ip = code_getaddr();
+          caught = err_throw_catch(err);
+        }
+      }
     }
 
     // cleanup the stack
-    while (prog_stack_count > level) {
-      code_pop_and_free(NULL);
+    stknode_t node;
+    int sp;
+    for (sp = throw_sp; sp > reset_sp; sp--) {
+      code_pop_and_free(&node);
+    }
+    if (node.type != kwTRY) {
+      err_stackmess();
     }
   }
   if (!caught) {
     prog_error = 0x80;
     err_common_msg(WORD_RTE, prog_file, prog_line, err);
   }
+  error_caught = caught;
 }
 
 // throw internal error
@@ -442,3 +459,36 @@ void cmd_throw() {
   }
 }
 
+void err_file(dword code) {
+  if (!gsb_last_error) {
+    char *err = malloc(SB_TEXTLINE_SIZE + 1);
+    sprintf(err, FSERR_FMT, code, strerror(code));
+    strupper(err);
+    err_throw_str(err);
+    free(err);
+  }
+}
+
+void err_reset() {
+  error_caught = 0;
+}
+
+int err_has_error() {
+  return error_caught || prog_error;
+}
+
+int err_handle_error(const char *err, var_p_t var) {
+  int result;
+  if (error_caught == 1) {
+    result = 1;
+  } else if (prog_error) {
+    rt_raise(err);
+    result = 1;
+  } else {
+    result = 0;
+  }
+  if (result && var) {
+    v_free(var);
+  }
+  return result;
+}

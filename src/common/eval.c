@@ -466,9 +466,8 @@ static inline void oper_unary(var_t *r, byte op) {
 static inline void oper_log(var_t *r, var_t *left, byte op) {
   var_int_t li;
   var_int_t ri;
-  int i;
   var_int_t a, b;
-  var_int_t ba, bb;
+  int i, set;
 
   if (op != OPLOG_IN) {
     li = v_igetval(left);
@@ -480,20 +479,24 @@ static inline void oper_log(var_t *r, var_t *left, byte op) {
 
   switch (op) {
   case OPLOG_AND:
-    ri = (li && ri) ? -1 : 0;
+    ri = (li && ri) ? 1 : 0;
     break;
   case OPLOG_OR:
-    ri = (li || ri) ? -1 : 0;
+    ri = (li || ri) ? 1 : 0;
     break;
   case OPLOG_EQV:
     a = li;
     b = ri;
     ri = 0;
-    for (i = 0; i < sizeof(var_int_t); i++) {
-      ba = a & (1 << i);
-      bb = b & (1 << i);
-      if ((ba && bb) || (!ba && !bb)) {
-        ri |= (1 << i);
+    set = 0;
+    for (i = (sizeof(var_int_t) * 8) - 1; i >= 0; i--) {
+      int ba = ((a >> i) & 1);
+      int bb = ((b >> i) & 1);
+      if (ba || bb) {
+        set = 1;
+      }
+      if (set && ba == bb) {
+        ri |= (((var_int_t)1) << i);
       }
     }
     break;
@@ -501,11 +504,15 @@ static inline void oper_log(var_t *r, var_t *left, byte op) {
     a = li;
     b = ri;
     ri = 0;
-    for (i = 0; i < sizeof(var_int_t); i++) {
-      ba = a & (1 << i);
-      bb = b & (1 << i);
-      if (!(ba && !bb)) {
-        ri |= (1 << i);
+    set = 0;
+    for (i = (sizeof(var_int_t) * 8) - 1; i >= 0; i--) {
+      int ba = ((a >> i) & 1);
+      int bb = ((b >> i) & 1);
+      if (ba || bb) {
+        set = 1;
+      }
+      if (set && (!ba || bb)) {
+        ri |= (((var_int_t)1) << i);
       }
     }
     break;
@@ -526,6 +533,12 @@ static inline void oper_log(var_t *r, var_t *left, byte op) {
     break;
   case OPLOG_XOR:
     ri = li ^ ri;
+    break;
+  case OPLOG_LSHIFT:
+    ri = li << ri;
+    break;
+  case OPLOG_RSHIFT:
+    ri = li >> ri;
     break;
   }
 
@@ -743,14 +756,14 @@ static inline void eval_callf_str1(long fcode, var_t *r) {
     v_init(&vtmp);
     eval(&vtmp);
     if (!prog_error) {
-      r->type = V_STR;
-      r->v.p.ptr = NULL;
-      cmd_str1(fcode, &vtmp, r);
-      v_free(&vtmp);
       if (CODE_PEEK() != kwTYPE_LEVEL_END) {
         err_missing_rp();
       } else {
         IP++;
+        r->type = V_STR;
+        r->v.p.ptr = NULL;
+        cmd_str1(fcode, &vtmp, r);
+        v_free(&vtmp);
       }
     }
   }
@@ -807,12 +820,12 @@ static inline void eval_callf_num(long fcode, var_t *r) {
     v_init(&vtmp);
     eval(&vtmp);
     if (!prog_error) {
-      cmd_ns1(fcode, &vtmp, r);
-      v_free(&vtmp);
       if (CODE_PEEK() != kwTYPE_LEVEL_END) {
         err_missing_rp();
       } else {
         IP++;
+        cmd_ns1(fcode, &vtmp, r);
+        v_free(&vtmp);
       }
     }
   }
@@ -848,12 +861,12 @@ static inline void eval_callf_imathI1(long fcode, var_t *r) {
     v_init(&vtmp);
     eval(&vtmp);
     if (!prog_error) {
-      r->type = V_INT;
-      r->v.i = cmd_imath1(fcode, &vtmp);
       if (CODE_PEEK() != kwTYPE_LEVEL_END) {
         err_missing_rp();
       } else {
         IP++;
+        r->type = V_INT;
+        r->v.i = cmd_imath1(fcode, &vtmp);
       }
     }
   }
@@ -877,15 +890,13 @@ static inline void eval_callf_mathN1(long fcode, var_t *r) {
     v_init(&vtmp);
     eval(&vtmp);
     if (!prog_error) {
-      r->type = V_NUM;
-      r->v.n = cmd_math1(fcode, &vtmp);
-      v_free(&vtmp);
-      if (!prog_error) {
-        if (CODE_PEEK() != kwTYPE_LEVEL_END) {
-          err_missing_rp();
-        } else {
-          IP++;
-        }
+      if (CODE_PEEK() != kwTYPE_LEVEL_END) {
+        err_missing_rp();
+      } else {
+        IP++;
+        r->type = V_NUM;
+        r->v.n = cmd_math1(fcode, &vtmp);
+        v_free(&vtmp);
       }
     }
   }
@@ -950,6 +961,7 @@ static inline void eval_callf(var_t *r) {
   case kwTRIM:
   case kwBCS:
   case kwCBS:
+  case kwTIMESTAMP:
     eval_callf_str1(fcode, r);
     break;
   case kwTRANSLATEF:

@@ -63,8 +63,26 @@ typedef long int var_int_t;
 #define OS_FILEHANDLES      256
 #define OS_DIRSEP   '/'
 
-// SB's constants
-#define SB_STR_VER          VERSION
+#if defined(_Win32)
+ #define SB_VERSYS "Win"
+#else
+ #define SB_VERSYS "Unix"
+#endif
+
+#if UINTPTR_MAX == 0xffffffff
+  #define SB_BIT_SZ "_32 "
+#else
+  #define SB_BIT_SZ "_64 "
+#endif
+
+  // SB's constants
+#if defined(_SDL)
+ #define SB_STR_VER VERSION " SDL " SB_VERSYS SB_BIT_SZ BUILD_DATE
+#elif defined (_ANDROID)
+  #define SB_STR_VER VERSION " Android " BUILD_DATE
+#else
+  #define SB_STR_VER VERSION " Console " SB_VERSYS SB_BIT_SZ BUILD_DATE
+#endif
 #define SB_DWORD_VER        0x908   // 00 (major) 08 (minor) 03 (patch)
 #define SB_PANICMSG_SIZE    1023
 #define SB_ERRMSG_SIZE      2048

@@ -199,6 +199,16 @@ var_num_t par_getnum(void);
 /**
  * @ingroup par
  *
+ * get next parameter as integer
+ * moves IP to the next position.
+ *
+ * @return the integer
+ */
+var_int_t par_getval(var_int_t def);
+
+/**
+ * @ingroup par
+ *
  * no-error if the next byte is a separator.
  * moves IP to the next position.
  *

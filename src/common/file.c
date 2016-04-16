@@ -34,7 +34,7 @@ typedef int FileHand;
 static dev_file_t file_table[OS_FILEHANDLES];
 
 /**
- * Basic wild-cards 
+ * Basic wild-cards
  */
 int wc_match(const char *mask, char *name) {
   if (mask == NULL) {
@@ -101,7 +101,7 @@ dev_file_t *dev_getfileptr(const int handle) {
     result = NULL;
   } else {
     // BASIC handles start from 1
-    int hnd = handle - 1;     
+    int hnd = handle - 1;
     if (hnd < 0 || hnd >= OS_FILEHANDLES) {
       rt_raise(FSERR_HANDLE);
       result = NULL;
@@ -180,9 +180,9 @@ int dev_fopen(int sb_handle, const char *name, int flags) {
 
   f->type = ft_stream;
 
-  // 
+  //
   // special devices
-  // 
+  //
   if (strlen(f->name) > 4) {
     if (f->name[4] == ':') {
       for (i = 0; i < 5; i++) {
@@ -207,7 +207,7 @@ int dev_fopen(int sb_handle, const char *name, int flags) {
         f->type = ft_socket_client;
       } else if (strncasecmp(f->name, "HTTP:", 5) == 0) {
         f->type = ft_http_client;
-      } else if (strncmp(f->name, "SOUT:", 5) == 0 || 
+      } else if (strncmp(f->name, "SOUT:", 5) == 0 ||
                  strncmp(f->name, "SDIN:", 5) == 0 ||
                  strncmp(f->name, "SERR:", 5) == 0) {
         f->type = ft_stream;
@@ -238,9 +238,9 @@ int dev_fopen(int sb_handle, const char *name, int flags) {
     }
   } // device
 
-  // 
+  //
   // open
-  // 
+  //
   switch (f->type) {
   case ft_stream:
     return stream_open(f);
@@ -638,7 +638,7 @@ char_p_t *dev_create_file_list(const char *wc, int *count) {
   char path[OS_PATHNAME_SIZE + 1];
   int l, size;
   char_p_t *list;
-  
+
   if (wc) {
     strcpy(path, wc);
     if ((p = strrchr(path, OS_DIRSEP)) == NULL) {
@@ -663,15 +663,15 @@ char_p_t *dev_create_file_list(const char *wc, int *count) {
     }
     wc2[0] = '\0';
   }
-  
+
   *count = 0;
   size = 256;
   list = malloc(sizeof(char_p_t) * size);
-  
+
   if ((dp = opendir(path)) == NULL) {
     return list;
   }
-  
+
   while ((e = readdir(dp)) != NULL) {
     name = e->d_name;
     if ((strcmp(name, ".") == 0) || (strcmp(name, "..") == 0)) {
@@ -687,7 +687,7 @@ char_p_t *dev_create_file_list(const char *wc, int *count) {
       *count = *count + 1;
     }
   }
-  
+
   closedir(dp);
 
   // common for all, if there are no files, return NULL
@@ -748,7 +748,7 @@ int dev_fattr(const char *file) {
   if ((vfslib = sblmgr_getvfs(file)) != -1) {
     return sblmgr_vfsdirexec(lib_vfs_attr, vfslib, file + 5);
   }
-  
+
   if (stat(file, &st) == 0) {
     r |= ((S_ISREG(st.st_mode)) ? VFS_ATTR_FILE : 0);
     r |= ((S_ISDIR(st.st_mode)) ? VFS_ATTR_DIR : 0);
@@ -780,4 +780,26 @@ int dev_faccess(const char *file) {
     return st.st_mode;
   }
   return 0;
+}
+
+/**
+ * returns the last-modified time for a file as a string
+ */
+int dev_filemtime(const char *file, char **buffer) {
+  int size = 0;
+  struct stat st;
+
+  if (!opt_file_permitted) {
+    rt_raise(ERR_FILE_PERM);
+  } else if (stat(file, &st) == 0) {
+    // 2016-02-20 05:23 PM
+    size = 20;
+    *buffer = malloc(size);
+    size = strftime(*buffer, size, "%Y-%m-%d %I:%M %p", localtime(&st.st_mtime));
+  } else {
+    *buffer = malloc(1);
+    *buffer[0] = '\0';
+    err_throw(FSERR_NOT_FOUND);
+  }
+  return size;
 }

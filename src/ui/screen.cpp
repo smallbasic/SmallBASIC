@@ -219,6 +219,46 @@ FormInput *Screen::getMenu(FormInput *prev, int px, int py) {
   return result;
 }
 
+void Screen::layoutInputs(int newWidth, int newHeight) {
+  List_each(FormInput *, it, _inputs) {
+    FormInput *r1 = (*it);
+    if (r1->isResizable()) {
+      bool right = true;
+      bool bottom = true;
+      List_each(FormInput *, subIt, _inputs) {
+        FormInput *r2 = (*subIt);
+        if (r1 != r2) {
+          if (r2->_x >  r1->_x &&
+              r2->_y >= r1->_y &&
+              r2->_y <= r1->_y + _height) {
+            // cant resize over right side sibling
+            right = false;
+          }
+          if (r2->_y >  r1->_y &&
+              r2->_x >= r1->_x &&
+              r2->_x <= r1->_x + _width) {
+            // cant resize over lower side sibling
+            bottom = false;
+          }
+        }
+      }
+      if (right) {
+        r1->_width = newWidth - r1->_x;
+      }
+      if (bottom) {
+        r1->_height = newHeight - r1->_y;
+      }
+    } else {
+      r1->layout(newWidth, newHeight);
+    }
+  }
+}
+
+// whether the given point overlaps with the screen rectangle
+bool Screen::overlaps(int px, int py) {
+  return (!OUTSIDE_RECT(px, py, _x, _y, _width, _height));
+}
+
 int Screen::print(const char *p, int lineHeight, bool allChars) {
   // print minimum of one character
   int numChars = 1;
@@ -238,11 +278,6 @@ int Screen::print(const char *p, int lineHeight, bool allChars) {
 
   _curX += cx;
   return numChars;
-}
-
-// whether the given point overlaps with the screen rectangle
-bool Screen::overlaps(int px, int py) {
-  return (!OUTSIDE_RECT(px, py, _x, _y, _width, _height));
 }
 
 // remove the button from the list
@@ -474,22 +509,6 @@ void GraphicScreen::drawRectFilled(int x1, int y1, int x2, int y2) {
   maFillRect(x1, y1, x2 - x1, y2 - y1);
 }
 
-// returns the color of the pixel at the given xy location
-int GraphicScreen::getPixel(int x, int y) {
-  MARect rc;
-  rc.left = x;
-  rc.top = y;
-  rc.width = 1;
-  rc.height = 1;
-
-  int data[1];
-  int result;
-
-  maGetImageData(_image, &data, &rc, 1);
-  result = -(data[0] & 0x00FFFFFF);
-  return result;
-}
-
 // extend the image to allow for additional content on the newline
 void GraphicScreen::imageAppend(MAHandle newImage) {
   MARect srcRect;
@@ -663,10 +682,11 @@ void GraphicScreen::resize(int newWidth, int newHeight, int oldWidth,
   if (!fullscreen) {
     drawBase(false);
   }
-  List_each(FormInput *, it, _inputs) {
-    FormInput *next = (*it);
-    next->resize(newWidth, newHeight);
-  }
+  layoutInputs(newWidth, newHeight);
+}
+
+void GraphicScreen::updateFont(int size) {
+  setFont(_bold, _italic, size > 0 ? size : _fontSize);
 }
 
 // handles the given escape character. Returns whether the font has changed
@@ -1014,6 +1034,7 @@ void TextScreen::resize(int newWidth, int newHeight, int, int, int) {
     _width = newWidth;
     _height = newHeight;
   }
+  layoutInputs(newWidth, newHeight);
 }
 
 //

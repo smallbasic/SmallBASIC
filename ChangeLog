@@ -1,12 +1,37 @@
-2016-02-18
-	Removed TICKSPERSEC, TICKS now returns millisecond intervals
+2016-03-29 (0.12.6)
+	Removed TICKSPERSEC
+	Removed BALLOC, MALLOC and VADR keywords. Removed duplicate ENVIRON
+	Removed system constants BPP and VIDADR, OSNAME, LINECHART, BARCHART
+	Added TIMESTAMP to return the modified-datetime of a file
+	Added LSHIFT and RSHIFT bit shift operators
+	SBVER now includes build information
+	TICKS now returns millisecond intervals
 	Refactor eval() for performance
 	Fixed some memory leaks in the ui handler
 	Editor now restores cursor when returning from run
+	Editor now displays the correct filename in the title bar
 	Added "industrial" editor theme from Shian (slot 2)
+	Fixed editor highlighting
 	Runtime errors now show source screen with red error highlighter
 	Form refresh command now takes an boolean arg, true=push ui state to vars
-	Removed BALLOC, MALLOC and VADR keywords
+	The IMAGE argument can now be PNG data stored in an INT array
+	The IMAGE argument can now be x,y,w,h screen corordinates
+	The IMAGE argument can now be a 2-D array of POINTS
+	Updated IMAGE sub-command to save 2-D array of POINT
+	Added window.setFont command to set font size, bold and italic. example:
+           w = window():w.setFont(10, "pt", false, true)
+	TRUE is now always returned as 1
+	Added file manager to main shell program
+	Fixed problem with escaped chars using FORMAT
+	Fixed problem with XNOR command result
+	Fixed problem with IMP and EQV command result
+	Fixed issues with INKEY command to allow ALT/SHIFT/CTRL states to be returned
+	Fixed capslock handling
+	Fixed issues with TRY/CATCH
+	Fixed using POINT to retrieve IMAGE data
+	Fixed issues with CHAIN
+	Fixed TLOAD to work correctly with TRY/CATCH
+	Fixed XPOS and YPOS to return 0 based values
 
 2016-02-11
 	Added export to mobile command (SDL)

@@ -42,24 +42,19 @@
 /*
  *   predefined system variables - index
  */
-#define SYSVAR_OSNAME       0  /**< system variable, OSNAME$   @ingroup var */
-#define SYSVAR_SBVER        1  /**< system variable, SBVER     @ingroup var */
-#define SYSVAR_PI           2  /**< system variable, PI        @ingroup var */
-#define SYSVAR_XMAX         3  /**< system variable, XMAX      @ingroup var */
-#define SYSVAR_YMAX         4  /**< system variable, YMAX      @ingroup var */
-#define SYSVAR_BPP          5  /**< system variable, BPP       @ingroup var */
-#define SYSVAR_TRUE         6  /**< system variable, TRUE      @ingroup var */
-#define SYSVAR_FALSE        7  /**< system variable, FALSE     @ingroup var */
-#define SYSVAR_LINECHART    8  /**< system variable, LINECHART @ingroup var */
-#define SYSVAR_BARCHART     9  /**< system variable, BARCHART  @ingroup var */
-#define SYSVAR_PWD          10 /**< system variable, PWD$      @ingroup var */
-#define SYSVAR_HOME         11 /**< system variable, HOME$     @ingroup var */
-#define SYSVAR_COMMAND      12 /**< system variable, COMMAND$  @ingroup var */
-#define SYSVAR_X            13 /**< system variable, X         @ingroup var */
-#define SYSVAR_Y            14 /**< system variable, Y         @ingroup var */
-#define SYSVAR_Z            15 /**< system variable, Z         @ingroup var */
-#define SYSVAR_VIDADR       16 /**< system variable, VIDADR    @ingroup var */
-#define SYSVAR_COUNT        17 /**< number of system variables @ingroup var */
+#define SYSVAR_SBVER        0  /**< system variable, SBVER     @ingroup var */
+#define SYSVAR_PI           1  /**< system variable, PI        @ingroup var */
+#define SYSVAR_XMAX         2  /**< system variable, XMAX      @ingroup var */
+#define SYSVAR_YMAX         3  /**< system variable, YMAX      @ingroup var */
+#define SYSVAR_TRUE         4  /**< system variable, TRUE      @ingroup var */
+#define SYSVAR_FALSE        5  /**< system variable, FALSE     @ingroup var */
+#define SYSVAR_PWD          6  /**< system variable, PWD$      @ingroup var */
+#define SYSVAR_HOME         7  /**< system variable, HOME$     @ingroup var */
+#define SYSVAR_COMMAND      8  /**< system variable, COMMAND$  @ingroup var */
+#define SYSVAR_X            9  /**< system variable, X         @ingroup var */
+#define SYSVAR_Y            10 /**< system variable, Y         @ingroup var */
+#define SYSVAR_Z            11 /**< system variable, Z         @ingroup var */
+#define SYSVAR_COUNT        12
 
 /**
  * @ingroup var
@@ -214,6 +209,13 @@ struct stknode_s {
       word vcheck; /**< checks (1=BYVAL ONLY, 3=BYVAL|BYREF, 2=BYREF ONLY) */
       var_t *res; /**< variable pointer (for BYVAL this is a clone) */
     } param;
+
+    /**
+     * try/catch
+     */
+    struct {
+      bcip_t catch_ip;
+    } vtry;
   } x;
 };
 typedef struct stknode_s stknode_t;

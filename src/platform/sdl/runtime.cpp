@@ -362,6 +362,9 @@ void Runtime::handleKeyEvent(MAEvent &event) {
     } else if ((event.nativeKey & KMOD_CTRL) &&
                (event.nativeKey & KMOD_SHIFT)) {
       event.key = SB_KEY_SHIFT_CTRL(event.key);
+    } else if ((event.nativeKey & KMOD_ALT) &&
+               (event.nativeKey & KMOD_SHIFT)) {
+      event.key = SB_KEY_ALT_SHIFT(event.key);
     } else if (event.nativeKey & KMOD_CTRL) {
       event.key = SB_KEY_CTRL(event.key);
     } else if (event.nativeKey & KMOD_ALT) {
@@ -415,7 +418,7 @@ void Runtime::pollEvents(bool blocking) {
       case SDL_TEXTINPUT:
         // pre-transformed/composted text
         mod = SDL_GetModState();
-        if (!mod || (mod & KMOD_SHIFT)) {
+        if (!mod || (mod & (KMOD_SHIFT|KMOD_CAPS))) {
           // ALT + CTRL keys handled in SDL_KEYDOWN
           for (int i = 0; ev.text.text[i] != 0; i++) {
             MAEvent *keyEvent = new MAEvent();
@@ -548,7 +551,6 @@ MAEvent Runtime::processEvents(int waitFlag) {
     break;
   default:
     pollEvents(false);
-    checkLoadError();
   }
 
   MAEvent event;
@@ -819,7 +821,6 @@ void flush_queue() {
 // sbasic implementation
 //
 int osd_devinit(void) {
-  setsysvar_str(SYSVAR_OSNAME, "SDL");
   runtime->setRunning(true);
   osd_clear_sound_queue();
   return 1;
@@ -974,6 +975,8 @@ extern "C" void dev_trace_line(int lineNo) {
           break;
         }
       }
+    } else if (!g_breakPoints.size()) {
+      runtime->systemPrint("Trace line: %d", lineNo);
     }
   } else {
     runtime->setExit(true);

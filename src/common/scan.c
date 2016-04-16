@@ -492,8 +492,8 @@ char *get_param_sect(char *text, const char *delim, char *dest) {
 
   while (*p) {
     if (quotes) {
-      if (*p == '\\' && *(p + 1) == '\"') {
-        // add the escaped quote and continue
+      if (*p == '\\' && (*(p + 1) == '\"' || *(p + 1) == '\\')) {
+        // add the escaped quote or slash and continue
         *d++ = *p++;
       } else if (*p == '\"') {
         quotes = 0;
@@ -1791,7 +1791,7 @@ void bc_store_exports(const char *slist) {
   if (comp_exptable.count) {
     offset = comp_exptable.count;
     comp_exptable.count += count;
-    comp_exptable.elem = (unit_sym_t **)realloc(comp_exptable.elem, 
+    comp_exptable.elem = (unit_sym_t **)realloc(comp_exptable.elem,
                                                 comp_exptable.count * sizeof(unit_sym_t **));
   } else {
     offset = 0;
@@ -2446,7 +2446,6 @@ int comp_text_line_command(long idx, int decl, int sharp, char *last_cmd) {
   case kwCATCH:
     comp_push(comp_prog.count);
     bc_add_ctrl(&comp_prog, idx, 0, 0);
-    bc_add_code(&comp_prog, comp_block_level);
     comp_expression(comp_bc_parm, 0);
     break;
 
@@ -2783,10 +2782,8 @@ bcip_t comp_next_bc_cmd(bcip_t ip) {
   case kwCASE:
   case kwCASE_ELSE:
   case kwENDSELECT:
-    ip += BC_CTRLSZ;
-    break;
   case kwCATCH:
-    ip += BC_CTRLSZ + 1;
+    ip += BC_CTRLSZ;
     break;
   case kwTYPE_EVAL_SC:
     ip += 2;                    // kwTYPE_LOGOPR+op
@@ -2867,34 +2864,6 @@ bcip_t comp_search_bc_stack_backward(bcip_t start, code_t code, byte level, bid_
     }
   }
   return INVALID_ADDR;
-}
-
-/*
- * search stack for the next inner catch
- */
-bcip_t comp_search_inner_catch(bcip_t start, byte level) {
-  bcip_t result = INVALID_ADDR;
-  if (level > 1) {
-    byte nextLevel = level - 1;
-    do {
-      bcip_t i;
-      comp_pass_node_t *node;
-      for (i = start; i < comp_sp; i++) {
-        node = comp_stack.elem[i];
-        if (node->level == nextLevel) {
-          if (comp_prog.ptr[node->pos] == kwTRY) {
-            // next CATCH has own block
-            break;
-          } else if (comp_prog.ptr[node->pos] == kwCATCH) {
-            result = node->pos;
-            break;
-          }
-        }
-      }
-      --nextLevel;
-    } while (result == INVALID_ADDR && nextLevel > 0);
-  }
-  return result;
 }
 
 /*
@@ -3383,17 +3352,16 @@ void comp_pass2_scan() {
         print_pass2_stack(i, kwENDTRY, node->level);
         return;
       }
+      // address of the end-try
       memcpy(comp_prog.ptr + node->pos + 1, &true_ip, ADDRSZ);
 
+      // address of the next catch in the same block
       false_ip = comp_search_bc_stack(i + 1, kwCATCH, node->level, node->block_id);
-      if (false_ip != INVALID_ADDR && false_ip < true_ip) {
-        // another catch in the same block
-        memcpy(comp_prog.ptr + node->pos + (ADDRSZ + 1), &false_ip, ADDRSZ);
-      } else {
-        // store the address of the next outer catch (or store INVALID_ADDR if not found)
-        false_ip = comp_search_inner_catch(i + 1, node->level);
-        memcpy(comp_prog.ptr + node->pos + (ADDRSZ + 1), &false_ip, ADDRSZ);
+      if (false_ip > true_ip) {
+        // not valid if found after end-try
+        false_ip = INVALID_ADDR;
       }
+      memcpy(comp_prog.ptr + node->pos + (ADDRSZ + 1), &false_ip, ADDRSZ);
       break;
     };
   }
@@ -3459,23 +3427,18 @@ void comp_init() {
   bc_create(&comp_data);
 
   // create system variables
-  comp_vartable[comp_var_getID(LCN_SV_OSNAME)].dolar_sup = 1;
   comp_var_getID(LCN_SV_SBVER);
   comp_var_getID(LCN_SV_PI);
   comp_var_getID(LCN_SV_XMAX);
   comp_var_getID(LCN_SV_YMAX);
-  comp_var_getID(LCN_SV_BPP);
   comp_var_getID(LCN_SV_TRUE);
   comp_var_getID(LCN_SV_FALSE);
-  comp_var_getID(LCN_SV_LINECHART);
-  comp_var_getID(LCN_SV_BARCHART);
   comp_vartable[comp_var_getID(LCN_SV_CWD)].dolar_sup = 1;
   comp_vartable[comp_var_getID(LCN_SV_HOME)].dolar_sup = 1;
   comp_vartable[comp_var_getID(LCN_SV_COMMAND)].dolar_sup = 1;
   comp_var_getID(LCN_SV_X);     // USE keyword
   comp_var_getID(LCN_SV_Y);     // USE keyword
   comp_var_getID(LCN_SV_Z);     // USE keyword
-  comp_var_getID(LCN_SV_VADR);
 }
 
 /*
@@ -3689,8 +3652,8 @@ char *comp_format_text(const char *source) {
       }
     } else {
       // in quotes
-      if (*p == '\\' && *(p + 1) == '\"') {
-        // add the escaped quote and continue
+      if (*p == '\\' && (*(p + 1) == '\"' || *(p + 1) == '\\')) {
+        // add the escaped quote or slash and continue
         *ps++ = *p++;
       } else if (*p == '\"' || *p == '\n') {
         // new line auto-ends the quoted string

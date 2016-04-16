@@ -197,7 +197,7 @@ int dev_restore(void);
  *
  * @param ch the key-code
  */
-void dev_pushkey(word ch);
+void dev_pushkey(dword ch);
 
 /**
  * @ingroup dev_i
@@ -755,6 +755,17 @@ int dev_faccess(const char *file);
  * @return the access attributes of the file
  */
 int dev_fattr(const char *file);
+
+/**
+ * @ingroup dev_f
+ *
+ * returns the last-modified time for a file as a string
+ *
+ * @param file is the filename
+ * @param buffer the result text
+ * @return number of characters returned in buffer
+ */
+int dev_filemtime(const char *file, char **buffer);
 
 /*
  *

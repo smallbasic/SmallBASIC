@@ -98,3 +98,112 @@ for i = 1 to end_el step 0.1
 next
 expected = 1 + ((end_el-1) * 10)
 if (expected != steps) then throw "incorrect step count:" + steps + " " + expected
+
+rem test fix for http://smallbasic.sourceforge.net/?q=node/1444
+func assertEq(a, b, pline)
+  if a != b
+    throw "Line: " + pline + " result: '" + a + "' != expected: '" + b + "'"
+  endif
+end
+
+assertEq format("\\ \\", "abcde"),   "abc",  PROGLINE
+assertEq format(" \\ \\", "abcde"),  " abc", PROGLINE
+assertEq format("\\ \\ ", "abcde"),  "abc ", PROGLINE
+assertEq format(" \\ \\ ", "abcde"), " abc ",PROGLINE
+assertEq format("\\ $ \\", "abcde"), "ab$cd",PROGLINE
+assertEq format(" \\$\\", "abcde"),  " a$b", PROGLINE
+assertEq format("\\$\\ ", "abcde"),  "a$b ", PROGLINE
+assertEq format(" \\$\\ ", "abcde"), " a$b ",PROGLINE
+assertEq format(" \\$\\ ", "abcde"), " a$b ",PROGLINE
+assertEq format("\\abcde\\", "ABbcde"),  "AabcdeB",PROGLINE
+
+rem http://smallbasic.sourceforge.net/?q=node/1445
+rem http://smallbasic.sourceforge.net/?q=node/1461
+rem https://en.wikipedia.org/wiki/XOR_gate
+rem https://en.wikipedia.org/wiki/XNOR_gate
+
+rem Logical
+assertEq 0 OR 0,  FALSE, PROGLINE
+assertEq 0 OR 1,  TRUE,  PROGLINE
+assertEq 1 OR 0,  TRUE,  PROGLINE
+assertEq 1 OR 1,  TRUE,  PROGLINE
+assertEq 0 == 0,  TRUE,  PROGLINE
+assertEq 0 == 1,  FALSE, PROGLINE
+assertEq 1 == 0,  FALSE, PROGLINE
+assertEq 1 == 1,  TRUE,  PROGLINE
+assertEq 0 != 0,  FALSE, PROGLINE
+assertEq 0 != 1,  TRUE,  PROGLINE
+assertEq 1 != 0,  TRUE,  PROGLINE
+assertEq 1 != 1,  FALSE, PROGLINE
+assertEq 0 AND 0, FALSE, PROGLINE
+assertEq 0 AND 1, FALSE, PROGLINE
+assertEq 1 AND 0, FALSE, PROGLINE
+assertEq 1 AND 1, TRUE,  PROGLINE
+
+rem Bitwise
+assertEq 0 BOR 0,  0, PROGLINE
+assertEq 7 BOR 6,  7, PROGLINE
+assertEq 100 BOR   0, 100, PROGLINE
+assertEq 1 BOR 1,  1, PROGLINE
+assertEq 0 BAND 0, 0, PROGLINE
+assertEq 0 BAND 1, 0, PROGLINE
+assertEq 1 BAND 0, 0, PROGLINE
+assertEq 1 BAND 1, 1, PROGLINE
+assertEq 0 NAND 0, 0xffffffffffffffff, PROGLINE
+assertEq 0 NAND 1, 0xffffffffffffffff, PROGLINE
+assertEq 1 NAND 0, 0xffffffffffffffff, PROGLINE
+assertEq 1 NAND 1, 0xfffffffffffffffe, PROGLINE
+assertEq 0 NOR 0,  0xffffffffffffffff, PROGLINE
+assertEq 0 NOR 1,  0xfffffffffffffffe, PROGLINE
+assertEq 1 NOR 0,  0xfffffffffffffffe, PROGLINE
+assertEq 1 NOR 1,  0xfffffffffffffffe, PROGLINE
+assertEq 0 XOR 0,  0, PROGLINE
+assertEq 0 XOR 1,  1,  PROGLINE
+assertEq 1 XOR 0,  1,  PROGLINE
+assertEq 1 XOR 1,  0, PROGLINE
+assertEq 0 XNOR 0, 0xffffffffffffffff,  PROGLINE
+assertEq 0 XNOR 1, 0xfffffffffffffffe, PROGLINE
+assertEq 1 XNOR 0, 0xfffffffffffffffe, PROGLINE
+assertEq 1 XNOR 1, 0xffffffffffffffff,  PROGLINE
+
+' mixed
+assertEq FALSE,   0, PROGLINE
+assertEq TRUE,    1, PROGLINE
+assertEq !FALSE,  1, PROGLINE
+assertEq 0 AND 0, 0, PROGLINE
+assertEq 0 AND 1, 0, PROGLINE
+assertEq 1 AND 1, 1, PROGLINE
+assertEq 0 OR 0,  0, PROGLINE
+assertEq 0 OR 1,  1, PROGLINE
+assertEq 1 OR 1,  1, PROGLINE
+assertEq NOT 0,   1, PROGLINE
+assertEq NOT 1,   0, PROGLINE
+assertEq 0 <> 0,  0, PROGLINE
+assertEq 0 <> 1,  1, PROGLINE
+assertEq 1 <> 1,  0, PROGLINE
+
+' The IMP operator returns 0 if the first operand is 1 and its second operand is 0.  In all other
+' cases, it returns 1. The operation is perform on each bit position in the two arguments.
+' !a || b
+' 1100
+' 1010
+' 1011
+assertEq 0xcccccccccccccccc Imp 0xaaaaaaaaaaaaaaaa, 0xbbbbbbbbbbbbbbbb, PROGLINE
+assertEq 0xcccccccc Imp 0xaaaaaaaa, 0xbbbbbbbb, PROGLINE
+assertEq 0xcccc Imp 0xaaaa, 0xbbbb, PROGLINE
+assertEq 0xcc Imp 0xaa, 0xbb, PROGLINE
+assertEq 0xc Imp 0xa, 0xb, PROGLINE
+
+' The Eqv operator returns 1 if and only if both inputs are equal.
+' 1100
+' 1010
+' 1001
+assertEq 0xcccccccccccccccc Eqv 0xaaaaaaaaaaaaaaaa, 0x9999999999999999, PROGLINE
+assertEq 0xcccccccc Eqv 0xaaaaaaaa, 0x99999999, PROGLINE
+assertEq 0xcccc Eqv 0xaaaa, 0x9999, PROGLINE
+assertEq 0xcc Eqv 0xaa, 0x99, PROGLINE
+assertEq 0xc Eqv 0xa, 0x9, PROGLINE
+
+' bit shift operators
+assertEq 0xFF  LSHIFT 1, 0x1FE, PROGLINE
+assertEq 0x1FE RSHIFT 1, 0xFF,  PROGLINE
