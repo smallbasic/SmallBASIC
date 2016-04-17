@@ -56,8 +56,8 @@ sub do_okay_button()
   button.x = xmax / 2
   button.y = -1
   button.label = "Close"
-  button.backgroundColor = "green"
-  button.color = "white"
+  button.backgroundColor = 8
+  button.color = 10
   frm.inputs << button
   frm = form(frm)
   print

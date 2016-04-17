@@ -141,6 +141,21 @@ void cev_prim_args() {
   }
 }
 
+// test for repeated primatives
+void cev_check_dup_prim() {
+  switch (CODE(IP)) {
+  case kwTYPE_INT:
+  case kwTYPE_NUM:
+  case kwTYPE_STR:
+  case kwTYPE_VAR:
+  case kwTYPE_CALLF:
+    cev_opr_err();
+    break;
+  default:
+    break;
+  }
+}
+
 /*
  * prim
  */
@@ -153,25 +168,31 @@ void cev_prim() {
   case kwTYPE_INT:
     bc_add_n(bc_out, bc_in->ptr + bc_in->cp, OS_INTSZ);
     IP += OS_INTSZ;
+    cev_check_dup_prim();
     break;
   case kwTYPE_NUM:
     bc_add_n(bc_out, bc_in->ptr + bc_in->cp, OS_REALSZ);
     IP += OS_REALSZ;
+    cev_check_dup_prim();
     break;
   case kwTYPE_STR:
     cev_prim_str();
+    cev_check_dup_prim();
     break;
   case kwTYPE_CALL_UDP:
     cev_udp();
+    cev_check_dup_prim();
     break;
   case kwTYPE_PTR:
     bc_add_n(bc_out, bc_in->ptr + bc_in->cp, ADDRSZ); // addr
     IP += ADDRSZ;
     bc_add_n(bc_out, bc_in->ptr + bc_in->cp, ADDRSZ); // return var
     IP += ADDRSZ;
+    cev_check_dup_prim();
     break;
   case kwTYPE_VAR:
     cev_prim_var();
+    cev_check_dup_prim();
     break;
   case kwTYPE_CALL_UDF:        // [udf1][addr2]
   case kwTYPE_CALLEXTF:        // [lib][index]
@@ -187,6 +208,9 @@ void cev_prim() {
       } else {
         cev_prim_args();
       }
+    }
+    if (code != kwBYREF) {
+      cev_check_dup_prim();
     }
     break;
   };
