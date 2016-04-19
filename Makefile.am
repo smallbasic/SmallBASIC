@@ -13,6 +13,9 @@ deb:
 test:
 	(cd @TEST_DIR@ && make test)
 
+leak-test:
+	(cd src/platform/unix && make leak-test)
+
 release:
 	(cd $(SUBDIRS) && make release)
 

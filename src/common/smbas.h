@@ -28,8 +28,7 @@ extern "C" {
  */
 typedef struct {
   char sign[4]; /**< always "SBEx" */
-  byte unused;
-  word ver; /**< version of this structure */
+  dword ver; /**< version of this structure */
   dword sbver; /**< version of SB */
   dword flags; /**< flags
    b0 = Big-endian CPU
@@ -41,12 +40,10 @@ typedef struct {
   dword var_count; /**< number of variables */
   dword lab_count; /**< number of labels */
   dword data_ip; /**< default DATA position */
-  dword uds_tab_ip; /**< location of struct mapping table */
 
   // ver 2
-  word lib_count; /**< libraries count (needed units) */
+  dword lib_count; /**< libraries count (needed units) */
   dword sym_count; /**< symbol count (linked-symbols) */
-  char reserved[26];
 } bc_head_t;
 
 /**
@@ -173,7 +170,6 @@ EXTERN char gsb_last_errmsg[SB_ERRMSG_SIZE + 1]; /**< last error message     */
 #define prog_libtable       ctask->sbe.exec.libtable
 #define prog_symtable       ctask->sbe.exec.symtable
 #define prog_exptable       ctask->sbe.exec.exptable
-#define prog_uds_tab_ip     ctask->sbe.exec.uds_tab_ip
 #define prog_timer          ctask->sbe.exec.timer
 #define comp_extfunctable   ctask->sbe.comp.extfunctable
 #define comp_extfunccount   ctask->sbe.comp.extfunccount
@@ -207,7 +203,6 @@ EXTERN char gsb_last_errmsg[SB_ERRMSG_SIZE + 1]; /**< last error message     */
 #define comp_udpcount       ctask->sbe.comp.udpcount
 #define comp_udpsize        ctask->sbe.comp.udpsize
 #define comp_next_field_id  ctask->sbe.comp.next_field_id
-#define comp_uds_tab_ip     ctask->sbe.comp.uds_tab_ip
 #define comp_use_global_vartable    ctask->sbe.comp.use_global_vartable
 #define comp_stack          ctask->sbe.comp.stack
 #define comp_sp             ctask->sbe.comp.stack.count
