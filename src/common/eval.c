@@ -724,9 +724,12 @@ static inline void eval_push(var_t *r) {
   // expression-stack resize
   eval_sp++;
   if (eval_sp == eval_size) {
-    eval_size += 64;
+    eval_size += SB_EVAL_STACK_SIZE;
     eval_stk = realloc(eval_stk, sizeof(var_t) * eval_size);
-    // rt_raise("EVAL: STACK OVERFLOW");
+    int i;
+    for (i = eval_sp; i < eval_size; i++) {
+      v_init(&eval_stk[i]);
+    }
   }
 }
 

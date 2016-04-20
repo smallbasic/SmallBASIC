@@ -4003,8 +4003,7 @@ void comp_preproc_unit_path(char *p) {
         *up++ = *p++;
       }
       *up = '\0';
-      sprintf(comp_bc_temp, "UNITPATH=%s", upath);
-      putenv(strdup(comp_bc_temp));
+      setenv("UNITPATH", upath, 1);
     }
   }
 }
@@ -4365,7 +4364,7 @@ byte_code comp_create_bin() {
 
     // unit header
     memcpy(&uft.sign, "SBUn", 4);
-    uft.version = 1;
+    uft.version = SB_DWORD_VER;
 
     strcpy(uft.base, comp_unit_name);
     uft.sym_count = comp_expcount;

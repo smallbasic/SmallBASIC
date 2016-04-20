@@ -1263,6 +1263,7 @@ int brun_create_task(const char *filename, byte *preloaded_bc, int libf) {
       cp += sizeof(bc_lib_rec_t);
     }
   }
+
   // build import-symbol table
   if (prog_symcount) {
     prog_symtable = (bc_symbol_rec_t *)malloc(prog_symcount * sizeof(bc_symbol_rec_t));
@@ -1271,6 +1272,7 @@ int brun_create_task(const char *filename, byte *preloaded_bc, int libf) {
       cp += sizeof(bc_symbol_rec_t);
     }
   }
+
   // create system stack
   prog_stack_alloc = SB_EXEC_STACK_SIZE;
   prog_stack = malloc(sizeof(stknode_t) * prog_stack_alloc);
@@ -1278,14 +1280,14 @@ int brun_create_task(const char *filename, byte *preloaded_bc, int libf) {
   prog_timer = NULL;
 
   // create eval's stack
-  eval_size = 64;
+  eval_size = SB_EVAL_STACK_SIZE;
   eval_stk = malloc(sizeof(var_t) * eval_size);
+  memset(eval_stk, 0, sizeof(var_t) * eval_size);
   eval_sp = 0;
 
   // initialize the rest tasks globals
   prog_error = 0;
   prog_line = 0;
-
   prog_dp = data_org = hdr.data_ip;
   prog_length = hdr.bc_count;
   prog_source = cp;
@@ -1385,7 +1387,6 @@ int brun_create_task(const char *filename, byte *preloaded_bc, int libf) {
 int exec_close_task() {
   word i;
   stknode_t node;
-
   if (ctask->bytecode) {
     // clean up - format list
     free_format();
@@ -1402,15 +1403,14 @@ int exec_close_task() {
     free(prog_stack);
     // clean up - variables
     for (i = 0; i < (int) prog_varcount; i++) {
-      int j, shared;
       // do not free imported variables
-      shared = -1;
+      int shared = -1;
+      int j;
       for (j = 0; j < prog_symcount; j++) {
-        if (prog_symtable[j].type == stt_variable) {
-          if (prog_symtable[j].var_id == i) {
-            shared = i;
-            break;
-          }
+        if (prog_symtable[j].type == stt_variable &&
+            prog_symtable[j].var_id == i) {
+          shared = j;
+          break;
         }
       }
 
@@ -1503,8 +1503,13 @@ void exec_sync_variables(int dir) {
         activate_task(ps->task_id);
         vp = tvar[us->vid];
 
+        // pointer assignment (shared var_t pointer)
         activate_task(tid);
-        tvar[ps->var_id] = vp;  // pointer assignment (shared var_t pointer)
+        if (tvar[ps->var_id] != vp) {
+          v_free(tvar[ps->var_id]);
+          free(tvar[ps->var_id]);
+        }
+        tvar[ps->var_id] = vp;
       } else {
         activate_task(tid);
         vp = tvar[ps->var_id];

@@ -142,10 +142,8 @@ int open_unit(const char *file) {
   }
 
   // compilation required
-  if (comp_rq) {
-    if (!comp_compile(bas_file)) {
-      return -1;
-    }
+  if (comp_rq && !comp_compile(bas_file)) {
+    return -1;
   }
 
   // open unit
@@ -155,10 +153,12 @@ int open_unit(const char *file) {
   }
 
   // read file header
-  read(h, &u.hdr, sizeof(unit_file_t));
-  if (memcmp(&u.hdr.sign, "SBUn", 4) != 0) {
+  int nread = read(h, &u.hdr, sizeof(unit_file_t));
+  if (nread != sizeof(unit_file_t) ||
+      u.hdr.version != SB_DWORD_VER ||
+      memcmp(&u.hdr.sign, "SBUn", 4) != 0) {
     close(h);
-    return -2;
+    return -1;
   }
 
   // load symbol-table
