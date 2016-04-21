@@ -89,7 +89,7 @@
 #define MSG_CANT_OPEN_FILE_AT   "Can't open '%s' at '%s'\n"
 #define MSG_CANT_OPEN_FILE      "Can't open '%s'\n"
 #define MSG_GRMODE_ERR          "GRMODE, usage:<width>x<height>[x<bits-per-pixel>]\nExample: OPTION PREDEF GRMODE=640x480x4\n"
-#define MSG_UNIT_NOT_FOUND      "Unit %s.sbu not found"
+#define MSG_UNIT_NOT_FOUND      "Unit %s.sbu not found or wrong version"
 #define MSG_IMPORT_FAILED       "Unit %s.sbu, import failed"
 #define MSG_INVALID_UNIT_NAME   "Invalid unit name"
 #define MSG_UNIT_ALREADY_DEFINED "Unit name already defined"

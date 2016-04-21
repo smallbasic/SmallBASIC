@@ -3091,13 +3091,15 @@ void comp_pass2_scan() {
     case kwTYPE_CALL_UDP:
     case kwTYPE_CALL_UDF:
       memcpy(&label_id, comp_prog.ptr + node->pos + 1, ADDRSZ);
-      if (label_id != kwCALLCF) {
+      if (label_id < comp_udpcount) {
         // update real IP
         true_ip = comp_udptable[label_id].ip + (ADDRSZ + 3);
         memcpy(comp_prog.ptr + node->pos + 1, &true_ip, ADDRSZ);
         // update return-var ID
         true_ip = comp_udptable[label_id].vid;
         memcpy(comp_prog.ptr + node->pos + (ADDRSZ + 1), &true_ip, ADDRSZ);
+      } else if (label_id != kwCALLCF) {
+        sc_raise(MSG_EXP_GENERR);
       }
       break;
 
@@ -3503,7 +3505,6 @@ void comp_close() {
  */
 char *comp_load(const char *file_name) {
   char *buf;
-
   strcpy(comp_file_name, file_name);
 #if defined(IMPL_DEV_READ)
   buf = dev_read(file_name);
