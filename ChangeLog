@@ -1,5 +1,6 @@
 2016-04-20 (0.12.6)
 	Fixed memory handling issues with UNITs
+	Fixed memory issue related to SUB/FUNC pointers
 
 2016-03-29 (0.12.6)
 	Removed TICKSPERSEC

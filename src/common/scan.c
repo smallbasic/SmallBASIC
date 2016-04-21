@@ -3090,14 +3090,15 @@ void comp_pass2_scan() {
     case kwTYPE_PTR:
     case kwTYPE_CALL_UDP:
     case kwTYPE_CALL_UDF:
-      // update real IP
       memcpy(&label_id, comp_prog.ptr + node->pos + 1, ADDRSZ);
-      true_ip = comp_udptable[label_id].ip + (ADDRSZ + 3);
-      memcpy(comp_prog.ptr + node->pos + 1, &true_ip, ADDRSZ);
-
-      // update return-var ID
-      true_ip = comp_udptable[label_id].vid;
-      memcpy(comp_prog.ptr + node->pos + (ADDRSZ + 1), &true_ip, ADDRSZ);
+      if (label_id != kwCALLCF) {
+        // update real IP
+        true_ip = comp_udptable[label_id].ip + (ADDRSZ + 3);
+        memcpy(comp_prog.ptr + node->pos + 1, &true_ip, ADDRSZ);
+        // update return-var ID
+        true_ip = comp_udptable[label_id].vid;
+        memcpy(comp_prog.ptr + node->pos + (ADDRSZ + 1), &true_ip, ADDRSZ);
+      }
       break;
 
     case kwONJMP:
