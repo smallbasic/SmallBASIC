@@ -75,6 +75,14 @@ void err_comp_label_not_def(const char *name) {
   sc_raise(MSG_LABEL_NOT_DEFINED, name);
 }
 
+// strcat replacement when p is incremented from dest
+void memcat(char *dest, char *p) {
+  int lenb = strlen(dest);
+  int lenp = strlen(p);
+  memmove(dest + lenb, p, lenp);
+  dest[lenb + lenp] = '\0';
+}
+
 /*
  * reset the external proc/func lists
  */
@@ -1564,7 +1572,6 @@ int comp_single_line_if(char *text) {
         }
         // store EOC
         bc_add_code(&comp_prog, kwTYPE_EOC);
-        // bc_eoc();
 
         // auto-goto
         p = pthen + 6;
@@ -1583,9 +1590,8 @@ int comp_single_line_if(char *text) {
         pelse = strstr(buf + 1, LCN_ELSE);
         if (pelse) {
           do {
-            if ((*(pelse - 1) == ' ' || *(pelse - 1) == '\t')
-                && (*(pelse + 4) == ' ' || *(pelse + 4) == '\t')) {
-
+            if ((*(pelse - 1) == ' ' || *(pelse - 1) == '\t') &&
+                (*(pelse + 4) == ' ' || *(pelse + 4) == '\t')) {
               *pelse = '\0';
 
               // scan the commands before ELSE
@@ -1601,11 +1607,10 @@ int comp_single_line_if(char *text) {
               if (is_digit(*p)) {
                 // add goto
                 strcat(buf, LCN_GOTO_WRS);
-                strcat(buf, p);
-              } else
-                strcat(buf, p);
-
-              //
+                memcat(buf, p);
+              } else {
+                memcat(buf, p);
+              }
               break;
             } else {
               pelse = strstr(pelse + 1, LCN_ELSE);
@@ -4005,7 +4010,7 @@ void comp_preproc_unit_path(char *p) {
         *up++ = *p++;
       }
       *up = '\0';
-      setenv("UNITPATH", upath, 1);
+      setenv(LCN_UNIT_PATH, upath, 1);
     }
   }
 }
