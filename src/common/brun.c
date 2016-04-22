@@ -1196,7 +1196,9 @@ int brun_create_task(const char *filename, byte *preloaded_bc, int libf) {
       lseek(h, sizeof(unit_sym_t) * uft.sym_count, SEEK_CUR);
     }
     read(h, &hdr, sizeof(bc_head_t));
-
+    if (hdr.sbver != SB_DWORD_VER) {
+      panic("File '%s' version incorrect", fname);
+    }
     source = malloc(hdr.size + 4);
     lseek(h, 0, SEEK_SET);
     read(h, source, hdr.size);

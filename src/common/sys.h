@@ -83,7 +83,6 @@ typedef long int var_int_t;
 #else
   #define SB_STR_VER VERSION " Console " SB_VERSYS SB_BIT_SZ BUILD_DATE
 #endif
-#define SB_DWORD_VER        0x908   // 00 (major) 08 (minor) 03 (patch)
 #define SB_PANICMSG_SIZE    1023
 #define SB_ERRMSG_SIZE      2048
 #define SB_KEYWORD_SIZE     128
