@@ -469,7 +469,6 @@ void cmd_chain(void) {
  */
 void cmd_run(int retf) {
   var_t var;
-
   v_init(&var);
   eval(&var);
   IF_ERR_RETURN;
@@ -482,7 +481,7 @@ void cmd_run(int retf) {
     v_free(&var);
   }
 
-  if (!dev_run(fileName, retf)) {
+  if (!dev_run(fileName, NULL, retf)) {
     err_run_err(fileName);
   }
 }

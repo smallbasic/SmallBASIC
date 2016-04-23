@@ -519,7 +519,7 @@ void v_setstrn(var_t *var, const char *string, int len);
  * @ingroup var
  *
  * Sets a string value to variable 'var'.
- * printf() style. Avoid to use on low-memory systems (like PalmOS 3.3).
+ * printf() style.
  *
  * @param var is the variable
  * @param fmt is the the format

@@ -11,8 +11,8 @@
  * @defgroup lgraf Low-level graphics/sound driver
  */
 
-#if !defined(_palm_dev_h)
-#define _palm_dev_h
+#if !defined(_osd_h)
+#define _osd_h
 
 #if defined(__cplusplus)
 extern "C" {
@@ -112,8 +112,6 @@ int osd_textheight(const char *str);
  *
  * enable/disable pen/mouse driver.
  *
- * That is neccessary on some systems like PalmOS because the pointing device it may be used by the OS.
- *
  * @note PEN ON/OFF command
  *
  * @param enable non-zero to enable pen/mouse driver.
@@ -126,10 +124,9 @@ void osd_setpenmode(int enable);
  * Mouse & lightpen!
  *
  * Since 1988 the mouse was an new device for PC's, there is no mouse support on QB.
- * We shall use the PEN(x) to support the mouse, and we must maintain the Palm compatibility.
  *
  * <pre>
- PalmOS PEN, Lightpen & Mouse API
+ PEN, Lightpen & Mouse API
  ================================
  PEN(0) -> true (non zero) if there is a new pen or mouse event
  PEN(1) -> PEN: last pen-down x; MOUSE: last mouse button down x

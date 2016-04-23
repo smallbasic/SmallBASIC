@@ -27,13 +27,7 @@
 #define _device_h
 
 #include "common/sys.h"
-#if !defined(SCAN_MODULE)
 #include "common/var.h"
-#endif
-
-#if USE_TERM_IO
-#include <termios.h>
-#endif
 
 #if defined(__cplusplus)
 extern "C" {
@@ -221,14 +215,11 @@ void dev_clrkb(void);
  * run process
  *
  * @param prog is the command-line
- * @param retflg non-zero for return (system()); otherwise dev_run() never returns (exec())
+ * @param v when non NULL, wait and return the process result
+ * @param wait bool whether to detach or wait for the process result
  * @return non-zero on success
  */
-int dev_run(const char *prog, int retflg);
-
-#if defined(_Win32)
-char *pw_shell(const char *cmd);
-#endif
+int dev_run(const char *src, var_t *v, int wait);
 
 /**
  * @ingroup dev
@@ -266,10 +257,9 @@ void dev_delay(dword ms);
  * Mouse & lightpen!
  *
  * Since 1988 the mouse was an new device for PC's, there is no mouse support on QB.
- * We shall use the PEN(x) to support the mouse, and we must maintain the Palm compatibility.
  *
  * <pre>
- PalmOS PEN, Lightpen & Mouse API
+ PEN, Lightpen & Mouse API
  ================================
  PEN(0) -> true (non zero) if there is a new pen or mouse event
  PEN(1) -> PEN: last pen-down x; MOUSE: last mouse button down x
@@ -303,8 +293,6 @@ int dev_getpen(int code);
  * @ingroup dev_i
  *
  * enable/disable pen/mouse driver.
- *
- * @note That is neccessary on some systems like PalmOS because the pointing device it may be used by the OS.
  *
  * @note That is the PEN ON/OFF command
  *

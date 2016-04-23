@@ -4010,7 +4010,12 @@ void comp_preproc_unit_path(char *p) {
         *up++ = *p++;
       }
       *up = '\0';
+#if defined(setenv)
       setenv(LCN_UNIT_PATH, upath, 1);
+#else
+      sprintf(comp_bc_temp, "UNITPATH=%s", upath);
+      putenv(strdup(comp_bc_temp));
+#endif
     }
   }
 }

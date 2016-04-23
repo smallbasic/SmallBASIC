@@ -10,17 +10,6 @@
 
 #include "common/sbapp.h"
 
-#ifdef INTERACTIVE_CONSOLE
-#include "platform/unix/interactive_mode.h"
-#ifndef HELP_SUBSYS
-#define HELP_SUBSYS
-#endif
-#endif
-
-#ifdef HELP_SUBSYS
-#include "platform/unix/help_subsys.h"
-#endif
-
 // global filename (its needed for CTRL+C signal - delete temporary)
 char g_file[OS_PATHNAME_SIZE + 1];
 

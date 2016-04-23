@@ -26,6 +26,7 @@
 extern char **environ;
 
 #define BUFSIZE 1024
+#define POPEN_BUFFSIZE 255
 
 #if defined(_Win32)
 
@@ -60,8 +61,7 @@ char *pw_shell(const char *cmd) {
   DuplicateHandle(h_pid, h_inppip, h_pid, &h_inppip, 0, FALSE,
                   DUPLICATE_SAME_ACCESS | DUPLICATE_CLOSE_SOURCE);
   DuplicateHandle(h_pid, h_outpip, h_pid, &h_errpip, 0, TRUE, DUPLICATE_SAME_ACCESS);
-  
-  // run
+
   memset(&si, 0, sizeof(si));
   si.cb = sizeof(si);
   si.dwFlags = STARTF_USESHOWWINDOW | STARTF_USESTDHANDLES;
@@ -91,11 +91,11 @@ char *pw_shell(const char *cmd) {
       }
       strcat(result, cv_buf);
     }
-
     CloseHandle(pi.hProcess);
   }
   else {
-    result = NULL;              // could not run it
+    // could not run it
+    result = NULL;
   }
 
   // clean up
@@ -108,55 +108,91 @@ char *pw_shell(const char *cmd) {
   }
   return result;
 }
-#endif
 
-/**
- * run a program (if retflg wait and return; otherwise just exec())
- */
-int dev_run(const char *src, int retflg) {
-#if defined(_Win32)
-  int r;
-  char *out;
-
-  r = ((out = pw_shell(src)) != NULL);
-  if (r) {
-    free(out);
-  }
-
-  if (r && !retflg) {
-    exit(1);                    // ok, what to do now ?
-  }
-  return r;
-#else
-  if (retflg) {
-    return (system(src) != -1);
-  } else {
-    //              execl(src, src, NULL);
-    // call the shell if we want to behave same like system() function
-    //  -c means the next argument is the command string to execute
-    // this allow us to execute shell script too!
-    char *src1;
-    src1 = malloc(strlen(src) + 3);
-    if (src1 == NULL) {
-      exit(-1);                 // ok, what to do now ?
+int dev_run(const char *src, var_t *r, int wait) {
+  int result = 1;
+  if (r != NULL) {
+    char *buf = pw_shell(src);
+    if (buf != NULL) {
+      r->type = V_STR;
+      r->v.p.ptr = buf;
+      r->v.p.size = strlen(buf) + 1;
+    } else {
+      result = 0;
     }
-    memset(src1, '\0', strlen(src) + 3);
-    *src1 = '"';
-    strcat(src1, src);
-    *(src1 + strlen(src) + 1) = '"';  // we need a doublequote around the command
-    execlp("sh", "sh", "-c", src1, NULL);
-    exit(-1);
-    // o.k. some error happens - what to do??? we already closed the screen!!
+  } else if (wait) {
+    char *out = pw_shell(src);
+    if (out != NULL) {
+      free(out);
+    } else {
+      result = 0;
+    }
+  } else {
+    HWND hwnd = GetActiveWindow();
+    ShellExecute(hwnd, "open", src, 0, 0, SW_SHOWNORMAL);
   }
-#endif
+  return result;
 }
+
+#else
+int dev_run(const char *src, var_t *r, int wait) {
+  int result = 1;
+  if (r != NULL) {
+    r->type = V_STR;
+    r->v.p.size = POPEN_BUFFSIZE + 1;
+    r->v.p.ptr = malloc(r->v.p.size);
+    *r->v.p.ptr = '\0';
+
+    int bytes = 0;
+    int total = 0;
+    char buf[256];
+
+    FILE *fin = popen(src, "r");
+    if (fin) {
+      while (!feof(fin)) {
+        bytes = fread(buf, 1, POPEN_BUFFSIZE, fin);
+        total += bytes;
+        buf[bytes] = '\0';
+        strcat(r->v.p.ptr, buf);
+        if (total + POPEN_BUFFSIZE + 1 >= r->v.p.size) {
+          r->v.p.size += POPEN_BUFFSIZE + 1;
+          r->v.p.ptr = realloc(r->v.p.ptr, r->v.p.size);
+        }
+      }
+      pclose(fin);
+    } else {
+      v_zerostr(r);
+      result = 0;
+    }
+  } else if (wait) {
+    result = (system(src) != -1);
+  }
+  else if (fork() == 0) {
+    // exec separate process
+    int size = strlen(src) + 3;
+    char *src1 =  malloc(size);
+    if (src1 != NULL) {
+      memset(src1, '\0', size);
+      // double quote the command
+      *src1 = '"';
+      strcat(src1, src);
+      *(src1 + strlen(src) + 1) = '"';
+      // -c means the next argument is the command string to execute
+      // this allow us to execute shell script
+      execlp("sh", "sh", "-c", src1, NULL);
+    }
+    exit(-1);
+  }
+  return result;
+}
+#endif
 
 #ifndef IMPL_DEV_ENV
 
 /**
- * The  putenv() function adds or changes the value of environment variables.  The argument string 
+ * The  putenv() function adds or changes the value of environment variables.  The argument string
  * is of the form name=value. If name does not already exist in the environment, then string is added
- * to the environment.  If name does exist, then the value of name in the environment is changed 
+ * to the environment.  If name does exist, then the value of name in the environment is changed
  * to value.  The string pointed to by string becomes part of the environment, so
  * altering the string changes the environment.
  *
@@ -170,7 +206,7 @@ int dev_putenv(const char *str) {
 }
 
 /**
- * The  getenv() function searches the environment list for a string that matches the string pointed 
+ * The  getenv() function searches the environment list for a string that matches the string pointed
  * to by name. The strings are of the form name = value.
  *
  * The getenv() function returns a pointer to the value in the environment, or NULL if there is no match.
