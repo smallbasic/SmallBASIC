@@ -1033,6 +1033,13 @@ void System::setRestart() {
   _state = kRestartState;
 }
 
+void System::systemLog(const char *buf) {
+  deviceLog("%s", buf);
+  int prevScreen = _output->selectBackScreen(CONSOLE_SCREEN);
+  _output->print(buf);
+  _output->selectBackScreen(prevScreen);
+}
+
 void System::systemPrint(const char *format, ...) {
   va_list args;
 
@@ -1046,12 +1053,7 @@ void System::systemPrint(const char *format, ...) {
     vsnprintf(buf, size + 1, format, args);
     va_end(args);
     buf[size] = '\0';
-
-    deviceLog("%s", buf);
-
-    int prevScreen = _output->selectBackScreen(CONSOLE_SCREEN);
-    _output->print(buf);
-    _output->selectBackScreen(prevScreen);
+    systemLog(buf);
     free(buf);
   }
 }
@@ -1158,7 +1160,7 @@ void osd_write(const char *str) {
 
 void lwrite(const char *str) {
   if (!(str[0] == '\n' && str[1] == '\0') && !g_system->isClosing()) {
-    g_system->systemPrint(str);
+    g_system->systemLog(str);
   }
 }
 

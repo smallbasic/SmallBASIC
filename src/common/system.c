@@ -122,9 +122,16 @@ int dev_run(const char *src, var_t *r, int wait) {
       result = 0;
     }
   } else if (wait) {
-    char *out = shell(src);
-    if (out != NULL) {
-      free(out);
+    STARTUPINFO si;
+    PROCESS_INFORMATION pi;
+    memset(&si, 0, sizeof(STARTUPINFO));
+    si.cb = sizeof(STARTUPINFO);
+    si.dwFlags = STARTF_USESHOWWINDOW;
+    si.wShowWindow = SW_SHOWNORMAL;
+    if (CreateProcess(NULL, (LPSTR)cmd, NULL, NULL, TRUE, NORMAL_PRIORITY_CLASS, NULL, NULL, &si, &pi)) {
+      WaitForSingleObject(pi.hProcess, INFINITE);
+      CloseHandle(pi.hProcess);
+      CloseHandle(pi.hThread);
     } else {
       result = 0;
     }
