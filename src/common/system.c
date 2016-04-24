@@ -26,7 +26,6 @@
 extern char **environ;
 
 #define BUFSIZE 1024
-#define POPEN_BUFFSIZE 255
 
 #if defined(_Win32)
 
@@ -35,9 +34,9 @@ extern char **environ;
  *
  * returns a newly allocated string with the result or NULL
  *
- * warning: if the cmd is a GUI process, the pw_shell will hang
+ * warning: if the cmd is a GUI process, the shell will hang
  */
-char *pw_shell(const char *cmd) {
+char *shell(const char *cmd) {
   HANDLE h_inppip, h_outpip, h_errpip, h_pid;
   char buf[BUFSIZE + 1], cv_buf[BUFSIZE + 1];
   char *result = NULL;
@@ -52,7 +51,9 @@ char *pw_shell(const char *cmd) {
   sa.nLength = sizeof(sa);
   sa.bInheritHandle = TRUE;
 
+  log_printf("shell: %s\n", cmd);
   if (!CreatePipe(&h_inppip, &h_outpip, &sa, BUFSIZE)) {
+    log_printf("CreatePipe failed");
     return NULL;
   }
 
@@ -66,7 +67,6 @@ char *pw_shell(const char *cmd) {
   si.cb = sizeof(si);
   si.dwFlags = STARTF_USESHOWWINDOW | STARTF_USESTDHANDLES;
   si.wShowWindow = SW_HIDE;
-
   si.hStdOutput = h_outpip;
   si.hStdError = h_errpip;
 
@@ -92,9 +92,10 @@ char *pw_shell(const char *cmd) {
       strcat(result, cv_buf);
     }
     CloseHandle(pi.hProcess);
+    log_printf("shell completed %d bytes\n", strlen(result));
   }
   else {
-    // could not run it
+    log_printf("Failed to launch %s\n", cmd);
     result = NULL;
   }
 
@@ -112,7 +113,7 @@ char *pw_shell(const char *cmd) {
 int dev_run(const char *src, var_t *r, int wait) {
   int result = 1;
   if (r != NULL) {
-    char *buf = pw_shell(src);
+    char *buf = shell(src);
     if (buf != NULL) {
       r->type = V_STR;
       r->v.p.ptr = buf;
@@ -121,7 +122,7 @@ int dev_run(const char *src, var_t *r, int wait) {
       result = 0;
     }
   } else if (wait) {
-    char *out = pw_shell(src);
+    char *out = shell(src);
     if (out != NULL) {
       free(out);
     } else {
@@ -139,25 +140,24 @@ int dev_run(const char *src, var_t *r, int wait) {
   int result = 1;
   if (r != NULL) {
     r->type = V_STR;
-    r->v.p.size = POPEN_BUFFSIZE + 1;
+    r->v.p.size = BUFSIZE + 1;
     r->v.p.ptr = malloc(r->v.p.size);
-    *r->v.p.ptr = '\0';
+    r->v.p.ptr[0] = '\0';
 
     int bytes = 0;
     int total = 0;
-    char buf[256];
-
+    char buf[BUFSIZE + 1];
     FILE *fin = popen(src, "r");
     if (fin) {
       while (!feof(fin)) {
-        bytes = fread(buf, 1, POPEN_BUFFSIZE, fin);
-        total += bytes;
+        bytes = fread(buf, 1, BUFSIZE, fin);
         buf[bytes] = '\0';
-        strcat(r->v.p.ptr, buf);
-        if (total + POPEN_BUFFSIZE + 1 >= r->v.p.size) {
-          r->v.p.size += POPEN_BUFFSIZE + 1;
+        total += bytes;
+        if (total >= r->v.p.size) {
+          r->v.p.size += BUFSIZE + 1;
           r->v.p.ptr = realloc(r->v.p.ptr, r->v.p.size);
         }
+        strcat(r->v.p.ptr, buf);
       }
       pclose(fin);
     } else {

@@ -336,7 +336,6 @@ function buildConsole() {
       dnl preconfigured values for unix console build
       TARGET="Building Unix console version."
       AC_DEFINE(_UnixOS, 1, [Building under Unix like systems.])
-      AC_DEFINE(USE_TERM_IO, 0, [Uses terminal-io functions.])
       AC_DEFINE(DEV_EVENTS_OSD, 0, [dev_events() implemented using osd_events().])
       PACKAGE_LIBS="${PACKAGE_LIBS} -lm -ldl -lpthread"
       BUILD_SUBDIRS="src/common src/platform/unix"

@@ -191,7 +191,7 @@
 #define ERR_GPF                 "\n\aOUT OF ADDRESS SPACE\n"
 #define ERR_CRITICAL_MISSING_PROC  "Unsupported built-in procedure call %ld, please report this bug"
 #define ERR_CHAIN_FILE          "CHAIN: File '%s' does not exist"
-#define ERR_RUN_FILE            "RUN/EXEC\"%s\" Failed"
+#define ERR_RUN_FILE            "RUN/EXEC \"%s\" Failed"
 #define ERR_RUNFUNC_FILE        "RUN(\"%s\"): Failed"
 #define ERR_PARCOUNT_SP         "Parameter count error @%d=%X"
 #define ERR_DATE                "Invalid DATE: '%s'. Expected DD/MM/YYYY"

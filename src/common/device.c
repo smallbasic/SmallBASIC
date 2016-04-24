@@ -19,24 +19,6 @@
 #endif
 
 /**
- * break signal
- */
-#if defined(_UnixOS) || defined(_DOS)
-void termination_handler(int signum) {
-  static int ctrlc_count;
-
-  prog_error = -2;
-  ctrlc_count++;
-  if (ctrlc_count == 1) {
-    dev_printf("\n\n\033[0m\033[7m\a * %s %d * \033[0m\n", WORD_BREAK_AT, prog_line);
-  } else if (ctrlc_count == 3) {
-    dev_restore();
-    exit(1);
-  }
-}
-#endif
-
-/**
  * initialize all drivers
  */
 int dev_init(int mode, int flags) {
@@ -398,26 +380,31 @@ void dev_printf(const char *fmt, ...) {
  * prints to the output device as per dev_printf
  */
 void log_printf(const char *format, ...) {
-  char buf[4096], *p = buf;
   va_list args;
-
   va_start(args, format);
-  p += vsnprintf(p, sizeof buf - 1, format, args);
+  unsigned size = vsnprintf(NULL, 0, format, args);
   va_end(args);
 
-  while (p > buf && isspace(p[-1])) {
-    *--p = '\0';
-  }
+  if (size) {
+    char *buf = malloc(size + 3);
+    va_start(args, format);
+    vsnprintf(buf, size + 1, format, args);
+    va_end(args);
 
-  *p++ = '\r';
-  *p++ = '\n';
-  *p = '\0';
+    buf[size] = '\0';
+    int i = size - 1;
+    while (i >= 0 && isspace(buf[i])) {
+      buf[i--] = '\0';
+    }
+    strcat(buf, "\r\n");
 
 #if defined(IMPL_LOG_WRITE)
-  lwrite(buf);
+    lwrite(buf);
 #else
-  dev_print(buf);
+    dev_print(buf);
 #endif
+    free(buf);
+  }
 }
 
 #if defined(BUILD_CONSOLE)

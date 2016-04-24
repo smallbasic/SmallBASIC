@@ -1034,19 +1034,26 @@ void System::setRestart() {
 }
 
 void System::systemPrint(const char *format, ...) {
-  char buf[4096], *p = buf;
   va_list args;
 
   va_start(args, format);
-  p += vsnprintf(p, sizeof(buf) - 1, format, args);
+  unsigned size = vsnprintf(NULL, 0, format, args);
   va_end(args);
-  *p = '\0';
 
-  deviceLog("%s", buf);
+  if (size) {
+    char *buf = (char *)malloc(size + 1);
+    va_start(args, format);
+    vsnprintf(buf, size + 1, format, args);
+    va_end(args);
+    buf[size] = '\0';
 
-  int prevScreen = _output->selectBackScreen(CONSOLE_SCREEN);
-  _output->print(buf);
-  _output->selectBackScreen(prevScreen);
+    deviceLog("%s", buf);
+
+    int prevScreen = _output->selectBackScreen(CONSOLE_SCREEN);
+    _output->print(buf);
+    _output->selectBackScreen(prevScreen);
+    free(buf);
+  }
 }
 
 //
