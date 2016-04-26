@@ -11,7 +11,9 @@
 #include "common/pproc.h"
 #include "common/messages.h"
 #include "common/inet.h"
+
 #include <limits.h>
+#include <dirent.h>
 
 /*
  * returns the last-modified time of the file
@@ -39,11 +41,9 @@ time_t sys_filetime(const char *file) {
 int sys_search_path(const char *path, const char *file, char *retbuf) {
   const char *ps, *p;
   char cur_path[OS_PATHNAME_SIZE + 1];
+  int found = 0;
 
-  if (path == NULL) {
-    return 0;
-  }
-  if (strlen(path) == 0) {
+  if (path == NULL || strlen(path) == 0) {
     return 0;
   }
   ps = path;
@@ -64,9 +64,7 @@ int sys_search_path(const char *path, const char *file, char *retbuf) {
 
     // fix home directory
     if (cur_path[0] == '~') {
-      char *old_path;
-
-      old_path = malloc(strlen(cur_path));
+      char *old_path = malloc(strlen(cur_path));
       strcpy(old_path, cur_path + 1);
 #if defined(_UnixOS)
       sprintf(cur_path, "%s/%s", getenv("HOME"), old_path);
@@ -79,24 +77,30 @@ int sys_search_path(const char *path, const char *file, char *retbuf) {
 #endif
       free(old_path);
     }
-    // build the final file-name
+
+    DIR *dp = opendir(cur_path);
+    if (dp != NULL) {
+      struct dirent *entry;
+      while (!found && (entry = readdir(dp)) != NULL) {
+        if (strcasecmp(entry->d_name, file) == 0) {
 #if defined(_UnixOS)
-    strcat(cur_path, "/");
+          strcat(cur_path, "/");
 #else
-    strcat(cur_path, "\\");
+          strcat(cur_path, "\\");
 #endif
-    strcat(cur_path, file);
-
-    if (access(cur_path, R_OK) == 0) {
-      if (retbuf) {
-        strcpy(retbuf, cur_path);
+          strcat(cur_path, entry->d_name);
+          if (access(cur_path, R_OK) == 0) {
+            if (retbuf) {
+              strcpy(retbuf, cur_path);
+            }
+            found = 1;
+          }
+        }
       }
-      return 1;
+      closedir(dp);
     }
-
-  } while (p);
-
-  return 0;
+  } while (p && !found);
+  return found;
 }
 
 /*
@@ -104,7 +108,7 @@ int sys_search_path(const char *path, const char *file, char *retbuf) {
  * (note: keyword USE)
  *
  * var - the variable (the X)
- * ip  - expression's address 
+ * ip  - expression's address
  */
 void exec_usefunc(var_t *var, bcip_t ip) {
   var_t *old_x;
@@ -129,7 +133,7 @@ void exec_usefunc(var_t *var, bcip_t ip) {
  *
  * var1 - the first variable (the X)
  * var2 - the second variable (the Y)
- * ip   - expression's address 
+ * ip   - expression's address
  */
 void exec_usefunc2(var_t *var1, var_t *var2, bcip_t ip) {
   var_t *old_x, *old_y;
@@ -161,7 +165,7 @@ void exec_usefunc2(var_t *var1, var_t *var2, bcip_t ip) {
  * var1 - the first variable (the X)
  * var2 - the second variable (the Y)
  * var3 - the thrid variable (the Z)
- * ip   - expression's address 
+ * ip   - expression's address
  */
 void exec_usefunc3(var_t *var1, var_t *var2, var_t *var3, bcip_t ip) {
   var_t *old_x, *old_y, *old_z;
@@ -706,7 +710,7 @@ int par_getpoly(pt_t **poly_pp) {
     }
     return 0;
   }
-  // 
+  //
   el = v_elem(var, 0);
   if (el->type == V_ARRAY) {
     style = 1;                  // nested --- [ [x1,y1], [x2,y2], ... ]
@@ -817,7 +821,7 @@ int par_getipoly(ipt_t **poly_pp) {
     }
     return 0;
   }
-  // 
+  //
   el = v_elem(var, 0);
   if (el && el->type == V_ARRAY) {
     style = 1;   // nested --- [ [x1,y1], [x2,y2], ... ]
@@ -901,7 +905,7 @@ int par_getipoly(ipt_t **poly_pp) {
 
 /*
  * returns true if the following code is descibing one var code
- * usefull for optimization 
+ * usefull for optimization
  * (one var can be used by the pointer; more than one it must be evaluated)
  */
 int par_isonevar() {
@@ -970,7 +974,7 @@ int par_getpartable(par_t **ptable_pp, const char *valid_sep) {
     case kwTYPE_LEVEL_END:     // end of parameters
       ready = 1;
       break;
-    case kwTYPE_SEP:           // separator 
+    case kwTYPE_SEP:           // separator
       code_skipnext();
 
       // check parameters separator
@@ -1068,7 +1072,7 @@ int par_massget_type_check(char fmt, par_t *par) {
  * // the string is optional too
  * pc = par_massget("Iis", &i1, &i2, &s1, &v);
  *
- * if ( pc != -1 ) {  
+ * if ( pc != -1 ) {
  *   // no error; also, you can use prog_error because par_massget() will call rt_raise() on error
  *   printf("required integer = %d\n", i1);
  *
@@ -1098,7 +1102,7 @@ int par_massget(const char *fmt, ...) {
     free(ptable);
     return -1;
   }
-  
+
   /*
    *      count pars
    */
@@ -1112,7 +1116,7 @@ int par_massget(const char *fmt, ...) {
     }
     fmt_p++;
   }
-  
+
   if (rqcount > pcount) {
     err_parfmt(fmt);
   }
@@ -1191,7 +1195,7 @@ int par_massget(const char *fmt, ...) {
       case 'P':
         // variable
         vt = va_arg(ap, var_t**);
-        if (ptable[curpar].flags == 0)// byref 
+        if (ptable[curpar].flags == 0)// byref
           *vt = ptable[curpar].var;
         else {
           err_syntax(-1, "%P");

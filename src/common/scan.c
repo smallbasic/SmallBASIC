@@ -4002,21 +4002,21 @@ void comp_preproc_unit_path(char *p) {
   if (*p == '=') {
     p++;
     SKIP_SPACES(p);
-    if (*p == '\"') {
-      p++;
-      char upath[SB_SOURCELINE_SIZE + 1];
-      char *up = upath;
-      while (*p != '\n' && *p != '\"') {
-        *up++ = *p++;
-      }
-      *up = '\0';
-#ifdef __MINGW32__
-      sprintf(comp_bc_temp, "UNITPATH=%s", upath);
-      putenv(strdup(comp_bc_temp));
-#else
-      setenv(LCN_UNIT_PATH, upath, 1);
-#endif
+  }
+  if (*p == '\"') {
+    p++;
+    char upath[SB_SOURCELINE_SIZE + 1];
+    char *up = upath;
+    while (*p != '\n' && *p != '\"') {
+      *up++ = *p++;
     }
+    *up = '\0';
+#ifdef __MINGW32__
+    sprintf(comp_bc_temp, "UNITPATH=%s", upath);
+    putenv(strdup(comp_bc_temp));
+#else
+    setenv(LCN_UNIT_PATH, upath, 1);
+#endif
   }
 }
 
