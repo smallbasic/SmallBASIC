@@ -83,6 +83,7 @@ int sys_search_path(const char *path, const char *file, char *retbuf) {
       struct dirent *entry;
       while (!found && (entry = readdir(dp)) != NULL) {
         if (strcasecmp(entry->d_name, file) == 0) {
+          int end = strlen(cur_path);
 #if defined(_UnixOS)
           strcat(cur_path, "/");
 #else
@@ -94,6 +95,8 @@ int sys_search_path(const char *path, const char *file, char *retbuf) {
               strcpy(retbuf, cur_path);
             }
             found = 1;
+          } else {
+            cur_path[end] = '\0';
           }
         }
       }
