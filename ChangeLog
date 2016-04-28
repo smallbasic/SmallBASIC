@@ -1,3 +1,13 @@
+2016-04-26 (0.12.6)
+	Fixes for unit case sensitivity
+
+2016-04-24 (0.12.6)
+	Fixes for RUN/EXEC
+
+2016-04-20 (0.12.6)
+	Fixed memory handling issues with UNITs
+	Fixed memory issue related to SUB/FUNC pointers
+
 2016-03-29 (0.12.6)
 	Removed TICKSPERSEC
 	Removed BALLOC, MALLOC and VADR keywords. Removed duplicate ENVIRON
@@ -32,6 +42,7 @@
 	Fixed issues with CHAIN
 	Fixed TLOAD to work correctly with TRY/CATCH
 	Fixed XPOS and YPOS to return 0 based values
+	Fixed compiler checking for redundant symbols, for example: let a = 1 2 3
 
 2016-02-11
 	Added export to mobile command (SDL)

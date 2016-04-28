@@ -64,8 +64,8 @@ typedef enum {
  * unit: file header
  */
 typedef struct {
-  dword sign[4]; /**< Always "SBUn" */
-  int version; /**< version of this structure, always 1 */
+  char sign[4]; /**< Always "SBUn" */
+  int version; /**< version of this structure */
   char base[SB_KEYWORD_SIZE + 1]; /**< unit-base name */
   int  sym_count; /**< number of symbols */
 } unit_file_t;

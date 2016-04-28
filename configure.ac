@@ -336,7 +336,6 @@ function buildConsole() {
       dnl preconfigured values for unix console build
       TARGET="Building Unix console version."
       AC_DEFINE(_UnixOS, 1, [Building under Unix like systems.])
-      AC_DEFINE(USE_TERM_IO, 0, [Uses terminal-io functions.])
       AC_DEFINE(DEV_EVENTS_OSD, 0, [dev_events() implemented using osd_events().])
       PACKAGE_LIBS="${PACKAGE_LIBS} -lm -ldl -lpthread"
       BUILD_SUBDIRS="src/common src/platform/unix"
@@ -366,6 +365,9 @@ checkForWindows
 PACKAGE_CFLAGS="${PACKAGE_CFLAGS} -Wall -Wno-unused-result"
 BUILD_DATE=`date +"%a, %d %b %Y"`
 AC_DEFINE_UNQUOTED([BUILD_DATE],["$BUILD_DATE"],[Build date])
+
+SB_DWORD_VER=`awk -F "." '{printf "0x%02d%02d%02d", $1,$2,$3}' <<< ${PACKAGE_VERSION}`
+AC_DEFINE_UNQUOTED([SB_DWORD_VER],[$SB_DWORD_VER],[SB_DWORD_VER])
 
 AC_SUBST(PACKAGE_CFLAGS)
 AC_SUBST(PACKAGE_LIBS)

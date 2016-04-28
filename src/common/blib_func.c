@@ -1451,49 +1451,8 @@ void cmd_strN(long funcCode, var_t *r) {
     // Win32: use & at the end of the command to run-it in background
     //
     par_getstr(&arg1);
-
-    if (!prog_error) {
-#if defined(_Win32)
-      char *buf;
-#else
-      int bytes = 0, total = 0;
-      char buf[256];
-#endif
-
-#if defined(_Win32)
-      if ((buf = pw_shell(arg1.v.p.ptr)) != NULL) {
-        r->type = V_STR;
-        r->v.p.ptr = buf;
-        r->v.p.size = strlen(buf) + 1;
-      }
-#else
-      /**
-       *   default popen/pclose
-       */
-      r->type = V_STR;
-      r->v.p.ptr = malloc(256);
-      *r->v.p.ptr = '\0';
-      r->v.p.size = 256;
-
-      FILE *fin = popen(arg1.v.p.ptr, "r");
-      if (fin) {
-        while (!feof(fin)) {
-          bytes = fread(buf, 1, 255, fin);
-          total += bytes;
-          buf[bytes] = '\0';
-          strcat(r->v.p.ptr, buf);
-          if (total + 256 >= r->v.p.size) {
-            r->v.p.size += 256;
-            r->v.p.ptr = realloc(r->v.p.ptr, r->v.p.size);
-          }
-        }
-        pclose(fin);
-      }
-#endif // bcb or not
-      else {
-        v_zerostr(r);
-        rt_raise(ERR_RUNFUNC_FILE, arg1.v.p.ptr);
-      }
+    if (!prog_error && !dev_run(arg1.v.p.ptr, r, 1)) {
+      rt_raise(ERR_RUNFUNC_FILE, arg1.v.p.ptr);
     }
     break;
 

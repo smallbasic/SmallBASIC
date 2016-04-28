@@ -56,8 +56,8 @@ sub do_okay_button()
   button.x = xmax / 2
   button.y = -1
   button.label = "Close"
-  button.backgroundColor = "green"
-  button.color = "white"
+  button.backgroundColor = 8
+  button.color = 10
   frm.inputs << button
   frm = form(frm)
   print
@@ -73,7 +73,7 @@ sub do_about()
   print
   print "Version "; sbver
   print
-  print "Copyright (c) 2002-2015 Chris Warren-Smith"
+  print "Copyright (c) 2002-2016 Chris Warren-Smith"
   print "Copyright (c) 1999-2006 Nic Christopoulos" + chr(10)
   print "http://smallbasic.sourceforge.net" + chr(10)
   print "SmallBASIC comes with ABSOLUTELY NO WARRANTY. ";

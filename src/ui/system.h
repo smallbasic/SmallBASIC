@@ -49,6 +49,7 @@ struct System {
   void setLoadBreak(const char *path);
   void setLoadPath(const char *path);
   void setRunning(bool running);
+  void systemLog(const char *msg);
   void systemPrint(const char *msg, ...);
   AnsiWidget *getOutput() { return _output; }
 

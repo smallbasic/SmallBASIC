@@ -83,13 +83,13 @@ typedef long int var_int_t;
 #else
   #define SB_STR_VER VERSION " Console " SB_VERSYS SB_BIT_SZ BUILD_DATE
 #endif
-#define SB_DWORD_VER        0x908   // 00 (major) 08 (minor) 03 (patch)
 #define SB_PANICMSG_SIZE    1023
 #define SB_ERRMSG_SIZE      2048
 #define SB_KEYWORD_SIZE     128
 #define SB_SOURCELINE_SIZE  65536 // compiler
 #define SB_TEXTLINE_SIZE    8192  // RTL
-#define SB_EXEC_STACK_SIZE  256 // executor's stack size
+#define SB_EXEC_STACK_SIZE  256   // executor's stack size
+#define SB_EVAL_STACK_SIZE  16    // evaluation stack size
 #define SB_PI               3.14159265358979323846
 
 // STD MACROS

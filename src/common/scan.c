@@ -75,6 +75,14 @@ void err_comp_label_not_def(const char *name) {
   sc_raise(MSG_LABEL_NOT_DEFINED, name);
 }
 
+// strcat replacement when p is incremented from dest
+void memcat(char *dest, char *p) {
+  int lenb = strlen(dest);
+  int lenp = strlen(p);
+  memmove(dest + lenb, p, lenp);
+  dest[lenb + lenp] = '\0';
+}
+
 /*
  * reset the external proc/func lists
  */
@@ -108,7 +116,7 @@ bc_symbol_rec_t *add_imptable_rec(const char *proc_name, int lib_id, int symbol_
     comp_imptable.elem = (bc_symbol_rec_t **)realloc(comp_imptable.elem,
                                                      (comp_imptable.count + 1) * sizeof(bc_symbol_rec_t **));
   } else {
-    comp_imptable.elem = (bc_symbol_rec_t **)malloc(comp_imptable.count * sizeof(bc_symbol_rec_t **));
+    comp_imptable.elem = (bc_symbol_rec_t **)malloc(sizeof(bc_symbol_rec_t **));
   }
   comp_imptable.elem[comp_imptable.count] = sym;
   comp_imptable.count++;
@@ -128,7 +136,7 @@ void add_libtable_rec(const char *lib, int uid, int type) {
     comp_libtable.elem = (bc_lib_rec_t **)realloc(comp_libtable.elem,
                                                  (comp_libtable.count + 1) * sizeof(bc_lib_rec_t **));
   } else {
-    comp_libtable.elem = (bc_lib_rec_t **)malloc(comp_libtable.count * sizeof(bc_lib_rec_t **));
+    comp_libtable.elem = (bc_lib_rec_t **)malloc(sizeof(bc_lib_rec_t **));
   }
   comp_libtable.elem[comp_libtable.count] = imlib;
   comp_libtable.count++;
@@ -1564,7 +1572,6 @@ int comp_single_line_if(char *text) {
         }
         // store EOC
         bc_add_code(&comp_prog, kwTYPE_EOC);
-        // bc_eoc();
 
         // auto-goto
         p = pthen + 6;
@@ -1583,9 +1590,8 @@ int comp_single_line_if(char *text) {
         pelse = strstr(buf + 1, LCN_ELSE);
         if (pelse) {
           do {
-            if ((*(pelse - 1) == ' ' || *(pelse - 1) == '\t')
-                && (*(pelse + 4) == ' ' || *(pelse + 4) == '\t')) {
-
+            if ((*(pelse - 1) == ' ' || *(pelse - 1) == '\t') &&
+                (*(pelse + 4) == ' ' || *(pelse + 4) == '\t')) {
               *pelse = '\0';
 
               // scan the commands before ELSE
@@ -1601,11 +1607,10 @@ int comp_single_line_if(char *text) {
               if (is_digit(*p)) {
                 // add goto
                 strcat(buf, LCN_GOTO_WRS);
-                strcat(buf, p);
-              } else
-                strcat(buf, p);
-
-              //
+                memcat(buf, p);
+              } else {
+                memcat(buf, p);
+              }
               break;
             } else {
               pelse = strstr(pelse + 1, LCN_ELSE);
@@ -3090,14 +3095,17 @@ void comp_pass2_scan() {
     case kwTYPE_PTR:
     case kwTYPE_CALL_UDP:
     case kwTYPE_CALL_UDF:
-      // update real IP
       memcpy(&label_id, comp_prog.ptr + node->pos + 1, ADDRSZ);
-      true_ip = comp_udptable[label_id].ip + (ADDRSZ + 3);
-      memcpy(comp_prog.ptr + node->pos + 1, &true_ip, ADDRSZ);
-
-      // update return-var ID
-      true_ip = comp_udptable[label_id].vid;
-      memcpy(comp_prog.ptr + node->pos + (ADDRSZ + 1), &true_ip, ADDRSZ);
+      if (label_id < comp_udpcount) {
+        // update real IP
+        true_ip = comp_udptable[label_id].ip + (ADDRSZ + 3);
+        memcpy(comp_prog.ptr + node->pos + 1, &true_ip, ADDRSZ);
+        // update return-var ID
+        true_ip = comp_udptable[label_id].vid;
+        memcpy(comp_prog.ptr + node->pos + (ADDRSZ + 1), &true_ip, ADDRSZ);
+      } else if (label_id != kwCALLCF) {
+        sc_raise(MSG_EXP_GENERR);
+      }
       break;
 
     case kwONJMP:
@@ -3502,7 +3510,6 @@ void comp_close() {
  */
 char *comp_load(const char *file_name) {
   char *buf;
-
   strcpy(comp_file_name, file_name);
 #if defined(IMPL_DEV_READ)
   buf = dev_read(file_name);
@@ -3995,17 +4002,21 @@ void comp_preproc_unit_path(char *p) {
   if (*p == '=') {
     p++;
     SKIP_SPACES(p);
-    if (*p == '\"') {
-      p++;
-      char upath[SB_SOURCELINE_SIZE + 1];
-      char *up = upath;
-      while (*p != '\n' && *p != '\"') {
-        *up++ = *p++;
-      }
-      *up = '\0';
-      sprintf(comp_bc_temp, "UNITPATH=%s", upath);
-      putenv(strdup(comp_bc_temp));
+  }
+  if (*p == '\"') {
+    p++;
+    char upath[SB_SOURCELINE_SIZE + 1];
+    char *up = upath;
+    while (*p != '\n' && *p != '\"') {
+      *up++ = *p++;
     }
+    *up = '\0';
+#ifdef __MINGW32__
+    sprintf(comp_bc_temp, "UNITPATH=%s", upath);
+    putenv(strdup(comp_bc_temp));
+#else
+    setenv(LCN_UNIT_PATH, upath, 1);
+#endif
   }
 }
 
@@ -4346,31 +4357,32 @@ byte_code comp_create_bin() {
   hdr.var_count = comp_varcount;
   hdr.lab_count = comp_labcount;
   hdr.data_ip = comp_first_data_ip;
-  hdr.size = sizeof(bc_head_t) + comp_prog.count + (comp_labcount * ADDRSZ)
-             + sizeof(unit_sym_t) * comp_expcount + sizeof(bc_lib_rec_t) * comp_libcount
-             + sizeof(bc_symbol_rec_t) * comp_impcount;
-
+  hdr.size = sizeof(bc_head_t) + comp_prog.count + (comp_labcount * ADDRSZ) +
+             sizeof(unit_sym_t) * comp_expcount +
+             sizeof(bc_lib_rec_t) * comp_libcount +
+             sizeof(bc_symbol_rec_t) * comp_impcount;
   if (comp_unit_flag) {
     hdr.size += sizeof(unit_file_t);
   }
 
   hdr.lib_count = comp_libcount;
   hdr.sym_count = comp_impcount;
-
   if (comp_unit_flag) {
+    memset(&uft, 0, sizeof(unit_file_t));
+
     // it is a unit... add more info
-    bc.size = hdr.size + 4;
+    bc.size = hdr.size;
     bc.code = malloc(bc.size);
 
     // unit header
     memcpy(&uft.sign, "SBUn", 4);
-    uft.version = 1;
+    uft.version = SB_DWORD_VER;
+
     strcpy(uft.base, comp_unit_name);
     uft.sym_count = comp_expcount;
 
-    cp = bc.code;
-    memcpy(cp, &uft, sizeof(unit_file_t));
-    cp += sizeof(unit_file_t);
+    memcpy(bc.code, &uft, sizeof(unit_file_t));
+    cp = bc.code + sizeof(unit_file_t);
 
     // unit symbol table (export)
     for (i = 0; i < uft.sym_count; i++) {
@@ -4423,7 +4435,6 @@ byte_code comp_create_bin() {
   if (!opt_quiet && !opt_interactive) {
     log_printf("\n");
     log_printf(RES_NUMBER_OF_VARS, comp_varcount, comp_varcount - 18);
-    // system variables
     log_printf(RES_NUMBER_OF_LABS, comp_labcount);
     log_printf(RES_NUMBER_OF_UDPS, comp_udpcount);
     log_printf(RES_CODE_SIZE, comp_prog.count);
@@ -4514,11 +4525,12 @@ int comp_compile(const char *sb_file_name) {
     }
   }
 
+  int is_unit = comp_unit_flag;
   comp_close();
   close_task(tid);
   activate_task(prev_tid);
 
-  if (opt_nosave) {
+  if (opt_nosave && !is_unit) {
     ctask->bytecode = bc.code;
   } else if (bc.code) {
     free(bc.code);
