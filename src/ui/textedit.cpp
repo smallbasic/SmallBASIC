@@ -973,7 +973,7 @@ void TextEditInput::editEnter() {
   char spaces[LINE_BUFFER_SIZE];
   int start = lineStart(_state.cursor);
   int prevLineStart = lineStart(start - 1);
-  if (prevLineStart) {
+  if (prevLineStart >= 0) {
     int indent = getIndent(spaces, sizeof(spaces), prevLineStart);
     if (indent) {
       _buf.insertChars(_state.cursor, spaces, indent);
