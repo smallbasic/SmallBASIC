@@ -110,10 +110,10 @@ char *shell(const char *cmd) {
   return result;
 }
 
-int dev_run(const char *src, var_t *r, int wait) {
+int dev_run(const char *cmd, var_t *r, int wait) {
   int result = 1;
   if (r != NULL) {
-    char *buf = shell(src);
+    char *buf = shell(cmd);
     if (buf != NULL) {
       r->type = V_STR;
       r->v.p.ptr = buf;
@@ -137,13 +137,13 @@ int dev_run(const char *src, var_t *r, int wait) {
     }
   } else {
     HWND hwnd = GetActiveWindow();
-    ShellExecute(hwnd, "open", src, 0, 0, SW_SHOWNORMAL);
+    ShellExecute(hwnd, "open", cmd, 0, 0, SW_SHOWNORMAL);
   }
   return result;
 }
 
 #else
-int dev_run(const char *src, var_t *r, int wait) {
+int dev_run(const char *cmd, var_t *r, int wait) {
   int result = 1;
   if (r != NULL) {
     r->type = V_STR;
@@ -154,7 +154,7 @@ int dev_run(const char *src, var_t *r, int wait) {
     int bytes = 0;
     int total = 0;
     char buf[BUFSIZE + 1];
-    FILE *fin = popen(src, "r");
+    FILE *fin = popen(cmd, "r");
     if (fin) {
       while (!feof(fin)) {
         bytes = fread(buf, 1, BUFSIZE, fin);
@@ -172,18 +172,18 @@ int dev_run(const char *src, var_t *r, int wait) {
       result = 0;
     }
   } else if (wait) {
-    result = (system(src) != -1);
+    result = (system(cmd) != -1);
   }
   else if (fork() == 0) {
     // exec separate process
-    int size = strlen(src) + 3;
+    int size = strlen(cmd) + 3;
     char *src1 =  malloc(size);
     if (src1 != NULL) {
       memset(src1, '\0', size);
       // double quote the command
       *src1 = '"';
-      strcat(src1, src);
-      *(src1 + strlen(src) + 1) = '"';
+      strcat(src1, cmd);
+      *(src1 + strlen(cmd) + 1) = '"';
       // -c means the next argument is the command string to execute
       // this allow us to execute shell script
       execlp("sh", "sh", "-c", src1, NULL);

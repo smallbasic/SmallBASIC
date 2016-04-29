@@ -34,11 +34,6 @@ AC_ARG_ENABLE(sdl,
   [ac_build_sdl="yes"],
   [ac_build_sdl="no"])
 
-AC_ARG_ENABLE(tizen,
-  AS_HELP_STRING([--enable-tizen],[build common library for Tizen(default=no)]),
-  [ac_build_tizen="yes"],
-  [ac_build_tizen="no"])
-
 AC_ARG_ENABLE(android,
   AS_HELP_STRING([--enable-android],[build common library for Android(default=no)]),
   [ac_build_android="yes"],
@@ -90,9 +85,6 @@ function checkPCRE() {
      have_pcre="no"
    esac
 
-   if test x$ac_build_tizen = xyes; then
-     have_pcre="no"
-   fi
    if test x$ac_build_android = xyes; then
      have_pcre="no"
    fi
@@ -253,23 +245,6 @@ function buildSDL() {
    (cd documentation && g++ -o build_kwp build_kwp.cpp && ./build_kwp > ../src/ui/kwp.h)
 }
 
-function buildTizen() {
-   TARGET="Building common library for Tizen."
-
-   defaultConditionals
-
-   AC_DEFINE(_UnixOS, 1, [Building under Unix like systems.])
-   AC_DEFINE(_TIZEN, 1, [Defined for Tizen build.])
-   AC_DEFINE(IMPL_DEV_READ, 1, [Implement dev_read()])
-   AC_DEFINE(DEV_EVENTS_OSD, 1, [dev_events() implemented using osd_events().])
-   AC_DEFINE(IMPL_DEV_DELAY, 1, [Driver implements dev_delay()])
-   AC_DEFINE(CPU_BIGENDIAN, 1, [Tizen uses big-endian])
-   AC_DEFINE(IMPL_LOG_WRITE, 1, [Driver implements lwrite()])
-
-   BUILD_SUBDIRS="src/platform/tizen/common"
-   AC_SUBST(BUILD_SUBDIRS)
-}
-
 function buildAndroid() {
    TARGET="Building for Android."
 
@@ -350,8 +325,6 @@ if test x$ac_build_fltk = xyes; then
    buildFLTK
 elif test x$ac_build_sdl = xyes; then
    buildSDL
-elif test x$ac_build_tizen = xyes; then
-   buildTizen
 elif test x$ac_build_android = xyes; then
    buildAndroid
 else
@@ -378,7 +351,6 @@ src/common/Makefile
 src/platform/fltk/Makefile
 src/platform/sdl/Makefile
 src/platform/unix/Makefile
-src/platform/tizen/common/Makefile
 src/platform/android/Makefile
 ])
 AC_OUTPUT

@@ -63,20 +63,14 @@ int find_unit_path(const char *name, char *file) {
     }
   }
 
-  // find in current directory
-  if (access(file, R_OK) == 0) {
+  // find in program launch directory
+  if (gsb_bas_dir[0] && sys_search_path(gsb_bas_dir, file, file)) {
     return 1;
   }
 
-  // find in program launch directory
-  if (gsb_bas_dir[0]) {
-    strcpy(file, gsb_bas_dir);
-    strcat(file, name);
-    strcat(file, ".bas");
-
-    if (access(file, R_OK) == 0) {
-      return 1;
-    }
+  // find in current directory
+  if (sys_search_path(".", file, file)) {
+    return 1;
   }
 
   return 0;
