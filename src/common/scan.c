@@ -3444,9 +3444,9 @@ void comp_init() {
   comp_vartable[comp_var_getID(LCN_SV_CWD)].dolar_sup = 1;
   comp_vartable[comp_var_getID(LCN_SV_HOME)].dolar_sup = 1;
   comp_vartable[comp_var_getID(LCN_SV_COMMAND)].dolar_sup = 1;
-  comp_var_getID(LCN_SV_X);     // USE keyword
-  comp_var_getID(LCN_SV_Y);     // USE keyword
-  comp_var_getID(LCN_SV_Z);     // USE keyword
+  comp_var_getID(LCN_SV_X);
+  comp_var_getID(LCN_SV_Y);
+  comp_var_getID(LCN_SV_Z);
 }
 
 /*
