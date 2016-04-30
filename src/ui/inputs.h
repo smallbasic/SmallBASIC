@@ -186,9 +186,7 @@ struct FormLink : public FormInput {
   const char *getText() const { return _link.c_str(); }
   bool hasHover() { return true; }
 
-  void draw(int x, int y, int w, int h, int chw) {
-    drawLink(_link.c_str(), x, y, w, chw);
-  }
+  void draw(int x, int y, int w, int h, int chw);
   int padding(bool vert) const { return vert ? LN_H : 0; }
 
 protected:

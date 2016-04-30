@@ -22,6 +22,9 @@ FormList *activeList = NULL;
 FormInput *focusInput = NULL;
 FormEditInput *focusEdit = NULL;
 
+#define LINE_Y (_height - 2)
+#define LINE_W (_width - 2)
+
 FormEditInput *get_focus_edit() {
   return focusEdit;
 }
@@ -117,7 +120,9 @@ FormInput::~FormInput() {
 
 void FormInput::construct(var_p_t form, var_p_t field, int id) {
   _exit = (map_get_bool(field, FORM_INPUT_IS_EXIT));
-  _noFocus = (map_get_bool(field, FORM_INPUT_NO_FOCUS));
+  if (!_noFocus) {
+    _noFocus = (map_get_bool(field, FORM_INPUT_NO_FOCUS));
+  }
   _id = id;
 
   var_p_t v_id = map_get(field, FORM_INPUT_ID);
@@ -219,8 +224,8 @@ void FormInput::drawButton(const char *caption, int dx, int dy,
 void FormInput::drawHover(int dx, int dy, bool selected) {
   MAHandle currentHandle = maSetDrawTarget(HANDLE_SCREEN);
   maSetColor(selected ? _fg : _bg);
-  int y = _y + dy + _height - 2;
-  maLine(dx + _x + 2, y, dx + _x + _width - 2, y);
+  int y = _y + dy + LINE_Y;
+  maLine(dx + _x + 2, y, dx + _x + LINE_W, y);
   maUpdateScreen();
   maSetDrawTarget(currentHandle);
 }
@@ -414,25 +419,28 @@ FormLink::FormLink(const char *link, int x, int y, int w, int h) :
   _link(link) {
 }
 
+void FormLink::draw(int x, int y, int w, int h, int chw) {
+  drawLink(_link.c_str(), x, y, w, chw);
+  if (_pressed) {
+    maSetColor(_pressed ? _fg : _bg);
+    maLine(x, y + LINE_Y, x + LINE_W, y + LINE_Y);
+  }
+}
+
 //
 // FormTab
 //
 FormTab::FormTab(const char *link, int x, int y, int w, int h) :
   FormLink(link, x, y, w, h) {
+  _noFocus = true;
 }
 
 void FormTab::draw(int x, int y, int w, int h, int chw) {
   int x_begin = chw;
   int x_end = x + MIN(w, _width);
 
-  maSetColor(_fg);
-  drawText(_link, x + x_begin, y, w, chw);
-  setTextColor();
+  drawLink(_link.c_str(), x + x_begin, y, w, chw);
   maLine(x_end, y + 4, x_end, y + _height - 4);
-
-  x_end -= x_begin;
-  maSetColor(_pressed ? _fg : _bg);
-  maLine(x + x_begin, y + _height - 2, x_end, y + _height - 2);
 }
 
 int FormTab::padding(bool vert) const {
@@ -1188,9 +1196,9 @@ void MenuButton::draw(int x, int y, int w, int h, int chw) {
     maDrawText(x + 4, textY, _label.c_str(), len);
     if (!_pressed && _index > 0 && _index % 2 == 0) {
       maSetColor(0x3b3a36);
-      maLine(x + 2, y, x + _width - 2, y);
+      maLine(x + 2, y, x + LINE_W, y);
       maSetColor(0x46453f);
-      maLine(x + 2, y - 1, x + _width - 2, y - 1);
+      maLine(x + 2, y - 1, x + LINE_W, y - 1);
     }
   }
 }
