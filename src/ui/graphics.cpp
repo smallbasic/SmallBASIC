@@ -136,10 +136,14 @@ void Graphics::drawLine(int startX, int startY, int endX, int endY) {
       }
       if (startY >= 0 && startY < _drawTarget->_h) {
         pixel_t *line = _drawTarget->getLine(startY);
+        if (x1 < _drawTarget->x()) {
+          x1 = _drawTarget->x();
+        }
+        if (x2 >= _drawTarget->w()) {
+          x2 = _drawTarget->w() - 1;
+        }
         for (int x = x1; x <= x2; x++) {
-          if (x >= _drawTarget->x() && x < _drawTarget->w()) {
-            line[x] = _drawColor;
-          }
+          line[x] = _drawColor;
         }
       }
     } else if (startX == endX) {
@@ -157,11 +161,15 @@ void Graphics::drawLine(int startX, int startY, int endX, int endY) {
         y2 = _drawTarget->_h - 1;
       }
       if (startX >= 0 && startX < _drawTarget->_w) {
+        if (y1 < _drawTarget->y()) {
+          y1 = _drawTarget->y();
+        }
+        if (y2 >= _drawTarget->h()) {
+          y2 = _drawTarget->h() - 1;
+        }
         for (int y = y1; y <= y2; y++) {
-          if (y >= _drawTarget->y() && y < _drawTarget->h()) {
-            pixel_t *line = _drawTarget->getLine(y);
-            line[startX] = _drawColor;
-          }
+          pixel_t *line = _drawTarget->getLine(y);
+          line[startX] = _drawColor;
         }
       }
     } else if (opt_antialias) {

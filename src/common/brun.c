@@ -283,7 +283,7 @@ void exec_setup_predefined_variables() {
   setsysvar_int(SYSVAR_YMAX, os_graf_my - 1);
   setsysvar_int(SYSVAR_TRUE, 1);
   setsysvar_int(SYSVAR_FALSE, 0);
-  setsysvar_str(SYSVAR_PWD, dev_getcwd());
+  setsysvar_str(SYSVAR_CWD, dev_getcwd());
   setsysvar_str(SYSVAR_COMMAND, opt_command);
 
 #if defined(_UnixOS)
@@ -1178,7 +1178,7 @@ int brun_create_task(const char *filename, byte *preloaded_bc, int libf) {
       find_unit(filename, fname);
     }
     if (access(fname, R_OK)) {
-      panic("File '%s' not found", filename);
+      panic("File '%s' not found", fname);
     }
     // look if it is already loaded
     if (search_task(fname) != -1) {
@@ -1765,6 +1765,10 @@ int sbasic_exec(const char *file) {
   if (opt_syntaxcheck) {         // this is a command-line flag to
     // syntax-check only
     exec_rq = 0;
+  } else if (ctask->bc_type == 2) {
+    // cannot run a unit
+    exec_rq = 0;
+    gsb_last_error = 1;
   } else if (opt_decomp && success) {
     sbasic_exec_prepare(file);  // load everything
     sbasic_dump_taskinfo(stdout);

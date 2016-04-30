@@ -81,29 +81,6 @@ Useful adb commands for debugging:
 adb shell dumpsys cpuinfo
 adb shell top -m 10
 
-## Building the TIZEN port
-
-1. Download and install the Tizen IDE
-
-2. Add the following lines to .bashrc
-```
-TIZEN_SDK=${HOME}/tizen-sdk
-TIZEN_ROOTSTRAP=${TIZEN_SDK}/platforms/mobile-3.0/rootstraps/mobile-3.0-device.native
-export TIZEN_BIN=${TIZEN_SDK}/tools/arm-linux-gnueabi-gcc-4.5/bin
-export TIZEN_LIBS=${HOME}/tizen-lib
-export PATH=${PATH}:${TIZEN_BIN}:~/bin
-export CHOST=arm-linux-gnueabi
-export LDFLAGS="--sysroot=${TIZEN_ROOTSTRAP} -L${TIZEN_LIBS}/lib"
-export CPPFLAGS="--sysroot=${TIZEN_ROOTSTRAP} -fmessage-length=0 -fPIC\
-  -I${TIZEN_ROOTSTRAP}/usr/include -I${TIZEN_LIBS}/include"
-export CFLAGS=${CPPFLAGS}
-```
-3. Build the common components
-```
-./configure --enable-tizen
-```
-4. Build the project using Tizen IDE
-
 ### .indent.pro settings
 ```
  -brf -nbap -br -brs -cdb -cdw -ce -cli0 -fca -i2 -l110 -lc110 -lp

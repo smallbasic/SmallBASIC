@@ -96,9 +96,9 @@ bool isKeyword(const char *keyword) {
   }
 
   const char* constants[] = {
-    "SBVER", "PI", "XMAX", "YMAX", "TRUE", "FALSE", "CWD", "HOME", "COMMAND", ""
+    "SBVER", "PI", "XMAX", "YMAX", "TRUE", "FALSE", "CWD", "HOME", "COMMAND", "INCLUDE", ""
   };
-  for (int i = 0; !result && constants[i] != '\0'; i++) {
+  for (int i = 0; !result && constants[i][0] != '\0'; i++) {
     if (strcasecmp(constants[i], keyword) == 0) {
       result = true;
     }

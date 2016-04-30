@@ -438,6 +438,7 @@ char *System::loadResource(const char *fileName) {
       int len = cached->length();
       buffer = (char *)malloc(len + 1);
       memcpy(buffer, cached->c_str(), len);
+      buffer[len] = '\0';
     } else {
       int handle = 1;
       var_t *var_p = v_new();
