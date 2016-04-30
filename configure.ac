@@ -1,7 +1,7 @@
 dnl
 dnl Configure script for SmallBASIC
 dnl
-dnl Copyright(C) 2001-2015 Chris Warren-Smith.
+dnl Copyright(C) 2001-2016 Chris Warren-Smith.
 dnl
 dnl This program is distributed under the terms of the GPL v2.0
 dnl Download the GNU Public License (GPL) from www.gnu.org
@@ -92,6 +92,23 @@ function checkPCRE() {
    if test "${have_pcre}" = "yes" ; then
      AC_DEFINE(USE_PCRE, 1, [match.c used with libpcre.])
      PACKAGE_LIBS="${PACKAGE_LIBS} `pcre-config --libs`"
+   fi
+}
+
+function checkTermios() {
+   AC_CHECK_HEADERS([termios.h], [have_termios_h=yes; break;])
+
+   case "${host_os}" in
+     *mingw* | pw32* | cygwin*)
+     have_termios_h="no"
+   esac
+
+   if test x$ac_build_android = xyes; then
+     have_termios_h="no"
+   fi
+
+   if test "${have_termios_h}" = "yes" ; then
+     AC_DEFINE(USE_TERM_IO, 1, [use the termios library.])
    fi
 }
 
@@ -332,6 +349,7 @@ else
 fi
 
 checkPCRE
+checkTermios
 checkDebugMode
 checkForWindows
 

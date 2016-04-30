@@ -26,6 +26,12 @@
 #if !defined(_device_h)
 #define _device_h
 
+#include "config.h"
+
+#if USE_TERM_IO
+#include <termios.h>
+#endif
+
 #include "common/sys.h"
 #include "common/var.h"
 
