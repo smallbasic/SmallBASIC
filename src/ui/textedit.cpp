@@ -973,7 +973,8 @@ void TextEditInput::editEnter() {
   char spaces[LINE_BUFFER_SIZE];
   int start = lineStart(_state.cursor);
   int prevLineStart = lineStart(start - 1);
-  if (prevLineStart >= 0) {
+
+  if (prevLineStart || _cursorLine == 1) {
     int indent = getIndent(spaces, sizeof(spaces), prevLineStart);
     if (indent) {
       _buf.insertChars(_state.cursor, spaces, indent);
@@ -996,7 +997,7 @@ void TextEditInput::editTab() {
     prevLineStart = lineStart(prevLineStart - 1);
   }
   // note - spaces not used in this context
-  indent = prevLineStart == 0 ? 0 : getIndent(spaces, sizeof(spaces), prevLineStart);
+  indent = (prevLineStart || _cursorLine == 2) ? getIndent(spaces, sizeof(spaces), prevLineStart) : 0;
 
   // get the current lines indent
   char *buf = lineText(start);
@@ -1176,7 +1177,7 @@ int TextEditInput::getIndent(char *spaces, int len, int pos) {
   // count the indent level and find the start of text
   char *buf = lineText(pos);
   int i = 0;
-  while (buf && buf[i] == ' ' && i < len) {
+  while (buf && (buf[i] == ' ' || buf[i] == '\t') && i < len) {
     spaces[i] = buf[i];
     i++;
   }
@@ -1205,7 +1206,7 @@ int TextEditInput::getIndent(char *spaces, int len, int pos) {
         j++;
       }
       // right trim trailing spaces
-      while (buf[j - 1] == ' ' && j > i) {
+      while ((buf[j - 1] == ' ' || buf[j - 1] == '\t') && j > i) {
         j--;
       }
       if (strncasecmp(buf + j - 4, "then", 4) != 0) {
