@@ -1050,6 +1050,7 @@ void System::systemPrint(const char *format, ...) {
 
   if (size) {
     char *buf = (char *)malloc(size + 1);
+    buf[0] = '\0';
     va_start(args, format);
     vsnprintf(buf, size + 1, format, args);
     va_end(args);

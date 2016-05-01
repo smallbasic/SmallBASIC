@@ -387,6 +387,7 @@ void log_printf(const char *format, ...) {
 
   if (size) {
     char *buf = malloc(size + 3);
+    buf[0] = '\0';
     va_start(args, format);
     vsnprintf(buf, size + 1, format, args);
     va_end(args);

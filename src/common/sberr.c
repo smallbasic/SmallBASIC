@@ -65,15 +65,15 @@ void rt_raise(const char *fmt, ...) {
 
     // log the stack trace
     for (i_stack = prog_stack_count; i_stack > 0; i_stack--) {
-      stknode_t node = prog_stack[i_stack];
+      stknode_t node = prog_stack[i_stack - 1];
       switch (node.type) {
-        case 0xFF:
-        case kwBYREF:
-        case kwTYPE_CRVAR:
+      case 0xFF:
+      case kwBYREF:
+      case kwTYPE_CRVAR:
         // ignore these types
         break;
 
-        default:
+      default:
         for (i_kw = 0; keyword_table[i_kw].name[0] != '\0'; i_kw++) {
           if (node.type == keyword_table[i_kw].code) {
             log_printf(" %s: %d", keyword_table[i_kw].name, node.line);

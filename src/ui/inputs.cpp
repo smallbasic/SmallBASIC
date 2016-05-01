@@ -138,14 +138,9 @@ void FormInput::construct(var_p_t form, var_p_t field, int id) {
   }
 
   const char *caption = getText();
-  int textW = 0;
-  int textH = 0;
-
-  if (caption) {
-    MAExtent extent = maGetTextSize(caption);
-    textW = EXTENT_X(extent);
-    textH = EXTENT_Y(extent);
-  }
+  MAExtent extent = maGetTextSize(caption != NULL && caption[0] ? caption : "Z");
+  int textW = EXTENT_X(extent);
+  int textH = EXTENT_Y(extent);
 
   if (_width <= 0 && caption != NULL) {
     _width = textW + padding(false);
@@ -572,7 +567,7 @@ void FormLineInput::draw(int x, int y, int w, int h, int chw) {
     maFillRect(px, y, width, _height);
     maSetColor(_bg);
     maDrawText(px, y, _buffer + _scroll + start, chars);
-  } else {
+  } else if (hasFocus()) {
     int px = x + (_point * chw);
     maFillRect(px, y, chw, _height);
     if (_point < len) {

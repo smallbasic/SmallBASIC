@@ -188,5 +188,29 @@ if (Found != 5) then
   throw "Failed: " + Found
 endif
 
+sub stack_test
+if 1 == 1 then
+  if 2 == 2 then
+    if 3 == 3 then
+      try
+        try
+          try
+            try
+              try
+                a = 1 / 0
+              catch
+              end try
+            catch
+            end try
+          catch
+          end try
+        catch
+        end try
+      catch
+      end try
+    fi
+  fi
+fi
+end
 
-
+stack_test

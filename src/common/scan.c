@@ -1818,7 +1818,7 @@ void comp_get_unary(const char *p, int *ladd, int *linc, int *ldec, int *leqop) 
   *ladd = (strncmp(p, "<<", 2) == 0);
   *linc = (strncmp(p, "++", 2) == 0);
   *ldec = (strncmp(p, "--", 2) == 0);
-  if (p[1] == '=' && strchr("-+/\\*^%&|", p[0])) {
+  if (p[0] != '\0' && p[1] == '=' && strchr("-+/\\*^%&|", p[0])) {
     *leqop = p[0];
   } else {
     *leqop = 0;
