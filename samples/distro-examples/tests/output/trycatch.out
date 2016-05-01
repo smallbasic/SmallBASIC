@@ -4,3 +4,20 @@ open failed	FS(2): NO SUCH FILE OR DIRECTORY
 after try
 catch by error name
 outer after try
+
+
+ * RTE-ERROR AT ../../../samples/distro-examples/tests/trycatch.bas:200 * 
+Description:
+Division by zero
+
+Stack:
+ TRY: 199
+ TRY: 198
+ TRY: 197
+ TRY: 196
+ TRY: 195
+ IF: 194
+ IF: 193
+ IF: 192
+ SUB: 216
+

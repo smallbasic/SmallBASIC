@@ -8,7 +8,7 @@
 SUBDIRS = @BUILD_SUBDIRS@
 
 deb:
-	fakeroot dpkg-buildpackage -b
+	fakeroot dpkg-buildpackage -b -uc -us
 
 test:
 	(cd @TEST_DIR@ && make test)
