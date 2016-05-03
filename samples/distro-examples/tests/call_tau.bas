@@ -30,8 +30,10 @@ foyer.name= "my name is PI"
 
 ? "end"
 
-tau.addRoom(foyer,x)
-
+for i = 0 to 1000
+  tau.addRoom(foyer,x)
+  jj = tau.calcRoomSize(foyer,x)
+next i
 
 sub addRoom(the_thing, d)
   print the_thing.name, d

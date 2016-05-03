@@ -2,7 +2,7 @@ Unit Tau
 Import TauChild
 
 Export expvar, foof, foop
-export addRoom
+export addRoom,calcRoomSize
 export print_expvar, ta, build_ta, cerr
 
 expvar = "Tau's exported variable"
@@ -37,7 +37,10 @@ sub cerr
 end
 
 sub addRoom(the_thing,d)
+end
 
+func calcRoomSize(the_thing,d)
+  calcRoomSize = 1
 end
 
 rem initialization
