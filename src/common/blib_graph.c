@@ -20,10 +20,17 @@
 int gra_x;
 int gra_y;
 
-//
 void graph_reset() {
   gra_x = gra_y = 0;
   dev_cls();
+}
+
+void graph_get_xstep(var_t *r) {
+  v_setint(r, gra_x);
+}
+
+void graph_get_ystep(var_t *r) {
+  v_setint(r, gra_y);
 }
 
 //
@@ -1518,8 +1525,7 @@ void cmd_m3apply() {
     for (i = 0; i < count; i++) {
       e = v_elem(p, i);
 
-      if (e->type != V_ARRAY
-        )
+      if (e->type != V_ARRAY)
         err_parsepoly(i, 10);
       else if ((e->v.a.size % 2) != 0)
         err_parsepoly(i, 11);

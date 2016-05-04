@@ -211,10 +211,29 @@ void setsysvar_int(int index, var_int_t value) {
     activate_task(i);
     if (ctask->has_sysvars) {
       var_t *var_p = tvar[index];
-
       var_p->type = V_INT;
       var_p->const_flag = 1;
       var_p->v.i = value;
+    }
+  }
+  activate_task(tid);
+}
+
+/**
+ * sets the value of an callback system-variable
+ */
+void setsysvar_fn(int index, method value) {
+  int tid;
+  int i;
+
+  tid = ctask->tid;
+  for (i = 0; i < count_tasks(); i++) {
+    activate_task(i);
+    if (ctask->has_sysvars) {
+      var_t *var_p = tvar[index];
+      var_p->type = V_FUNC;
+      var_p->const_flag = 1;
+      var_p->v.fn.cb = value;
     }
   }
   activate_task(tid);
@@ -285,6 +304,8 @@ void exec_setup_predefined_variables() {
   setsysvar_int(SYSVAR_FALSE, 0);
   setsysvar_str(SYSVAR_CWD, dev_getcwd());
   setsysvar_str(SYSVAR_COMMAND, opt_command);
+  setsysvar_fn(SYSVAR_LASTX, graph_get_xstep);
+  setsysvar_fn(SYSVAR_LASTY, graph_get_ystep);
 
 #if defined(_UnixOS)
   if (dev_getenv("HOME")) {

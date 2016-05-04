@@ -695,6 +695,9 @@ static inline void eval_var(var_t *r, var_t *var_p) {
       eval_var(r, var_deref);
     }
     break;
+  case V_FUNC:
+    var_p->v.fn.cb(r);
+    break;
   }
 }
 

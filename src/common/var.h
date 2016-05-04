@@ -54,7 +54,9 @@
 #define SYSVAR_X            9  /**< system variable, X         @ingroup var */
 #define SYSVAR_Y            10 /**< system variable, Y         @ingroup var */
 #define SYSVAR_Z            11 /**< system variable, Z         @ingroup var */
-#define SYSVAR_COUNT        12
+#define SYSVAR_LASTX        12 /**< system variable, LASTX     @ingroup var */
+#define SYSVAR_LASTY        13 /**< system variable, LASTY     @ingroup var */
+#define SYSVAR_COUNT        14
 
 /**
  * @ingroup var
