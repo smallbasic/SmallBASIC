@@ -95,6 +95,8 @@ void cmd_diffeq(void);
 void graph_reset(void); // graphics module - reset
 void graph_get_xstep(var_t *r);
 void graph_get_ystep(var_t *r);
+void graph_get_mx(var_t *r);
+void graph_get_my(var_t *r);
 void cmd_pset(void);
 void cmd_line(void);
 void cmd_rect(void);

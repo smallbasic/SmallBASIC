@@ -728,8 +728,6 @@ void System::setupPath() {
 void System::setDimensions() {
   os_graf_mx = _output->getWidth();
   os_graf_my = _output->getHeight();
-  setsysvar_int(SYSVAR_XMAX, os_graf_mx - 1);
-  setsysvar_int(SYSVAR_YMAX, os_graf_my - 1);
 }
 
 void System::setRunning(bool running) {
