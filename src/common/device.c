@@ -398,7 +398,11 @@ void log_printf(const char *format, ...) {
       buf[i--] = '\0';
     }
     strcat(buf, "\r\n");
+#if defined(IMPL_LOG_WRITE)
     lwrite(buf);
+#else
+    dev_print(buf);
+#endif
     free(buf);
   }
 }
@@ -418,6 +422,5 @@ void dev_trace_line(int lineNo) {
 
 #ifndef IMPL_LOG_WRITE
 void lwrite(const char *buf) {
-  fprintf(stderr, "%s\n", buf);
 }
 #endif
