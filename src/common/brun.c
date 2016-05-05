@@ -296,10 +296,10 @@ void sysvar_getcwd(var_t *r) {
  */
 void exec_setup_predefined_variables() {
   char homedir[OS_PATHNAME_SIZE + 1];
+  homedir[0] = '\0';
 
   // needed here (otherwise task will not updated)
   ctask->has_sysvars = 1;
-
   setsysvar_str(SYSVAR_SBVER, SB_STR_VER);
   setsysvar_num(SYSVAR_PI, SB_PI);
   setsysvar_int(SYSVAR_TRUE, 1);
@@ -323,7 +323,6 @@ void exec_setup_predefined_variables() {
     homedir[l] = OS_DIRSEP;
     homedir[l + 1] = '\0';
   }
-  setsysvar_str(SYSVAR_HOME, homedir);
 #elif defined(_Win32)
   if (dev_getenv("HOME")) {
     // this works on cygwin
@@ -334,7 +333,6 @@ void exec_setup_predefined_variables() {
     char *p = strrchr(homedir, '\\');
     *p = '\0';
     strcat(homedir, "\\");
-
     if (OS_DIRSEP == '/') {
       p = homedir;
       while (*p) {
@@ -344,18 +342,8 @@ void exec_setup_predefined_variables() {
       }
     }
   }
-  setsysvar_str(SYSVAR_HOME, homedir);  // mingw32
-
-  {
-    static char stupid_os_envsblog[1024]; // it must be static at
-    // least by default on DOS
-    // or Win32(BCB)
-    sprintf(stupid_os_envsblog, "SBLOG=%s%csb.log", homedir, OS_DIRSEP);
-    putenv(stupid_os_envsblog);
-  }
-#else
-  setsysvar_str(SYSVAR_HOME, "");
 #endif
+  setsysvar_str(SYSVAR_HOME, homedir);
 }
 
 /**
@@ -536,7 +524,7 @@ static inline void bc_loop_call_proc() {
   pcode_t pcode = code_getaddr();
   switch (pcode) {
   case kwCLS:
-    graph_reset();
+    dev_cls();
     break;
   case kwTHROW:
     cmd_throw();
@@ -1721,6 +1709,7 @@ void sbasic_exec_prepare(const char *filename) {
   }
   // reset system
   cmd_play_reset();
+  graph_reset();
 }
 
 /*

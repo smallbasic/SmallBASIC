@@ -13,6 +13,7 @@
 #include "common/messages.h"
 #include "common/osd.h"
 #include "common/sberr.h"
+#include "common/blib.h"
 
 #define W2X(x) (((((x) - dev_Wx1) * dev_Vdx) / dev_Wdx) + dev_Vx1)
 #define W2Y(y) (((((y) - dev_Wy1) * dev_Vdy) / dev_Wdy) + dev_Vy1)
@@ -155,6 +156,7 @@ void dev_print(const char *str) {
  * clears the screen
  */
 void dev_cls() {
+  graph_reset();
   osd_cls();
 }
 

@@ -200,45 +200,6 @@ void exec_usefunc3(var_t *var1, var_t *var2, var_t *var3, bcip_t ip) {
   free(old_z);
 }
 
-#ifndef IMPL_LOG_WRITE
-
-/**
- * Write to the log file
- */
-void lwrite(const char *buf) {
-  int log_dev; /* logfile file handle */
-  char log_name[OS_PATHNAME_SIZE + 1]; /* LOGFILE filename */
-
-  // open
-#if defined(_Win32) || defined(__MINGW32__)
-  if (getenv("SBLOG")) {
-    strcpy(log_name, getenv("SBLOG"));
-  }
-  else {
-    sprintf(log_name, "c:%csb.log", OS_DIRSEP);
-  }
-#else
-  sprintf(log_name, "%ctmp%csb.log", OS_DIRSEP, OS_DIRSEP);
-#endif
-
-  log_dev = open(log_name, O_RDWR, 0660);
-  lseek(log_dev, 0, SEEK_END);
-  if (log_dev == -1) {
-    log_dev = open(log_name, O_CREAT | O_RDWR, 0660);
-  }
-  if (log_dev == -1) {
-    panic("LOG: Error on creating log file");
-  }
-
-  // write
-  if (write(log_dev, buf, strlen(buf)) == -1) {
-    panic("LOG: write failed");
-  }
-
-  close(log_dev);
-}
-#endif // NOT IMPL_LOG_WRITE
-
 /*
  * Write string to output device
  */
