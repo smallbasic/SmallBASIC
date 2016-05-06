@@ -209,7 +209,7 @@ func showResult(result)
   rect out_x, out_y STEP w, h,  COLOR bgnd FILLED
   rect out_x - 1, out_y - 1 STEP w + 1, h + 1,  COLOR 2
 
-  local out_str = chr(27) + "[15 C" + result
+  local out_str = result
   local out_str_w = textwidth(result)
   local x = (out_x + w) - out_str_w - textwidth("0")
 

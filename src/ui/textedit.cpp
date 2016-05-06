@@ -103,6 +103,7 @@ const char *helpText =
   "A-g goto line\n"
   "A-n trim line-endings\n"
   "A-t select theme\n"
+  "A-. break mode\n"
   "A-<n> recent file\n"
   "SHIFT-<arrow> select\n"
   "TAB indent line\n"
