@@ -2354,7 +2354,7 @@ void cmd_genfunc(long funcCode, var_t *r) {
           err_argerr();
         else {
           x = v_getint(v_elem(v, 0));
-          y = v_getint(v_elem(v, 0));
+          y = v_getint(v_elem(v, 1));
         }
       } else {
         x = v_getint(v);

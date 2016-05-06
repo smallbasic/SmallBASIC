@@ -1,5 +1,7 @@
-2016-04-26 (0.12.6)
-	Added LASTX, LASTY system variables
+2016-05-07 (0.12.6)
+	Reverted LASTX/LASTY. Data was already accessible via POINT command
+	Reverted getPixel from SCREEN for performance. Can still access this by passed -ve x/y values
+	Reverted using var V_FUNC handling for int sys vars due to eval issues
 
 2016-04-26 (0.12.6)
 	Fixes for unit case sensitivity

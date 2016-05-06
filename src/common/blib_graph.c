@@ -18,22 +18,6 @@ void graph_reset() {
   gra_x = gra_y = 0;
 }
 
-void graph_get_xstep(var_t *r) {
-  v_setint(r, gra_x);
-}
-
-void graph_get_ystep(var_t *r) {
-  v_setint(r, gra_y);
-}
-
-void graph_get_mx(var_t *r) {
-  v_setint(r, os_graf_mx - 1);
-}
-
-void graph_get_my(var_t *r) {
-  v_setint(r, os_graf_my - 1);
-}
-
 //
 //  VIEW [x1,y1,x2,y2[,c[,b]]]
 //

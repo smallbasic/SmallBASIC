@@ -728,6 +728,8 @@ void System::setupPath() {
 void System::setDimensions() {
   os_graf_mx = _output->getWidth();
   os_graf_my = _output->getHeight();
+  setsysvar_int(SYSVAR_XMAX, os_graf_mx - 1);
+  setsysvar_int(SYSVAR_YMAX, os_graf_my - 1);
 }
 
 void System::setRunning(bool running) {
@@ -1082,17 +1084,7 @@ int osd_getpen(int mode) {
 }
 
 long osd_getpixel(int x, int y) {
-  g_system->getOutput()->redraw();
-
-  MARect rc;
-  int data[1];
-  rc.left = x;
-  rc.top = y;
-  rc.width = 1;
-  rc.height = 1;
-  maGetImageData(HANDLE_SCREEN, &data, &rc, 1);
-  int result = -(data[0] & 0x00FFFFFF);
-  return result;
+  return g_system->getOutput()->getPixel(x, y);
 }
 
 int osd_getx(void) {

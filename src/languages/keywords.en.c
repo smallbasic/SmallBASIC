@@ -492,8 +492,6 @@ struct proc_keyword_s proc_table[] = {
 #define LCN_SV_X                "X"
 #define LCN_SV_Y                "Y"
 #define LCN_SV_Z                "Z"
-#define LCN_SV_LASTX            "LASTX"
-#define LCN_SV_LASTY            "LASTY"
 
 // fast cut of comments (pp)
 #define LCN_REM_1               ":rem "

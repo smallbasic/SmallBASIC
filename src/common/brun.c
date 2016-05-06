@@ -220,26 +220,6 @@ void setsysvar_int(int index, var_int_t value) {
 }
 
 /**
- * sets the value of an callback system-variable
- */
-void setsysvar_fn(int index, method value) {
-  int tid;
-  int i;
-
-  tid = ctask->tid;
-  for (i = 0; i < count_tasks(); i++) {
-    activate_task(i);
-    if (ctask->has_sysvars) {
-      var_t *var_p = tvar[index];
-      var_p->type = V_FUNC;
-      var_p->const_flag = 1;
-      var_p->v.fn.cb = value;
-    }
-  }
-  activate_task(tid);
-}
-
-/**
  * sets the value of a real system-variable
  */
 void setsysvar_num(int index, var_num_t value) {
@@ -287,10 +267,6 @@ void setsysvar_str(int index, const char *value) {
   activate_task(tid);
 }
 
-void sysvar_getcwd(var_t *r) {
-  v_setstr(r, dev_getcwd());
-}
-
 /**
  * create predefined system variables for this task
  */
@@ -302,14 +278,12 @@ void exec_setup_predefined_variables() {
   ctask->has_sysvars = 1;
   setsysvar_str(SYSVAR_SBVER, SB_STR_VER);
   setsysvar_num(SYSVAR_PI, SB_PI);
+  setsysvar_int(SYSVAR_XMAX, os_graf_mx - 1);
+  setsysvar_int(SYSVAR_YMAX, os_graf_my - 1);
   setsysvar_int(SYSVAR_TRUE, 1);
   setsysvar_int(SYSVAR_FALSE, 0);
+  setsysvar_str(SYSVAR_CWD, dev_getcwd());
   setsysvar_str(SYSVAR_COMMAND, opt_command);
-  setsysvar_fn(SYSVAR_CWD, sysvar_getcwd);
-  setsysvar_fn(SYSVAR_XMAX, graph_get_mx);
-  setsysvar_fn(SYSVAR_YMAX, graph_get_my);
-  setsysvar_fn(SYSVAR_LASTX, graph_get_xstep);
-  setsysvar_fn(SYSVAR_LASTY, graph_get_ystep);
 
 #if defined(_UnixOS)
   if (dev_getenv("HOME")) {
@@ -329,7 +303,7 @@ void exec_setup_predefined_variables() {
     strcpy(homedir, dev_getenv("HOME"));
   }
   else {
-    GetModuleFileName(NULL, homedir, 1024);
+    GetModuleFileName(NULL, homedir, sizeof(homedir) - 1);
     char *p = strrchr(homedir, '\\');
     *p = '\0';
     strcat(homedir, "\\");

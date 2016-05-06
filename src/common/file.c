@@ -616,6 +616,7 @@ void dev_chdir(const char *dir) {
   if (chdir(dir) != 0) {
     err_file(errno);
   }
+  setsysvar_str(SYSVAR_CWD, dev_getcwd());
 }
 
 /**
