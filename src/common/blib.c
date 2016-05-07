@@ -84,6 +84,7 @@ void cmd_dim(int preserve) {
           code_skipnext();
           zaf = 0;
           do {
+            v_init(&arg);
             eval(&arg);
             if (prog_error) {
               return;
@@ -1755,7 +1756,6 @@ void cmd_next() {
   jump_ip = node.x.vfor.jump_ip;
 
   var_p = node.x.vfor.var_ptr;
-  // v_init(&var_to);
   var_step.const_flag = 0;
   var_step.type = V_INT;
   var_step.v.i = 1;
@@ -1766,6 +1766,7 @@ void cmd_next() {
     //
 
     prog_ip = node.x.vfor.to_expr_ip;
+    v_init(&var_to);
     eval(&var_to);
 
     if (!prog_error && (var_to.type == V_INT || var_to.type == V_NUM)) {

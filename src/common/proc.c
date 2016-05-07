@@ -432,6 +432,7 @@ void par_getstr(var_t *var) {
     err_syntax(-1, "%S");
     return;
   default:
+    v_init(var);
     eval(var);
     break;
   };
@@ -525,10 +526,9 @@ var_int_t par_getval(var_int_t def) {
       result = def;
       break;
     default:
+      v_init(&var);
       eval(&var);
-      if (!prog_error) {
-        result = v_getint(&var);
-      }
+      result = prog_error ? 0 : v_getint(&var);
       v_free(&var);
       break;
     }
