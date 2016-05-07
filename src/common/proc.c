@@ -471,19 +471,67 @@ var_num_t par_getnum() {
   return f;
 }
 
+var_int_t par_next_int(int sep) {
+  var_int_t result;
+  if (prog_error) {
+    result = 0;
+  } else {
+    result = par_getint();
+  }
+  if (!prog_error && (sep || code_peek() == kwTYPE_SEP)) {
+    par_getcomma();
+  }
+  return result;
+}
+
+var_t *par_next_str(var_t *arg, int sep) {
+  var_t *result;
+  if (prog_error) {
+    result = NULL;
+  } else if (code_isvar()) {
+    result = code_getvarptr();
+  } else {
+    eval(arg);
+    result = arg;
+  }
+  if (result && result->type != V_STR) {
+    err_syntax(-1, "%S");
+  }
+  if (!prog_error && (sep || code_peek() == kwTYPE_SEP)) {
+    par_getcomma();
+  }
+  return result;
+}
+
 var_int_t par_getval(var_int_t def) {
   var_int_t result;
-  byte code = code_peek();
-  if (code == kwTYPE_VAR) {
-    result = par_getint();
-  } else if (code == kwTYPE_INT) {
-    code_skipnext();
-    result = code_getint();
-  } else if (code == kwTYPE_NUM) {
-    code_skipnext();
-    result = code_getreal();
-  } else {
+  if (prog_error) {
     result = def;
+  } else {
+    var_t var;
+    switch (code_peek()) {
+    case kwTYPE_INT:
+      code_skipnext();
+      result = code_getint();
+      break;
+    case kwTYPE_NUM:
+      code_skipnext();
+      result = code_getreal();
+      break;
+    case kwTYPE_LINE:
+    case kwTYPE_EOC:
+    case kwTYPE_SEP:
+    case kwTYPE_LEVEL_END:
+      result = def;
+      break;
+    default:
+      eval(&var);
+      if (!prog_error) {
+        result = v_getint(&var);
+      }
+      v_free(&var);
+      break;
+    }
   }
   return result;
 }

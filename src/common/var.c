@@ -32,7 +32,7 @@ var_t *v_new() {
 int v_isempty(var_t *var) {
   switch (var->type) {
   case V_STR:
-    return (strlen(var->v.p.ptr) == 0);
+    return (v_strlen(var) == 0);
   case V_INT:
     return (var->v.i == 0);
   case V_MAP:
@@ -50,6 +50,19 @@ int v_isempty(var_t *var) {
   return 1;
 }
 
+int v_strlen(var_t *v) {
+  int result;
+  if (v->type == V_STR) {
+    result = v->v.p.size;
+    if (result && v->v.p.ptr[result - 1] == '\0') {
+      result--;
+    }
+  } else {
+    result = 0;
+  }
+  return result;
+}
+
 /*
  * returns the length of the variable
  */
@@ -58,7 +71,7 @@ int v_length(var_t *var) {
 
   switch (var->type) {
   case V_STR:
-    return strlen(var->v.p.ptr);
+    return v_strlen(var);
   case V_MAP:
     return map_length(var);
   case V_PTR:

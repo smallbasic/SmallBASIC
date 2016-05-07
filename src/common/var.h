@@ -654,6 +654,16 @@ char *v_getstr(var_t *v);
 /**
  * @ingroup var
  *
+ * returns the length of the var string
+ *
+ * @param v is the variable
+ * @return the string length
+ */
+int v_strlen(var_t *v);
+
+/**
+ * @ingroup var
+ *
  * returns whether the variable is of the given type
  *
  * @param v is the variable

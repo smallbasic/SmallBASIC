@@ -244,18 +244,20 @@ int comp_is_external_func(const char *name) {
  * error messages
  */
 void sc_raise(const char *fmt, ...) {
-  char *buff;
-  va_list ap;
+  if (!prog_error) {
+    char *buff;
+    va_list ap;
 
-  va_start(ap, fmt);
-  comp_error = 1;
+    va_start(ap, fmt);
+    comp_error = 1;
 
-  buff = malloc(SB_SOURCELINE_SIZE + 1);
-  vsnprintf(buff, SB_SOURCELINE_SIZE, fmt, ap);
-  va_end(ap);
+    buff = malloc(SB_SOURCELINE_SIZE + 1);
+    vsnprintf(buff, SB_SOURCELINE_SIZE, fmt, ap);
+    va_end(ap);
 
-  sc_raise2(comp_bc_sec, comp_line, buff);  // sberr.h
-  free(buff);
+    sc_raise2(comp_bc_sec, comp_line, buff);  // sberr.h
+    free(buff);
+  }
 }
 
 /*

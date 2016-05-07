@@ -397,8 +397,9 @@ void date_fmt(char *fmt, char *buf, long d, long m, long y) {
               // full name
               strcat(buf, date_mN_table[m - 1]);
             }
-          } else
+          } else {
             strcat(buf, "***");
+          }
         }
 
         mc = 0;
@@ -1300,7 +1301,9 @@ void cmd_str0(long funcCode, var_t *r) {
 // str <- FUNC (...)
 //
 void cmd_strN(long funcCode, var_t *r) {
-  var_t arg1;
+  var_t arg1, arg2;
+  var_t *var_p1 = NULL;
+  var_t *var_p2 = NULL;
   var_int_t i, count, lsrc, len, start, pc;
   char tmp[2], *tmp_p;
   char *s1 = NULL, *s2 = NULL, *s3 = NULL;
@@ -1334,8 +1337,9 @@ void cmd_strN(long funcCode, var_t *r) {
         r->v.p.ptr[strlen(r->v.p.ptr) - 1] = '\0';
         r->type = V_STR;
         r->v.p.size = strlen(r->v.p.ptr) + 1;
-      } else
+      } else {
         v_zerostr(r);
+      }
     }
     break;
   case kwSTRING:
@@ -1497,8 +1501,9 @@ void cmd_strN(long funcCode, var_t *r) {
         strcpy(r->v.p.ptr, s1);
         r->v.p.size = l;
         *p = lc;
-      } else
+      } else {
         v_zerostr(r);
+      }
     }
     break;
 
@@ -1612,13 +1617,15 @@ void cmd_strN(long funcCode, var_t *r) {
     //
     // str <- REPLACE$ ( source, pos, str [, len] )
     //
-    count = -1;
-    par_massget("SISi", &s1, &start, &s2, &count);
-    if (!prog_error) {
-      int ls1, ls2;
+    v_init(&arg2);
 
-      ls1 = strlen(s1);
-      ls2 = strlen(s2);
+    var_p1 = par_next_str(&arg1, 1);
+    start = par_next_int(1);
+    var_p2 = par_next_str(&arg2, 0);
+    count = par_getval(-1);
+    if (!prog_error) {
+      int ls1 = v_strlen(var_p1);
+      int ls2 = v_strlen(var_p2);
 
       start--;
       if (start < 0 || start > ls1) {
@@ -1630,36 +1637,37 @@ void cmd_strN(long funcCode, var_t *r) {
 
       // copy the left-part
       if (start > 0) {
-        memcpy(r->v.p.ptr, s1, start);
+        memcpy(r->v.p.ptr, var_p1->v.p.ptr, start);
         r->v.p.ptr[start] = '\0';
-      } else
+      } else {
         *r->v.p.ptr = '\0';
-
+      }
       // insert the string
-      strcat(r->v.p.ptr, s2);
+      strcat(r->v.p.ptr, var_p2->v.p.ptr);
 
       // add the right-part
       if (count == -1) {
         count = ls2;
       }
       if (start + count < ls1) {
-        strcat(r->v.p.ptr, (s1 + start + count));
+        strcat(r->v.p.ptr, (var_p1->v.p.ptr + start + count));
       }
       r->v.p.ptr[ls1 + ls2] = '\0';
       r->v.p.size = ls1 + ls2 + 1;
     }
-
+    v_free(&arg2);
     break;
 
   case kwMID:
     //
     // str <- MID$ ( str, start [, len] )
     //
-    len = -1;
-    par_massget("SIi", &s1, &start, &len);
+    var_p1 = par_next_str(&arg1, 1);
+    start = par_next_int(0);
+    len = par_getval(-1);
     if (!prog_error) {
-      lsrc = strlen(s1);
-      if (start <= 0 || start > (int) strlen(s1)) {
+      lsrc = v_strlen(var_p1);
+      if (start <= 0 || start > lsrc) {
         err_stridx(start);
       } else {
         start--;
@@ -1667,13 +1675,13 @@ void cmd_strN(long funcCode, var_t *r) {
           len = lsrc - start;
         }
         r->v.p.ptr = malloc(len + 1);
-        memcpy(r->v.p.ptr, s1 + start, len);
+        memcpy(r->v.p.ptr, var_p1->v.p.ptr + start, len);
         r->v.p.ptr[len] = '\0';
         r->v.p.size = len + 1;
       }
     }
-
     break;
+
   default:
     rt_raise("Unsupported built-in function call %ld, please report this bug (7)", funcCode);
   }
@@ -1873,7 +1881,6 @@ void cmd_intN(long funcCode, var_t *r) {
       code_skipnext();
       var_p = tvar[code_getaddr()];
       if (var_p->type == V_ARRAY) {
-
         l = 1;
         if (code_peek() == kwTYPE_SEP) {
           par_getcomma();
@@ -2471,10 +2478,11 @@ void cmd_genfunc(long funcCode, var_t *r) {
 
     r->type = V_NUM;
 
-    if (funcCode == kwPTDISTLN)
+    if (funcCode == kwPTDISTLN) {
       r->v.n = geo_distfromline(B.x, B.y, C.x, C.y, A.x, A.y);
-    else
+    } else {
       r->v.n = geo_distfromseg(B.x, B.y, C.x, C.y, A.x, A.y);
+    }
   }
     break;
     //
@@ -2554,12 +2562,13 @@ void cmd_genfunc(long funcCode, var_t *r) {
                 if (first) {
                   dar_first(funcCode, r, elem_p);
                   first = 0;
-                } else
+                } else {
                   dar_next(funcCode, r, elem_p);
-
+                }
                 tcount++;
-              } else
+              } else {
                 return;
+              }
             }
             break;
           }
@@ -2573,12 +2582,13 @@ void cmd_genfunc(long funcCode, var_t *r) {
           if (first) {
             dar_first(funcCode, r, &arg);
             first = 0;
-          } else
+          } else {
             dar_next(funcCode, r, &arg);
-
+          }
           tcount++;
-        } else
+        } else {
           return;
+        }
         v_free(&arg);
       }
 
