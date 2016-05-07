@@ -624,7 +624,6 @@ pt_t par_getpt() {
       par_getcomma();
       if (!prog_error) {
         var_t v2;
-
         eval(&v2);
         if (!prog_error) {
           pt.y = v_getreal(&v2);
@@ -676,10 +675,11 @@ ipt_t par_getipt() {
       par_getcomma();
       if (!prog_error) {
         var_t v2;
-
+        v_init(&v2);
         eval(&v2);
-        if (!prog_error)
+        if (!prog_error) {
           pt.y = v_getint(&v2);
+        }
         v_free(&v2);
       }
     }
