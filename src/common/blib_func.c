@@ -21,10 +21,6 @@
 #include "common/messages.h"
 #include "common/keymap.h"
 
-#if defined(_UnixOS)
-#include <unistd.h>
-#endif
-
 struct code_array_node_s {
   var_t *v;
   var_int_t col;

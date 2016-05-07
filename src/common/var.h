@@ -659,7 +659,7 @@ char *v_getstr(var_t *v);
  * @param v is the variable
  * @return the string length
  */
-int v_strlen(var_t *v);
+int v_strlen(const var_t *v);
 
 /**
  * @ingroup var

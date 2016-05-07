@@ -50,7 +50,7 @@ int v_isempty(var_t *var) {
   return 1;
 }
 
-int v_strlen(var_t *v) {
+int v_strlen(const var_t *v) {
   int result;
   if (v->type == V_STR) {
     result = v->v.p.size;
@@ -459,7 +459,7 @@ void v_set(var_t *dest, const var_t *src) {
     dest->v.i = src->v.i;
     break;
   case V_STR:
-    dest->v.p.size = strlen(src->v.p.ptr) + 1;
+    dest->v.p.size = v_strlen(src) + 1;
     dest->v.p.ptr = (char *)malloc(dest->v.p.size);
     strcpy(dest->v.p.ptr, src->v.p.ptr);
     break;
