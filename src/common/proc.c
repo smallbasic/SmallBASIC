@@ -494,9 +494,9 @@ var_t *par_next_str(var_t *arg, int sep) {
   } else {
     eval(arg);
     result = arg;
-  }
-  if (result && result->type != V_STR) {
-    err_syntax(-1, "%S");
+    if (result->type != V_STR) {
+      v_tostr(arg);
+    }
   }
   if (!prog_error && (sep || code_peek() == kwTYPE_SEP)) {
     par_getcomma();
