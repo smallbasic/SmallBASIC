@@ -523,6 +523,7 @@ var_int_t par_getval(var_int_t def) {
     case kwTYPE_EOC:
     case kwTYPE_SEP:
     case kwTYPE_LEVEL_END:
+    case kwTYPE_EVPUSH:
       result = def;
       break;
     default:

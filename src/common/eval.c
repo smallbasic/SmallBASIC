@@ -26,6 +26,12 @@
               (v)->type == V_ARRAY)) {  \
     v_free((v));                        \
   }
+#define V_FREE2(v)               \
+  if (((v)->type == V_STR ||     \
+       (v)->type == V_MAP ||     \
+       (v)->type == V_ARRAY)) {  \
+    v_free((v));                 \
+  }
 
 /**
  * matrix: convert var_t to double[r][c]
@@ -268,7 +274,7 @@ int v_wc_match(var_t *vwc, var_t *v) {
     if (!prog_error) {
       ri = wc_match((char *) vwc->v.p.ptr, (char *) vt->v.p.ptr);
     }
-    v_free(vt);
+    V_FREE(vt);
     free(vt);
   }
   return ri;
@@ -334,7 +340,7 @@ static inline void oper_add(var_t *r, var_t *left) {
         break;
       }
       v_set(r, &vtmp);
-      v_free(&vtmp);
+      V_FREE2(&vtmp);
     }
     V_FREE(left);
   }
@@ -613,7 +619,7 @@ static inline void oper_cmp(var_t *r, var_t *left) {
         v = v_clone(left);
         v_tostr(v);
         ri = (strstr(r->v.p.ptr, v->v.p.ptr) != NULL);
-        v_free(v);
+        V_FREE(v);
         free(v);
       }
     } else if (r->type == V_NUM || r->type == V_INT) {
@@ -862,7 +868,7 @@ static inline void eval_callf_num(long fcode, var_t *r) {
       } else {
         IP++;
         cmd_ns1(fcode, &vtmp, r);
-        v_free(&vtmp);
+        V_FREE2(&vtmp);
       }
     }
   }
@@ -910,8 +916,8 @@ static inline void eval_callf_imathI1(long fcode, var_t *r) {
 }
 
 static inline void eval_callf_imathI2(long fcode, var_t *r) {
-  var_t vtmp;
   // int FUNC(void)
+  var_t vtmp;
   vtmp.type = V_INT;
   vtmp.v.i = 0;
   r->type = V_INT;
@@ -933,7 +939,7 @@ static inline void eval_callf_mathN1(long fcode, var_t *r) {
         IP++;
         r->type = V_NUM;
         r->v.n = cmd_math1(fcode, &vtmp);
-        v_free(&vtmp);
+        V_FREE2(&vtmp);
       }
     }
   }
@@ -1160,7 +1166,7 @@ static inline void eval_call_udf(var_t *r) {
     } else {
       v_set(r, udf_rv.x.vdvar.vptr);
       // free ret-var
-      v_free(udf_rv.x.vdvar.vptr);
+      V_FREE(udf_rv.x.vdvar.vptr);
       free(udf_rv.x.vdvar.vptr);
     }
   }
@@ -1174,7 +1180,7 @@ void eval(var_t *r) {
   bcip_t eval_pos = eval_sp;
   byte level = 0;
 
-  do {
+  while (!prog_error) {
     code_t code = CODE(IP);
     IP++;
     switch (code) {
@@ -1312,14 +1318,7 @@ void eval(var_t *r) {
         }
       }
     };
-
-    // run-time error check
-    if (prog_error) {
-      break;
-    }
-
-  } while (1);
-
+  }
   // restore stack pointer
   eval_sp = eval_pos;
 }

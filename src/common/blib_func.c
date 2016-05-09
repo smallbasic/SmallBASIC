@@ -459,7 +459,7 @@ void date_tim2hms(long t, long *h, long *m, long *s) {
  * f <- FUNC (f|i)
  */
 var_num_t cmd_math1(long funcCode, var_t *arg) {
-  var_num_t r = 0.0, x;
+  var_num_t r, x;
 
   IF_ERR_RETURN_0;
   x = v_getval(arg);
@@ -610,6 +610,7 @@ var_num_t cmd_math1(long funcCode, var_t *arg) {
     break;
   default:
     rt_raise("Unsupported built-in function call %ld, please report this bug (2)", funcCode);
+    r = 0.0;
   };
 
   return r;
@@ -717,7 +718,7 @@ var_int_t cmd_fre(var_int_t arg) {
  * i <- FUNC (f|i)
  */
 var_int_t cmd_imath1(long funcCode, var_t *arg) {
-  var_int_t r = 0;
+  var_int_t r;
 
   IF_ERR_RETURN_0;
   var_int_t x = v_getint(arg);
@@ -793,6 +794,7 @@ var_int_t cmd_imath1(long funcCode, var_t *arg) {
 
   default:
     rt_raise("Unsupported built-in function call %ld, please report this bug (3)", funcCode);
+    r = 0;
   };
 
   return r;
