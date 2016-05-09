@@ -44,6 +44,7 @@ using namespace strlib;
 #define CHOICE_BN_W 6
 #define GRAY_BG_COL    0x4e4c46
 #define LABEL_TEXT_COL 0xdfdbd2
+#define FOCUS_COLOR    0x444999
 
 #define FORM_VALUE "value"
 #define FORM_INPUTS "inputs"
