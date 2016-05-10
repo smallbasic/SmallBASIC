@@ -192,7 +192,14 @@ char *System::getText(char *dest, int maxSize) {
 
   FormInput *widget = new FormLineInput(NULL, maxSize, true, x, y, w, h);
   widget->setFocus(true);
-  widget->setColor(FOCUS_COLOR, DEFAULT_FOREGROUND);
+
+  int bg = _output->getBackgroundColor();
+  int fg = _output->getColor();
+  if (bg != DEFAULT_BACKGROUND || fg != DEFAULT_FOREGROUND) {
+    widget->setColor(bg, fg);
+  } else {
+    widget->setColor(FOCUS_COLOR, DEFAULT_FOREGROUND);
+  }
   _output->addInput(widget);
   _output->redraw();
   _state = kModalState;
