@@ -1870,7 +1870,7 @@ void comp_text_line_let(long idx, int ladd, int linc, int ldec, int leqop) {
 
         // store plain operator in comp_bc_parm
         int len = strlen(p);
-        memcpy(comp_bc_parm, p, len);
+        memmove(comp_bc_parm, p, len);
         comp_bc_parm[len] = '\0';
 
         comp_get_unary(comp_bc_parm, &ladd, &linc, &ldec, &leqop);

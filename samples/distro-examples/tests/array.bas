@@ -69,4 +69,16 @@ if (sim(0) <> 50) then
   throw "dim sim not tasty"
 fi
 
+rem ==6866== Source and destination overlap in memcpy(0xfc3f090, 0xfc3f096, 13)
+rem ==6866==    at 0x4C32513: memcpy@@GLIBC_2.14 (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+rem ==6866==    by 0x48D4A3: memcpy (string3.h:53)
+rem ==6866==    by 0x48D4A3: comp_text_line_let (scan.c:1874)
+
+dim dots(1)
+dots(0).y = 100
+dots(0).dy = 1
+dots(0).y += dots(0).dy
+if (dots(0).y != 101) then
+   throw "not 101 !!!"
+endif
 
