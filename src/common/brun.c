@@ -92,8 +92,10 @@ void free_node(stknode_t *node) {
     break;
 
   case kwFUNC:
+  case kwPROC:
     if (node->x.vcall.rvid != INVALID_ADDR) {
-      tvar[node->x.vcall.rvid] = node->x.vcall.retvar;  // restore ptr
+      free(tvar[node->x.vcall.rvid]);
+      tvar[node->x.vcall.rvid] = node->x.vcall.retvar;
     }
     break;
 
