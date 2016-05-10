@@ -2575,6 +2575,7 @@ void cmd_genfunc(long funcCode, var_t *r) {
         // no 'break' here
       default:
         // default --- expression
+        v_init(&arg);
         eval(&arg);
         if (!prog_error) {
           if (first) {
@@ -2594,9 +2595,9 @@ void cmd_genfunc(long funcCode, var_t *r) {
     } while (!ready);
 
     // final
-    if (!prog_error)
+    if (!prog_error) {
       dar_final(funcCode, r, tcount);
-
+    }
     break;
     //
     //
@@ -2647,6 +2648,7 @@ void cmd_genfunc(long funcCode, var_t *r) {
         // no 'break' here
       default:
         // default --- expression
+        v_init(&arg);
         eval(&arg);
         if (!prog_error) {
           if (tcount >= len) {
