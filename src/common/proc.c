@@ -511,14 +511,6 @@ var_int_t par_getval(var_int_t def) {
   } else {
     var_t var;
     switch (code_peek()) {
-    case kwTYPE_INT:
-      code_skipnext();
-      result = code_getint();
-      break;
-    case kwTYPE_NUM:
-      code_skipnext();
-      result = code_getreal();
-      break;
     case kwTYPE_LINE:
     case kwTYPE_EOC:
     case kwTYPE_SEP:
