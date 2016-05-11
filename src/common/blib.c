@@ -23,11 +23,11 @@
  * LET v[(x)] = any
  * CONST v[(x)] = any
  */
-void cmd_let(int allowConst) {
+void cmd_let(int is_const) {
   var_t *v_left = code_getvarptr();
 
   if (!prog_error) {
-    if (v_left->const_flag && !allowConst) {
+    if (v_left->const_flag) {
       err_const();
       return;
     }
@@ -46,7 +46,7 @@ void cmd_let(int allowConst) {
       eval(&v_right);
       if (!prog_error) {
         v_set(v_left, &v_right);
-        v_left->const_flag = allowConst;
+        v_left->const_flag = is_const;
       }
       v_free(&v_right);
     }
