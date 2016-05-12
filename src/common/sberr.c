@@ -55,9 +55,6 @@ void err_stack_dump() {
       }
     }
   }
-  if (prog_stack_count) {
-    log_printf("\n");
-  }
 }
 
 /**
@@ -75,15 +72,15 @@ void rt_raise(const char *fmt, ...) {
   char *buff;
   va_list ap;
 
-  if (!gsb_last_error && !prog_error) {
+  if (!gsb_last_error && !prog_error && prog_source) {
     prog_error = errRuntime;
     va_start(ap, fmt);
     buff = malloc(SB_TEXTLINE_SIZE + 1);
     vsprintf(buff, fmt, ap);
     va_end(ap);
+    err_stack_dump();
     err_common_msg(WORD_RTE, prog_file, prog_line, buff);
     free(buff);
-    err_stack_dump();
   }
 }
 
@@ -91,7 +88,7 @@ void rt_raise(const char *fmt, ...) {
  * run-time syntax error
  */
 void err_syntax(int keyword, const char *fmt) {
-  if (!gsb_last_error) {
+  if (!gsb_last_error && prog_source) {
     char *buff = malloc(SB_TEXTLINE_SIZE + 1);
     char *fmt_p = (char *)fmt;
 
@@ -190,7 +187,7 @@ void err_varisnotarray(void) {
 }
 
 void err_vararridx(int i, int m) {
-  rt_raise(ERR_ARRAY_RANGE, i, m);
+  err_throw(ERR_ARRAY_RANGE, i, m);
 }
 
 void err_varnotnum(void) {
@@ -226,7 +223,7 @@ void err_notarray(void) {
 }
 
 void err_out_of_range(void) {
-  rt_raise(ERR_RANGE);
+  err_throw(ERR_RANGE);
 }
 
 void err_missing_sep(void) {
@@ -259,7 +256,7 @@ void err_parm_byref(int n) {
 }
 
 void err_stridx(int n) {
-  rt_raise(ERR_STR_RANGE, n);
+  err_throw(ERR_STR_RANGE, n);
 }
 
 void err_fopen(void) {
@@ -374,6 +371,7 @@ void err_throw_str(const char *err) {
   int throw_sp = prog_stack_count;
   int try_sp = err_find_try(throw_sp);
   int reset_sp;
+  int trace_done = 0;
 
   if (!prog_error && try_sp != -1) {
     bcip_t catch_ip = prog_stack[try_sp].x.vtry.catch_ip;
@@ -413,6 +411,7 @@ void err_throw_str(const char *err) {
 
     if (!caught) {
       err_stack_dump();
+      trace_done = 1;
     }
 
     // cleanup the stack
@@ -427,6 +426,9 @@ void err_throw_str(const char *err) {
   }
   if (!caught) {
     prog_error = errRuntime;
+    if (!trace_done) {
+      err_stack_dump();
+    }
     err_common_msg(WORD_RTE, prog_file, prog_line, err);
   } else {
     prog_error = errThrow;

@@ -1442,7 +1442,7 @@ int exec_close_task() {
     prog_timer = NULL;
   }
 
-  if (prog_error != -1 && prog_error != 0) {
+  if (prog_error != errEnd && prog_error != errNone) {
     return 1;
   }
   return 0;
