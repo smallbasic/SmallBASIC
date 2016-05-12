@@ -35,6 +35,9 @@ static char fileName[OS_FILENAME_SIZE + 1];
 static int exec_tid;
 
 #define EVT_CHECK_EVERY 50
+#define IF_ERR_BREAK if (prog_error) { \
+  if (prog_error == errThrow)       \
+      prog_error = errNone; else break;}
 
 /**
  * jump to label
@@ -326,7 +329,7 @@ void exec_setup_predefined_variables() {
  * BREAK
  */
 void brun_stop() {
-  prog_error = -3;
+  prog_error = errBreak;
 }
 
 /**
@@ -421,7 +424,7 @@ void cmd_chain(void) {
   if (success == 0) {
     close_task(tid_base);
     activate_task(tid_prev);
-    prog_error = 1;
+    prog_error = errCompile;
     return;
   }
 
@@ -448,7 +451,7 @@ void cmd_chain(void) {
   strcpy(gsb_last_errmsg, "");
 
   if (success == 0) {
-    prog_error = 1;
+    prog_error = errRuntime;
   }
 }
 
@@ -671,7 +674,7 @@ static inline void bc_loop_call_proc() {
     dev_print("\nSTKDUMP:\n");
     dump_stack();
     // end of program
-    prog_error = -1;
+    prog_error = errEnd;
     break;
   case kwDEFINEKEY:
     cmd_definekey();
@@ -722,7 +725,7 @@ static inline void bc_loop_end() {
     }
   }
   // end of program
-  prog_error = -1;
+  prog_error = errEnd;
 }
 
 /**
@@ -775,7 +778,7 @@ void bc_loop(int isf) {
         // break event
         break;
       case -2:
-        prog_error = -2;
+        prog_error = errBreak;
         inf_break(prog_line);
         break;
       default:
@@ -1275,7 +1278,7 @@ int brun_create_task(const char *filename, byte *preloaded_bc, int libf) {
   eval_sp = 0;
 
   // initialize the rest tasks globals
-  prog_error = 0;
+  prog_error = errNone;
   prog_line = 0;
   prog_dp = data_org = hdr.data_ip;
   prog_length = hdr.bc_count;
@@ -1533,10 +1536,10 @@ int sbasic_exec_task(int tid) {
 
   prev_tid = activate_task(tid);
 
-  bc_loop(0);                   // natural the value -1 is end of program
-  success = (prog_error == 0 || prog_error == -1);
+  bc_loop(0);
+  success = (prog_error == errNone || prog_error == errEnd);
   if (success) {
-    prog_error = 0;
+    prog_error = errNone;
   }
   activate_task(prev_tid);
   return success;

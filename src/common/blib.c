@@ -1475,9 +1475,8 @@ void cmd_endif() {
   stknode_t node;
 
   code_pop(&node, kwIF);
-  while (node.type != kwIF) {
+  while (node.type != kwIF && !prog_error) {
     code_pop(&node, kwIF);
-    IF_ERR_BREAK;
   }
 
   if (!prog_error) {

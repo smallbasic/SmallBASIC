@@ -564,7 +564,6 @@ void cmd_floadln() {
   int eof, eol, bufLen, bufIndex;
   dword unreadBytes;
 
-  err_reset();
   if (code_peek() == kwTYPE_SEP) {
     // "filename" is an already open file number
     flags = 0;
@@ -646,7 +645,7 @@ void cmd_floadln() {
           unreadBytes -= bufLen;
 
           dev_fread(handle, (byte *)buf, bufLen);
-          if (err_has_error()) {
+          if (prog_error) {
             eof = 1;
             break;
           }
@@ -666,7 +665,7 @@ void cmd_floadln() {
         }
       }                         // read line
 
-      if (err_has_error()) {
+      if (prog_error) {
         // clear & exit
         v_free(array_p);
         v_init(array_p);
@@ -716,7 +715,6 @@ void cmd_fsaveln() {
   int flags = DEV_FILE_OUTPUT;
   int handle, i;
 
-  err_reset();
   if (code_peek() == kwTYPE_SEP) {
     // "filename" is an already open file number
     flags = 0;

@@ -128,6 +128,7 @@ bool System::execute(const char *bas) {
   }
 
   opt_command[0] = '\0';
+  opt_file_permitted = 1;
   _output->resetFont();
   _output->flush(true);
   return result;
@@ -470,6 +471,7 @@ char *System::loadResource(const char *fileName) {
       dev_fclose(handle);
       v_free(var_p);
       free(var_p);
+      opt_file_permitted = 0;
     }
   }
   return buffer;

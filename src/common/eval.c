@@ -1306,6 +1306,7 @@ void eval(var_t *r) {
       default:
         if (code == kwTYPE_EOC ||
             code == kwTYPE_SEP ||
+            code == kwTO ||
             kw_check_evexit(code)) {
           IP--;
           // restore stack pointer
