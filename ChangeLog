@@ -1,3 +1,10 @@
+2016-05-14 (0.12.6)
+	Fix to prevent const overwriting another const
+	Updated MID and REPLACE for performance
+	POINT(0) and POINT(1) values now reset with each program run
+	POINT(-x, -y) now provides access to the base screen image. For better
+	performance use the IMAGE.SAVE sub command
+
 2016-05-07 (0.12.6)
 	Reverted LASTX/LASTY. Data was already accessible via POINT command
 	Reverted getPixel from SCREEN for performance. Can still access this by passed -ve x/y values

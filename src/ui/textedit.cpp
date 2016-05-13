@@ -1044,7 +1044,7 @@ void TextEditInput::editTab() {
 }
 
 bool TextEditInput::endStatement(const char *buf) {
-  const struct Holder {
+  static const struct Holder {
     const char *symbol;
     int len;
   } term[] = {
@@ -1059,7 +1059,7 @@ bool TextEditInput::endStatement(const char *buf) {
     {"end", 3},
     {"until ", 6}
   };
-  const int len = sizeof(term) / sizeof(Holder);
+  static const int len = sizeof(term) / sizeof(Holder);
   bool result = false;
   for (int i = 0; i < len && !result; i++) {
     if (strncasecmp(buf, term[i].symbol, term[i].len) == 0) {
