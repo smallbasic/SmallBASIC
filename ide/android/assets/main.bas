@@ -6,6 +6,11 @@ const lineSpacing = 2 + char_h
 const onlineUrl = "http://smallbasic.sourceforge.net/?q=export/code/1243"
 const idxEdit = 5
 const idxFiles = 6
+const renameId = "__bn_rename__"
+const deleteId = "__bn_delete__"
+const newId = "__bn_new__"
+const viewId = "__bn_view__"
+const closeId = "__bn_close__"
 
 func spaced(s)
   local ch, len_s
@@ -205,11 +210,6 @@ end
 
 sub manageFiles()
   local f, wnd, bn_edit, bn_files, selectedFile
-  const renameId = "__bn_rename__"
-  const deleteId = "__bn_delete__"
-  const newId = "__bn_new__"
-  const viewId = "__bn_view__"
-  const closeId = "__bn_close__"
 
   sub mk_item(x, lab, value)
     local bn
