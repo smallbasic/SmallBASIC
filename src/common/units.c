@@ -266,7 +266,7 @@ int unit_exec(int lib_id, int index, var_t *ret) {
     break;
   case stt_procedure:
     exec_sync_variables(1);
-    cmd_call_unit_udp(kwPROC, ps->task_id, us->address, 0);
+    cmd_call_unit_udp(kwPROC, ps->task_id, us->address, INVALID_ADDR);
     activate_task(ps->task_id);
     if (prog_error) {
       gsb_last_error = prog_error;

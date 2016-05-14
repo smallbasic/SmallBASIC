@@ -216,7 +216,11 @@ int code_isvar() {
   }
 
   if (var_p) {
-    if (kw_check_evexit(code_peek()) || code_peek() == kwTYPE_LEVEL_END) {
+    byte code = code_peek();
+    if (code == kwTYPE_EOC ||
+        code == kwTYPE_SEP ||
+        code == kwTYPE_LEVEL_END ||
+        kw_check_evexit(code)) {
       // restore IP
       prog_ip = cur_ip;
       return 1;

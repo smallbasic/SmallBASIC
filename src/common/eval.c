@@ -26,6 +26,12 @@
               (v)->type == V_ARRAY)) {  \
     v_free((v));                        \
   }
+#define V_FREE2(v)               \
+  if (((v)->type == V_STR ||     \
+       (v)->type == V_MAP ||     \
+       (v)->type == V_ARRAY)) {  \
+    v_free((v));                 \
+  }
 
 /**
  * matrix: convert var_t to double[r][c]
@@ -268,13 +274,15 @@ int v_wc_match(var_t *vwc, var_t *v) {
     if (!prog_error) {
       ri = wc_match((char *) vwc->v.p.ptr, (char *) vt->v.p.ptr);
     }
-    v_free(vt);
+    V_FREE(vt);
     free(vt);
   }
   return ri;
 }
 
-static inline void oper_add(var_t *r, var_t *left, byte op) {
+static inline void oper_add(var_t *r, var_t *left) {
+  byte op = CODE(IP);
+  IP++;
   if (r->type == V_INT && v_is_type(left, V_INT)) {
     if (op == '+') {
       r->v.i += left->v.i;
@@ -332,17 +340,20 @@ static inline void oper_add(var_t *r, var_t *left, byte op) {
         break;
       }
       v_set(r, &vtmp);
-      v_free(&vtmp);
+      V_FREE2(&vtmp);
     }
     V_FREE(left);
   }
 }
 
-static inline void oper_mul(var_t *r, var_t *left, byte op) {
+static inline void oper_mul(var_t *r, var_t *left) {
   var_num_t lf;
   var_num_t rf;
   var_int_t li;
   var_int_t ri;
+
+  byte op = CODE(IP);
+  IP++;
 
   if (r->type == V_ARRAY || v_is_type(left, V_ARRAY)) {
     // arrays
@@ -425,9 +436,12 @@ static inline void oper_mul(var_t *r, var_t *left, byte op) {
   }
 }
 
-static inline void oper_unary(var_t *r, byte op) {
+static inline void oper_unary(var_t *r) {
   var_int_t ri;
   var_num_t rf;
+
+  byte op = CODE(IP);
+  IP++;
 
   switch (op) {
   case '-':
@@ -463,11 +477,15 @@ static inline void oper_unary(var_t *r, byte op) {
   }
 }
 
-static inline void oper_log(var_t *r, var_t *left, byte op) {
+static inline void oper_log(var_t *r, var_t *left) {
   var_int_t li;
   var_int_t ri;
   var_int_t a, b;
   int i, set;
+
+  // logical/bit
+  byte op = CODE(IP);
+  IP++;
 
   if (op != OPLOG_IN) {
     li = v_igetval(left);
@@ -550,8 +568,12 @@ static inline void oper_log(var_t *r, var_t *left, byte op) {
   r->v.i = ri;
 }
 
-static inline void oper_cmp(var_t *r, var_t *left, byte op) {
+static inline void oper_cmp(var_t *r, var_t *left) {
   var_int_t ri;
+
+  // compare
+  byte op = CODE(IP);
+  IP++;
 
   switch (op) {
   case OPLOG_EQ:
@@ -597,7 +619,7 @@ static inline void oper_cmp(var_t *r, var_t *left, byte op) {
         v = v_clone(left);
         v_tostr(v);
         ri = (strstr(r->v.p.ptr, v->v.p.ptr) != NULL);
-        v_free(v);
+        V_FREE(v);
         free(v);
       }
     } else if (r->type == V_NUM || r->type == V_INT) {
@@ -623,6 +645,9 @@ static inline void oper_cmp(var_t *r, var_t *left, byte op) {
 static inline void oper_powr(var_t *r, var_t *left) {
   var_num_t rf;
 
+  // pow
+  IP++;
+
   rf = pow(v_getval(left), v_getval(r));
   V_FREE(r);
   r->type = V_NUM;
@@ -632,9 +657,21 @@ static inline void oper_powr(var_t *r, var_t *left) {
   V_FREE(left);
 }
 
-static inline void eval_shortc(var_t *r, bcip_t addr, byte op) {
+static inline void eval_shortc(var_t *r) {
+  // short-circuit evaluation
+  // see cev_log() in ceval.c for layout details
   var_int_t li;
   var_int_t ri;
+
+  // skip code kwTYPE_LOGOPR
+  IP++;
+
+  // read operator
+  byte op = CODE(IP);
+  IP++;
+
+  // read shortcut jump offset
+  bcip_t addr = code_getaddr();
 
   // read left side result
   li = v_igetval(&eval_stk[eval_sp - 1]);
@@ -694,6 +731,9 @@ static inline void eval_var(var_t *r, var_t *var_p) {
     if (var_deref != NULL) {
       eval_var(r, var_deref);
     }
+    break;
+  case V_FUNC:
+    var_p->v.fn.cb(r);
     break;
   }
 }
@@ -828,7 +868,7 @@ static inline void eval_callf_num(long fcode, var_t *r) {
       } else {
         IP++;
         cmd_ns1(fcode, &vtmp, r);
-        v_free(&vtmp);
+        V_FREE2(&vtmp);
       }
     }
   }
@@ -876,8 +916,8 @@ static inline void eval_callf_imathI1(long fcode, var_t *r) {
 }
 
 static inline void eval_callf_imathI2(long fcode, var_t *r) {
-  var_t vtmp;
   // int FUNC(void)
+  var_t vtmp;
   vtmp.type = V_INT;
   vtmp.v.i = 0;
   r->type = V_INT;
@@ -899,7 +939,7 @@ static inline void eval_callf_mathN1(long fcode, var_t *r) {
         IP++;
         r->type = V_NUM;
         r->v.n = cmd_math1(fcode, &vtmp);
-        v_free(&vtmp);
+        V_FREE2(&vtmp);
       }
     }
   }
@@ -1126,7 +1166,7 @@ static inline void eval_call_udf(var_t *r) {
     } else {
       v_set(r, udf_rv.x.vdvar.vptr);
       // free ret-var
-      v_free(udf_rv.x.vdvar.vptr);
+      V_FREE(udf_rv.x.vdvar.vptr);
       free(udf_rv.x.vdvar.vptr);
     }
   }
@@ -1136,21 +1176,12 @@ static inline void eval_call_udf(var_t *r) {
  * executes the expression (Code[IP]) and returns the result (r)
  */
 void eval(var_t *r) {
-  code_t code;
-  byte op;
-  var_t *var_p;
-  bcip_t addr;
-
   var_t *left = NULL;
   bcip_t eval_pos = eval_sp;
   byte level = 0;
 
-  r->const_flag = 0;
-  r->type = V_INT;
-  r->v.i = 0L;
-
-  do {
-    code = CODE(IP);
+  while (!prog_error) {
+    code_t code = CODE(IP);
     IP++;
     switch (code) {
     case kwTYPE_INT:
@@ -1173,91 +1204,41 @@ void eval(var_t *r) {
       v_eval_str(r);
       break;
 
-    case kwTYPE_PTR:
-      // UDF pointer - constant
-      V_FREE(r);
-      r->type = V_PTR;
-      r->const_flag = 1;
-      r->v.ap.p = code_getaddr();
-      r->v.ap.v = code_getaddr();
+    case kwTYPE_LOGOPR:
+      oper_log(r, left);
       break;
 
-    case kwTYPE_VAR:
-      // variable
-      V_FREE(r);
-      IP--;
-      var_p = code_getvarptr();
-      if (prog_error) {
-        return;
-      }
-      eval_var(r, var_p);
-      break;
-
-    case kwTYPE_EVPUSH:
-      // stack = push result
-      eval_push(r);
-      break;
-
-    case kwTYPE_EVPOP:
-      // pop left
-      eval_sp--;
-      left = &eval_stk[eval_sp];
+    case kwTYPE_CMPOPR:
+      oper_cmp(r, left);
       break;
 
     case kwTYPE_ADDOPR:
-      op = CODE(IP);
-      IP++;
-      oper_add(r, left, op);
+      oper_add(r, left);
       break;
 
     case kwTYPE_MULOPR:
-      op = CODE(IP);
-      IP++;
-      oper_mul(r, left, op);
+      oper_mul(r, left);
+      break;
+
+    case kwTYPE_POWOPR:
+      oper_powr(r, left);
       break;
 
     case kwTYPE_UNROPR:
       // unary
-      op = CODE(IP);
-      IP++;
-      oper_unary(r, op);
+      oper_unary(r);
       break;
 
-    case kwTYPE_EVAL_SC:
-      // short-circuit evaluation
-      // see cev_log() in ceval.c for layout details
-
-      // skip code kwTYPE_LOGOPR
-      IP++;
-
-      // read operator
-      op = CODE(IP);
-      IP++;
-
-      // read shortcut jump offset
-      addr = code_getaddr();
-      eval_shortc(r, addr, op);
-      break;
-
-    case kwTYPE_LOGOPR:
-      // logical/bit
-      op = CODE(IP);
-      IP++;
-      oper_log(r, left, op);
-      break;
-
-    case kwTYPE_CMPOPR:
-      // compare
-      op = CODE(IP);
-      IP++;
-      oper_cmp(r, left, op);
-      break;
-
-    case kwTYPE_POWOPR:
-      // pow
-      op = CODE(IP);
-      IP++;
-      oper_powr(r, left);
+    case kwTYPE_VAR: {
+      // variable
+      V_FREE(r);
+      IP--;
+      var_t *var_p = code_getvarptr();
+      if (prog_error) {
+        return;
+      }
+      eval_var(r, var_p);
+    }
       break;
 
     case kwTYPE_LEVEL_BEGIN:
@@ -1276,9 +1257,19 @@ void eval(var_t *r) {
       level--;
       break;
 
-    case kwTYPE_CALLEXTF:
-      // [lib][index] external functions
-      eval_extf(r);
+    case kwTYPE_EVPUSH:
+      // stack = push result
+      eval_push(r);
+      break;
+
+    case kwTYPE_EVPOP:
+      // pop left
+      eval_sp--;
+      left = &eval_stk[eval_sp];
+      break;
+
+    case kwTYPE_EVAL_SC:
+      eval_shortc(r);
       break;
 
     case kwTYPE_CALLF:
@@ -1290,33 +1281,47 @@ void eval(var_t *r) {
       eval_call_udf(r);
       break;
 
-    case kwBYREF:
-      // unexpected code
-      err_evsyntax();
-      break;
-
     default:
-      if (code == kwTYPE_EOC || kw_check_evexit(code)) {
-        IP--;
-        // restore stack pointer
-        eval_sp = eval_pos;
+      // less used codes
+      switch (code) {
+      case kwTYPE_CALLEXTF:
+        // [lib][index] external functions
+        eval_extf(r);
+        break;
 
-        // normal exit
-        return;
-      }
-      rt_raise("UNKNOWN ERROR. IP:%d=0x%02X", IP, code);
-      if (!opt_quiet) {
-        hex_dump(prog_source, prog_length);
+      case kwTYPE_PTR:
+        // UDF pointer - constant
+        V_FREE(r);
+        r->type = V_PTR;
+        r->const_flag = 1;
+        r->v.ap.p = code_getaddr();
+        r->v.ap.v = code_getaddr();
+        break;
+
+      case kwBYREF:
+        // unexpected code
+        err_evsyntax();
+        break;
+
+      default:
+        if (code == kwTYPE_EOC ||
+            code == kwTYPE_SEP ||
+            code == kwTO ||
+            kw_check_evexit(code)) {
+          IP--;
+          // restore stack pointer
+          eval_sp = eval_pos;
+
+          // normal exit
+          return;
+        }
+        rt_raise("UNKNOWN ERROR. IP:%d=0x%02X", IP, code);
+        if (!opt_quiet) {
+          hex_dump(prog_source, prog_length);
+        }
       }
     };
-
-    // run-time error check
-    if (prog_error) {
-      break;
-    }
-
-  } while (1);
-
+  }
   // restore stack pointer
   eval_sp = eval_pos;
 }

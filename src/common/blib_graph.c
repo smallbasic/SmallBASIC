@@ -7,12 +7,6 @@
 //
 // Copyright(C) 2000 Nicholas Christopoulos
 
-#include "common/sys.h"
-#include "common/str.h"
-#include "common/kw.h"
-#include "common/panic.h"
-#include "common/var.h"
-#include "common/blib.h"
 #include "common/pproc.h"
 #include "common/messages.h"
 
@@ -20,10 +14,8 @@
 int gra_x;
 int gra_y;
 
-//
 void graph_reset() {
   gra_x = gra_y = 0;
-  dev_cls();
 }
 
 //
@@ -1518,8 +1510,7 @@ void cmd_m3apply() {
     for (i = 0; i < count; i++) {
       e = v_elem(p, i);
 
-      if (e->type != V_ARRAY
-        )
+      if (e->type != V_ARRAY)
         err_parsepoly(i, 10);
       else if ((e->v.a.size % 2) != 0)
         err_parsepoly(i, 11);

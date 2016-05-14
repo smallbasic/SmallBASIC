@@ -52,9 +52,9 @@ const int theme1[] = {
 };
 
 const int theme2[] = {
-  0xcccccc, 0x000077, 0x333333, 0xa7aebc, 0x0000aa, 0x008888,
+  0xcccccc, 0x000077, 0x333333, 0x333333, 0x0000aa, 0x008888,
   0x010101, 0xeeeeee, 0x010101, 0xffff00, 0x00ff00, 0x010101,
-  0x00ffff, 0xff00ff, 0xffffff, 0x00ffff, 0x007777
+  0x00ffff, 0xff00ff, 0xffffff, 0x00ffff, 0x00aaff
 };
 
 const int theme3[] = {
@@ -103,6 +103,7 @@ const char *helpText =
   "A-g goto line\n"
   "A-n trim line-endings\n"
   "A-t select theme\n"
+  "A-. break mode\n"
   "A-<n> recent file\n"
   "SHIFT-<arrow> select\n"
   "TAB indent line\n"
@@ -1007,19 +1008,8 @@ void TextEditInput::editTab() {
   }
 
   // adjust indent for statement terminators
-  if (strncasecmp(buf + curIndent, "wend", 4) == 0 ||
-      strncasecmp(buf + curIndent, "fi", 2) == 0 ||
-      strncasecmp(buf + curIndent, "endif", 5) == 0 ||
-      strncasecmp(buf + curIndent, "elseif ", 7) == 0 ||
-      strncasecmp(buf + curIndent, "elif ", 5) == 0 ||
-      strncasecmp(buf + curIndent, "else", 4) == 0 ||
-      strncasecmp(buf + curIndent, "next", 4) == 0 ||
-      strncasecmp(buf + curIndent, "case", 4) == 0 ||
-      strncasecmp(buf + curIndent, "end", 3) == 0 ||
-      strncasecmp(buf + curIndent, "until ", 6) == 0) {
-    if (indent >= _indentLevel) {
-      indent -= _indentLevel;
-    }
+  if (indent >= _indentLevel && endStatement(buf + curIndent)) {
+    indent -= _indentLevel;
   }
   if (curIndent < indent) {
     // insert additional spaces
@@ -1051,6 +1041,35 @@ void TextEditInput::editTab() {
     _state.cursor = start + indent;
   }
   free(buf);
+}
+
+bool TextEditInput::endStatement(const char *buf) {
+  static const struct Holder {
+    const char *symbol;
+    int len;
+  } term[] = {
+    {"wend", 4},
+    {"fi", 2},
+    {"endif", 5},
+    {"elseif ", 7},
+    {"elif ", 5},
+    {"else", 4},
+    {"next", 4},
+    {"case", 4},
+    {"end", 3},
+    {"until ", 6}
+  };
+  static const int len = sizeof(term) / sizeof(Holder);
+  bool result = false;
+  for (int i = 0; i < len && !result; i++) {
+    if (strncasecmp(buf, term[i].symbol, term[i].len) == 0) {
+      char c = buf[term[i].len];
+      if (c == '\0' || IS_WHITE(c)) {
+        result = true;
+      }
+    }
+  }
+  return result;
 }
 
 void TextEditInput::findMatchingBrace() {

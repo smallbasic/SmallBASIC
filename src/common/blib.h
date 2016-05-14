@@ -92,7 +92,7 @@ void cmd_deriv(void);
 void cmd_diffeq(void);
 
 // not basic, but speed is needed
-void graph_reset(void); // graphics module - reset
+void graph_reset(void);
 void cmd_pset(void);
 void cmd_line(void);
 void cmd_rect(void);

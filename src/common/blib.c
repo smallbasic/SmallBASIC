@@ -23,11 +23,11 @@
  * LET v[(x)] = any
  * CONST v[(x)] = any
  */
-void cmd_let(int allowConst) {
+void cmd_let(int is_const) {
   var_t *v_left = code_getvarptr();
 
   if (!prog_error) {
-    if (v_left->const_flag && !allowConst) {
+    if (v_left->const_flag) {
       err_const();
       return;
     }
@@ -46,7 +46,7 @@ void cmd_let(int allowConst) {
       eval(&v_right);
       if (!prog_error) {
         v_set(v_left, &v_right);
-        v_left->const_flag = allowConst;
+        v_left->const_flag = is_const;
       }
       v_free(&v_right);
     }
@@ -84,6 +84,7 @@ void cmd_dim(int preserve) {
           code_skipnext();
           zaf = 0;
           do {
+            v_init(&arg);
             eval(&arg);
             if (prog_error) {
               return;
@@ -1474,9 +1475,8 @@ void cmd_endif() {
   stknode_t node;
 
   code_pop(&node, kwIF);
-  while (node.type != kwIF) {
+  while (node.type != kwIF && !prog_error) {
     code_pop(&node, kwIF);
-    IF_ERR_BREAK;
   }
 
   if (!prog_error) {
@@ -1755,7 +1755,6 @@ void cmd_next() {
   jump_ip = node.x.vfor.jump_ip;
 
   var_p = node.x.vfor.var_ptr;
-  // v_init(&var_to);
   var_step.const_flag = 0;
   var_step.type = V_INT;
   var_step.v.i = 1;
@@ -1766,6 +1765,7 @@ void cmd_next() {
     //
 
     prog_ip = node.x.vfor.to_expr_ip;
+    v_init(&var_to);
     eval(&var_to);
 
     if (!prog_error && (var_to.type == V_INT || var_to.type == V_NUM)) {

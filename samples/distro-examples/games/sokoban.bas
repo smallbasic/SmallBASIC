@@ -514,7 +514,7 @@ sub play_game(byref game)
 
   game.game_over = false
   while game.game_over = false
-    pause true: k = inkey
+    k = inkey(1)
     if len(k) = 2 then
       ch = asc(right(k,1))
       select case ch

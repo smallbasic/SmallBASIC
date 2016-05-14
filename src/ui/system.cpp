@@ -128,6 +128,7 @@ bool System::execute(const char *bas) {
   }
 
   opt_command[0] = '\0';
+  opt_file_permitted = 1;
   _output->resetFont();
   _output->flush(true);
   return result;
@@ -192,6 +193,14 @@ char *System::getText(char *dest, int maxSize) {
 
   FormInput *widget = new FormLineInput(NULL, maxSize, true, x, y, w, h);
   widget->setFocus(true);
+
+  int bg = _output->getBackgroundColor();
+  int fg = _output->getColor();
+  if (bg != DEFAULT_BACKGROUND || fg != DEFAULT_FOREGROUND) {
+    widget->setColor(bg, fg);
+  } else {
+    widget->setColor(FOCUS_COLOR, DEFAULT_FOREGROUND);
+  }
   _output->addInput(widget);
   _output->redraw();
   _state = kModalState;
@@ -462,6 +471,7 @@ char *System::loadResource(const char *fileName) {
       dev_fclose(handle);
       v_free(var_p);
       free(var_p);
+      opt_file_permitted = 0;
     }
   }
   return buffer;
@@ -1084,17 +1094,7 @@ int osd_getpen(int mode) {
 }
 
 long osd_getpixel(int x, int y) {
-  g_system->getOutput()->redraw();
-
-  MARect rc;
-  int data[1];
-  rc.left = x;
-  rc.top = y;
-  rc.width = 1;
-  rc.height = 1;
-  maGetImageData(HANDLE_SCREEN, &data, &rc, 1);
-  int result = -(data[0] & 0x00FFFFFF);
-  return result;
+  return g_system->getOutput()->getPixel(x, y);
 }
 
 int osd_getx(void) {

@@ -200,6 +200,24 @@ var_num_t par_getnum(void);
  * @ingroup par
  *
  * get next parameter as integer
+ *
+ * @return the integer
+ */
+var_int_t par_next_int(int sep);
+
+/**
+ * @ingroup par
+ *
+ * get next parameter as string
+ *
+ * @return the string var
+ */
+var_t *par_next_str(var_t *arg, int sep);
+
+/**
+ * @ingroup par
+ *
+ * get next parameter as integer
  * moves IP to the next position.
  *
  * @return the integer

@@ -144,8 +144,10 @@ void cmd_form_do_events(var_s *self) {
                    focusInput->edit(event.key, sw, charWidth)) {
           dev_clrkb();
           out->setDirty();
-        } else if (event.key == SB_KEY_MK_PUSH || event.key == SB_KEY_MK_RELEASE ||
-                   SB_KEY_CTRL(SB_KEY_UP) || SB_KEY_CTRL(SB_KEY_DOWN)) {
+        } else if (event.key == SB_KEY_MK_PUSH ||
+                   event.key == SB_KEY_MK_RELEASE ||
+                   event.key == (int)SB_KEY_CTRL(SB_KEY_UP) ||
+                   event.key == (int)SB_KEY_CTRL(SB_KEY_DOWN)) {
           // no exit on mouse events
           dev_clrkb();
         } else {

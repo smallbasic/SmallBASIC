@@ -1,4 +1,4 @@
-color 0,15
+color 1,2:cls
 circle ymax/4,ymax/4,ymax/8
 circle ymax/2,ymax/4,ymax/8 FILLED
 circle ymax/4,ymax/2,ymax/8,.75

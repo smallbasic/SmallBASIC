@@ -355,24 +355,26 @@ void dev_clear_sound_queue() {
 
 /**
  * printf
- *
- * WARNING: Win32/Unix ver is limited to 1024 bytes
  */
-void dev_printf(const char *fmt, ...) {
-  char *buf;
-  va_list ap;
+void dev_printf(const char *format, ...) {
+  va_list args;
+  va_start(args, format);
+  unsigned size = vsnprintf(NULL, 0, format, args);
+  va_end(args);
 
-  va_start(ap, fmt);
-  buf = malloc(1024);
-#if defined(_DOS) || defined(_Win32)
-  vsprintf(buf, fmt, ap);
-#else
-  vsnprintf(buf, 1024, fmt, ap);
-#endif
-  va_end(ap);
+  if (size) {
+    char *buf = malloc(size + 1);
+    buf[0] = '\0';
+    va_start(args, format);
+    vsnprintf(buf, size + 1, format, args);
+    va_end(args);
 
-  dev_print(buf);
-  free(buf);
+    buf[size] = '\0';
+    va_end(args);
+
+    dev_print(buf);
+    free(buf);
+  }
 }
 
 /**
@@ -398,7 +400,6 @@ void log_printf(const char *format, ...) {
       buf[i--] = '\0';
     }
     strcat(buf, "\r\n");
-
 #if defined(IMPL_LOG_WRITE)
     lwrite(buf);
 #else
@@ -418,5 +419,11 @@ void dev_show_page() {}
 #if !defined(_SDL)
 void dev_trace_line(int lineNo) {
   dev_printf("<%d>", lineNo);
+}
+#endif
+
+#ifndef IMPL_LOG_WRITE
+void lwrite(const char *buf) {
+  fprintf(stderr, "%s\n", buf);
 }
 #endif

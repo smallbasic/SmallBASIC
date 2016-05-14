@@ -131,6 +131,7 @@ protected:
   void editDeleteLine();
   void editEnter();
   void editTab();
+  bool endStatement(const char *buf);
   void findMatchingBrace();
   int  getCursorRow() const;
   uint32_t getHash(const char *str, int offs, int &count);

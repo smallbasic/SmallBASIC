@@ -198,15 +198,15 @@ if 1 == 1 then
             try
               try
                 a = 1 / 0
-              catch
+              catch "X"
               end try
-            catch
+            catch "X"
             end try
-          catch
+          catch "X"
           end try
-        catch
+        catch "X"
         end try
-      catch
+      catch "X"
       end try
     fi
   fi

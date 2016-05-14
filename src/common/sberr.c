@@ -14,8 +14,6 @@
 #include <string.h>
 #include <errno.h>
 
-int error_caught;
-
 /**
  * common message handler
  */
@@ -32,11 +30,38 @@ void err_common_msg(const char *seg, const char *file, int line, const char *des
   log_printf("\033[80m\033[0m");
 }
 
+void err_stack_dump() {
+  int i_stack, i_kw;
+
+  if (prog_stack_count) {
+    log_printf("\033[4mStack:\033[0m\n");
+  }
+
+  // log the stack trace
+  for (i_stack = prog_stack_count; i_stack > 0; i_stack--) {
+    stknode_t node = prog_stack[i_stack - 1];
+    switch (node.type) {
+    case 0xFF:
+    case kwBYREF:
+    case kwTYPE_CRVAR:
+      // ignore these types
+      break;
+
+    default:
+      for (i_kw = 0; keyword_table[i_kw].name[0] != '\0'; i_kw++) {
+        if (node.type == keyword_table[i_kw].code) {
+          log_printf(" %s: %d", keyword_table[i_kw].name, node.line);
+        }
+      }
+    }
+  }
+}
+
 /**
  * raise a compiler error
  */
 void sc_raise2(const char *sec, int scline, const char *buff) {
-  prog_error = 0x40;
+  prog_error = errCompile;
   err_common_msg(WORD_COMP, sec, scline, buff);
 }
 
@@ -46,44 +71,16 @@ void sc_raise2(const char *sec, int scline, const char *buff) {
 void rt_raise(const char *fmt, ...) {
   char *buff;
   va_list ap;
-  int i_stack, i_kw;
 
-  if (!gsb_last_error) {
-    prog_error = 0x80;
-
+  if (!gsb_last_error && !prog_error && prog_source) {
+    prog_error = errRuntime;
     va_start(ap, fmt);
     buff = malloc(SB_TEXTLINE_SIZE + 1);
     vsprintf(buff, fmt, ap);
     va_end(ap);
-
+    err_stack_dump();
     err_common_msg(WORD_RTE, prog_file, prog_line, buff);
     free(buff);
-
-    if (prog_stack_count) {
-      log_printf("\033[4mStack:\033[0m\n");
-    }
-
-    // log the stack trace
-    for (i_stack = prog_stack_count; i_stack > 0; i_stack--) {
-      stknode_t node = prog_stack[i_stack - 1];
-      switch (node.type) {
-      case 0xFF:
-      case kwBYREF:
-      case kwTYPE_CRVAR:
-        // ignore these types
-        break;
-
-      default:
-        for (i_kw = 0; keyword_table[i_kw].name[0] != '\0'; i_kw++) {
-          if (node.type == keyword_table[i_kw].code) {
-            log_printf(" %s: %d", keyword_table[i_kw].name, node.line);
-          }
-        }
-      }
-    }
-    if (prog_stack_count) {
-      log_printf("\n");
-    }
   }
 }
 
@@ -91,11 +88,11 @@ void rt_raise(const char *fmt, ...) {
  * run-time syntax error
  */
 void err_syntax(int keyword, const char *fmt) {
-  if (!gsb_last_error) {
+  if (!gsb_last_error && prog_source) {
     char *buff = malloc(SB_TEXTLINE_SIZE + 1);
     char *fmt_p = (char *)fmt;
 
-    prog_error = 0x80;
+    prog_error = errSyntax;
     buff[0] = '\0';
     if (keyword != -1) {
       if (kw_getfuncname(keyword, buff) ||
@@ -169,7 +166,7 @@ void err_arrmis_rp(void) {
 }
 
 void err_arridx(int i, int m) {
-  rt_raise(ERR_ARRAY_RANGE, i, m);
+  err_throw(ERR_ARRAY_RANGE, i, m);
 }
 
 void err_typemismatch(void) {
@@ -182,15 +179,15 @@ void err_argerr(void) {
 }
 
 void err_varisarray(void) {
-  rt_raise(EVAL_VAR_IS_ARRAY);
+  err_throw(EVAL_VAR_IS_ARRAY);
 }
 
 void err_varisnotarray(void) {
-  rt_raise(EVAL_VAR_IS_NOT_ARRAY);
+  err_throw(EVAL_VAR_IS_NOT_ARRAY);
 }
 
 void err_vararridx(int i, int m) {
-  rt_raise(ERR_ARRAY_RANGE, i, m);
+  err_throw(ERR_ARRAY_RANGE, i, m);
 }
 
 void err_varnotnum(void) {
@@ -226,7 +223,7 @@ void err_notarray(void) {
 }
 
 void err_out_of_range(void) {
-  rt_raise(ERR_RANGE);
+  err_throw(ERR_RANGE);
 }
 
 void err_missing_sep(void) {
@@ -234,7 +231,7 @@ void err_missing_sep(void) {
 }
 
 void err_division_by_zero(void) {
-  rt_raise(ERR_DIVZERO);
+  err_throw(ERR_DIVZERO);
 }
 
 void err_matop(void) {
@@ -259,7 +256,7 @@ void err_parm_byref(int n) {
 }
 
 void err_stridx(int n) {
-  rt_raise(ERR_STR_RANGE, n);
+  err_throw(ERR_STR_RANGE, n);
 }
 
 void err_fopen(void) {
@@ -374,6 +371,7 @@ void err_throw_str(const char *err) {
   int throw_sp = prog_stack_count;
   int try_sp = err_find_try(throw_sp);
   int reset_sp;
+  int trace_done = 0;
 
   if (!prog_error && try_sp != -1) {
     bcip_t catch_ip = prog_stack[try_sp].x.vtry.catch_ip;
@@ -411,6 +409,11 @@ void err_throw_str(const char *err) {
       }
     }
 
+    if (!caught) {
+      err_stack_dump();
+      trace_done = 1;
+    }
+
     // cleanup the stack
     stknode_t node;
     int sp;
@@ -422,10 +425,14 @@ void err_throw_str(const char *err) {
     }
   }
   if (!caught) {
-    prog_error = 0x80;
+    prog_error = errRuntime;
+    if (!trace_done) {
+      err_stack_dump();
+    }
     err_common_msg(WORD_RTE, prog_file, prog_line, err);
+  } else {
+    prog_error = errThrow;
   }
-  error_caught = caught;
 }
 
 // throw internal error
@@ -469,17 +476,9 @@ void err_file(dword code) {
   }
 }
 
-void err_reset() {
-  error_caught = 0;
-}
-
-int err_has_error() {
-  return error_caught || prog_error;
-}
-
 int err_handle_error(const char *err, var_p_t var) {
   int result;
-  if (error_caught == 1) {
+  if (prog_error == errThrow) {
     result = 1;
   } else if (prog_error) {
     rt_raise(err);

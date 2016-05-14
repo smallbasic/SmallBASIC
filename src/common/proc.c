@@ -200,45 +200,6 @@ void exec_usefunc3(var_t *var1, var_t *var2, var_t *var3, bcip_t ip) {
   free(old_z);
 }
 
-#ifndef IMPL_LOG_WRITE
-
-/**
- * Write to the log file
- */
-void lwrite(const char *buf) {
-  int log_dev; /* logfile file handle */
-  char log_name[OS_PATHNAME_SIZE + 1]; /* LOGFILE filename */
-
-  // open
-#if defined(_Win32) || defined(__MINGW32__)
-  if (getenv("SBLOG")) {
-    strcpy(log_name, getenv("SBLOG"));
-  }
-  else {
-    sprintf(log_name, "c:%csb.log", OS_DIRSEP);
-  }
-#else
-  sprintf(log_name, "%ctmp%csb.log", OS_DIRSEP, OS_DIRSEP);
-#endif
-
-  log_dev = open(log_name, O_RDWR, 0660);
-  lseek(log_dev, 0, SEEK_END);
-  if (log_dev == -1) {
-    log_dev = open(log_name, O_CREAT | O_RDWR, 0660);
-  }
-  if (log_dev == -1) {
-    panic("LOG: Error on creating log file");
-  }
-
-  // write
-  if (write(log_dev, buf, strlen(buf)) == -1) {
-    panic("LOG: write failed");
-  }
-
-  close(log_dev);
-}
-#endif // NOT IMPL_LOG_WRITE
-
 /*
  * Write string to output device
  */
@@ -471,6 +432,7 @@ void par_getstr(var_t *var) {
     err_syntax(-1, "%S");
     return;
   default:
+    v_init(var);
     eval(var);
     break;
   };
@@ -510,19 +472,59 @@ var_num_t par_getnum() {
   return f;
 }
 
+var_int_t par_next_int(int sep) {
+  var_int_t result;
+  if (prog_error) {
+    result = 0;
+  } else {
+    result = par_getint();
+  }
+  if (!prog_error && (sep || code_peek() == kwTYPE_SEP)) {
+    par_getcomma();
+  }
+  return result;
+}
+
+var_t *par_next_str(var_t *arg, int sep) {
+  var_t *result;
+  if (prog_error) {
+    result = NULL;
+  } else if (code_isvar()) {
+    result = code_getvarptr();
+  } else {
+    eval(arg);
+    result = arg;
+    if (result->type != V_STR) {
+      v_tostr(arg);
+    }
+  }
+  if (!prog_error && (sep || code_peek() == kwTYPE_SEP)) {
+    par_getcomma();
+  }
+  return result;
+}
+
 var_int_t par_getval(var_int_t def) {
   var_int_t result;
-  byte code = code_peek();
-  if (code == kwTYPE_VAR) {
-    result = par_getint();
-  } else if (code == kwTYPE_INT) {
-    code_skipnext();
-    result = code_getint();
-  } else if (code == kwTYPE_NUM) {
-    code_skipnext();
-    result = code_getreal();
-  } else {
+  if (prog_error) {
     result = def;
+  } else {
+    var_t var;
+    switch (code_peek()) {
+    case kwTYPE_LINE:
+    case kwTYPE_EOC:
+    case kwTYPE_SEP:
+    case kwTYPE_LEVEL_END:
+    case kwTYPE_EVPUSH:
+      result = def;
+      break;
+    default:
+      v_init(&var);
+      eval(&var);
+      result = prog_error ? 0 : v_getint(&var);
+      v_free(&var);
+      break;
+    }
   }
   return result;
 }
@@ -615,7 +617,6 @@ pt_t par_getpt() {
       par_getcomma();
       if (!prog_error) {
         var_t v2;
-
         eval(&v2);
         if (!prog_error) {
           pt.y = v_getreal(&v2);
@@ -667,10 +668,11 @@ ipt_t par_getipt() {
       par_getcomma();
       if (!prog_error) {
         var_t v2;
-
+        v_init(&v2);
         eval(&v2);
-        if (!prog_error)
+        if (!prog_error) {
           pt.y = v_getint(&v2);
+        }
         v_free(&v2);
       }
     }

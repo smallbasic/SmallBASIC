@@ -35,6 +35,9 @@ static char fileName[OS_FILENAME_SIZE + 1];
 static int exec_tid;
 
 #define EVT_CHECK_EVERY 50
+#define IF_ERR_BREAK if (prog_error) { \
+  if (prog_error == errThrow)       \
+      prog_error = errNone; else break;}
 
 /**
  * jump to label
@@ -92,8 +95,10 @@ void free_node(stknode_t *node) {
     break;
 
   case kwFUNC:
+  case kwPROC:
     if (node->x.vcall.rvid != INVALID_ADDR) {
-      tvar[node->x.vcall.rvid] = node->x.vcall.retvar;  // restore ptr
+      free(tvar[node->x.vcall.rvid]);
+      tvar[node->x.vcall.rvid] = node->x.vcall.retvar;
     }
     break;
 
@@ -211,7 +216,6 @@ void setsysvar_int(int index, var_int_t value) {
     activate_task(i);
     if (ctask->has_sysvars) {
       var_t *var_p = tvar[index];
-
       var_p->type = V_INT;
       var_p->const_flag = 1;
       var_p->v.i = value;
@@ -273,10 +277,10 @@ void setsysvar_str(int index, const char *value) {
  */
 void exec_setup_predefined_variables() {
   char homedir[OS_PATHNAME_SIZE + 1];
+  homedir[0] = '\0';
 
   // needed here (otherwise task will not updated)
   ctask->has_sysvars = 1;
-
   setsysvar_str(SYSVAR_SBVER, SB_STR_VER);
   setsysvar_num(SYSVAR_PI, SB_PI);
   setsysvar_int(SYSVAR_XMAX, os_graf_mx - 1);
@@ -298,19 +302,16 @@ void exec_setup_predefined_variables() {
     homedir[l] = OS_DIRSEP;
     homedir[l + 1] = '\0';
   }
-  setsysvar_str(SYSVAR_HOME, homedir);
 #elif defined(_Win32)
-  if (dev_getenv("HOME")) {     // this works on cygwin
+  if (dev_getenv("HOME")) {
+    // this works on cygwin
     strcpy(homedir, dev_getenv("HOME"));
   }
   else {
-    char *p;
-
-    GetModuleFileName(NULL, homedir, 1024);
-    p = strrchr(homedir, '\\');
+    GetModuleFileName(NULL, homedir, sizeof(homedir) - 1);
+    char *p = strrchr(homedir, '\\');
     *p = '\0';
     strcat(homedir, "\\");
-
     if (OS_DIRSEP == '/') {
       p = homedir;
       while (*p) {
@@ -320,25 +321,15 @@ void exec_setup_predefined_variables() {
       }
     }
   }
-  setsysvar_str(SYSVAR_HOME, homedir);  // mingw32
-
-  {
-    static char stupid_os_envsblog[1024]; // it must be static at
-    // least by default on DOS
-    // or Win32(BCB)
-    sprintf(stupid_os_envsblog, "SBLOG=%s%csb.log", homedir, OS_DIRSEP);
-    putenv(stupid_os_envsblog);
-  }
-#else
-  setsysvar_str(SYSVAR_HOME, "");
 #endif
+  setsysvar_str(SYSVAR_HOME, homedir);
 }
 
 /**
  * BREAK
  */
 void brun_stop() {
-  prog_error = -3;
+  prog_error = errBreak;
 }
 
 /**
@@ -433,7 +424,7 @@ void cmd_chain(void) {
   if (success == 0) {
     close_task(tid_base);
     activate_task(tid_prev);
-    prog_error = 1;
+    prog_error = errCompile;
     return;
   }
 
@@ -460,7 +451,7 @@ void cmd_chain(void) {
   strcpy(gsb_last_errmsg, "");
 
   if (success == 0) {
-    prog_error = 1;
+    prog_error = errRuntime;
   }
 }
 
@@ -512,7 +503,7 @@ static inline void bc_loop_call_proc() {
   pcode_t pcode = code_getaddr();
   switch (pcode) {
   case kwCLS:
-    graph_reset();
+    dev_cls();
     break;
   case kwTHROW:
     cmd_throw();
@@ -683,7 +674,7 @@ static inline void bc_loop_call_proc() {
     dev_print("\nSTKDUMP:\n");
     dump_stack();
     // end of program
-    prog_error = -1;
+    prog_error = errEnd;
     break;
   case kwDEFINEKEY:
     cmd_definekey();
@@ -734,7 +725,7 @@ static inline void bc_loop_end() {
     }
   }
   // end of program
-  prog_error = -1;
+  prog_error = errEnd;
 }
 
 /**
@@ -787,7 +778,7 @@ void bc_loop(int isf) {
         // break event
         break;
       case -2:
-        prog_error = -2;
+        prog_error = errBreak;
         inf_break(prog_line);
         break;
       default:
@@ -1287,7 +1278,7 @@ int brun_create_task(const char *filename, byte *preloaded_bc, int libf) {
   eval_sp = 0;
 
   // initialize the rest tasks globals
-  prog_error = 0;
+  prog_error = errNone;
   prog_line = 0;
   prog_dp = data_org = hdr.data_ip;
   prog_length = hdr.bc_count;
@@ -1451,7 +1442,7 @@ int exec_close_task() {
     prog_timer = NULL;
   }
 
-  if (prog_error != -1 && prog_error != 0) {
+  if (prog_error != errEnd && prog_error != errNone) {
     return 1;
   }
   return 0;
@@ -1545,10 +1536,10 @@ int sbasic_exec_task(int tid) {
 
   prev_tid = activate_task(tid);
 
-  bc_loop(0);                   // natural the value -1 is end of program
-  success = (prog_error == 0 || prog_error == -1);
+  bc_loop(0);
+  success = (prog_error == errNone || prog_error == errEnd);
   if (success) {
-    prog_error = 0;
+    prog_error = errNone;
   }
   activate_task(prev_tid);
   return success;
@@ -1697,6 +1688,7 @@ void sbasic_exec_prepare(const char *filename) {
   }
   // reset system
   cmd_play_reset();
+  graph_reset();
 }
 
 /*

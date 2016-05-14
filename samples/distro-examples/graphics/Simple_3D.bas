@@ -33,6 +33,7 @@ for i=1 to 15
 	calcPt
 	line sx,sy
 next
+showpage
 end
 
 '

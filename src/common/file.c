@@ -96,18 +96,13 @@ int dev_freefilehandle() {
  */
 dev_file_t *dev_getfileptr(const int handle) {
   dev_file_t *result;
-  if (!opt_file_permitted) {
-    rt_raise(ERR_FILE_PERM);
+  // BASIC handles start from 1
+  int hnd = handle - 1;
+  if (hnd < 0 || hnd >= OS_FILEHANDLES) {
+    rt_raise(FSERR_HANDLE);
     result = NULL;
   } else {
-    // BASIC handles start from 1
-    int hnd = handle - 1;
-    if (hnd < 0 || hnd >= OS_FILEHANDLES) {
-      rt_raise(FSERR_HANDLE);
-      result = NULL;
-    } else {
-      result = &file_table[hnd];
-    }
+    result = &file_table[hnd];
   }
   return result;
 }
@@ -161,11 +156,6 @@ int select_unix_serial_speed(int n) {
 int dev_fopen(int sb_handle, const char *name, int flags) {
   dev_file_t *f;
   int i;
-
-  if (!opt_file_permitted) {
-    rt_raise(ERR_FILE_PERM);
-    return 0;
-  }
 
   if ((f = dev_getfileptr(sb_handle)) == NULL) {
     return 0;
@@ -237,6 +227,11 @@ int dev_fopen(int sb_handle, const char *name, int flags) {
       }
     }
   } // device
+
+  if (!opt_file_permitted && f->type != ft_http_client) {
+    rt_raise(ERR_FILE_PERM);
+    return 0;
+  }
 
   //
   // open

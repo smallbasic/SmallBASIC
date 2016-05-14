@@ -19,6 +19,7 @@ using namespace strlib;
 String g_exportAddr;
 String g_exportToken;
 int cursorPos;
+bool returnToLine;
 
 void onlineHelp(Runtime *runtime, TextEditInput *widget) {
   char path[100];
@@ -109,7 +110,12 @@ void System::editSource(String loadPath) {
   editWidget->updateUI(NULL, NULL);
   editWidget->setLineNumbers();
   editWidget->setFocus(true);
-  editWidget->setCursorPos(cursorPos);
+
+  if (isBreak() && returnToLine) {
+    editWidget->setCursorRow(gsb_last_line);
+  } else {
+    editWidget->setCursorPos(cursorPos);
+  }
   cursorPos = 0;
 
   if (gsb_last_error && !isBack()) {
@@ -284,6 +290,12 @@ void System::editSource(String loadPath) {
         _output->setStatus("Recent files. Esc=Close");
         widget = helpWidget;
         showRecentFiles(helpWidget, loadPath);
+        break;
+      case SB_KEY_ALT('.'):
+        returnToLine = !returnToLine;
+        _output->setStatus(returnToLine ?
+                           "Position the cursor to the last program line after BREAK" :
+                           "BREAK restores current cursor position");
         break;
       case SB_KEY_ALT('1'):
       case SB_KEY_ALT('2'):
