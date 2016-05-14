@@ -179,11 +179,11 @@ void err_argerr(void) {
 }
 
 void err_varisarray(void) {
-  rt_raise(EVAL_VAR_IS_ARRAY);
+  err_throw(EVAL_VAR_IS_ARRAY);
 }
 
 void err_varisnotarray(void) {
-  rt_raise(EVAL_VAR_IS_NOT_ARRAY);
+  err_throw(EVAL_VAR_IS_NOT_ARRAY);
 }
 
 void err_vararridx(int i, int m) {

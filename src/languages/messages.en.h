@@ -172,7 +172,7 @@
 #define EVAL_TYPE               "Expr/RT: Type mismatch"
 #define EVAL_PARAM              "Expr/RT: Invalid parameter"
 #define ERR_UNSUPPORTED         "Unsupported"
-#define ERR_CONST               "LET: Cannot change a constant"
+#define ERR_CONST               "LET: Cannot change a constant (CONST always has global scope)"
 #define ERR_NOT_A_VAR           "Not a variable"
 #define ERR_NOT_ARR_OR_FUNC     "NOT an array OR function"
 #define ERR_RANGE               "Out of range"

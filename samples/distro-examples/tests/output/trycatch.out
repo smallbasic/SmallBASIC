@@ -16,7 +16,6 @@ Stack:
  SUB: 216
 
 
-
  * RTE-ERROR AT ../../../samples/distro-examples/tests/trycatch.bas:200 * 
 Description:
 Division by zero
