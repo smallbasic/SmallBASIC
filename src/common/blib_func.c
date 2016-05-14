@@ -2350,7 +2350,7 @@ void cmd_genfunc(long funcCode, var_t *r) {
     //
   case kwPOINT: {
     int x = -1, y = -1;
-
+    int y_set = 0;
     if (code_isvar()) {
       var_t *v;
       v = code_getvarptr();
@@ -2360,6 +2360,7 @@ void cmd_genfunc(long funcCode, var_t *r) {
         else {
           x = v_getint(v_elem(v, 0));
           y = v_getint(v_elem(v, 1));
+          y_set = 1;
         }
       } else {
         x = v_getint(v);
@@ -2367,6 +2368,7 @@ void cmd_genfunc(long funcCode, var_t *r) {
           par_getcomma();
           IF_ERR_RETURN;
           y = par_getint();
+          y_set = 1;
           IF_ERR_RETURN;
         }
       }
@@ -2376,18 +2378,17 @@ void cmd_genfunc(long funcCode, var_t *r) {
       if (code_peek() == kwTYPE_SEP) {
         par_getcomma();
         IF_ERR_RETURN;
-
         y = par_getint();
+        y_set = 1;
         IF_ERR_RETURN;
       }
     }
 
-    //
     r->type = V_INT;
     r->v.i = 0;
     IF_ERR_RETURN;
 
-    if (y == -1) {
+    if (y_set == 0) {
       switch (x) {
       case 0:
         r->v.i = gra_x;
