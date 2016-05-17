@@ -9,13 +9,8 @@
 
 #include "common/sys.h"
 #include "common/pmem.h"
-#include "common/panic.h"
 #include "common/smbas.h"
 #include "common/messages.h"
-
-void err_tlistadd(void) {
-  panic("tmplist_add: OUT OF MEMORY");
-}
 
 void tmplist_init(tmplist_t *lst) {
   lst->head = lst->tail = NULL;
@@ -37,13 +32,7 @@ void tmplist_clear(tmplist_t *lst) {
 }
 
 tmpnode_t *tmplist_add(tmplist_t *lst, void *data, int size) {
-  tmpnode_t *np;
-
-  np = (tmpnode_t *) malloc(sizeof(tmpnode_t));
-  if (!np) {
-    err_tlistadd();
-  }
-
+  tmpnode_t *np = (tmpnode_t *) malloc(sizeof(tmpnode_t));
   np->data = malloc(size);
   memcpy(np->data, data, size);
   np->next = NULL;

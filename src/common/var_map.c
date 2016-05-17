@@ -14,6 +14,7 @@
 #include "common/sberr.h"
 #include "common/pproc.h"
 #include "common/var_map.h"
+#include "common/str.h"
 #include "lib/search.h"
 #include "lib/jsmn.h"
 
@@ -123,7 +124,7 @@ int cmp_fn(const void *a, const void *b) {
 
   int result;
   if (el_a->key->type == V_STR && el_b->key->type == V_STR) {
-    result = strcasecmp(el_a->key->v.p.ptr, el_b->key->v.p.ptr);
+    result = strcaseless(el_a->key->v.p.ptr, el_b->key->v.p.ptr);
   } else {
     result = v_compare(el_a->key, el_b->key);
   }
@@ -139,7 +140,7 @@ int cmp_fn_var(const void *a, const void *b) {
 
   int result;
   if (key_a->type == V_STR && key_b->type == V_STR) {
-    result = strcasecmp(key_a->v.p.ptr, key_b->v.p.ptr);
+    result = strcaseless(key_a->v.p.ptr, key_b->v.p.ptr);
   } else {
     result = v_compare(key_a, key_b);
   }
@@ -186,7 +187,7 @@ void map_get_recurse(CallbackData *cb, const node_t *nodep, const char *name) {
   }
   Element *el = ((Node *)nodep)->element;
   if (el != NULL && el->key->type == V_STR &&
-      strcasecmp(el->key->v.p.ptr, name) == 0) {
+      strcaseless(el->key->v.p.ptr, name) == 0) {
     cb->el = el;
   }
   if (nodep->right != NULL) {

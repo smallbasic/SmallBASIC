@@ -130,13 +130,6 @@ void cmd_fseek() {
 }
 
 /*
- * PRINT #fileN; var1 [, varN]
- */
-void cmd_fprint() {
-  cmd_print(PV_FILE);
-}
-
-/*
  * store a variable in binary form
  */
 void write_encoded_var(int handle, var_t * var) {
@@ -435,13 +428,6 @@ void cmd_flineinput() {
       dev_print("\n");
     }
   }
-}
-
-/*
- * INPUT #fileN; var$ [, var2 [, ...]]
- */
-void cmd_finput() {
-  cmd_input(PV_FILE);
 }
 
 /*

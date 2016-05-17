@@ -163,44 +163,6 @@ void exec_usefunc2(var_t *var1, var_t *var2, bcip_t ip) {
 }
 
 /*
- * execute a user's expression (using three variable)
- *
- * var1 - the first variable (the X)
- * var2 - the second variable (the Y)
- * var3 - the thrid variable (the Z)
- * ip   - expression's address
- */
-void exec_usefunc3(var_t *var1, var_t *var2, var_t *var3, bcip_t ip) {
-  var_t *old_x, *old_y, *old_z;
-
-  // save X
-  old_x = v_clone(tvar[SYSVAR_X]);
-  old_y = v_clone(tvar[SYSVAR_Y]);
-  old_z = v_clone(tvar[SYSVAR_Z]);
-
-  // run
-  v_set(tvar[SYSVAR_X], var1);
-  v_free(var1);
-  v_set(tvar[SYSVAR_Y], var2);
-  v_free(var2);
-  v_set(tvar[SYSVAR_Z], var3);
-  v_free(var3);
-  code_jump(ip);
-  eval(var1);
-
-  // restore X,Y
-  v_set(tvar[SYSVAR_X], old_x);
-  v_free(old_x);
-  free(old_x);
-  v_set(tvar[SYSVAR_Y], old_y);
-  v_free(old_y);
-  free(old_y);
-  v_set(tvar[SYSVAR_Z], old_z);
-  v_free(old_z);
-  free(old_z);
-}
-
-/*
  * Write string to output device
  */
 void pv_write(char *str, int method, int handle) {
@@ -906,15 +868,6 @@ int par_getipoly(ipt_t **poly_pp) {
   }
 
   return count;
-}
-
-/*
- * returns true if the following code is descibing one var code
- * usefull for optimization
- * (one var can be used by the pointer; more than one it must be evaluated)
- */
-int par_isonevar() {
-  return code_isvar();
 }
 
 /*

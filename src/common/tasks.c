@@ -28,28 +28,6 @@ int count_tasks() {
 /**
  *	@ingroup sys
  *
- *	return the active task-id
- *
- *	@return the active task-id
- */
-int current_tid() {
-  return task_index;
-}
-
-/**
- *	@ingroup sys
- *
- *	return the active task-structure
- *
- *	@return the active task-structure
- */
-task_t *current_task() {
-  return &tasks[task_index];
-}
-
-/**
- *	@ingroup sys
- *
  *	return the nth task-structure
  *
  *	@return the nth task-structure

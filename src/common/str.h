@@ -100,16 +100,6 @@ int is_all_digits(const char *text);
 /**
  * @ingroup str
  *
- * returns true if the string 'name' can be a keyword
- *
- * @param name the string
- * @return true if the string 'name' can be a keyword
- */
-int is_keyword(const char *name);
-
-/**
- * @ingroup str
- *
  * returns true if the string is a number
  *
  * @param name the string
@@ -255,7 +245,26 @@ char *ftostr(var_num_t num, char *dest);
  */
 char *ltostr(var_int_t num, char *dest);
 
+/**
+ * @ingroup str
+ *
+ * compare to strings case insensitively
+ *
+ * @param
+ * @param
+ * @return
+ */
 int strcaseless(const char *s1, const char *s2);
+
+/**
+ * @ingroup str
+ *
+ * compare to strings case insensitively
+ *
+ * @param
+ * @param
+ * @return
+ */
 int strcaselessn(const char *s1, const char *s2, int len);
 
 /**
@@ -442,10 +451,15 @@ const char *baseof(const char *source, int delim);
  */
 char char_table_replace(const char *what_table, int ch, const char *replace_table);
 
-#if defined(_WinBCB)
-#define strncasecmp(a,b,n)  strnicmp(a,b,n)
-#define strcasecmp(a,b)   stricmp(a,b)
-#endif
+/**
+ * @ingroup sys
+ *
+ * dumps a memory block in hex
+ *
+ * @param block is the block
+ * @param size is the size of the block
+ */
+void hex_dump(const unsigned char *block, int size);
 
 #if defined(__cplusplus)
 }

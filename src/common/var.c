@@ -215,18 +215,6 @@ void v_tomatrix(var_t *v, int r, int c) {
 }
 
 /*
- * create RxC array
- */
-var_t *v_new_matrix(int r, int c) {
-  var_t *v;
-
-  v = v_new();
-  v_tomatrix(v, r, c);
-
-  return v;
-}
-
-/*
  * create array
  */
 void v_toarray1(var_t *v, dword r) {
@@ -629,21 +617,6 @@ void v_setstrn(var_t *var, const char *string, int len) {
 }
 
 /*
- * set the value of 'var' to string
- */
-void v_setstrf(var_t *var, const char *fmt, ...) {
-  char *buf;
-  va_list ap;
-
-  va_start(ap, fmt);
-  buf = malloc(0x10000);
-  vsnprintf(buf, 1024, fmt, ap);
-  v_setstr(var, buf);
-  free(buf);
-  va_end(ap);
-}
-
-/*
  * adds a string to current string value
  */
 void v_strcat(var_t *var, const char *string) {
@@ -685,48 +658,6 @@ char *v_getstr(var_t *var) {
     v_tostr(var);
   }
   return var->v.p.ptr;
-}
-
-/*
- * set the value of 'var' to 'itable' integer array
- */
-void v_setintarray(var_t *var, int32_t *itable, int count) {
-  int i;
-  var_t *elem_p;
-
-  v_toarray1(var, count);
-  for (i = 0; i < count; i++) {
-    elem_p = (var_t *)(var->v.a.ptr + sizeof(var_t) * i);
-    v_setint(elem_p, itable[i]);
-  }
-}
-
-/*
- * set the value of 'var' to 'itable' real's array
- */
-void v_setrealarray(var_t *var, var_num_t *ntable, int count) {
-  int i;
-  var_t *elem_p;
-
-  v_toarray1(var, count);
-  for (i = 0; i < count; i++) {
-    elem_p = (var_t *)(var->v.a.ptr + sizeof(var_t) * i);
-    v_setreal(elem_p, ntable[i]);
-  }
-}
-
-/*
- * set the value of 'var' to 'itable' string array
- */
-void v_setstrarray(var_t *var, char **ctable, int count) {
-  int i;
-  var_t *elem_p;
-
-  v_toarray1(var, count);
-  for (i = 0; i < count; i++) {
-    elem_p = (var_t *)(var->v.a.ptr + sizeof(var_t) * i);
-    v_setstr(elem_p, ctable[i]);
-  }
 }
 
 /*

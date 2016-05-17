@@ -8,7 +8,6 @@
 // Copyright(C) 2000 Nicholas Christopoulos
 
 #include "common/smbas.h"
-#include "common/panic.h"
 #include "common/pproc.h"
 #include "common/str.h"
 #include "common/kw.h"
@@ -1156,7 +1155,6 @@ static inline void eval_callf(var_t *r) {
 }
 
 static inline void eval_call_udf(var_t *r) {
-  prog_ip--;
   bc_loop(1);
   if (!prog_error) {
     stknode_t udf_rv;
@@ -1181,11 +1179,10 @@ void eval(var_t *r) {
   byte level = 0;
 
   while (!prog_error) {
-    code_t code = CODE(IP);
-    IP++;
-    switch (code) {
+    switch (CODE(IP)) {
     case kwTYPE_INT:
       // integer - constant
+      IP++;
       V_FREE(r);
       r->type = V_INT;
       r->v.i = code_getint();
@@ -1193,6 +1190,7 @@ void eval(var_t *r) {
 
     case kwTYPE_NUM:
       // double - constant
+      IP++;
       V_FREE(r);
       r->type = V_NUM;
       r->v.n = code_getreal();
@@ -1200,39 +1198,45 @@ void eval(var_t *r) {
 
     case kwTYPE_STR:
       // string - constant
+      IP++;
       V_FREE(r);
       v_eval_str(r);
       break;
 
     case kwTYPE_LOGOPR:
+      IP++;
       oper_log(r, left);
       break;
 
     case kwTYPE_CMPOPR:
+      IP++;
       oper_cmp(r, left);
       break;
 
     case kwTYPE_ADDOPR:
+      IP++;
       oper_add(r, left);
       break;
 
     case kwTYPE_MULOPR:
+      IP++;
       oper_mul(r, left);
       break;
 
     case kwTYPE_POWOPR:
+      IP++;
       oper_powr(r, left);
       break;
 
     case kwTYPE_UNROPR:
       // unary
+      IP++;
       oper_unary(r);
       break;
 
     case kwTYPE_VAR: {
       // variable
       V_FREE(r);
-      IP--;
       var_t *var_p = code_getvarptr();
       if (prog_error) {
         return;
@@ -1243,37 +1247,42 @@ void eval(var_t *r) {
 
     case kwTYPE_LEVEL_BEGIN:
       // left parenthesis
+      IP++;
       level++;
       break;
 
     case kwTYPE_LEVEL_END:
       // right parenthesis
       if (level == 0) {
-        IP--;
         eval_sp = eval_pos;
         // warning: normal exit
         return;
       }
       level--;
+      IP++;
       break;
 
     case kwTYPE_EVPUSH:
       // stack = push result
+      IP++;
       eval_push(r);
       break;
 
     case kwTYPE_EVPOP:
       // pop left
+      IP++;
       eval_sp--;
       left = &eval_stk[eval_sp];
       break;
 
     case kwTYPE_EVAL_SC:
+      IP++;
       eval_shortc(r);
       break;
 
     case kwTYPE_CALLF:
       // built-in functions
+      IP++;
       eval_callf(r);
       break;
 
@@ -1283,14 +1292,16 @@ void eval(var_t *r) {
 
     default:
       // less used codes
-      switch (code) {
+      switch (CODE(IP)) {
       case kwTYPE_CALLEXTF:
         // [lib][index] external functions
+        IP++;
         eval_extf(r);
         break;
 
       case kwTYPE_PTR:
         // UDF pointer - constant
+        IP++;
         V_FREE(r);
         r->type = V_PTR;
         r->const_flag = 1;
@@ -1303,12 +1314,12 @@ void eval(var_t *r) {
         err_evsyntax();
         break;
 
-      default:
+      default: {
+        code_t code = CODE(IP);
         if (code == kwTYPE_EOC ||
             code == kwTYPE_SEP ||
             code == kwTO ||
             kw_check_evexit(code)) {
-          IP--;
           // restore stack pointer
           eval_sp = eval_pos;
 
@@ -1319,8 +1330,8 @@ void eval(var_t *r) {
         if (!opt_quiet) {
           hex_dump(prog_source, prog_length);
         }
-      }
-    };
+      }};
+    }
   }
   // restore stack pointer
   eval_sp = eval_pos;

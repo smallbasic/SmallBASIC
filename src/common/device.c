@@ -368,10 +368,7 @@ void dev_printf(const char *format, ...) {
     va_start(args, format);
     vsnprintf(buf, size + 1, format, args);
     va_end(args);
-
     buf[size] = '\0';
-    va_end(args);
-
     dev_print(buf);
     free(buf);
   }
@@ -427,3 +424,15 @@ void lwrite(const char *buf) {
   fprintf(stderr, "%s\n", buf);
 }
 #endif
+
+/**
+ * Displays a fatal error message
+ */
+void panic(const char *fmt, ...) {
+  va_list argp;
+	va_start(argp, fmt);
+  vfprintf(stderr, fmt, argp);
+  dev_print("Fatal error");
+	va_end(argp);
+  exit(EXIT_FAILURE);
+}

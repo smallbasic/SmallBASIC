@@ -353,15 +353,6 @@ void comp_close();
 /**
  * @ingroup scan
  *
- * returns true if there is a compile-error
- *
- * @return true if there is a compile-error
- */
-int comp_geterror(void);
-
-/**
- * @ingroup scan
- *
  * compiles a program
  *
  * @param section is the section's name (use NULL for "main")

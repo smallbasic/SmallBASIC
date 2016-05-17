@@ -83,7 +83,6 @@ typedef long int var_int_t;
 #else
   #define SB_STR_VER VERSION " Console " SB_VERSYS SB_BIT_SZ BUILD_DATE
 #endif
-#define SB_PANICMSG_SIZE    1023
 #define SB_ERRMSG_SIZE      2048
 #define SB_KEYWORD_SIZE     128
 #define SB_SOURCELINE_SIZE  65536 // compiler
@@ -106,7 +105,6 @@ typedef long int var_int_t;
 #define CLAMP(v,l,h)    ((v)<(l) ? (l) : (v) > (h) ? (h) : v) // clamp to specified range
 
 #include "common/pmem.h"
-#include "common/panic.h"
 #include "common/str.h"
 
 #if !defined(O_BINARY)

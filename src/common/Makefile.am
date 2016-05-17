@@ -71,7 +71,6 @@ libsb_common_a_SOURCES =                  \
     inet.c inet.h                         \
     kw.c kw.h                             \
     mem.c                                 \
-    panic.c panic.h                       \
     pfill.c                               \
     plot.c                                \
     proc.c pproc.h                        \

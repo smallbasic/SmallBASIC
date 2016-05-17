@@ -9,7 +9,6 @@
 
 #include "common/sys.h"
 #include "common/str.h"
-#include "common/panic.h"
 #include "common/fmt.h"
 #include "common/device.h"
 #include "common/pproc.h"

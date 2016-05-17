@@ -167,24 +167,6 @@ int count_tasks();
 /**
  *   @ingroup sys
  *
- *   return the active task-id
- *
- *   @return the active task-id
- */
-int current_tid();
-
-/**
- *   @ingroup sys
- *
- *   return the active task-structure
- *
- *   @return the active task-structure
- */
-task_t *current_task();
-
-/**
- *   @ingroup sys
- *
  *   initialize tasks manager
  */
 int init_tasks();

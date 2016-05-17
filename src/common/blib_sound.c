@@ -10,7 +10,6 @@
 #include "common/sys.h"
 #include "common/str.h"
 #include "common/kw.h"
-#include "common/panic.h"
 #include "common/var.h"
 #include "common/blib.h"
 #include "common/pproc.h"

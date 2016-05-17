@@ -401,17 +401,6 @@ void v_tomatrix(var_t *v, int r, int c);
 /**
  * @ingroup var
  *
- * creates and returns a new matrix (array RxC) variable
- *
- * @param r the number of the rows
- * @param c the number of the columns
- * @return a newly created variable
- */
-var_t *v_new_matrix(int r, int c);
-
-/**
- * @ingroup var
- *
  * converts the variable v to an array of R elements.
  * R can be zero for zero-length arrays
  *
@@ -487,7 +476,7 @@ int v_length(var_t *v);
  Old API routines that is good to use them:
 
  v_init(), v_free()                  --- basic
- v_new(), v_clone(), v_new_matrix()  --- create vars in heap, dont forget the free()
+ v_new(), v_clone()                  --- create vars in heap, dont forget the free()
 
  v_resize_array()                    --- resize an 1-dim array
  v_tomatrix(), v_toarray1()          --- convertion to matrix (RxC) or 1D array
@@ -518,17 +507,6 @@ void v_setstrn(var_t *var, const char *string, int len);
 /**
  * @ingroup var
  *
- * Sets a string value to variable 'var'.
- * printf() style.
- *
- * @param var is the variable
- * @param fmt is the the format
- */
-void v_setstrf(var_t *var, const char *fmt, ...);
-
-/**
- * @ingroup var
- *
  * concate string to variable 'var'
  *
  * @param var is the variable
@@ -555,39 +533,6 @@ void v_setreal(var_t *var, var_num_t number);
  * @param integer is the integer
  */
 void v_setint(var_t *var, var_int_t integer);
-
-/**
- * @ingroup var
- *
- * makes 'var' an array of integers and copies the itable elements to it
- *
- * @param var is the variable
- * @param itable is the table of integers
- * @param count the number of the elements
- */
-void v_setintarray(var_t *var, int32_t *itable, int count);
-
-/**
- * @ingroup var
- *
- * makes 'var' an array of reals and copies the ntable elements to it
- *
- * @param var is the variable
- * @param ntable is the table of doubles
- * @param count the number of the elements
- */
-void v_setrealarray(var_t *var, var_num_t *ntable, int count);
-
-/**
- * @ingroup var
- *
- * makes 'var' an array of strings and copies the ctable elements to it
- *
- * @param var is the variable
- * @param ctable is the table of strings
- * @param count the number of the elements
- */
-void v_setstrarray(var_t *var, char **ctable, int count);
 
 /**
  * @ingroup var

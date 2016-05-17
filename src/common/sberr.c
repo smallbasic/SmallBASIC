@@ -218,10 +218,6 @@ void err_notavar(void) {
   rt_raise(ERR_NOT_A_VAR);
 }
 
-void err_notarray(void) {
-  rt_raise(ERR_NOT_ARR_OR_FUNC);
-}
-
 void err_out_of_range(void) {
   err_throw(ERR_RANGE);
 }
@@ -282,10 +278,6 @@ void err_bfn_err(long code) {
 
 void err_pcode_err(long pcode) {
   rt_raise(ERR_CRITICAL_MISSING_PROC, pcode);
-}
-
-void err_chain_err(const char *file) {
-  rt_raise(ERR_CHAIN_FILE, file);
 }
 
 void err_run_err(const char *file) {

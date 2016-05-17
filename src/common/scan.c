@@ -559,12 +559,6 @@ char *get_param_sect(char *text, const char *delim, char *dest) {
 }
 
 /*
- */
-int comp_geterror() {
-  return comp_error;
-}
-
-/*
  * checking for missing labels
  */
 int comp_check_labels() {
@@ -907,25 +901,6 @@ char *comp_next_char(char *source) {
       return p;
     }
     p++;
-  }
-  return p;
-}
-
-/*
- */
-char *comp_prev_char(const char *root, const char *ptr) {
-  char *p = (char *)ptr;
-
-  if (p > root) {
-    p--;
-  } else {
-    return (char *)root;
-  }
-  while (p > root) {
-    if (*p != ' ') {
-      return p;
-    }
-    p--;
   }
   return p;
 }
@@ -3519,13 +3494,7 @@ char *comp_load(const char *file_name) {
   int h = open(comp_file_name, O_BINARY | O_RDONLY, 0644);
   if (h == -1) {
     buf = NULL;
-#if defined(__CYGWIN__)
-    char temp[1024];
-    getcwd(temp, 1024);
-    panic(MSG_CANT_OPEN_FILE_AT, comp_file_name, temp);
-#else
     panic(MSG_CANT_OPEN_FILE, comp_file_name);
-#endif
   } else {
     int size;
 

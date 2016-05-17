@@ -351,13 +351,6 @@ void dev_cls(void);
 /**
  * @ingroup dev_g
  *
- * clear from cursor to end-of-line
- */
-void dev_clreol(void);
-
-/**
- * @ingroup dev_g
- *
  * sets the current x, y for texts or graphics
  *
  * @note AT command
@@ -1047,6 +1040,16 @@ dword dev_get_millisecond_count();
  * Trace or debug at the given line number
  */
 void dev_trace_line(int lineNo);
+
+/**
+ * @ingroup sys
+ *
+ * print a message and quits
+ *
+ * @param fmt the printf's style format
+ * @param ... the format's parameters
+ */
+void panic(const char *fmt, ...);
 
 #if defined(__cplusplus)
 }

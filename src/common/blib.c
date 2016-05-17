@@ -579,11 +579,6 @@ void cmd_print(int output) {
   }
 }
 
-// print for log
-void cmd_logprint() {
-  cmd_print(PV_LOG);
-}
-
 /**
  * INPUT ...
  */

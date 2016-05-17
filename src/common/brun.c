@@ -12,7 +12,6 @@
 #include "config.h"
 
 #include "common/sys.h"
-#include "common/panic.h"
 #include "common/blib.h"
 #include "common/str.h"
 #include "common/fmt.h"
@@ -178,19 +177,6 @@ void code_pop_and_free(stknode_t *node) {
       err_stackunderflow();
       node->type = 0xFF;
     }
-  }
-}
-
-/**
- * removes nodes from stack until 'type' node found
- */
-void code_pop_until(int type) {
-  stknode_t node;
-
-  code_pop(&node, type);
-  while (node.type != type) {
-    code_pop(&node, type);
-    IF_ERR_RETURN;
   }
 }
 
