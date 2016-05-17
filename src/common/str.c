@@ -83,9 +83,9 @@ int strcaseless(const char *s1, const char *s2) {
       break;
     }
     if (c1 != c2) {
-      c1 = toupper(c1);
+      c1 = to_lower(c1);
       if (c1 != c2) {
-        c2 = toupper(c2);
+        c2 = to_lower(c2);
         if (c1 != c2) {
           result = c1 < c2 ? -1 : 1;
           break;
