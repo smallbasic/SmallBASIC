@@ -25,6 +25,6 @@
  void net_disconnect(socket_t s) {}
  int net_peek(socket_t s) { return 0; }
 #elif defined(_UnixOS)
- #include "platform/unix/inet.c"
+ #include "platform/console/inet.c"
 #endif
 

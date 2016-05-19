@@ -314,14 +314,14 @@ function buildConsole() {
          AC_DEFINE(__CYGWIN__, 1, [as above])
          AC_DEFINE(INET_UNSUP, 1, [inet not supported.])
          PACKAGE_LIBS="${PACKAGE_LIBS} -lm -lgcc"
-         BUILD_SUBDIRS="src/common src/platform/unix"
+         BUILD_SUBDIRS="src/common src/platform/console"
       else
          dnl preconfigured values for cygwin mingw console build
          TARGET="Building Cygwin MinGW console version."
          AC_DEFINE(__MINGW32__, 1, [as above])
          AC_DEFINE(_UnixOS, 1, [Building under Unix like systems.])
          PACKAGE_LIBS="${PACKAGE_LIBS} -mconsole -lmingw32 -lwsock32"
-         BUILD_SUBDIRS="src/common src/platform/unix"
+         BUILD_SUBDIRS="src/common src/platform/console"
       fi
       AC_DEFINE(_Win32, 1, [Windows build])
    else
@@ -330,8 +330,8 @@ function buildConsole() {
       AC_DEFINE(_UnixOS, 1, [Building under Unix like systems.])
       AC_DEFINE(DEV_EVENTS_OSD, 0, [dev_events() implemented using osd_events().])
       PACKAGE_LIBS="${PACKAGE_LIBS} -lm -ldl -lpthread"
-      BUILD_SUBDIRS="src/common src/platform/unix"
-      TEST_DIR="src/platform/unix"
+      BUILD_SUBDIRS="src/common src/platform/console"
+      TEST_DIR="src/platform/console"
       AC_SUBST(TEST_DIR)
    fi
 
@@ -368,7 +368,7 @@ Makefile
 src/common/Makefile
 src/platform/fltk/Makefile
 src/platform/sdl/Makefile
-src/platform/unix/Makefile
+src/platform/console/Makefile
 src/platform/android/Makefile
 ])
 AC_OUTPUT
