@@ -78,6 +78,7 @@ libsb_common_a_SOURCES =                  \
     scan.c scan.h                         \
     str.c str.h                           \
     tasks.c tasks.h                       \
+    hashmap.c hashmap.h                   \
     var_map.c var_map.h                   \
     var_eval.c var_eval.h                 \
     keymap.c keymap.h                     \

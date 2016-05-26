@@ -57,6 +57,8 @@ if (isref(m4) == false) then
 end if
 
 if m4.cat.name <> "lots" then
+  ? m3
+  ? m4
   throw "ref/map error"
 end if
 

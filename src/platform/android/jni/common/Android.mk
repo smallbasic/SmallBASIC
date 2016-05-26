@@ -47,7 +47,6 @@ LOCAL_SRC_FILES  :=    \
     $(COMMON)/inet.c             \
     $(COMMON)/kw.c               \
     $(COMMON)/mem.c              \
-    $(COMMON)/panic.c            \
     $(COMMON)/pfill.c            \
     $(COMMON)/plot.c             \
     $(COMMON)/proc.c             \
@@ -57,6 +56,7 @@ LOCAL_SRC_FILES  :=    \
     $(COMMON)/tasks.c            \
     $(COMMON)/var_map.c          \
     $(COMMON)/var_eval.c         \
+    $(COMMON)/hashmap.c          \
     $(COMMON)/keymap.c           \
     $(COMMON)/units.c            \
     $(COMMON)/var.c
