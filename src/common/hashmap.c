@@ -76,20 +76,8 @@ void tree_destroy(TreeNode *node) {
   tree_delete_node(node);
 }
 
-TreeNode *tree_find(const TreeNode *node, TreeNode **rootp) {
-  while (rootp != NULL && *rootp != NULL) {
-    int r = tree_compare(node->key, (*rootp)->key);
-    if (r == 0) {
-      // found
-      return *rootp;
-    }
-    rootp = (r < 0) ? &(*rootp)->left : &(*rootp)->right;
-  }
-  return NULL;
-}
-
 /* find or insert datum into search tree */
-TreeNode *tree_search(TreeNode *node, TreeNode **rootp) {
+TreeNode *tree_search(TreeNode *node, TreeNode **rootp, int insert) {
   if (rootp == NULL) {
     return NULL;
   }
@@ -100,8 +88,14 @@ TreeNode *tree_search(TreeNode *node, TreeNode **rootp) {
     }
     rootp = (r < 0) ? &(*rootp)->left : &(*rootp)->right;
   }
-  *rootp = node;
-  return node;
+  TreeNode *result;
+  if (insert) {
+    *rootp = node;
+    result = node;
+  } else {
+    result = NULL;
+  }
+  return result;
 }
 
 int tree_foreach(const TreeNode *nodep, hashmap_foreach_func func, hashmap_cb *data) {
@@ -143,15 +137,14 @@ var_p_t hashmap_put(var_p_t map, const var_p_t key) {
 
   // hashmap_put takes ownership of key
   TreeNode *treeNode = tree_create_node(key);
-  TreeNode *node = tree_find(treeNode, (TreeNode **)&map->v.m.map);
-  if (node != NULL) {
-    // item already exists
+  TreeNode *node = tree_search(treeNode, (TreeNode **)&map->v.m.map, 1);
+  if (node != treeNode) {
+    // found existing item, discard treeNode
     result = node->value;
     tree_delete_node(treeNode);
-  }
-  else {
-    tree_search(treeNode, (TreeNode **)&map->v.m.map);
-    treeNode->value = result = v_new();
+  } else {
+    // not found, treeNode attached to tree
+    result = treeNode->value = v_new();
     v_init(treeNode->value);
     map->v.m.size++;
   }
@@ -163,7 +156,7 @@ var_p_t hashmap_get(var_p_t map, const var_p_t key) {
   TreeNode treeNode;
   treeNode.key = key;
 
-  TreeNode *node = tree_find(&treeNode, (TreeNode **)&map->v.m.map);
+  TreeNode *node = tree_search(&treeNode, (TreeNode **)&map->v.m.map, 0);
   if (node != NULL) {
     result = node->value;
   } else {

@@ -34,6 +34,13 @@ typedef struct JsonTokens {
 int map_read_next_token(var_p_t dest, JsonTokens *json, int index);
 
 /**
+ * initialise the variable as a map
+ */
+void map_init(var_p_t map) {
+  hashmap_create(map);
+}
+
+/**
  * Compare one MAP to another. see v_compare comments for return spec.
  */
 int map_compare(const var_p_t var_a, const var_p_t var_b) {
@@ -200,6 +207,17 @@ var_p_t map_resolve_fields(const var_p_t base) {
 }
 
 /**
+ * Adds a new variable onto the map
+ */
+var_p_t map_add_var(var_p_t base, const char *name, int value) {
+  var_p_t key = v_new();
+  v_setstr(key, name);
+  var_p_t var = hashmap_put(base, key);
+  v_setint(var, value);
+  return var;
+}
+
+/**
  * Return the variable in base keyed by key, if not found then creates
  * an empty variable that will be returned in a further call
  */
@@ -265,12 +283,8 @@ void map_set_int(var_p_t base, const char *name, var_int_t n) {
   if (var != NULL) {
     v_setint(var, n);
   } else {
-    var_p_t key = v_new();
-    v_setstr(key, name);
-    var_p_t value = hashmap_put(base, key);
-    v_setint(value, n);
-    v_tostr(value);
- }
+    map_add_var(base, name, n);
+  }
 }
 
 /**
