@@ -77,11 +77,7 @@ int map_length(const var_p_t var_p) {
 var_p_t map_get(var_p_t base, const char *name) {
   var_p_t result;
   if (base->type == V_MAP) {
-    var_t var;
-    var.type = V_STR;
-    var.v.p.ptr = (char*)name;
-    var.v.p.size = strlen(name) + 1;
-    result = hashmap_get(base, &var);
+    result = hashmap_get(base, name);
   } else {
     result = NULL;
   }
@@ -194,9 +190,10 @@ var_p_t map_resolve_fields(const var_p_t base) {
     }
 
     // evaluate the variable 'key' name
-    var_p_t key = v_new();
-    v_eval_str(key);
-    field = hashmap_put(base, key);
+    int len = code_getstrlen();
+    const char *key = (const char *)&prog_source[prog_ip];
+    prog_ip += len;
+    field = hashmap_puts(base, key, len);
 
     // evaluate the next sub-element
     field = map_resolve_fields(field);

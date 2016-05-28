@@ -254,17 +254,6 @@ char *ltostr(var_int_t num, char *dest);
  * @param
  * @return
  */
-int strcaseless(const char *s1, const char *s2);
-
-/**
- * @ingroup str
- *
- * compare to strings case insensitively
- *
- * @param
- * @param
- * @return
- */
 int strcaselessn(const char *s1, const char *s2, int len);
 
 /**

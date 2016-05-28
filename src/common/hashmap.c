@@ -53,17 +53,8 @@ void tree_delete_node(TreeNode *node) {
   free(node);
 }
 
-/**
- * Callback to compare TreeNode's
- */
-int tree_compare(var_p_t el_a, var_p_t el_b) {
-  int result;
-  if (el_a->type == V_STR && el_b->type == V_STR) {
-    result = strcasecmp(el_a->v.p.ptr, el_b->v.p.ptr);
-  } else {
-    result = v_compare(el_a, el_b);
-  }
-  return result;
+int tree_compare(const char *key, int length, var_p_t vkey) {
+  return strcaselessn(key, vkey->v.p.ptr, I2MAX(length, vkey->v.p.size - 1));
 }
 
 void tree_destroy(TreeNode *node) {
@@ -76,26 +67,28 @@ void tree_destroy(TreeNode *node) {
   tree_delete_node(node);
 }
 
-/* find or insert datum into search tree */
-TreeNode *tree_search(TreeNode *node, TreeNode **rootp, int insert) {
-  if (rootp == NULL) {
-    return NULL;
-  }
+TreeNode *tree_search(TreeNode **rootp, const char *key, int length) {
   while (*rootp != NULL) {
-    int r;
-    if ((r = tree_compare(node->key, (*rootp)->key)) == 0) {
+    int r = tree_compare(key, length, (*rootp)->key);
+    if (r == 0) {
       return *rootp;
     }
     rootp = (r < 0) ? &(*rootp)->left : &(*rootp)->right;
   }
-  TreeNode *result;
-  if (insert) {
-    *rootp = node;
-    result = node;
-  } else {
-    result = NULL;
-  }
+  TreeNode *result = tree_create_node(NULL);
+  *rootp = result;
   return result;
+}
+
+TreeNode *tree_find(TreeNode **rootp, const char *key, int length) {
+  while (*rootp != NULL) {
+    int r = tree_compare(key, length, (*rootp)->key);
+    if (r == 0) {
+      return *rootp;
+    }
+    rootp = (r < 0) ? &(*rootp)->left : &(*rootp)->right;
+  }
+  return NULL;
 }
 
 int tree_foreach(const TreeNode *nodep, hashmap_foreach_func func, hashmap_cb *data) {
@@ -132,31 +125,36 @@ int hashmap_destroy(var_p_t var_p) {
   return 0;
 }
 
-var_p_t hashmap_put(var_p_t map, const var_p_t key) {
-  var_p_t result;
-
-  // hashmap_put takes ownership of key
-  TreeNode *treeNode = tree_create_node(key);
-  TreeNode *node = tree_search(treeNode, (TreeNode **)&map->v.m.map, 1);
-  if (node != treeNode) {
-    // found existing item, discard treeNode
-    result = node->value;
-    tree_delete_node(treeNode);
-  } else {
-    // not found, treeNode attached to tree
-    result = treeNode->value = v_new();
-    v_init(treeNode->value);
+var_p_t hashmap_puts(var_p_t map, const char *key, int length) {
+  TreeNode *node = tree_search((TreeNode **)&map->v.m.map, key, length);
+  if (node->key == NULL) {
+    node->key = v_new();
+    node->value = v_new();
+    v_setstrn(node->key, key, length);
     map->v.m.size++;
   }
-  return result;
+  return node->value;
 }
 
-var_p_t hashmap_get(var_p_t map, const var_p_t key) {
-  var_p_t result;
-  TreeNode treeNode;
-  treeNode.key = key;
+var_p_t hashmap_put(var_p_t map, const var_p_t key) {
+  // hashmap takes ownership of key
+  if (key->type != V_STR) {
+    // keys are always strings
+    v_tostr(key);
+  }
 
-  TreeNode *node = tree_search(&treeNode, (TreeNode **)&map->v.m.map, 0);
+  TreeNode *node = tree_search((TreeNode **)&map->v.m.map, key->v.p.ptr, key->v.p.size);
+  if (node->key == NULL) {
+    node->key = key;
+    node->value = v_new();
+    map->v.m.size++;
+  }
+  return node->value;
+}
+
+var_p_t hashmap_get(var_p_t map, const char *key) {
+  var_p_t result;
+  TreeNode *node = tree_find((TreeNode **)&map->v.m.map, key, strlen(key));
   if (node != NULL) {
     result = node->value;
   } else {

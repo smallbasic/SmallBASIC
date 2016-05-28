@@ -15,6 +15,7 @@
 #include "common/var_map.h"
 
 #define ARR_ALLOC 256
+#define INT_STR_LEN 64
 
 /*
  * creates and returns a new variable
@@ -67,7 +68,7 @@ int v_strlen(const var_t *v) {
  * returns the length of the variable
  */
 int v_length(var_t *var) {
-  char tmpsb[64];
+  char tmpsb[INT_STR_LEN];
 
   switch (var->type) {
   case V_STR:
@@ -364,7 +365,7 @@ int v_compare(var_t *a, var_t *b) {
  * result = a + b
  */
 void v_add(var_t *result, var_t *a, var_t *b) {
-  char tmpsb[64];
+  char tmpsb[INT_STR_LEN];
 
   if (a->type == V_STR && b->type == V_STR) {
     int length = strlen(a->v.p.ptr) + strlen(b->v.p.ptr);
@@ -401,7 +402,7 @@ void v_add(var_t *result, var_t *a, var_t *b) {
       }
     } else {
       result->type = V_STR;
-      result->v.p.ptr = (char *)malloc(strlen(a->v.p.ptr) + 64);
+      result->v.p.ptr = (char *)malloc(strlen(a->v.p.ptr) + INT_STR_LEN);
       strcpy(result->v.p.ptr, a->v.p.ptr);
       if (b->type == V_INT) {
         ltostr(b->v.i, tmpsb);
@@ -421,7 +422,7 @@ void v_add(var_t *result, var_t *a, var_t *b) {
       }
     } else {
       result->type = V_STR;
-      result->v.p.ptr = (char *)malloc(strlen(b->v.p.ptr) + 64);
+      result->v.p.ptr = (char *)malloc(strlen(b->v.p.ptr) + INT_STR_LEN);
       if (a->type == V_INT) {
         ltostr(a->v.i, tmpsb);
       } else {
@@ -550,11 +551,11 @@ char *v_str(var_t *arg) {
   char *buffer;
   switch (arg->type) {
   case V_INT:
-    buffer = malloc(64);
+    buffer = malloc(INT_STR_LEN);
     ltostr(arg->v.i, buffer);
     break;
   case V_NUM:
-    buffer = malloc(64);
+    buffer = malloc(INT_STR_LEN);
     ftostr(arg->v.n, buffer);
     break;
   case V_STR:
@@ -685,7 +686,7 @@ void v_input2var(const char *str, var_t *var) {
     v_setstr(var, str);
   } else {
     char *np, *sb;
-    char buf[64];
+    char buf[INT_STR_LEN];
     int type;
     var_int_t lv;
     var_num_t dv;
