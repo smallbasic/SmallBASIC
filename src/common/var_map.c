@@ -193,7 +193,7 @@ var_p_t map_resolve_fields(const var_p_t base) {
     int len = code_getstrlen();
     const char *key = (const char *)&prog_source[prog_ip];
     prog_ip += len;
-    field = hashmap_puts(base, key, len);
+    field = hashmap_put(base, key, len);
 
     // evaluate the next sub-element
     field = map_resolve_fields(field);
@@ -209,7 +209,7 @@ var_p_t map_resolve_fields(const var_p_t base) {
 var_p_t map_add_var(var_p_t base, const char *name, int value) {
   var_p_t key = v_new();
   v_setstr(key, name);
-  var_p_t var = hashmap_put(base, key);
+  var_p_t var = hashmap_putv(base, key);
   v_setint(var, value);
   return var;
 }
@@ -229,7 +229,7 @@ void map_get_value(var_p_t base, var_p_t var_key, var_p_t *result) {
       const var_t *element = (var_t *)(clone->v.a.ptr + (sizeof(var_t) * i));
       var_p_t key = v_new();
       v_setint(key, i);
-      var_p_t value = hashmap_put(base, key);
+      var_p_t value = hashmap_putv(base, key);
       v_set(value, element);
     }
 
@@ -245,9 +245,8 @@ void map_get_value(var_p_t base, var_p_t var_key, var_p_t *result) {
     }
   }
 
-  var_p_t key = v_new();
-  v_set(key, var_key);
-  *result = hashmap_put(base, key);
+  v_tostr(var_key);
+  *result = hashmap_put(base, var_key->v.p.ptr, var_key->v.p.size);
 }
 
 /**
@@ -256,8 +255,7 @@ void map_get_value(var_p_t base, var_p_t var_key, var_p_t *result) {
 int map_set_cb(hashmap_cb *cb, var_p_t var_key, var_p_t value) {
   var_p_t key = v_new();
   v_set(key, var_key);
-
-  var_p_t var = hashmap_put(cb->var, key);
+  var_p_t var = hashmap_putv(cb->var, key);
   v_set(var, value);
   return 0;
 }
@@ -461,7 +459,7 @@ int map_create(var_p_t dest, JsonTokens *json, int end_position, int index) {
     } else if (token.type == JSMN_STRING || token.type == JSMN_PRIMITIVE) {
       var_p_t key = v_new();
       map_set_primative(key, json->js + token.start, token.end - token.start);
-      var_p_t value = hashmap_put(dest, key);
+      var_p_t value = hashmap_putv(dest, key);
       i = map_read_next_token(value, json, i + 1);
     } else {
       err_array();

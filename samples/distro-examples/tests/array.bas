@@ -46,7 +46,7 @@ if (isstring(m2(3)) == false) then
   throw "m2(3) is not an string"
 end if
 
-m3 = array("{\"cat\":{\"name\":\"lots\"},\"other\":\"thing\",\"zz\":\"thing\"}")
+m3 = array("{\"cat\":{\"name\":\"lots\"},\"other\":\"thing\",\"zz\":\"thing\",\"zz\":\"memleak\"}")
 if (ismap(m3) == false) then
   throw "m3 is not an map"
 end if

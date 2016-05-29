@@ -125,7 +125,7 @@ int hashmap_destroy(var_p_t var_p) {
   return 0;
 }
 
-var_p_t hashmap_puts(var_p_t map, const char *key, int length) {
+var_p_t hashmap_put(var_p_t map, const char *key, int length) {
   TreeNode *node = tree_search((TreeNode **)&map->v.m.map, key, length);
   if (node->key == NULL) {
     node->key = v_new();
@@ -136,7 +136,7 @@ var_p_t hashmap_puts(var_p_t map, const char *key, int length) {
   return node->value;
 }
 
-var_p_t hashmap_put(var_p_t map, const var_p_t key) {
+var_p_t hashmap_putv(var_p_t map, const var_p_t key) {
   // hashmap takes ownership of key
   if (key->type != V_STR) {
     // keys are always strings
@@ -148,6 +148,10 @@ var_p_t hashmap_put(var_p_t map, const var_p_t key) {
     node->key = key;
     node->value = v_new();
     map->v.m.size++;
+  } else {
+    // discard unused key
+    v_free(key);
+    free(key);
   }
   return node->value;
 }
