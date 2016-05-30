@@ -10,7 +10,7 @@ AM_CPPFLAGS = -I$(top_builddir)/src -I. @PACKAGE_CFLAGS@
 bin_PROGRAMS = sbasic
 
 sbasic_SOURCES =          \
-  ../console/console_main.c	\
+  ../console/main.c	\
   ../console/dev_null.c
 
 sbasic_LDADD = -L$(top_srcdir)/src/common -lsb_common @PACKAGE_LIBS@
