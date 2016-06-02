@@ -55,7 +55,7 @@ void tree_delete_node(Node *node) {
   free(node);
 }
 
-int tree_compare(const char *key, int length, var_p_t vkey) {
+static inline int tree_compare(const char *key, int length, var_p_t vkey) {
   return strcaselessn(key, length, vkey->v.p.ptr, vkey->v.p.size - 1);
 }
 
@@ -145,7 +145,7 @@ int hashmap_get_hash(const char *key, int length) {
   return hash;
 }
 
-Node *hashmap_search(var_p_t map, const char *key, int length) {
+static inline Node *hashmap_search(var_p_t map, const char *key, int length) {
   int index = hashmap_get_hash(key, length) % map->v.m.size;
   Node **table = (Node **)map->v.m.map;
   Node *result = table[index];
@@ -163,7 +163,7 @@ Node *hashmap_search(var_p_t map, const char *key, int length) {
   return result;
 }
 
-Node *hashmap_find(var_p_t map, const char *key) {
+static inline Node *hashmap_find(var_p_t map, const char *key) {
   int length = strlen(key);
   int index = hashmap_get_hash(key, length) % map->v.m.size;
   Node **table = (Node **)map->v.m.map;

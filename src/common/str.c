@@ -82,10 +82,6 @@ int strcaselessn(const char *s1, int s1n, const char *s2, int s2n) {
     }
     char c1 = s1[i];
     char c2 = s2[i];
-    if (c1 == '\0' || c2 == '\0') {
-      result = c1 == c2 ? 0 : c1 == '\0' ? -1 : 1;
-      break;
-    }
     if (c1 != c2) {
       c1 = to_lower(c1);
       c2 = to_lower(c2);
