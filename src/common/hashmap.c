@@ -56,7 +56,7 @@ void tree_delete_node(Node *node) {
 }
 
 int tree_compare(const char *key, int length, var_p_t vkey) {
-  return strcaselessn(key, vkey->v.p.ptr, I2MAX(length, vkey->v.p.size - 1));  
+  return strcaselessn(key, length, vkey->v.p.ptr, vkey->v.p.size - 1);
 }
 
 void tree_destroy(Node *node) {
@@ -140,7 +140,7 @@ int hashmap_get_hash(const char *key, int length) {
   for (i = 0; i < length && key[i] != '\0'; i++) {
     hash += to_lower(key[i]);
     hash <<= 3;
-    hash ^= (hash >> 2);
+    hash ^= (hash >> 3);
   }
   return hash;
 }

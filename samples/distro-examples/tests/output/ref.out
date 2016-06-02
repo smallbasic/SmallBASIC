@@ -6,8 +6,8 @@ a=b	a=b
 a<>b	a<>b
 {"name":"kitchen"}
 {"name":"hall"}
-{"fridge":"empty","name":"Kitchen"}
-{"occupied":1,"name":"toilet"}
-{"fridge":"empty","name":"Kitchen"}
+{"name":"Kitchen","fridge":"empty"}
+{"name":"toilet","occupied":1}
+{"name":"Kitchen","fridge":"empty"}
 {"name":"hall"}
 toilet

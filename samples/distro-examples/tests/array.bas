@@ -62,6 +62,8 @@ if m4.cat.name <> "lots" then
   throw "ref/map error"
 end if
 
+print "array: " + m4
+
 dim sim
 sim << 100
 sim(0) --

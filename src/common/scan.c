@@ -3605,9 +3605,10 @@ char *comp_format_text(const char *source) {
         break;
 
       default:
-        if ((strcaselessn(p, LCN_REM_1, 5) == 0) || (strcaselessn(p, LCN_REM_2, 5) == 0)
-            || (strcaselessn(p, LCN_REM_3, 4) == 0 && last_ch == '\n')
-            || (strcaselessn(p, LCN_REM_4, 4) == 0 && last_ch == '\n')) {
+        if ((strcaselessn(p, 5, LCN_REM_1, 5) == 0)
+            || (strcaselessn(p, 5, LCN_REM_2, 5) == 0)
+            || (strcaselessn(p, 4, LCN_REM_3, 4) == 0 && last_ch == '\n')
+            || (strcaselessn(p, 4, LCN_REM_4, 4) == 0 && last_ch == '\n')) {
           // skip the rest line
           while (*p) {
             if (*p == '\n') {

@@ -432,6 +432,11 @@ void v_add(var_t *result, var_t *a, var_t *b) {
       strcat(result->v.p.ptr, b->v.p.ptr);
       result->v.p.size = strlen(result->v.p.ptr) + 1;
     }
+  } else if (b->type == V_MAP) {
+    char *map = map_to_str(b);
+    v_set(result, a);
+    v_strcat(result, map);
+    free(map);
   }
 }
 

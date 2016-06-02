@@ -73,11 +73,11 @@ void str_alltrim(char *str) {
 /**
  * caseless string compare
  */
-int strcaselessn(const char *s1, const char *s2, int count) {
+int strcaselessn(const char *s1, int s1n, const char *s2, int s2n) {
   int result, i;
   for (i = 0;; i++) {
-    if (i == count) {
-      result = 0;
+    if (i == s1n || i == s2n) {
+      result = s1n < s2n ? -1 : s1n > s2n ? 1 : 0;
       break;
     }
     char c1 = s1[i];
@@ -88,12 +88,10 @@ int strcaselessn(const char *s1, const char *s2, int count) {
     }
     if (c1 != c2) {
       c1 = to_lower(c1);
+      c2 = to_lower(c2);
       if (c1 != c2) {
-        c2 = to_lower(c2);
-        if (c1 != c2) {
-          result = c1 < c2 ? -1 : 1;
-          break;
-        }
+        result = c1 < c2 ? -1 : 1;
+        break;
       }
     }
   }

@@ -254,7 +254,7 @@ char *ltostr(var_int_t num, char *dest);
  * @param
  * @return
  */
-int strcaselessn(const char *s1, const char *s2, int len);
+int strcaselessn(const char *s1, int s1n, const char *s2, int s2n);
 
 /**
  * @ingroup str
