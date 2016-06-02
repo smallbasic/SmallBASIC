@@ -14,20 +14,22 @@
 #include "common/smbas.h"
 #include "common/hashmap.h"
 
+#define MAP_SIZE 48
+
 /**
  * Our internal tree element node
  */
-typedef struct TreeNode {
+typedef struct Node {
   var_p_t key;
   var_p_t value;
-  struct TreeNode *left, *right;
-} TreeNode;
+  struct Node *left, *right;
+} Node;
 
 /**
  * Returns a new tree node
  */
-TreeNode *tree_create_node(var_p_t key) {
-  TreeNode *node = (TreeNode *)malloc(sizeof(TreeNode));
+Node *tree_create_node(var_p_t key) {
+  Node *node = (Node *)malloc(sizeof(Node));
   node->key = key;
   node->value = NULL;
   node->left = NULL;
@@ -38,7 +40,7 @@ TreeNode *tree_create_node(var_p_t key) {
 /**
  * cleanup the given element
  */
-void tree_delete_node(TreeNode *node) {
+void tree_delete_node(Node *node) {
   // cleanup v_new
   v_free(node->key);
   free(node->key);
@@ -54,10 +56,10 @@ void tree_delete_node(TreeNode *node) {
 }
 
 int tree_compare(const char *key, int length, var_p_t vkey) {
-  return strcaselessn(key, vkey->v.p.ptr, I2MAX(length, vkey->v.p.size - 1));
+  return strcaselessn(key, vkey->v.p.ptr, I2MAX(length, vkey->v.p.size - 1));  
 }
 
-void tree_destroy(TreeNode *node) {
+void tree_destroy(Node *node) {
   if (node->left != NULL) {
     tree_destroy(node->left);
   }
@@ -67,7 +69,7 @@ void tree_destroy(TreeNode *node) {
   tree_delete_node(node);
 }
 
-TreeNode *tree_search(TreeNode **rootp, const char *key, int length) {
+Node *tree_search(Node **rootp, const char *key, int length) {
   while (*rootp != NULL) {
     int r = tree_compare(key, length, (*rootp)->key);
     if (r == 0) {
@@ -75,12 +77,12 @@ TreeNode *tree_search(TreeNode **rootp, const char *key, int length) {
     }
     rootp = (r < 0) ? &(*rootp)->left : &(*rootp)->right;
   }
-  TreeNode *result = tree_create_node(NULL);
+  Node *result = tree_create_node(NULL);
   *rootp = result;
   return result;
 }
 
-TreeNode *tree_find(TreeNode **rootp, const char *key, int length) {
+Node *tree_find(Node **rootp, const char *key, int length) {
   while (*rootp != NULL) {
     int r = tree_compare(key, length, (*rootp)->key);
     if (r == 0) {
@@ -91,7 +93,7 @@ TreeNode *tree_find(TreeNode **rootp, const char *key, int length) {
   return NULL;
 }
 
-int tree_foreach(const TreeNode *nodep, hashmap_foreach_func func, hashmap_cb *data) {
+int tree_foreach(const Node *nodep, hashmap_foreach_func func, hashmap_cb *data) {
   if (nodep != NULL) {
     if (nodep->left != NULL && !tree_foreach(nodep->left, func, data)) {
       return 0;
@@ -114,24 +116,76 @@ int tree_foreach(const TreeNode *nodep, hashmap_foreach_func func, hashmap_cb *d
 void hashmap_create(var_p_t map) {
   v_free(map);
   map->type = V_MAP;
-  map->v.m.map = NULL;
-  map->v.m.size = 0;
+  map->v.m.count = 0;
+  map->v.m.size = MAP_SIZE;
+  map->v.m.map = calloc(map->v.m.size, sizeof(Node *));
 }
 
 int hashmap_destroy(var_p_t var_p) {
   if (var_p->type == V_MAP && var_p->v.m.map != NULL) {
-    tree_destroy(var_p->v.m.map);
+    int i;
+    for (i = 0; i < var_p->v.m.size; i++) {
+      Node **table = (Node **)var_p->v.m.map;
+      if (table[i] != NULL) {
+        tree_destroy(table[i]);
+      }
+    }
+    free(var_p->v.m.map);
   }
   return 0;
 }
 
+int hashmap_get_hash(const char *key, int length) {
+  int hash = 1, i;
+  for (i = 0; i < length && key[i] != '\0'; i++) {
+    hash += to_lower(key[i]);
+    hash <<= 3;
+    hash ^= (hash >> 2);
+  }
+  return hash;
+}
+
+Node *hashmap_search(var_p_t map, const char *key, int length) {
+  int index = hashmap_get_hash(key, length) % map->v.m.size;
+  Node **table = (Node **)map->v.m.map;
+  Node *result = table[index];
+  if (result == NULL) {
+    // new entry
+    result = table[index] = tree_create_node(NULL);
+  } else {
+    int r = tree_compare(key, length, result->key);
+    if (r < 0) {
+      result = tree_search(&result->left, key, length);
+    } else if (r > 0) {
+      result = tree_search(&result->right, key, length);
+    }
+  }
+  return result;
+}
+
+Node *hashmap_find(var_p_t map, const char *key) {
+  int length = strlen(key);
+  int index = hashmap_get_hash(key, length) % map->v.m.size;
+  Node **table = (Node **)map->v.m.map;
+  Node *result = table[index];
+  if (result != NULL) {
+    int r = tree_compare(key, length, result->key);
+    if (r < 0 && result->left != NULL) {
+      result = tree_search(&result->left, key, length);
+    } else if (r > 0 && result->right != NULL) {
+      result = tree_search(&result->right, key, length);
+    }
+  }
+  return result;
+}
+
 var_p_t hashmap_put(var_p_t map, const char *key, int length) {
-  TreeNode *node = tree_search((TreeNode **)&map->v.m.map, key, length);
+  Node *node = hashmap_search(map, key, length);
   if (node->key == NULL) {
     node->key = v_new();
     node->value = v_new();
     v_setstrn(node->key, key, length);
-    map->v.m.size++;
+    map->v.m.count++;
   }
   return node->value;
 }
@@ -143,11 +197,11 @@ var_p_t hashmap_putv(var_p_t map, const var_p_t key) {
     v_tostr(key);
   }
 
-  TreeNode *node = tree_search((TreeNode **)&map->v.m.map, key->v.p.ptr, key->v.p.size);
+  Node *node = hashmap_search(map, key->v.p.ptr, key->v.p.size);
   if (node->key == NULL) {
     node->key = key;
     node->value = v_new();
-    map->v.m.size++;
+    map->v.m.count++;
   } else {
     // discard unused key
     v_free(key);
@@ -158,7 +212,7 @@ var_p_t hashmap_putv(var_p_t map, const var_p_t key) {
 
 var_p_t hashmap_get(var_p_t map, const char *key) {
   var_p_t result;
-  TreeNode *node = tree_find((TreeNode **)&map->v.m.map, key, strlen(key));
+  Node *node = hashmap_find(map, key);
   if (node != NULL) {
     result = node->value;
   } else {
@@ -169,6 +223,12 @@ var_p_t hashmap_get(var_p_t map, const char *key) {
 
 void hashmap_foreach(var_p_t map, hashmap_foreach_func func, hashmap_cb *data) {
   if (map && map->type == V_MAP) {
-    tree_foreach(map->v.m.map, func, data);
+    int i;
+    for (i = 0; i < map->v.m.size; i++) {
+      Node **table = (Node **)map->v.m.map;
+      if (table[i] != NULL) {
+        tree_foreach(table[i], func, data);
+      }
+    }
   }
 }

@@ -93,6 +93,7 @@ struct var_s {
     // associative array/map
     struct {
       void *map; /** pointer the map structure */
+      int32_t count;
       int32_t size;
     } m;
 

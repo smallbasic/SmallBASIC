@@ -67,7 +67,7 @@ int map_to_int(const var_p_t var_p) {
 int map_length(const var_p_t var_p) {
   int result;
   if (var_p->type == V_MAP) {
-    result = var_p->v.m.size;
+    result = var_p->v.m.count;
   } else {
     result = 0;
   }
@@ -246,7 +246,7 @@ void map_get_value(var_p_t base, var_p_t var_key, var_p_t *result) {
   }
 
   v_tostr(var_key);
-  *result = hashmap_put(base, var_key->v.p.ptr, var_key->v.p.size);
+  *result = hashmap_put(base, var_key->v.p.ptr, v_strlen(var_key));
 }
 
 /**
@@ -269,6 +269,7 @@ void map_set(var_p_t dest, const var_p_t src) {
     cb.var = dest;
     hashmap_create(dest);
     hashmap_foreach(src, map_set_cb, &cb);
+    dest->v.m.count = src->v.m.count;
     dest->v.m.size = src->v.m.size;
   }
 }
@@ -285,27 +286,27 @@ void map_set_int(var_p_t base, const char *name, var_int_t n) {
 /**
  * Helper for map_to_str
  */
-int map_to_str_cb(hashmap_cb *cb, var_p_t k, var_p_t v) {
-  char *key = v_str(k);
-  char *value = v_str(v);
+int map_to_str_cb(hashmap_cb *cb, var_p_t v_key, var_p_t v_var) {
+  char *key = v_str(v_key);
+  char *value = v_str(v_var);
   int required = strlen(cb->buffer) + strlen(key) + strlen(value) + BUFFER_PADDING;
   if (required >= cb->count) {
     cb->count = required + BUFFER_GROW_SIZE;
     cb->buffer = realloc(cb->buffer, cb->count);
   }
-  if (!cb->firstElement) {
+  if (!cb->start) {
     strcat(cb->buffer, ",");
   }
-  cb->firstElement = 0;
+  cb->start = 0;
   strcat(cb->buffer, "\"");
   strcat(cb->buffer, key);
   strcat(cb->buffer, "\"");
   strcat(cb->buffer, ":");
-  if (((var_p_t)v)->type == V_STR) {
+  if (v_var->type == V_STR) {
     strcat(cb->buffer, "\"");
   }
   strcat(cb->buffer, value);
-  if (((var_p_t)v)->type == V_STR) {
+  if (v_var->type == V_STR) {
     strcat(cb->buffer, "\"");
   }
   free(key);
@@ -373,7 +374,7 @@ char *map_to_str(const var_p_t var_p) {
   cb.buffer = malloc(cb.count);
 
   if (var_p->type == V_MAP) {
-    cb.firstElement = 1;
+    cb.start = 1;
     strcpy(cb.buffer, "{");
     hashmap_foreach(var_p, map_to_str_cb, &cb);
     strcat(cb.buffer, "}");

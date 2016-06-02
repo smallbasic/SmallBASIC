@@ -18,7 +18,7 @@
 typedef struct hashmap_cb {
   int count;
   int index;
-  int firstElement;
+  int start;
   char *buffer;
   var_p_t var;
 } hashmap_cb;

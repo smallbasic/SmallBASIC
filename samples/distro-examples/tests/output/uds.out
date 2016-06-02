@@ -1,12 +1,12 @@
 start of test
 a:
-{"xcat":"cat","xdog":"dog","xfish":{"big":"big","small":"small"}}
+{"xdog":"dog","xfish":{"small":"small","big":"big"},"xcat":"cat"}
 In a:
-a.xcat=cat
 a.xdog=dog
-a.xfish={"big":"big","small":"small"}
+a.xfish={"small":"small","big":"big"}
+a.xcat=cat
 In a.xfish:
-a.xfish.big=big
 a.xfish.small=small
+a.xfish.big=big
 3
 2
