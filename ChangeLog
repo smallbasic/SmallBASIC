@@ -1,3 +1,7 @@
+2016-06-04 (0.12.7)
+	Updated MAP handling for performance
+	Updated error message formatting
+
 2016-05-14 (0.12.6)
 	Fix to prevent const overwriting another const
 	Updated MID and REPLACE for performance

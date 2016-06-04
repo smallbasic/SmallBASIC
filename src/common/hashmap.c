@@ -14,7 +14,7 @@
 #include "common/smbas.h"
 #include "common/hashmap.h"
 
-#define MAP_SIZE 48
+#define MAP_SIZE 32
 
 /**
  * Our internal tree element node

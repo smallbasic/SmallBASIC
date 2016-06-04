@@ -14,23 +14,23 @@
 #include <string.h>
 #include <errno.h>
 
-/**
- * common message handler
- */
-void err_common_msg(const char *seg, const char *file, int line, const char *descr) {
+void err_title_msg(const char *seg, const char *file, int line) {
   gsb_last_line = line;
   gsb_last_error = prog_error;
   strcpy(gsb_last_file, file);
+  log_printf("\n\033[0m\n");
+  log_printf("\033[7m * %s-%s %s:%d * \033[0m\n\n", seg, WORD_ERROR_AT, file, line);
+}
+
+void err_detail_msg(const char *descr) {
   strncpy(prog_errmsg, descr, SB_ERRMSG_SIZE);
   prog_errmsg[SB_ERRMSG_SIZE] = '\0';
   strcpy(gsb_last_errmsg, prog_errmsg);
-  log_printf("\n\033[0m\033[80m\n");
-  log_printf("\033[7m * %s-%s %s:%d * \033[0m\n\n", seg, WORD_ERROR_AT, file, line);
   log_printf("\033[4m%s:\033[0m\n%s\n", WORD_DESCRIPTION, descr);
   log_printf("\033[80m\033[0m");
 }
 
-void err_stack_dump() {
+void err_stack_msg() {
   int i_stack, i_kw;
 
   if (prog_stack_count) {
@@ -62,7 +62,8 @@ void err_stack_dump() {
  */
 void sc_raise2(const char *sec, int scline, const char *buff) {
   prog_error = errCompile;
-  err_common_msg(WORD_COMP, sec, scline, buff);
+  err_title_msg(WORD_COMP, sec, scline);
+  err_detail_msg(buff);
 }
 
 /**
@@ -78,8 +79,9 @@ void rt_raise(const char *fmt, ...) {
     buff = malloc(SB_TEXTLINE_SIZE + 1);
     vsprintf(buff, fmt, ap);
     va_end(ap);
-    err_stack_dump();
-    err_common_msg(WORD_RTE, prog_file, prog_line, buff);
+    err_title_msg(WORD_RTE, prog_file, prog_line);
+    err_stack_msg();
+    err_detail_msg(buff);
     free(buff);
   }
 }
@@ -132,7 +134,10 @@ void err_syntax(int keyword, const char *fmt) {
       }
       fmt_p++;
     }
-    err_common_msg(WORD_RTE, prog_file, prog_line, ERR_SYNTAX);
+
+    err_title_msg(WORD_RTE, prog_file, prog_line);
+    err_stack_msg();
+    err_detail_msg(ERR_SYNTAX);
     log_printf("Expected:");
     log_printf(buff);
     log_printf("\n");
@@ -402,7 +407,8 @@ void err_throw_str(const char *err) {
     }
 
     if (!caught) {
-      err_stack_dump();
+      err_title_msg(WORD_RTE, prog_file, prog_line);
+      err_stack_msg();
       trace_done = 1;
     }
 
@@ -419,9 +425,10 @@ void err_throw_str(const char *err) {
   if (!caught) {
     prog_error = errRuntime;
     if (!trace_done) {
-      err_stack_dump();
+      err_title_msg(WORD_RTE, prog_file, prog_line);
+      err_stack_msg();
     }
-    err_common_msg(WORD_RTE, prog_file, prog_line, err);
+    err_detail_msg(err);
   } else {
     prog_error = errThrow;
   }
