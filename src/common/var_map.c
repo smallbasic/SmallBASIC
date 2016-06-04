@@ -104,19 +104,17 @@ int map_get_bool(var_p_t base, const char *name) {
 }
 
 int map_get_int(var_p_t base, const char *name, int def) {
-  int result = def;
   var_p_t var = map_get(base, name);
-  if (var != NULL) {
-    result = v_igetval(var);
-  }
-  return result;
+  return var != NULL ? v_igetval(var) : def;
 }
 
 const char *map_get_str(var_p_t base, const char *name) {
-  char *result = NULL;
+  char *result;
   var_p_t var = map_get(base, name);
   if (var != NULL && var->type == V_STR) {
     result = var->v.p.ptr;
+  } else {
+    result = NULL;
   }
   return result;
 }
@@ -257,6 +255,9 @@ int map_set_cb(hashmap_cb *cb, var_p_t var_key, var_p_t value) {
   v_set(key, var_key);
   var_p_t var = hashmap_putv(cb->var, key);
   v_set(var, value);
+  if (var->type == V_FUNC) {
+    var->v.fn.self = cb->var;
+  }
   return 0;
 }
 

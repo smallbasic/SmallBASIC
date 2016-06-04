@@ -1183,9 +1183,9 @@ int maGetMilliSecondCount(void) {
   return dev_get_millisecond_count();
 }
 
-void create_func(var_p_t form, const char *name, method cb) {
-  var_p_t v_func = map_add_var(form, name, 0);
+void create_func(var_p_t map, const char *name, method cb) {
+  var_p_t v_func = map_add_var(map, name, 0);
   v_func->type = V_FUNC;
-  v_func->v.fn.self = form;
+  v_func->v.fn.self = map;
   v_func->v.fn.cb = cb;
 }
