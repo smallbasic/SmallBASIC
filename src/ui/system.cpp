@@ -129,6 +129,7 @@ bool System::execute(const char *bas) {
 
   opt_command[0] = '\0';
   opt_file_permitted = 1;
+  _output->selectScreen(USER_SCREEN1);
   _output->resetFont();
   _output->flush(true);
   return result;

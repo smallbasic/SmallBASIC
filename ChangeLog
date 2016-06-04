@@ -1,6 +1,7 @@
 2016-06-04 (0.12.7)
 	Updated MAP handling for performance
 	Updated error message formatting
+	Fix error with textScreen sub-command
 
 2016-05-14 (0.12.6)
 	Fix to prevent const overwriting another const

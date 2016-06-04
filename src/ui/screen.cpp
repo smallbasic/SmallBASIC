@@ -867,6 +867,7 @@ struct RectFilledShape : Shape {
 //
 TextScreen::TextScreen(int width, int height, int fontSize) :
   Screen(0, 0, width, height, fontSize),
+  _over(NULL),
   _inset(0, 0, 0, 0),
   _buffer(NULL),
   _head(0),
