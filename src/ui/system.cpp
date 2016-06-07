@@ -72,6 +72,7 @@ void Cache::add(const char *key, const char *value) {
 System::System() :
   _output(NULL),
   _state(kInitState),
+  _editor(NULL),
   _cache(MAX_CACHE),
   _touchX(-1),
   _touchY(-1),
@@ -93,9 +94,11 @@ System::System() :
 System::~System() {
   delete [] _systemMenu;
   delete [] _programSrc;
+  delete _editor;
 
   _systemMenu = NULL;
   _programSrc = NULL;
+  _editor = NULL;
 }
 
 void System::checkModifiedTime() {

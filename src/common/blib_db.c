@@ -358,12 +358,10 @@ void cmd_flineinput() {
     // file handle
     par_getsharp();
     if (!prog_error) {
-
       handle = par_getint();
       if (!prog_error) {
         // par_getsemicolon();
         par_getsep();           // allow commas
-
         if (!prog_error) {
           if (dev_fstatus(handle)) {
             // get the variable
@@ -373,7 +371,6 @@ void cmd_flineinput() {
               return;
             }
             var_p = code_getvarptr();
-
             if (!prog_error) {
               v_free(var_p);
               size = 256;
@@ -389,8 +386,9 @@ void cmd_flineinput() {
                   var_p->type = V_INT;
                   var_p->v.i = -1;
                   return;
-                } else if (ch == '\n')
+                } else if (ch == '\n') {
                   break;
+                }
                 else if (ch != '\r') {
                   // store char
                   if (index == (size - 1)) {
@@ -401,14 +399,12 @@ void cmd_flineinput() {
                   index++;
                 }
               }
-
-              //
               var_p->v.p.ptr[index] = '\0';
               var_p->v.p.size = index + 1;
-
-            }                   // read
-            else
+            }
+            else {
               rt_raise("FIO: FILE IS NOT OPENED");
+            }
           }
         }
       }
@@ -421,10 +417,9 @@ void cmd_flineinput() {
     if (!prog_error) {
       v_free(var_p);
       var_p->type = V_STR;
-      var_p->v.p.ptr = malloc(SB_TEXTLINE_SIZE + 1);
-      var_p->v.p.size = SB_TEXTLINE_SIZE + 1;
-      ((char *)var_p->v.p.ptr)[0] = 0;
+      var_p->v.p.ptr = calloc(SB_TEXTLINE_SIZE + 1, 1);
       dev_gets((char *)var_p->v.p.ptr, SB_TEXTLINE_SIZE);
+      var_p->v.p.size = strlen(var_p->v.p.ptr);
       dev_print("\n");
     }
   }

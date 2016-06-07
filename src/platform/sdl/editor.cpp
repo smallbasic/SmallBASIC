@@ -95,7 +95,8 @@ void System::editSource(String loadPath) {
   int charWidth = _output->getCharWidth();
   int charHeight = _output->getCharHeight();
   int prevScreenId = _output->selectScreen(SOURCE_SCREEN);
-  TextEditInput *editWidget = new TextEditInput(_programSrc, charWidth, charHeight, 0, 0, w, h);
+  TextEditInput *editWidget = _editor != NULL ? _editor :
+                              new TextEditInput(_programSrc, charWidth, charHeight, 0, 0, w, h);
   TextEditHelpWidget *helpWidget = new TextEditHelpWidget(editWidget, charWidth, charHeight);
   TextEditInput *widget = editWidget;
   String dirtyFile;
@@ -178,9 +179,7 @@ void System::editSource(String loadPath) {
       case SB_KEY_CTRL('r'):
         _state = kRunState;
         cursorPos = editWidget->getCursorPos();
-        if (editWidget->isDirty()) {
-          saveFile(editWidget, loadPath);
-        }
+        saveFile(editWidget, loadPath);
         break;
       case SB_KEY_CTRL('s'):
         saveFile(editWidget, loadPath);
@@ -392,6 +391,14 @@ void System::editSource(String loadPath) {
         _state = kEditState;
       }
     }
+  }
+
+  if (_state == kRunState) {
+    // allow the editor to be restored on return
+    _output->removeInput(editWidget);
+    _editor = editWidget;
+  } else {
+    _editor = NULL;
   }
 
   _output->removeInputs();

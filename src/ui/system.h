@@ -120,6 +120,7 @@ protected:
   strlib::Stack<String *> _history;
   strlib::String _loadPath;
   strlib::String _activeFile;
+  TextEditInput *_editor;
   Cache _cache;
   int _touchX;
   int _touchY;
