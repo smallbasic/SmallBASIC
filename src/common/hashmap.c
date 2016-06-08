@@ -171,9 +171,9 @@ static inline Node *hashmap_find(var_p_t map, const char *key) {
   if (result != NULL) {
     int r = tree_compare(key, length, result->key);
     if (r < 0 && result->left != NULL) {
-      result = tree_search(&result->left, key, length);
+      result = tree_find(&result->left, key, length);
     } else if (r > 0 && result->right != NULL) {
-      result = tree_search(&result->right, key, length);
+      result = tree_find(&result->right, key, length);
     } else if (r != 0) {
       result = NULL;
     }
