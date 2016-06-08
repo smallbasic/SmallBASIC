@@ -113,11 +113,15 @@ int tree_foreach(const Node *nodep, hashmap_foreach_func func, hashmap_cb *data)
 /**
  * initialise the variable as a map
  */
-void hashmap_create(var_p_t map) {
+void hashmap_create(var_p_t map, int size) {
   v_free(map);
   map->type = V_MAP;
   map->v.m.count = 0;
-  map->v.m.size = MAP_SIZE;
+  if (size == 0) {
+    map->v.m.size = MAP_SIZE;
+  } else {
+    map->v.m.size = (size * 100) / 75;
+  }
   map->v.m.map = calloc(map->v.m.size, sizeof(Node *));
 }
 

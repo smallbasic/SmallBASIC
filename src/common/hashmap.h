@@ -25,7 +25,7 @@ typedef struct hashmap_cb {
 
 typedef int (*hashmap_foreach_func)(hashmap_cb *cb, var_p_t k, var_p_t v);
 
-void hashmap_create(var_p_t map);
+void hashmap_create(var_p_t map, int size);
 int  hashmap_destroy(var_p_t map);
 var_p_t hashmap_put(var_p_t map, const char *key, int length);
 var_p_t hashmap_putv(var_p_t map, const var_p_t key);

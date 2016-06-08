@@ -37,7 +37,7 @@ int map_read_next_token(var_p_t dest, JsonTokens *json, int index);
  * initialise the variable as a map
  */
 void map_init(var_p_t map) {
-  hashmap_create(map);
+  hashmap_create(map, 0);
 }
 
 /**
@@ -183,7 +183,7 @@ var_p_t map_resolve_fields(const var_p_t base) {
         err_typemismatch();
         return NULL;
       } else {
-        hashmap_create(base);
+        hashmap_create(base, 0);
       }
     }
 
@@ -222,7 +222,7 @@ void map_get_value(var_p_t base, var_p_t var_key, var_p_t *result) {
     int i;
     var_t *clone = v_clone(base);
 
-    hashmap_create(base);
+    hashmap_create(base, 0);
     for (i = 0; i < clone->v.a.size; i++) {
       const var_t *element = (var_t *)(clone->v.a.ptr + (sizeof(var_t) * i));
       var_p_t key = v_new();
@@ -239,7 +239,7 @@ void map_get_value(var_p_t base, var_p_t var_key, var_p_t *result) {
       err_typemismatch();
       return;
     } else {
-      hashmap_create(base);
+      hashmap_create(base, 0);
     }
   }
 
@@ -268,10 +268,9 @@ void map_set(var_p_t dest, const var_p_t src) {
   if (dest != src && src->type == V_MAP) {
     hashmap_cb cb;
     cb.var = dest;
-    hashmap_create(dest);
+    hashmap_create(dest, src->v.m.count);
     hashmap_foreach(src, map_set_cb, &cb);
     dest->v.m.count = src->v.m.count;
-    dest->v.m.size = src->v.m.size;
   }
 }
 
@@ -452,7 +451,7 @@ void map_set_primative(var_p_t dest, const char *s, int len) {
  * Creates a map variable
  */
 int map_create(var_p_t dest, JsonTokens *json, int end_position, int index) {
-  hashmap_create(dest);
+  hashmap_create(dest, 0);
   int i = index;
   while (i < json->num_tokens) {
     jsmntok_t token = json->tokens[i];
