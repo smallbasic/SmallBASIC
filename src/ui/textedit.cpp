@@ -705,6 +705,16 @@ bool TextEditInput::find(const char *word, bool next) {
   return result;
 }
 
+char *TextEditInput::getTextSelection() {
+  char *result;
+  if (_state.select_start != _state.select_end) {
+    result = _buf.textRange(_state.select_start,  _state.select_end);
+  } else {
+    result = _buf.textRange(0, _buf._len);
+  }
+  return result;
+}
+
 int *TextEditInput::getMarkers() {
   return g_lineMarker;
 }

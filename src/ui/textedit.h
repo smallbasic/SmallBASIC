@@ -83,6 +83,7 @@ struct TextEditInput : public FormEditInput {
   bool find(const char *word, bool next);
   int  getCursorPos() const { return _state.cursor; }
   const char *getText() const { return _buf._buffer; }
+  char *getTextSelection();
   int  getTextLength() const { return _buf._len; }
   int *getMarkers();
   void gotoLine(const char *buffer);

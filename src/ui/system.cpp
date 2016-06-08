@@ -493,18 +493,23 @@ bool System::loadSource(const char *fileName) {
 
 char *System::readSource(const char *fileName) {
   _activeFile.empty();
-  char *buffer = loadResource(fileName);
-  if (!buffer) {
-    int h = open(fileName, O_BINARY | O_RDONLY, 0644);
-    if (h != -1) {
-      int len = lseek(h, 0, SEEK_END);
-      lseek(h, 0, SEEK_SET);
-      buffer = (char *)malloc(len + 1);
-      len = read(h, buffer, len);
-      buffer[len] = '\0';
-      close(h);
-      _activeFile = fileName;
-      _modifiedTime = getModifiedTime();
+  char *buffer;
+  if (_editor != NULL) {
+    buffer = _editor->getTextSelection();
+  } else {
+    buffer = loadResource(fileName);
+    if (!buffer) {
+      int h = open(fileName, O_BINARY | O_RDONLY, 0644);
+      if (h != -1) {
+        int len = lseek(h, 0, SEEK_END);
+        lseek(h, 0, SEEK_SET);
+        buffer = (char *)malloc(len + 1);
+        len = read(h, buffer, len);
+        buffer[len] = '\0';
+        close(h);
+        _activeFile = fileName;
+        _modifiedTime = getModifiedTime();
+      }
     }
   }
   if (buffer != NULL) {
