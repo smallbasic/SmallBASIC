@@ -1,6 +1,6 @@
 start of test
 a:
-{"xfish":{"small":"small","big":"big"},"xdog":"dog","xcat":"cat"}
+{"xcat":"cat","xdog":"dog","xfish":{"small":"small","big":"big"}}
 In a:
 a.xfish={"small":"small","big":"big"}
 a.xdog=dog
