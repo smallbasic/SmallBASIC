@@ -393,6 +393,7 @@ void System::editSource(String loadPath) {
     // allow the editor to be restored on return
     _output->removeInput(editWidget);
     _editor = editWidget;
+    _editor->setFocus(false);
   } else {
     _editor = NULL;
   }
