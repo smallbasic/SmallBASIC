@@ -1278,7 +1278,7 @@ void comp_expression(char *expr, byte no_parser) {
   if (!comp_error) {
     if (no_parser == 0) {
       // optimization
-      bc_add_code(&bc, kwTYPE_EOC);
+      bc_eoc(&bc);
       // printf("=== before:\n"); hex_dump(bc.ptr, bc.count);
       expr_parser(&bc);
       // printf("=== after:\n"); hex_dump(bc.ptr, bc.count);
@@ -1340,7 +1340,7 @@ void comp_data_seg(char *source) {
     if (*ptr == '\0') {
       break;
     } else if (*ptr == ',') {
-      bc_add_code(&comp_data, kwTYPE_EOC);
+      bc_eoc(&comp_data);
       ptr++;
     } else {
       // find the end of the element
@@ -1404,8 +1404,7 @@ void comp_data_seg(char *source) {
     }
   }
 
-  bc_add_code(&comp_data, kwTYPE_EOC);
-  // no bc_eoc
+  bc_eoc(&comp_data);
 }
 
 /*
@@ -1548,7 +1547,7 @@ int comp_single_line_if(char *text) {
           return 0;
         }
         // store EOC
-        bc_add_code(&comp_prog, kwTYPE_EOC);
+        bc_eoc(&comp_prog);
 
         // auto-goto
         p = pthen + 6;
@@ -2364,7 +2363,7 @@ int comp_text_line_command(long idx, int decl, int sharp, char *last_cmd) {
       comp_push(comp_prog.count);
       bc_add_ctrl(&comp_prog, idx, 0, 0);
       comp_expression(comp_bc_parm, 0);
-      bc_add_code(&comp_prog, kwTYPE_EOC);
+      bc_eoc(&comp_prog);
     }
     break;
 
