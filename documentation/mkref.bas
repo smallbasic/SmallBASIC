@@ -154,6 +154,8 @@ end
 '
 ' make post files for smallbasic.github.io
 '
+' local test: $ bundle exec jekyll serve
+'
 sub mk_jekyll(byref in_map)
   local i, row, group, type, keyword, syntax, brief, comments, buffer, fname
   local in_map_len = len(in_map) - 1
@@ -169,6 +171,7 @@ sub mk_jekyll(byref in_map)
     syntax = get_field(row, "syntax=", false)
     brief = get_field(row, "brief=", false)
     buffer << "---"
+    buffer << "permalink: /" + in_map(i).entity_id
     buffer << "layout: post"
     buffer << "title:  \"" + keyword + "\""
     buffer << "categories: " + lower(group)
@@ -191,7 +194,7 @@ sub mk_jekyll(byref in_map)
       i++
       buffer << fix_comments_jekyll(in_map(i).comment_body_value, keyword)
     wend
-    fname = datefmt("yyyy-mm-dd", date$) + "-" + lower(group) + "-" + lower(keyword) + ".markdown"
+    fname = "2016-06-04-" + lower(group) + "-" + lower(keyword) + ".markdown"
     tsave fname, buffer
   next i
 end
