@@ -539,7 +539,7 @@ void cmd_print(int output) {
         }
       }
     } else {
-      if (kw_check_evexit(code)) {
+      if (kw_check_evexit(code) || code == kwTYPE_LEVEL_END) {
         exitf = 1;
         break;
       }
