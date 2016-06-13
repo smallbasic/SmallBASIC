@@ -102,7 +102,7 @@ void System::editSource(String loadPath) {
   String cleanFile;
   String recentFile;
   enum InputMode {
-    kInit, kExportAddr, kExportToken
+    kInit, kExportAddr, kExportToken, kCommand
   } inputMode = kInit;
 
   setupStatus(dirtyFile, cleanFile, loadPath);
@@ -161,7 +161,6 @@ void System::editSource(String loadPath) {
 
       switch (event.key) {
       case SB_KEY_F(8):
-      case SB_KEY_F(10):
       case SB_KEY_F(11):
       case SB_KEY_F(12):
       case SB_KEY_MENU:
@@ -176,6 +175,13 @@ void System::editSource(String loadPath) {
       case SB_KEY_F(9):
       case SB_KEY_CTRL('r'):
         _state = kRunState;
+        break;
+      case SB_KEY_F(10):
+        _output->setStatus("Enter program command line, Esc=Close");
+        widget = helpWidget;
+        helpWidget->createLineEdit(opt_command);
+        helpWidget->show();
+        inputMode = kCommand;
         break;
       case SB_KEY_CTRL('s'):
         saveFile(editWidget, loadPath);
@@ -346,6 +352,12 @@ void System::editSource(String loadPath) {
             exportBuffer(_output, editWidget->getText(), g_exportAddr, g_exportToken);
             helpWidget->hide();
             break;
+          case kCommand:
+            strcpy(opt_command, helpWidget->getText());
+            inputMode = kInit;
+            widget = editWidget;
+            helpWidget->hide();
+            break;
           default:
             break;
           }
@@ -379,9 +391,7 @@ void System::editSource(String loadPath) {
                             "Would you like to save it now?";
       int choice = ask("Save changes?", message, isBack());
       if (choice == 0) {
-        if (!editWidget->save(loadPath)) {
-          alert("", "Failed to save file");
-        }
+        saveFile(editWidget, loadPath);
       } else if (choice == 2) {
         // cancel
         _state = kEditState;

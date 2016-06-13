@@ -194,14 +194,6 @@ protected:
   String _link;
 };
 
-struct FormTab : public FormLink {
-  FormTab(const char *link, int x, int y, int w, int h);
-  virtual ~FormTab() {}
-
-  void draw(int x, int y, int w, int h, int chw);
-  int padding(bool vert) const;
-};
-
 struct FormEditInput : public FormInput {
   FormEditInput(int x, int y, int w, int h);
   virtual ~FormEditInput();

@@ -423,26 +423,6 @@ void FormLink::draw(int x, int y, int w, int h, int chw) {
 }
 
 //
-// FormTab
-//
-FormTab::FormTab(const char *link, int x, int y, int w, int h) :
-  FormLink(link, x, y, w, h) {
-  _noFocus = true;
-}
-
-void FormTab::draw(int x, int y, int w, int h, int chw) {
-  int x_begin = chw;
-  int x_end = x + MIN(w, _width);
-
-  drawLink(_link.c_str(), x + x_begin, y, w, chw);
-  maLine(x_end, y + 4, x_end, y + _height - 4);
-}
-
-int FormTab::padding(bool vert) const {
-  return vert ? 0 : g_system->getOutput()->getCharWidth() * 2;
-}
-
-//
 // FormEditInput
 //
 FormEditInput::FormEditInput(int x, int y, int w, int h) :

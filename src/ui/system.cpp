@@ -11,6 +11,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <stdio.h>
+#include <errno.h>
 
 #include "common/sbapp.h"
 #include "common/osd.h"
@@ -130,7 +131,9 @@ bool System::execute(const char *bas) {
     _state = kActiveState;
   }
 
-  opt_command[0] = '\0';
+  if (_editor == NULL) {
+    opt_command[0] = '\0';
+  }
   opt_file_permitted = 1;
   _output->selectScreen(USER_SCREEN1);
   _output->resetFont();
@@ -541,6 +544,7 @@ void System::runEdit(const char *startupBas) {
 
   while (true) {
     if (loadSource(startupBas)) {
+      setupPath(loadPath);
       editSource(loadPath);
       if (isBack() || isClosing()) {
         break;
@@ -585,7 +589,7 @@ void System::runMain(const char *mainBasPath) {
       if (fileExists(_loadPath)) {
         _mainBas = false;
         activePath = _loadPath;
-        setupPath();
+        setupPath(_loadPath);
       } else {
         _mainBas = true;
         _loadPath = mainBasPath;
@@ -651,7 +655,8 @@ void System::runOnce(const char *startupBas) {
 
 void System::saveFile(TextEditInput *edit, strlib::String &path) {
   if (!edit->save(path)) {
-    alert("", "Failed to save file");
+    systemPrint("\nfailed to save: %s. error: %s\n", path.c_str(), strerror(errno));
+    alert(strerror(errno), "Failed to save file");
   } else {
     _modifiedTime = getModifiedTime();
   }
@@ -717,8 +722,8 @@ bool System::setParentPath() {
   return result;
 }
 
-void System::setupPath() {
-  const char *filename = _loadPath;
+void System::setupPath(String &loadPath) {
+  const char *filename = loadPath;
   if (strstr(filename, "://") == NULL) {
     const char *slash = strrchr(filename, '/');
     if (!slash) {
@@ -733,11 +738,11 @@ void System::setupPath() {
         path[len] = 0;
         chdir(path);
         struct stat st_file;
-        if (stat(_loadPath.c_str(), &st_file) < 0) {
+        if (stat(loadPath.c_str(), &st_file) < 0) {
           // reset relative path back to full path
           getcwd(path, FILENAME_MAX);
           strcat(path, filename + len);
-          _loadPath = path;
+          loadPath = path;
         }
       }
     }

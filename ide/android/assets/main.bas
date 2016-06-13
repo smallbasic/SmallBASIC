@@ -35,25 +35,25 @@ end
 func mk_menu(value, lab, x)
   local bn
   bn.x = x
-  bn.y = 0
+  bn.y = ypos * char_h
   bn.value = value
-  bn.label = lab
-  bn.color = 7
-  bn.backgroundColor = 1
-  bn.type = "tab"
+  bn.label = "[ " + lab + " ]"
+  bn.color = 3
+  bn.backgroundColor = 0
+  bn.type = "link"
   mk_menu = bn
 end
 
-sub intro(byref frm)
-  local i, bn
-  for i = 1 to 4
-    bn = mk_bn(0, "Welcome to SmallBASIC", i)
-    bn.type = "label"
-    frm.inputs << bn
-  next i
-  bn = mk_bn(0, spaced("Welcome to SmallBASIC"), 7)
-  bn.type = "label"
-  frm.inputs << bn
+sub intro()
+  color 7,0
+  print boldOn + spaced("Welcome to SmallBASIC") + boldOff
+  color 6,0
+  print
+  print "Pop up menus are accessed by either a Right mouse ";
+  print "click or 3 vertical dots tap (Android). ";
+  print "From popup menus, you can do things like toggle the ";
+  print "Editor, Run, Adjust Font size..."
+  print
 end
 
 sub do_okay_button()
@@ -61,8 +61,8 @@ sub do_okay_button()
   button.x = xmax / 2
   button.y = -1
   button.label = "Close"
-  button.backgroundColor = 8
-  button.color = 10
+  button.backgroundColor = 1
+  button.color = 3
   frm.inputs << button
   frm = form(frm)
   print
@@ -211,26 +211,13 @@ end
 sub manageFiles()
   local f, wnd, bn_edit, bn_files, selectedFile
 
-  sub mk_item(x, lab, value)
-    local bn
-    bn.x = x
-    bn.y = 0
-    bn.label = lab
-    bn.value = value
-    bn.backgroundColor = 1
-    bn.color = 7
-    bn.type = "tab"
-    f.inputs << bn
-  end
-
   sub createUI()
     cls
-    rect 0, 0, xmax, lineSpacing COLOR 1 filled
-    mk_item( 0, "<<", closeId)
-    mk_item(-1, "View", viewId)
-    mk_item(-1, "Rename", renameId)
-    mk_item(-1, "New", newId)
-    mk_item(-1, "Delete", deleteId)
+    f.inputs << mk_menu(closeId, "<<", 0)
+    f.inputs << mk_menu(viewId, "View",  -1)
+    f.inputs << mk_menu(renameId,"Rename", -1)
+    f.inputs << mk_menu(newId, "New", -1)
+    f.inputs << mk_menu(deleteId, "Delete", -1)
     bn_edit.x = 0
     bn_edit.y = char_h + 4
     bn_edit.width = xmax
@@ -384,38 +371,33 @@ sub manageFiles()
 end
 
 sub main
-  local basList, dirList, path
-  local frm, bn_about, bn_online, bn_new
-  local do_intro
+  local path, frm
 
-  dim basList
-  dim dirList
+  if (command == "welcome") then
+    intro()
+  fi
 
-  bn_files = mk_menu("_files", "File", 0)
-  bn_online = mk_menu(onlineUrl, "Online", -1)
-  bn_setup = mk_menu("_setup", "Setup", -1)
-  bn_about = mk_menu("_about", "About", -1)
-  bn_online.isExit = true
+  func makeUI(path)
+    local frm, bn_files, bn_online, bn_setup, bn_about, bn_new
+    local basList, dirList
+    dim basList
+    dim dirList
 
-  func makeUI(path, welcome)
-    local frm
+    bn_files = mk_menu("_files", "File", 0)
+    bn_online = mk_menu(onlineUrl, "Online", -1)
+    bn_setup = mk_menu("_setup", "Setup", -1)
+    bn_about = mk_menu("_about", "About", -1)
+    bn_online.isExit = true
+
     frm.inputs << bn_files
     frm.inputs << bn_online
     if (instr(sbver, "SDL") == 0) then
       frm.inputs << bn_setup
     endif
     frm.inputs << bn_about
-
-    if (welcome) then
-      intro(frm)
-    fi
-
     listFiles frm, path, basList, dirList
     frm.color = 10
-    rect 0, 0, xmax, lineSpacing COLOR 1 filled
-    at 0, 0
-    frm = form(frm)
-    makeUI = frm
+    makeUI = form(frm)
   end
 
   sub go_back
@@ -436,37 +418,30 @@ sub main
     path = backPath
   end
 
-  do_intro = false
-  if (command == "welcome") then
-    do_intro = true
-  fi
   path = cwd
-  frm = makeUI(path, do_intro)
+  frm = makeUI(path)
 
   while 1
     frm.doEvents()
 
     if (isdir(frm.value)) then
-      frm.close()
+      cls
       path = frm.value
       chdir path
-      frm = makeUI(path, false)
+      frm = makeUI(path)
     elif frm.value == "_about" then
-      frm.close()
       do_about()
-      frm = makeUI(path, false)
+      frm = makeUI(path)
     elif frm.value == "_setup" then
-      frm.close()
       do_setup()
-      frm = makeUI(path, false)
+      frm = makeUI(path)
     elif frm.value == "_files" then
-      frm.close()
       managefiles()
-      frm = makeUI(path, false)
+      frm = makeUI(path)
     elif frm.value == "_back" then
-      frm.close()
+      cls
       go_back()
-      frm = makeUI(path, false)
+      frm = makeUI(path)
     fi
   wend
 end

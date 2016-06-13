@@ -198,7 +198,7 @@ struct TextEditHelpWidget : public TextEditInput {
   void createOutline();
   void createSearch(bool replace);
   bool edit(int key, int screenWidth, int charWidth);
-  void paste(const char *text) {}
+  void paste(const char *text);
   bool isDrawTop() { return true; }
   void layout(int w, int h) { _x = w - _width; _height = h; }
   void reset(HelpMode mode);

@@ -111,7 +111,8 @@ const char *helpText =
   "F2 online help\n"
   "F3,F4 export\n"
   "F5 debug\n"
-  "F9, C-r run\n";
+  "F9, C-r run\n"
+  "F10, set command$\n";
 
 inline bool match(const char *str, const char *pattern , int len) {
   int i, j;
@@ -1851,6 +1852,19 @@ void TextEditHelpWidget::createSearch(bool replace) {
     _editor->find(_buf._buffer, true);
   } else {
     reset(replace ? kSearchReplace : kSearch);
+  }
+}
+
+void TextEditHelpWidget::paste(const char *text) {
+  switch (_mode) {
+  case kSearch:
+  case kSearchReplace:
+  case kReplace:
+  case kLineEdit:
+    TextEditInput::paste(text);
+    break;
+  default:
+    break;
   }
 }
 

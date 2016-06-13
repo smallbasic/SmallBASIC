@@ -198,8 +198,6 @@ FormInput *create_input(var_p_t v_field) {
       widget = new FormLabel(label, x, y, w, h);
     } else if (strcasecmp("link", type) == 0) {
       widget = new FormLink(label, x, y, w, h);
-    } else if (strcasecmp("tab", type) == 0) {
-      widget = new FormTab(label, x, y, w, h);
     } else if (strcasecmp("listbox", type) == 0 ||
                strcasecmp("list", type) == 0) {
       ListModel *model = new ListModel(get_selected_index(v_field), value);

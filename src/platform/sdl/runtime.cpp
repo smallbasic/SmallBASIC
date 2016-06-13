@@ -498,7 +498,6 @@ void Runtime::pollEvents(bool blocking) {
         maEvent = getMotionEvent(EVENT_TYPE_POINTER_DRAGGED, &ev);
         break;
       case SDL_MOUSEBUTTONUP:
-        SDL_SetCursor(_cursorArrow);
         maEvent = getMotionEvent(EVENT_TYPE_POINTER_RELEASED, &ev);
         break;
       case SDL_WINDOWEVENT:

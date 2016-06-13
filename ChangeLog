@@ -1,4 +1,10 @@
 2016-06-12 (0.12.7)
+	Updated welcome screen
+	Added editor F10 option to set the command$ variable
+	Fixed editor cursor flicker issue
+	Fixed editor find dialog paste support
+
+2016-06-12 (0.12.7)
 	Fix infinite loop when printing FUNC with extra args
 
 2016-06-07 (0.12.7)
