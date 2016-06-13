@@ -60,9 +60,10 @@ sub do_okay_button()
   local frm, button
   button.x = xmax / 2
   button.y = -1
-  button.label = "Close"
-  button.backgroundColor = 1
+  button.label = "[ Close ]"
+  button.backgroundColor = 0
   button.color = 3
+  button.type = "link"
   frm.inputs << button
   frm = form(frm)
   print
