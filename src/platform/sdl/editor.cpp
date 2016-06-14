@@ -94,8 +94,14 @@ void System::editSource(String loadPath) {
   int charWidth = _output->getCharWidth();
   int charHeight = _output->getCharHeight();
   int prevScreenId = _output->selectScreen(SOURCE_SCREEN);
-  TextEditInput *editWidget = _editor != NULL ? _editor :
-                              new TextEditInput(_programSrc, charWidth, charHeight, 0, 0, w, h);
+  TextEditInput *editWidget;
+  if (_editor != NULL) {
+    editWidget = _editor;
+    editWidget->_width = w;
+    editWidget->_height = h;
+  } else {
+    editWidget = new TextEditInput(_programSrc, charWidth, charHeight, 0, 0, w, h);
+  }
   TextEditHelpWidget *helpWidget = new TextEditHelpWidget(editWidget, charWidth, charHeight);
   TextEditInput *widget = editWidget;
   String dirtyFile;

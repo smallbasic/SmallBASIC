@@ -210,7 +210,10 @@ void EditBuffer::clear() {
 }
 
 int EditBuffer::deleteChars(int pos, int num) {
-  memmove(&_buffer[pos], &_buffer[pos+num], _len - (pos + num));
+  if (_len - (pos + num) > 0) {
+    memmove(&_buffer[pos], &_buffer[pos + num], _len - (pos + num));
+  }
+  // otherwise no more characters to pull back over the hole
   _len -= num;
   _buffer[_len] = '\0';
   _in->setDirty(true);
