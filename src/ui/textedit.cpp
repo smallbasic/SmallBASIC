@@ -15,9 +15,16 @@
 #include "ui/strlib.h"
 #include "ui/kwp.h"
 
+void safe_memmove(void *dest, const void *src, size_t n) {
+  if (n > 0 && dest != NULL && src != NULL) {
+    memmove(dest, src, n);
+  }
+}
+
 #define STB_TEXTEDIT_IS_SPACE(ch) IS_WHITE(ch)
 #define STB_TEXTEDIT_IS_PUNCT(ch) (ch != '_' && ch != '$' && ispunct(ch))
 #define IS_VAR_CHAR(ch) (ch == '_' || ch == '$' || isalpha(ch) || isdigit(ch))
+#define STB_TEXTEDIT_memmove safe_memmove
 #define STB_TEXTEDIT_IMPLEMENTATION
 #include "lib/stb_textedit.h"
 
@@ -215,6 +222,9 @@ int EditBuffer::deleteChars(int pos, int num) {
   }
   // otherwise no more characters to pull back over the hole
   _len -= num;
+  if (_len < 0) {
+    _len = 0;
+  }
   _buffer[_len] = '\0';
   _in->setDirty(true);
   return 1;
@@ -226,7 +236,9 @@ int EditBuffer::insertChars(int pos, const char *text, int num) {
     _size += (required + GROW_SIZE);
     _buffer = (char *)realloc(_buffer, _size);
   }
-  memmove(&_buffer[pos + num], &_buffer[pos], _len - pos);
+  if (_len - pos > 0) {
+    memmove(&_buffer[pos + num], &_buffer[pos], _len - pos);
+  }
   memcpy(&_buffer[pos], text, num);
   _len += num;
   _buffer[_len] = '\0';

@@ -3,7 +3,7 @@
 	Added editor F10 option to set the command$ variable
 	Fixed editor cursor flicker issue
 	Fixed editor find dialog paste support
-	Fixed potential editor crash
+	Fixed editor stability issues with undo/redo
 
 2016-06-12 (0.12.7)
 	Fix infinite loop when printing FUNC with extra args
