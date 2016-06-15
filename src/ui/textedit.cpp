@@ -879,6 +879,8 @@ char *TextEditInput::copy(bool cut) {
 void TextEditInput::paste(const char *text) {
   if (text != NULL) {
     stb_textedit_paste(&_buf, &_state, text, strlen(text));
+    _cursorRow = getCursorRow();
+    updateScroll();
   }
 }
 

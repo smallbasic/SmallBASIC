@@ -1,10 +1,13 @@
+2016-06-15 (0.12.7)
+	Added editor double click to select word
+	Fixed editor stability issues with undo/redo
+	Fixed editor scrolling after paste
+
 2016-06-12 (0.12.7)
 	Updated welcome screen
 	Added editor F10 option to set the command$ variable
 	Fixed editor cursor flicker issue
 	Fixed editor find dialog paste support
-	Fixed editor stability issues with undo/redo
-	Added editor double click to select word
 
 2016-06-12 (0.12.7)
 	Fix infinite loop when printing FUNC with extra args
