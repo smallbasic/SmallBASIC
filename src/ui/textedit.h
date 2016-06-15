@@ -152,6 +152,7 @@ protected:
   void setColor(SyntaxState &state);
   void toggleMarker();
   void updateScroll();
+  int wordEnd();
   int wordStart();
 
   EditBuffer _buf;
@@ -166,6 +167,7 @@ protected:
   int _indentLevel;
   int _matchingBrace;
   int _ptY;
+  int _pressTick;
   bool _dirty;
 };
 

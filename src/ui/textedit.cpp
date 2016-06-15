@@ -41,11 +41,14 @@ void safe_memmove(void *dest, const void *src, size_t n) {
 #define TWISTY2_LEN 4
 #define HELP_BG 0x73c990
 #define HELP_FG 0x20242a
+#define DOUBLE_CLICK_MS 200
 
 #if defined(_Win32)
 #include <shlwapi.h>
 #define strcasestr StrStrI
 #endif
+
+extern "C" dword dev_get_millisecond_count();
 
 unsigned g_themeId = 0;
 int g_lineMarker[MAX_MARKERS] = {
@@ -311,6 +314,7 @@ TextEditInput::TextEditInput(const char *text, int chW, int chH,
   _indentLevel(INDENT_LEVEL),
   _matchingBrace(-1),
   _ptY(-1),
+  _pressTick(0),
   _dirty(false) {
   stb_textedit_initialize_state(&_state, false);
 }
@@ -802,7 +806,14 @@ void TextEditInput::clicked(int x, int y, bool pressed) {
   if (x < _marginWidth) {
     _ptY = -1;
   } else if (pressed) {
-    stb_textedit_click(&_buf, &_state, x - _marginWidth, y + (_scroll * _charHeight));
+    int tick = dev_get_millisecond_count();
+    if (_pressTick && tick - _pressTick < DOUBLE_CLICK_MS) {
+      _state.select_start = wordStart();
+      _state.select_end = wordEnd();
+    } else  {
+      stb_textedit_click(&_buf, &_state, x - _marginWidth, y + (_scroll * _charHeight));
+    }
+    _pressTick = tick;
   }
 }
 
@@ -1290,11 +1301,7 @@ char *TextEditInput::getSelection(int *start, int *end) {
     *end = _state.select_end;
   } else {
     *start = wordStart();
-    int i = _state.cursor;
-    while (IS_VAR_CHAR(_buf._buffer[i]) && i < _buf._len) {
-      i++;
-    }
-    *end = i;
+    *end = wordEnd();
     result = _buf.textRange(*start, *end);
   }
   return result;
@@ -1546,6 +1553,14 @@ void TextEditInput::updateScroll() {
     // cursor outside current view
     _scroll = _cursorRow - (pageRows / 2);
   }
+}
+
+int TextEditInput::wordEnd() {
+  int i = _state.cursor;
+  while (IS_VAR_CHAR(_buf._buffer[i]) && i < _buf._len) {
+    i++;
+  }
+  return i;
 }
 
 int TextEditInput::wordStart() {
