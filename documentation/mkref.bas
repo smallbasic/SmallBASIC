@@ -61,8 +61,10 @@ func fix_comments(comments, keyword)
 end
 
 func fix_comments_jekyll(comments, keyword)
-  comments = translate(comments, "<code>", "```" + chr(10))
-  comments = translate(comments, "</code>", chr(10) + "```" + chr(10))
+  comments = translate(comments, "<code>", "<pre>" + chr(10))
+  comments = translate(comments, "</code>", chr(10) + "</pre>" + chr(10))
+  comments = translate(comments, "p. ", "<p>")
+  comments = translate(comments, "bc. ", "<pre>")
   comments = fix_comments(comments, keyword)
   fix_comments_jekyll = comments
 end
