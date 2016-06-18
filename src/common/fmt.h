@@ -67,7 +67,7 @@ void expfta(var_num_t x, char *dest);
  * @param fmt_cnst is the format string
  * @param x is the number
  */
-void format_num(char *dest, const char *fmt_cnst, var_num_t x);
+char *format_num(const char *fmt_cnst, var_num_t x);
 
 /**
  * @ingroup str
@@ -85,7 +85,7 @@ void format_num(char *dest, const char *fmt_cnst, var_num_t x);
  * @param fmt_cnst is the format string
  * @param str is the source string
  */
-void format_str(char *dest, const char *fmt_cnst, const char *str);
+char *format_str(const char *fmt_cnst, const char *str);
 
 /**
  * @ingroup str

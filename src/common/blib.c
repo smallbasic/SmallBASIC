@@ -446,10 +446,11 @@ void cmd_erase() {
  * PRINT ...
  */
 void cmd_print(int output) {
-  byte code, last_op = 0;
-  byte exitf = 0, use_format = 0;
-  var_t var, *vuser_p;
+  byte last_op = 0;
+  byte exitf = 0;
+  byte use_format = 0;
   int handle = 0;
+  var_t var;
 
   // prefix - # (file)
   if (output == PV_FILE) {
@@ -488,24 +489,24 @@ void cmd_print(int output) {
       return;
     }
 
-    vuser_p = code_getvarptr();
+    var_t *vuser_p = code_getvarptr();
     par_getsemicolon();
     if (prog_error) {
       return;
     }
     v_free(vuser_p);
     vuser_p->type = V_STR;
-    vuser_p->v.p.ptr = malloc(STR_INIT_SIZE);
-    vuser_p->v.p.ptr[0] = '\0';
+    vuser_p->v.p.ptr = NULL;
     vuser_p->v.p.size = 0;
     handle = (mem_t)vuser_p;
   }
 
   // prefix - USING
-  code = code_peek();
+  byte code = code_peek();
   if (code == kwUSING) {
     code_skipnext();
     if (code_peek() != kwTYPE_SEP) {
+      v_init(&var);
       eval(&var);
       if (prog_error) {
         return;
@@ -553,7 +554,7 @@ void cmd_print(int output) {
         if (use_format) {
           switch (var.type) {
           case V_STR:
-            fmt_printS((char *) var.v.p.ptr, output, handle);
+            fmt_printS((char *)var.v.p.ptr, output, handle);
             break;
           case V_INT:
             fmt_printN(var.v.i, output, handle);
@@ -2247,11 +2248,11 @@ void cmd_wjoin() {
     }
 
     len += el_len;
-    strcat((char *) str->v.p.ptr, (char *) e_str.v.p.ptr);
+    strcat((char *)str->v.p.ptr, (char *)e_str.v.p.ptr);
     v_free(&e_str);
 
     if (i != var_p->v.p.size - 1) {
-      strcat((char *) str->v.p.ptr, (char *) del.v.p.ptr);
+      strcat((char *)str->v.p.ptr, (char *)del.v.p.ptr);
       len += del_len;
     }
   }

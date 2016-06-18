@@ -1,5 +1,6 @@
 2016-06-18 (0.12.7)
-	Fixed memory leak issue with JOIN
+	Fixed memory access issue with JOIN
+	Fixed memory access issue with SPRINT
 
 2016-06-15 (0.12.7)
 	Added editor double click to select word

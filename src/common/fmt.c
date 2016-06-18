@@ -44,35 +44,36 @@ void fmt_addfmt(const char *fmt, int type);
 void fmt_printL(int output, int handle);
 
 typedef struct {
-  char *fmt;                    // the format or a string
-  int type;                     // 0 = string, 1 = numeric format, 2 = string
-// format
+  char *fmt;    // the format or a string
+  int type;     // 0 = string, 1 = numeric format, 2 = string format
 } fmt_node_t;
 
 static fmt_node_t fmt_stack[MAX_FMT_N]; // the list
-static int fmt_count;           // number of elements in the list
-static int fmt_cur;             // next format element to be used
+static int fmt_count;   // number of elements in the list
+static int fmt_cur;     // next format element to be used
 
 /*
  * tables of powers :)
  */
-static double nfta_eplus[] = { 1e+8, 1e+16, 1e+24, 1e+32, 1e+40, 1e+48, 1e+56, 1e+64,  // 8
-    1e+72, 1e+80, 1e+88, 1e+96, 1e+104, 1e+112, 1e+120, 1e+128, // 16
-    1e+136, 1e+144, 1e+152, 1e+160, 1e+168, 1e+176, 1e+184, 1e+192, // 24
-    1e+200, 1e+208, 1e+216, 1e+224, 1e+232, 1e+240, 1e+248, 1e+256, // 32
-    1e+264, 1e+272, 1e+280, 1e+288, 1e+296, 1e+304  // 38
-    };
+static double nfta_eplus[] = {
+  1e+8, 1e+16, 1e+24, 1e+32, 1e+40, 1e+48, 1e+56, 1e+64,  // 8
+  1e+72, 1e+80, 1e+88, 1e+96, 1e+104, 1e+112, 1e+120, 1e+128, // 16
+  1e+136, 1e+144, 1e+152, 1e+160, 1e+168, 1e+176, 1e+184, 1e+192, // 24
+  1e+200, 1e+208, 1e+216, 1e+224, 1e+232, 1e+240, 1e+248, 1e+256, // 32
+  1e+264, 1e+272, 1e+280, 1e+288, 1e+296, 1e+304  // 38
+};
 
-static double nfta_eminus[] = { 1e-8, 1e-16, 1e-24, 1e-32, 1e-40, 1e-48, 1e-56, 1e-64,  // 8
-    1e-72, 1e-80, 1e-88, 1e-96, 1e-104, 1e-112, 1e-120, 1e-128, // 16
-    1e-136, 1e-144, 1e-152, 1e-160, 1e-168, 1e-176, 1e-184, 1e-192, // 24
-    1e-200, 1e-208, 1e-216, 1e-224, 1e-232, 1e-240, 1e-248, 1e-256, // 32
-    1e-264, 1e-272, 1e-280, 1e-288, 1e-296, 1e-304  // 38
-    };
+static double nfta_eminus[] = {
+  1e-8, 1e-16, 1e-24, 1e-32, 1e-40, 1e-48, 1e-56, 1e-64,  // 8
+  1e-72, 1e-80, 1e-88, 1e-96, 1e-104, 1e-112, 1e-120, 1e-128, // 16
+  1e-136, 1e-144, 1e-152, 1e-160, 1e-168, 1e-176, 1e-184, 1e-192, // 24
+  1e-200, 1e-208, 1e-216, 1e-224, 1e-232, 1e-240, 1e-248, 1e-256, // 32
+  1e-264, 1e-272, 1e-280, 1e-288, 1e-296, 1e-304  // 38
+};
 
 /*
  * Part of floating point to string (by using integers) algorithm
- * where x any number 2^31 > x >= 0 
+ * where x any number 2^31 > x >= 0
  */
 void fptoa(var_num_t x, char *dest) {
   dest[0] = '\0';
@@ -239,9 +240,9 @@ void fmt_nmap(int dir, char *dest, char *fmt, char *src) {
 
   *dest = '\0';
   if (dir > 0) {
-    // 
+    //
     // left to right
-    // 
+    //
     p = fmt;
     d = dest;
     s = src;
@@ -263,15 +264,13 @@ void fmt_nmap(int dir, char *dest, char *fmt, char *src) {
       default:
         *d++ = *p;
       }
-
       p++;
     }
-
     *d = '\0';
   } else {
-    // 
+    //
     // right to left
-    // 
+    //
     p = fmt + (strlen(fmt) - 1);
     d = dest + (strlen(fmt) - 1);
     *(d + 1) = '\0';
@@ -308,7 +307,6 @@ void fmt_nmap(int dir, char *dest, char *fmt, char *src) {
           *d-- = *p;
         }
       }
-
       p--;
     }
   }
@@ -352,7 +350,6 @@ int fmt_cdig(char *fmt) {
       count++;
       break;
     }
-
     p++;
   }
 
@@ -371,12 +368,14 @@ int fmt_cdig(char *fmt) {
  *   - = minus for negative
  *   + = sign of number
  */
-void format_num(char *dest, const char *fmt_cnst, var_num_t x) {
+char *format_num(const char *fmt_cnst, var_num_t x) {
   char *p, *fmt;
   char left[64], right[64];
   char lbuf[64], rbuf[64];
   int dp = 0, lc = 0, sign = 0;
   int rsz, lsz;
+
+  char *dest = malloc(128);
 
   // backup of format
   fmt = malloc(strlen(fmt_cnst) + 1);
@@ -392,15 +391,14 @@ void format_num(char *dest, const char *fmt_cnst, var_num_t x) {
   }
 
   if (strchr(fmt_cnst, '^')) {
-    // 
+    //
     // E format
-    // 
-
+    //
     lc = fmt_cdig(fmt);
     if (lc < 4) {
       fmt_omap(dest, fmt);
       free(fmt);
-      return;
+      return dest;
     }
 
     // convert
@@ -418,12 +416,12 @@ void format_num(char *dest, const char *fmt_cnst, var_num_t x) {
       if (lc < rsz + 1) {
         fmt_omap(dest, fmt);
         free(fmt);
-        return;
+        return dest;
       }
 
-      if (lc < lsz + rsz + 1)
+      if (lc < lsz + rsz + 1) {
         left[lc - rsz] = '\0';
-
+      }
       strcpy(lbuf, left);
       strcat(lbuf, "E");
       strcat(lbuf, right);
@@ -433,9 +431,9 @@ void format_num(char *dest, const char *fmt_cnst, var_num_t x) {
       fmt_nmap(-1, dest, fmt, left);
     }
   } else {
-    // 
+    //
     // normal format
-    // 
+    //
 
     // rounding
     p = strchr(fmt, '.');
@@ -450,7 +448,7 @@ void format_num(char *dest, const char *fmt_cnst, var_num_t x) {
     if (strchr(dest, 'E')) {
       fmt_omap(dest, fmt);
       free(fmt);
-      return;
+      return dest;
     }
 
     // left & right parts
@@ -475,7 +473,7 @@ void format_num(char *dest, const char *fmt_cnst, var_num_t x) {
     if (lc < strlen(left)) {
       fmt_omap(dest, fmt_cnst);
       free(fmt);
-      return;
+      return dest;
     }
     fmt_nmap(-1, lbuf, fmt, left);
 
@@ -491,16 +489,16 @@ void format_num(char *dest, const char *fmt_cnst, var_num_t x) {
     char *e;
 
     e = strchr(dest, 'E');
-    if (e) {                    // special treatment for E format 
+    if (e) {                    // special treatment for E format
       p = strchr(dest, '+');
-      if (p && p < e) {          // the sign bust be before the E 
+      if (p && p < e) {          // the sign bust be before the E
         *p = (sign > 0) ? '+' : '-';
       }
       p = strchr(dest, '-');
       if (p && p < e) {
         *p = (sign > 0) ? ' ' : '-';
       }
-    } else {                      // no E format 
+    } else {                      // no E format
       p = strchr(dest, '+');
       if (p) {
         *p = (sign > 0) ? '+' : '-';
@@ -514,6 +512,7 @@ void format_num(char *dest, const char *fmt_cnst, var_num_t x) {
 
   // cleanup
   free(fmt);
+  return dest;
 }
 
 /*
@@ -522,29 +521,31 @@ void format_num(char *dest, const char *fmt_cnst, var_num_t x) {
  * symbols:
  *   &       the whole string
  *   !       the first char
- *   \\      segment 
+ *   \\      segment
  */
-void format_str(char *dest, const char *fmt_cnst, const char *str) {
-  char *p, *d, *ss = NULL;
-  int ps = 0, pe = 0, l, srclen;
-  int count, lc;
-
+char *format_str(const char *fmt_cnst, const char *str) {
   if (strchr(fmt_cnst, '&')) {
+    int size = strlen(str) + 1;
+    char *dest = malloc(size);
     strcpy(dest, str);
-    return;
+    return dest;
   }
   if (strchr(fmt_cnst, '!')) {
+    char *dest = malloc(2);
     dest[0] = str[0];
     dest[1] = '\0';
-    return;
+    return dest;
   }
 
   // segment
-  l = strlen(fmt_cnst);
-  srclen = strlen(str);
-  p = (char *) fmt_cnst;
-  lc = 0;
-  count = 0;
+  int ps = 0;
+  int pe = 0;
+  int lc = 0;
+  int count = 0;
+  const int fmtlen = strlen(fmt_cnst);
+  const int srclen = strlen(str);
+  char *p = (char *)fmt_cnst;
+  char *ss = NULL;
   while (*p) {
     if (*p == '\\' && lc != '_') {
       if (count == 0) {
@@ -563,20 +564,18 @@ void format_str(char *dest, const char *fmt_cnst, const char *str) {
     p++;
   }
 
-  memset(dest, ' ', l - 1);
-  dest[l] = '\0';
-  d = dest;
+  char *dest = malloc(fmtlen + 1);
+  memset(dest, ' ', fmtlen - 1);
+  dest[fmtlen] = '\0';
+  char *d = dest;
   if (ps) {
     memcpy(d, fmt_cnst, ps);
     d += ps;
   }
 
-  /*
-   *      convert
-   */
+  // convert
   if (ss) {
     int i, j;
-
     for (i = j = 0; i < count; i++) {
       switch (ss[i]) {
       case '\\':
@@ -584,8 +583,9 @@ void format_str(char *dest, const char *fmt_cnst, const char *str) {
         if (j < srclen) {
           d[i] = str[j];
           j++;
-        } else
+        } else {
           d[i] = ' ';
+        }
         break;
       default:
         d[i] = ss[i];
@@ -593,12 +593,12 @@ void format_str(char *dest, const char *fmt_cnst, const char *str) {
     }
   }
 
-  // 
   d += count;
   *d = '\0';
   if (*(fmt_cnst + pe + 1) != '\0') {
     strcat(dest, fmt_cnst + pe + 1);
   }
+  return dest;
 }
 
 /*
@@ -704,7 +704,7 @@ void free_format() {
 }
 
 /*
- * The final format - create the format-list 
+ * The final format - create the format-list
  * (that list it will be used later by fmt_printN and fmt_printS)
  *
  * '_' the next character is not belongs to format (simple string)
@@ -818,8 +818,6 @@ void fmt_printL(int output, int handle) {
  */
 void fmt_printN(var_num_t x, int output, int handle) {
   fmt_node_t *node;
-  char buf[64];
-
   if (fmt_count == 0) {
     rt_raise(ERR_FORMAT_INVALID_FORMAT);
   } else {
@@ -829,8 +827,9 @@ void fmt_printN(var_num_t x, int output, int handle) {
     if (fmt_cur >= fmt_count)
       fmt_cur = 0;
     if (node->type == 1) {
-      format_num(buf, node->fmt, x);
+      char *buf = format_num(node->fmt, x);
       pv_write(buf, output, handle);
+      free(buf);
       if (fmt_cur != 0) {
         fmt_printL(output, handle);
       }
@@ -845,7 +844,6 @@ void fmt_printN(var_num_t x, int output, int handle) {
  */
 void fmt_printS(const char *str, int output, int handle) {
   fmt_node_t *node;
-  char buf[1024];
 
   if (fmt_count == 0) {
     rt_raise(ERR_FORMAT_INVALID_FORMAT);
@@ -857,8 +855,9 @@ void fmt_printS(const char *str, int output, int handle) {
       fmt_cur = 0;
     }
     if (node->type == 2) {
-      format_str(buf, node->fmt, str);
+      char *buf = format_str(node->fmt, str);
       pv_write(buf, output, handle);
+      free(buf);
       if (fmt_cur != 0) {
         fmt_printL(output, handle);
       }

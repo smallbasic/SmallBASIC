@@ -2080,22 +2080,20 @@ void cmd_genfunc(long funcCode, var_t *r) {
         rt_raise(ERR_FORMAT_INVALID_FORMAT);
         v_free(&arg);
       } else {
-        char *buf;
-
-        buf = malloc(1024);
+        char *buf = NULL;
         v_init(&arg2);
         eval(&arg2);
         if (!prog_error) {
           switch (arg2.type) {
           case V_STR:
-            format_str(buf, arg.v.p.ptr, arg2.v.p.ptr);
+            buf = format_str(arg.v.p.ptr, arg2.v.p.ptr);
           case V_INT:
             if (arg2.type == V_INT) {
-              format_num(buf, arg.v.p.ptr, arg2.v.i);
+              buf = format_num(arg.v.p.ptr, arg2.v.i);
             }
           case V_NUM:
             if (arg2.type == V_NUM) {
-              format_num(buf, arg.v.p.ptr, arg2.v.n);
+              buf = format_num(arg.v.p.ptr, arg2.v.n);
             }
             r->type = V_STR;
             r->v.p.size = strlen(buf) + 1;

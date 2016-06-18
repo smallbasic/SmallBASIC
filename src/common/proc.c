@@ -167,7 +167,6 @@ void exec_usefunc2(var_t *var1, var_t *var2, bcip_t ip) {
  */
 void pv_write(char *str, int method, int handle) {
   var_t *vp;
-  int l;
 
   switch (method) {
   case PV_FILE:
@@ -177,13 +176,15 @@ void pv_write(char *str, int method, int handle) {
     lwrite(str);
     break;
   case PV_STRING:
-    vp = (var_t*) (intptr_t) handle;
-    l = strlen(str) + strlen(str) + 1;
-    if (vp->v.p.size <= l) {
-      vp->v.p.size = l + 128;
-      vp->v.p.ptr = realloc(vp->v.p.ptr, vp->v.p.size);
+    vp = (var_t*)(intptr_t)handle;
+    vp->v.p.size += strlen(str);
+    if (vp->v.p.ptr == NULL) {
+      vp->v.p.ptr = malloc(vp->v.p.size + 1);
+      strcpy((char *)vp->v.p.ptr, str);
+    } else {
+      vp->v.p.ptr = realloc(vp->v.p.ptr, vp->v.p.size + 1);
+      strcat((char *)vp->v.p.ptr, str);
     }
-    strcat((char *) vp->v.p.ptr, str);
     break;
   case PV_NET:
     net_print((socket_t) handle, (const char *)str);
