@@ -19,6 +19,8 @@
 #include "common/keymap.h"
 #include "common/messages.h"
 
+#define STR_INIT_SIZE 256
+
 /**
  * LET v[(x)] = any
  * CONST v[(x)] = any
@@ -493,9 +495,9 @@ void cmd_print(int output) {
     }
     v_free(vuser_p);
     vuser_p->type = V_STR;
-    vuser_p->v.p.size = 256;
-    vuser_p->v.p.ptr = malloc(vuser_p->v.p.size);
+    vuser_p->v.p.ptr = malloc(STR_INIT_SIZE);
     vuser_p->v.p.ptr[0] = '\0';
+    vuser_p->v.p.size = 0;
     handle = (mem_t)vuser_p;
   }
 
@@ -710,7 +712,7 @@ void cmd_input(int input) {
         int index, size;
         byte ch, quotes;
 
-        size = 256;
+        size = STR_INIT_SIZE;
         inps = malloc(size);
         index = 0;
         quotes = 0;
@@ -724,7 +726,7 @@ void cmd_input(int input) {
           } else if (ch != '\r') {
             // store char
             if (index == (size - 2)) {
-              size += 256;
+              size += STR_INIT_SIZE;
               inps = realloc(inps, size);
             }
 
@@ -2191,8 +2193,7 @@ void cmd_wsplit() {
  * JOIN array(), delimiter, dest-var
  */
 void cmd_wjoin() {
-  var_t *str, del, *var_p, *elem_p, e_str;
-  int i;
+  var_t del, *var_p;;
 
   v_init(&del);
   var_p = par_getvarray();
@@ -2217,38 +2218,45 @@ void cmd_wjoin() {
     v_free(&del);
     return;
   }
-  str = code_getvarptr();
-  v_free(str);
 
-  //
+  var_t *str = code_getvarptr();
+  int size = STR_INIT_SIZE;
+  int len = 0;
+  int del_len = v_strlen(&del);
+  int i;
+
+  v_free(str);
   str->type = V_STR;
-  str->v.p.ptr = malloc(256);
-  str->v.p.size = 256;
+  str->v.p.ptr = malloc(size);
   str->v.p.ptr[0] = '\0';
 
   for (i = 0; i < var_p->v.a.size; i++) {
-    elem_p = (var_t *) (var_p->v.a.ptr + sizeof(var_t) * i);
+    var_t *elem_p = (var_t *)(var_p->v.a.ptr + sizeof(var_t) * i);
+    var_t e_str;
 
     v_init(&e_str);
     v_set(&e_str, elem_p);
     if (e_str.type != V_STR) {
       v_tostr(&e_str);
     }
-    while ((e_str.v.p.size + del.v.p.size + 1) >= str->v.p.size) {
-      str->v.p.ptr = realloc(str->v.p.ptr, str->v.p.size + 256);
-      str->v.p.size += 256;
+
+    int el_len = v_strlen(&e_str);
+    if (el_len + del_len + 1 >= (size - len)) {
+      size += el_len + del_len + STR_INIT_SIZE;
+      str->v.p.ptr = realloc(str->v.p.ptr, size);
     }
 
+    len += el_len;
     strcat((char *) str->v.p.ptr, (char *) e_str.v.p.ptr);
     v_free(&e_str);
 
     if (i != var_p->v.p.size - 1) {
       strcat((char *) str->v.p.ptr, (char *) del.v.p.ptr);
+      len += del_len;
     }
   }
 
-  // todo: realloc down or not
-  str->v.p.size = strlen((char *) str->v.p.ptr) + 1;
+  str->v.p.size = len;
 
   // cleanup
   v_free(&del);

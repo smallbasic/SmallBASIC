@@ -1,3 +1,6 @@
+2016-06-18 (0.12.7)
+	Fixed memory leak issue with JOIN
+
 2016-06-15 (0.12.7)
 	Added editor double click to select word
 	Fixed editor stability issues with undo/redo
