@@ -4276,7 +4276,7 @@ int comp_pass2() {
 
   if (comp_proc_level) {
     sc_raise(MSG_MISSING_END_3);
-  } else {
+  } else if (comp_prog.size) {
     bc_add_code(&comp_prog, kwSTOP);
     comp_first_data_ip = comp_prog.count;
     comp_pass2_scan();

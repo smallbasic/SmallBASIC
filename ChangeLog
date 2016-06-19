@@ -19,6 +19,7 @@
 2016-06-07 (0.12.7)
 	Fix memory leak with LINPUT command
 	SDL: editor widget now remembers the undo buffer between program runs
+	Editor now allows run by selection
 
 2016-06-04 (0.12.7)
 	Updated MAP handling for performance

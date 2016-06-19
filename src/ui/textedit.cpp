@@ -728,7 +728,15 @@ bool TextEditInput::find(const char *word, bool next) {
 char *TextEditInput::getTextSelection() {
   char *result;
   if (_state.select_start != _state.select_end) {
-    result = _buf.textRange(_state.select_start,  _state.select_end);
+    int start, end;
+    if (_state.select_start > _state.select_end) {
+      end = _state.select_start;
+      start = _state.select_end;
+    } else {
+      start = _state.select_start;
+      end = _state.select_end;
+    }
+    result = _buf.textRange(start, end);
   } else {
     result = _buf.textRange(0, _buf._len);
   }

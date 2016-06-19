@@ -228,8 +228,9 @@ char *bc_store_string(bc_t *bc, char *src) {
  * adds an EOC mark at the current position
  */
 void bc_eoc(bc_t *bc) {
-  if (bc->ptr[bc->count - 1] != kwTYPE_LINE &&
-      bc->ptr[bc->count - 1] != kwTYPE_EOC) {
+  if (bc && bc->count &&
+      (bc->ptr[bc->count - 1] != kwTYPE_LINE &&
+       bc->ptr[bc->count - 1] != kwTYPE_EOC)) {
     bc_add1(bc, kwTYPE_EOC);
   }
 }
