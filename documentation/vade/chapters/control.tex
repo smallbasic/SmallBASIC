@@ -1,0 +1,419 @@
+
+\chapter{Control Flow}
+
+\quick{In this section we'll describe a number of ways to establish
+control flow in a \SB\ program, ie everything which keeps the program
+from simply executing line after line of code. It deals with conditional
+operations loops, and exceptions.}
+
+\section{Conditionals}
+
+\subsection{\Co{if \ldots\ then}}
+
+The most simple case is an \Co{if \ldots\ then} construct, which should be
+familiar from other BASIC dialects.
+
+In its regular form, it looks like this:
+
+\begin{lstlisting}
+if temp>20 then
+	print "It's a warm day."
+endif
+\end{lstlisting}
+
+The expression following \Co{if} need not be in parentheses. The keyword
+\Co{then} is optional. The keyword \Co{endif} may be replaced with
+\Co{fi} (which is \Co{if} reversed \ldots).
+
+For more complex cases, alternative branches can be explored with the
+keywords \Co{elseif} and \Co{else}:
+
+\begin{lstlisting}
+if temp>30 then
+	print "It's really hot."
+elseif temp>20 then
+	print "It's a warm day."
+else
+	print "It's cool."
+endif
+\end{lstlisting}
+
+\Co{Elseif} can be replaced with \Co{elif}. \Co{Else} will catch all
+alternatives, if none of the \Co{if} and \Co{elseif} branches are true.
+
+Note that all the branches can be tested against arbitrary expressions;
+they don't need to refer to the same variable. If you want to test a
+single value against several possible outcomes, \Co{select \ldots\ case}
+is probably a better option, see \Cref{selectCase}.
+
+Several \Co{if} clauses can be nested. It's your resposibility to make
+sure than they are properly closed, especially when you're using many
+\Co{elseif}/\Co{else} branches.
+
+If your >>deserts are small<<,\footnote{\emph{He either fears his fate
+too much\\ Or his deserts are small\\ Who dares not put it to the
+touch\\ To win, or lose, it all} -- Earl of Montrose} and you don't have
+to process much code in your \Co{if} clause, then there is a single-line
+variation as well:
+
+\begin{lstlisting}
+if temp>30 then ? "Hot" else ? "Moderate"
+\end{lstlisting}
+
+Note that in this case, \Co{then} is mandatory, while \Co{endif} must
+not be used. You can put several colon-separated commands between
+\Co{then} and \Co{else} and after \Co{else}, respectively, provided you
+can fit everything into a single line of code.
+
+\subsection{\Co{iff(\ldots)}}
+
+As with the single-line option above, there is also an >>inline<< if
+clause. >>C<< users will be reminded of the \Co{x ? y : z} syntax used
+there. In \SB, it is the keyword \Co{iff}, followed by a list of three
+parameters. The first is the condition, the second the result of the
+clause in the case the condition is true, and the third the result
+otherwise. The following two examples are equivalent:
+
+\begin{lstlisting}
+nuffda= iff(hoogla, boogla, zoogla)
+
+if hoogla
+	nuffda= boogla
+else
+	nuffda= zoogla
+endif
+\end{lstlisting}
+
+\Co{Iff} helps you to make your code more concise, and better readable.
+Since \Co{iff} is simply a function, it can also show up within more
+complex expressions:
+
+\begin{lstlisting}
+honka= "Hello, " + iff(its_a_boy, "dude", "chick") + "!"
+\end{lstlisting}
+
+which may or may not help with the readability of your code.
+
+\subsection{\Co{select \ldots\ case \ldots\ end select\label{selectCase}}}
+
+Finally, many programming languages offer a simplified syntax for
+testing a single variable (or expression) against a number of
+conditions, and \SB\ is no exception.
+
+Here, such a clause is introduced with the two keywords \Co{select
+case}, followed by a variable or expression. Then, a number of
+conditions will be tested with \Co{case} statements, before the whole
+clause is closed with \Co{end select}:
+
+\begin{lstlisting}
+nuffda= 10
+
+select case nuffda
+  case 1
+    ? "1"
+  case 10
+    ? "10"
+end select
+\end{lstlisting}
+
+Each \Co{case} is followed by an expression (variable or function)
+against which the \Co{select case} expression is tested. The \Co{select
+case} expression is evaluated only once, namely when entering the whole
+construct.
+
+Note that, compared to other programming languages, there are several
+limitations to the construct:
+
+\begin{itemize}
+
+\item No \Co{break} required or even allowed. This makes it impossible
+to achieve a >>fallthrough<< of several \Co{case} clauses (intentionally
+or accidentally).
+
+\item There is no way to compare for inequality (like \Co{case > 5} --
+this would be an illegal construct), and 
+
+\item There is no \Co{default} clause which would serve to catch the
+cases not dealt with explicitly (analogous to the \Co{else} clause in
+\Co{if} constructs).
+
+\end{itemize}
+
+\section{Loops}
+
+\subsection{\Co{for \ldots\ next}}
+
+\Co{For} loops come in two flavours with \SB:
+
+The first is the regular loop which you are probably familiar with from
+other programming languages:
+
+\begin{lstlisting}
+for i=start to end [step inc]
+	...
+next
+\end{lstlisting}
+
+The \Co{step} keyword and the subsequent increment \Co{inc} (which can
+be any expression, not necessarily only a variable) are optional; if they're
+missing, the increment is set to $1$. There is no need to add to the
+\Co{next} keyword the name of the loop variable.\footnote{Currently, you
+can write \emph{anything} you want there without causing an error, but I
+guess this is more a bug than a feature, and will be removed over the
+next few versions.}
+
+The index loop variable \Co{i} will be set to the initial value
+\Co{start}, and the code inside the loop executed at least once. Upon
+reaching the corresponding \Co{next} statement, the index is compared to
+the limit \Co{end} given after the \Co{to} keyword. If the index is
+smaller or equal to \Co{end}, the index is incremented by the \Co{inc},
+if this is provided, or by $1$), and the loop is traversed once more.
+(If \Co{inc} is negative, the situation is obviously reversed.)
+
+This means that to traverse through a complete array (assuming it uses
+sequential indices only), you must configure your loop like this:
+
+\begin{lstlisting}
+dim x(423)
+...
+for i=0 to 423
+	...
+next
+\end{lstlisting}
+
+The index is considered a regular variable inside the loop, and open to
+manipulation. This means that you can play tricks like:
+
+\begin{lstlisting}
+for i=0 to 100000
+	...
+	if i=10
+		i= 1000001
+	endif
+next
+\end{lstlisting}
+
+Since the \Co{inc} expression is evaluated after each loop traverse, you can
+mess with that as well.
+
+The second >>flavour<< of \Co{for} is meant to deal with more complex
+arrays and maps. It has a slightly different syntax:
+
+\begin{lstlisting}
+for i in z
+	...
+next
+\end{lstlisting}
+
+where \Co{z} is an array or map. The \Co{for} loop will be traversed
+once for each member of the structure's top dimension (as evaluated by \Co{len}, see
+\Cref{cLen}). The value of \Co{i} is set to:
+
+\begin{itemize}
+
+\item \Co{z(i)}, if \Co{i} is an array, or
+
+\item the >>next<< key of \Co{z}, if it is a map.
+
+\end{itemize}
+
+In the case of a map, the map element can be accessed with
+\Co{z(i)}.\footnote{Yes, that's correct. Read it again.}
+
+\begin{lstlisting}
+dim zoogla(5)
+zoogla(3)= "uffda"
+
+boogla= [[4, 5, 6, 7], 2390023, [3.1415926, "hoogla!"], 99]
+boogla("tchaka")= 500
+boogla.bonka= 999
+
+for x in zoogla
+  ? x
+next
+?
+for x in boogla
+  ? x, boogla(x)
+next 
+
+> 0
+> 0
+> 0
+> uffda
+> 0
+> 0
+>
+> 0	[4,5,6,7]
+> 1	2390023
+> 2	[3.1415926,hoogla!]
+> 3	99
+> BONKA	999
+> tchaka	500
+\end{lstlisting}
+
+Since it's only determined at runtime which keys are used to point to
+map members, this method is necessary to make it possible to traverse
+through all map members in a loop.
+
+For maps, there is no defined order in which the keys will be allotted
+to the index variable.
+
+\subsection{\Co{while \ldots\ wend} and \Co{repeat \ldots\ until}}
+
+When the number of times a loop is supposed to be executed is not known
+beforehand (for example, when reading lines from a file when the file
+length is unknown), \SB\ offers two different loop constructs:
+
+\begin{lstlisting}
+while (expression)
+	...
+wend
+
+repeat
+	...
+until (expression)
+\end{lstlisting}
+
+In both cases the code block between the loop delimiters will be
+repeated until an expression will be fulfilled. Note two important
+differences though:
+
+\begin{itemize}
+
+\item In a \Co{while \ldots\ wend} loop, the loop is executed as long as
+the expression is \emph{true} (ie, unequal to $0$), whereas a \Co{repeat
+\ldots\ until} loop is executed as long as the expression is
+\emph{false}, or $0$.
+
+\item In a \Co{while \ldots\ wend} loop, the test for the expression is
+performed at the \emph{beginning} of the loop, but in a \Co{repeat \ldots\
+until} loop, the expression test takes place at the \emph{end} of the loop.
+This has the consequence that the \Co{repeat \ldots} code block is
+guaranteed to be executed at least once, wheres the \Co{while \ldots}
+code block is not.
+
+\end{itemize}
+
+\Co{(expression)} can be any valid term which will result in a value
+returned, like a variable or a function call. It can even be useful to employ
+a constant here, namely when you want to break from the loop somewhere
+in the middle of the code block. For example --
+
+\begin{lstlisting}
+while 1
+	' read user input
+	...
+	if user_name=correct
+		? "Name ", user_name, " is correct."
+		exit
+	endif
+	? "Illegal input"
+wend
+\end{lstlisting}
+
+In this case your loop should contain an \Co{exit} statement (see below) to
+break out of the loop.
+
+This also serves to emulate a \Co{do \ldots\ loop} \index{do-loop}
+construct that would allow for a loop to be executed >>indefinitely<<
+which \SB\ doesn't feature genuinely.
+
+\subsubsection{Pathological Cases}
+
+It's syntactically legal to omit the expressions for \Co{while} or
+\Co{until} completely. In this case the >>expression<< is always taken
+to evaluate to \Co{$0$}.
+
+With a \Co{while \ldots wend} loop this doesn't really make sense; the
+code inside the loop will simply never be executed. In a \Co{repeat
+\ldots until} loop though the situation is different: This loop will
+endlessly be executed, and in effect such a construct without an
+expression for \Co{repeat} will be equivalent to \Co{do \ldots loop}
+constructs of other languages.
+
+If you employ such a scheme, make sure that you provide a way to leave
+the loop, like for example an \Co{exit} statement:
+
+\subsection{\Co{exit}}
+
+The keyword \Co{exit} lets you exit immediately from the innermost loop
+it is found in. (This is equivalent to the >>C<< statement \Co{break}.)
+You can specify a qualifier with \Co{exit}, namely one of \Co{for},
+\Co{loop}, \Co{sub}, or \Co{func}, which will make \SB\ leave the
+innermost surrounding structure of that type. (\Co{loop} includes
+\Co{repeat} and \Co{while} constructs.)
+
+\section{Exceptions: \Co{try \ldots\ catch \ldots\ throw}}
+
+Exceptions provide a fairly comfortable way to catch runtime errors
+\index{runtime error, catching} occuring unexpectedly in your program.
+Of course, they can't help with faulty program logic. Rather, exceptions
+are supposed to handle files not conforming to an expected format,
+hardware problems and the like.
+
+Formally, an exception block somewhat resembles a \Co{select \ldots\ case}
+sequence. It consists of an outer >>bracket<< of \Co{try} and \Co{end
+try} keywords, which delimites the >>regime<< of code to which the
+exception handling applies.\footnote{Obviously, in different sections of
+your code you may want to respond to the same error in different ways,
+thus there's no >>global<< treatment.}
+Inside this bracket there are one or more \Co{catch} sections, each of
+which applies to one particular error condition:
+
+\begin{lstlisting}
+try
+	' error-generating section
+	...
+	catch error1
+		' dealing with the first error case
+		...
+	catch error2
+		' ... second error case
+		...
+	' and so on
+end try
+\end{lstlisting}
+
+You have basically two options to catch errors this way:
+
+Firstly, as shown above, you may provide \emph{several}
+\Co{catch}-phrases.\footnote{if you'll pardon the pun} In this case,
+\Co{error1}, \Co{error2} and so on must be string expressions. Once an
+error is raised, these string expressions are compared to the error
+message associated with the error, and the first \Co{catch} section
+which matches the error message will be executed,\footnote{Which means
+that, to use the exception mechanism responsibly, you must have a good
+idea what the error messages you may encounter will look like.} whereupon
+the \Co{try \ldots\ catch} section will be left and the >>regular<<
+surrounding code will be resumed. If none of the \Co{catch} expressions
+matches, program execution is resumed after \Co{end try}, too.
+
+Your second option is to provide only a \emph{single} \Co{catch}. In
+this case, \Co{error1} must be a simple string variable, and the current
+error string will be assigned to this variable (provided any error
+occured at all). The corresponding \Co{catch} section will then be
+executed, regardless of the exact nature of the error.
+
+The second option is thus preferrable if you either want to have a
+simple >>catch all<< which will deal with any imaginable error in a
+single sweep, or, at the other extreme, if the error conditions you
+expect to encounter are so confusing that you'd rather dedicate some
+more sophisticated code to them than simple string comparisons against
+the error messages.
+
+If no error is caused in the error-generating section, then none of the
+\Co{catch} sections are executed. Errors raised outside the \Co{try
+\ldots\ catch} section can't be evaluated inside it. (The will have
+caused your program to halt already.)
+
+If no error
+occured, but you feel facetious, you can use \textbf{\Co{throw} to
+create any desired error}. The syntax is simply -- 
+
+\begin{lstlisting}
+throw my_err
+\end{lstlisting}
+
+with the parameter \Co{my\_err} being the error string. (Outside of a
+\Co{catch \ldots\ try} block, \Co{throw} will cause the program to
+abort.)

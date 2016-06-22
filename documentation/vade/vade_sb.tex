@@ -1,0 +1,192 @@
+%**********************************************************************
+
+\documentclass[a5paper, oneside, 10pt, titlepage, noindent, just=true]{scrbook}
+
+\usepackage[latin1]{inputenc}
+
+\usepackage[osf, sc]{mathpazo}
+
+\usepackage{graphicx}
+
+\usepackage{makeidx}
+
+\usepackage{mathtools}
+
+\usepackage{alltt}
+
+\renewcommand{\encodingdefault}{T1}
+
+%usepackage[ocr-a]{ocr}
+%usepackage[T1]{fontenc}
+%renewcommand{\ttdefault}{ocr}
+
+\setkomafont{disposition}{%
+	\normalfont}
+
+%*******************************************
+% use the following commands all or nothing:
+%usepackage[T1]{fontenc}
+%renewcommand*\familydefault{\ttdefault}
+
+%usepackage[just=true]{stdpage}
+%*******************************************
+
+\input{vademecum.tex}
+
+\usepackage{setspace}
+
+%onehalfspacing
+
+\usepackage{microtype}
+
+\lefthyphenmin=3
+
+\usepackage{array}
+
+\usepackage{color}
+
+\definecolor{lightgray}{gray}{0.9}
+
+\usepackage{listings}
+
+\lstset{ %
+language=,                 % choose the language of the code
+basicstyle=\ttfamily \footnotesize,       % the size of the fonts that are used for the code
+numbers=none,                   % where to put the line-numbers
+numberstyle=\footnotesize,      % the size of the fonts that are used for the line-numbers
+columns=fullflexible            % better kerning?
+stepnumber=2,                   % the step between two line-numbers. If it's 1 each line will be numbered
+numbersep=5pt,                  % how far the line-numbers are from the code
+backgroundcolor=\color{lightgray},  % choose the background color. You must add \usepackage{color}
+showspaces=false,               % show spaces adding particular underscores
+showstringspaces=false,         % underline spaces within strings
+showtabs=false,                 % show tabs within strings adding particular underscores
+frame=none,	                % adds a frame around the code  none or single
+tabsize=4,	                % sets default tabsize to 2 spaces
+captionpos=b,                   % sets the caption-position to bottom
+breaklines=true,                % sets automatic line breaking
+breakatwhitespace=false,        % sets if automatic breaks should only happen at whitespace
+title=\lstname,                 % show the filename of files included with \lstinputlisting; also try caption instead of title
+aboveskip=\medskipamount,
+belowskip=0pt,
+escapeinside={\%*}{*)}          % if you want to add a comment within your code
+}
+
+\usepackage{hyperref}
+
+\hypersetup{
+    colorlinks=true,       % false: boxed links; true: colored links
+    linkcolor=blue,          % color of internal links
+    citecolor=green,        % color of links to bibliography
+    filecolor=magenta,      % color of file links
+    urlcolor=cyan           % color of external links
+}
+
+\setcounter{secnumdepth}{4}
+
+\setcounter{tocdepth}{2}
+
+% prettify the design of \paragraphs:
+\makeatletter
+\renewcommand\paragraph{%
+   \@startsection{paragraph}{4}{0mm}%
+      {-\baselineskip}%
+      {.5\baselineskip}%
+      {\normalfont\normalsize}}
+\makeatother
+
+\setcounter{secnumdepth}{3}		% we don't want to number paragraphs
+
+\hyphenation{small-basic}
+
+\makeindex
+
+%**********************************************************************
+
+\newcommand{\absatz}{\bigskip}
+
+%**********************************************************************
+
+\frontmatter
+
+\title{The \\ \SB\ >>Vademecum<< \\ (\SBversion) \\\emph{Incomplete --
+Draft}}
+
+\author{Elmar Vogt \\ Fürth, GERMANY}
+
+%**********************************************************************
+
+\begin{document}
+
+\input{./quotes}
+%sloppy
+
+\maketitle
+
+\chapter{Foreword}
+
+\qN
+
+A \emph{Vademecum} (lat. >>vade-me-cum<<, >>Come with me<<) is a small
+booklet on a subject, meant to be your handy companion. While not as
+exhaustive as a genuine reference manual, it is designed to let you
+quickly find information on a certain subject: This Vademecum omits some
+details and deprecated features of \SB\ for the sake of brevity, as it
+aims to help you find your way around this elegant language in a
+friendly, trustworthy, and straightforward manner.
+
+\absatz
+
+The first part of the Vademecum will give you an introduction to the
+language, while the second part can be used as a reference for work.
+
+\absatz
+
+-- Elmar Vogt
+
+\tableofcontents
+
+\mainmatter
+
+%**********************************************************************
+
+\part{Language Overview}
+
+\input{./chapters/intro}
+
+\input{./chapters/install}
+
+\input{./chapters/ide}
+
+\input{./chapters/syntax}
+
+\input{./chapters/data}
+
+\input{./chapters/control}
+
+\input{./chapters/structure}
+
+\input{./chapters/use}
+
+\part{Reference}
+
+\input{./chapters/special}
+
+\chapter{Keywords and Built-in Functions \label{keywordReference}}
+
+\input{./chapters/cmd1}
+\input{./chapters/cmd}
+
+\backmatter
+
+\appendix
+
+\printindex
+
+%**********************************************************************
+
+\input{../LaTeX/signature}
+
+\end{document}
+
+

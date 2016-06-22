@@ -1,0 +1,625 @@
+\chapter{Data}
+
+\quick{In this chapter, the Vademecum introduces you to the various ways
+\SB\ handles program data -- both simple variables and more complex
+structures.}
+
+\section{A Note on Types \label{noteOnTypes}}
+
+\SB\ is \textbf{dynamically typed language}\footnote{sometimes also
+referred to somehow incorrectly as a >>typeless<< language}. This means
+that one and the same variable can hold numerical values and strings at
+different times. \index{type system} Furthermore, necessary conversions
+are done automatically on the fly, for example when a string is used as
+the parameter for a numerical function:
+
+\begin{lstlisting}
+x= "3.141"    ' string assignment
+y= cos(x)     ' no problem:
+' x is automatically converted to a number
+print y
+
+> -1
+\end{lstlisting}
+
+While there are also functions for explicit conversions, per default
+conversions are done >>tacitly<< by the interpreter, without any
+provisions in the \SB\ program, and there are also no >>notifications<<
+when a type conversion occurs. Another consequence is that the kind of
+data contained in a variable (or the structure of a map, see \Cref{map})
+is only determined at runtime.\footnote{Contrast this behaviour to other
+languages like >>C<<, where a strict type discipline is enforced.} It is
+up to the programmer to ensure that his code will >>expect the
+unexpected<< and be able to cope with any data it is fed with.
+
+\section{Simple Variables}
+
+Simple variables \textbf{need not be declared}; they come into existance by their
+first appearance in the source code. If they are not created through an
+assignment, they will be initiated to the value >>$0$<< (or,
+equivalently, to the empty string >>""<<. (This example admittedly looks a
+little silly.) \index{variable declaration}
+
+\textbf{Value assignment} is done with the \Co{$=$} operator: \index{=
+(assigment operator)} The value
+to the right of it (which may be another variable, a literal, or a
+more complicated expression) is assigned to the variable on the
+left:\footnote{The command \Co{?} used below is a shorthand for
+\Co{print}: It will display the current values of all the following literals or
+variables on the screen.}
+
+\begin{lstlisting}
+x= 20
+y= 10
+z= x+y
+? z
+
+>30
+
+a= "Hello world"
+? a
+
+Hello world
+
+"Goodbye world"= q
+\end{lstlisting}
+
+The last line will cause an error, since the operands are in the wrong
+order: It's not possible to assign a variable like \Co{q} to a literal,
+only the other way around.
+
+Historically, BASIC required the keyword \Co{let} before an assignment:
+
+\begin{lstlisting}
+let x=20
+\end{lstlisting}
+
+\SB\ offers you the option to use this syntax variant for compatibility
+reasons (read: nostalgia), but it's deprecated.
+
+\subsection{Numbers}
+
+Many languages have different types for various flavours of numbers --
+signed or unsigned integers, reals, etc. --~ In contrast, \SB\ only has
+a single class of numbers.\footnote{While \SB\ internally also
+represents numbers either as integers or, if they carry fractions or
+exceed the limits for integers, as 64 bit reals, this is invisible to
+the user, since all conversions are done implicitly and automatically
+when required.}
+
+\SB\ numbers can have absolute values roughly between $2.2\cdot
+10^{-208}$ (smaller values are considered $0$) and $1.8\cdot 10^{308}$
+(larger values raise a flag \Co{INF} (for >>infinity<<).
+
+\subsection{Strings}
+
+Strings are chains of one or several letters, used to represent words,
+sentences or complete texts. A string consisting of zero letters is
+called an >>empty<< string. \index{empty string} (While I have a strong
+hunch that strings are internally represented with UTF-8 unicode
+characters, it's probably safer to only assign ASCII letters to them.)
+
+\begin{lstlisting}
+my_name= "Elmar Vogt"
+? "Hello, my name is ", my_name
+
+> Hello, my name is Elmar Vogt
+\end{lstlisting}
+
+Strings are dynamic objects in \SB, meaning that they have no
+predefined length: In the course of a program, they can change their
+length arbitrarily, and there is no need to define a maximum length for
+them. A theoretical upper length limit is set at 2 billion
+characters.\footnote{Even before that \SB\ tends to get too tediously
+slow for all practical purposes.}
+
+\textbf{String concatenation} is done with the $+$ operator: \index{+
+(string concatenation operator)}
+
+\begin{lstlisting}
+my_name= "Elmar Vogt"
+greeting= "Hello, my name is "
+welcome= greeting + name
+? welcome
+
+> Hello, my name is Elmar Vogt
+\end{lstlisting}
+
+The $+$ operator combines the string operands to the left and to the
+right of it to a new, third string, the length of which is the sum of
+the individual strings' lengths. If either the left or the right operand
+is a number -- a literal or a variable --, then this operand will be
+converted to a string before the concatenation. For example, a variable
+with the value \Co{42} would be converted to a string of two characters,
+namely \Co{4} and \Co{2}.\footnote{Obviously, if \emph{both} operands are
+numbers, $+$ will perform a simple addition and assign the sum of both
+values to the variable on the left of the equality sign.}
+
+The \textbf{length} of a string \index{length (string)} is simply the
+number of characters currently contained in the string:\footnote{The
+function \Co{len()} returns the length of the following argument in
+brackets}
+
+\begin{lstlisting}
+? len("Hello world")
+
+> 11
+\end{lstlisting}
+
+\textbf{String indexing} \index{indexing (strings)} is done with the first
+character of a string being considere to be at position $1$:\footnote{The
+function \Co{mid(x, y, z)} returns $z$ characters from the string $x$,
+beginning with the $y$th}
+
+\begin{lstlisting}
+? mid("Help me", 4, 1)
+
+> p
+\end{lstlisting}
+
+This also means that the index of the \emph{last} character of a string
+is equivalent to its length:\footnote{The function \Co{len()} returns
+the length of its string argument, in number of characters}
+
+\begin{lstlisting}
+z= "Help me"
+? mid(z, len(z), 1)
+
+> e
+\end{lstlisting}
+
+A loop designed to iterate over all characters in a string \Co{x} must thus
+look like this:
+
+\begin{lstlisting}
+for i=1 to len(x)
+	...
+next i
+\end{lstlisting}
+
+Note that this in contrast with the use of arrays (see below), where the first
+array element has the index $0$, and for an array with $n$ elements the
+highest index is $n-1$.
+
+\section{Complex data structures}
+
+Beside simple variables and literals, \SB\ also offers the option of
+composing arbitrarily complex\footnote{>>Complex<< here denoting
+intricate constructs, not the mathematical notion of complex numbers}
+variable structures. These come in two flavours: 
+
+Simple arrays (\Cref{array}), and maps (\Cref{map}).
+
+From \SB's point of view, both are the same. Technically, arrays are
+simply a subset of possible maps, but to make it easier to grasp the
+concept, we'll treat both as different entities for the moment.
+
+In contrast to simple variables, complex data structures \textbf{must be
+declared before use} with the \Co{dim} statement.
+
+\begin{lstlisting}
+dim x
+\end{lstlisting}
+
+Since (almost) all variables are handled dynamically in \SB\ and can change their
+structure during their lifetime, it is neither necessary nor useful
+to define details or the size of the data structure at hand.
+
+\subsection{Arrays \label{array}}
+
+Arrays are the more simple way of agglomerating data into a single
+variable. \SB\ treats them much like the way other programming languages
+do. An array holds a number of variables which are accessed by means of
+the array name, and a numerical index, pretty much like a street address
+is a combination of the street's name, and a house number. To access an
+array member, its name is followed by the index in parentheses \Co{()}:
+
+\begin{lstlisting}
+hoogla(i)= boogla(250)
+\end{lstlisting}
+
+will assign the value of \Co{boogla}'s 250th member to the member of
+\Co{hoogla} with the numberical index \Co{i}.
+
+Array members can be of \textbf{mixed content}, ie it's perfectly okay
+for one member of an array to hold a number, and for a different member
+of the same array to hold a string.
+
+Arrays must be \textbf{defined before use}, and while they are dynamic
+and can change their size on the fly, room for an array member must be
+defined before it can be used, by using the \Co{dim} statement along
+with a numerical value:
+
+\begin{lstlisting}
+dim hoogla(250)
+\end{lstlisting}
+
+will define \Co{hoogla} to initially have $251$ members with indices
+$0..250$. This \textbf{array indexing} \index{indexing (arrays)} 
+contrasts with the indexing of strings.
+
+Array members can be erased from the array with \Co{delete}. Note that
+if the $i$th member of an array is deleted, then all array members with
+higher indices >>move down<< one notch, ie the value of \Co{x(n)} will
+now be in \Co{x(n-1)}. \index{array member deletion}
+
+Likewise, new array members can be appended to an array with the
+operator \Co{$<<$}.\footnote{Sorry for the ugly typography here.}
+
+\begin{lstlisting}
+dim hoogla(250)
+hoogla << 132
+\end{lstlisting}
+
+means that now \Co{hoogla} will have $252$ members, and the new $252$nd
+member (with the index $251$) will have the value $132$. \index{array
+member addition} \index{$<<$ (array appendix operator)}
+
+Arrays are not limited to being a chain of values. \textbf{Several array
+dimensions} can be defined to render arrays of >>rectangular<<, >>cubic<<,
+>>tesseractic<< or even higher dimensions:
+
+\begin{lstlisting}
+dim hoogla(10, 20, 10)
+hoogla(5, 9, 8)= "blubbdi"
+\end{lstlisting}
+
+will create an array with $11 \times 21 \times 11$ members, or access
+one particular member, resp. For obvious reasons, it's not possible to
+\Co{delete} members of such a higher-dimensional array in the
+abovementioned way. Likewise, using the appendix operator \Co{$<<$} with
+a higher-dimensional array should be avoided.\footnote{While technically
+it works, it will actually transform the array into a
+\emph{one-dimensional} array, arrange the previous values sequentially
+and finally append the new array member. But this is dark voodoo and
+should not be practiced. Besides, there is no guarantee that this
+behaviour will be retained in future versions of \SB.}
+
+The maximum array size is virtually unlimited. But note that with the
+introduction of new array dimensions, the space and performance
+requirements increase exponentially.
+
+\subsection{Maps \label{map}}
+
+Maps differ from arrays in two ways: Firstly, while arrays always have a
+linear or >>rectangular<< structure, \textbf{maps are >>data trees<<, where each
+map member can be a simple variable, an array or a complete map}. This
+structure can become extremely complex during the runtime of a program.
+As explained in \Cref{noteOnTypes}, since there is no fixed type system,
+and hence no predetermined structure for any given map, this means that
+an \SB\ program must >>anticipate all known unknowns<<.
+
+Secondly, map indices aren't limited to a consecutive list of integer
+numbers. Rather, \textbf{map members can be accessed by any simple variable --
+string, integer or real}. This leads to subtle syntax differences when
+accessing them and has a number of other consequences. For example, it's
+not straightforward anymore to write a loop which will iterate over all
+map members, or determine the number of map elements. The concept is
+probably more easy to grasp when one doesn't think of maps as of
+traditional arrays, but to consider each member a pair of a >>value<<,
+which is stored in the map, and a >>key<< (the index) by which it is
+accessed.
+
+These two features in combination with \SB's automatic conversion features
+lead to the fact that \textbf{it is fairly easy to inadvertently convert an
+array into a map}, a conversion from which there is no easy way back, and
+thus to create havoc at runtime. 
+
+\textbf{Map initialisation} can be done by in three ways: Either
+explicitly, by using the \Co{dim} keyword \emph{without} an array size
+(ie, simply \Co{dim x} is enough), through the \Co{array} keyword (see
+below), or implicitly by assigning the map members values by a sequence
+of comma-seperated values, enclosed in square brackets \Co{[]}:
+\index{[] (map initialiser)} \index{map initialisation}
+
+\begin{lstlisting}
+hoogla= [10, 9, 8, 7, 6, 1]
+\end{lstlisting}
+
+initialises a simple map \Co{hoogla} with $6$ members with automatically
+generated indices from $0$ to $5$. 
+
+To create more complex structures, each map member which is a map again
+must be enclosed in brackets. For example,
+
+\begin{lstlisting}
+boogla= [1, 2, [4, 5, 6, 7], 2390023, [3.1415926, "hoogla!"], 99]
+\end{lstlisting}
+
+can be visualized in a structure like this:
+
+\begin{lstlisting}
+1
+2
+4          5          6         7
+3.1415926  "hoogla!"
+99
+\end{lstlisting}
+
+To initialise a map in that way, it does \emph{not} need to be defined
+with \Co{dim} beforehand -- actually, a square bracket initialisation
+will delete any variable with the same name that may have been existing
+before, and create a completely new one.
+
+Furthermore, the \Co{array} keyword can be used as an alternative way to
+initialize a map (though not an array, confusingly). Basically, what
+you do is that you pass your map members in the shape of a
+JSON-formatted string\footnote{>>JavaScript Object Notation<<, see eg
+\href{http://en.wikipedia.org/wiki/JSON}{Wikipedia} for details}
+\index{JSON} \index{JavaScript Object Notation} to the
+\Co{array} function:
+
+\begin{lstlisting}
+boogla= array("[1, 2, [4, 5, 6, 7], [3.1415926, \"hoogla!\"], 99]")
+\end{lstlisting}
+
+is equivalent to the map definition above. Be aware that you pass
+\emph{all} map members to \Co{array} wrapped in a single string, rather
+than as individual elements. Likewise, if you use string variables in
+your map, these must be escaped with backslashes inside the \Co{array}
+argument (ie, \Co{\textbackslash "hoogla\textbackslash "} rather than
+simply \Co{"hoogla"}.
+
+A further neat feature is that maps of any complexity can be serialized
+with a simple \Co{print} command to a file. \Co{Print} will not only
+display a single member, but will format the output as a JSON string. This
+means --~without going into too many details regarding file handling
+here~-- that writing a complete map to a file and loading it again at a
+later stage are simple three-liner tasks.
+
+\textbf{Access to map members} \index{map member access} is possible
+through two different notations. The first one contains the key to the
+map member in parentheses after the map name: \index{parentheses
+notation (maps and arrays)}
+
+\begin{lstlisting}
+boogla(3.1415926)= ...
+\end{lstlisting}
+
+which is similar to an array access, with the exception that the key may
+be a real value, or even a string:
+
+\begin{lstlisting}
+boogla("nuffda")= ...
+\end{lstlisting}
+
+The second option uses the >>dot notation<< \index{dot notation (maps)}
+familiar from other languages like >>C<<, seperating the name from the
+member key with a dot \Co{.}:
+
+\begin{lstlisting}
+boogla.nuffda= ...
+\end{lstlisting}
+
+The two notations are for the most part equivalent, while the second
+alternative makes sure that you're accessing a map, not an array.
+
+For more complex maps with nested structures, you simply >>chain<< your
+notations to access the lower-level members:
+
+\begin{lstlisting}
+boogla.nuffda.oingaboinga= ...
+\end{lstlisting}
+
+The notations can be mixed within a single variable access: 
+
+\begin{lstlisting}
+dim boogla
+z.tschaka= "Hello, world!"
+boogla("gloegk")= z
+? boogla.gloegk("tschaka")
+
+> Hello, world!
+\end{lstlisting}
+
+But this is not recommended, because it is too easy to inadvertently
+mess up your dots and parentheses and accessing a non-existent map
+member.\footnote{Since it isn't necessary to declare map members before
+accessing them, you will not get a warning in such a case and may spend
+many hours debugging.}
+
+An interesting feature is that with the parentheses notation, a variable
+may be used as key, which isn't possible with dot notation:
+
+\begin{lstlisting}
+z.tschaka= "Hello, world!"
+target= "tschaka"
+? z(target), z.target
+
+> Hello, world!	0
+\end{lstlisting}
+
+When accessing \Co{z} in the third line, in the first term
+\Co{z(target)}, \Co{target} is replaced with its value \Co{tschaka} by
+the interpreter, before looking the map member with that name up and
+returning the result, \Co{"Hello, world!"}. In the second term
+\Co{z.target}, the interpreter looks for a member of \Co{z} with the key
+\Co{target}, can't find one, and tacitly creates a new one which is
+initialized with the value~$0$.\footnote{Wrap your heads around this,
+folks. It's important.}
+
+This makes the parentheses notation particularly useful when you want to
+decide at runtime which map member you want to access: With dot
+notation, access is fixed, but with parentheses notation you can pass a
+variable to determine which member to use in that instance.
+
+\subsection{\Co{len} \label{cLen}}
+
+For both arrays and maps, \Co{len(x)} will give you the number of
+elements in the structure. But note that this isn't the total number of
+elements, but only the number of elements in the >>top dimension<<.
+
+For example, when initializing an array as
+
+\begin{lstlisting}
+boogla= [1, 2, [4, 5, 6, 7], 2390023, [3.1415926, "hoogla!"], 99]
+\end
+
+\Co{len(boogla)} will be $6$, as this is the number of first-dimension
+members, not 10, which would be the total number of elements.
+
+\subsection{Almost, but Not Quite the Same (Not a Rose by any other
+Name)}
+
+The \textbf{near-but-not-quite equivalency of maps and arrays} leads to
+interesting consequences, read: causes for unexpected trouble. For
+example, in the following code
+
+\begin{lstlisting}
+dim x
+dim z
+x("hello")= 10
+x(5)= 55
+z(5)= 10
+z("hello")= 55
+\end{lstlisting}
+
+the third and fourth line cause no errors, but the fifth one does. Why
+is this? The cause is, that after the \Co{dim} command, \Co{x} and
+\Co{z} essentially are still shapeless somethings, but the first access
+with a string for an index forces \Co{x} to become a map (line 3).
+Accessing it \emph{afterwards} with a numerical key is no problem at
+all. \Co{z} on the other hand is firstly accessed as an array (line 5),
+and this leads to problems, because neither has its size been defined,
+nor has the appendix operator been used.
+
+Likewise,
+
+\begin{lstlisting}
+dim x
+
+z= "hello"
+x(z)= 3.14
+x << 99
+\end{lstlisting}
+
+throws an error in the last line, namely >>index out of range<<. The
+first use of \Co{x} forced it to become a map, but unfortunately, the
+appendix operator is only defined for arrays,\footnote{and it \emph{can}
+only be defined for arrays, because what would be the key for the value
+appended, if the recipient was a map?} hence the error.
+
+Finally,
+
+\begin{lstlisting}
+zoogla= [[1, 2, 3], [10, 11, 12], [99, 98, 97]]
+\end{lstlisting}
+
+looks tantalizingly like a definition for a two-dimensional array, but
+it actually is a map -- which you find out when you try to access it
+like an array; \Co{zoogla(2, 2)} will cause an >>out of range<< error.
+Only \Co{zoogla(2)(2)} will work.
+
+\absatz
+
+\quick{In a nutshell: Try to avoid arrays whenever possible. In the long
+run, you're better off if you force your structures to be maps and
+treat them accordingly.}
+
+\section{Pointers and References \label{referenceOperator}}
+
+\subsection{Referencing Variables}
+
+\SB\ also provide a reference operator. If you're familiar with >>C<<,
+which is explicitly built around the notion of pointers and references,
+this concept will be nothing new for you. The essence is that the
+reference operator \Co{\at}, applied to any variable, will not return the
+variable's \emph{value}, but its \emph{address}, ie its memory location.
+\index{\at\ (reference operator)} \index{object reference} In other words,
+after
+
+\begin{lstlisting}
+y= @x
+\end{lstlisting}
+
+\Co{y} and \Co{x} will point to the same variable, and changes made to
+\Co{x} will always be reflected by \Co{y}:
+
+\begin{lstlisting}
+y= @x
+x= 10
+? y
+x= 20
+? x, y
+
+> 10
+> 20		20
+\end{lstlisting}
+
+Unfortunately, this is a somewhat \footnote{We've all been
+there~\ldots}, because the reverse isn't true. Continue the above code:
+
+\begin{lstlisting}
+...
+y= 50
+? x, y
+
+> 20		50
+\end{lstlisting}
+
+What gives? When executing \Co{y= 50}, the value $50$ is assigned to
+the variable \Co{y}, which from this point on no longer holds \Co{x}'s
+address; the link between the two variables is broken, and the variables
+go their seperate ways. So, as long as \Co{y} is a reference to \Co{x},
+it will always reflect the current value of \Co{x}, but the opposite
+isn't true: Once \Co{y}'s value changes, it is a reference to \Co{x} no
+more. So, when applied \textbf{to simple variables, the reference
+operator works >>read-only<<.}\footnote{and is in the words of its
+inventor, >>a bit useless<<}
+
+The situation changes when \Co{\at} is applied to a map, and a member of
+that map is overwritten:
+
+\begin{lstlisting}
+dim boogla
+boogla("honk")= 20
+y= @boogla
+y.honk= 99
+? boogla.honk
+
+> 99
+\end{lstlisting}
+
+performs as expected, and \Co{y} is now a >>true<< copy of \Co{boogla}.
+The reason is that the line \Co{y.honk= 99} doesn't assign a new value
+to \Co{y}, but to a member of \Co{y}, hence \Co{y}'s >>integrity<<
+remains unviolated. \textbf{With maps, the reference operator creates
+two-way equivalences.} Of course, when you assign a value to \Co{y}
+itself (rather than to a member of \Co{y}), you will break that
+relationship like with a simple variable.
+
+Note that the use of the reference operator here differs slightly from
+that in passing parameters to subroutines (see
+\Cref{passingParameters}).
+
+\subsection{Referencing Routines}
+
+The reference operator \Co{\at} works not only on variables, but also
+on routines:
+
+\begin{lstlisting}
+boogla= @honk
+zoogla= @buzz
+call boogla, 1, 2, 3
+call @honk, 4, 5, 6
+? call(zoogla, 5)
+
+sub honk(x, y, z)
+	print x*y*z
+end
+func buzz(x)
+	buzz= x*x
+end
+
+> 6
+> 120
+> 25
+\end{lstlisting}
+
+The keyword \Co{call} is used to invoke a routine. It is followed by the
+reference to the routine, or a variable which holds the
+reference,\footnote{If you think about it, only the latter case
+is really really useful.}, and a comma-separated list of parameters.
+Note that if a procedure is \Co{call}ed, the parameter list \emph{must
+not} be in parentheses, while when you \Co{call} a function, it
+\emph{must}.

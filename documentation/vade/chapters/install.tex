@@ -1,0 +1,84 @@
+\chapter{Installation}
+
+\quick{In this chapter you'll learn how to install \SB\ and prepare a
+working environment with it. (There's really not much to it.)}
+
+\absatz
+
+You'll find the web address of the current software versions in the chapter
+\Cref{resources}.
+
+\section{Windows}
+
+Go to the \href{http://smallbasic.sourceforge.net/?q=node/195}{Download
+section} at \SB's Sourceforge site, and download the current Windows
+version of \SB.
+
+Run the executable, and you're set: You should by now see a \SB\ icon in
+the start menu of Windows.
+
+You can run your \SB\ programs in one of two ways:
+
+\begin{itemize}
+
+\item You can open the \SB\
+IDE (see \Cref{ide}), load your program and run it from the IDE.
+
+\item Alternatively, connect the filetype extension \Co{.bas} with \SB. From
+then on a double-click on a \Co{.bas} file in the Windows file explorer
+will launch the interpreter with your program.
+
+\end{itemize}
+
+\section{Linux \label{installLinux}}
+
+Go to the \href{http://smallbasic.sourceforge.net/?q=node/195}{Download
+section} at \SB's Sourceforge site, and download the appropriate Linux 
+version of \SB:
+
+\begin{itemize}
+
+\item If you're running Ubuntu, download the Ubuntu version,
+
+\item In all other cases, download the openSUSE version.
+
+\end{itemize}
+
+A double-click on the package will bring up your packet manager. From
+there, follow the installation instructions. After a successful
+installation, \SB\ will appear in Linux' >>Development<< start menu.
+
+You can run \SB\ programs in three different ways:
+
+\begin{itemize}
+
+\item Start the IDE from the start menu, edit your file and run it from
+there,
+
+\item Open a terminal, and use the command line \Co{sbasici -r
+filename.bas}, or
+
+\item Double-click on a \SB\ file in the file explorer, and chose the
+option >>Run<< in the subsequent dialog.
+
+\end{itemize}
+
+For the last option, the very first line in your basic file must be
+
+\begin{lstlisting}
+#! /usr/bin sbasici
+\end{lstlisting}
+
+(This mechanism of linking a source file to a hosting program is called
+>>Shebanging<< in Unix-like OS's. Read the
+\href{http://en.wikipedia.org/wiki/Shebang_(Unix)}{Wikipedia
+article} to learn more about it.) \index{\# (>>shebang<<)}
+
+\section{Android}
+
+Go to 
+\href{https://play.google.com/store/apps/details?id=net.sourceforge.smallbasic}{\SB's
+Google play store entry}, and click the >>Install<< button.
+
+When starting \SB\ on your smartphone, you will see a rudimentary IDE
+to launch your programs. (See \Cref{ide_android})
