@@ -610,14 +610,11 @@ int slib_build_ptable(slib_par_t * ptable) {
         }
         else {
           v_free(arg);
-          free(arg);
+          v_detach(arg);
           return pcount;
         }
-
       }
-
-    }while (!ready);
-
+    } while (!ready);
     code_skipnext();            // kwTYPE_LEVEL_END
   }
 
@@ -630,14 +627,14 @@ int slib_build_ptable(slib_par_t * ptable) {
 /*
  * free parameter table
  */
-void slib_free_ptable(slib_par_t * ptable, int pcount) {
+void slib_free_ptable(slib_par_t *ptable, int pcount) {
 #if defined(LNX_EXTLIB) || defined(WIN_EXTLIB)
   int i;
 
   for (i = 0; i < pcount; i++) {
     if (ptable[i].byref == 0) {
       v_free(ptable[i].var_p);
-      free(ptable[i].var_p);
+      v_detach(ptable[i].var_p);
     }
   }
 #endif
@@ -781,10 +778,7 @@ long sblmgr_vfsexec(enum slib_vfs_idx_t func, dev_file_t * f, ...)
   va_start(ap, f);
 #if defined(LNX_EXTLIB) || defined(WIN_EXTLIB)
     {
-      slib_t *lib;
-
-      lib = &slib_table[f->vfslib];
-
+      slib_t *lib = &slib_table[f->vfslib];
       switch (func) {
         case lib_vfs_open:
         {

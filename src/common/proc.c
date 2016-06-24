@@ -128,7 +128,7 @@ void exec_usefunc(var_t *var, bcip_t ip) {
   // restore X
   v_set(tvar[SYSVAR_X], old_x);
   v_free(old_x);
-  free(old_x);
+  v_detach(old_x);
 }
 
 /*
@@ -156,10 +156,10 @@ void exec_usefunc2(var_t *var1, var_t *var2, bcip_t ip) {
   // restore X,Y
   v_set(tvar[SYSVAR_X], old_x);
   v_free(old_x);
-  free(old_x);
+  v_detach(old_x);
   v_set(tvar[SYSVAR_Y], old_y);
   v_free(old_y);
-  free(old_y);
+  v_detach(old_y);
 }
 
 /*
@@ -177,12 +177,12 @@ void pv_write(char *str, int method, int handle) {
     break;
   case PV_STRING:
     vp = (var_t*)(intptr_t)handle;
-    vp->v.p.size += strlen(str);
+    vp->v.p.length += strlen(str);
     if (vp->v.p.ptr == NULL) {
-      vp->v.p.ptr = malloc(vp->v.p.size + 1);
+      vp->v.p.ptr = malloc(vp->v.p.length + 1);
       strcpy((char *)vp->v.p.ptr, str);
     } else {
-      vp->v.p.ptr = realloc(vp->v.p.ptr, vp->v.p.size + 1);
+      vp->v.p.ptr = realloc(vp->v.p.ptr, vp->v.p.length + 1);
       strcat((char *)vp->v.p.ptr, str);
     }
     break;
@@ -591,7 +591,7 @@ pt_t par_getpt() {
   // clean-up
   if (alloc) {
     v_free(var);
-    free(var);
+    v_detach(var);
   }
 
   return pt;
@@ -643,7 +643,7 @@ ipt_t par_getipt() {
   // clean-up
   if (alloc) {
     v_free(var);
-    free(var);
+    v_detach(var);
   }
 
   return pt;
@@ -674,7 +674,7 @@ int par_getpoly(pt_t **poly_pp) {
   if (var->v.a.size == 0) {
     if (alloc) {
       v_free(var);
-      free(var);
+      v_detach(var);
     }
     return 0;
   }
@@ -692,7 +692,7 @@ int par_getpoly(pt_t **poly_pp) {
       err_parsepoly(-1, 1);
       if (alloc) {
         v_free(var);
-        free(var);
+        v_detach(var);
       }
       return 0;
     }
@@ -703,7 +703,7 @@ int par_getpoly(pt_t **poly_pp) {
       err_parsepoly(-1, 2);
       if (alloc) {
         v_free(var);
-        free(var);
+        v_detach(var);
       }
       return 0;
     }
@@ -754,7 +754,7 @@ int par_getpoly(pt_t **poly_pp) {
   }
   if (alloc) {
     v_free(var);
-    free(var);
+    v_detach(var);
   }
 
   return count;
@@ -785,7 +785,7 @@ int par_getipoly(ipt_t **poly_pp) {
   if (var->v.a.size == 0) {
     if (alloc) {
       v_free(var);
-      free(var);
+      v_detach(var);
     }
     return 0;
   }
@@ -803,7 +803,7 @@ int par_getipoly(ipt_t **poly_pp) {
       err_parsepoly(-1, 1);
       if (alloc) {
         v_free(var);
-        free(var);
+        v_detach(var);
       }
       return 0;
     }
@@ -814,7 +814,7 @@ int par_getipoly(ipt_t **poly_pp) {
       err_parsepoly(-1, 2);
       if (alloc) {
         v_free(var);
-        free(var);
+        v_detach(var);
       }
       return 0;
     }
@@ -865,7 +865,7 @@ int par_getipoly(ipt_t **poly_pp) {
   }
   if (alloc) {
     v_free(var);
-    free(var);
+    v_detach(var);
   }
 
   return count;
@@ -876,17 +876,14 @@ int par_getipoly(ipt_t **poly_pp) {
  */
 void par_freepartable(par_t **ptable_pp, int pcount) {
   int i;
-  par_t *ptable;
-
-  ptable = *ptable_pp;
+  par_t *ptable = *ptable_pp;
   if (ptable) {
     for (i = 0; i < pcount; i++) {
       if (ptable[i].flags & PAR_BYVAL) {
         v_free(ptable[i].var);
-        free(ptable[i].var);
+        v_detach(ptable[i].var);
       }
     }
-
     free(ptable);
   }
   *ptable_pp = NULL;
@@ -980,7 +977,7 @@ int par_getpartable(par_t **ptable_pp, const char *valid_sep) {
         pcount++;
       } else {
         v_free(par);
-        free(par);
+        v_detach(par);
         par_freepartable(ptable_pp, pcount);
         return -1;
       }

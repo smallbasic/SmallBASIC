@@ -78,6 +78,8 @@ typedef void (*method) (struct var_s *self);
 struct var_s {
   byte type; /**< variable's type */
   byte const_flag; /**< non-zero if constants */
+  byte pooled;
+  byte attached;
 
   // value
   union {
@@ -109,7 +111,7 @@ struct var_s {
     // generic ptr (string)
     struct {
       char *ptr; /**< data ptr (possibly, string pointer) */
-      int32_t size; /**< the size of string */
+      int32_t length; /**< the string length */
       int32_t pos; /**< position in string (used by pv_* functions) */
     } p;
 
@@ -233,6 +235,15 @@ typedef struct stknode_s stknode_t;
  * @return a newly created var_t object
  */
 var_t *v_new(void);
+
+/**
+ * @ingroup var
+ *
+ * allows the var to be released back into the pool or freed
+ *
+ * @return a newly created var_t object
+ */
+void v_detach(var_t *v);
 
 /**
  * @ingroup var

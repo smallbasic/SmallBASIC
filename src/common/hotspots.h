@@ -195,7 +195,7 @@ static inline void v_free(var_t *v) {
       free(v->v.p.ptr);
     }
     v->v.p.ptr = NULL;
-    v->v.p.size = 0;
+    v->v.p.length = 0;
     break;
   case V_ARRAY:
     if (v->v.a.size) {

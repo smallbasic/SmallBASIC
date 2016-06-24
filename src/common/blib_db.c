@@ -400,7 +400,7 @@ void cmd_flineinput() {
                 }
               }
               var_p->v.p.ptr[index] = '\0';
-              var_p->v.p.size = index + 1;
+              var_p->v.p.length = index + 1;
             }
             else {
               rt_raise("FIO: FILE IS NOT OPENED");
@@ -419,7 +419,7 @@ void cmd_flineinput() {
       var_p->type = V_STR;
       var_p->v.p.ptr = calloc(SB_TEXTLINE_SIZE + 1, 1);
       dev_gets((char *)var_p->v.p.ptr, SB_TEXTLINE_SIZE);
-      var_p->v.p.size = strlen(var_p->v.p.ptr);
+      var_p->v.p.length = strlen(var_p->v.p.ptr);
       dev_print("\n");
     }
   }
@@ -655,8 +655,8 @@ void cmd_floadln() {
 
       // store text-line
       var_p->v.p.ptr[bcount] = '\0';
-      var_p->v.p.size = bcount + 1;
-      var_p->v.p.ptr = realloc(var_p->v.p.ptr, var_p->v.p.size);
+      var_p->v.p.length = bcount + 1;
+      var_p->v.p.ptr = realloc(var_p->v.p.ptr, var_p->v.p.length);
 
       // resize array
       if (index >= (array_size - 1)) {
@@ -674,12 +674,12 @@ void cmd_floadln() {
     // build string
     v_free(var_p);
     var_p->type = V_STR;
-    var_p->v.p.size = dev_flength(handle) + 1;
-    var_p->v.p.ptr = malloc(var_p->v.p.size);
-    if (var_p->v.p.size > 1) {
-      dev_fread(handle, (byte *)var_p->v.p.ptr, var_p->v.p.size - 1);
+    var_p->v.p.length = dev_flength(handle) + 1;
+    var_p->v.p.ptr = malloc(var_p->v.p.length);
+    if (var_p->v.p.length > 1) {
+      dev_fread(handle, (byte *)var_p->v.p.ptr, var_p->v.p.length - 1);
     }
-    var_p->v.p.ptr[var_p->v.p.size - 1] = '\0';
+    var_p->v.p.ptr[var_p->v.p.length - 1] = '\0';
   }
   if (flags == DEV_FILE_INPUT) {
     dev_fclose(handle);
@@ -832,7 +832,7 @@ void dirwalk(char *dir, char *wc, bcip_t use_ip) {
         exec_usefunc(var, use_ip);
         contf = v_getint(var);
         v_free(var);
-        free(var);
+        v_detach(var);
       }
       if (!contf) {
         break;

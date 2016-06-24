@@ -84,13 +84,13 @@ void free_node(stknode_t *node) {
   case kwTYPE_VAR:
     if ((node->x.param.vcheck == 1) || (node->x.param.vcheck == 0x81)) {
       v_free(node->x.param.res);
-      free(node->x.param.res);
+      v_detach(node->x.param.res);
     }
     break;
 
   case kwTYPE_RET:
     v_free(node->x.vdvar.vptr); // free ret-var
-    free(node->x.vdvar.vptr);
+    v_detach(node->x.vdvar.vptr);
     break;
 
   case kwFUNC:
@@ -106,14 +106,14 @@ void free_node(stknode_t *node) {
       if (node->x.vfor.flags & 1) {
         // allocated in for
         v_free(node->x.vfor.arr_ptr);
-        free(node->x.vfor.arr_ptr);
+        v_detach(node->x.vfor.arr_ptr);
       }
     }
     break;
 
   case kwSELECT:
     v_free(node->x.vcase.var_ptr);
-    free(node->x.vcase.var_ptr);
+    v_detach(node->x.vcase.var_ptr);
     break;
   }
 }
@@ -252,7 +252,7 @@ void setsysvar_str(int index, const char *value) {
       var_p->const_flag = 1;
       var_p->v.p.ptr = malloc(l);
       strcpy(var_p->v.p.ptr, value);
-      var_p->v.p.size = l;
+      var_p->v.p.length = l;
     }
   }
   activate_task(tid);

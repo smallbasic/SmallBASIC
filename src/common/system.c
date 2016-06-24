@@ -117,7 +117,7 @@ int dev_run(const char *cmd, var_t *r, int wait) {
     if (buf != NULL) {
       r->type = V_STR;
       r->v.p.ptr = buf;
-      r->v.p.size = strlen(buf) + 1;
+      r->v.p.length = strlen(buf) + 1;
     } else {
       result = 0;
     }
@@ -147,8 +147,8 @@ int dev_run(const char *cmd, var_t *r, int wait) {
   int result = 1;
   if (r != NULL) {
     r->type = V_STR;
-    r->v.p.size = BUFSIZE + 1;
-    r->v.p.ptr = malloc(r->v.p.size);
+    r->v.p.length = BUFSIZE + 1;
+    r->v.p.ptr = malloc(r->v.p.length);
     r->v.p.ptr[0] = '\0';
 
     int bytes = 0;
@@ -160,9 +160,9 @@ int dev_run(const char *cmd, var_t *r, int wait) {
         bytes = fread(buf, 1, BUFSIZE, fin);
         buf[bytes] = '\0';
         total += bytes;
-        if (total >= r->v.p.size) {
-          r->v.p.size += BUFSIZE + 1;
-          r->v.p.ptr = realloc(r->v.p.ptr, r->v.p.size);
+        if (total >= r->v.p.length) {
+          r->v.p.length += BUFSIZE + 1;
+          r->v.p.ptr = realloc(r->v.p.ptr, r->v.p.length);
         }
         strcat(r->v.p.ptr, buf);
       }

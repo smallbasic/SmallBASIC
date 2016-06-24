@@ -27,6 +27,13 @@ var_t *v_new() {
 }
 
 /*
+ * release memory held by the given variable
+ */
+void v_detach(var_t *v) {
+  free(v);
+}
+
+/*
  * returns true if the user's program must use this var as an empty var
  * this is usefull for arrays
  */
@@ -54,7 +61,7 @@ int v_isempty(var_t *var) {
 int v_strlen(const var_t *v) {
   int result;
   if (v->type == V_STR) {
-    result = v->v.p.size;
+    result = v->v.p.length;
     if (result && v->v.p.ptr[result - 1] == '\0') {
       result--;
     }
@@ -257,7 +264,7 @@ int v_is_nonzero(var_t *v) {
     // return (v->v.n != 0.0 && v->v.n != -0.0);
     return (ABS(v->v.n) > 1E-308);
   case V_STR:
-    return (v->v.p.size != 0);
+    return (v->v.p.length != 0);
   case V_MAP:
     return !map_is_empty(v);
   case V_PTR:
@@ -374,7 +381,7 @@ void v_add(var_t *result, var_t *a, var_t *b) {
     strcpy(result->v.p.ptr, a->v.p.ptr);
     strcat(result->v.p.ptr, b->v.p.ptr);
     result->v.p.ptr[length] = '\0';
-    result->v.p.size = length + 1;
+    result->v.p.length = length + 1;
     return;
   } else if (a->type == V_INT && b->type == V_INT) {
     result->type = V_INT;
@@ -410,7 +417,7 @@ void v_add(var_t *result, var_t *a, var_t *b) {
         ftostr(b->v.n, tmpsb);
       }
       strcat(result->v.p.ptr, tmpsb);
-      result->v.p.size = strlen(result->v.p.ptr) + 1;
+      result->v.p.length = strlen(result->v.p.ptr) + 1;
     }
   } else if ((a->type == V_INT || a->type == V_NUM) && b->type == V_STR) {
     if (is_number(b->v.p.ptr)) {
@@ -430,7 +437,7 @@ void v_add(var_t *result, var_t *a, var_t *b) {
       }
       strcpy(result->v.p.ptr, tmpsb);
       strcat(result->v.p.ptr, b->v.p.ptr);
-      result->v.p.size = strlen(result->v.p.ptr) + 1;
+      result->v.p.length = strlen(result->v.p.ptr) + 1;
     }
   } else if (b->type == V_MAP) {
     char *map = map_to_str(b);
@@ -453,8 +460,8 @@ void v_set(var_t *dest, const var_t *src) {
     dest->v.i = src->v.i;
     break;
   case V_STR:
-    dest->v.p.size = v_strlen(src) + 1;
-    dest->v.p.ptr = (char *)malloc(dest->v.p.size);
+    dest->v.p.length = v_strlen(src) + 1;
+    dest->v.p.ptr = (char *)malloc(dest->v.p.length);
     strcpy(dest->v.p.ptr, src->v.p.ptr);
     break;
   case V_NUM:
@@ -502,8 +509,7 @@ void v_set(var_t *dest, const var_t *src) {
  * return a full copy of the 'source'
  */
 var_t *v_clone(const var_t *source) {
-  var_t *vnew = (var_t *)malloc(sizeof(var_t));
-  v_init(vnew);
+  var_t *vnew = v_new();
   v_set(vnew, source);
   return vnew;
 }
@@ -545,7 +551,7 @@ void v_createstr(var_t *v, const char *src) {
   int l = strlen(src) + 1;
   v->type = V_STR;
   v->v.p.ptr = malloc(l);
-  v->v.p.size = l;
+  v->v.p.length = l;
   strcpy(v->v.p.ptr, src);
 }
 
@@ -592,7 +598,7 @@ void v_tostr(var_t *arg) {
     int len = strlen(tmp) + 1;
     arg->type = V_STR;
     arg->v.p.ptr = malloc(len);
-    arg->v.p.size = len;
+    arg->v.p.length = len;
     strcpy(arg->v.p.ptr, tmp);
     free(tmp);
   }
@@ -605,8 +611,8 @@ void v_setstr(var_t *var, const char *string) {
   if (var->type != V_STR || strcmp(string, var->v.p.ptr) != 0) {
     v_free(var);
     var->type = V_STR;
-    var->v.p.size = strlen(string) + 1;
-    var->v.p.ptr = malloc(var->v.p.size);
+    var->v.p.length = strlen(string) + 1;
+    var->v.p.ptr = malloc(var->v.p.length);
     strcpy(var->v.p.ptr, string);
   }
 }
@@ -615,8 +621,8 @@ void v_setstrn(var_t *var, const char *string, int len) {
   if (var->type != V_STR || strncmp(string, var->v.p.ptr, len) != 0) {
     v_free(var);
     var->type = V_STR;
-    var->v.p.size = len + 1;
-    var->v.p.ptr = malloc(var->v.p.size);
+    var->v.p.length = len + 1;
+    var->v.p.ptr = malloc(var->v.p.length);
     strncpy(var->v.p.ptr, string, len);
     var->v.p.ptr[len] = '\0';
   }
@@ -630,8 +636,8 @@ void v_strcat(var_t *var, const char *string) {
     v_tostr(var);
   }
   if (var->type == V_STR) {
-    var->v.p.size = strlen(var->v.p.ptr) + strlen(string) + 1;
-    var->v.p.ptr = realloc(var->v.p.ptr, var->v.p.size);
+    var->v.p.length = strlen(var->v.p.ptr) + strlen(string) + 1;
+    var->v.p.ptr = realloc(var->v.p.ptr, var->v.p.length);
     strcat(var->v.p.ptr, string);
   } else {
     err_typemismatch();
@@ -674,7 +680,7 @@ void v_zerostr(var_t *r) {
   r->type = V_STR;
   r->v.p.ptr = malloc(1);
   r->v.p.ptr[0] = '\0';
-  r->v.p.size = 1;
+  r->v.p.length = 1;
 }
 
 /*

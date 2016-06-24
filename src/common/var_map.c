@@ -233,7 +233,7 @@ void map_get_value(var_p_t base, var_p_t var_key, var_p_t *result) {
 
     // free the clone
     v_free(clone);
-    free(clone);
+    v_detach(clone);
   } else if (base->type != V_MAP) {
     if (v_is_nonzero(base)) {
       err_typemismatch();
@@ -512,7 +512,7 @@ void map_from_str(var_p_t dest) {
       int num_tokens = TOKEN_GROW_SIZE;
       jsmntok_t *tokens = malloc(sizeof(jsmntok_t) * num_tokens);
       const char *js = arg.v.p.ptr;
-      size_t len = arg.v.p.size;
+      size_t len = arg.v.p.length;
       int result;
       jsmn_parser parser;
 

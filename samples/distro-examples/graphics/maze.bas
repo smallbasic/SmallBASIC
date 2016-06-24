@@ -30,23 +30,24 @@ end
 
 func show_maze() 
   local py, px
-  local margin = 20
+  local margin = 25
   local border = margin / 2
   local cellW = (xmax - margin) / W
   local cellH = (ymax - margin) / H
   local wallc, x, y
   
-  wallc = 2
+  wallc = rgb(80, 80, 80)
   cls
   py = border
   for y = 0 to H 
     px = border
     for x = 0 to W
+      wallc += 255
       if (x < W && h_walls(x, y)) then
-        line px, py, px + cellW, py, wallc
+        rect px, py, px + cellW, py+2, wallc FILLED
       fi
       if (y < H && v_walls(x, y)) then
-        line px, py, px, py + cellH, wallc
+        rect px, py, px+2, py + cellH, wallc FILLED
       fi
       px += cellW
     next y

@@ -98,9 +98,10 @@ void cmd_play() {
   double TmpL;
 
   par_getstr(&var);
-  if (prog_error)
+  if (prog_error) {
     return;
-  str = (char *) malloc(var.v.p.size + 1);
+  }
+  str = (char *) malloc(var.v.p.length + 1);
 
   // copy without spaces
   p = (char *) var.v.p.ptr;

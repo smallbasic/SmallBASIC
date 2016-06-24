@@ -43,12 +43,12 @@ Node *tree_create_node(var_p_t key) {
 void tree_delete_node(Node *node) {
   // cleanup v_new
   v_free(node->key);
-  free(node->key);
+  v_detach(node->key);
 
   // cleanup v_new
   if (node->value) {
     v_free(node->value);
-    free(node->value);
+    v_detach(node->value);
   }
 
   // cleanup the node
@@ -56,7 +56,7 @@ void tree_delete_node(Node *node) {
 }
 
 static inline int tree_compare(const char *key, int length, var_p_t vkey) {
-  return strcaselessn(key, length, vkey->v.p.ptr, vkey->v.p.size - 1);
+  return strcaselessn(key, length, vkey->v.p.ptr, vkey->v.p.length - 1);
 }
 
 void tree_destroy(Node *node) {
@@ -203,7 +203,7 @@ var_p_t hashmap_putv(var_p_t map, const var_p_t key) {
     v_tostr(key);
   }
 
-  Node *node = hashmap_search(map, key->v.p.ptr, key->v.p.size);
+  Node *node = hashmap_search(map, key->v.p.ptr, key->v.p.length);
   if (node->key == NULL) {
     node->key = key;
     node->value = v_new();
@@ -211,7 +211,7 @@ var_p_t hashmap_putv(var_p_t map, const var_p_t key) {
   } else {
     // discard unused key
     v_free(key);
-    free(key);
+    v_detach(key);
   }
   return node->value;
 }

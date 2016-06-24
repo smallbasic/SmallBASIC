@@ -121,7 +121,6 @@ void mat_op1(var_t *l, int op, var_num_t n) {
         }
       }
     }
-
     mat_tov(l, m, lr, lc, 1);
     free(m1);
     free(m);
@@ -175,10 +174,11 @@ void mat_op2(var_t *l, var_t *r, int op) {
       free(m1);
       free(m2);
       if (m) {
-        if (r->v.a.maxdim == 1)
+        if (r->v.a.maxdim == 1) {
           mat_tov(l, m, lc, 1, 0);
-        else
+        } else {
           mat_tov(l, m, lr, lc, 1);
+        }
         free(m);
       }
     } else {
@@ -214,18 +214,16 @@ void mat_mul(var_t *l, var_t *r) {
         mr = lr;
         mc = rc;
         m = (var_num_t*) malloc(sizeof(var_num_t) * mr * mc);
-
         for (i = 0; i < mr; i++) {
           for (j = 0; j < mc; j++) {
             pos = i * mc + j;
             m[pos] = 0.0;
-            for (k = 0; k < lc; k++)
+            for (k = 0; k < lc; k++) {
               m[pos] = m[pos] + (m1[i * lc + k] * m2[k * rc + j]);
+            }
           }
         }
       }
-
-      // /
       free(m1);
       free(m2);
       if (m) {
@@ -274,7 +272,7 @@ int v_wc_match(var_t *vwc, var_t *v) {
       ri = wc_match((char *) vwc->v.p.ptr, (char *) vt->v.p.ptr);
     }
     V_FREE(vt);
-    free(vt);
+    v_detach(vt);
   }
   return ri;
 }
@@ -614,12 +612,11 @@ static inline void oper_cmp(var_t *r, var_t *left) {
           ri = 0;
         }
       } else if (v_is_type(left, V_NUM) || v_is_type(left, V_INT)) {
-        var_t *v;
-        v = v_clone(left);
+        var_t *v = v_clone(left);
         v_tostr(v);
         ri = (strstr(r->v.p.ptr, v->v.p.ptr) != NULL);
         V_FREE(v);
-        free(v);
+        v_detach(v);
       }
     } else if (r->type == V_NUM || r->type == V_INT) {
       ri = (v_compare(left, r) == 0);
@@ -750,11 +747,11 @@ static inline void eval_push(var_t *r) {
     eval_stk[eval_sp].v.n = r->v.n;
     break;
   case V_STR:
-    len = r->v.p.size;
+    len = r->v.p.length;
     eval_stk[eval_sp].type = V_STR;
     eval_stk[eval_sp].v.p.ptr = malloc(len + 1);
     strcpy(eval_stk[eval_sp].v.p.ptr, r->v.p.ptr);
-    eval_stk[eval_sp].v.p.size = len;
+    eval_stk[eval_sp].v.p.length = len;
     break;
   default:
     v_set(&eval_stk[eval_sp], r);
@@ -1165,7 +1162,7 @@ static inline void eval_call_udf(var_t *r) {
       v_set(r, udf_rv.x.vdvar.vptr);
       // free ret-var
       V_FREE(udf_rv.x.vdvar.vptr);
-      free(udf_rv.x.vdvar.vptr);
+      v_detach(udf_rv.x.vdvar.vptr);
     }
   }
 }
