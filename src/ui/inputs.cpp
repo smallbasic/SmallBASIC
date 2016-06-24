@@ -49,7 +49,7 @@ int get_color(var_p_t value, int def) {
       result = colors[result];
     }
   } else if (value != NULL && value->type == V_STR &&
-             value->v.p.size) {
+             value->v.p.length) {
     const char *n = value->v.p.ptr;
     if (n[0] == '0' && n[1] == 'x' && n[2]) {
       result = strtol(n + 2, NULL, 16);

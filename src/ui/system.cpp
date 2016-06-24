@@ -465,7 +465,7 @@ char *System::loadResource(const char *fileName) {
         if (http_read(f, var_p) == 0) {
           systemPrint("\nfailed to read %s\n", fileName);
         } else {
-          int len = var_p->v.p.size;
+          int len = var_p->v.p.length;
           buffer = (char *)malloc(len + 1);
           memcpy(buffer, var_p->v.p.ptr, len);
           buffer[len] = '\0';

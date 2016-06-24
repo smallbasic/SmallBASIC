@@ -259,7 +259,7 @@ ImageBuffer *load_image(dev_file_t *filep) {
       var_p = v_new();
       http_read(filep, var_p);
       error = lodepng_decode32(&image, &w, &h, (unsigned char *)var_p->v.p.ptr,
-                               var_p->v.p.size);
+                               var_p->v.p.length);
       v_free(var_p);
       free(var_p);
       break;
