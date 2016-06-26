@@ -210,7 +210,7 @@ static inline void v_free(var_t *v) {
     break;
   case V_ARRAY:
     if (v->v.a.size && v->v.a.data) {
-      int i;
+      unsigned i;
       for (i = 0; i < v->v.a.size; i++) {
         var_t *elem = v_elem(v, i);
         v_free(elem);

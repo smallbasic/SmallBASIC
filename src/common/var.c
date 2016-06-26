@@ -18,6 +18,7 @@
 
 #define INT_STR_LEN 64
 #define VAR_POOL_SIZE 2048
+#define VAR_POOL_SEGMENT 20
 
 var_t var_pool[VAR_POOL_SIZE];
 int next_pool_free = 0;
@@ -39,7 +40,7 @@ var_t *v_new() {
   var_t *result = NULL;
   int i;
   for (i = 0; i < VAR_POOL_SIZE; i++) {
-    next_pool_free = (next_pool_free + 1) % VAR_POOL_SIZE;
+    next_pool_free = (next_pool_free + VAR_POOL_SEGMENT) % VAR_POOL_SIZE;
     if (!var_pool[next_pool_free].attached) {
       result = &var_pool[next_pool_free];
       result->attached = 1;
