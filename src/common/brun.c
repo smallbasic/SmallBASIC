@@ -73,7 +73,7 @@ void free_node(stknode_t *node) {
   switch (node->type) {
   case kwTYPE_CRVAR:
     v_free(tvar[node->x.vdvar.vid]);  // free local variable data
-    free(tvar[node->x.vdvar.vid]);
+    v_detach(tvar[node->x.vdvar.vid]);
     tvar[node->x.vdvar.vid] = node->x.vdvar.vptr; // restore ptr
     break;
 
@@ -96,7 +96,7 @@ void free_node(stknode_t *node) {
   case kwFUNC:
   case kwPROC:
     if (node->x.vcall.rvid != INVALID_ADDR) {
-      free(tvar[node->x.vcall.rvid]);
+      v_detach(tvar[node->x.vcall.rvid]);
       tvar[node->x.vcall.rvid] = node->x.vcall.retvar;
     }
     break;
@@ -373,7 +373,7 @@ void cmd_chain(void) {
     int el;
     int len = 0;
     for (el = 0; el < var.v.a.size; el++) {
-      var_t *el_p = (var_t *)(var.v.a.ptr + sizeof(var_t) * el);
+      var_t *el_p = v_elem(&var, el);
       if (el_p->type == V_STR) {
         int str_len = strlen(el_p->v.p.ptr) + 2;
         if (len) {
@@ -1395,7 +1395,7 @@ int exec_close_task() {
       // free this variable
       if (shared == -1) {
         v_free(tvar[i]);
-        free(tvar[i]);
+        v_detach(tvar[i]);
       }
     }
 
@@ -1485,7 +1485,7 @@ void exec_sync_variables(int dir) {
         activate_task(tid);
         if (tvar[ps->var_id] != vp) {
           v_free(tvar[ps->var_id]);
-          free(tvar[ps->var_id]);
+          v_detach(tvar[ps->var_id]);
         }
         tvar[ps->var_id] = vp;
       } else {
@@ -1666,6 +1666,8 @@ int sbasic_compile(const char *file) {
  * initialize executor and run a binary
  */
 void sbasic_exec_prepare(const char *filename) {
+  v_init_pool();
+
   // load source
   if (opt_nosave) {
     exec_tid = brun_create_task(filename, ctask->bytecode, 0);

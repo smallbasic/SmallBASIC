@@ -224,7 +224,7 @@ void map_get_value(var_p_t base, var_p_t var_key, var_p_t *result) {
 
     hashmap_create(base, 0);
     for (i = 0; i < clone->v.a.size; i++) {
-      const var_t *element = (var_t *)(clone->v.a.ptr + (sizeof(var_t) * i));
+      const var_t *element = v_elem(clone, i);
       var_p_t key = v_new();
       v_setint(key, i);
       var_p_t value = hashmap_putv(base, key);
@@ -342,7 +342,7 @@ void array_to_str(hashmap_cb *cb, var_t *var) {
     for (i = 0; i < rows; i++) {
       for (j = 0; j < cols; j++) {
         int pos = i * cols + j;
-        var_t *elem = (var_t *)(var->v.a.ptr + (sizeof(var_t) * pos));
+        var_t *elem = v_elem(var, pos);
         array_append_elem(cb, elem);
         if (j != cols - 1) {
           strcat(cb->buffer, ",");
@@ -355,7 +355,7 @@ void array_to_str(hashmap_cb *cb, var_t *var) {
   } else {
     int i;
     for (i = 0; i < var->v.a.size; i++) {
-      var_t *elem = (var_t *)(var->v.a.ptr + (sizeof(var_t) * i));
+      var_t *elem = v_elem(var, i);
       array_append_elem(cb, elem);
       if (i != var->v.a.size - 1) {
         strcat(cb->buffer, ",");
@@ -412,7 +412,7 @@ int map_create_array(var_p_t dest, JsonTokens *json, int end_position, int index
       size += ARRAY_GROW_SIZE;
       v_resize_array(dest, size);
     }
-    var_t *elem = (var_t *)(dest->v.a.ptr + (sizeof(var_t) * item_index));
+    var_t *elem = v_elem(dest, item_index);
     i = map_read_next_token(elem, json, i);
     item_index++;
   }

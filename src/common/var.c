@@ -14,23 +14,54 @@
 #include "common/sberr.h"
 #include "common/var_map.h"
 
-#define ARR_ALLOC 256
+#include <malloc.h>
+
 #define INT_STR_LEN 64
+#define VAR_POOL_SIZE 256
+
+var_t var_pool[VAR_POOL_SIZE];
+int next_pool_free = 0;
+
+void v_init_pool() {
+  int i;
+  next_pool_free = 0;
+  for (i = 0; i < VAR_POOL_SIZE; i++) {
+    v_init(&var_pool[i]);
+    var_pool[i].pooled = 1;
+    var_pool[i].attached = 0;
+  }
+}
 
 /*
  * creates and returns a new variable
  */
 var_t *v_new() {
-  var_t *ptr = (var_t *)malloc(sizeof(var_t));
-  v_init(ptr);
-  return ptr;
+  var_t *result = NULL;
+  int i;
+  for (i = 0; i < VAR_POOL_SIZE; i++) {
+    next_pool_free = (next_pool_free + 1) % VAR_POOL_SIZE;
+    if (!var_pool[next_pool_free].attached) {
+      result = &var_pool[next_pool_free];
+      result->attached = 1;
+      break;
+    }
+  }
+  if (!result) {
+    result = (var_t *)malloc(sizeof(var_t));
+    v_init(result);
+    result->pooled = 0;
+  }
+  return result;
 }
 
-/*
- * release memory held by the given variable
- */
-void v_detach(var_t *v) {
-  free(v);
+void v_new_array(var_t *var, unsigned size) {
+  var->type = V_ARRAY;
+  var->v.a.size = size;
+  var->v.a.data = (var_t *)malloc(sizeof(var_t) * size);
+}
+
+void v_detach_array(var_t *var) {
+  free(var->v.a.data);
 }
 
 /*
@@ -106,13 +137,12 @@ int v_length(var_t *var) {
 var_t *v_getelemptr(var_t *v, dword index) {
   if (v->type == V_ARRAY) {
     if (index < v->v.a.size) {
-      return (var_t *)(v->v.a.ptr + (index * sizeof(var_t)));
+      return v_elem(v, index);
     } else {
       err_vararridx(index, v->v.a.size);
       return NULL;
     }
   }
-
   err_varisnotarray();
   return NULL;
 }
@@ -121,8 +151,7 @@ var_t *v_getelemptr(var_t *v, dword index) {
  * resize an existing array
  */
 void v_resize_array(var_t *v, dword size) {
-  byte *prev;
-  var_t *elem;
+  var_t *prev;
   dword i;
 
   if (v->type == V_ARRAY) {
@@ -135,7 +164,7 @@ void v_resize_array(var_t *v, dword size) {
       v_free(v);
       v->type = V_ARRAY;
       v->v.a.size = 0;
-      v->v.a.ptr = NULL;
+      v->v.a.data = NULL;
       v->v.a.ubound[0] = v->v.a.lbound[0] = opt_base;
       v->v.a.maxdim = 1;
     } else if (v->v.a.size > size) {
@@ -143,7 +172,7 @@ void v_resize_array(var_t *v, dword size) {
 
       // free vars
       for (i = size; i < v->v.a.size; i++) {
-        elem = (var_t *)(v->v.a.ptr + (sizeof(var_t) * i));
+        var_t *elem = v_elem(v, i);
         v_free(elem);
       }
 
@@ -161,16 +190,17 @@ void v_resize_array(var_t *v, dword size) {
     } else if (v->v.a.size < size) {
       // resize up
       // if there is space do not resize
-      if (v->v.a.size == 0) {
-        prev = v->v.a.ptr;
-        v->v.a.ptr = malloc((size + ARR_ALLOC) * sizeof(var_t));
+      int prev_size = v->v.a.size;
+      if (prev_size == 0) {
+        prev = v->v.a.data;
+        v_new_array(v, size);
       } else {
-        if (v->v.a.size < size) {
+        if (prev_size < size) {
           // resize & copy
-          prev = v->v.a.ptr;
-          v->v.a.ptr = malloc((size + ARR_ALLOC) * sizeof(var_t));
-          if (v->v.a.size > 0) {
-            memcpy(v->v.a.ptr, prev, v->v.a.size * sizeof(var_t));
+          prev = v->v.a.data;
+          v_new_array(v, size);
+          if (prev_size > 0) {
+            memcpy(v->v.a.data, prev, prev_size * sizeof(var_t));
           }
         } else {
           prev = NULL;
@@ -178,8 +208,8 @@ void v_resize_array(var_t *v, dword size) {
       }
 
       // init vars
-      for (i = v->v.a.size; i < size; i++) {
-        elem = (var_t *)(v->v.a.ptr + (sizeof(var_t) * i));
+      for (i = prev_size; i < size; i++) {
+        var_t *elem = v_elem(v, i);
         v_init(elem);
       }
 
@@ -201,17 +231,12 @@ void v_resize_array(var_t *v, dword size) {
  * create RxC array
  */
 void v_tomatrix(var_t *v, int r, int c) {
-  var_t *e;
   int i;
 
   v_free(v);
-  v->type = V_ARRAY;
-
-  // create data
-  v->v.a.size = r * c;
-  v->v.a.ptr = malloc(sizeof(var_t) * v->v.a.size);
+  v_new_array(v, r * c);
   for (i = 0; i < r * c; i++) {
-    e = (var_t *)(v->v.a.ptr + (sizeof(var_t) * i));
+    var_t *e = v_elem(v, i);
     v_init(e);
   }
 
@@ -226,18 +251,15 @@ void v_tomatrix(var_t *v, int r, int c) {
  * create array
  */
 void v_toarray1(var_t *v, dword r) {
-  var_t *e;
   dword i;
 
   v_free(v);
   v->type = V_ARRAY;
 
   if (r > 0) {
-    // create data
-    v->v.a.size = r;
-    v->v.a.ptr = malloc(sizeof(var_t) * (v->v.a.size + ARR_ALLOC));
+    v_new_array(v, r);
     for (i = 0; i < r; i++) {
-      e = (var_t *)(v->v.a.ptr + (sizeof(var_t) * i));
+      var_t *e = v_elem(v, i);
       v_init(e);
     }
 
@@ -247,7 +269,7 @@ void v_toarray1(var_t *v, dword r) {
     v->v.a.ubound[0] = opt_base + (r - 1);
   } else {
     v->v.a.size = 0;
-    v->v.a.ptr = NULL;
+    v->v.a.data = NULL;
     v->v.a.lbound[0] = v->v.a.ubound[0] = opt_base;
     v->v.a.maxdim = 1;
   }
@@ -349,8 +371,8 @@ int v_compare(var_t *a, var_t *b) {
     // check every element
     int i, ci;
     for (i = 0; i < a->v.a.size; i++) {
-      var_t *ea = (var_t *)(a->v.a.ptr + sizeof(var_t) * i);
-      var_t *eb = (var_t *)(b->v.a.ptr + sizeof(var_t) * i);
+      var_t *ea = v_elem(a, i);
+      var_t *eb = v_elem(b, i);
       if ((ci = v_compare(ea, eb)) != 0) {
         return ci;
       }
@@ -484,20 +506,19 @@ void v_set(var_t *dest, const var_t *src) {
   case V_ARRAY:
     if (src->v.a.size) {
       memcpy(&dest->v.a, &src->v.a, sizeof(src->v.a));
-      dest->v.a.ptr = malloc(src->v.a.size * sizeof(var_t));
+      v_new_array(dest, src->v.a.size);
 
       // copy each element
       int i;
-      var_t *dest_vp, *src_vp;
       for (i = 0; i < src->v.a.size; i++) {
-        src_vp = (var_t *)(src->v.a.ptr + (sizeof(var_t) * i));
-        dest_vp = (var_t *)(dest->v.a.ptr + (sizeof(var_t) * i));
+        var_t *src_vp = v_elem(src, i);
+        var_t *dest_vp = v_elem(dest, i);
         v_init(dest_vp);
         v_set(dest_vp, src_vp);
       }
     } else {
       dest->v.a.size = 0;
-      dest->v.a.ptr = NULL;
+      dest->v.a.data = NULL;
       dest->v.a.ubound[0] = dest->v.a.lbound[0] = opt_base;
       dest->v.a.maxdim = 1;
     }

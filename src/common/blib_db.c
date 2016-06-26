@@ -169,7 +169,7 @@ void write_encoded_var(int handle, var_t * var) {
 
     // write elements
     for (i = 0; i < var->v.a.size; i++) {
-      elem = (var_t *)(var->v.a.ptr + sizeof(var_t) * i);
+      elem = v_elem(var, i);
       write_encoded_var(handle, elem);
     }
     break;
@@ -181,7 +181,6 @@ void write_encoded_var(int handle, var_t * var) {
  */
 int read_encoded_var(int handle, var_t * var) {
   struct file_encoded_var fv;
-  var_t *elem;
   int i;
 
   dev_fread(handle, (byte *)&fv, sizeof(struct file_encoded_var));
@@ -207,9 +206,7 @@ int read_encoded_var(int handle, var_t * var) {
     var->v.p.ptr[fv.size] = '\0';
     break;
   case V_ARRAY:
-    var->type = V_ARRAY;
-    var->v.a.ptr = malloc(fv.size * sizeof(var_t));
-    var->v.a.size = fv.size;
+    v_new_array(var, fv.size);
 
     // read additional data about array
     dev_fread(handle, (byte *)&var->v.a.maxdim, 1);
@@ -220,7 +217,7 @@ int read_encoded_var(int handle, var_t * var) {
 
     // write elements
     for (i = 0; i < var->v.a.size; i++) {
-      elem = (var_t *)(var->v.a.ptr + sizeof(var_t) * i);
+      var_t *elem = v_elem(var, i);
       v_init(elem);
       read_encoded_var(handle, elem);
     }
@@ -606,7 +603,7 @@ void cmd_floadln() {
 
     while (!eof) {
       // build var for line
-      var_p = (var_t *)(array_p->v.a.ptr + (sizeof(var_t) * index));
+      var_p = v_elem(array_p, index);
       size = GROW_SIZE;
       var_p->type = V_STR;
       var_p->v.p.ptr = malloc(size);
@@ -734,7 +731,7 @@ void cmd_fsaveln() {
   if (var_p->type == V_ARRAY) {
     // parameter is an array
     for (i = 0; i < array_p->v.a.size; i++) {
-      var_p = (var_t *)(array_p->v.a.ptr + (sizeof(var_t) * i));
+      var_p = v_elem(array_p, i);
       fprint_var(handle, var_p);
       dev_fwrite(handle, (byte *)"\n", 1);
     }

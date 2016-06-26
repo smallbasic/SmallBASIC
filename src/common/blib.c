@@ -209,10 +209,10 @@ void cmd_ladd() {
     var_t *elem_p;
     if (var_p->type != V_ARRAY) {
       v_toarray1(var_p, 1);
-      elem_p = (var_t *)var_p->v.a.ptr;
+      elem_p = v_elem(var_p, 0);
     } else {
       v_resize_array(var_p, var_p->v.a.size + 1);
-      elem_p = (var_t *)(var_p->v.a.ptr + (sizeof(var_t) * (var_p->v.a.size - 1)));
+      elem_p = v_elem(var_p, var_p->v.a.size - 1);
     }
 
     // set the value onto the element
@@ -302,16 +302,15 @@ void cmd_lins() {
     var_t *elem_p;
     if (ladd) {
       // append
-      elem_p = (var_t *)(var_p->v.a.ptr + (sizeof(var_t) * (var_p->v.a.size - 1)));
+      elem_p = v_elem(var_p, var_p->v.a.size - 1);
     } else {
       // move all form idx one down
       int i;
       for (i = var_p->v.a.size - 1; i > idx; i--) {
         // A(i) = A(i-1)
-        v_set((var_t *)(var_p->v.a.ptr + (sizeof(var_t) * i)),
-              (var_t *)(var_p->v.a.ptr + (sizeof(var_t) * (i - 1))));
+        v_set(v_elem(var_p, i), v_elem(var_p, i - 1));
       }
-      elem_p = (var_t *)(var_p->v.a.ptr + (sizeof(var_t) * idx));
+      elem_p = v_elem(var_p, idx);
     }
 
     // set the value onto the element
@@ -2232,7 +2231,7 @@ void cmd_wjoin() {
   str->v.p.ptr[0] = '\0';
 
   for (i = 0; i < var_p->v.a.size; i++) {
-    var_t *elem_p = (var_t *)(var_p->v.a.ptr + sizeof(var_t) * i);
+    var_t *elem_p = v_elem(var_p, i);
     var_t e_str;
 
     v_init(&e_str);
@@ -2420,8 +2419,8 @@ int sb_qcmp(var_t *a, var_t *b, bcip_t use_ip) {
 static bcip_t static_qsort_last_use_ip;
 
 int qs_cmp(const void *a, const void *b) {
-  var_t *ea = (var_t *) a;
-  var_t *eb = (var_t *) b;
+  var_t *ea = (var_t *)a;
+  var_t *eb = (var_t *)b;
   return sb_qcmp(ea, eb, static_qsort_last_use_ip);
 }
 
@@ -2452,7 +2451,7 @@ void cmd_sort() {
   if (!errf) {
     if (var_p->v.a.size > 1) {
       static_qsort_last_use_ip = use_ip;
-      qsort(var_p->v.a.ptr, var_p->v.a.size, sizeof(var_t), qs_cmp);
+      qsort(var_p->v.a.data, var_p->v.a.size, sizeof(var_t), qs_cmp);
     }
   }
   // NO RTE anymore... there is no meaning on this because of empty

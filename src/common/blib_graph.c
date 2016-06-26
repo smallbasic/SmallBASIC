@@ -1280,8 +1280,7 @@ var_t *par_getm3() {
   return vp;
 }
 
-///
-void m3combine(var_t * m, var_num_t nm[3][3]) {
+void m3combine(var_t *m, var_num_t nm[3][3]) {
   var_num_t om[3][3];
   int i, j;
   var_t *e;
@@ -1289,25 +1288,24 @@ void m3combine(var_t * m, var_num_t nm[3][3]) {
   // copy m to om
   for (i = 0; i < 3; i++) {
     for (j = 0; j < 3; j++) {
-      e = (var_t *) (m->v.a.ptr + (i * 3 + j) * sizeof(var_t));
-      if (e->type == V_NUM
-        )
+      e = v_elem(m, (i * 3 + j));
+      if (e->type == V_NUM) {
         om[i][j] = e->v.n;
-      else if (e->type == V_INT
-        )
+      } else if (e->type == V_INT) {
         om[i][j] = e->v.i;
-      else
+      } else {
         om[i][j] = v_getval(e);
+      }
     }
   }
 
   // combine
   for (i = 0; i < 3; i++) {
     for (j = 0; j < 3; j++) {
-      e = (var_t *) (m->v.a.ptr + (i * 3 + j) * sizeof(var_t));
-      if (e->type != V_NUM
-        )
+      e = v_elem(m, (i * 3 + j));
+      if (e->type != V_NUM) {
         v_free(e);
+      }
       e->type = V_NUM;
       e->v.n = nm[i][0] * om[0][j] + nm[i][1] * om[1][j] + nm[i][2] * om[2][j];
     }
@@ -1320,8 +1318,9 @@ void m3ident(var_num_t m[3][3]) {
   int i, j;
 
   for (i = 0; i < 3; i++) {
-    for (j = 0; j < 3; j++)
+    for (j = 0; j < 3; j++) {
       m[i][j] = (i == j) ? 1.0 : 0.0;
+    }
   }
 }
 
@@ -1333,12 +1332,12 @@ void cmd_m3ident() {
   int i, j;
 
   m = par_getm3();
-  if (prog_error)
+  if (prog_error) {
     return;
-
+  }
   for (i = 0; i < 3; i++) {
     for (j = 0; j < 3; j++) {
-      e = (var_t *) (m->v.a.ptr + (i * 3 + j) * sizeof(var_t));
+      e = v_elem(m, (i * 3 + j));
       v_init(e);
       e->type = V_NUM;
       e->v.n = (i == j) ? 1.0 : 0.0;
@@ -1355,14 +1354,17 @@ void cmd_m3rotate() {
   var_num_t matrix[3][3];
 
   m = par_getm3();
-  if (prog_error)
+  if (prog_error) {
     return;
+  }
   par_getcomma();
-  if (prog_error)
+  if (prog_error) {
     return;
+  }
   angle = par_getnum();
-  if (prog_error)
+  if (prog_error) {
     return;
+  }
   if (code_peek() == kwTYPE_SEP) {
     par_getcomma();
     if (prog_error)
@@ -1527,19 +1529,7 @@ void cmd_m3apply() {
 }
 
 //
-//  INTERSECT a.x, a.y, b.x, b.y, c.x, c.y, d.x, d.y, BYREF type, BYREF r.x, BYREF r.y
-//
-//   ���������� �� ������ ����� (R) ��� ����������� ��������
-//   �-� ��� C-D.
-//
-//   ����������:
-//   R       = �� ������ �����
-//   (return code) type = ����� �����.
-//           0 = ��� ������� ���� (���������� ��������� ���� NDC 04/01/95).
-//           1 = ������� ��� ����.
-//           2 = ���������.
-//           3 = ��������� �� ������ ����� (����������)...
-//           4 = �� ������ ����� ����� ���� �������.
+// INTERSECT a.x, a.y, b.x, b.y, c.x, c.y, d.x, d.y, BYREF type, BYREF r.x, BYREF r.y
 //
 void cmd_intersect() {
   var_num_t a, b, c, s;
@@ -1603,18 +1593,20 @@ void cmd_intersect() {
   c = (A.x - C.x) * (B.y - A.y) - (A.y - C.y) * (B.x - A.x);
 
   if (a == 0.0)
-    type->v.i = (b == 0.0) ? 3 : 2; // �� b=0, ���������� ������ ���������
+    type->v.i = (b == 0.0) ? 3 : 2;
   else {
     if (a > 0.0) {
-      if ((b >= 0.0 && b <= a) && (c >= 0.0 && c <= a))
-        type->v.i = 1;          // ��� ����
-      else
-        type->v.i = 0;          // ��� ����
+      if ((b >= 0.0 && b <= a) && (c >= 0.0 && c <= a)) {
+        type->v.i = 1;
+      } else {
+        type->v.i = 0;
+      }
     } else {
-      if ((b <= 0.0 && b >= a) && (c <= 0.0 && c >= a))
-        type->v.i = 1;          // ��� ����
-      else
-        type->v.i = 0;          // ��� ����
+      if ((b <= 0.0 && b >= a) && (c <= 0.0 && c >= a)) {
+        type->v.i = 1;
+      } else {
+        type->v.i = 0;
+      }
     }
   }
 

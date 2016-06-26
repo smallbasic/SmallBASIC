@@ -182,6 +182,19 @@ static inline void v_init(var_t *v) {
 /**
  * @ingroup var
  *
+ * frees the var or releases it back into the pool
+ */
+static inline void v_detach(var_t *v) {
+  if (v->pooled) {
+    v->attached = 0;
+  } else {
+    free(v);
+  }
+}
+
+/**
+ * @ingroup var
+ *
  * free variable's data.
  *
  * @warning it frees only the data, not the variable
@@ -198,17 +211,15 @@ static inline void v_free(var_t *v) {
     v->v.p.length = 0;
     break;
   case V_ARRAY:
-    if (v->v.a.size) {
-      if (v->v.a.ptr) {
-        int i;
-        for (i = 0; i < v->v.a.size; i++) {
-          var_t *elem = (var_t *) (v->v.a.ptr + (sizeof(var_t) * i));
-          v_free(elem);
-        }
-        free(v->v.a.ptr);
-        v->v.a.ptr = NULL;
-        v->v.a.size = 0;
+    if (v->v.a.size && v->v.a.data) {
+      int i;
+      for (i = 0; i < v->v.a.size; i++) {
+        var_t *elem = v_elem(v, i);
+        v_free(elem);
       }
+      v_detach_array(v);
+      v->v.a.data = NULL;
+      v->v.a.size = 0;
     }
     break;
   case V_MAP:

@@ -1,6 +1,7 @@
 2016-06-24 (0.12.7)
 	Renamed str var "size" field "length"
 	var cleanup now uses v_detach()
+	implemented var pooling
 
 2016-06-18 (0.12.7)
 	Fixed memory access issue with JOIN

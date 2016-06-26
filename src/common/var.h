@@ -78,8 +78,8 @@ typedef void (*method) (struct var_s *self);
 struct var_s {
   byte type; /**< variable's type */
   byte const_flag; /**< non-zero if constants */
-  byte pooled;
-  byte attached;
+  byte pooled; /** whether held in pooled memory */
+  byte attached; /** whether attached in pooled memory */
 
   // value
   union {
@@ -95,8 +95,8 @@ struct var_s {
     // associative array/map
     struct {
       void *map; /** pointer the map structure */
-      int32_t count;
-      int32_t size;
+      uint32_t count;
+      uint32_t size;
     } m;
 
     // reference variable
@@ -111,17 +111,18 @@ struct var_s {
     // generic ptr (string)
     struct {
       char *ptr; /**< data ptr (possibly, string pointer) */
-      int32_t length; /**< the string length */
-      int32_t pos; /**< position in string (used by pv_* functions) */
+      uint32_t length; /**< the string length */
+      uint32_t pos; /**< position in string (used by pv_* functions) */
     } p;
 
     // array
     struct {
-      byte *ptr; /**< array data ptr (sizeof(var_t) * size) */
-      int32_t size; /**< the number of elements */
+      struct var_s *data; /**< array data pointer */
+      uint32_t size; /**< the number of elements */
       int32_t lbound[MAXDIM]; /**< lower bound */
       int32_t ubound[MAXDIM]; /**< upper bound */
       byte maxdim; /**< number of dimensions */
+      uint16_t poolId; /** pooled memory id */
     } a;
   } v;
 };
@@ -230,6 +231,13 @@ typedef struct stknode_s stknode_t;
 /**
  * @ingroup var
  *
+ * intialises the var pool
+ */
+void v_init_pool(void);
+
+/**
+ * @ingroup var
+ *
  * creates a new variable
  *
  * @return a newly created var_t object
@@ -239,11 +247,18 @@ var_t *v_new(void);
 /**
  * @ingroup var
  *
- * allows the var to be released back into the pool or freed
+ * creates a new variable array
  *
- * @return a newly created var_t object
+ * @return a newly created var_t array of the given size
  */
-void v_detach(var_t *v);
+void v_new_array(var_t *var, unsigned size);
+
+/**
+ * @ingroup var
+ *
+ * frees the var or releases it back into the pool
+ */
+void v_detach_array(var_t *var);
 
 /**
  * @ingroup var
@@ -555,11 +570,6 @@ void v_setint(var_t *var, var_int_t integer);
  */
 void v_zerostr(var_t *var);
 
-/**< makes 'var' an empry integer variable
- @ingroup var
- */
-#define v_zeroint(r) v_init((r))
-
 /**
  * @ingroup var
  *
@@ -578,7 +588,7 @@ void v_input2var(const char *str, var_t *var);
  * on the array x. i is a zero-based, one dim, index.
  * @ingroup var
 */
-#define v_elem(x,i)     (var_t *) ( (x)->v.a.ptr + (sizeof(var_t) * (i)))
+#define v_elem(var, i) &((var)->v.a.data[i])
 
 /**
  * < the number of the elements of the array (x)

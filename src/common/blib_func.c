@@ -1150,7 +1150,7 @@ void cmd_str1(long funcCode, var_t *arg, var_t *r) {
       if (count) {
         v_toarray1(r, count);
         for (i = 0; i < count; i++) {
-          elem_p = (var_t *) (r->v.a.ptr + (sizeof(var_t) * i));
+          elem_p = v_elem(r, i);
           elem_p->type = V_STR;
           elem_p->v.p.ptr = strdup((char *)dev_getenv_n(i));
           elem_p->v.p.length = strlen(elem_p->v.p.ptr) + 1;
@@ -2876,9 +2876,9 @@ void cmd_genfunc(long funcCode, var_t *r) {
     }
     cur = lst.head;
     while (cur) {
-      tp = (canode_t *) cur->data;
+      tp = (canode_t *)cur->data;
       pos = tp->row * cols + tp->col;
-      e = (var_t *) (r->v.a.ptr + (sizeof(var_t) * pos));
+      e = v_elem(r, pos);
       v_set(e, tp->v);
       v_free(tp->v);
       v_detach(tp->v);
@@ -2914,7 +2914,7 @@ void cmd_genfunc(long funcCode, var_t *r) {
 
         // add the entries
         for (i = 0; i < count; i++) {
-          elem_p = (var_t *) (r->v.a.ptr + (sizeof(var_t) * i));
+          elem_p = v_elem(r, i);
           elem_p->type = V_STR;
           elem_p->v.p.length = strlen(list[i]) + 1;
           elem_p->v.p.ptr = malloc(elem_p->v.p.length);
@@ -2950,8 +2950,7 @@ void cmd_genfunc(long funcCode, var_t *r) {
 
         // add the entries
         for (i = 0, x = xmin; i < count; i++, x += dx) {
-          elem_p = (var_t *) (r->v.a.ptr + (sizeof(var_t) * i));
-
+          elem_p = v_elem(r, i);
           elem_p->type = V_NUM;
           elem_p->v.n = x;
         }

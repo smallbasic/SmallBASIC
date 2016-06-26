@@ -62,11 +62,11 @@ var_num_t *mat_toc(var_t *v, int32_t *rows, int32_t *cols) {
     *rows = 1;
   }
 
-  m = (var_num_t*) malloc(((*rows) * (*cols)) * sizeof(var_num_t));
+  m = (var_num_t *)malloc(((*rows) * (*cols)) * sizeof(var_num_t));
   for (i = 0; i < *rows; i++) {
     for (j = 0; j < *cols; j++) {
       pos = i * (*cols) + j;
-      e = (var_t *) (v->v.a.ptr + (sizeof(var_t) * pos));
+      e = v_elem(v, pos);
       m[pos] = v_getval(e);
     }
   }
@@ -90,7 +90,7 @@ void mat_tov(var_t *v, var_num_t *m, int rows, int cols, int protect_col1) {
   for (i = 0; i < rows; i++) {
     for (j = 0; j < cols; j++) {
       pos = i * cols + j;
-      e = (var_t *) (v->v.a.ptr + (sizeof(var_t) * pos));
+      e = v_elem(v, pos);
       e->type = V_NUM;
       e->v.n = m[pos];
     }
@@ -107,7 +107,7 @@ void mat_op1(var_t *l, int op, var_num_t n) {
 
   m1 = mat_toc(l, &lr, &lc);
   if (m1) {
-    m = (var_num_t*) malloc(sizeof(var_num_t) * lr * lc);
+    m = (var_num_t *)malloc(sizeof(var_num_t) * lr * lc);
     for (i = 0; i < lr; i++) {
       for (j = 0; j < lc; j++) {
         pos = i * lc + j;
@@ -156,7 +156,7 @@ void mat_op2(var_t *l, var_t *r, int op) {
       if (rc != lc || lr != rr) {
         err_matdim();
       } else {
-        m = (var_num_t*) malloc(sizeof(var_num_t) * lr * lc);
+        m = (var_num_t *)malloc(sizeof(var_num_t) * lr * lc);
         for (i = 0; i < lr; i++) {
           for (j = 0; j < lc; j++) {
             pos = i * lc + j;
@@ -213,7 +213,7 @@ void mat_mul(var_t *l, var_t *r) {
       } else {
         mr = lr;
         mc = rc;
-        m = (var_num_t*) malloc(sizeof(var_num_t) * mr * mc);
+        m = (var_num_t *)malloc(sizeof(var_num_t) * mr * mc);
         for (i = 0; i < mr; i++) {
           for (j = 0; j < mc; j++) {
             pos = i * mc + j;
@@ -253,11 +253,9 @@ int v_wc_match(var_t *vwc, var_t *v) {
   ri = 0;
   if (v->type == V_ARRAY) {
     int i;
-    var_t *elem_p;
-
     ri = 1;
     for (i = 0; i < v->v.a.size; i++) {
-      elem_p = v_elem(v, i);
+      var_t *elem_p = v_elem(v, i);
       if (v_wc_match(vwc, elem_p) == 0) {
         ri = 0;
         break;
@@ -595,10 +593,8 @@ static inline void oper_cmp(var_t *r, var_t *left) {
     ri = 0;
     if (r->type == V_ARRAY) {
       int i;
-      var_t *elem_p;
-
       for (i = 0; i < r->v.a.size; i++) {
-        elem_p = v_elem(r, i);
+        var_t *elem_p = v_elem(r, i);
         if (v_compare(left, elem_p) == 0) {
           ri = i + 1;
           break;
