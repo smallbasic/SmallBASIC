@@ -122,7 +122,7 @@ struct var_s {
       int32_t lbound[MAXDIM]; /**< lower bound */
       int32_t ubound[MAXDIM]; /**< upper bound */
       byte maxdim; /**< number of dimensions */
-      uint16_t poolId; /** pooled memory id */
+      int16_t poolId; /** pooled memory id */
     } a;
   } v;
 };

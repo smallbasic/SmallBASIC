@@ -132,7 +132,7 @@ void cmd_fseek() {
 /*
  * store a variable in binary form
  */
-void write_encoded_var(int handle, var_t * var) {
+void write_encoded_var(int handle, var_t *var) {
   struct file_encoded_var fv;
   var_t *elem;
   int i;
@@ -179,7 +179,7 @@ void write_encoded_var(int handle, var_t * var) {
 /*
  * read a variable from a binary form
  */
-int read_encoded_var(int handle, var_t * var) {
+int read_encoded_var(int handle, var_t *var) {
   struct file_encoded_var fv;
   int i;
 

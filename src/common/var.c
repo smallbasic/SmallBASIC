@@ -17,7 +17,7 @@
 #include <malloc.h>
 
 #define INT_STR_LEN 64
-#define VAR_POOL_SIZE 256
+#define VAR_POOL_SIZE 2048
 
 var_t var_pool[VAR_POOL_SIZE];
 int next_pool_free = 0;
@@ -55,13 +55,43 @@ var_t *v_new() {
 }
 
 void v_new_array(var_t *var, unsigned size) {
+  int i, j;
+  int count = 0;
+  for (i = 0, j = next_pool_free;
+       i < size && j < VAR_POOL_SIZE && var_pool[j].attached == 0;
+       i++, j++) {
+    count++;
+  }
+  if (!size) {
+    var->v.a.data = NULL;
+  } else if (count == size) {
+    var->v.a.poolId = next_pool_free;
+    var->v.a.data = &var_pool[next_pool_free];
+    for (i = 0; i < size; i++) {
+      var_pool[i + next_pool_free].attached = 1;
+    }
+    next_pool_free = (next_pool_free + size) % VAR_POOL_SIZE;
+  } else {
+    var->v.a.data = (var_t *)malloc(sizeof(var_t) * size);
+    var->v.a.poolId = -1;
+  }
   var->type = V_ARRAY;
   var->v.a.size = size;
-  var->v.a.data = (var_t *)malloc(sizeof(var_t) * size);
 }
 
 void v_detach_array(var_t *var) {
-  free(var->v.a.data);
+  if (var->v.a.poolId != -1) {
+    int i;
+    for (i = 0; i < var->v.a.size; i++) {
+      for (i = 0; i < var->v.a.size; i++) {
+        var_pool[i + var->v.a.poolId].attached = 0;
+      }
+    }
+    next_pool_free = var->v.a.poolId;
+    var->v.a.poolId = -1;
+  } else {
+    free(var->v.a.data);
+  }
 }
 
 /*
@@ -151,15 +181,12 @@ var_t *v_getelemptr(var_t *v, dword index) {
  * resize an existing array
  */
 void v_resize_array(var_t *v, dword size) {
-  var_t *prev;
-  dword i;
-
   if (v->type == V_ARRAY) {
     if ((int)size < 0) {
       err_evargerr();
       return;
     }
-
+    int i;
     if (size == 0) {
       v_free(v);
       v->type = V_ARRAY;
@@ -176,35 +203,25 @@ void v_resize_array(var_t *v, dword size) {
         v_free(elem);
       }
 
-      // do not resize array
-      prev = NULL;
-
       // array data
       v->v.a.size = size;
       v->v.a.ubound[0] = v->v.a.lbound[0] + (size - 1);
       v->v.a.maxdim = 1;
-
-      if (prev) {
-        free(prev);
-      }
     } else if (v->v.a.size < size) {
-      // resize up
-      // if there is space do not resize
+      // resize up, if there is space do not resize
       int prev_size = v->v.a.size;
       if (prev_size == 0) {
-        prev = v->v.a.data;
         v_new_array(v, size);
-      } else {
-        if (prev_size < size) {
-          // resize & copy
-          prev = v->v.a.data;
-          v_new_array(v, size);
-          if (prev_size > 0) {
-            memcpy(v->v.a.data, prev, prev_size * sizeof(var_t));
-          }
-        } else {
-          prev = NULL;
+      } else if (prev_size < size) {
+        // resize & copy
+        var_t *prev = (var_t *)malloc(sizeof(var_t) * prev_size);
+        memcpy(prev, v->v.a.data, prev_size * sizeof(var_t));
+        v_detach_array(v);
+        v_new_array(v, size);
+        if (prev_size > 0) {
+          memcpy(v->v.a.data, prev, prev_size * sizeof(var_t));
         }
+        free(prev);
       }
 
       // init vars
@@ -217,10 +234,6 @@ void v_resize_array(var_t *v, dword size) {
       v->v.a.size = size;
       v->v.a.ubound[0] = v->v.a.lbound[0] + (size - 1);
       v->v.a.maxdim = 1;
-
-      if (prev) {
-        free(prev);
-      }
     }
   } else {
     err_varisnotarray();

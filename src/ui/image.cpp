@@ -520,7 +520,7 @@ extern "C" void v_create_image(var_p_t var) {
       var_p_t elem0 = v_elem(&arg, 0);
       if (elem0->type == V_STR) {
         char **data = new char*[arg.v.a.size];
-        for (int i = 0; i < arg.v.a.size; i++) {
+        for (unsigned i = 0; i < arg.v.a.size; i++) {
           var_p_t elem = v_elem(&arg, i);
           data[i] = elem->v.p.ptr;
         }
@@ -531,7 +531,7 @@ extern "C" void v_create_image(var_p_t var) {
         image = load_image(&arg);
       } else if (elem0->type == V_INT) {
         unsigned char *data = new unsigned char[arg.v.a.size];
-        for (int i = 0; i < arg.v.a.size; i++) {
+        for (unsigned i = 0; i < arg.v.a.size; i++) {
           var_p_t elem = v_elem(&arg, i);
           data[i] = (unsigned char)elem->v.i;
         }

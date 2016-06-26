@@ -247,7 +247,7 @@ extern "C" void v_create_form(var_p_t var) {
     if (arg->type == V_MAP) {
       var_p_t inputs = map_get(arg, FORM_INPUTS);
       if (inputs != NULL && inputs->type == V_ARRAY) {
-        for (int i = 0; i < inputs->v.a.size; i++) {
+        for (unsigned i = 0; i < inputs->v.a.size; i++) {
           var_p_t elem = v_elem(inputs, i);
           if (elem->type == V_MAP) {
             hasInputs = true;
@@ -260,9 +260,9 @@ extern "C" void v_create_form(var_p_t var) {
   if (hasInputs) {
     map_set(var, arg);
     var_p_t v_focus = map_get(var, FORM_FOCUS);
-    int i_focus = v_focus != NULL ? v_getint(v_focus) : -1;
+    unsigned i_focus = v_focus != NULL ? v_getint(v_focus) : -1;
     var_p_t inputs = map_get(var, FORM_INPUTS);
-    for (int i = 0; i < inputs->v.a.size; i++) {
+    for (unsigned i = 0; i < inputs->v.a.size; i++) {
       var_p_t elem = v_elem(inputs, i);
       if (elem->type == V_MAP) {
         FormInput *widget = create_input(elem);

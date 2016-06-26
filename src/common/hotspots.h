@@ -204,9 +204,7 @@ static inline void v_detach(var_t *v) {
 static inline void v_free(var_t *v) {
   switch (v->type) {
   case V_STR:
-    if (v->v.p.ptr) {
-      free(v->v.p.ptr);
-    }
+    free(v->v.p.ptr);
     v->v.p.ptr = NULL;
     v->v.p.length = 0;
     break;
