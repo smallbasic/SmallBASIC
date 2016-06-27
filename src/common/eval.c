@@ -699,6 +699,9 @@ static inline void eval_shortc(var_t *r) {
 
 static inline void eval_var(var_t *r, var_t *var_p) {
   var_t *var_deref;
+  if (prog_error) {
+    return;
+  }
   switch (var_p->type) {
   case V_PTR:
     r->type = var_p->type;
@@ -1172,7 +1175,8 @@ void eval(var_t *r) {
   byte level = 0;
 
   while (!prog_error) {
-    switch (CODE(IP)) {
+    byte code = prog_source[prog_ip];
+    switch (code) {
     case kwTYPE_INT:
       // integer - constant
       IP++;
@@ -1227,15 +1231,10 @@ void eval(var_t *r) {
       oper_unary(r);
       break;
 
-    case kwTYPE_VAR: {
+    case kwTYPE_VAR:
       // variable
       V_FREE(r);
-      var_t *var_p = code_getvarptr();
-      if (prog_error) {
-        return;
-      }
-      eval_var(r, var_p);
-    }
+      eval_var(r, code_getvarptr());
       break;
 
     case kwTYPE_LEVEL_BEGIN:
@@ -1285,7 +1284,7 @@ void eval(var_t *r) {
 
     default:
       // less used codes
-      switch (CODE(IP)) {
+      switch (code) {
       case kwTYPE_CALLEXTF:
         // [lib][index] external functions
         IP++;
@@ -1308,7 +1307,6 @@ void eval(var_t *r) {
         break;
 
       default: {
-        code_t code = CODE(IP);
         if (code == kwTYPE_EOC ||
             code == kwTYPE_SEP ||
             code == kwTO ||
