@@ -215,7 +215,7 @@ static inline void v_free(var_t *v) {
         var_t *elem = v_elem(v, i);
         v_free(elem);
       }
-      v_detach_array(v);
+      free(v->v.a.data);
       v->v.a.data = NULL;
       v->v.a.size = 0;
     }

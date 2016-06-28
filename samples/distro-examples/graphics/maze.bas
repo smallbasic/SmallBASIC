@@ -126,7 +126,9 @@ func generate_maze()
 end
 
 randomize
+t=ticks
 init_walls
 generate_maze
 show_maze
-pause
+at 0,0:? (ticks-t)
+'pause

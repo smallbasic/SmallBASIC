@@ -122,7 +122,6 @@ struct var_s {
       int32_t lbound[MAXDIM]; /**< lower bound */
       int32_t ubound[MAXDIM]; /**< upper bound */
       byte maxdim; /**< number of dimensions */
-      int16_t poolId; /** pooled memory id */
     } a;
   } v;
 };
@@ -252,13 +251,6 @@ var_t *v_new(void);
  * @return a newly created var_t array of the given size
  */
 void v_new_array(var_t *var, unsigned size);
-
-/**
- * @ingroup var
- *
- * frees the var or releases it back into the pool
- */
-void v_detach_array(var_t *var);
 
 /**
  * @ingroup var

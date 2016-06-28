@@ -1,6 +1,6 @@
 // This file is part of SmallBASIC
 //
-// SmallBasic Variable Manager.
+// SmallBASIC variable manager.
 //
 // This program is distributed under the terms of the GPL v2.0 or later
 // Download the GNU Public License (GPL) from www.gnu.org
@@ -18,7 +18,6 @@
 
 #define INT_STR_LEN 64
 #define VAR_POOL_SIZE 2048
-#define VAR_POOL_SEGMENT 20
 
 var_t var_pool[VAR_POOL_SIZE];
 int next_pool_free = 0;
@@ -40,58 +39,29 @@ var_t *v_new() {
   var_t *result = NULL;
   int i;
   for (i = 0; i < VAR_POOL_SIZE; i++) {
-    next_pool_free = (next_pool_free + VAR_POOL_SEGMENT) % VAR_POOL_SIZE;
     if (!var_pool[next_pool_free].attached) {
       result = &var_pool[next_pool_free];
       result->attached = 1;
       break;
     }
+    next_pool_free = (next_pool_free + 1) % VAR_POOL_SIZE;
   }
   if (!result) {
     result = (var_t *)malloc(sizeof(var_t));
-    v_init(result);
     result->pooled = 0;
   }
+  v_init(result);
   return result;
 }
 
 void v_new_array(var_t *var, unsigned size) {
-  int i, j;
-  int count = 0;
-  for (i = 0, j = next_pool_free;
-       i < size && j < VAR_POOL_SIZE && var_pool[j].attached == 0;
-       i++, j++) {
-    count++;
-  }
-  if (!size) {
-    var->v.a.data = NULL;
-  } else if (count == size) {
-    var->v.a.poolId = next_pool_free;
-    var->v.a.data = &var_pool[next_pool_free];
-    for (i = 0; i < size; i++) {
-      var_pool[i + next_pool_free].attached = 1;
-    }
-    next_pool_free = (next_pool_free + size) % VAR_POOL_SIZE;
-  } else {
-    var->v.a.data = (var_t *)malloc(sizeof(var_t) * size);
-    var->v.a.poolId = -1;
-  }
   var->type = V_ARRAY;
   var->v.a.size = size;
-}
-
-void v_detach_array(var_t *var) {
-  if (var->v.a.poolId != -1) {
-    int i;
-    for (i = 0; i < var->v.a.size; i++) {
-      for (i = 0; i < var->v.a.size; i++) {
-        var_pool[i + var->v.a.poolId].attached = 0;
-      }
-    }
-    next_pool_free = var->v.a.poolId;
-    var->v.a.poolId = -1;
-  } else {
-    free(var->v.a.data);
+  var->v.a.data = (var_t *)malloc(sizeof(var_t) * size);
+  int i = 0;
+  for (i = 0; i < size; i++) {
+    var_t *e = v_elem(var, i);
+    v_init(e);
   }
 }
 
@@ -215,14 +185,8 @@ void v_resize_array(var_t *v, dword size) {
         v_new_array(v, size);
       } else if (prev_size < size) {
         // resize & copy
-        var_t *prev = (var_t *)malloc(sizeof(var_t) * prev_size);
-        memcpy(prev, v->v.a.data, prev_size * sizeof(var_t));
-        v_detach_array(v);
-        v_new_array(v, size);
-        if (prev_size > 0) {
-          memcpy(v->v.a.data, prev, prev_size * sizeof(var_t));
-        }
-        free(prev);
+        v->v.a.data = (var_t *)realloc(v->v.a.data, sizeof(var_t) * size);
+        v->v.a.size = size;
       }
 
       // init vars
@@ -245,16 +209,8 @@ void v_resize_array(var_t *v, dword size) {
  * create RxC array
  */
 void v_tomatrix(var_t *v, int r, int c) {
-  int i;
-
   v_free(v);
   v_new_array(v, r * c);
-  for (i = 0; i < r * c; i++) {
-    var_t *e = v_elem(v, i);
-    v_init(e);
-  }
-
-  // array info
   v->v.a.lbound[0] = v->v.a.lbound[1] = opt_base;
   v->v.a.ubound[0] = opt_base + (r - 1);
   v->v.a.ubound[1] = opt_base + (c - 1);
@@ -265,19 +221,10 @@ void v_tomatrix(var_t *v, int r, int c) {
  * create array
  */
 void v_toarray1(var_t *v, dword r) {
-  dword i;
-
   v_free(v);
   v->type = V_ARRAY;
-
   if (r > 0) {
     v_new_array(v, r);
-    for (i = 0; i < r; i++) {
-      var_t *e = v_elem(v, i);
-      v_init(e);
-    }
-
-    // array info
     v->v.a.maxdim = 1;
     v->v.a.lbound[0] = opt_base;
     v->v.a.ubound[0] = opt_base + (r - 1);
