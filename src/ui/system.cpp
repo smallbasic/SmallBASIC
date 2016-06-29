@@ -477,7 +477,7 @@ char *System::loadResource(const char *fileName) {
       _output->setStatus(NULL);
       dev_fclose(handle);
       v_free(var_p);
-      free(var_p);
+      v_detach(var_p);
       opt_file_permitted = 0;
     }
   }
