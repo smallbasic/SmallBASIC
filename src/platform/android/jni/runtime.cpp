@@ -355,9 +355,7 @@ void Runtime::runShell() {
 
   String ipAddress = getString("getIPAddress");
   if (ipAddress.length()) {
-    String env = "IP_ADDR=";
-    env += ipAddress;
-    dev_putenv(env.c_str());
+    setenv("IP_ADDR", ipAddress.c_str(), 1);
   }
 
   String startupBas = getString("getStartupBas");
@@ -429,10 +427,7 @@ void Runtime::loadEnvConfig(Properties &profile, const char *key) {
   String *s = profile.get(key);
   if (s) {
     trace("%s = %s", key, s->c_str());
-    String env = key;
-    env += "=";
-    env += s->c_str();
-    dev_putenv(env.c_str());
+    setenv(key, s->c_str(), 1);
   }
 }
 

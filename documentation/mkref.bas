@@ -27,6 +27,8 @@ elif (len(args) == 2 && args(1) == "bas") then
   mk_bas(in_map)
 elif (len(args) == 2 && args(1) == "jekyll") then
   mk_jekyll(in_map)
+elif (len(args) == 2 && args(1) == "test") then
+  mk_test(in_map)
 else
   mk_help(in_map)
 fi
@@ -198,5 +200,52 @@ sub mk_jekyll(byref in_map)
     wend
     fname = "2016-06-04-" + lower(group) + "-" + lower(keyword) + ".markdown"
     tsave fname, buffer
+  next i
+end
+
+func cmpFunc(l, r)
+  local f1 = lower(l)
+  local f2 = lower(r)
+  cmpFunc = IFF(f1 == f2, 0, IFF(f1 > f2, 1, -1))
+end
+
+'
+' make a test program from the syntax field
+'
+sub mk_test(byref in_map)
+  local i, row, type, prev, syntax
+  local in_len = len(in_map) - 1
+  dim cmds, funcs
+  for i = 0 to in_len
+    row = in_map(i).body_value
+    type = get_field(row, "type=", false)
+    syntax = trim(get_field(row, "syntax=", false))
+    if (type == "command") then
+      cmds << syntax
+    else if (type == "function") then
+      funcs << syntax
+    endif
+  next i
+
+  sort cmds use cmpFunc(x,y)
+  in_len = len(cmds) - 1
+  prev = ""
+  for i = 0 to in_len
+    row = cmds(i)
+    if (row != prev) then
+      print "'" + row
+    endif
+    prev = row
+  next i
+
+  sort funcs use cmpFunc(x,y)
+  in_len = len(funcs) - 1
+  prev = ""
+  for i = 0 to in_len
+    row = funcs(i)
+    if (row != prev) then
+      print "print " + row
+    endif
+    prev = row
   next i
 end

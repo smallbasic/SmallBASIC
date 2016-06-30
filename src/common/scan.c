@@ -3982,12 +3982,7 @@ void comp_preproc_unit_path(char *p) {
       *up++ = *p++;
     }
     *up = '\0';
-#ifdef __MINGW32__
-    sprintf(comp_bc_temp, "UNITPATH=%s", upath);
-    putenv(strdup(comp_bc_temp));
-#else
-    setenv(LCN_UNIT_PATH, upath, 1);
-#endif
+    dev_setenv(LCN_UNIT_PATH, upath);
   }
 }
 

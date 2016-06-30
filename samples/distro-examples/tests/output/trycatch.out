@@ -7,6 +7,9 @@ outer after try
 
 
  * RTE-ERROR AT ../../../samples/distro-examples/tests/trycatch.bas:200 * 
+Description:
+Division by zero
+
 Stack:
  TRY: 199
  TRY: 198
@@ -17,6 +20,3 @@ Stack:
  IF: 193
  IF: 192
  SUB: 216
-Description:
-Division by zero
-

@@ -2272,8 +2272,14 @@ void cmd_environ() {
   if (prog_error) {
     return;
   }
-  if (dev_putenv((char *) str.v.p.ptr) == -1) {
+  char *eq = strchr(str.v.p.ptr, '=');
+  if (eq == NULL) {
     rt_raise(ERR_PUTENV);
+  } else {
+    *eq = '\0';
+    if (dev_setenv(str.v.p.ptr, eq + 1) == -1) {
+      rt_raise(ERR_PUTENV);
+    }
   }
   v_free(&str);
 }

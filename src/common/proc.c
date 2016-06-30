@@ -661,7 +661,7 @@ int par_getpoly(pt_t **poly_pp) {
   // get array
   if (code_isvar()) {
     var = par_getvarray();
-    if (prog_error) {
+    if (var == NULL || prog_error) {
       return 0;
     }
   } else {
@@ -670,21 +670,20 @@ int par_getpoly(pt_t **poly_pp) {
     alloc = 1;
   }
 
-  // zero-length array
-  if (var->v.a.size == 0) {
+  // zero-length or non array
+  if (var->type != V_ARRAY || var->v.a.size == 0) {
     if (alloc) {
       v_free(var);
       v_detach(var);
     }
     return 0;
   }
-  //
+
   el = v_elem(var, 0);
   if (el->type == V_ARRAY) {
     style = 1;                  // nested --- [ [x1,y1], [x2,y2], ... ]
   }
-  // else
-  // style = 0; // 2x2 or 1x --- [ x1, y1, x2, y2, ... ]
+  // else style = 0; // 2x2 or 1x --- [ x1, y1, x2, y2, ... ]
 
   // error check
   if (style == 1) {
@@ -721,14 +720,14 @@ int par_getpoly(pt_t **poly_pp) {
       el = v_elem(var, i);
 
       // error check
-      if (el->type != V_ARRAY
-        )
+      if (el->type != V_ARRAY) {
         err_parsepoly(i, 3);
-      else if (el->v.a.size != 2)
+      } else if (el->v.a.size != 2) {
         err_parsepoly(i, 4);
-      if (prog_error)
+      }
+      if (prog_error) {
         break;
-
+      }
       // store point
       poly[i].x = v_getreal(v_elem(el, 0));
       poly[i].y = v_getreal(v_elem(el, 1));
@@ -772,7 +771,7 @@ int par_getipoly(ipt_t **poly_pp) {
   // get array
   if (code_isvar()) {
     var = par_getvarray();
-    if (prog_error) {
+    if (var == NULL || prog_error) {
       return 0;
     }
   } else {
@@ -781,8 +780,8 @@ int par_getipoly(ipt_t **poly_pp) {
     alloc = 1;
   }
 
-  // zero-length array
-  if (var->v.a.size == 0) {
+  // zero-length or non array
+  if (var->type != V_ARRAY || var->v.a.size == 0) {
     if (alloc) {
       v_free(var);
       v_detach(var);

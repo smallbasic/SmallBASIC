@@ -1000,10 +1000,11 @@ char *dev_getenv_n(int n);
  *
  * sets a system environment variable
  *
- * @param setvar is a string in style "var=value"
+ * @param key the key to set
+ * @param value the value to set
  * @return non-zero on success
  */
-int dev_putenv(const char *setvar);
+int dev_setenv(const char *key, const char *value);
 
 /**
  * @ingroup dev_f

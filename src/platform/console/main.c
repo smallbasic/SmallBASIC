@@ -29,9 +29,6 @@ void remove_temp_file(void) {
 void show_help() {
   printf("usage: sbasic [options] source [--] [program parameters]\n");
   printf("-c      syntax check (compile only)\n");
-  printf("-g      enable graphics\n");
-  printf("-g      [<width>x<height>[x<bpp>]]\n");
-  printf("        enable graphics & setup the graphics mode (depends on driver)\n");
   printf("-m      [mod1,mod2,...]\n");
   printf("        load all or the specified modules\n");
   printf("-pkw    print all keywords \n");
@@ -111,7 +108,6 @@ int process_options(int argc, char *argv[]) {
   int i;
   int opt_ihavename = 0;
   int opt_nomore = 0;
-  char buff[128];
 
   for (i = 1; i < argc; i++) {
     if (argv[i][0] == '-') {
@@ -143,8 +139,7 @@ int process_options(int argc, char *argv[]) {
           break;
 
         case 'u':
-          sprintf(buff, "UNITPATH=%s", &argv[i][2]);
-          dev_putenv(buff);
+          dev_setenv("UNITPATH", &argv[i][2]);
           break;
 
         case 'v':
@@ -162,19 +157,6 @@ int process_options(int argc, char *argv[]) {
 
         case 'x':
           opt_nosave = 0;
-          break;
-
-        case 'g':
-          // run in graphics mode
-          opt_graphics = 2;
-          if ((argv[i][2] >= '1') && (argv[i][2] <= '9')) {
-            // setup graphics mode
-            char *mode = &argv[i][2];
-            sprintf(buff, "SBGRAF=%s", mode);
-            dev_putenv(buff);
-            comp_preproc_grmode(mode);
-            opt_graphics = 2;
-          }
           break;
 
         case 'p':

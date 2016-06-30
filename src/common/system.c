@@ -194,22 +194,17 @@ int dev_run(const char *cmd, var_t *r, int wait) {
 }
 #endif
 
-#ifndef IMPL_DEV_ENV
-
-/**
- * The  putenv() function adds or changes the value of environment variables.  The argument string
- * is of the form name=value. If name does not already exist in the environment, then string is added
- * to the environment.  If name does exist, then the value of name in the environment is changed
- * to value.  The string pointed to by string becomes part of the environment, so
- * altering the string changes the environment.
- *
- * The putenv() function returns zero on success, or -1 if an error occurs.
- *
- * If the value is zero-length then the variable must be deleted. (libc4,libc5 compatible version)
- */
-int dev_putenv(const char *str) {
-  char *p = strdup(str); // no free()
-  return putenv(p);
+int dev_setenv(const char *key, const char *value) {
+#ifdef __MINGW32__
+  // use leaky putenv
+  unsigned size = snprintf(NULL, 0, "%s=%s", key, value) + 1;
+  char *buf = malloc(size);
+  buf[0] = '\0';
+  snprintf(buf, size, "%s=%s", key, value);
+  return putenv(buf);
+#else
+  return setenv(key, value, 1);
+#endif
 }
 
 /**
@@ -246,8 +241,6 @@ char *dev_getenv_n(int n) {
   }
   return NULL;
 }
-
-#endif // IMPL_DEV_ENV
 
 dword dev_get_millisecond_count(void) {
 #if defined(__MACH__)

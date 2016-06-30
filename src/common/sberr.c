@@ -18,7 +18,7 @@ void err_title_msg(const char *seg, const char *file, int line) {
   gsb_last_line = line;
   gsb_last_error = prog_error;
   strcpy(gsb_last_file, file);
-  log_printf("\n\033[0m\n");
+  log_printf("\n\033[0m");
   log_printf("\033[7m * %s-%s %s:%d * \033[0m\n\n", seg, WORD_ERROR_AT, file, line);
 }
 
@@ -80,8 +80,8 @@ void rt_raise(const char *fmt, ...) {
     vsprintf(buff, fmt, ap);
     va_end(ap);
     err_title_msg(WORD_RTE, prog_file, prog_line);
-    err_stack_msg();
     err_detail_msg(buff);
+    err_stack_msg();
     free(buff);
   }
 }
@@ -136,8 +136,8 @@ void err_syntax(int keyword, const char *fmt) {
     }
 
     err_title_msg(WORD_RTE, prog_file, prog_line);
-    err_stack_msg();
     err_detail_msg(ERR_SYNTAX);
+    err_stack_msg();
     log_printf("Expected:");
     log_printf(buff);
     log_printf("\n");
@@ -408,6 +408,7 @@ void err_throw_str(const char *err) {
 
     if (!caught) {
       err_title_msg(WORD_RTE, prog_file, prog_line);
+      err_detail_msg(err);
       err_stack_msg();
       trace_done = 1;
     }
@@ -426,9 +427,9 @@ void err_throw_str(const char *err) {
     prog_error = errRuntime;
     if (!trace_done) {
       err_title_msg(WORD_RTE, prog_file, prog_line);
+      err_detail_msg(err);
       err_stack_msg();
     }
-    err_detail_msg(err);
   } else {
     prog_error = errThrow;
   }
