@@ -1078,3 +1078,20 @@ void hex_dump(const unsigned char *block, int size) {
 #endif
 }
 
+void cstr_init(cstr *cs, int size) {
+  cs->length = 0;
+  cs->size = size;
+  cs->buf = malloc(size);
+  cs->buf[0] = '\0';
+}
+
+void cstr_append(cstr *cs, const char *str) {
+  int len = strlen(str);
+  if (cs->size - cs->length < len + 1) {
+    cs->size += len + 1;
+    cs->buf = realloc(cs->buf, cs->size);
+  }
+  strcat(cs->buf, str);
+  cs->length += len;
+}
+

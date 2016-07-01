@@ -1263,8 +1263,12 @@ void eval(var_t *r) {
     case kwTYPE_EVPOP:
       // pop left
       IP++;
-      eval_sp--;
-      left = &eval_stk[eval_sp];
+      if (!eval_sp) {
+        err_syntax_unknown();
+      } else {
+        eval_sp--;
+        left = &eval_stk[eval_sp];
+      }
       break;
 
     case kwTYPE_EVAL_SC:

@@ -389,8 +389,7 @@ char *trimdup(const char *str);
  * @param suffix if not NULL, the suffix to be used on the basename (before the extension)
  * @return a pointer to dest
  */
-char *chgfilename(char *dest, char *source, char *newdir, char *prefix, char *new_ext, char *suffix)
-   ;
+char *chgfilename(char *dest, char *source, char *newdir, char *prefix, char *new_ext, char *suffix);
 
 /**
  * @ingroup str
@@ -449,6 +448,31 @@ char char_table_replace(const char *what_table, int ch, const char *replace_tabl
  * @param size is the size of the block
  */
 void hex_dump(const unsigned char *block, int size);
+
+/**
+ * @ingroup str
+ *
+ * string buffer
+ */
+typedef struct cstr {
+  int size;
+  int length;
+  char *buf;
+} cstr;
+
+/**
+ * @ingroup str
+ *
+ * string buffer constructor
+ */
+void cstr_init(cstr *cs, int size);
+
+/**
+ * @ingroup str
+ *
+ * append to string buffer
+ */
+void cstr_append(cstr *cs, const char *str);
 
 #if defined(__cplusplus)
 }

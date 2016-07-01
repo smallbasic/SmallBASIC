@@ -209,7 +209,7 @@ long date_julian(long d, long m, long y);
  * @param y is the year
  * @return the julian-date
  */
-void date_fmt(char *fmt, char *buf, long d, long m, long y);
+char *date_fmt(char *fmt, long d, long m, long y);
 
 /**
  * @ingroup date

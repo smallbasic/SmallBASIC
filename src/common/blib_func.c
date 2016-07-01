@@ -319,17 +319,18 @@ int date_weekday(long d, long m, long y) {
 /*
  * format date
  */
-void date_fmt(char *fmt, char *buf, long d, long m, long y) {
+char *date_fmt(char *fmt, long d, long m, long y) {
   int dc, mc, yc, wd, l, i;
   char *p, tmp[32];
+  cstr str;
 
-  buf[0] = '\0';
+  cstr_init(&str, BUF_LEN);
   dc = 0;
   mc = 0;
   yc = 0;
   p = fmt;
   if (!(*p)) {
-    return;
+    return str.buf;
   }
   while (1) {
     if (*p == DATEFMT_DAY_U || *p == DATEFMT_DAY_L) {
@@ -342,89 +343,94 @@ void date_fmt(char *fmt, char *buf, long d, long m, long y) {
       //
       // Separator
       //
-      if (dc) {                 // day
+      if (dc) {
+        // day
         switch (dc) {
         case 1:
           ltostr(d, tmp);
-          strcat(buf, tmp);
+          cstr_append(&str, tmp);
           break;
         case 2:
           ltostr(d, tmp);
           if (d < 10) {
-            strcat(buf, "0");
+            cstr_append(&str, "0");
           }
-          strcat(buf, tmp);
+          cstr_append(&str, tmp);
           break;
-        default:               // weekday
+        default:
+          // weekday
           wd = date_weekday(d, m, y);
           if (wd >= 0 && wd <= 6) {
             if (dc == 3) {
               // 3 letters
-              strcat(buf, date_wd3_table[wd]);
+              cstr_append(&str, date_wd3_table[wd]);
             } else {
               // full name
-              strcat(buf, date_wdN_table[wd]);
+              cstr_append(&str, date_wdN_table[wd]);
             }
           } else {
-            strcat(buf, "***");
+            cstr_append(&str, "***");
           }
         }
 
         dc = 0;
-      }                         // day
-      else if (mc) {            // month
+      }
+      else if (mc) {
+        // month
         switch (mc) {
         case 1:
           ltostr(m, tmp);
-          strcat(buf, tmp);
+          cstr_append(&str, tmp);
           break;
         case 2:
           ltostr(m, tmp);
           if (m < 10) {
-            strcat(buf, "0");
+            cstr_append(&str, "0");
           }
-          strcat(buf, tmp);
+          cstr_append(&str, tmp);
           break;
-        default:               // month
+        default:
+          // month
           if (m >= 1 && m <= 12) {
             if (mc == 3) {
               // 3 letters
-              strcat(buf, date_m3_table[m - 1]);
+              cstr_append(&str, date_m3_table[m - 1]);
             } else {
               // full name
-              strcat(buf, date_mN_table[m - 1]);
+              cstr_append(&str, date_mN_table[m - 1]);
             }
           } else {
-            strcat(buf, "***");
+            cstr_append(&str, "***");
           }
         }
-
         mc = 0;
-      }                         // month
-      else if (yc) {            // year
+      }
+      else if (yc) {
+        // year
         ltostr(y, tmp);
         l = strlen(tmp);
         if (l < yc) {
           for (i = l; i < yc; i++) {
-            strcat(buf, "0");
+            cstr_append(&str, "0");
           }
         } else {
-          strcat(buf, tmp + (l - yc));
+          cstr_append(&str, tmp + (l - yc));
         }
         yc = 0;
-      }                         // year
+      }
 
       // add separator
       tmp[0] = *p;
       tmp[1] = '\0';
-      strcat(buf, tmp);
+      cstr_append(&str, tmp);
     }
 
     if (*p == '\0') {
-      return;
+      break;
     }
-    p++;                        // next
+    p++;
   }
+  return str.buf;
 }
 
 /*
@@ -2206,13 +2212,14 @@ void cmd_genfunc(long funcCode, var_t *r) {
       }
     }
 
-    if (funcCode == kwDATEFMT) {  // format
+    if (funcCode == kwDATEFMT) {
+      // format
       r->type = V_STR;
-      r->v.p.ptr = malloc(r->v.p.length);
-      date_fmt(arg.v.p.ptr, r->v.p.ptr, d, m, y);
+      r->v.p.ptr = date_fmt(arg.v.p.ptr, d, m, y);
       r->v.p.length = strlen(r->v.p.ptr) + 1;
       v_free(&arg);
-    } else {                    // weekday
+    } else {
+      // weekday
       r->v.i = date_weekday(d, m, y);
     }
   }

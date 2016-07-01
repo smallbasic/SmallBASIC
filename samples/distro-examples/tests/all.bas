@@ -3,11 +3,12 @@
 ' Originally generated from mkref.bas
 '
 dim a,b
-s="aaaaaaaaaaabbbbbbbbbbccccccccccc"
-s1="tttttttttttttttt"
-s2="yyyyyyyyyyyyyyyyyyyyy"
-x=11111
+s="catsanddogs"
+s1="hello"
+s2="there"
+x=12.3
 d=1:m=1:y=1
+n=1234
 
 'ACCESS (file)
 APPEND a, "1", "2", "3", "4"
@@ -50,7 +51,7 @@ ENV("foo=bar"): if (env("foo") != "bar") then throw "env failed"
 'LINPUT [#fileN] var
 'LOCATE y, x
 'LOCK
-LOGPRINT "hello"
+'LOGPRINT "hello"
 'M3APPLY m3x3, BYREF poly
 'M3IDENT BYREF m3x3
 'M3ROTATE BYREF m3x3, angle [, x, y]
@@ -239,6 +240,6 @@ print UBOUND (a,1)
 print UCASE (s)
 print UPPER (s)
 print VAL (s)
-print WEEKDAY (dmy| (d,m,y)| julian_date)
+print WEEKDAY(dmy); WEEKDAY(d,m,y); WEEKDAY(JULIAN(d,m,y))
 print XPOS
 print YPOS

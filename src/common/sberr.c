@@ -145,6 +145,10 @@ void err_syntax(int keyword, const char *fmt) {
   }
 }
 
+void err_syntax_unknown() {
+  rt_raise(ERR_SYNTAX);
+}
+
 void err_parm_num(int found, int expected) {
   rt_raise(ERR_PARAM_NUM, found, expected);
 }
