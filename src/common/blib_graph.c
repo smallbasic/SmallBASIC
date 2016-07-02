@@ -1265,15 +1265,13 @@ void cmd_chart() {
   dev_settextcolor(prev_fgcolor, prev_bgcolor);
 }
 
-//
 var_t *par_getm3() {
-  var_t *vp;
-
   // array
-  vp = par_getvarray();
-  if (prog_error)
+  var_t *vp = par_getvarray();
+  if (prog_error) {
     return NULL;
-  if (vp->v.a.size != 9) {
+  }
+  if (vp == NULL || vp->type != V_ARRAY || vp->v.a.size != 9) {
     err_typemismatch();
     return NULL;
   }
@@ -1647,7 +1645,7 @@ void cmd_intersect() {
 void cmd_polyext() {
   var_t *xmin, *ymin, *xmax, *ymax;
   int count, i;
-  pt_t *poly;
+  pt_t *poly = NULL;
 
   count = par_getpoly(&poly);
   if (prog_error)

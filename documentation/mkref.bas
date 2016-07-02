@@ -209,11 +209,20 @@ func cmpFunc(l, r)
   cmpFunc = IFF(f1 == f2, 0, IFF(f1 > f2, 1, -1))
 end
 
+func fname(s)
+  local result
+  result = trim(leftof(s, " "))
+  if (len(result) == 0) then
+    result = s
+  endif
+  fname = result
+end
+
 '
 ' make a test program from the syntax field
 '
 sub mk_test(byref in_map)
-  local i, row, type, prev, syntax
+  local i, row, type, prev, syntax, el
   local in_len = len(in_map) - 1
   dim cmds, funcs
   for i = 0 to in_len
@@ -233,7 +242,7 @@ sub mk_test(byref in_map)
   for i = 0 to in_len
     row = cmds(i)
     if (row != prev) then
-      print "'" + row
+      print "print \"" + fname(row) + ":\" ':" + row
     endif
     prev = row
   next i
@@ -244,7 +253,7 @@ sub mk_test(byref in_map)
   for i = 0 to in_len
     row = funcs(i)
     if (row != prev) then
-      print "print " + row
+      print "print \"" + fname(row) + ":\" + " + row
     endif
     prev = row
   next i

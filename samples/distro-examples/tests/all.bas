@@ -9,237 +9,240 @@ s2="there"
 x=12.3
 d=1:m=1:y=1
 n=1234
+a=[1,1;2,-1,-2;1,-2,2,1;1,-3,,1,3;3,-1,,,-2]
+b=[44,3,4,5,6]
+inva=a
 
-'ACCESS (file)
-APPEND a, "1", "2", "3", "4"
-'ARC [STEP] x,y,r,astart,aend [,aspect [,color]] [COLOR color]
-'AT x, y
-'BEEP
-'BLOAD filename[, address]
-'BPUTC# fileN; byte
-'BSAVE filename, address, length
-'CALL (fp)
-'CHART LINECHART|BARCHART, array() [, style [, x1, y1, x2, y2]]
-'CHDIR dir
-'CHMOD file, mode
-'CIRCLE [STEP] x,y,r [,aspect [, color]] [COLOR color] [FILLED]
-'CLOSE #fileN
-'CLS
-'COLOR foreground-color [, background-color]
-'COPY "file", "newfile"
-'DATEDMY dmy| julian_date, BYREF d, BYREF m, BYREF y
-'DELAY ms
-DELETE a, 1
-'DERIV x, maxtries, maxerr, BYREF result, BYREF errcode USE expr
-'DIFFEQN x0, y0, xf, maxseg, maxerr, BYREF yf, BYREF errcode USE expr
-'DIRWALK directory [, wildcards] [USE ...]
-'DRAW "commands"
-'DRAWPOLY array [,x-origin,y-origin [, scalef [, color]]] [COLOR color] [FILLED]
-'EMPTY (x)
-ENV("foo=bar"): if (env("foo") != "bar") then throw "env failed"
-'EXPRSEQ BYREF array, xmin, xmax, count USE expression
-'FORM(map)
-'IMAGE [#handle | fileName | http://path-to-file.png | image-var | array of pixmap data]
-'INPUT #fileN; var1 [,delim] [, var2 [,delim]] ...
-'INPUT [prompt,|;] var[, var [, ...]]
-'INSERT a, idx, val [, val [, ...]]]
-'INTERSECT Ax, Ay, Bx, By, Cx, Cy, Dx, Dy, BYREF type, BYREF Rx, BYREF Ry
-'JOIN words(), delimiters, string
-'KILL "file"
-'LINE [STEP] x,y [,|STEP x2,y2] [, color| COLOR color]
-'LINEINPUT [#fileN] var
-'LINPUT [#fileN] var
-'LOCATE y, x
-'LOCK
-'LOGPRINT "hello"
-'M3APPLY m3x3, BYREF poly
-'M3IDENT BYREF m3x3
-'M3ROTATE BYREF m3x3, angle [, x, y]
-'M3SCALE BYREF m3x3, x, y, Sx, Sy
-'M3TRANS BYREF m3x3, Tx, Ty
-'MKDIR dir
-NOSOUND
-'OPEN file [FOR {INPUT|OUTPUT|APPEND}] AS #fileN
-'PAINT [STEP] x, y [,fill-color [,border-color]]
-'PAUSE 0
-PEN OFF
-PLAY "aaaaa"
-'PLOT xmin, xmax USE f(x)
-'POLYEXT poly(), BYREF xmin, BYREF ymin, BYREF xmax, BYREF ymax
-'PRINT [USING [format];] [expr|str [,|; [expr|str]] ...
-'PSET [STEP] x,y [, color| COLOR color]
-RANDOMIZE 111
-'READ var[, var ...]
-'RECT [STEP] x,y [,|STEP x2,y2] [, color| COLOR color] [FILLED]
-'REDIM x
-'RENAME "file", "newname"
-'RMDIR dir
-'ROOT low, high, segs, maxerr, BYREF result, BYREF errcode USE expr
-'SEARCH A, key, BYREF ridx [USE cmpfunc]
-'SEEK #fileN; pos
-SHOWPAGE
-'SINPUT src; var [, delim] [,var [, delim]] ...
-'SORT array [USE cmpfunc]
-'SOUND freq, dur_ms [, vol] [BG]
-'SPLIT string, delimiters, words() [, pairs] [USE expr]
-'SPRINT var; [USING...;] ...
-'STKDUMP
-SWAP a, b
-'THROW [info [, ...]]
-'TIMEHMS hms| timer, BYREF h, BYREF m, BYREF s
-'TLOAD file, BYREF var [, type]
-'TROFF
-'TRON
-'TSAVE file, var
-'VIEW [x1,y1,x2,y2 [,color [,border-color]]]
-'WINDOW [x1,y1,x2,y2]
-'WRITE #fileN; var1 [, ...]
-print ABS (x)
-print ABSMAX (1,2,3,4,5)
-print ABSMIN (1,2,3,4,5)
-print ACOS (x)
-print ACOSH (x)
-print ACOT (x)
-print ACOTH (x)
-print ACSC (x)
-print ACSCH (x)
-'print ARRAY('[1,2,3,4]')
-print ASC (s)
-print ASEC (x)
-print ASECH (x)
-print ASIN (x)
-print ASINH (x)
-print ATAN (x)
-print ATAN2 (x, y)
-print ATANH (x)
-print ATN (x)
-print BCS (s)
-'print BGETC (fileN)
-print BIN (x)
-print CAT (x)
-print CBS (s)
-print CDBL (x)
-print CEIL (x)
-print CHOP (source)
-print CHR (x)
-print CINT (x)
-print COS (x)
-print COSH (x)
-print COT (x)
-print COTH (x)
-print CREAL (x)
-print CSC (x)
-print CSCH (x)
-print DATE
-print DATEFMT ("dmy", d,m,y)
-'print DEFINEKEY k,sub
-print DEG (x)
-'print DETERM (A[, toler])
-'print DISCLOSE (str[, pairs [, ignore-pairs]])
-'print ENCLOSE (str[, pair])
-'print ENV expr
-'print EOF (fileN)
-'print EXIST (file)
-print EXP (x)
-print FILES (wildcards)
-print FIX (x)
-print FLOOR (x)
-'print FORMAT (format, val)
-print FRAC (x)
-print FRE (x)
-print FREEFILE
-print HEX (x)
-print IFF (1,2,3)
-'print INKEY
-'print INPUT (len [, fileN])
-'print INSTR ([start,] s1, s2)
-print INT (x)
-'print INVERSE (A)
-print ISARRAY (a)
-print ISDIR (x)
-print ISFILE (x)
-print ISLINK (x)
-print ISMAP (x)
-print ISNUMBER (x)
-print ISREF (x)
-print ISSTRING (x)
-print JULIAN (d,m,y)
-print LBOUND (a, 1)
-print LCASE (s)
-print LEFT (s, 1)
-print LEFTOF (s1, s2)
-print LEFTOFLAST (s1, s2)
-print LEN(a)
-'print LINEQN (a, b [, toler])
-'print LOF ("all.bas")
-print LOG (x)
-print LOG10 (x)
-print LOWER (s)
-print LTRIM (s)
-print MAX (1,2,3,4,5)
-print MID (s, 2,4)
-print MIN (6,5,4,3,2)
-print OCT (x)
-'print PEN (0..14)
-'print POINT (x [, y])
-print POLYAREA (poly)
-'print POLYCENT
-print POW (10,2)
-print PROGLINE
-'print PTDISTLN (Bx,By,Cx,Cy,Ax,Ay)
-'print PTDISTSEG (Bx,By,Cx,Cy,Ax,Ay)
-'print PTSIGN (Ax,Ay,Bx,By,Qx,Qy)
-print RAD (33.3)
-print REPLACE (s, 2, "zzzz", 2)
-print RGB (128,128,128)
-print RGBF (.99,.99,.99)
-print RIGHT (s,4)
-print RIGHTOF (s1, s2)
-print RIGHTOFLAST (s1, s2)
-print RINSTR (2, s1, s2)
-print RND
-print ROUND (x, 2)
-print RTRIM (s)
-'print RUN cmdstr
-print SEC (x)
-print SECH (x)
-'print SEEK (fileN)
-print SEGCOS (Ax,Ay,Bx,By,Cx,Cy,Dx,Dy)
-print SEGLEN (Ax,Ay,Bx,By)
-print SEGSIN (Ax,Ay,Bx,By,Cx,Cy,Dx,Dy)
-print SEQ (xmin, xmax, count)
-print SGN (x)
-print SIN (x)
-print SINH (x)
-print SPACE (n)
-print SPC (n)
-print SQR (x)
-print SQUEEZE (s)
-'print STATMEAN (...)
-'print STATMEANDEV (...)
-'print STATSPREADP (...)
-'print STATSPREADS (...)
-print STR (n)
-print STRING(10, "strings")
-print SUM (1,2,3,4)
-print SUMSQ (2,3,4,5)
-print TAB (n)
-print TAN (x)
-print TANH (x)
-print TEXTHEIGHT (s)
-print TEXTWIDTH (s)
-print TICKS
-print TIME
-print TIMER
-'print TIMESTAMP filename
-print TRANSLATE ("source", "what", "with")
-print TRIM(s)
-print TXTH (s)
-print TXTW (s)
-print UBOUND (a,1)
-print UCASE (s)
-print UPPER (s)
-print VAL (s)
-print WEEKDAY(dmy); WEEKDAY(d,m,y); WEEKDAY(JULIAN(d,m,y))
-print XPOS
-print YPOS
+print "ACCESS:" ':ACCESS (file)
+print "APPEND:" : APPEND a, "1", "2", "3", "4"
+print "ARC:" ':ARC [STEP] x,y,r,astart,aend [,aspect [,color]] [COLOR color]
+print "AT:" ':AT x, y
+print "BEEP:" ':BEEP
+print "BLOAD:" ':BLOAD filename[, address]
+print "BPUTC#:" ':BPUTC# fileN; byte
+print "BSAVE:" ':BSAVE filename, address, length
+print "CALL:" ':CALL (fp)
+print "CHART:" ':CHART LINECHART|BARCHART, array() [, style [, x1, y1, x2, y2]]
+print "CHDIR:" ':CHDIR dir
+print "CHMOD:" ':CHMOD file, mode
+print "CIRCLE:" ':CIRCLE [STEP] x,y,r [,aspect [, color]] [COLOR color] [FILLED]
+print "CLOSE:" ':CLOSE #fileN
+print "CLS:" :CLS
+print "COLOR:" :COLOR 1,2
+print "COPY:" ':COPY "file", "newfile"
+print "DATEDMY:"': DATEDMY(100000,d,m,y); PRINT d,m,u
+print "DELAY:" ':DELAY ms
+print "DELETE:" :DELETE a, 1
+print "DERIV:" ':DERIV x, maxtries, maxerr, BYREF result, BYREF errcode USE expr
+print "DIFFEQN:" ':DIFFEQN x0, y0, xf, maxseg, maxerr, BYREF yf, BYREF errcode USE expr
+print "DIRWALK:" ':DIRWALK directory [, wildcards] [USE ...]
+print "DRAW:" :DRAW ""
+print "DRAWPOLY:" ':DRAWPOLY array [,x-origin,y-origin [, scalef [, color]]] [COLOR color] [FILLED]
+print "EMPTY:" ':EMPTY (x)
+print "ENV:" :ENV("foo=bar"): if (env("foo") != "bar") then throw "env failed"
+print "EXPRSEQ:" ':EXPRSEQ BYREF array, xmin, xmax, count USE expression
+print "FORM(map):" ':FORM(map)
+print "IMAGE:" ':IMAGE [#handle | fileName | http://path-to-file.png | image-var | array of pixmap data]
+print "INPUT:" ':INPUT #fileN; var1 [,delim] [, var2 [,delim]] ...
+print "INPUT:" ':INPUT [prompt,|;] var[, var [, ...]]
+print "INSERT:" :INSERT a, 2, "this", "that", "the", "other"
+print "INTERSECT:" ':INTERSECT Ax, Ay, Bx, By, Cx, Cy, Dx, Dy, BYREF type, BYREF Rx, BYREF Ry
+print "JOIN:" ':JOIN a, ",.", "ss": PRINT words
+print "KILL:" ':KILL "file"
+print "LINE:" ':LINE [STEP] x,y [,|STEP x2,y2] [, color| COLOR color]
+print "LINEINPUT:" ':LINEINPUT [#fileN] var
+print "LINPUT:" ':LINPUT [#fileN] var
+print "LOCATE:" ':LOCATE y, x
+print "LOCK:" ':LOCK
+print "LOGPRINT:" ':LOGPRINT ...
+print "M3APPLY:" ': M3APPLY m3x3, poly
+print "M3IDENT:" ':M3IDENT m3x3
+print "M3ROTATE:" ':M3ROTATE m3x3, angle
+print "M3SCALE:" ':M3SCALE m3x3, x, y, Sx, Sy
+print "M3TRANS:" ':M3TRANS m3x3, Tx, Ty
+print "MKDIR:" ':MKDIR dir
+print "NOSOUND:" :NOSOUND
+print "OPEN:" ':OPEN file [FOR {INPUT|OUTPUT|APPEND}] AS #fileN
+print "PAINT:" ':PAINT [STEP] x, y [,fill-color [,border-color]]
+print "PAUSE:" ':PAUSE [secs]
+print "PEN:" : PEN ON: PEN OFF
+print "PLAY:" :PLAY "abcdefg"
+print "PLOT:" 'PLOT xmin, xmax USE f(x)
+print "POLYEXT:" :POLYEXT poly, xmin, ymin, xmax, ymax
+print "PRINT:" ':PRINT [USING [format];] [expr|str [,|; [expr|str]] ...
+print "PSET:" ':PSET [STEP] x,y [, color| COLOR color]
+print "RANDOMIZE:" :RANDOMIZE 111
+print "READ:" ':READ var[, var ...]
+print "RECT:" ':RECT [STEP] x,y [,|STEP x2,y2] [, color| COLOR color] [FILLED]
+print "REDIM:" ':REDIM x
+print "RENAME:" ':RENAME "file", "newname"
+print "RMDIR:" ':RMDIR dir
+print "ROOT:" ':ROOT low, high, segs, maxerr, BYREF result, BYREF errcode USE expr
+print "SEARCH:" ':SEARCH A, key, BYREF ridx [USE cmpfunc]
+print "SEEK:" ':SEEK #fileN; pos
+print "SHOWPAGE:" :SHOWPAGE
+print "SINPUT:" ':SINPUT src; var [, delim] [,var [, delim]] ...
+print "SORT:" ':SORT array [USE cmpfunc]
+print "SOUND:" ':SOUND freq, dur_ms [, vol] [BG]
+print "SPLIT:" ':SPLIT string, delimiters, words() [, pairs] [USE expr]
+print "SPRINT:" ':SPRINT var; [USING...;] ...
+print "STKDUMP:" ':STKDUMP
+print "SWAP:" :SWAP a, b
+print "THROW:" ':THROW [info [, ...]]
+print "TIMEHMS:" ':TIMEHMS hms| timer, BYREF h, BYREF m, BYREF s
+print "TLOAD:" ':TLOAD file, BYREF var [, type]
+print "TRON:" :TRON
+print "TROFF:" :TROFF
+print "TSAVE:" ':TSAVE file, var
+print "VIEW:" ':VIEW [x1,y1,x2,y2 [,color [,border-color]]]
+print "WINDOW:" ':WINDOW [x1,y1,x2,y2]
+print "WRITE:" ':WRITE #fileN; var1 [, ...]
+print "ABS:" + ABS (x)
+print "ABSMAX:" + ABSMAX (1,2,3,4,5,6,7,8,9)
+print "ABSMIN:" + ABSMIN (1,2,3,4,5,6,7,8,9)
+print "ACOS:" + ACOS (x)
+print "ACOSH:" + ACOSH (x)
+print "ACOT:" + ACOT (x)
+print "ACOTH:" + ACOTH (x)
+print "ACSC:" + ACSC (x)
+print "ACSCH:" + ACSCH (x)
+print "ARRAY:" + ARRAY("[1,2,3,4,5,6,7,8,9]")
+print "ASC:" + ASC (s)
+print "ASEC:" + ASEC (x)
+print "ASECH:" + ASECH (x)
+print "ASIN:" + ASIN (x)
+print "ASINH:" + ASINH (x)
+print "ATAN:" + ATAN (x)
+print "ATAN2:" + ATAN2 (x, y)
+print "ATANH:" + ATANH (x)
+print "ATN:" + ATN (x)
+print "BCS:" + BCS (s)
+print "BGETC:" '+ BGETC (fileN)
+print "BIN:" + BIN (x)
+print "CAT:" + CAT (x)
+print "CBS:" + CBS (s)
+print "CDBL:" + CDBL (x)
+print "CEIL:" + CEIL (x)
+print "CHOP:" + CHOP ("123.45$")
+print "CHR:" + CHR (87)
+print "CINT:" + CINT (x)
+print "COS:" + COS (x)
+print "COSH:" + COSH (x)
+print "COT:" + COT (x)
+print "COTH:" + COTH (x)
+print "CREAL:" + CREAL (x)
+print "CSC:" + CSC (x)
+print "CSCH:" + CSCH (x)
+print "DATE:" + DATE
+print "DATEFMT:" + DATEFMT("ddmmyy", 12345) + " " + DATEFMT("yyymmdd", d,m,y)
+print "DEFINEKEY:"' + DEFINEKEY k,sub
+print "DEG:" + DEG (x)
+print "DETERM:"' + DETERM (A, 1)
+print "DISCLOSE:" + DISCLOSE("{debraceme}", "{}")
+print "ENCLOSE:" + ENCLOSE ("braceme", "{}")
+print "ENV:" + ENV("DISPLAY")
+print "EOF:"' + EOF (fileN)
+print "EXIST:"' + EXIST (file)
+print "EXP:" + EXP (x)
+print "FILES:"; FILES ("file-not-found")
+print "FIX:" + FIX (x)
+print "FLOOR:" + FLOOR (x)
+print "FORMAT:" + FORMAT ("XXXX", 9999)
+print "FRAC:" + FRAC (x)
+print "FRE:" + FRE (x)
+print "FREEFILE:" + FREEFILE
+print "HEX:" + HEX (x)
+print "IFF:" + IFF (1+1==2, "1+1=2", "1+1<>2")
+print "INKEY:"' + INKEY
+print "INPUT:"' + INPUT (len [, fileN])
+print "INSTR:" + INSTR (2, s1, s2)
+print "INT:" + INT (x)
+print "INVERSE:"; INVERSE(inva)
+print "ISARRAY:" + ISARRAY (a)
+print "ISDIR:" + ISDIR (x)
+print "ISFILE:" + ISFILE (x)
+print "ISLINK:" + ISLINK (x)
+print "ISMAP:" + ISMAP (x)
+print "ISNUMBER:" + ISNUMBER (x)
+print "ISREF:" + ISREF (x)
+print "ISSTRING:" + ISSTRING (s)
+print "JULIAN:" + JULIAN(d,m,y)
+print "LBOUND:" + LBOUND (a, 1)
+print "LCASE:" + LCASE (s)
+print "LEFT:" + LEFT (s,2)
+print "LEFTOF:" + LEFTOF (s1, s2)
+print "LEFTOFLAST:" + LEFTOFLAST (s1, s2)
+print "LEN(d):" + LEN(d)
+print "LINEQN:"'; LINEQN (inva, b)
+print "LOF:"' + LOF (1)
+print "LOG:" + LOG (x)
+print "LOG10:" + LOG10 (x)
+print "LOWER:" + LOWER (s)
+print "LTRIM:" + LTRIM (s)
+print "MAX:" + MAX (1,2,3,4,5,6,7,8,9)
+print "MID:" + MID (s,2,4)
+print "MIN:" + MIN (1,2,3,4,5,6,7,8,9)
+print "OCT:" + OCT (x)
+print "PEN:" + PEN (1)
+print "POINT:" + POINT (1,2)
+print "POLYAREA:" + POLYAREA (poly)
+print "POLYCENT:"' + POLYCENT(a)
+print "POW:" + POW (x, y)
+print "PROGLINE:" + PROGLINE
+print "PTDISTLN:" + PTDISTLN (Bx,By,Cx,Cy,Ax,Ay)
+print "PTDISTSEG:" + PTDISTSEG (Bx,By,Cx,Cy,Ax,Ay)
+print "PTSIGN:" + PTSIGN (Ax,Ay,Bx,By,Qx,Qy)
+print "RAD:" + RAD (x)
+print "REPLACE:" + REPLACE ("source", 1, "sorce", 2)
+print "RGB:" + RGB (80,80,80)
+print "RGBF:" + RGBF (.1,.1,.1)
+print "RIGHT:" + RIGHT (s,2)
+print "RIGHTOF:" + RIGHTOF (s1, s2)
+print "RIGHTOFLAST:" + RIGHTOFLAST (s1, s2)
+print "RINSTR:" + RINSTR (2, s1, s2)
+print "RND:" + RND
+print "ROUND:" + ROUND (x,22)
+print "RTRIM:" + RTRIM (s)
+print "RUN:" '+ RUN cmdstr
+print "SEC:" + SEC (x)
+print "SECH:" + SECH (x)
+print "SEEK:" '+ SEEK (fileN)
+print "SEGCOS:" + SEGCOS (Ax,Ay,Bx,By,Cx,Cy,Dx,Dy)
+print "SEGLEN:" + SEGLEN (Ax,Ay,Bx,By)
+print "SEGSIN:" + SEGSIN (Ax,Ay,Bx,By,Cx,Cy,Dx,Dy)
+print "SEQ:"' + SEQ (100,200,1)
+print "SGN:" + SGN (x)
+print "SIN:" + SIN (x)
+print "SINH:" + SINH (x)
+print "SPACE:" + SPACE (2)+ "<"
+print "SPC:" + SPC (2) + "<"
+print "SQR:" + SQR (x)
+print "SQUEEZE:" + SQUEEZE (s)
+print "STATMEAN:" + STATMEAN (1,2,3,4,5,6,7,8,9)
+print "STATMEANDEV:" + STATMEANDEV (1,2,3,4,5,6,7,8,9)
+print "STATSPREADP:" + STATSPREADP (1,2,3,4,5,6,7,8,9)
+print "STATSPREADS:" + STATSPREADS (1,2,3,4,5,6,7,8,9)
+print "STR:" + STR (5)
+print "STRING:"; STRING(5, "Strings")
+print "SUM:" + SUM (1,2,3,4,5,6,7,8,9)
+print "SUMSQ:" + SUMSQ (1,2,3,4,5,6,7,8,9)
+print "TAB:" + TAB (n)
+print "TAN:" + TAN (x)
+print "TANH:" + TANH (x)
+print "TEXTHEIGHT:" + TEXTHEIGHT (s)
+print "TEXTWIDTH:" + TEXTWIDTH (s)
+print "TICKS:"' + TICKS
+print "TIME:"' + TIME
+print "TIMER:"' + TIMER
+print "TIMESTAMP:" '+ TIMESTAMP filename
+print "TRANSLATE:" + TRANSLATE ("source", "what", "with")
+print "TRIM(s):" + TRIM("   s with spaces     ")
+print "TXTH:" + TXTH (s)
+print "TXTW:" + TXTW (s)
+print "UBOUND:" + UBOUND (a, 1)
+print "UCASE:" + UCASE (s)
+print "UPPER:" + UPPER (s)
+print "VAL:" + VAL (s)
+print "WEEKDAY:" + WEEKDAY(dmy) + " " + WEEKDAY(1,1,2020) + " " + WEEKDAY(JULIAN(d,m,y))
+print "XPOS:" + XPOS
+print "YPOS:" + YPOS
