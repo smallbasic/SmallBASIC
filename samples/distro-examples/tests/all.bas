@@ -2,7 +2,7 @@
 ' Test for all built-in SUBs and FUNCs
 ' Originally generated from mkref.bas
 '
-dim a,b
+dim a,b,c
 s="catsanddogs"
 s1="hello"
 s2="there"
@@ -13,12 +13,12 @@ a=[1,1;2,-1,-2;1,-2,2,1;1,-3,,1,3;3,-1,,,-2]
 b=[44,3,4,5,6]
 inva=a
 
-print "ACCESS:" ':ACCESS (file)
-print "APPEND:" : APPEND a, "1", "2", "3", "4"
+print "ACCESS:" +IFF(ACCESS ("/etc/hostname") != 0, "<> 0", "0")
+print "APPEND:"; : APPEND c, "1", "2", "3", "4": PRINT c
 print "ARC:" ':ARC [STEP] x,y,r,astart,aend [,aspect [,color]] [COLOR color]
 print "AT:" ':AT x, y
 print "BEEP:" ':BEEP
-print "BLOAD:" ':BLOAD filename[, address]
+print "BLOAD:" ':BLOAD "/etc/hostname"
 print "BPUTC#:" ':BPUTC# fileN; byte
 print "BSAVE:" ':BSAVE filename, address, length
 print "CALL:" ':CALL (fp)
@@ -87,7 +87,7 @@ print "SOUND:" ':SOUND freq, dur_ms [, vol] [BG]
 print "SPLIT:" ':SPLIT string, delimiters, words() [, pairs] [USE expr]
 print "SPRINT:" ':SPRINT var; [USING...;] ...
 print "STKDUMP:" ':STKDUMP
-print "SWAP:" :SWAP a, b
+print "SWAP:"; :sa=10:sb=20:SWAP sa,sb: PRINT sa;sb
 print "THROW:" ':THROW [info [, ...]]
 print "TIMEHMS:" ':TIMEHMS hms| timer, BYREF h, BYREF m, BYREF s
 print "TLOAD:" ':TLOAD file, BYREF var [, type]
@@ -97,7 +97,7 @@ print "TSAVE:" ':TSAVE file, var
 print "VIEW:" ':VIEW [x1,y1,x2,y2 [,color [,border-color]]]
 print "WINDOW:" ':WINDOW [x1,y1,x2,y2]
 print "WRITE:" ':WRITE #fileN; var1 [, ...]
-print "ABS:" + ABS (x)
+print "ABS:" + ABS (12.2222)
 print "ABSMAX:" + ABSMAX (1,2,3,4,5,6,7,8,9)
 print "ABSMIN:" + ABSMIN (1,2,3,4,5,6,7,8,9)
 print "ACOS:" + ACOS (x)
@@ -133,7 +133,7 @@ print "COTH:" + COTH (x)
 print "CREAL:" + CREAL (x)
 print "CSC:" + CSC (x)
 print "CSCH:" + CSCH (x)
-print "DATE:" + DATE
+print "DATE:"' + DATE
 print "DATEFMT:" + DATEFMT("ddmmyy", 12345) + " " + DATEFMT("yyymmdd", d,m,y)
 print "DEFINEKEY:"' + DEFINEKEY k,sub
 print "DEG:" + DEG (x)
@@ -149,7 +149,7 @@ print "FIX:" + FIX (x)
 print "FLOOR:" + FLOOR (x)
 print "FORMAT:" + FORMAT ("XXXX", 9999)
 print "FRAC:" + FRAC (x)
-print "FRE:" + FRE (x)
+print "FRE:" '+ FRE (x)
 print "FREEFILE:" + FREEFILE
 print "HEX:" + HEX (x)
 print "IFF:" + IFF (1+1==2, "1+1=2", "1+1<>2")
