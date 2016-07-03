@@ -1,3 +1,7 @@
+2016-07-03 (0.12.7)
+	Updated welcome screen
+	Fixed some memory access issues uncovered with new test all.bas
+
 2016-06-24 (0.12.7)
 	Renamed str var "size" field "length"
 	var cleanup now uses v_detach()

@@ -44,16 +44,34 @@ func mk_menu(value, lab, x)
   mk_menu = bn
 end
 
-sub intro()
-  color 7,0
-  print boldOn + spaced("Welcome to SmallBASIC") + boldOff
-  color 6,0
-  print
-  print "Pop up menus are accessed by either a Right mouse ";
-  print "click or 3 vertical dots tap (Android). ";
-  print "From popup menus, you can do things like toggle the ";
-  print "Editor, Run, Adjust Font size..."
-  print
+sub info_header(is_welcome)
+  if (is_welcome) then
+    color 7,0
+    print boldOn + spaced("Welcome to SmallBASIC") + boldOff
+    color 6,0
+    print "Pop up menus are accessed by either a Right mouse ";
+    print "click or 3 vertical dots tap (Android). ";
+    print "From popup menus, you can do things like toggle the ";
+    print "Editor, Run, Adjust Font size..."
+    print
+  else
+    color 6,0
+    randomize
+    print "TIP: ";
+    select case (rnd * 100 % 10)
+    case 0: print "Press and hold Ctrl then press 'm' to access the menu."
+    case 1: print "Press and hold Ctrl then press 'p' to take a screenshot."
+    case 2: print "In the editor, press and hold Ctrl then press 'h' to access help."
+    case 3: print "Toggle the editor menu option for different run modes."
+    case 4: print "Editor Live Mode makes your program restart whenever the program changes."
+    case 5: print "Select a file to edit or run..."
+    case 6: print "Select the Online option to run a featured program."
+    case 7: print "Select View source from the menu to display program code."
+    case 8: print "Select the File option to manage .bas files in the current folder."
+    case else: print "Click the right mouse button (or menu key in android) to access the menu."
+    end select
+  endif
+  color 2,0
 end
 
 sub do_okay_button()
@@ -373,10 +391,7 @@ end
 
 sub main
   local path, frm
-
-  if (command == "welcome") then
-    intro()
-  fi
+  local is_welcome = true
 
   func makeUI(path)
     local frm, bn_files, bn_online, bn_setup, bn_about, bn_new
@@ -384,6 +399,8 @@ sub main
     dim basList
     dim dirList
 
+    info_header(is_welcome)
+    is_welcome = false
     bn_files = mk_menu("_files", "File", 0)
     bn_online = mk_menu(onlineUrl, "Online", -1)
     bn_setup = mk_menu("_setup", "Setup", -1)
