@@ -86,3 +86,10 @@ if (dots(0).y != 101) then
    throw "not 101 !!!"
 endif
 
+arr1 = [1,2,3;4,5,6,7]
+arr2 = array("[1,2,3;4,5,6,7]")
+if (arr1 != arr2) then
+  ? arr1
+  ? arr2
+  throw "array err"
+endif

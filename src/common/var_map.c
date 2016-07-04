@@ -28,6 +28,28 @@ typedef struct JsonTokens {
   int num_tokens;
 } JsonTokens;
 
+typedef struct cint_list {
+  int *data;
+  int length;
+  int size;
+  int grow_size;
+} cint_list;
+
+void cint_list_init(cint_list *cl, int size) {
+  cl->length = 0;
+  cl->size = size;
+  cl->grow_size = size;
+  cl->data = malloc(sizeof(int) * cl->grow_size);
+}
+
+void cint_list_append(cint_list *cl, int value) {
+  if (cl->size - cl->length == 0) {
+    cl->size += cl->grow_size;
+    cl->data = realloc(cl->data, sizeof(int) * cl->size);
+  }
+  cl->data[cl->length++] = value;
+}
+
 /**
  * Process the next token
  */
@@ -396,31 +418,6 @@ void map_write(const var_p_t var_p, int method, int handle) {
 }
 
 /**
- * Creates an array variable
- */
-int map_create_array(var_p_t dest, JsonTokens *json, int end_position, int index) {
-  int size = ARRAY_GROW_SIZE;
-  int item_index = 0;
-  v_toarray1(dest, size);
-  int i = index;
-  while (i < json->num_tokens) {
-    jsmntok_t token = json->tokens[i];
-    if (token.start > end_position) {
-      break;
-    }
-    if (item_index >= size) {
-      size += ARRAY_GROW_SIZE;
-      v_resize_array(dest, size);
-    }
-    var_t *elem = v_elem(dest, item_index);
-    i = map_read_next_token(elem, json, i);
-    item_index++;
-  }
-  v_resize_array(dest, item_index);
-  return i;
-}
-
-/**
  * Process the next primative value
  */
 void map_set_primative(var_p_t dest, const char *s, int len) {
@@ -445,6 +442,103 @@ void map_set_primative(var_p_t dest, const char *s, int len) {
   } else {
     v_setint(dest, value);
   }
+}
+
+/**
+ * Handle the semi-colon row separator character
+ */
+int map_array_split_row(var_p_t dest, var_t *elem, int index) {
+  int result = 0;
+  if (elem->type == V_STR) {
+    char *delim = strchr(elem->v.p.ptr, ';');
+    while (delim != NULL) {
+      var_t *var = v_new();
+      *delim = '\0';
+      map_set_primative(var, elem->v.p.ptr, strlen(elem->v.p.ptr));
+      if (++index >= dest->v.a.size) {
+        int size = dest->v.a.size + ARRAY_GROW_SIZE;
+        v_resize_array(dest, size);
+      }
+      var_t *next = v_elem(dest, index);
+      map_set_primative(next, delim + 1, strlen(delim + 1));
+      v_set(elem, var);
+      v_free(var);
+      v_detach(var);
+      elem = next;
+
+      if (elem->type == V_STR) {
+        delim = strchr(elem->v.p.ptr, ';');
+      } else {
+        delim = NULL;
+      }
+      result++;
+    }
+  }
+  return result;
+}
+
+/**
+ * Creates an array variable
+ */
+int map_create_array(var_p_t dest, JsonTokens *json, int end_position, int index) {
+  int item_index = 0;
+  int i = index;
+  int cols = 0;
+  int rows = 1;
+  int curcol = 0;
+  cint_list offs;
+
+  cint_list_init(&offs, ARRAY_GROW_SIZE);
+  v_toarray1(dest, ARRAY_GROW_SIZE);
+  while (i < json->num_tokens) {
+    jsmntok_t token = json->tokens[i];
+    if (token.start > end_position) {
+      break;
+    }
+    if (item_index >= dest->v.a.size) {
+      int size = dest->v.a.size + ARRAY_GROW_SIZE;
+      v_resize_array(dest, size);
+    }
+    cint_list_append(&offs, curcol);
+    var_t *elem = v_elem(dest, item_index);
+    i = map_read_next_token(elem, json, i);
+    int split = map_array_split_row(dest, elem, item_index);
+    if (split) {
+      int j;
+      for (j = 0; j < split; j++) {
+        cint_list_append(&offs, 0);
+      }
+      item_index += split;
+      rows += split;
+      curcol = 0;
+    }
+    if (++curcol > cols) {
+      cols = curcol;
+    }
+    item_index++;
+  }
+
+  v_resize_array(dest, item_index);
+
+  // change the grid dimensions when row separator found
+  if (rows > 1) {
+    int idx, row;
+    var_t *var = v_new();
+    v_tomatrix(var, rows, cols);
+    for (idx = 0, row = -1; idx < item_index; idx++) {
+      if (!offs.data[idx]) {
+        // start of next row
+        row++;
+      }
+      int pos = row * cols + offs.data[idx];
+      v_set(v_elem(var, pos), v_elem(dest, idx));
+    }
+    v_set(dest, var);
+    v_free(var);
+    v_detach(var);
+  }
+  free(offs.data);
+  return i;
 }
 
 /**

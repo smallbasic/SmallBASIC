@@ -1,3 +1,6 @@
+2016-07-04 (0.12.7)
+	Updated ARRAY command to handle 2d arrays
+
 2016-07-03 (0.12.7)
 	Updated welcome screen
 	Fixed some memory access issues uncovered with new test all.bas
