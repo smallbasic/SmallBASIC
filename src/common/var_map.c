@@ -26,6 +26,7 @@ typedef struct JsonTokens {
   const char *js;
   jsmntok_t *tokens;
   int num_tokens;
+  int code_array;
 } JsonTokens;
 
 typedef struct cint_list {
@@ -424,6 +425,7 @@ void map_set_primative(var_p_t dest, const char *s, int len) {
   int value = 0;
   int fract = 0;
   int text = 0;
+  int sign = 1;
   int i;
   for (i = 0; i < len && !text; i++) {
     int n = s[i] - '0';
@@ -431,6 +433,8 @@ void map_set_primative(var_p_t dest, const char *s, int len) {
       value = value * 10 + n;
     } else if (!fract && s[i] == '.') {
       fract = 1;
+    } else if (s[i] == '-' && sign) {
+      sign = -1;
     } else {
       text = 1;
     }
@@ -440,41 +444,52 @@ void map_set_primative(var_p_t dest, const char *s, int len) {
   } else if (fract) {
     v_setreal(dest, atof(s));
   } else {
-    v_setint(dest, value);
+    v_setint(dest, sign * value);
   }
 }
 
 /**
  * Handle the semi-colon row separator character
  */
-int map_array_split_row(var_p_t dest, var_t *elem, int index) {
-  int result = 0;
-  if (elem->type == V_STR) {
-    char *delim = strchr(elem->v.p.ptr, ';');
-    while (delim != NULL) {
-      var_t *var = v_new();
-      *delim = '\0';
-      map_set_primative(var, elem->v.p.ptr, strlen(elem->v.p.ptr));
-      if (++index >= dest->v.a.size) {
-        int size = dest->v.a.size + ARRAY_GROW_SIZE;
-        v_resize_array(dest, size);
-      }
-      var_t *next = v_elem(dest, index);
-      map_set_primative(next, delim + 1, strlen(delim + 1));
-      v_set(elem, var);
-      v_free(var);
-      v_detach(var);
-      elem = next;
+int map_read_next_array_token(JsonTokens *json, int index, var_p_t dest,
+                              int item_index, int *new_elems, int *new_rows) {
+  int next;
+  jsmntok_t token = json->tokens[index];
+  var_t *elem = v_elem(dest, item_index);
 
-      if (elem->type == V_STR) {
-        delim = strchr(elem->v.p.ptr, ';');
-      } else {
-        delim = NULL;
+  if (token.type == JSMN_PRIMITIVE && json->code_array) {
+    int len = token.end - token.start;
+    const char *str = json->js + token.start;
+    const char *delim = memchr(str, ';', len);
+    if (delim != NULL) {
+      map_set_primative(elem, str, delim - str);
+      while (delim != NULL) {
+        len -= (delim - str) + 1;
+        if (len) {
+          // text exists beyond ';'
+          if (++item_index >= dest->v.a.size) {
+            int size = dest->v.a.size + ARRAY_GROW_SIZE;
+            v_resize_array(dest, size);
+          }
+          elem = v_elem(dest, item_index);
+          str = ++delim;
+          map_set_primative(elem, str, len);
+          delim = memchr(str, ';', len);
+          (*new_elems)++;
+        } else {
+          // no more text, just count the new row
+          delim = NULL;
+        }
+        (*new_rows)++;
       }
-      result++;
+    } else {
+      map_set_primative(elem, json->js + token.start, token.end - token.start);
     }
+    next = index + 1;
+  } else {
+    next = map_read_next_token(elem, json, index);
   }
-  return result;
+  return next;
 }
 
 /**
@@ -483,7 +498,7 @@ int map_array_split_row(var_p_t dest, var_t *elem, int index) {
 int map_create_array(var_p_t dest, JsonTokens *json, int end_position, int index) {
   int item_index = 0;
   int i = index;
-  int cols = 0;
+  int cols = 1;
   int rows = 1;
   int curcol = 0;
   cint_list offs;
@@ -491,6 +506,8 @@ int map_create_array(var_p_t dest, JsonTokens *json, int end_position, int index
   cint_list_init(&offs, ARRAY_GROW_SIZE);
   v_toarray1(dest, ARRAY_GROW_SIZE);
   while (i < json->num_tokens) {
+    int new_elems = 0;
+    int new_rows = 0;
     jsmntok_t token = json->tokens[i];
     if (token.start > end_position) {
       break;
@@ -500,17 +517,16 @@ int map_create_array(var_p_t dest, JsonTokens *json, int end_position, int index
       v_resize_array(dest, size);
     }
     cint_list_append(&offs, curcol);
-    var_t *elem = v_elem(dest, item_index);
-    i = map_read_next_token(elem, json, i);
-    int split = map_array_split_row(dest, elem, item_index);
-    if (split) {
+    i = map_read_next_array_token(json, i, dest, item_index, &new_elems, &new_rows);
+    if (new_rows) {
       int j;
-      for (j = 0; j < split; j++) {
+      for (j = 0; j < new_elems; j++) {
         cint_list_append(&offs, 0);
+        item_index++;
       }
-      item_index += split;
-      rows += split;
-      curcol = 0;
+      rows += new_rows;
+      // when no added cells, make curcol reset to zero
+      curcol = !new_elems ? -1 : 0;
     }
     if (++curcol > cols) {
       cols = curcol;
@@ -570,7 +586,7 @@ int map_create(var_p_t dest, JsonTokens *json, int end_position, int index) {
 int map_read_next_token(var_p_t dest, JsonTokens *json, int index) {
   int next;
   jsmntok_t token = json->tokens[index];
-  switch(token.type) {
+  switch (token.type) {
   case JSMN_OBJECT:
     next = map_create(dest, json, token.end, index + 1);
     break;
@@ -595,7 +611,7 @@ int map_read_next_token(var_p_t dest, JsonTokens *json, int index) {
 /**
  * Initialise a map from a string
  */
-void map_from_str(var_p_t dest) {
+void map_from_str(var_p_t dest, int code_array) {
   var_t arg;
   v_init(&arg);
   eval(&arg);
@@ -626,6 +642,7 @@ void map_from_str(var_p_t dest) {
         json.tokens = tokens;
         json.js = js;
         json.num_tokens = parser.toknext;
+        json.code_array = code_array;
         map_read_next_token(dest, &json, 0);
       }
       free(tokens);

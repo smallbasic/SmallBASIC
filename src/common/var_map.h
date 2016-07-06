@@ -34,7 +34,7 @@ void map_set(var_p_t dest, const var_p_t src);
 void map_set_int(var_p_t base, const char *name, var_int_t n);
 char *map_to_str(const var_p_t var_p);
 void map_write(const var_p_t var_p, int method, int handle);
-void map_from_str(var_p_t var_p);
+void map_from_str(var_p_t var_p, int code_array);
 
 #if defined(__cplusplus)
 }

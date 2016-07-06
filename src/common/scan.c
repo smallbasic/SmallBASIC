@@ -1181,11 +1181,18 @@ void comp_expression(char *expr, byte no_parser) {
     } else if (*ptr == '\"') {
       // string
       ptr = bc_store_string(&bc, ptr);
-    } else if (*ptr == '[') {     // code-defined array
-      ptr++;
-      level++;
-      bc_add_fcode(&bc, kwCODEARRAY);
-      bc_add_code(&bc, kwTYPE_LEVEL_BEGIN);
+    } else if (*ptr == '[') {
+      // code-defined array
+      char *end = strchr(ptr, ']');
+      if (end == NULL) {
+        err_comp_missing_rp();
+      } else {
+        bc_add_fcode(&bc, kwCODEARRAY);
+        bc_add_code(&bc, kwTYPE_LEVEL_BEGIN);
+        bc_add_strn(&bc, ptr, end - ptr + 1);
+        bc_add_code(&bc, kwTYPE_LEVEL_END);
+        ptr = end + 1;
+      }
     } else if (*ptr == '(') {
       // parenthesis
       level++;
