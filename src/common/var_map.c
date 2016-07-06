@@ -457,7 +457,7 @@ int map_read_next_array_token(JsonTokens *json, int index, var_p_t dest,
   jsmntok_t token = json->tokens[index];
   var_t *elem = v_elem(dest, item_index);
 
-  if (token.type == JSMN_PRIMITIVE && json->code_array) {
+  if (token.type == JSMN_PRIMITIVE && json->tokens[0].type == JSMN_ARRAY) {
     int len = token.end - token.start;
     const char *str = json->js + token.start;
     const char *delim = memchr(str, ';', len);
@@ -465,7 +465,7 @@ int map_read_next_array_token(JsonTokens *json, int index, var_p_t dest,
       map_set_primative(elem, str, delim - str);
       while (delim != NULL) {
         len -= (delim - str) + 1;
-        if (len) {
+        if (len > 0) {
           // text exists beyond ';'
           if (++item_index >= dest->v.a.size) {
             int size = dest->v.a.size + ARRAY_GROW_SIZE;
@@ -611,7 +611,7 @@ int map_read_next_token(var_p_t dest, JsonTokens *json, int index) {
 /**
  * Initialise a map from a string
  */
-void map_from_str(var_p_t dest, int code_array) {
+void map_from_str(var_p_t dest) {
   var_t arg;
   v_init(&arg);
   eval(&arg);
@@ -642,7 +642,6 @@ void map_from_str(var_p_t dest, int code_array) {
         json.tokens = tokens;
         json.js = js;
         json.num_tokens = parser.toknext;
-        json.code_array = code_array;
         map_read_next_token(dest, &json, 0);
       }
       free(tokens);

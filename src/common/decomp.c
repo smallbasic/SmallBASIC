@@ -203,7 +203,7 @@ void dump_bytecode(FILE * output) {
     case kwAPPEND:
       fprintf(output, "append");
       break;
-    case kwCODEARRAY:
+    case kwARRAY:
       fprintf(output, "array");
       break;
     case kwTYPE_PARAM:

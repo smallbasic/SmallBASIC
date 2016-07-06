@@ -45,7 +45,6 @@ LOCAL_SRC_FILES  :=    \
     $(COMMON)/geom.c             \
     $(COMMON)/inet.c             \
     $(COMMON)/kw.c               \
-    $(COMMON)/mem.c              \
     $(COMMON)/pfill.c            \
     $(COMMON)/plot.c             \
     $(COMMON)/proc.c             \

@@ -11,7 +11,6 @@
 #define _bc_h
 
 #include "common/sys.h"
-#include "common/pmem.h"
 #include "common/kw.h"
 
 #define BC_ALLOC_INCR     1024

@@ -69,7 +69,6 @@ libsb_common_a_SOURCES =                  \
     geom.c geom.h g_bmp.h                 \
     inet.c inet.h                         \
     kw.c kw.h                             \
-    mem.c                                 \
     pfill.c                               \
     plot.c                                \
     proc.c pproc.h                        \
@@ -85,7 +84,6 @@ libsb_common_a_SOURCES =                  \
     var.c var.h                           \
     messages.h                            \
     osd.h                                 \
-    pmem.h                                \
     sbapp.h                               \
     smbas.h                               \
     sys.h

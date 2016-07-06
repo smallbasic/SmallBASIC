@@ -1052,6 +1052,15 @@ void dev_trace_line(int lineNo);
  */
 void panic(const char *fmt, ...);
 
+/**
+ * @ingroup sys
+ *
+ * write to logfile
+ *
+ * @param buf is the string to write
+ */
+void lwrite(const char *buf);
+
 #if defined(__cplusplus)
 }
 #endif

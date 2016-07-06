@@ -11,7 +11,6 @@
 #define _smbas_h
 
 #include "common/sys.h"
-#include "common/pmem.h"
 #include "common/var.h"
 #include "common/kw.h"
 #include "common/scan.h"

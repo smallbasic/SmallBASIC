@@ -1187,7 +1187,7 @@ void comp_expression(char *expr, byte no_parser) {
       if (end == NULL) {
         err_comp_missing_rp();
       } else {
-        bc_add_fcode(&bc, kwCODEARRAY);
+        bc_add_fcode(&bc, kwARRAY);
         bc_add_code(&bc, kwTYPE_LEVEL_BEGIN);
         bc_add_strn(&bc, ptr, end - ptr + 1);
         bc_add_code(&bc, kwTYPE_LEVEL_END);

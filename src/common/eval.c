@@ -1142,10 +1142,7 @@ static inline void eval_callf(var_t *r) {
     eval_callf_free(r);
     break;
   case kwARRAY:
-    map_from_str(r, 0);
-    break;
-  case kwCODEARRAY:
-    map_from_str(r, 1);
+    map_from_str(r);
     break;
   default:
     err_bfn_err(fcode);

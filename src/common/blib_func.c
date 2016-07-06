@@ -20,13 +20,6 @@
 #include "common/messages.h"
 #include "common/keymap.h"
 
-struct code_array_node_s {
-  var_t *v;
-  var_int_t col;
-  var_int_t row;
-};
-typedef struct code_array_node_s canode_t;
-
 // relative coordinates (current x/y) from blib_graph
 extern int gra_x;
 extern int gra_y;
@@ -2817,84 +2810,6 @@ void cmd_genfunc(long funcCode, var_t *r) {
       free(m1);
     }
   }
-    break;
-    //
-    // array <- CODEARRAY(x1,y1...[;x2,y2...])
-    // its used to create dynamic arrays.
-    // its not a function, its the [ ] operators
-    //
-  case kwCODEARRAY: {
-    var_int_t curcol, ready, count, pos;
-    var_t *e;
-    int32_t rows, cols;
-    tmplist_t lst;
-    canode_t tnode, *tp;
-    tmpnode_t *cur;
-
-    rows = 0;
-    cols = 0;
-    curcol = 0;
-    ready = 0;
-    count = 0;
-    tmplist_init(&lst);
-
-    do {
-      code = code_peek();
-      switch (code) {
-      case kwTYPE_SEP:       // separator
-        code_skipnext();
-        if (code_peek() == ';') { // next row
-          rows++;
-          curcol = 0;
-        } else {                // next col
-          curcol++;
-          if (curcol > cols) {
-            cols = curcol;
-          }
-        }
-        code_skipnext();
-        break;
-      case kwTYPE_LEVEL_END: // ) -- end of parameters
-        ready = 1;
-        break;
-      default:
-        tnode.col = curcol;
-        tnode.row = rows;
-        tnode.v = v_new();
-        eval(tnode.v);
-        if (!prog_error) {
-          tmplist_add(&lst, &tnode, sizeof(canode_t));
-          count++;
-        }
-      }
-
-      //
-    } while (!ready);
-
-    //
-    // create the array
-    //
-    rows++;
-    cols++;
-    if (rows > 1) {
-      v_tomatrix(r, rows, cols);
-    } else {
-      v_toarray1(r, cols);
-    }
-    cur = lst.head;
-    while (cur) {
-      tp = (canode_t *)cur->data;
-      pos = tp->row * cols + tp->col;
-      e = v_elem(r, pos);
-      v_set(e, tp->v);
-      v_free(tp->v);
-      v_detach(tp->v);
-      cur = cur->next;
-    }
-
-    tmplist_clear(&lst);
-  }
-
     break;
     //
     // array <- FILES([wildcards])
