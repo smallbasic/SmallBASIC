@@ -1726,29 +1726,25 @@ void cmd_intN(long funcCode, var_t *r) {
     //
     r->v.i = 0;
     start = 1;
-    par_massget("iSS", &start, &s1, &s2);
-    if (!prog_error) {
-      l = strlen(s1);
-      if (l) {
-        start--;
-        if (start >= l || start < 0) {
-          err_stridx(start);
-        } else {
-          p = s1 + start;
-          l = strlen(s2);
-
-          while (*p) {
-            if (strncmp(p, s2, l) == 0) {
-              r->v.i = (p - s1) + 1;
-              if (funcCode == kwINSTR) {
-                break;
-              }
+    if (par_massget("iSS", &start, &s1, &s2) > 1 &&
+        !prog_error && s1[0] != '\0' && s2[0] != '\0') {
+      start--;
+      if (start >= strlen(s1) || start < 0) {
+        err_stridx(start);
+      } else {
+        p = s1 + start;
+        l = strlen(s2);
+        while (*p) {
+          if (strncmp(p, s2, l) == 0) {
+            r->v.i = (p - s1) + 1;
+            if (funcCode == kwINSTR) {
+              break;
             }
-            p++;
           }
-        }                       // start
-      }                         // l
-    }                           // error
+          p++;
+        }
+      }
+    }
     break;
   case kwISARRAY:
     cmd_is_var_type(V_ARRAY, &arg1, r);

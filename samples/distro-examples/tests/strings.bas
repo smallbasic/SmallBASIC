@@ -64,5 +64,8 @@ if rightof$(s, "23")!="4567" then ? "rightof() error"
 if leftoflast$(s, "23")!="1" then ? "leftoflast() error"
 if rightoflast$(s, "23")!="4567" then ? "rightoflast() error"
 
-
-
+if (0 != instr("qwerty","")) then throw "instr err1"
+if (0 != instr(3,"qwerty","")) then throw "instr err2"
+for i = 1 to 6
+  if (0 != instr(i, "qwerty", "querty")) then throw "instr err3"
+next i
