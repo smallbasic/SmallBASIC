@@ -1613,7 +1613,7 @@ void cmd_strN(long funcCode, var_t *r) {
 
   case kwREPLACE:
     //
-    // str <- REPLACE$ ( source, pos, str [, len] )
+    // str <- REPLACE$(source, pos, str [, len])
     //
     v_init(&arg2);
 
@@ -1621,37 +1621,44 @@ void cmd_strN(long funcCode, var_t *r) {
     start = par_next_int(1);
     var_p2 = par_next_str(&arg2, 0);
     count = par_getval(-1);
-    if (!prog_error) {
-      int ls1 = v_strlen(var_p1);
-      int ls2 = v_strlen(var_p2);
+    if (count < -1) {
+      err_stridx(count);
+    } else if (!prog_error) {
+      // write str into pos of source the return the new string
+      int len_source = v_strlen(var_p1);
+      int len_str = v_strlen(var_p2);
 
       start--;
-      if (start < 0 || start > ls1) {
+      if (start < 0 || start > len_source) {
         err_stridx(start);
+        v_free(&arg2);
         break;
       }
-
-      r->v.p.ptr = malloc(ls1 + ls2 + 1);
-
-      // copy the left-part
-      if (start > 0) {
-        memcpy(r->v.p.ptr, var_p1->v.p.ptr, start);
-        r->v.p.ptr[start] = '\0';
-      } else {
-        *r->v.p.ptr = '\0';
+      if (count < 0) {
+        // how much of "str" to retain
+        count = len_str;
       }
-      // insert the string
+
+      // calculate the final length
+      r->v.p.length = start + len_str + 1;
+      if (start + count < len_source) {
+        r->v.p.length += (len_source - (start + count));
+      }
+      r->v.p.ptr = malloc(r->v.p.length);
+
+      if (start > 0) {
+        // copy the left side of "source"
+        memcpy(r->v.p.ptr, var_p1->v.p.ptr, start);
+      }
+
+      // insert "str"
+      r->v.p.ptr[start] = '\0';
       strcat(r->v.p.ptr, var_p2->v.p.ptr);
 
-      // add the right-part
-      if (count == -1) {
-        count = ls2;
+      // add the remainder of "source" startin at index "count"
+      if (start + count < len_source) {
+        strcat(r->v.p.ptr, var_p1->v.p.ptr + start + count);
       }
-      if (start + count < ls1) {
-        strcat(r->v.p.ptr, (var_p1->v.p.ptr + start + count));
-      }
-      r->v.p.ptr[ls1 + ls2] = '\0';
-      r->v.p.length = ls1 + ls2 + 1;
     }
     v_free(&arg2);
     break;

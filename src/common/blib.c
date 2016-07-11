@@ -1079,7 +1079,7 @@ void cmd_call_unit_udp(int cmd, int udp_tid, bcip_t goto_addr, bcip_t rvid) {
       default:
         // default: the parameter is an expression
         arg = v_new();       // create a new temporary variable; it is the by-val value
-                             // 'arg' will bev_detachd at udp's return
+                             // 'arg' will be freed at udp's return
         eval(arg);           // execute the expression and store the result to 'arg'
 
         if (!prog_error) {
@@ -1231,7 +1231,7 @@ void cmd_udpret() {
   while ((node.type != kwPROC) && (node.type != kwFUNC)) {
     // pop from stack until caller's node found
     if (node.type == kwTYPE_CRVAR) {  // local variable - cleanup
-      v_free(tvar[node.x.vdvar.vid]); //v_detach local variable data
+      v_free(tvar[node.x.vdvar.vid]); // free local variable data
       v_detach(tvar[node.x.vdvar.vid]);
       tvar[node.x.vdvar.vid] = node.x.vdvar.vptr;
       // restore ptr (replace to pre-call variable)
