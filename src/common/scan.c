@@ -1183,7 +1183,7 @@ void comp_expression(char *expr, byte no_parser) {
       ptr = bc_store_string(&bc, ptr);
     } else if (*ptr == '[') {
       // code-defined array
-      char *end = strchr(ptr, ']');
+      char *end = strrchr(ptr, ']');
       if (end == NULL) {
         err_comp_missing_rp();
       } else {
@@ -1198,7 +1198,7 @@ void comp_expression(char *expr, byte no_parser) {
       level++;
       bc_add_code(&bc, kwTYPE_LEVEL_BEGIN);
       ptr++;
-    } else if (*ptr == ')' || *ptr == ']') {
+    } else if (*ptr == ')') {
       // parenthesis
       bc_add_code(&bc, kwTYPE_LEVEL_END);
       level--;

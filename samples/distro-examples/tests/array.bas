@@ -92,3 +92,8 @@ arr3 = array("[1,2,3    ;4,5,6;           7,8,9]")
 if (arr1 != arr2 || arr2 != arr3) then
   throw "array err"
 endif
+
+const wormHoles = [[4,  4],  [4, 20], [20,  20], [20, 4], [12,12] ]
+if (str(wormHoles) != "[[4,4],[4,20],[20,20],[20,4],[12,12]]") then
+  throw wormHoles
+endif
