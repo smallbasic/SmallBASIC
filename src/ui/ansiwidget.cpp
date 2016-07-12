@@ -80,6 +80,12 @@ AnsiWidget::AnsiWidget(int width, int height) :
   trace("width: %d height: %d fontSize:%d", _width, height, _fontSize);
 }
 
+void AnsiWidget::clearScreen() {
+  _hoverInput = NULL;
+  _activeButton = NULL;
+  _back->clear();
+}
+
 bool AnsiWidget::construct() {
   bool result = false;
   _back = new GraphicScreen(_width, _height, _fontSize);

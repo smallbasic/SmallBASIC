@@ -36,7 +36,7 @@ struct AnsiWidget {
 
   void addImage(ImageDisplay &image);
   void addInput(FormInput *input) { _back->_inputs.add(input); }
-  void clearScreen() { _back->clear(); }
+  void clearScreen();
   bool construct();
   void draw();
   void drawOverlay(bool vscroll) { _back->drawOverlay(vscroll); }
