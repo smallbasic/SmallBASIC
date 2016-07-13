@@ -363,6 +363,7 @@ enum func_keywords {
   kwPTSIGN,
   kwPTDISTLN,
   kwPOINT,
+  kwCODEARRAY,
   kwGAUSSJORDAN,
   kwFILES,
   kwINVERSE,

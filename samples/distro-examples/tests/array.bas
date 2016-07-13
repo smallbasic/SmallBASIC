@@ -97,3 +97,7 @@ const wormHoles = [[4,  4],  [4, 20], [20,  20], [20, 4], [12,12] ]
 if (str(wormHoles) != "[[4,4],[4,20],[20,20],[20,4],[12,12]]") then
   throw wormHoles
 endif
+x = 4
+y = 4
+if [x,y] in wormHoles then
+endif

@@ -1117,6 +1117,7 @@ static inline void eval_callf(var_t *r) {
   case kwPTDISTLN:
   case kwPOINT:
   case kwINPUTF:
+  case kwCODEARRAY:
   case kwGAUSSJORDAN:
   case kwFILES:
   case kwINVERSE:

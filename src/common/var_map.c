@@ -17,7 +17,7 @@
 #define BUFFER_GROW_SIZE 64
 #define BUFFER_PADDING   10
 #define TOKEN_GROW_SIZE  16
-#define ARRAY_GROW_SIZE  16
+#define ARRAY_GROW_SIZE  8
 
 /**
  * Container for map_from_str
@@ -50,6 +50,12 @@ void cint_list_append(cint_list *cl, int value) {
   }
   cl->data[cl->length++] = value;
 }
+
+typedef struct canode_t {
+  var_t *v;
+  var_int_t col;
+  var_int_t row;
+} canode_t;
 
 /**
  * Process the next token
@@ -452,10 +458,10 @@ void map_set_primative(var_p_t dest, const char *s, int len) {
  * Handle the semi-colon row separator character
  */
 int map_read_next_array_token(JsonTokens *json, int index, var_p_t dest,
-                              int item_index, int *new_elems, int *new_rows) {
+                              int count, int *new_elems, int *new_rows) {
   int next;
   jsmntok_t token = json->tokens[index];
-  var_t *elem = v_elem(dest, item_index);
+  var_t *elem = v_elem(dest, count);
 
   if (token.type == JSMN_PRIMITIVE && json->tokens[0].type == JSMN_ARRAY) {
     int len = token.end - token.start;
@@ -467,11 +473,11 @@ int map_read_next_array_token(JsonTokens *json, int index, var_p_t dest,
         len -= (delim - str) + 1;
         if (len > 0) {
           // text exists beyond ';'
-          if (++item_index >= dest->v.a.size) {
+          if (++count >= dest->v.a.size) {
             int size = dest->v.a.size + ARRAY_GROW_SIZE;
             v_resize_array(dest, size);
           }
-          elem = v_elem(dest, item_index);
+          elem = v_elem(dest, count);
           str = ++delim;
           map_set_primative(elem, str, len);
           delim = memchr(str, ';', len);
@@ -493,10 +499,33 @@ int map_read_next_array_token(JsonTokens *json, int index, var_p_t dest,
 }
 
 /**
+ * change the grid dimensions when row separator found
+ */
+void map_resize_array(var_p_t dest, int size, int rows, int cols, cint_list *offs) {
+  v_resize_array(dest, size);
+  if (rows > 1) {
+    int idx, row;
+    var_t *var = v_new();
+    v_tomatrix(var, rows, cols);
+    for (idx = 0, row = -1; idx < size; idx++) {
+      if (!offs->data[idx]) {
+        // start of next row
+        row++;
+      }
+      int pos = row * cols + offs->data[idx];
+      v_set(v_elem(var, pos), v_elem(dest, idx));
+    }
+    v_set(dest, var);
+    v_free(var);
+    v_detach(var);
+  }
+}
+
+/**
  * Creates an array variable
  */
 int map_create_array(var_p_t dest, JsonTokens *json, int end_position, int index) {
-  int item_index = 0;
+  int count = 0;
   int i = index;
   int cols = 1;
   int rows = 1;
@@ -512,17 +541,17 @@ int map_create_array(var_p_t dest, JsonTokens *json, int end_position, int index
     if (token.start > end_position) {
       break;
     }
-    if (item_index >= dest->v.a.size) {
+    if (count >= dest->v.a.size) {
       int size = dest->v.a.size + ARRAY_GROW_SIZE;
       v_resize_array(dest, size);
     }
     cint_list_append(&offs, curcol);
-    i = map_read_next_array_token(json, i, dest, item_index, &new_elems, &new_rows);
+    i = map_read_next_array_token(json, i, dest, count, &new_elems, &new_rows);
     if (new_rows) {
       int j;
       for (j = 0; j < new_elems; j++) {
         cint_list_append(&offs, 0);
-        item_index++;
+        count++;
       }
       rows += new_rows;
       // when no added cells, make curcol reset to zero
@@ -531,28 +560,9 @@ int map_create_array(var_p_t dest, JsonTokens *json, int end_position, int index
     if (++curcol > cols) {
       cols = curcol;
     }
-    item_index++;
+    count++;
   }
-
-  v_resize_array(dest, item_index);
-
-  // change the grid dimensions when row separator found
-  if (rows > 1) {
-    int idx, row;
-    var_t *var = v_new();
-    v_tomatrix(var, rows, cols);
-    for (idx = 0, row = -1; idx < item_index; idx++) {
-      if (!offs.data[idx]) {
-        // start of next row
-        row++;
-      }
-      int pos = row * cols + offs.data[idx];
-      v_set(v_elem(var, pos), v_elem(dest, idx));
-    }
-    v_set(dest, var);
-    v_free(var);
-    v_detach(var);
-  }
+  map_resize_array(dest, count, rows, cols, &offs);
   free(offs.data);
   return i;
 }
@@ -650,4 +660,50 @@ void map_from_str(var_p_t dest) {
   v_free(&arg);
 }
 
+// array <- CODEARRAY(x1,y1...[;x2,y2...])
+// dynamic arrays created with the [] operators
+void map_from_codearray(var_p_t dest) {
+  int count = 0;
+  int cols = 0;
+  int rows = 0;
+  int curcol = 0;
+  int ready = 0;
+  cint_list offs;
+
+  cint_list_init(&offs, ARRAY_GROW_SIZE);
+  v_toarray1(dest, ARRAY_GROW_SIZE);
+
+  do {
+    switch (code_peek()) {
+    case kwTYPE_SEP:
+      code_skipnext();
+      if (code_peek() == ';') {
+        // next row
+        rows++;
+        curcol = 0;
+      } else {
+        // next col
+        if (++curcol > cols) {
+          cols = curcol;
+        }
+      }
+      code_skipnext();
+      break;
+    case kwTYPE_LEVEL_END:
+      // end of parameters
+      ready = 1;
+      break;
+    default:
+      if (count >= dest->v.a.size) {
+        int size = dest->v.a.size + ARRAY_GROW_SIZE;
+        v_resize_array(dest, size);
+      }
+      cint_list_append(&offs, curcol);
+      eval(v_elem(dest, count++));
+    }
+  } while (!ready && !prog_error);
+
+  map_resize_array(dest, count, rows + 1, cols + 1, &offs);
+  free(offs.data);
+}
 

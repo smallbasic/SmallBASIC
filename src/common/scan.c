@@ -1183,22 +1183,16 @@ void comp_expression(char *expr, byte no_parser) {
       ptr = bc_store_string(&bc, ptr);
     } else if (*ptr == '[') {
       // code-defined array
-      char *end = strrchr(ptr, ']');
-      if (end == NULL) {
-        err_comp_missing_rp();
-      } else {
-        bc_add_fcode(&bc, kwARRAY);
-        bc_add_code(&bc, kwTYPE_LEVEL_BEGIN);
-        bc_add_strn(&bc, ptr, end - ptr + 1);
-        bc_add_code(&bc, kwTYPE_LEVEL_END);
-        ptr = end + 1;
-      }
+      ptr++;
+      level++;
+      bc_add_fcode(&bc, kwCODEARRAY);
+      bc_add_code(&bc, kwTYPE_LEVEL_BEGIN);
     } else if (*ptr == '(') {
       // parenthesis
       level++;
       bc_add_code(&bc, kwTYPE_LEVEL_BEGIN);
       ptr++;
-    } else if (*ptr == ')') {
+    } else if (*ptr == ')' || *ptr == ']') {
       // parenthesis
       bc_add_code(&bc, kwTYPE_LEVEL_END);
       level--;

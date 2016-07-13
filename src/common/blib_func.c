@@ -2814,6 +2814,11 @@ void cmd_genfunc(long funcCode, var_t *r) {
     }
   }
     break;
+
+  case kwCODEARRAY:
+    map_from_codearray(r);
+    break;
+
     //
     // array <- FILES([wildcards])
     //
