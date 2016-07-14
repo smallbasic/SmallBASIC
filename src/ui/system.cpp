@@ -543,23 +543,23 @@ void System::runEdit(const char *startupBas) {
   String loadPath = startupBas;
 
   while (true) {
-    if (loadSource(startupBas)) {
+    if (loadSource(loadPath)) {
       setupPath(loadPath);
       editSource(loadPath);
       if (isBack() || isClosing()) {
         break;
       } else {
         do {
-          execute(startupBas);
+          execute(loadPath);
         } while (isRestart());
       }
     } else {
-      FILE *fp = fopen(startupBas, "w");
+      FILE *fp = fopen(loadPath, "w");
       if (fp) {
         fprintf(fp, "rem Welcome to SmallBASIC\n");
         fclose(fp);
       } else {
-        alert("Error", "Failed to load file");
+        alert("Failed to load file", strerror(errno));
         break;
       }
     }
