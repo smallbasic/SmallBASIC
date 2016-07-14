@@ -497,7 +497,7 @@ bool System::loadSource(const char *fileName) {
 char *System::readSource(const char *fileName) {
   _activeFile.empty();
   char *buffer;
-  if (_editor != NULL) {
+  if (_editor != NULL && _loadPath.equals(fileName)) {
     buffer = _editor->getTextSelection();
   } else {
     buffer = loadResource(fileName);
