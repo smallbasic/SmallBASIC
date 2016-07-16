@@ -540,21 +540,21 @@ void System::resize() {
 void System::runEdit(const char *startupBas) {
   logEntered();
   _mainBas = false;
-  String loadPath = startupBas;
+  _loadPath = startupBas;
 
   while (true) {
-    if (loadSource(loadPath)) {
-      setupPath(loadPath);
-      editSource(loadPath);
+    if (loadSource(_loadPath)) {
+      setupPath(_loadPath);
+      editSource(_loadPath);
       if (isBack() || isClosing()) {
         break;
       } else {
         do {
-          execute(loadPath);
+          execute(_loadPath);
         } while (isRestart());
       }
     } else {
-      FILE *fp = fopen(loadPath, "w");
+      FILE *fp = fopen(_loadPath, "w");
       if (fp) {
         fprintf(fp, "rem Welcome to SmallBASIC\n");
         fclose(fp);

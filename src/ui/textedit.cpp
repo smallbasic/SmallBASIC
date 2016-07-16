@@ -549,6 +549,10 @@ void TextEditInput::drawText(int x, int y, const char *str,
       } else if (state == kText || str[i] == '\"') {
         next = 1;
         while (i + next < length && str[i + next] != '\"') {
+          if (i + next + 1 < length &&
+              str[i + next] == '\\' && str[i + next + 1] == '\"') {
+            next++;
+          }
           next++;
         }
         if (str[i + next] == '\"') {
