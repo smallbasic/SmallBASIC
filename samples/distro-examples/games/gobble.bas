@@ -35,7 +35,7 @@ print
 w = window():
 w.setFont(80, "pt", true, false)
 for i = 0 to 15
-  print "   "; game(i); " ";
+  print " "; game(i); " ";
   if (i == 3 or i == 7 or i = 11) then
     print
   fi
