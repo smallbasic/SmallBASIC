@@ -293,14 +293,17 @@ void Screen::remove(Shape *button) {
 }
 
 // remove the image from the list
-void Screen::removeInput(FormInput *input) {
+bool Screen::removeInput(FormInput *input) {
+  bool result = false;
   List_each(FormInput *, it, _inputs) {
     FormInput *next = (*it);
     if (next == input) {
       _inputs.remove(it);
+      result = true;
       break;
     }
   }
+  return result;
 }
 
 // remove the image from the list

@@ -138,6 +138,7 @@ bool System::execute(const char *bas) {
   _output->selectScreen(USER_SCREEN1);
   _output->resetFont();
   _output->flush(true);
+  _userScreenId = -1;
   return result;
 }
 
@@ -906,12 +907,14 @@ void System::showMenu() {
 void System::showSystemScreen(bool showSrc) {
   int prevScreenId;
   if (showSrc) {
-    prevScreenId = _output->selectBackScreen(SOURCE_SCREEN);
+    prevScreenId = _output->getScreenId(true);
+    _output->selectBackScreen(SOURCE_SCREEN);
     printSource();
     _output->selectBackScreen(prevScreenId);
     _output->selectFrontScreen(SOURCE_SCREEN);
   } else {
-    prevScreenId = _output->selectFrontScreen(CONSOLE_SCREEN);
+    prevScreenId = _output->getScreenId(false);
+    _output->selectFrontScreen(CONSOLE_SCREEN);
   }
   if (_userScreenId == -1) {
     _userScreenId = prevScreenId;
@@ -957,11 +960,12 @@ void System::printErrorLine() {
       errLine++;
     }
 
-    int prevScreen = _output->selectBackScreen(CONSOLE_SCREEN);
+    int prevScreenId = _output->getScreenId(true);
+    _output->selectBackScreen(CONSOLE_SCREEN);
     _output->print("\033[4mError line:\033[0m\n");
     _output->print(errLine);
     *ch = end;
-    _output->selectBackScreen(prevScreen);
+    _output->selectBackScreen(prevScreenId);
   }
 }
 
@@ -1060,9 +1064,10 @@ void System::setRestart() {
 
 void System::systemLog(const char *buf) {
   deviceLog("%s", buf);
-  int prevScreen = _output->selectBackScreen(CONSOLE_SCREEN);
+  int prevScreenId = _output->getScreenId(true);
+  _output->selectBackScreen(CONSOLE_SCREEN);
   _output->print(buf);
-  _output->selectBackScreen(prevScreen);
+  _output->selectBackScreen(prevScreenId);
 }
 
 void System::systemPrint(const char *format, ...) {

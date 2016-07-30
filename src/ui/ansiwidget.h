@@ -52,6 +52,7 @@ struct AnsiWidget {
   int  getFontSize() { return _fontSize; }
   FormInput *getNextField(FormInput *field) { return _back->getNextField(field); }
   int  getPixel(int x, int y) { return _back->getPixel(x, y); }
+  int  getScreenId(bool back);
   int  getScreenWidth()  { return _back->_width; }
   void getScroll(int &x, int &y) { _back->getScroll(x, y); }
   int  getHeight() { return _height; }
@@ -60,25 +61,24 @@ struct AnsiWidget {
   int  getY() { return _back->_curY; }
   bool hasHover() const { return _hoverInput != NULL; }
   bool hasMenu() const { return _back == _screens[MENU_SCREEN]; }
-  int  insetMenuScreen(int x, int y, int w, int h);
-  int  insetTextScreen(int x, int y, int w, int h);
+  void insetMenuScreen(int x, int y, int w, int h);
+  void insetTextScreen(int x, int y, int w, int h);
   bool pointerTouchEvent(MAEvent &event);
   bool pointerMoveEvent(MAEvent &event);
   void pointerReleaseEvent(MAEvent &event);
   void print(const char *str);
   void redraw();
-  void registerScreen(int screenId) { createScreen(screenId); }
   void removeHover();
   void removeImage(int imageId) { _back->removeImage(imageId); }
-  void removeInput(FormInput *input) { _back->removeInput(input); }
+  bool removeInput(FormInput *input) { return _back->removeInput(input); }
   void removeInputs();
   void resetScroll() { _back->resetScroll(); }
   void reset();
   void resetFont() { _back->reset(_fontSize); _back->updateFont(); }
   void resize(int width, int height);
   bool scroll(bool up, bool page);
-  int  selectBackScreen(int screenId);
-  int  selectFrontScreen(int screenId);
+  void selectBackScreen(int screenId);
+  void selectFrontScreen(int screenId);
   int  selectScreen(int screenId);
   void setColor(long color);
   void setDirty() { _back->setDirty(); }

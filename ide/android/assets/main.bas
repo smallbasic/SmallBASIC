@@ -58,7 +58,7 @@ sub info_header(is_welcome)
     color 6,0
     randomize
     print "TIP: ";
-    select case (rnd * 100 % 10)
+    select case (rnd * 100 % 12)
     case 0: print "Press and hold Ctrl then press 'm' to access the menu."
     case 1: print "Press and hold Ctrl then press 'p' to take a screenshot."
     case 2: print "In the editor, press and hold Ctrl then press 'h' to access help."
@@ -68,6 +68,7 @@ sub info_header(is_welcome)
     case 6: print "Select the Online option to run a featured program."
     case 7: print "Select View source from the menu to display program code."
     case 8: print "Select the File option to manage .bas files in the current folder."
+    case 9: print "You can drop .bas files from the system file manager to load a program."
     case else: print "Click the right mouse button (or menu key in android) to access the menu."
     end select
   endif
@@ -391,7 +392,7 @@ end
 
 sub main
   local path, frm
-  local is_welcome = true
+  local is_welcome = (command == "welcome")
 
   func makeUI(path)
     local frm, bn_files, bn_online, bn_setup, bn_about, bn_new

@@ -162,6 +162,17 @@ void AnsiWidget::flush(bool force, bool vscroll, int maxPending) {
   }
 }
 
+int AnsiWidget::getScreenId(bool back) {
+  int result = 0;
+  for (int i = 0; i < MAX_SCREENS; i++) {
+    if (_screens[i] == (back ? _back : _front)) {
+      result = i;
+      break;
+    }
+  }
+  return result;
+}
+
 // prints the contents of the given string onto the backbuffer
 void AnsiWidget::print(const char *str) {
   int len = strlen(str);
@@ -349,14 +360,7 @@ void AnsiWidget::setXY(int x, int y) {
   }
 }
 
-int AnsiWidget::insetMenuScreen(int x, int y, int w, int h) {
-  int result = 0;
-  for (int i = 0; i < MAX_SCREENS; i++) {
-    if (_front == _screens[i]) {
-      result = i;
-      break;
-    }
-  }
+void AnsiWidget::insetMenuScreen(int x, int y, int w, int h) {
   if (_back == _screens[MENU_SCREEN]) {
     _back = _screens[USER_SCREEN1];
   }
@@ -368,17 +372,9 @@ int AnsiWidget::insetMenuScreen(int x, int y, int w, int h) {
   menuScreen->setOver(_front);
   _front = _back = menuScreen;
   _front->_dirty = true;
-  return result;
 }
 
-int AnsiWidget::insetTextScreen(int x, int y, int w, int h) {
-  int result = 0;
-  for (int i = 0; i < MAX_SCREENS; i++) {
-    if (_front == _screens[i]) {
-      result = i;
-      break;
-    }
-  }
+void AnsiWidget::insetTextScreen(int x, int y, int w, int h) {
   if (_back == _screens[TEXT_SCREEN]) {
     _back = _screens[USER_SCREEN1];
   }
@@ -387,7 +383,6 @@ int AnsiWidget::insetTextScreen(int x, int y, int w, int h) {
   _front = _back = textScreen;
   _front->_dirty = true;
   flush(true);
-  return result;
 }
 
 // handler for pointer touch events
@@ -675,34 +670,20 @@ bool AnsiWidget::setActiveButton(MAEvent &event, Screen *screen) {
   return result;
 }
 
-int AnsiWidget::selectBackScreen(int screenId) {
-  int result = 0;
-  for (int i = 0; i < MAX_SCREENS; i++) {
-    if (_back == _screens[i]) {
-      result = i;
-      break;
-    }
-  }
+void AnsiWidget::selectBackScreen(int screenId) {
   _back = createScreen(screenId);
-  return result;
+  _back->selectFont();
 }
 
-int AnsiWidget::selectFrontScreen(int screenId) {
-  int result = 0;
-  for (int i = 0; i < MAX_SCREENS; i++) {
-    if (_front == _screens[i]) {
-      result = i;
-      break;
-    }
-  }
+void AnsiWidget::selectFrontScreen(int screenId) {
   _front = createScreen(screenId);
   _front->_dirty = true;
   flush(true);
-  return result;
 }
 
 int AnsiWidget::selectScreen(int screenId) {
-  int result = selectBackScreen(screenId);
+  int result = getScreenId(true);
+  selectBackScreen(screenId);
   _front = _back;
   _front->_dirty = true;
   flush(true);

@@ -407,7 +407,9 @@ void System::editSource(String loadPath) {
 
   if (_state == kRunState) {
     // allow the editor to be restored on return
-    _output->removeInput(editWidget);
+    if (!_output->removeInput(editWidget)) {
+      trace("Failed to remove editor input");
+    }
     _editor = editWidget;
     _editor->setFocus(false);
   } else {
