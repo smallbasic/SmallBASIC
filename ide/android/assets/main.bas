@@ -11,6 +11,7 @@ const deleteId = "__bn_delete__"
 const newId = "__bn_new__"
 const viewId = "__bn_view__"
 const closeId = "__bn_close__"
+const menu_gap = -(txtw(" ") / 2)
 
 func spaced(s)
   local ch, len_s
@@ -37,7 +38,7 @@ func mk_menu(value, lab, x)
   bn.x = x
   bn.y = ypos * char_h
   bn.value = value
-  bn.label = "[ " + lab + " ]"
+  bn.label = "[" + lab + "]"
   bn.color = 3
   bn.backgroundColor = 0
   bn.type = "link"
@@ -54,7 +55,7 @@ sub info_header(is_welcome)
     print "From popup menus, you can do things like toggle the ";
     print "Editor, Run, Adjust Font size..."
     print
-  else
+  else if (instr(sbver, "SDL") != 0) then
     color 6,0
     randomize
     print "TIP: ";
@@ -77,9 +78,9 @@ end
 
 sub do_okay_button()
   local frm, button
-  button.x = xmax / 2
+  button.label = "[Close]"
+  button.x = (xmax - txtw(button.label)) / 2
   button.y = -1
-  button.label = "[ Close ]"
   button.backgroundColor = 0
   button.color = 3
   button.type = "link"
@@ -234,10 +235,10 @@ sub manageFiles()
   sub createUI()
     cls
     f.inputs << mk_menu(closeId, "<<", 0)
-    f.inputs << mk_menu(viewId, "View",  -1)
-    f.inputs << mk_menu(renameId,"Rename", -1)
-    f.inputs << mk_menu(newId, "New", -1)
-    f.inputs << mk_menu(deleteId, "Delete", -1)
+    f.inputs << mk_menu(viewId, "View",  menu_gap)
+    f.inputs << mk_menu(renameId,"Rename", menu_gap)
+    f.inputs << mk_menu(newId, "New", menu_gap)
+    f.inputs << mk_menu(deleteId, "Delete", menu_gap)
     bn_edit.x = 0
     bn_edit.y = char_h + 4
     bn_edit.width = xmax
@@ -403,9 +404,9 @@ sub main
     info_header(is_welcome)
     is_welcome = false
     bn_files = mk_menu("_files", "File", 0)
-    bn_online = mk_menu(onlineUrl, "Online", -1)
-    bn_setup = mk_menu("_setup", "Setup", -1)
-    bn_about = mk_menu("_about", "About", -1)
+    bn_online = mk_menu(onlineUrl, "Online", menu_gap)
+    bn_setup = mk_menu("_setup", "Setup", menu_gap)
+    bn_about = mk_menu("_about", "About", menu_gap)
     bn_online.isExit = true
 
     frm.inputs << bn_files
