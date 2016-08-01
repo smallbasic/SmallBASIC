@@ -1,4 +1,7 @@
 2016-07-30 (0.12.7)
+	Fixed value of i when FOR loop body not executed (node/1611)
+
+2016-07-30 (0.12.7)
 	Fixed screen switching when program screen has different font size
 
 2016-07-16 (0.12.7)

@@ -1554,13 +1554,13 @@ void cmd_for() {
             node.x.vfor.step_expr_ip = INVALID_ADDR;
             varstep.type = V_INT;
             varstep.v.i = 1;
-          }                     // STEP kw
-        } else {                  // str for TO
+          }
+        } else {
           if (!prog_error) {
             rt_raise(ERR_SYNTAX);
           }
         }
-      } else {                    // TO keyword
+      } else {
         rt_raise(ERR_SYNTAX);
       }
     }
@@ -1568,17 +1568,25 @@ void cmd_for() {
     // run
     //
     if (!prog_error) {
-      if (v_sign(&varstep) < 0) {
-        code_jump((v_compare(var_p, &var) >= 0) ? true_ip : false_ip);
+      // var_p=FROM, var=TO
+      int sign = v_sign(&varstep);
+      int cmp = v_compare(var_p, &var);
+      bcip_t next_ip;
+      if (sign == 0) {
+        rt_raise(ERR_SYNTAX);
+      } else if (sign < 0) {
+        next_ip = cmp >= 0 ? true_ip : false_ip;
       } else {
-        if (v_compare(var_p, &var) <= 0) {
-          code_jump(true_ip);
-        } else {
-          code_jump(false_ip);
-        }
+        next_ip = cmp <= 0 ? true_ip : false_ip;
       }
-
-      code_push(&node);
+      code_jump(next_ip);
+      if (next_ip == false_ip) {
+        // skip to after kwNEXT
+        code_skipnext();
+        code_jump(code_getaddr());
+      } else {
+        code_push(&node);
+      }
     }
   } else {
     //
