@@ -12,6 +12,7 @@ const newId = "__bn_new__"
 const viewId = "__bn_view__"
 const closeId = "__bn_close__"
 const menu_gap = -(txtw(" ") / 2)
+const is_sdl = instr(sbver, "SDL") != 0
 
 func spaced(s)
   local ch, len_s
@@ -50,12 +51,15 @@ sub info_header(is_welcome)
     color 7,0
     print boldOn + spaced("Welcome to SmallBASIC") + boldOff
     color 6,0
-    print "Pop up menus are accessed by either a Right mouse ";
-    print "click or 3 vertical dots tap (Android). ";
-    print "From popup menus, you can do things like toggle the ";
+    if (is_sdl) then
+      print "Click the right mouse button to access the context menu. ";
+    else
+      print "Press the menu key (3 vertical dots) to access the context menu. ";
+    endif
+    print "From here, you can do things like toggle the ";
     print "Editor, Run, Adjust Font size..."
     print
-  else if (instr(sbver, "SDL") != 0) then
+  else if (is_sdl) then
     color 6,0
     randomize
     print "TIP: ";
@@ -411,7 +415,7 @@ sub main
 
     frm.inputs << bn_files
     frm.inputs << bn_online
-    if (instr(sbver, "SDL") == 0) then
+    if (!is_sdl) then
       frm.inputs << bn_setup
     endif
     frm.inputs << bn_about

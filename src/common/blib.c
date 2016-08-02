@@ -1571,21 +1571,23 @@ void cmd_for() {
       // var_p=FROM, var=TO
       int sign = v_sign(&varstep);
       int cmp = v_compare(var_p, &var);
-      bcip_t next_ip;
-      if (sign == 0) {
+      if (sign != 0) {
+        bcip_t next_ip;
+        if (sign < 0) {
+          next_ip = cmp >= 0 ? true_ip : false_ip;
+        } else {
+          next_ip = cmp <= 0 ? true_ip : false_ip;
+        }
+        code_jump(next_ip);
+        if (next_ip == false_ip) {
+          // skip to after kwNEXT
+          code_skipnext();
+          code_jump(code_getaddr());
+        } else {
+          code_push(&node);
+        }
+      } else {
         rt_raise(ERR_SYNTAX);
-      } else if (sign < 0) {
-        next_ip = cmp >= 0 ? true_ip : false_ip;
-      } else {
-        next_ip = cmp <= 0 ? true_ip : false_ip;
-      }
-      code_jump(next_ip);
-      if (next_ip == false_ip) {
-        // skip to after kwNEXT
-        code_skipnext();
-        code_jump(code_getaddr());
-      } else {
-        code_push(&node);
       }
     }
   } else {
