@@ -6,14 +6,17 @@
 # Download the GNU Public License (GPL) from www.gnu.org
 #
 
+# setup notes:
+# touch AUTHORS NEWS README ChangeLog
+# cd src
+# ln -s ../../../src/common
+# ln -s ../../../src/lib
+# ln -s ../../../src/languages
+# mkdir libs
+# cp ~/.m2/repository/io/undertow/undertow-core/1.3.23.Final/undertow-core-1.3.23.Final.jar libs
+
 rm -f acinclude.m4
 rm -rf autom4te.cache aclocal.m4
-
-ln -s ../../AUTHORS
-ln -s ../../NEWS
-ln -s ../../README
-ln -s ../../ChangeLog
-
 libtoolize
 aclocal
 autoheader

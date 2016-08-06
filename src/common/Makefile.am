@@ -10,7 +10,7 @@ if !WITH_CYGWIN_CONSOLE
   AM_CFLAGS = @PACKAGE_CFLAGS@
 endif
 
-AM_CPPFLAGS = -I$(top_builddir)/src -DPACKAGE_LIB_DIR=\""$(pkglibdir)"\"
+AM_CPPFLAGS = -I$(abs_top_builddir)/src -DPACKAGE_LIB_DIR=\""$(pkglibdir)"\"
 
 EXTRA_DIST =                              \
     keywords.c                            \
