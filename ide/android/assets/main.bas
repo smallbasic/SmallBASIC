@@ -50,6 +50,7 @@ sub info_header(is_welcome)
   if (is_welcome) then
     color 7,0
     print boldOn + spaced("Welcome to SmallBASIC") + boldOff
+    print
     color 6,0
     if (is_sdl) then
       print "Click the right mouse button to access the context menu. ";
