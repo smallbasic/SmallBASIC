@@ -7,13 +7,14 @@
 #
 
 # setup notes:
+# sudo apt-get install libtool
 # touch AUTHORS NEWS README ChangeLog
 # cd src
 # ln -s ../../../src/common
 # ln -s ../../../src/lib
 # ln -s ../../../src/languages
 # mkdir libs
-# cp ~/.m2/repository/io/undertow/undertow-core/1.3.23.Final/undertow-core-1.3.23.Final.jar libs
+# cp ~/.m2/repository/... libs (see jars in run.sh)
 
 rm -f acinclude.m4
 rm -rf autom4te.cache aclocal.m4
@@ -22,4 +23,3 @@ aclocal
 autoheader
 autoconf
 automake -a
-

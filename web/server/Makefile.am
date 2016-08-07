@@ -7,10 +7,10 @@
 
 SUBDIRS = src/common .
 
-AM_CFLAGS = -I"${JAVA_HOME}/include" -I"${JAVA_HOME}/include/linux"
+AM_CPPFLAGS = -I"${JAVA_HOME}/include" -I"${JAVA_HOME}/include/linux" -I$(top_builddir)/src -I.
 ACLOCAL_AMFLAGS= -I m4
 lib_LTLIBRARIES = libsmallbasic.la
-libsmallbasic_la_SOURCES = main.c
+libsmallbasic_la_SOURCES = src/main.cpp
 libsmallbasic_la_LIBADD = -L$(top_srcdir)/src/common -lsb_common
 libsmallbasic_la_DEPENDENCIES = $(top_srcdir)/src/common/libsb_common.a
 

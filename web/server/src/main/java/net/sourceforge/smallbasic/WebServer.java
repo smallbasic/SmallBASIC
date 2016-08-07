@@ -1,5 +1,7 @@
 package net.sourceforge.smallbasic;
 
+import java.nio.ByteBuffer;
+
 import io.undertow.Undertow;
 import io.undertow.server.HttpHandler;
 import io.undertow.server.HttpServerExchange;
@@ -7,26 +9,20 @@ import io.undertow.util.Headers;
 
 /**
  * SmallBASIC web server
- * 
+ *
  * @author chrisws
  * @see http://undertow.io
  */
 public class WebServer {
-  /**
-     to locate the shared library:
-     Call System.load to load the .so from an explicitly specified absolute path.
-     Copy the shared library to one of the paths already listed in java.library.path
-     Modify the LD_LIBRARY_PATH environment variable to include the directory where the shared library is located.
-     Specify the java.library.path on the command line by using the -D option.
-  */
-  
   static {
     System.loadLibrary("smallbasic");
   }
 
   public static native String execute(String basName);
-  
+  public static native void init();
+
   public static void main(final String[] args) {
+    init();
     Undertow server = Undertow.builder()
         .addHttpListener(8080, "localhost")
         .setHandler(new HttpHandler() {
@@ -40,11 +36,14 @@ public class WebServer {
           int lastIndex =  requestPath.lastIndexOf('/');
           if (lastIndex != -1 && requestPath.endsWith(".bas")) {
             String basName = requestPath.substring(lastIndex + 1);
-            exchange.getResponseSender().send(execute(basName)); 
+            exchange.getResponseSender().send(do_execute(basName));
           } else {
             exchange.getResponseSender().send("error: file not found");
           }
         }
+      }
+      private synchronized String do_execute(String basName) {
+        return execute(basName);
       }
     }).build();
     server.start();
