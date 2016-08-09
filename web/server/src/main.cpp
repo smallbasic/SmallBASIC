@@ -18,7 +18,10 @@
 // - write well formed HTML and markup for font, colours etc
 // - pass web args to command$
 // - html5 versions of RECT and LINE
-
+// http://www.html5canvastutorials.com/tutorials/html5-canvas-rectangles/
+// http://www.html5canvastutorials.com/tutorials/html5-canvas-lines/
+// http://www.html5canvastutorials.com/tutorials/html5-canvas-circles/
+// fixed font
 cstr g_buffer;
 
 extern "C" JNIEXPORT void JNICALL Java_net_sourceforge_smallbasic_WebServer_init

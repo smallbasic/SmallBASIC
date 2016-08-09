@@ -22,10 +22,17 @@ public class WebServer {
   public static native void init();
 
   public static void main(final String[] args) {
-    init();
-    Undertow server = Undertow.builder()
-        .addHttpListener(8080, "localhost")
-        .setHandler(new HttpHandler() {
+    int port = 8080;
+    String host = "localhost";
+    for (int i = 0; i < args.length; i++) {
+      if ("--port".equals(args[i]) && i + 1 < args.length) {
+        port = Integer.valueOf(args[++i].trim());
+      } else if ("--host".equals(args[i]) && i + 1 < args.length) {
+        host = args[++i].trim();
+      }
+    }
+    System.err.println("Starting server [" + host + ":" + port + "]");
+    Undertow server = Undertow.builder().addHttpListener(port, host).setHandler(new HttpHandler() {
       @Override
       public void handleRequest(final HttpServerExchange exchange) throws Exception {
         if (exchange.isInIoThread()) {
@@ -46,6 +53,7 @@ public class WebServer {
         return execute(basName);
       }
     }).build();
+    init();
     server.start();
   }
 }

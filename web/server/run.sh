@@ -8,5 +8,5 @@ libs/xnio-nio-3.3.6.Final.jar:\
 libs/undertow-core-1.3.23.Final.jar:\
 target/SBServer-1.0.jar"
 
-java -server -Djava.library.path=`pwd`/.libs net.sourceforge.smallbasic.WebServer
+java -server -Djava.library.path=`pwd`/.libs net.sourceforge.smallbasic.WebServer $*
 
