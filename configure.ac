@@ -34,6 +34,11 @@ AC_ARG_ENABLE(android,
   [ac_build_android="yes"],
   [ac_build_android="no"])
 
+AC_ARG_ENABLE(web,
+  AS_HELP_STRING([--enable-web],[build Web server version(default=no)]),
+  [ac_build_web="yes"],
+  [ac_build_web="no"])
+
 AC_ARG_ENABLE(dist,
   AS_HELP_STRING([--enable-dist],[prepare to run make dist(default=no)]),
   [ac_build_dist="yes"],
@@ -258,10 +263,24 @@ function buildConsole() {
    AC_SUBST(BUILD_SUBDIRS)
 }
 
+function buildWeb() {
+   BUILD_SUBDIRS="src/common src/platform/web"
+   PACKAGE_LIBS="${PACKAGE_LIBS} -lm -ldl -lpthread -lmicrohttpd"
+   AC_CHECK_HEADERS([microhttpd.h], [have_microhttpd_h=yes; break;])
+   AM_CONDITIONAL(WITH_CYGWIN_CONSOLE, false)
+   AC_DEFINE(_UnixOS, 1, [Building under Unix like systems.])
+   AC_DEFINE(DEV_EVENTS_OSD, 0, [dev_events() implemented using osd_events().])
+   AC_DEFINE(BUILD_CONSOLE, 1, [Building a console based system.])
+   AC_DEFINE(USE_TERM_IO, 0, [dont use the termios library.])
+   AC_SUBST(BUILD_SUBDIRS)
+}
+
 if test x$ac_build_sdl = xyes; then
    buildSDL
 elif test x$ac_build_android = xyes; then
    buildAndroid
+elif test x$ac_build_web = xyes; then
+   buildWeb
 else
    buildConsole
 fi
@@ -284,9 +303,10 @@ AC_SUBST(PACKAGE_LIBS)
 AC_CONFIG_FILES([
 Makefile
 src/common/Makefile
-src/platform/sdl/Makefile
-src/platform/console/Makefile
 src/platform/android/Makefile
+src/platform/console/Makefile
+src/platform/sdl/Makefile
+src/platform/web/Makefile
 ])
 AC_OUTPUT
 
