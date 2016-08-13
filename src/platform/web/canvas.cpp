@@ -36,37 +36,52 @@ Canvas::Canvas() :
   _underline(false),
   _bold(false),
   _italic(false),
+  _spanLevel(false),
   _curx(0),
   _cury(0) {
 }
 
 String Canvas::getPage() {
   String result;
-  result.append("<!DOCTYPE HTML><html>\n<head>\n")
-    .append("<style>\n body { margin: 0px; padding: 0px; }\n</style>")
-    .append("<title>SmallBASIC</title>")
-    .append("</head>\n<body>\n<canvas id='_canvas'>")
-    .append("</canvas>\n<script>\n")
+  result.append("<!DOCTYPE HTML><html><head><style>")
+    .append(" body { margin: 0px; padding: 2px;")
+    .append("  font-family: monospace;")
+    .append("  background-color:black; color:white}\n")
+    .append(" span.underline { text-decoration: underline; }\n")
+    .append(" span.bold { font-weight: bold; }\n")
+    .append(" span.italic { text-style: italic; }\n")
+    .append(" #_canvas { position:absolute; left:0px; top:0px; ")
+    .append("  width: 100%; height: 100%}")
+    .append("\n</style><title>SmallBASIC</title>")
+    .append("</head><body><canvas id='_canvas'></canvas>")
+    .append("<script>\n")
+    .append("var ctx = document.getElementById('_canvas').getContext('2d');\n")
+    .append("ctx.textBaseline = 'hanging';\n")
+    .append("ctx.font = '14pt courier';\n")
+    .append("var m = ctx.measureText('Q');\n")
+    .append("function _t(s, x, y) {\n")
+    .append("  ctx.fillText(s, x*m.width, y*20);\n")
+    .append("}\n")
     .append(_script)
     .append("</script>\n")
-    .append(_html)
-    .append("</script>\n</body>\n</html>");
+    .append(_html);
+  for (int i = 0; i < _spanLevel; i++) {
+    result.append("</span>");
+  }
+  result.append("</body></html>");
   return result;
 }
 
 void Canvas::clearScreen() {
   _html.empty();
   _script.empty();
+  _spanLevel = 0;
   _curx = _cury = 0;
 }
 
 void Canvas::reset() {
-  _invert = false;
-  _underline = false;
-  _bold = false;
-  _italic = false;
-  _bg = colors[15];
-  _fg = colors[0];
+  resetStyle();
+  clearScreen();
 }
 
 void Canvas::setTextColor(long fg, long bg) {
@@ -107,18 +122,109 @@ void Canvas::drawRect(int x1, int y1, int x2, int y2) {
   //drawline(x2, y1, x1, y1);
 }
 
-/*! Handles the \n character
+/*! Prints the contents of the given string onto the backbuffer
  */
-void Canvas::newLine() {
-  _cury++;
-  _html.append("<br/>");
+void Canvas::print(const char *str) {
+  unsigned char *p = (unsigned char*)str;
+  while (*p) {
+    switch (*p) {
+    case '\a':
+      break;
+    case '\xC':
+      resetStyle();
+      break;
+    case '\033':
+      // ESC ctrl chars
+      if (*(p+1) == '[' ) {
+        p += 2;
+        String bg = _bg;
+        String fg = _fg;
+        bool bold = _bold;
+        bool italic = _italic;
+        while (doEscape(p)) {
+          // continue
+        }
+        if (!bg.equals(_bg) || !fg.equals(_fg)) {
+          printColorSpan(_bg, _fg);
+        }
+        if (_bold && !bold) {
+          printSpan("bold");
+        }
+        if (_italic && !italic) {
+          printSpan("italic");
+        }
+      }
+      break;
+    case '\n':
+      // new line
+      newLine();
+      break;
+    case '\r':
+      _curx = 0;
+      break;
+    default:
+      int numChars = 1;
+      while (p[numChars] > 31) {
+        _curx++;
+        numChars++;
+      }
+
+      if (_invert) {
+        printColorSpan(_fg, _bg);
+      }
+      if (_underline) {
+        printSpan("underline");
+      }
+      drawText((const char *)p, numChars);
+      if (_invert) {
+        printEndSpan();
+      }
+      if (_underline) {
+        printEndSpan();
+      }
+
+      // advance, allow for p++
+      p += numChars - 1;
+    };
+    if (*p == '\0') {
+      break;
+    }
+    p++;
+  }
+}
+
+/*! Handles the characters following the \e[ sequence. Returns whether a further call
+ * is required to complete the process.
+ */
+bool Canvas::doEscape(unsigned char* &p) {
+  int escValue = 0;
+
+  while (isdigit(*p)) {
+    escValue = (escValue * 10) + (*p - '0');
+    p++;
+  }
+
+  setGraphicsRendition(*p, escValue);
+
+  if (*p == ';') {
+    p++; // next rendition
+    return true;
+  }
+  return false;
+}
+
+void Canvas::drawText(const char *str, int len, bool canvas) {
+  if (canvas) {
+    _script.append("_t('").append(str, len).append("', ")
+      .append(_curx).append(", ").append(_cury).append(");\n");
+  } else {
+    _html.append(str, len);
+  }
 }
 
 String Canvas::getColor(long c) {
   String result;
   if (c < 0) {
-    // assume color is windows style RGB packing
-    // RGB(r,g,b) ((COLORREF)((BYTE)(r)|((BYTE)(g) << 8)|((BYTE)(b) << 16)))
     c = -c;
     int b = (c>>16) & 0xFF;
     int g = (c>>8) & 0xFF;
@@ -132,24 +238,61 @@ String Canvas::getColor(long c) {
   return result;
 }
 
-/*! Handles the given escape character. Returns whether the font has changed
+/*! Handles the \n character
  */
-bool Canvas::setGraphicsRendition(char c, int escValue) {
+void Canvas::newLine() {
+  _html.append("<br/>");
+  _cury++;
+  _curx = 0;
+}
+
+void Canvas::printColorSpan(String &bg, String &fg) {
+  _spanLevel++;
+  _html.append("<span style='background-color:")
+    .append(bg).append("; color:").append(fg).append("'>");
+}
+
+void Canvas::printEndSpan() {
+  _spanLevel--;
+  _html.append("</span>");
+}
+
+void Canvas::printSpan(const char *clazz) {
+  _spanLevel++;
+  _html.append("<span class=").append(clazz).append(">");
+}
+
+void Canvas::resetStyle() {
+  for (int i = 0; i < _spanLevel; i++) {
+    _html.append("</span>");
+  }
+  _spanLevel = 0;
+  _invert = false;
+  _underline = false;
+  _bold = false;
+  _italic = false;
+  _bg = colors[15];
+  _fg = colors[0];
+}
+
+/*! Handles the given escape character. Returns whether the style has changed
+ */
+void Canvas::setGraphicsRendition(char c, int escValue) {
   switch (c) {
   case ';': // fallthru
   case 'm': // \e[...m  - ANSI terminal
     switch (escValue) {
     case 0:  // reset
-      reset();
+      resetStyle();
       break;
     case 1: // set bold on
       _bold = true;
-      return true;
+      break;
     case 2: // set faint on
       break;
     case 3: // set italic on
       _italic = true;
-      return true;
+      break;
     case 4: // set underline on
       _underline = true;
       break;
@@ -164,10 +307,10 @@ bool Canvas::setGraphicsRendition(char c, int escValue) {
       break;
     case 21: // set bold off
       _bold = false;
-      return true;
+      break;
     case 23:
       _italic = false;
-      return true;
+      break;
     case 24: // set underline off
       _underline = false;
       break;
@@ -228,93 +371,5 @@ bool Canvas::setGraphicsRendition(char c, int escValue) {
     case 49: // superscript
       break;
     };
-  }
-  return false;
-}
-
-/*! Handles the characters following the \e[ sequence. Returns whether a further call
- * is required to complete the process.
- */
-bool Canvas::doEscape(unsigned char* &p) {
-  int escValue = 0;
-
-  while (isdigit(*p)) {
-    escValue = (escValue * 10) + (*p - '0');
-    p++;
-  }
-
-  if (setGraphicsRendition(*p, escValue)) {
-    //setFont();
-  }
-
-  if (*p == ';') {
-    p++; // next rendition
-    return true;
-  }
-  return false;
-}
-
-/*! Prints the contents of the given string onto the backbuffer
- */
-void Canvas::print(const char *str) {
-  //  setFont();
-  unsigned char *p = (unsigned char*)str;
-  while (*p) {
-    switch (*p) {
-    case '\a':
-      break;
-    case '\xC':
-      reset();
-      break;
-    case '\033':
-      // ESC ctrl chars
-      if (*(p+1) == '[' ) {
-        p += 2;
-        while (doEscape(p)) {
-          // continue
-        }
-      }
-      break;
-    case '\n':
-      // new line
-      newLine();
-      break;
-    case '\r':
-      _curx = 0;
-      break;
-    default:
-      int numChars = 1; // print minimum of one character
-      // print further non-control, non-null characters
-      // up to the width of the line
-      while (p[numChars] > 31) {
-        _curx++;
-        numChars++;
-      }
-
-      if (_invert) {
-        //setcolor(labelcolor());
-        //fillrect(curX, curY, cx, fontHeight);
-        //setcolor(color());
-        //drawtext((const char*)p, numChars, float(curX), float(curY+ascent));
-      } else {
-        _html.append((const char *)p, numChars);
-        //setcolor(color());
-        //fillrect(curX, curY, cx, fontHeight);
-        //setcolor(labelcolor());
-        //drawtext((const char*)p, numChars, float(curX), float(curY+ascent));
-      }
-
-      if (_underline) {
-        //drawline(curX, curY+ascent+1, curX+cx, curY+ascent+1);
-      }
-
-      // advance, allow for p++
-      p += numChars-1;
-    };
-
-    if (*p == '\0') {
-      break;
-    }
-    p++;
   }
 }

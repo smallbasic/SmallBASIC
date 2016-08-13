@@ -31,7 +31,6 @@ void init() {
   opt_pref_width = 0;
   opt_quiet = 1;
   opt_verbose = 0;
-  os_color_depth = 1;
   os_graf_mx = 80;
   os_graf_my = 25;
 }
@@ -91,7 +90,6 @@ int access_cb(void *cls,
     String page;
     if (stat(url + 1, &buf) == 0) {
       // TODO: pass web args to command$
-      fprintf(stderr, "exec %s\n", url + 1);
       sbasic_main(url + 1);
       page.append(g_canvas.getPage());
     } else {

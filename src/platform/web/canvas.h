@@ -31,10 +31,15 @@ struct Canvas {
   void setXY(int x, int y);
  
 private:    
-  void newLine();
-  String getColor(long c);
-  bool setGraphicsRendition(char c, int escValue);
   bool doEscape(unsigned char* &p);
+  void drawText(const char *str, int len, bool canvas=false);
+  String getColor(long c);
+  void newLine();
+  void printColorSpan(String &bg, String &fg);
+  void printEndSpan();
+  void printSpan(const char *clazz);
+  void resetStyle();
+  void setGraphicsRendition(char c, int escValue);
 
   String _html;
   String _script;
@@ -44,6 +49,7 @@ private:
   bool _underline;
   bool _bold;
   bool _italic;
+  int _spanLevel;
   int _curx;
   int _cury;
 };
