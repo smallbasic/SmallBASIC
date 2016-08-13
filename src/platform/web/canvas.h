@@ -22,7 +22,7 @@ struct Canvas {
   void drawLine(int x1, int y1, int x2, int y2);
   void drawRectFilled(int x1, int y1, int x2, int y2);
   void drawRect(int x1, int y1, int x2, int y2);
-  String getPage() { return _html; }
+  String getPage();
   void print(const char *str);
   void reset();
   void setTextColor(long fg, long bg);
@@ -37,6 +37,7 @@ private:
   bool doEscape(unsigned char* &p);
 
   String _html;
+  String _script;
   String _bg;
   String _fg;
   bool _invert;

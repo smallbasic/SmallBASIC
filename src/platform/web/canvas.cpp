@@ -8,14 +8,6 @@
 
 #include "platform/web/canvas.h"
 
-// - write well formed HTML and markup for font, colours etc
-// - pass web args to command$
-// fixed font
-
-//http://stackoverflow.com/questions/7812514/drawing-a-dot-on-html5-canvas
-// http://www.html5canvastutorials.com/tutorials/html5-canvas-lines/
-// http://www.html5canvastutorials.com/tutorials/html5-canvas-rectangles/
-
 const char *colors[] = {
   "black",   // 0 black
   "#000080", // 1 blue
@@ -36,7 +28,10 @@ const char *colors[] = {
 };
 
 Canvas::Canvas() :
-  _html(), _bg(), _fg(),
+  _html(),
+  _script(),
+  _bg(),
+  _fg(),
   _invert(false),
   _underline(false),
   _bold(false),
@@ -45,8 +40,24 @@ Canvas::Canvas() :
   _cury(0) {
 }
 
+String Canvas::getPage() {
+  String result;
+  result.append("<!DOCTYPE HTML><html>\n<head>\n")
+    .append("<style>\n body { margin: 0px; padding: 0px; }\n</style>")
+    .append("<title>SmallBASIC</title>")
+    .append("</head>\n<body>\n<canvas id='_canvas'>")
+    .append("</canvas>\n<script>\n")
+    .append(_script)
+    .append("</script>\n")
+    .append(_html)
+    .append("</script>\n</body>\n</html>");
+  return result;
+}
+
 void Canvas::clearScreen() {
   _html.empty();
+  _script.empty();
+  _curx = _cury = 0;
 }
 
 void Canvas::reset() {
@@ -59,25 +70,30 @@ void Canvas::reset() {
 }
 
 void Canvas::setTextColor(long fg, long bg) {
-  //labelcolor(getColor(fg));
-  //color(getColor(bg)));
+  _fg = getColor(fg);
+  _bg = getColor(bg);
 }
 
 void Canvas::setColor(long fg) {
-  //labelcolor(getColor(fg);
+  _fg = getColor(fg);
 }
 
+//http://stackoverflow.com/questions/7812514/drawing-a-dot-on-html5-canvas
 void Canvas::setPixel(int x, int y, int c) {
 }
 
 void Canvas::setXY(int x, int y) {
+  _curx = x;
+  _cury = y;
 }
 
+// http://www.html5canvastutorials.com/tutorials/html5-canvas-lines/
 void Canvas::drawLine(int x1, int y1, int x2, int y2) {
   //setcolor(labelcolor();
   //drawline(x1, y1, x2, y2);
 }
 
+// http://www.html5canvastutorials.com/tutorials/html5-canvas-rectangles/
 void Canvas::drawRectFilled(int x1, int y1, int x2, int y2) {
   //setcolor(labelcolor();
   //fillrect(Rectangle(x1, y1, x2-x1, y2-y1));
@@ -94,6 +110,7 @@ void Canvas::drawRect(int x1, int y1, int x2, int y2) {
 /*! Handles the \n character
  */
 void Canvas::newLine() {
+  _cury++;
   _html.append("<br/>");
 }
 
@@ -248,8 +265,6 @@ void Canvas::print(const char *str) {
       break;
     case '\xC':
       reset();
-      //setcolor(color());
-      //fillrect(Rectangle(w(), h()));
       break;
     case '\033':
       // ESC ctrl chars
@@ -265,12 +280,14 @@ void Canvas::print(const char *str) {
       newLine();
       break;
     case '\r':
+      _curx = 0;
       break;
     default:
       int numChars = 1; // print minimum of one character
       // print further non-control, non-null characters
       // up to the width of the line
       while (p[numChars] > 31) {
+        _curx++;
         numChars++;
       }
 
@@ -280,6 +297,7 @@ void Canvas::print(const char *str) {
         //setcolor(color());
         //drawtext((const char*)p, numChars, float(curX), float(curY+ascent));
       } else {
+        _html.append((const char *)p, numChars);
         //setcolor(color());
         //fillrect(curX, curY, cx, fontHeight);
         //setcolor(labelcolor());

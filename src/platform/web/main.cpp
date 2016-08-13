@@ -44,7 +44,7 @@ int accept_cb(void *cls,
 }
 
 // server callback
-// see: usr/share/doc/libmicrohttpd-dev/examples
+// see: /usr/share/doc/libmicrohttpd-dev/examples
 int access_cb(void *cls,
               struct MHD_Connection *connection,
               const char *url,
@@ -90,13 +90,15 @@ int access_cb(void *cls,
     g_canvas.reset();
     String page;
     if (stat(url + 1, &buf) == 0) {
+      // TODO: pass web args to command$
+      fprintf(stderr, "exec %s\n", url + 1);
       sbasic_main(url + 1);
       page.append(g_canvas.getPage());
     } else {
-      page.append("File not found: ").append(url).append("\n");
+      page.append("File not found: ").append(url + 1).append("\n");
     }
     response = MHD_create_response_from_buffer(page.length(), (void *)page.c_str(),
-                                               MHD_RESPMEM_PERSISTENT);
+                                               MHD_RESPMEM_MUST_COPY);
   }
   if (response != NULL) {
     result = MHD_queue_response(connection, MHD_HTTP_OK, response);
