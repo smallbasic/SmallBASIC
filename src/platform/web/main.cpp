@@ -15,20 +15,14 @@
 #include "common/sbapp.h"
 #include "common/device.h"
 #include "common/osd.h"
-#include "common/str.h"
+#include "platform/web/canvas.h"
 
-// TODO:
-// - write well formed HTML and markup for font, colours etc
-// - pass web args to command$
-// fixed font
-// /usr/share/doc/libmicrohttpd-dev/examples/
-
-cstr g_buffer;
+Canvas g_canvas;
 
 void init() {
   opt_command[0] = '\0';
   opt_file_permitted = 0;
-  opt_graphics = 0;
+  opt_graphics = 1;
   opt_ide = 0;
   opt_modlist[0] = '\0';
   opt_nosave = 1;
@@ -42,57 +36,15 @@ void init() {
   os_graf_my = 25;
 }
 
-void osd_write(const char *str) {
-  int len = strlen(str);
-  if (len) {
-    int i, index = 0, escape = 0;
-    char *buffer = (char *)malloc(len + 1);
-    for (i = 0; i < len; i++) {
-      if (i + 1 < len && str[i] == '\033' && str[i + 1] == '[') {
-        escape = 1;
-      } else if (escape && str[i] == 'm') {
-        escape = 0;
-      } else if (!escape) {
-        buffer[index++] = str[i];
-      }
-    }
-    if (index) {
-      buffer[index] = 0;
-      cstr_append(&g_buffer, buffer);
-    }
-    free(buffer);
-  }
-}
-
-int osd_textwidth(const char *str) {
-  return strlen(str);
-}
-
-// http://www.html5canvastutorials.com/tutorials/html5-canvas-rectangles/
-void osd_line(int x1, int y1, int x2, int y2) {
-}
-
-// http://www.html5canvastutorials.com/tutorials/html5-canvas-lines/
-void osd_rect(int x1, int y1, int x2, int y2, int fill) {
-
-}
-
-void osd_setcolor(long color) {
-
-}
-
-void osd_settextcolor(long fg, long bg) {
-
-}
-
 // allow or deny access
-int accept_cb(void *cls, 
+int accept_cb(void *cls,
               const struct sockaddr *addr,
               socklen_t addrlen) {
   return MHD_YES;
 }
 
 // server callback
+// see: usr/share/doc/libmicrohttpd-dev/examples
 int access_cb(void *cls,
               struct MHD_Connection *connection,
               const char *url,
@@ -105,7 +57,7 @@ int access_cb(void *cls,
   struct MHD_Response *response;
   struct stat buf;
   int result;
-  
+
   if (0 != strcmp(method, "GET")) {
     // unexpected method
     return MHD_NO;
@@ -132,16 +84,18 @@ int access_cb(void *cls,
       response = NULL;
     } else {
       response = MHD_create_response_from_fd(buf.st_size, fd);
+      close(fd);
     }
   } else {
-    cstr_init(&g_buffer, 1024);
+    g_canvas.reset();
+    String page;
     if (stat(url + 1, &buf) == 0) {
       sbasic_main(url + 1);
+      page.append(g_canvas.getPage());
     } else {
-      fprintf(stderr, "File not found %s\n", url);
-      cstr_append(&g_buffer, "File not found");
+      page.append("File not found: ").append(url).append("\n");
     }
-    response = MHD_create_response_from_buffer(g_buffer.length, (void *)g_buffer.buf,
+    response = MHD_create_response_from_buffer(page.length(), (void *)page.c_str(),
                                                MHD_RESPMEM_PERSISTENT);
   }
   if (response != NULL) {
@@ -174,10 +128,65 @@ int main(int argc, char **argv) {
   return 0;
 }
 
+//
+// common device implementation
+//
+int osd_textwidth(const char *str) {
+  return strlen(str);
+}
+
+void osd_line(int x1, int y1, int x2, int y2) {
+  g_canvas.drawLine(x1, y1, x2, y2);
+}
+
+void osd_rect(int x1, int y1, int x2, int y2, int fill) {
+  if (fill) {
+    g_canvas.drawRectFilled(x1, y1, x2, y2);
+  } else {
+    g_canvas.drawRect(x1, y1, x2, y2);
+  }
+}
+
+void osd_setcolor(long color) {
+  g_canvas.setColor(color);
+}
+
+void osd_settextcolor(long fg, long bg) {
+  g_canvas.setTextColor(fg, bg);
+}
+
+void osd_setpixel(int x, int y) {
+  g_canvas.setPixel(x, y, dev_fgcolor);
+}
+
+void osd_setxy(int x, int y) {
+  g_canvas.setXY(x, y);
+}
+
+void osd_cls(void) {
+  g_canvas.clearScreen();
+}
+
+int osd_events(int wait_flag) {
+  // TODO: exit on max-ticks
+  return 0;
+}
+
+void osd_write(const char *str) {
+  if (strlen(str) > 0) {
+    g_canvas.print(str);
+  }
+}
+
+char *dev_gets(char *dest, int maxSize) {
+  return NULL;
+}
+
+//
 // not implemented
+//
 int osd_devinit() { return 1;}
 int osd_devrestore() { return 1; }
-int osd_events(int wait_flag) { return 0; }
 int osd_getpen(int code) {return 0;}
 int osd_getx() { return 0; }
 int osd_gety() { return 0; }
@@ -185,9 +194,11 @@ int osd_textheight(const char *str) { return 1; }
 long osd_getpixel(int x, int y) { return 0;}
 void osd_beep() {}
 void osd_clear_sound_queue() {}
-void osd_cls() {}
 void osd_refresh() {}
 void osd_setpenmode(int enable) {}
-void osd_setpixel(int x, int y) {}
-void osd_setxy(int x, int y) {}
 void osd_sound(int frq, int ms, int vol, int bgplay) {}
+void v_create_image(var_p_t var) {}
+void v_create_form(var_p_t var) {}
+void v_create_window(var_p_t var) {}
+void dev_show_page() {}
+void dev_delay(dword ms) {}
