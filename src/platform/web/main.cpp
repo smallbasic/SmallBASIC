@@ -7,6 +7,7 @@
 //
 
 #include <microhttpd.h>
+#include <getopt.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
@@ -18,6 +19,17 @@
 #include "platform/web/canvas.h"
 
 Canvas g_canvas;
+int g_ticks = 0;
+int g_maxTicks = 1000;
+
+static struct option OPTIONS[] = {
+  {"help",      no_argument,       NULL, 'h'},
+  {"verbose",   no_argument,       NULL, 'v'},
+  {"port",      optional_argument, NULL, 'p'},
+  {"max-ticks", optional_argument, NULL, 't'},
+  {"module",    optional_argument, NULL, 'm'},
+  {0, 0, 0, 0}
+};
 
 void init() {
   opt_command[0] = '\0';
@@ -33,6 +45,23 @@ void init() {
   opt_verbose = 0;
   os_graf_mx = 80;
   os_graf_my = 25;
+}
+
+void show_help() {
+  fprintf(stdout,
+          "SmallBASIC version %s - kw:%d, pc:%d, fc:%d, ae:%d I=%d N=%d\n\n",
+          SB_STR_VER, kwNULL, (kwNULLPROC - kwCLS) + 1,
+          (kwNULLFUNC - kwASC) + 1, (int)(65536 / sizeof(var_t)),
+          (int)sizeof(var_int_t), (int)sizeof(var_num_t));
+  fprintf(stdout, "usage: sbasicw [options]...\n");
+  int i = 0;
+  while (OPTIONS[i].name != NULL) {
+    fprintf(stdout, OPTIONS[i].has_arg ?
+            "  -%c, --%s='<argument>'\n" : "  -%c, --%s\n",
+            OPTIONS[i].val, OPTIONS[i].name);
+    i++;
+  }
+  fprintf(stdout, "\nhttp://smallbasic.sourceforge.net\n\n");
 }
 
 // allow or deny access
@@ -87,6 +116,7 @@ int access_cb(void *cls,
     }
   } else {
     g_canvas.reset();
+    g_ticks = 0;
     String page;
     if (stat(url + 1, &buf) == 0) {
       // TODO: pass web args to command$
@@ -108,19 +138,52 @@ int access_cb(void *cls,
 }
 
 int main(int argc, char **argv) {
-  if (argc != 2) {
-    printf("%s PORT\n", argv[0]);
-    return 1;
-  }
   init();
-  fprintf(stdout, "Starting SmallBASIC web server on port:%s\n", argv[1]);
+  int port = 8080;
+  while (1) {
+    int option_index = 0;
+    int c = getopt_long(argc, argv, "hvp:t:m:", OPTIONS, &option_index);
+    if (c == -1) {
+      break;
+    }
+    if (OPTIONS[option_index].has_arg && optarg == '\0') {
+      show_help();
+      exit(1);
+    }
+    switch (c) {
+    case 'v':
+      opt_verbose = true;
+      opt_quiet = false;
+      break;
+    case 'h':
+      show_help();
+      exit(1);
+      break;
+    case 'p':
+      port = atoi(optarg);
+      break;
+    case 't':
+      g_ticks = atoi(optarg);
+      break;
+    case 'm':
+      opt_loadmod = 1;
+      strcpy(opt_modlist, optarg);
+      break;
+    default:
+      show_help();
+      exit(1);
+      break;
+    }
+  }
 
+  fprintf(stdout, "Starting SmallBASIC web server on port:%d\n", port);
   // MHD_http_unescape
   MHD_Daemon *d =
-    MHD_start_daemon(MHD_USE_THREAD_PER_CONNECTION, atoi(argv[1]),
+    MHD_start_daemon(MHD_USE_THREAD_PER_CONNECTION, port,
                      &accept_cb, NULL,
                      &access_cb, NULL, MHD_OPTION_END);
   if (d == NULL) {
+    fprintf(stderr, "startup failed\n");
     return 1;
   }
   getc(stdin);
@@ -168,8 +231,13 @@ void osd_cls(void) {
 }
 
 int osd_events(int wait_flag) {
-  // TODO: exit on max-ticks
-  return 0;
+  int result;
+  if (++g_ticks == g_maxTicks) {
+    result = -2;
+  } else {
+    result = 0;
+  }
+  return result;
 }
 
 void osd_write(const char *str) {

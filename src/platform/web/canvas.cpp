@@ -27,6 +27,9 @@ const char *colors[] = {
   "white"    // 15 bright white
 };
 
+#define DEFAULT_FOREGROUND -0xa1a1a1
+#define DEFAULT_BACKGROUND 0
+
 Canvas::Canvas() :
   _html(),
   _script(),
@@ -39,14 +42,16 @@ Canvas::Canvas() :
   _spanLevel(false),
   _curx(0),
   _cury(0) {
+  _bgBody = getColor(DEFAULT_BACKGROUND);
+  _fgBody = getColor(DEFAULT_FOREGROUND);
 }
 
 String Canvas::getPage() {
   String result;
   result.append("<!DOCTYPE HTML><html><head><style>")
-    .append(" body { margin: 0px; padding: 2px;")
-    .append("  font-family: monospace;")
-    .append("  background-color:black; color:white}\n")
+    .append(" body { margin: 0px; padding: 2px; font-family: monospace;")
+    .append("  background-color:").append(_bgBody).append(";")
+    .append("  color:").append(_fgBody).append(";}\n")
     .append(" span.underline { text-decoration: underline; }\n")
     .append(" span.bold { font-weight: bold; }\n")
     .append(" span.italic { text-style: italic; }\n")
@@ -77,6 +82,8 @@ void Canvas::clearScreen() {
   _script.empty();
   _spanLevel = 0;
   _curx = _cury = 0;
+  _bgBody = _bg;
+  _fgBody = _fg;
 }
 
 void Canvas::reset() {
@@ -271,8 +278,8 @@ void Canvas::resetStyle() {
   _underline = false;
   _bold = false;
   _italic = false;
-  _bg = colors[15];
-  _fg = colors[0];
+  _bg = _bgBody;
+  _fg = _fgBody;
 }
 
 /*! Handles the given escape character. Returns whether the style has changed

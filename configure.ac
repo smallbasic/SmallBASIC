@@ -269,7 +269,7 @@ function buildWeb() {
    AC_CHECK_HEADERS([microhttpd.h], [have_microhttpd_h=yes; break;])
    AM_CONDITIONAL(WITH_CYGWIN_CONSOLE, false)
    AC_DEFINE(_UnixOS, 1, [Building under Unix like systems.])
-   AC_DEFINE(DEV_EVENTS_OSD, 0, [dev_events() implemented using osd_events().])
+   AC_DEFINE(DEV_EVENTS_OSD, 1, [dev_events() implemented using osd_events().])
    AC_DEFINE(IMPL_DEV_DELAY, 1, [Driver implements dev_delay()])
    AC_DEFINE(USE_TERM_IO, 0, [dont use the termios library.])
    AC_SUBST(BUILD_SUBDIRS)

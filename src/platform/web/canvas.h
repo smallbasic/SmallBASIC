@@ -45,6 +45,8 @@ private:
   String _script;
   String _bg;
   String _fg;
+  String _bgBody;
+  String _fgBody;
   bool _invert;
   bool _underline;
   bool _bold;
