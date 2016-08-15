@@ -57,12 +57,14 @@ String Canvas::getPage() {
     .append(" span.italic { text-style: italic; }\n")
     .append(" #_canvas { position:absolute; left:0px; top:0px; ")
     .append("  width: 100%; height: 100%}")
-    .append("\n</style><title>SmallBASIC</title>")
-    .append("</head><body><canvas id='_canvas'></canvas>")
-    .append("<script>\n")
+    .append("\n</style><title>SmallBASIC</title></head><body>")
+    .append("<canvas id='_canvas'></canvas>\n")
+    .append("<script type=text/javascript>\n")
     .append("var ctx = document.getElementById('_canvas').getContext('2d');\n")
     .append("ctx.textBaseline = 'hanging';\n")
     .append("ctx.font = '14pt courier';\n")
+    .append("ctx.lineWidth = 1;\n")
+    .append("ctx.strokeStyle='").append(_fg).append("';\n")
     .append("var m = ctx.measureText('Q');\n")
     .append("function _t(s, x, y) {\n")
     .append("  ctx.fillText(s, x*m.width, y*20);\n")
@@ -102,6 +104,7 @@ void Canvas::setColor(long fg) {
 
 //http://stackoverflow.com/questions/7812514/drawing-a-dot-on-html5-canvas
 void Canvas::setPixel(int x, int y, int c) {
+  _script.append("ctx.fillRect(").append(x).append(",").append(y).append(",1,1);");
 }
 
 void Canvas::setXY(int x, int y) {
@@ -109,24 +112,26 @@ void Canvas::setXY(int x, int y) {
   _cury = y;
 }
 
-// http://www.html5canvastutorials.com/tutorials/html5-canvas-lines/
 void Canvas::drawLine(int x1, int y1, int x2, int y2) {
-  //setcolor(labelcolor();
-  //drawline(x1, y1, x2, y2);
+  _script.append("ctx.beginPath();\n");
+  _script.append("ctx.moveTo(").append(x1).append(",").append(x2).append(");\n");
+  _script.append("ctx.lineTo(").append(x2).append(",").append(y2).append(");\n");
+  _script.append("ctx.stroke();\n");
 }
 
-// http://www.html5canvastutorials.com/tutorials/html5-canvas-rectangles/
 void Canvas::drawRectFilled(int x1, int y1, int x2, int y2) {
-  //setcolor(labelcolor();
-  //fillrect(Rectangle(x1, y1, x2-x1, y2-y1));
+  _script.append("ctx.beginPath();\n");
+  _script.append("ctx.rect(").append(x1).append(",").append(y1).append(",")
+    .append(x2).append(",").append(y2).append(");\n");
+  _script.append("ctx.fillStyle='").append(_bg).append("';\n");
+  _script.append("ctx.fill();\n");
 }
 
 void Canvas::drawRect(int x1, int y1, int x2, int y2) {
-  //setcolor(labelcolor());
-  //drawline(x1, y1, x1, y2);
-  //drawline(x1, y2, x2, y2);
-  //drawline(x2, y2, x2, y1);
-  //drawline(x2, y1, x1, y1);
+  _script.append("ctx.beginPath();\n");
+  _script.append("ctx.rect(").append(x1).append(",").append(y1).append(",")
+    .append(x2).append(",").append(y2).append(");\n");
+  _script.append("ctx.stroke();\n");
 }
 
 /*! Prints the contents of the given string onto the backbuffer
@@ -152,13 +157,25 @@ void Canvas::print(const char *str) {
           // continue
         }
         if (!bg.equals(_bg) || !fg.equals(_fg)) {
-          printColorSpan(_bg, _fg);
+          if (_bg.equals(_bgBody) && _fg.equals(_fgBody)) {
+            printEndSpan();
+          } else {
+            printColorSpan(_bg, _fg);
+          }
         }
-        if (_bold && !bold) {
-          printSpan("bold");
+        if (_bold != bold) {
+          if (!_bold) {
+            printEndSpan();
+          } else {
+            printSpan("bold");
+          }
         }
-        if (_italic && !italic) {
-          printSpan("italic");
+        if (_italic != italic) {
+          if (!_italic) {
+            printEndSpan();
+          } else {
+            printSpan("italic");
+          }
         }
       }
       break;
@@ -260,8 +277,10 @@ void Canvas::printColorSpan(String &bg, String &fg) {
 }
 
 void Canvas::printEndSpan() {
-  _spanLevel--;
-  _html.append("</span>");
+  if (_spanLevel) {
+    _spanLevel--;
+    _html.append("</span>");
+  }
 }
 
 void Canvas::printSpan(const char *clazz) {

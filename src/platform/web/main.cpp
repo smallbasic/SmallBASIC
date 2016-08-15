@@ -19,14 +19,15 @@
 #include "platform/web/canvas.h"
 
 Canvas g_canvas;
-int g_ticks = 0;
-int g_maxTicks = 1000;
+dword g_start = 0;
+dword g_maxTime = 2000;
 
 static struct option OPTIONS[] = {
   {"help",      no_argument,       NULL, 'h'},
   {"verbose",   no_argument,       NULL, 'v'},
+  {"file-permitted", no_argument,  NULL, 'f'},
   {"port",      optional_argument, NULL, 'p'},
-  {"max-ticks", optional_argument, NULL, 't'},
+  {"max-time",  optional_argument, NULL, 't'},
   {"module",    optional_argument, NULL, 'm'},
   {0, 0, 0, 0}
 };
@@ -43,8 +44,8 @@ void init() {
   opt_pref_width = 0;
   opt_quiet = 1;
   opt_verbose = 0;
-  os_graf_mx = 80;
-  os_graf_my = 25;
+  os_graf_mx = 1024;
+  os_graf_my = 768;
 }
 
 void show_help() {
@@ -116,7 +117,7 @@ int access_cb(void *cls,
     }
   } else {
     g_canvas.reset();
-    g_ticks = 0;
+    g_start = dev_get_millisecond_count();
     String page;
     if (stat(url + 1, &buf) == 0) {
       // TODO: pass web args to command$
@@ -142,7 +143,7 @@ int main(int argc, char **argv) {
   int port = 8080;
   while (1) {
     int option_index = 0;
-    int c = getopt_long(argc, argv, "hvp:t:m:", OPTIONS, &option_index);
+    int c = getopt_long(argc, argv, "hvfp:t:m:", OPTIONS, &option_index);
     if (c == -1) {
       break;
     }
@@ -155,6 +156,9 @@ int main(int argc, char **argv) {
       opt_verbose = true;
       opt_quiet = false;
       break;
+    case 'f':
+      opt_file_permitted = true;
+      break;
     case 'h':
       show_help();
       exit(1);
@@ -163,7 +167,7 @@ int main(int argc, char **argv) {
       port = atoi(optarg);
       break;
     case 't':
-      g_ticks = atoi(optarg);
+      g_maxTime = atoi(optarg);
       break;
     case 'm':
       opt_loadmod = 1;
@@ -232,7 +236,7 @@ void osd_cls(void) {
 
 int osd_events(int wait_flag) {
   int result;
-  if (++g_ticks == g_maxTicks) {
+  if (dev_get_millisecond_count() - g_start > g_maxTime) {
     result = -2;
   } else {
     result = 0;
