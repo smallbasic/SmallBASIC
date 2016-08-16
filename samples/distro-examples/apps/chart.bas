@@ -4,6 +4,9 @@
 ' CHART examples
 
 const VN=10
+const LINECHART=1
+const BARCHART=2
+
 dim v(1 to VN)
 
 randomize timer

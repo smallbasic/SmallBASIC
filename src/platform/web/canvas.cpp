@@ -9,7 +9,7 @@
 #include "platform/web/canvas.h"
 
 const char *colors[] = {
-  "black",   // 0 black
+  "#0",      // 0 black
   "#000080", // 1 blue
   "#008000", // 2 green
   "#008080", // 3 cyan
@@ -24,7 +24,7 @@ const char *colors[] = {
   "#ff0000", // 12 light red
   "#ff00ff", // 13 light magenta
   "#ffff00", // 14 light yellow
-  "white"    // 15 bright white
+  "#fff"     // 15 bright white
 };
 
 #define DEFAULT_FOREGROUND -0xa1a1a1
@@ -55,19 +55,40 @@ String Canvas::getPage() {
     .append(" span.underline { text-decoration: underline; }\n")
     .append(" span.bold { font-weight: bold; }\n")
     .append(" span.italic { text-style: italic; }\n")
-    .append(" #_canvas { position:absolute; left:0px; top:0px; ")
-    .append("  width: 100%; height: 100%}")
+    .append(" #_canvas { position:absolute; left:0px; top:0px;} ")
     .append("\n</style><title>SmallBASIC</title></head><body>")
     .append("<canvas id='_canvas'></canvas>\n")
     .append("<script type=text/javascript>\n")
-    .append("var ctx = document.getElementById('_canvas').getContext('2d');\n")
+    .append("var canvas = document.getElementById('_canvas');\n")
+    .append("canvas.width = window.innerWidth;\n")
+    .append("canvas.height = window.innerHeight;\n")
+    .append("var ctx = canvas.getContext('2d');\n")
+    .append("ctx.textBaseline = 'hanging';\n")
     .append("ctx.textBaseline = 'hanging';\n")
     .append("ctx.font = '14pt courier';\n")
-    .append("ctx.lineWidth = 1;\n")
-    .append("ctx.strokeStyle='").append(_fg).append("';\n")
     .append("var m = ctx.measureText('Q');\n")
-    .append("function _t(s, x, y) {\n")
+    .append("function t(s, x, y) {\n")
     .append("  ctx.fillText(s, x*m.width, y*20);\n")
+    .append("}\n")
+    .append("function ln(x1, y1, x2, y2, c) {\n")
+    .append("  ctx.beginPath();\n")
+    .append("  ctx.moveTo(x1,y1);\n")
+    .append("  ctx.lineTo(x2,y2);\n")
+    .append("  ctx.lineWidth = 1;\n")
+    .append("  ctx.strokeStyle=c;\n")
+    .append("  ctx.stroke();\n")
+    .append("}\n")
+    .append("function rcf(x1, y1, x2, y2, c) {\n")
+    .append("  ctx.beginPath();\n")
+    .append("  ctx.rect(x1, y1, x2, y2);\n")
+    .append("  ctx.fillStyle=c;\n")
+    .append("  ctx.fill();\n")
+    .append("}\n")
+    .append("function rc(x1, y2, x2, y2, c) {\n")
+    .append("  ctx.beginPath();\n")
+    .append("  ctx.rect(x1, y1, x2, y2);\n")
+    .append("  ctx.strokeStyle=c;\n")
+    .append("  ctx.stroke();\n")
     .append("}\n")
     .append(_script)
     .append("</script>\n")
@@ -113,25 +134,30 @@ void Canvas::setXY(int x, int y) {
 }
 
 void Canvas::drawLine(int x1, int y1, int x2, int y2) {
-  _script.append("ctx.beginPath();\n");
-  _script.append("ctx.moveTo(").append(x1).append(",").append(x2).append(");\n");
-  _script.append("ctx.lineTo(").append(x2).append(",").append(y2).append(");\n");
-  _script.append("ctx.stroke();\n");
+  _script.append("ln(")
+    .append(x1).append(",")
+    .append(y1).append(",")
+    .append(x2).append(",")
+    .append(y2).append(",'")
+    .append(_fg).append("');\n");
 }
 
 void Canvas::drawRectFilled(int x1, int y1, int x2, int y2) {
-  _script.append("ctx.beginPath();\n");
-  _script.append("ctx.rect(").append(x1).append(",").append(y1).append(",")
-    .append(x2).append(",").append(y2).append(");\n");
-  _script.append("ctx.fillStyle='").append(_bg).append("';\n");
-  _script.append("ctx.fill();\n");
+  _script.append("rcf(")
+    .append(x1).append(",")
+    .append(y1).append(",")
+    .append(x2).append(",")
+    .append(y2).append(",'")
+    .append(_fg).append("');\n");
 }
 
 void Canvas::drawRect(int x1, int y1, int x2, int y2) {
-  _script.append("ctx.beginPath();\n");
-  _script.append("ctx.rect(").append(x1).append(",").append(y1).append(",")
-    .append(x2).append(",").append(y2).append(");\n");
-  _script.append("ctx.stroke();\n");
+  _script.append("rc(")
+    .append(x1).append(",")
+    .append(y1).append(",")
+    .append(x2).append(",")
+    .append(y1).append(",'")
+    .append(_fg).append("');\n");
 }
 
 /*! Prints the contents of the given string onto the backbuffer
@@ -239,7 +265,7 @@ bool Canvas::doEscape(unsigned char* &p) {
 
 void Canvas::drawText(const char *str, int len, bool canvas) {
   if (canvas) {
-    _script.append("_t('").append(str, len).append("', ")
+    _script.append("t('").append(str, len).append("', ")
       .append(_curx).append(", ").append(_cury).append(");\n");
   } else {
     _html.append(str, len);
