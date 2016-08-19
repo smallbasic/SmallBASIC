@@ -24,17 +24,17 @@ dword g_maxTime = 2000;
 bool g_graphicText = false;
 
 static struct option OPTIONS[] = {
-  {"help",          no_argument,       NULL, 'h'},
-  {"verbose",       no_argument,       NULL, 'v'},
-  {"file-permitted",no_argument,  NULL, 'f'},
-  {"port",          optional_argument, NULL, 'p'},
-  {"run",           optional_argument, NULL, 'r'},
-  {"width",         optional_argument, NULL, 'w'},
-  {"height",        optional_argument, NULL, 'e'},
-  {"command",       optional_argument, NULL, 'c'},
-  {"graphic-text",  optional_argument, NULL, 'g'},
-  {"max-time",      optional_argument, NULL, 't'},
-  {"module",        optional_argument, NULL, 'm'},
+  {"help",           no_argument,       NULL, 'h'},
+  {"verbose",        no_argument,       NULL, 'v'},
+  {"file-permitted", no_argument,       NULL, 'f'},
+  {"port",           optional_argument, NULL, 'p'},
+  {"run",            optional_argument, NULL, 'r'},
+  {"width",          optional_argument, NULL, 'w'},
+  {"height",         optional_argument, NULL, 'e'},
+  {"command",        optional_argument, NULL, 'c'},
+  {"graphic-text",   optional_argument, NULL, 'g'},
+  {"max-time",       optional_argument, NULL, 't'},
+  {"module",         optional_argument, NULL, 'm'},
   {0, 0, 0, 0}
 };
 
@@ -138,7 +138,7 @@ int access_cb(void *cls,
         os_graf_mx = atoi(width);
       }
       if (height != NULL) {
-        os_graf_mx = atoi(height);
+        os_graf_my = atoi(height);
       }
       if (graphicText != NULL) {
         g_graphicText = atoi(graphicText) > 0;
@@ -147,7 +147,7 @@ int access_cb(void *cls,
         strcpy(opt_command, command);
       }
       g_canvas.setGraphicText(g_graphicText);
-      fprintf(stdout, "url=%s\n", url + 1);
+      fprintf(stdout, "url[%s] cmd[%s] dim[%dX%d]\n", url + 1, opt_command, os_graf_mx, os_graf_my);
       sbasic_main(url + 1);
       page.append(g_canvas.getPage());
     } else {
