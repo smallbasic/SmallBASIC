@@ -29,10 +29,11 @@ struct Canvas {
   void setColor(long fg);
   void setPixel(int x, int y, int c);
   void setXY(int x, int y);
+  void setGraphicText(bool graphicText) { _graphicText = graphicText; }
  
 private:    
   bool doEscape(unsigned char* &p);
-  void drawText(const char *str, int len, bool canvas=false);
+  void drawText(const char *str, int len);
   String getColor(long c);
   void newLine();
   void printColorSpan(String &bg, String &fg);
@@ -51,6 +52,7 @@ private:
   bool _underline;
   bool _bold;
   bool _italic;
+  bool _graphicText;
   int _spanLevel;
   int _curx;
   int _cury;

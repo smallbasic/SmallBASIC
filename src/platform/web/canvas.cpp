@@ -9,7 +9,7 @@
 #include "platform/web/canvas.h"
 
 const char *colors[] = {
-  "#0",      // 0 black
+  "#000",    // 0 black
   "#000080", // 1 blue
   "#008000", // 2 green
   "#008080", // 3 cyan
@@ -39,6 +39,7 @@ Canvas::Canvas() :
   _underline(false),
   _bold(false),
   _italic(false),
+  _graphicText(false),
   _spanLevel(false),
   _curx(0),
   _cury(0) {
@@ -49,28 +50,32 @@ Canvas::Canvas() :
 String Canvas::getPage() {
   String result;
   result.append("<!DOCTYPE HTML><html><head><style>")
-    .append(" body { margin: 0px; padding: 2px; font-family: monospace;")
+    .append(" body { margin: 0px; padding: 0px; font-family: monospace;")
     .append("  background-color:").append(_bgBody).append(";")
     .append("  color:").append(_fgBody).append(";}\n")
     .append(" span.underline { text-decoration: underline; }\n")
     .append(" span.bold { font-weight: bold; }\n")
     .append(" span.italic { text-style: italic; }\n")
-    .append(" #_canvas { position:absolute; left:0px; top:0px;} ")
-    .append("\n</style><title>SmallBASIC</title></head><body>")
+    .append(" #_canvas { position:absolute; left:0px; top:0px; z-index:-1; ")
+    .append("  background-color:").append(_bgBody).append(";")
+    .append("  color:").append(_fgBody).append(";}\n")
+    .append("</style><title>SmallBASIC</title></head><body>")
     .append("<canvas id='_canvas'></canvas>\n")
     .append("<script type=text/javascript>\n")
     .append("var canvas = document.getElementById('_canvas');\n")
     .append("canvas.width = window.innerWidth;\n")
     .append("canvas.height = window.innerHeight;\n")
     .append("var ctx = canvas.getContext('2d');\n")
+    .append("const txtHeight = 11;\n")
     .append("ctx.textBaseline = 'hanging';\n")
-    .append("ctx.textBaseline = 'hanging';\n")
-    .append("ctx.font = '14pt courier';\n")
-    .append("var m = ctx.measureText('Q');\n")
-    .append("function t(s, x, y) {\n")
-    .append("  ctx.fillText(s, x*m.width, y*20);\n")
+    .append("ctx.font = txtHeight + 'pt courier';\n")
+    .append("function t(s, x, y, b, i, c) {\n")
+    .append("  var face=(i?'italic':'') +' ' + (b?'bold':'');\n")
+    .append("  ctx.font=face + ' ' + txtHeight + 'pt courier';\n")
+    .append("  ctx.fillStyle=c;\n")
+    .append("  ctx.fillText(s, x, y * (txtHeight+4));\n")
     .append("}\n")
-    .append("function ln(x1, y1, x2, y2, c) {\n")
+    .append("function l(x1, y1, x2, y2, c) {\n")
     .append("  ctx.beginPath();\n")
     .append("  ctx.moveTo(x1,y1);\n")
     .append("  ctx.lineTo(x2,y2);\n")
@@ -78,13 +83,13 @@ String Canvas::getPage() {
     .append("  ctx.strokeStyle=c;\n")
     .append("  ctx.stroke();\n")
     .append("}\n")
-    .append("function rcf(x1, y1, x2, y2, c) {\n")
+    .append("function rf(x1, y1, x2, y2, c) {\n")
     .append("  ctx.beginPath();\n")
     .append("  ctx.rect(x1, y1, x2, y2);\n")
     .append("  ctx.fillStyle=c;\n")
     .append("  ctx.fill();\n")
     .append("}\n")
-    .append("function rc(x1, y2, x2, y2, c) {\n")
+    .append("function r(x1, y2, x2, y2, c) {\n")
     .append("  ctx.beginPath();\n")
     .append("  ctx.rect(x1, y1, x2, y2);\n")
     .append("  ctx.strokeStyle=c;\n")
@@ -134,7 +139,7 @@ void Canvas::setXY(int x, int y) {
 }
 
 void Canvas::drawLine(int x1, int y1, int x2, int y2) {
-  _script.append("ln(")
+  _script.append("l(")
     .append(x1).append(",")
     .append(y1).append(",")
     .append(x2).append(",")
@@ -143,7 +148,7 @@ void Canvas::drawLine(int x1, int y1, int x2, int y2) {
 }
 
 void Canvas::drawRectFilled(int x1, int y1, int x2, int y2) {
-  _script.append("rcf(")
+  _script.append("rf(")
     .append(x1).append(",")
     .append(y1).append(",")
     .append(x2).append(",")
@@ -152,7 +157,7 @@ void Canvas::drawRectFilled(int x1, int y1, int x2, int y2) {
 }
 
 void Canvas::drawRect(int x1, int y1, int x2, int y2) {
-  _script.append("rc(")
+  _script.append("r(")
     .append(x1).append(",")
     .append(y1).append(",")
     .append(x2).append(",")
@@ -215,7 +220,6 @@ void Canvas::print(const char *str) {
     default:
       int numChars = 1;
       while (p[numChars] > 31) {
-        _curx++;
         numChars++;
       }
 
@@ -232,6 +236,7 @@ void Canvas::print(const char *str) {
       if (_underline) {
         printEndSpan();
       }
+      _curx += numChars;
 
       // advance, allow for p++
       p += numChars - 1;
@@ -263,10 +268,15 @@ bool Canvas::doEscape(unsigned char* &p) {
   return false;
 }
 
-void Canvas::drawText(const char *str, int len, bool canvas) {
-  if (canvas) {
-    _script.append("t('").append(str, len).append("', ")
-      .append(_curx).append(", ").append(_cury).append(");\n");
+void Canvas::drawText(const char *str, int len) {
+  if (_graphicText) {
+    _script.append("t('").append(str, len)
+      .append("', ").append(_curx)
+      .append(", ").append(_cury)
+      .append(", ").append(_bold)
+      .append(", ").append(_italic)
+      .append(", '").append(_fg)
+      .append("');\n");
   } else {
     _html.append(str, len);
   }
@@ -291,27 +301,33 @@ String Canvas::getColor(long c) {
 /*! Handles the \n character
  */
 void Canvas::newLine() {
-  _html.append("<br/>");
+  if (!_graphicText) {
+    _html.append("<br/>");
+  }
   _cury++;
   _curx = 0;
 }
 
 void Canvas::printColorSpan(String &bg, String &fg) {
-  _spanLevel++;
-  _html.append("<span style='background-color:")
-    .append(bg).append("; color:").append(fg).append("'>");
+  if (!_graphicText) {
+    _spanLevel++;
+    _html.append("<span style='background-color:")
+      .append(bg).append("; color:").append(fg).append("'>");
+  }
 }
 
 void Canvas::printEndSpan() {
-  if (_spanLevel) {
+  if (!_graphicText && _spanLevel) {
     _spanLevel--;
     _html.append("</span>");
   }
 }
 
 void Canvas::printSpan(const char *clazz) {
-  _spanLevel++;
-  _html.append("<span class=").append(clazz).append(">");
+  if (!_graphicText) {
+    _spanLevel++;
+    _html.append("<span class=").append(clazz).append(">");
+  }
 }
 
 void Canvas::resetStyle() {

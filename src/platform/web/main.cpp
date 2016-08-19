@@ -21,14 +21,20 @@
 Canvas g_canvas;
 dword g_start = 0;
 dword g_maxTime = 2000;
+bool g_graphicText = false;
 
 static struct option OPTIONS[] = {
-  {"help",      no_argument,       NULL, 'h'},
-  {"verbose",   no_argument,       NULL, 'v'},
-  {"file-permitted", no_argument,  NULL, 'f'},
-  {"port",      optional_argument, NULL, 'p'},
-  {"max-time",  optional_argument, NULL, 't'},
-  {"module",    optional_argument, NULL, 'm'},
+  {"help",          no_argument,       NULL, 'h'},
+  {"verbose",       no_argument,       NULL, 'v'},
+  {"file-permitted",no_argument,  NULL, 'f'},
+  {"port",          optional_argument, NULL, 'p'},
+  {"run",           optional_argument, NULL, 'r'},
+  {"width",         optional_argument, NULL, 'w'},
+  {"height",        optional_argument, NULL, 'e'},
+  {"command",       optional_argument, NULL, 'c'},
+  {"graphic-text",  optional_argument, NULL, 'g'},
+  {"max-time",      optional_argument, NULL, 't'},
+  {"module",        optional_argument, NULL, 'm'},
   {0, 0, 0, 0}
 };
 
@@ -120,7 +126,28 @@ int access_cb(void *cls,
     g_start = dev_get_millisecond_count();
     String page;
     if (stat(url + 1, &buf) == 0) {
-      // TODO: pass web args to command$
+      const char *width =
+        MHD_lookup_connection_value(connection, MHD_GET_ARGUMENT_KIND, "width");
+      const char *height =
+        MHD_lookup_connection_value(connection, MHD_GET_ARGUMENT_KIND, "height");
+      const char *command =
+        MHD_lookup_connection_value(connection, MHD_GET_ARGUMENT_KIND, "command");
+      const char *graphicText =
+        MHD_lookup_connection_value(connection, MHD_GET_ARGUMENT_KIND, "graphic-text");
+      if (width != NULL) {
+        os_graf_mx = atoi(width);
+      }
+      if (height != NULL) {
+        os_graf_mx = atoi(height);
+      }
+      if (graphicText != NULL) {
+        g_graphicText = atoi(graphicText) > 0;
+      }
+      if (command != NULL) {
+        strcpy(opt_command, command);
+      }
+      g_canvas.setGraphicText(g_graphicText);
+      fprintf(stdout, "url=%s\n", url + 1);
       sbasic_main(url + 1);
       page.append(g_canvas.getPage());
     } else {
@@ -141,9 +168,11 @@ int access_cb(void *cls,
 int main(int argc, char **argv) {
   init();
   int port = 8080;
+  char *runBas = NULL;
+
   while (1) {
     int option_index = 0;
-    int c = getopt_long(argc, argv, "hvfp:t:m:", OPTIONS, &option_index);
+    int c = getopt_long(argc, argv, "hvfp:t:m:r:w:e:c:g:", OPTIONS, &option_index);
     if (c == -1) {
       break;
     }
@@ -152,6 +181,21 @@ int main(int argc, char **argv) {
       exit(1);
     }
     switch (c) {
+    case 'r':
+      runBas = optarg;
+      break;
+    case 'w':
+      os_graf_mx = atoi(optarg);
+      break;
+    case 'e':
+      os_graf_my = atoi(optarg);
+      break;
+    case 'c':
+      strcpy(opt_command, optarg);
+      break;
+    case 'g':
+      g_graphicText = atoi(optarg) > 1;
+      break;
     case 'v':
       opt_verbose = true;
       opt_quiet = false;
@@ -180,18 +224,24 @@ int main(int argc, char **argv) {
     }
   }
 
-  fprintf(stdout, "Starting SmallBASIC web server on port:%d\n", port);
-  // MHD_http_unescape
-  MHD_Daemon *d =
-    MHD_start_daemon(MHD_USE_THREAD_PER_CONNECTION, port,
+  if (runBas != NULL) {
+    g_canvas.reset();
+    g_start = dev_get_millisecond_count();
+    sbasic_main(runBas);
+    puts(g_canvas.getPage().c_str());
+  } else {
+    fprintf(stdout, "Starting SmallBASIC web server on port:%d\n", port);
+    MHD_Daemon *d =
+    MHD_start_daemon(MHD_USE_SELECT_INTERNALLY, port,
                      &accept_cb, NULL,
                      &access_cb, NULL, MHD_OPTION_END);
-  if (d == NULL) {
-    fprintf(stderr, "startup failed\n");
-    return 1;
+    if (d == NULL) {
+      fprintf(stderr, "startup failed\n");
+      return 1;
+    }
+    getc(stdin);
+    MHD_stop_daemon(d);
   }
-  getc(stdin);
-  MHD_stop_daemon(d);
   return 0;
 }
 
