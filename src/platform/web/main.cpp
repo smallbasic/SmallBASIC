@@ -21,7 +21,7 @@
 Canvas g_canvas;
 dword g_start = 0;
 dword g_maxTime = 2000;
-bool g_graphicText = false;
+bool g_graphicText = true;
 
 static struct option OPTIONS[] = {
   {"help",           no_argument,       NULL, 'h'},
