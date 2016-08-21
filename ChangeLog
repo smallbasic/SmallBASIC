@@ -1,3 +1,6 @@
+2016-08-21 (0.12.7)
+	Added 'web' sub-project (sbasicw)
+
 2016-07-30 (0.12.7)
 	Fixed value of i when FOR loop body not executed (node/1611)
 

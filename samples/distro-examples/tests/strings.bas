@@ -79,3 +79,16 @@ next i
 Def lset(s) = Replace(" ", 1, s)
 s=lset(".")
 
+func test_str(s1,s2)
+  if (s1 <> s2) then
+    throw "sprint err1"
+  endif
+  if (len(s1) <> len(s2)) then
+    throw "sprint err2"
+  endif
+end
+
+sprint s1;using"aaa###bbb";123;
+
+test_str(s1, "aaa123bbb")
+test_str("   ", spc(3))

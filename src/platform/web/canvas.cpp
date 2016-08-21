@@ -70,6 +70,8 @@ String Canvas::getPage() {
     .append("var ctx = canvas.getContext('2d');\n")
     .append("const fontSize = 10;\n")
     .append("const fontHeight = fontSize + 5;\n")
+    .append("var pxId = ctx.createImageData(1,1);\n")
+    .append("var pxData = pxId.data;\n")
     .append("ctx.textBaseline = 'top';\n")
     .append("ctx.font = fontSize + 'pt monospace';\n")
     .append("function t(s, x, y, b, i, u, bg, fg) {\n")
@@ -102,6 +104,13 @@ String Canvas::getPage() {
     .append("  ctx.rect(x1, y1, x2, y2);\n")
     .append("  ctx.strokeStyle=c;\n")
     .append("  ctx.stroke();\n")
+    .append("}\n")
+    .append("function p(x, y, r, g, b) {\n")
+    .append("  pxData[0] = r;\n")
+    .append("  pxData[1] = g;\n")
+    .append("  pxData[2] = b;\n")
+    .append("  pxData[3] = 255;\n")
+    .append("  ctx.putImageData(pxId, x, y);\n")
     .append("}\n")
     .append("function refresh() {\n")
     .append("  var url='?width='+window.innerWidth+'&height='+window.innerHeight;\n")
@@ -141,9 +150,16 @@ void Canvas::setColor(long fg) {
   _fg = getColor(fg);
 }
 
-//http://stackoverflow.com/questions/7812514/drawing-a-dot-on-html5-canvas
 void Canvas::setPixel(int x, int y, int c) {
-  _script.append("ctx.fillRect(").append(x).append(",").append(y).append(",1,1);");
+  int r = (c & 0xff0000) >> 16;
+  int g = (c & 0xff00) >> 8;
+  int b = (c & 0xff);
+  _script.append("p(")
+    .append(x).append(",")
+    .append(y).append(",")
+    .append(r).append(",")
+    .append(g).append(",")
+    .append(b).append(");\n");
 }
 
 void Canvas::setXY(int x, int y) {

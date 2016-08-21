@@ -6,6 +6,8 @@
 // Download the GNU Public License (GPL) from www.gnu.org
 //
 
+#include <config.h>
+
 #include <microhttpd.h>
 #include <getopt.h>
 #include <stdlib.h>
@@ -78,6 +80,52 @@ int accept_cb(void *cls,
   return MHD_YES;
 }
 
+MHD_Response *execute(struct MHD_Connection *connection, const char *bas) {
+  const char *width =
+    MHD_lookup_connection_value(connection, MHD_GET_ARGUMENT_KIND, "width");
+  const char *height =
+    MHD_lookup_connection_value(connection, MHD_GET_ARGUMENT_KIND, "height");
+  const char *command =
+    MHD_lookup_connection_value(connection, MHD_GET_ARGUMENT_KIND, "command");
+  const char *graphicText =
+    MHD_lookup_connection_value(connection, MHD_GET_ARGUMENT_KIND, "graphic-text");
+  if (width != NULL) {
+    os_graf_mx = atoi(width);
+  }
+  if (height != NULL) {
+    os_graf_my = atoi(height);
+  }
+  if (graphicText != NULL) {
+    g_graphicText = atoi(graphicText) > 0;
+  }
+  if (command != NULL) {
+    strcpy(opt_command, command);
+  }
+  fprintf(stdout, "sbasicw: file[%s] cmd[%s] dim[%dX%d]\n", bas, opt_command, os_graf_mx, os_graf_my);
+  g_canvas.reset();
+  g_start = dev_get_millisecond_count();
+  g_canvas.setGraphicText(g_graphicText);
+  sbasic_main(bas);
+  String page = g_canvas.getPage();
+  return MHD_create_response_from_buffer(page.length(), (void *)page.c_str(),
+                                         MHD_RESPMEM_MUST_COPY);
+}
+
+MHD_Response *get_response(struct MHD_Connection *connection, const char *path) {
+  MHD_Response *response = NULL;
+  struct stat stbuf;
+  if (strcmp(path, "favicon.ico") == 0) {
+    int fd = open("./images/sb4w.ico", O_RDONLY);
+    if (!fstat(fd, &stbuf)) {
+      response = MHD_create_response_from_fd(stbuf.st_size, fd);
+    }
+    close(fd);
+  } else if (stat(path, &stbuf) != -1 && S_ISREG(stbuf.st_mode)) {
+    response = execute(connection, path);
+  }
+  return response;
+}
+
 // server callback
 // see: /usr/share/doc/libmicrohttpd-dev/examples
 int access_cb(void *cls,
@@ -89,11 +137,7 @@ int access_cb(void *cls,
               size_t *upload_data_size,
               void **ptr) {
   static int dummy;
-  struct MHD_Response *response;
-  struct stat buf;
-  int result;
-
-  if (0 != strcmp(method, "GET")) {
+  if (strcmp(method, "GET") != 0) {
     // unexpected method
     return MHD_NO;
   }
@@ -112,56 +156,18 @@ int access_cb(void *cls,
   // clear context pointer
   *ptr = NULL;
 
-  if (strcmp(url, "/favicon.ico") == 0) {
-    int fd = open("./images/sb4w.ico", O_RDONLY);
-    if (fstat(fd, &buf)) {
-      close(fd);
-      response = NULL;
-    } else {
-      response = MHD_create_response_from_fd(buf.st_size, fd);
-      close(fd);
-    }
-  } else {
-    g_canvas.reset();
-    g_start = dev_get_millisecond_count();
-    String page;
-    if (stat(url + 1, &buf) == 0) {
-      const char *width =
-        MHD_lookup_connection_value(connection, MHD_GET_ARGUMENT_KIND, "width");
-      const char *height =
-        MHD_lookup_connection_value(connection, MHD_GET_ARGUMENT_KIND, "height");
-      const char *command =
-        MHD_lookup_connection_value(connection, MHD_GET_ARGUMENT_KIND, "command");
-      const char *graphicText =
-        MHD_lookup_connection_value(connection, MHD_GET_ARGUMENT_KIND, "graphic-text");
-      if (width != NULL) {
-        os_graf_mx = atoi(width);
-      }
-      if (height != NULL) {
-        os_graf_my = atoi(height);
-      }
-      if (graphicText != NULL) {
-        g_graphicText = atoi(graphicText) > 0;
-      }
-      if (command != NULL) {
-        strcpy(opt_command, command);
-      }
-      g_canvas.setGraphicText(g_graphicText);
-      fprintf(stdout, "url[%s] cmd[%s] dim[%dX%d]\n", url + 1, opt_command, os_graf_mx, os_graf_my);
-      sbasic_main(url + 1);
-      page.append(g_canvas.getPage());
-    } else {
-      page.append("File not found: ").append(url + 1).append("\n");
-    }
-    response = MHD_create_response_from_buffer(page.length(), (void *)page.c_str(),
-                                               MHD_RESPMEM_MUST_COPY);
-  }
+  int result;
+  struct MHD_Response *response = get_response(connection, url + 1);
   if (response != NULL) {
     result = MHD_queue_response(connection, MHD_HTTP_OK, response);
-    MHD_destroy_response(response);
   } else {
-    result = MHD_NO;
+    String error;
+    error.append("File not found: ").append(url);
+    response = MHD_create_response_from_buffer(error.length(), (void *)error.c_str(),
+                                               MHD_RESPMEM_MUST_COPY);
+    result = MHD_queue_response(connection, MHD_HTTP_NOT_FOUND, response);
   }
+  MHD_destroy_response(response);
   return result;
 }
 
