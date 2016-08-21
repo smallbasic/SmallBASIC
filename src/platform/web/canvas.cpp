@@ -27,6 +27,25 @@ const char *colors[] = {
   "#fff"     // 15 bright white
 };
 
+const uint32_t colors_i[] = {
+  0x000000, // 0 black
+  0x000080, // 1 blue
+  0x008000, // 2 green
+  0x008080, // 3 cyan
+  0x800000, // 4 red
+  0x800080, // 5 magenta
+  0x808000, // 6 yellow
+  0xC0C0C0, // 7 white
+  0x808080, // 8 gray
+  0x0000FF, // 9 light blue
+  0x00FF00, // 10 light green
+  0x00FFFF, // 11 light cyan
+  0xFF0000, // 12 light red
+  0xFF00FF, // 13 light magenta
+  0xFFFF00, // 14 light yellow
+  0xFFFFFF  // 15 bright white
+};
+
 #define DEFAULT_FOREGROUND -0xa1a1a1
 #define DEFAULT_BACKGROUND 0
 
@@ -95,13 +114,13 @@ String Canvas::getPage() {
     .append("  ctx.strokeStyle=c;\n")
     .append("  ctx.stroke();\n")
     .append("}\n")
-    .append("function rf(x1, y1, x2, y2, c) {\n")
+    .append("function rf(x, y, w, h, c) {\n")
     .append("  ctx.fillStyle=c;\n")
-    .append("  ctx.fillRect(x1, y1, x2-x1, y2-y1);\n")
+    .append("  ctx.fillRect(x, y, w, h);\n")
     .append("}\n")
-    .append("function r(x1, y2, x2, y2, c) {\n")
+    .append("function r(x, y, w, h, c) {\n")
     .append("  ctx.beginPath();\n")
-    .append("  ctx.rect(x1, y1, x2, y2);\n")
+    .append("  ctx.rect(x, y, w, h);\n")
     .append("  ctx.strokeStyle=c;\n")
     .append("  ctx.stroke();\n")
     .append("}\n")
@@ -151,6 +170,11 @@ void Canvas::setColor(long fg) {
 }
 
 void Canvas::setPixel(int x, int y, int c) {
+  if (c < 0) {
+    c = -c;
+  } else {
+    c = colors_i[c > 15 ? 15 : c];
+  }
   int r = (c & 0xff0000) >> 16;
   int g = (c & 0xff00) >> 8;
   int b = (c & 0xff);
@@ -180,8 +204,8 @@ void Canvas::drawRectFilled(int x1, int y1, int x2, int y2) {
   _script.append("rf(")
     .append(x1).append(",")
     .append(y1).append(",")
-    .append(x2).append(",")
-    .append(y2).append(",'")
+    .append(x2-x1).append(",")
+    .append(y2-y1).append(",'")
     .append(_fg).append("');\n");
 }
 
@@ -189,8 +213,8 @@ void Canvas::drawRect(int x1, int y1, int x2, int y2) {
   _script.append("r(")
     .append(x1).append(",")
     .append(y1).append(",")
-    .append(x2).append(",")
-    .append(y1).append(",'")
+    .append(x2-x1).append(",")
+    .append(y2-y1).append(",'")
     .append(_fg).append("');\n");
 }
 
@@ -251,7 +275,6 @@ void Canvas::print(const char *str) {
       while (p[numChars] > 31) {
         numChars++;
       }
-
       if (_invert) {
         printColorSpan(_fg, _bg);
       }
@@ -317,9 +340,9 @@ String Canvas::getColor(long c) {
   String result;
   if (c < 0) {
     c = -c;
-    int b = (c>>16) & 0xFF;
+    int r = (c>>16) & 0xFF;
     int g = (c>>8) & 0xFF;
-    int r = (c) & 0xFF;
+    int b = (c) & 0xFF;
     char buf[8];
     sprintf(buf, "#%x%x%x", b, g, r);
     result.append(buf);
