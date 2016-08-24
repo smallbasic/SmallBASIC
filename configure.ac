@@ -264,9 +264,17 @@ function buildConsole() {
 }
 
 function buildWeb() {
+   if test $host_os = 'mingw32'; then
+     AC_DEFINE(__MINGW32__, 1, [as above])
+     AC_DEFINE(_Win32, 1, [Windows build])
+     PACKAGE_CFLAGS="-I$prefix/include ${PACKAGE_CFLAGS} -mms-bitfields -D__USE_MINGW_ANSI_STDIO"
+     PACKAGE_LIBS="${PACKAGE_LIBS} -L$prefix/lib -Wl,-Bstatic -mconsole -lmingw32 -lwsock32 "
+     PACKAGE_LIBS="${PACKAGE_LIBS} -lmicrohttpd -lws2_32 -static-libgcc -static-libstdc++"
+   else
+     PACKAGE_LIBS="${PACKAGE_LIBS} -lm -ldl -lpthread -lmicrohttpd"
+     AC_CHECK_HEADERS([microhttpd.h], [], [AC_MSG_ERROR([microhttpd is not installed])])
+   fi
    BUILD_SUBDIRS="src/common src/platform/web"
-   PACKAGE_LIBS="${PACKAGE_LIBS} -lm -ldl -lpthread -lmicrohttpd"
-   AC_CHECK_HEADERS([microhttpd.h], [have_microhttpd_h=yes; break;])
    AM_CONDITIONAL(WITH_CYGWIN_CONSOLE, false)
    AC_DEFINE(_UnixOS, 1, [Building under Unix like systems.])
    AC_DEFINE(DEV_EVENTS_OSD, 1, [dev_events() implemented using osd_events().])
