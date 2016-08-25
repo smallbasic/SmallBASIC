@@ -671,6 +671,7 @@ bool AnsiWidget::setActiveButton(MAEvent &event, Screen *screen) {
 }
 
 void AnsiWidget::selectBackScreen(int screenId) {
+  _hoverInput = NULL;
   _back = createScreen(screenId);
   _back->selectFont();
 }
