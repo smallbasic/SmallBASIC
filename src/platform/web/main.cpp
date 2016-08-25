@@ -101,7 +101,7 @@ MHD_Response *execute(struct MHD_Connection *connection, const char *bas) {
   if (command != NULL) {
     strcpy(opt_command, command);
   }
-  fprintf(stdout, "sbasicw: file[%s] cmd[%s] dim[%dX%d]\n", bas, opt_command, os_graf_mx, os_graf_my);
+  fprintf(stdout, "sbasicw: %s dim:%dX%d cmd:\"%s\"\n", bas, os_graf_mx, os_graf_my, opt_command);
   g_canvas.reset();
   g_start = dev_get_millisecond_count();
   g_canvas.setGraphicText(g_graphicText);
@@ -111,17 +111,33 @@ MHD_Response *execute(struct MHD_Connection *connection, const char *bas) {
                                          MHD_RESPMEM_MUST_COPY);
 }
 
+MHD_Response *serve_file(const char *path) {
+  MHD_Response *response;
+  struct stat stbuf;
+  int fd = open(path, O_RDONLY);
+  if (!fstat(fd, &stbuf)) {
+    response = MHD_create_response_from_fd(stbuf.st_size, fd);
+  } else {
+    response = NULL;
+  }
+  return response;
+}
+
 MHD_Response *get_response(struct MHD_Connection *connection, const char *path) {
   MHD_Response *response = NULL;
   struct stat stbuf;
-  if (strcmp(path, "favicon.ico") == 0) {
-    int fd = open("./images/sb4w.ico", O_RDONLY);
-    if (!fstat(fd, &stbuf)) {
-      response = MHD_create_response_from_fd(stbuf.st_size, fd);
+  if (path[0] == '\0') {
+    response = serve_file("index.html");
+  } else if (strcmp(path, "favicon.ico") == 0) {
+    response = serve_file(path);
+  } else if (strstr(path, "..") == NULL) {
+    const char *dot = strrchr(path, '.');
+    if (dot && strncasecmp(dot, ".bas", 4) == 0 &&
+        stat(path, &stbuf) != -1 && S_ISREG(stbuf.st_mode)) {
+      response = execute(connection, path);
+    } else {
+      response = serve_file(path);
     }
-    close(fd);
-  } else if (stat(path, &stbuf) != -1 && S_ISREG(stbuf.st_mode)) {
-    response = execute(connection, path);
   }
   return response;
 }
