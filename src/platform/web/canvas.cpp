@@ -59,6 +59,7 @@ Canvas::Canvas() :
   _bold(false),
   _italic(false),
   _graphicText(false),
+  _json(false),
   _spanLevel(false),
   _curx(0),
   _cury(0) {
@@ -68,6 +69,15 @@ Canvas::Canvas() :
 
 String Canvas::getPage() {
   String result;
+  if (_json) {
+    result.append("{").append(_html).append("}");
+  } else {
+    buildHTML(result);
+  }
+  return result;
+}
+
+void Canvas::buildHTML(String &result) {
   result.append("<!DOCTYPE HTML><html><head><style>")
     .append(" body { margin: 0px; padding: 0px; font-family: monospace;")
     .append(" background-color:").append(_bgBody).append(";")
@@ -143,7 +153,6 @@ String Canvas::getPage() {
     result.append("</span>");
   }
   result.append("</body></html>");
-  return result;
 }
 
 void Canvas::clearScreen() {
@@ -355,7 +364,7 @@ String Canvas::getColor(long c) {
 /*! Handles the \n character
  */
 void Canvas::newLine() {
-  if (!_graphicText) {
+  if (!_graphicText && !_json) {
     _html.append("<br/>");
   }
   _cury++;
@@ -363,7 +372,7 @@ void Canvas::newLine() {
 }
 
 void Canvas::printColorSpan(String &bg, String &fg) {
-  if (!_graphicText) {
+  if (!_graphicText &!_json) {
     _spanLevel++;
     _html.append("<span style='background-color:")
       .append(bg).append("; color:").append(fg).append("'>");
@@ -371,14 +380,14 @@ void Canvas::printColorSpan(String &bg, String &fg) {
 }
 
 void Canvas::printEndSpan() {
-  if (!_graphicText && _spanLevel) {
+  if (!_graphicText && _spanLevel && !_json) {
     _spanLevel--;
     _html.append("</span>");
   }
 }
 
 void Canvas::printSpan(const char *clazz) {
-  if (!_graphicText) {
+  if (!_graphicText && !_json) {
     _spanLevel++;
     _html.append("<span class=").append(clazz).append(">");
   }

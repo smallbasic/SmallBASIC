@@ -73,6 +73,30 @@ void show_help() {
   fprintf(stdout, "\nhttp://smallbasic.sourceforge.net\n\n");
 }
 
+void log(const char *format, ...) {
+  va_list args;
+  va_start(args, format);
+  unsigned size = vsnprintf(NULL, 0, format, args);
+  va_end(args);
+
+  if (size) {
+    char *buf = (char *)malloc(size + 1);
+    buf[0] = '\0';
+    va_start(args, format);
+    vsnprintf(buf, size + 1, format, args);
+    va_end(args);
+    buf[size] = '\0';
+
+    char date[18];
+    time_t t = time(NULL);
+    struct tm *p = localtime(&t);
+    strftime(date, sizeof(date), "%Y%m%d %H:%M:%S", p);
+    fprintf(stdout, "%s %s\n", date, buf);
+    free(buf);
+  }
+
+}
+
 // allow or deny access
 int accept_cb(void *cls,
               const struct sockaddr *addr,
@@ -89,6 +113,9 @@ MHD_Response *execute(struct MHD_Connection *connection, const char *bas) {
     MHD_lookup_connection_value(connection, MHD_GET_ARGUMENT_KIND, "command");
   const char *graphicText =
     MHD_lookup_connection_value(connection, MHD_GET_ARGUMENT_KIND, "graphic-text");
+  const char *accept =
+    MHD_lookup_connection_value(connection, MHD_HEADER_KIND, MHD_HTTP_HEADER_ACCEPT);
+
   if (width != NULL) {
     os_graf_mx = atoi(width);
   }
@@ -101,10 +128,12 @@ MHD_Response *execute(struct MHD_Connection *connection, const char *bas) {
   if (command != NULL) {
     strcpy(opt_command, command);
   }
-  fprintf(stdout, "sbasicw: %s dim:%dX%d cmd:\"%s\"\n", bas, os_graf_mx, os_graf_my, opt_command);
+
+  log("%s dim:%dX%d cmd:\"%s\"", bas, os_graf_mx, os_graf_my, opt_command);
   g_canvas.reset();
   g_start = dev_get_millisecond_count();
   g_canvas.setGraphicText(g_graphicText);
+  g_canvas.setJSON((strncmp(accept, "application/json", 16) == 0));
   sbasic_main(bas);
   String page = g_canvas.getPage();
   return MHD_create_response_from_buffer(page.length(), (void *)page.c_str(),
@@ -179,6 +208,7 @@ int access_cb(void *cls,
   } else {
     String error;
     error.append("File not found: ").append(url);
+    log(error.c_str());
     response = MHD_create_response_from_buffer(error.length(), (void *)error.c_str(),
                                                MHD_RESPMEM_MUST_COPY);
     result = MHD_queue_response(connection, MHD_HTTP_NOT_FOUND, response);

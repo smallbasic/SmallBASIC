@@ -30,8 +30,10 @@ struct Canvas {
   void setPixel(int x, int y, int c);
   void setXY(int x, int y);
   void setGraphicText(bool graphicText) { _graphicText = graphicText; }
+  void setJSON(bool json) { _json = json; if (_json) _graphicText = false;}
  
 private:    
+  void buildHTML(String &result);
   bool doEscape(unsigned char* &p);
   void drawText(const char *str, int len);
   String getColor(long c);
@@ -53,6 +55,7 @@ private:
   bool _bold;
   bool _italic;
   bool _graphicText;
+  bool _json;
   int _spanLevel;
   int _curx;
   int _cury;

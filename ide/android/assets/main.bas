@@ -53,9 +53,9 @@ sub info_header(is_welcome)
     print
     color 6,0
     if (is_sdl) then
-      print "Click the right mouse button to access the context menu. ";
+      print "Popup menus are accessed by a right mouse click. ";
     else
-      print "Press the menu key (3 vertical dots) to access the context menu. ";
+      print "Popup menus are accessed by the menu key (3 vertical dots). ";
     endif
     print "From here, you can do things like toggle the ";
     print "Editor, Run, Adjust Font size..."
