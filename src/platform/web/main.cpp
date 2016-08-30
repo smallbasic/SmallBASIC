@@ -76,7 +76,7 @@ void show_help() {
 void log(const char *format, ...) {
   va_list args;
   va_start(args, format);
-  unsigned size = vsnprintf(NULL, 0, format, args);
+  unsigned size = format == NULL ? 0 : vsnprintf(NULL, 0, format, args);
   va_end(args);
 
   if (size) {
@@ -91,10 +91,13 @@ void log(const char *format, ...) {
     time_t t = time(NULL);
     struct tm *p = localtime(&t);
     strftime(date, sizeof(date), "%Y%m%d %H:%M:%S", p);
+#if defined(_Win32)
+    ::OutputDebugString(buf);
+#else
     fprintf(stdout, "%s %s\n", date, buf);
+#endif
     free(buf);
   }
-
 }
 
 // allow or deny access
@@ -182,24 +185,22 @@ int access_cb(void *cls,
               size_t *upload_data_size,
               void **ptr) {
   static int dummy;
-  if (strcmp(method, "GET") != 0) {
-    // unexpected method
-    return MHD_NO;
-  }
   if (&dummy != *ptr) {
     // The first time only the headers are valid,
     // do not respond in the first round
     *ptr = &dummy;
     return MHD_YES;
   }
-
-  if (0 != *upload_data_size) {
-    // cannot upload data in a GET
-    return MHD_NO;
-  }
-
   // clear context pointer
   *ptr = NULL;
+
+  if (upload_data != NULL) {
+    size_t size = OPT_CMD_SZ - 1;
+    if (*upload_data_size < size) {
+      size = *upload_data_size;
+    }
+    strncpy(opt_command, upload_data, size);
+  }
 
   int result;
   struct MHD_Response *response = get_response(connection, url + 1);
@@ -354,6 +355,12 @@ void osd_write(const char *str) {
 
 char *dev_gets(char *dest, int maxSize) {
   return NULL;
+}
+
+void lwrite(const char *buf) {
+  if (buf[0] != '\0' && buf[0] != '\r' && buf[0] != '\n') {
+    log("%s %s", "LOGPRINT:", buf);
+  }
 }
 
 //
