@@ -461,6 +461,7 @@ sub main
       do_setup()
       frm = makeUI(path)
     elif frm.value == "_files" then
+      chdir path
       managefiles()
       frm = makeUI(path)
     elif frm.value == "_back" then
