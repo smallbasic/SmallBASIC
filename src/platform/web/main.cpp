@@ -91,11 +91,7 @@ void log(const char *format, ...) {
     time_t t = time(NULL);
     struct tm *p = localtime(&t);
     strftime(date, sizeof(date), "%Y%m%d %H:%M:%S", p);
-#if defined(_Win32)
-    ::OutputDebugString(buf);
-#else
     fprintf(stdout, "%s %s\n", date, buf);
-#endif
     free(buf);
   }
 }
