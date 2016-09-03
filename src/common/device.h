@@ -975,7 +975,7 @@ char *dev_getcwd(void);
  * @param var the name of the variable
  * @return on success the value; otherwise NULL
  */
-char *dev_getenv(const char *var);
+const char *dev_getenv(const char *var);
 
 /**
  * @ingroup dev
@@ -993,7 +993,7 @@ int dev_env_count();
  * @param n the index of the variable
  * @return on success the value; otherwise NULL
  */
-char *dev_getenv_n(int n);
+const char *dev_getenv_n(int n);
 
 /**
  * @ingroup dev

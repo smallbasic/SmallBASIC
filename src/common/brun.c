@@ -277,8 +277,8 @@ void exec_setup_predefined_variables() {
   setsysvar_str(SYSVAR_COMMAND, opt_command);
 
 #if defined(_UnixOS)
-  if (dev_getenv("HOME")) {
-    strcpy(homedir, dev_getenv("HOME"));
+  if (getenv("HOME")) {
+    strcpy(homedir, getenv("HOME"));
   }
   else {
     strcpy(homedir, "/tmp/");
@@ -289,9 +289,9 @@ void exec_setup_predefined_variables() {
     homedir[l + 1] = '\0';
   }
 #elif defined(_Win32)
-  if (dev_getenv("HOME")) {
+  if (getenv("HOME")) {
     // this works on cygwin
-    strcpy(homedir, dev_getenv("HOME"));
+    strcpy(homedir, getenv("HOME"));
   }
   else {
     GetModuleFileName(NULL, homedir, sizeof(homedir) - 1);
@@ -1506,9 +1506,9 @@ void exec_sync_variables(int dir) {
  */
 void sys_before_comp() {
   // setup prefered screen mode variables
-  if (dev_getenv("SBGRAF")) {
-    if (dev_getenv("SBGRAF")) {
-      comp_preproc_grmode(dev_getenv("SBGRAF"));
+  if (getenv("SBGRAF")) {
+    if (getenv("SBGRAF")) {
+      comp_preproc_grmode(getenv("SBGRAF"));
     }
     opt_graphics = 2;
   }

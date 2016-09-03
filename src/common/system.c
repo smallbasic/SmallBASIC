@@ -194,6 +194,8 @@ int dev_run(const char *cmd, var_t *r, int wait) {
 }
 #endif
 
+#if !defined(IMPL_DEV_ENV)
+
 int dev_setenv(const char *key, const char *value) {
 #ifdef __MINGW32__
   // use leaky putenv
@@ -213,7 +215,7 @@ int dev_setenv(const char *key, const char *value) {
  *
  * The getenv() function returns a pointer to the value in the environment, or NULL if there is no match.
  */
-char *dev_getenv(const char *str) {
+const char *dev_getenv(const char *str) {
   return getenv(str);
 }
 
@@ -231,7 +233,7 @@ int dev_env_count() {
 /**
  * returns the value of the n-th system's environment variable
  */
-char *dev_getenv_n(int n) {
+const char *dev_getenv_n(int n) {
   int count = 0;
   while (environ[count]) {
     if (n == count) {
@@ -241,6 +243,7 @@ char *dev_getenv_n(int n) {
   }
   return NULL;
 }
+#endif
 
 dword dev_get_millisecond_count(void) {
 #if defined(__MACH__)

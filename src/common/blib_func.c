@@ -1125,12 +1125,9 @@ void cmd_str1(long funcCode, var_t *arg, var_t *r) {
     IF_ERR_RETURN;
     if (*arg->v.p.ptr != '\0') {
       // return the variable
-      char *v;
-      int l;
-
-      v = dev_getenv(arg->v.p.ptr);
+      const char *v = dev_getenv(arg->v.p.ptr);
       if (v) {
-        l = strlen(v) + 1;
+        int l = strlen(v) + 1;
         r->v.p.ptr = malloc(l);
         strcpy(r->v.p.ptr, v);
         r->v.p.length = l;
@@ -1149,9 +1146,10 @@ void cmd_str1(long funcCode, var_t *arg, var_t *r) {
       if (count) {
         v_toarray1(r, count);
         for (i = 0; i < count; i++) {
+          const char *value = dev_getenv_n(i);
           elem_p = v_elem(r, i);
           elem_p->type = V_STR;
-          elem_p->v.p.ptr = strdup((char *)dev_getenv_n(i));
+          elem_p->v.p.ptr = strdup(value != NULL ? value : "");
           elem_p->v.p.length = strlen(elem_p->v.p.ptr) + 1;
         }
       } else {

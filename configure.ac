@@ -281,6 +281,7 @@ function buildWeb() {
    AC_DEFINE(IMPL_DEV_DELAY, 1, [Driver implements dev_delay()])
    AC_DEFINE(IMPL_LOG_WRITE, 1, [Driver implements lwrite()])
    AC_DEFINE(USE_TERM_IO, 0, [dont use the termios library.])
+   AC_DEFINE(IMPL_DEV_ENV, 1, [Driver implements dev_env funcs])
    AC_SUBST(BUILD_SUBDIRS)
 }
 

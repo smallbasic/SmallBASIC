@@ -70,7 +70,7 @@ Canvas::Canvas() :
 String Canvas::getPage() {
   String result;
   if (_json) {
-    result.append("{").append(_html).append("}");
+    result.append(_html);
   } else {
     buildHTML(result);
   }

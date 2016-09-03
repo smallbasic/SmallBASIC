@@ -24,6 +24,7 @@ Canvas g_canvas;
 dword g_start = 0;
 dword g_maxTime = 2000;
 bool g_graphicText = true;
+struct MHD_Connection *g_connection;
 
 static struct option OPTIONS[] = {
   {"help",           no_argument,       NULL, 'h'},
@@ -128,12 +129,14 @@ MHD_Response *execute(struct MHD_Connection *connection, const char *bas) {
     strcpy(opt_command, command);
   }
 
-  log("%s dim:%dX%d cmd:\"%s\"", bas, os_graf_mx, os_graf_my, opt_command);
+  log("%s dim:%dX%d", bas, os_graf_mx, os_graf_my);
+  g_connection = connection;
   g_canvas.reset();
   g_start = dev_get_millisecond_count();
   g_canvas.setGraphicText(g_graphicText);
   g_canvas.setJSON((strncmp(accept, "application/json", 16) == 0));
   sbasic_main(bas);
+  g_connection = NULL;
   String page = g_canvas.getPage();
   return MHD_create_response_from_buffer(page.length(), (void *)page.c_str(),
                                          MHD_RESPMEM_MUST_COPY);
@@ -357,6 +360,86 @@ void lwrite(const char *buf) {
   if (buf[0] != '\0' && buf[0] != '\r' && buf[0] != '\n') {
     log("%s %s", "LOGPRINT:", buf);
   }
+}
+
+//
+// Handle ENV using cookies, HTTP headers and GET arguments
+//
+struct ValueIteratorClosure {
+  ValueIteratorClosure(int el) :
+    _result(NULL),
+    _count(0),
+    _element(el) {
+  }
+  const char *_result;
+  int _count;
+  int _element;
+};
+
+int valueIterator(void *cls, enum MHD_ValueKind kind,
+                  const char *key, const char *value) {
+  ValueIteratorClosure *closure = (ValueIteratorClosure *)cls;
+  int result;
+  if (closure->_count++ == closure->_element) {
+    closure->_result = value;
+    result = MHD_NO;
+  } else {
+    result = MHD_YES;
+  }
+  return result;
+}
+
+int countIterator(void *cls, enum MHD_ValueKind kind,
+                 const char *key, const char *value) {
+  return MHD_YES;
+}
+
+int dev_setenv(const char *key, const char *value) {
+  int result;
+  if (g_connection != NULL) {
+    result = MHD_set_connection_value(g_connection, MHD_COOKIE_KIND, key, value);
+  } else {
+    result = MHD_NO;
+  }
+  return result = MHD_YES ? 0 : -1;
+}
+
+const char *dev_getenv(const char *key) {
+  const char *result;
+  if (g_connection != NULL) {
+    result = MHD_lookup_connection_value(g_connection, MHD_COOKIE_KIND, key);
+    if (result == NULL) {
+      result = MHD_lookup_connection_value(g_connection, MHD_HEADER_KIND, key);
+    }
+    if (result == NULL) {
+      result = MHD_lookup_connection_value(g_connection, MHD_GET_ARGUMENT_KIND, key);
+    }
+  } else {
+    result = NULL;
+  }
+  return result;
+}
+
+int dev_env_count() {
+  int count = 0;
+  if (g_connection != NULL) {
+    count += MHD_get_connection_values(g_connection, MHD_COOKIE_KIND, countIterator, NULL);
+    count += MHD_get_connection_values(g_connection, MHD_HEADER_KIND, countIterator, NULL);
+    count += MHD_get_connection_values(g_connection, MHD_GET_ARGUMENT_KIND, countIterator, NULL);
+  }
+  return count;
+}
+
+const char *dev_getenv_n(int n) {
+  const char *result = NULL;
+  if (g_connection != NULL) {
+    ValueIteratorClosure closure(n);
+    MHD_get_connection_values(g_connection, MHD_COOKIE_KIND, valueIterator, &closure);
+    MHD_get_connection_values(g_connection, MHD_HEADER_KIND, valueIterator, &closure);
+    MHD_get_connection_values(g_connection, MHD_GET_ARGUMENT_KIND, valueIterator, &closure);
+    result = closure._result;
+  }
+  return result;
 }
 
 //
