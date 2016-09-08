@@ -25,6 +25,7 @@ dword g_start = 0;
 dword g_maxTime = 2000;
 bool g_graphicText = true;
 struct MHD_Connection *g_connection;
+StringList g_cookies;
 
 static struct option OPTIONS[] = {
   {"help",           no_argument,       NULL, 'h'},
@@ -135,11 +136,20 @@ MHD_Response *execute(struct MHD_Connection *connection, const char *bas) {
   g_start = dev_get_millisecond_count();
   g_canvas.setGraphicText(g_graphicText);
   g_canvas.setJSON((strncmp(accept, "application/json", 16) == 0));
+  g_cookies.removeAll();
   sbasic_main(bas);
   g_connection = NULL;
   String page = g_canvas.getPage();
-  return MHD_create_response_from_buffer(page.length(), (void *)page.c_str(),
-                                         MHD_RESPMEM_MUST_COPY);
+  MHD_Response *response =
+    MHD_create_response_from_buffer(page.length(), (void *)page.c_str(),
+                                    MHD_RESPMEM_MUST_COPY);
+  List_each(String *, it, g_cookies) {
+    String *next = (*it);
+    MHD_add_response_header(response,
+                            MHD_HTTP_HEADER_SET_COOKIE,
+                            next->c_str());
+  }
+  return response;
 }
 
 MHD_Response *serve_file(const char *path) {
@@ -395,13 +405,10 @@ int countIterator(void *cls, enum MHD_ValueKind kind,
 }
 
 int dev_setenv(const char *key, const char *value) {
-  int result;
-  if (g_connection != NULL) {
-    result = MHD_set_connection_value(g_connection, MHD_COOKIE_KIND, key, value);
-  } else {
-    result = MHD_NO;
-  }
-  return result = MHD_YES ? 0 : -1;
+  String cookie;
+  cookie.append(key).append("=").append(value);
+  g_cookies.add(cookie);
+  return 0;
 }
 
 const char *dev_getenv(const char *key) {

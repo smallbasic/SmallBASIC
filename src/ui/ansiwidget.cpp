@@ -272,7 +272,7 @@ void AnsiWidget::removeHover() {
 }
 
 void AnsiWidget::removeInputs() {
-  List_each(FormInput*, it, _back->_inputs) {
+  List_each(FormInput *, it, _back->_inputs) {
     FormInput *widget = (FormInput *)(*it);
     if (widget == _activeButton) {
       _activeButton = NULL;
@@ -608,7 +608,7 @@ bool AnsiWidget::drawHoverLink(MAEvent &event) {
     int dy = _front->_y - _front->_scrollY;
     FormInput *active = NULL;
     if (_front->overlaps(event.point.x, event.point.y)) {
-      List_each(FormInput*, it, _front->_inputs) {
+      List_each(FormInput *, it, _front->_inputs) {
         FormInput *widget = (FormInput *)(*it);
         if (widget->hasHover() &&
             widget->overlaps(event.point, dx, dy)) {
@@ -650,7 +650,7 @@ bool AnsiWidget::setActiveButton(MAEvent &event, Screen *screen) {
   bool result = false;
   if (_front != _screens[MENU_SCREEN] &&
       screen->overlaps(event.point.x, event.point.y)) {
-    List_each(FormInput*, it, screen->_inputs) {
+    List_each(FormInput *, it, screen->_inputs) {
       FormInput *widget = (FormInput *)(*it);
       bool redraw = false;
       if (widget->selected(event.point, screen->_x,
