@@ -199,7 +199,7 @@ char *System::getText(char *dest, int maxSize) {
   int h = _output->textHeight();
   int charWidth = _output->getCharWidth();
 
-  FormInput *widget = new FormLineInput(NULL, maxSize, true, x, y, w, h);
+  FormInput *widget = new FormLineInput(NULL, NULL, maxSize, true, x, y, w, h);
   widget->setFocus(true);
 
   int bg = _output->getBackgroundColor();

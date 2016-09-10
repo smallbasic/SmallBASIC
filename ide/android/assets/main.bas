@@ -250,6 +250,7 @@ sub manageFiles()
     bn_edit.type = "text"
     bn_edit.color = "white"
     bn_edit.resizable = TRUE
+    bn_edit.help = "Enter file name, and then click New."
     bn_files.x = x1
     bn_files.y = bn_edit.y + char_h + 2
     bn_files.height = ymax - bn_files.y
@@ -257,6 +258,7 @@ sub manageFiles()
     bn_files.color = 2
     bn_files.type = "list"
     bn_files.resizable = TRUE
+    bn_files.help = "No .bas files in " + cwd
     f.focus = idxEdit
     f.inputs << bn_edit
     f.inputs << bn_files
@@ -284,12 +286,14 @@ sub manageFiles()
   end
 
   sub deleteFile()
-    wnd.ask("Are you sure you wish to delete " + selectedFile + "?", "Delete File")
-    if (wnd.answer == 0) then
-      f.refresh(true)
-      local selectedIndex = f.inputs(idxFiles).selectedIndex
-      kill selectedFile
-      reloadList(selectedIndex)
+    if (len(selectedFile) > 0) then
+      wnd.ask("Are you sure you wish to delete " + selectedFile + "?", "Delete File")
+      if (wnd.answer == 0) then
+        f.refresh(true)
+        local selectedIndex = f.inputs(idxFiles).selectedIndex
+        kill selectedFile
+        reloadList(selectedIndex)
+      endif
     endif
     f.value = ""
   end

@@ -265,12 +265,14 @@ function buildConsole() {
 
 function buildWeb() {
    if test $host_os = 'mingw32'; then
+     TARGET="Building Ming32 Web server version."
      AC_DEFINE(__MINGW32__, 1, [as above])
      AC_DEFINE(_Win32, 1, [Windows build])
      PACKAGE_CFLAGS="-I$prefix/include ${PACKAGE_CFLAGS} -mms-bitfields -D__USE_MINGW_ANSI_STDIO"
      PACKAGE_LIBS="${PACKAGE_LIBS} -L$prefix/lib -Wl,-Bstatic -mconsole -lmingw32 -lwsock32 "
      PACKAGE_LIBS="${PACKAGE_LIBS} -lmicrohttpd -lws2_32 -static-libgcc -static-libstdc++"
    else
+     TARGET="Building Web server version."
      PACKAGE_LIBS="${PACKAGE_LIBS} -lm -ldl -lpthread -lmicrohttpd"
      AC_CHECK_HEADERS([microhttpd.h], [], [AC_MSG_ERROR([microhttpd is not installed])])
    fi

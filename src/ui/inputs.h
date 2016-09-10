@@ -58,6 +58,7 @@ using namespace strlib;
 #define FORM_INPUT_LABEL "label"
 #define FORM_INPUT_NAME "name"
 #define FORM_INPUT_TYPE "type"
+#define FORM_INPUT_HELP "help"
 #define FORM_INPUT_BG "backgroundColor"
 #define FORM_INPUT_FG "color"
 #define FORM_INPUT_IS_EXIT "isExit"
@@ -135,6 +136,7 @@ struct FormInput : public Shape {
   bool isVisible() { return _visible; }
   void setColor(int bg, int fg) { _bg = bg; _fg = fg; }
   void setTextColor();
+  void setHelpTextColor();
   void selected();
   void show() { _visible = true; }
   bool _pressed;
@@ -214,7 +216,8 @@ protected:
 };
 
 struct FormLineInput : public FormEditInput {
-  FormLineInput(const char *text, int maxSize, bool grow, int x, int y, int w, int h);
+  FormLineInput(const char *text, const char *help,
+                int maxSize, bool grow, int x, int y, int w, int h);
   virtual ~FormLineInput();
 
   void close();
@@ -235,6 +238,7 @@ struct FormLineInput : public FormEditInput {
   int getCompletions(StringList *list, int max) { return 0; }
 
 private:
+  String _help;
   char *_buffer;
   int _size;
   int _scroll;
@@ -284,11 +288,13 @@ private:
 };
 
 struct FormListBox : public FormList {
-  FormListBox(ListModel *model, int x, int y, int w, int h);
+  FormListBox(ListModel *model, const char *help, int x, int y, int w, int h);
   void clicked(int x, int y, bool pressed);
   void draw(int x, int y, int w, int h, int chw);
   bool selected(MAPoint2d pt, int scrollX, int scrollY, bool &redraw);
   virtual ~FormListBox() {}
+private:
+  String _help;
 };
 
 struct FormImage : public FormInput {
