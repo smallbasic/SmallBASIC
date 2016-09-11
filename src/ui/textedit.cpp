@@ -109,6 +109,7 @@ const char *helpText =
   "C-SPC auto-complete\n"
   "C-home top\n"
   "C-end bottom\n"
+  "C-5,6,7 macro\n"
   "A-c change case\n"
   "A-g goto line\n"
   "A-n trim line-endings\n"
