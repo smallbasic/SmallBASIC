@@ -16,9 +16,14 @@
 
 using namespace strlib;
 
+#define MAX_MACRO 20
+
 String g_exportAddr;
 String g_exportToken;
-bool returnToLine;
+int g_macro[MAX_MACRO];
+int g_macro_size;
+bool g_macro_record;
+bool g_returnToLine;
 
 void onlineHelp(Runtime *runtime, TextEditInput *widget) {
   char path[100];
@@ -117,7 +122,7 @@ void System::editSource(String loadPath) {
   editWidget->setLineNumbers();
   editWidget->setFocus(true);
 
-  if (isBreak() && returnToLine) {
+  if (isBreak() && g_returnToLine) {
     editWidget->setCursorRow(gsb_last_line);
   }
 
@@ -166,6 +171,21 @@ void System::editSource(String loadPath) {
       }
 
       switch (event.key) {
+      case SB_KEY_CTRL('5'):
+        _output->setStatus("Recording keyboard macro");
+        g_macro_record = true;
+        g_macro_size = 0;
+        break;
+      case SB_KEY_CTRL('6'):
+        dirty = !editWidget->isDirty();
+        g_macro_record = false;
+        break;
+      case SB_KEY_CTRL('7'):
+        g_macro_record = false;
+        for (int i = 0; i < g_macro_size; i++) {
+          redraw |= widget->edit(g_macro[i], sw, charWidth);
+        }
+        break;
       case SB_KEY_F(8):
       case SB_KEY_F(11):
       case SB_KEY_F(12):
@@ -299,8 +319,8 @@ void System::editSource(String loadPath) {
         showRecentFiles(helpWidget, loadPath);
         break;
       case SB_KEY_ALT('.'):
-        returnToLine = !returnToLine;
-        _output->setStatus(returnToLine ?
+        g_returnToLine = !g_returnToLine;
+        _output->setStatus(g_returnToLine ?
                            "Position the cursor to the last program line after BREAK" :
                            "BREAK restores current cursor position");
         break;
@@ -338,6 +358,10 @@ void System::editSource(String loadPath) {
       default:
         redraw = widget->edit(event.key, sw, charWidth);
         break;
+      }
+      if (g_macro_record && g_macro_size < MAX_MACRO &&
+          event.key != (int)SB_KEY_CTRL('5')) {
+        g_macro[g_macro_size++] = event.key;
       }
       if (event.key == SB_KEY_ENTER) {
         if (helpWidget->replaceMode()) {
