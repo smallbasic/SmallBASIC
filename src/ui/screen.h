@@ -53,7 +53,9 @@ struct Screen : public Shape {
   void drawLabel();
   void drawShape(Shape *button);
   void drawOverlay(bool vscroll);
+  int  getIndex(FormInput *input) const;
   FormInput *getMenu(FormInput *prev, int px, int py);
+  FormInput *getNextMenu(FormInput *prev, bool up);
   FormInput *getNextField(FormInput *field);
   void getScroll(int &x, int &y) { x = _scrollX; y = _scrollY; }
   void layoutInputs(int newWidth, int newHeight);

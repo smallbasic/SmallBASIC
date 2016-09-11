@@ -59,24 +59,22 @@ sub info_header(is_welcome)
     endif
     print "From here, you can do things like toggle the ";
     print "Editor, Run, Adjust Font size..."
+    if (is_sdl) then
+      randomize
+      select case (rnd * 100 % 10)
+      case 0: tip = "Press and hold Ctrl then press 'm' to access the menu."
+      case 1: tip = "Press and hold Ctrl then press 'p' to take a screenshot."
+      case 2: tip = "In the editor, press and hold Ctrl then press 'h' to access help."
+      case 3: tip = "Toggle the editor menu option for different run modes."
+      case 4: tip = "Editor Live Mode makes your program restart whenever the program changes."
+      case 5: tip = "Select the Online option to run a featured program."
+      case 6: tip = "Select View source from the menu to display program code."
+      case 7: tip = "Select the File option to manage .bas files in the current folder."
+      case 8: tip = "You can drop .bas files from the system file manager to load a program."
+      end select
+      print "Tip: " + tip
+    endif
     print
-  else if (is_sdl) then
-    color 6,0
-    randomize
-    print "TIP: ";
-    select case (rnd * 100 % 12)
-    case 0: print "Press and hold Ctrl then press 'm' to access the menu."
-    case 1: print "Press and hold Ctrl then press 'p' to take a screenshot."
-    case 2: print "In the editor, press and hold Ctrl then press 'h' to access help."
-    case 3: print "Toggle the editor menu option for different run modes."
-    case 4: print "Editor Live Mode makes your program restart whenever the program changes."
-    case 5: print "Select a file to edit or run..."
-    case 6: print "Select the Online option to run a featured program."
-    case 7: print "Select View source from the menu to display program code."
-    case 8: print "Select the File option to manage .bas files in the current folder."
-    case 9: print "You can drop .bas files from the system file manager to load a program."
-    case else: print "Click the right mouse button (or menu key in android) to access the menu."
-    end select
   endif
   color 2,0
 end

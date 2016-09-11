@@ -360,6 +360,10 @@ void AnsiWidget::setXY(int x, int y) {
   }
 }
 
+void AnsiWidget::handleMenu(bool up) {
+  _activeButton = _front->getNextMenu(_activeButton, up);
+}
+
 void AnsiWidget::insetMenuScreen(int x, int y, int w, int h) {
   if (_back == _screens[MENU_SCREEN]) {
     _back = _screens[USER_SCREEN1];

@@ -672,9 +672,17 @@ void Runtime::optionsBox(StringList *items) {
   _output->redraw();
   while (selectedIndex == -1 && !isClosing()) {
     MAEvent ev = processEvents(true);
-    if (ev.type == EVENT_TYPE_KEY_PRESSED &&
-        ev.key == 27) {
-      break;
+    if (ev.type == EVENT_TYPE_KEY_PRESSED) {
+      if (ev.key == 27) {
+        break;
+      } else if (ev.key == 13) {
+        selectedIndex = _output->getMenuIndex();
+        break;
+      } else if (ev.key == SB_KEY_UP) {
+        _output->handleMenu(true);
+      } else if (ev.key == SB_KEY_DOWN) {
+        _output->handleMenu(false);
+      }
     }
     if (ev.type == EVENT_TYPE_POINTER_RELEASED &&
         ++releaseCount == 2) {
