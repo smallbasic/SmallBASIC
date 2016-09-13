@@ -40,7 +40,6 @@ void cmd_ldel(void);
 void cmd_erase(void);
 void cmd_print(int output);
 void logprint_var(var_t *var);
-void cmd_logprint(void);
 void cmd_input(int input);
 void cmd_if(void);
 void cmd_else(void);
@@ -123,7 +122,6 @@ void cmd_intersect(void);
 void cmd_polyext(void);
 void cmd_exprseq(void);
 void cmd_plot(void);
-void cmd_plot2(void);
 
 // third class
 void cmd_strN(long, var_t*);  // its ok, i want all functions
@@ -152,8 +150,6 @@ void cmd_delay(void);
 // FILE I/O
 void cmd_fopen(void);
 void cmd_fclose(void);
-void cmd_fprint(void);
-void cmd_finput(void);
 void cmd_fwrite(void);
 void cmd_fread(void);
 void cmd_flineinput(void);
@@ -213,7 +209,7 @@ long date_julian(long d, long m, long y);
  * @param y is the year
  * @return the julian-date
  */
-void date_fmt(char *fmt, char *buf, long d, long m, long y);
+char *date_fmt(char *fmt, long d, long m, long y);
 
 /**
  * @ingroup date

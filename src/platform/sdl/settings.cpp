@@ -177,7 +177,7 @@ void restoreSettings(SDL_Rect &rect, int &fontScale, bool debug, bool restoreDir
     rect.h = DEFAULT_HEIGHT;
     fontScale = DEFAULT_SCALE;
     opt_mute_audio = 0;
-    opt_ide = IDE_NONE;
+    opt_ide = IDE_INTERNAL;
     g_themeId = 0;
   }
 }

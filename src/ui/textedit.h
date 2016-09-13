@@ -83,6 +83,7 @@ struct TextEditInput : public FormEditInput {
   bool find(const char *word, bool next);
   int  getCursorPos() const { return _state.cursor; }
   const char *getText() const { return _buf._buffer; }
+  char *getTextSelection();
   int  getTextLength() const { return _buf._len; }
   int *getMarkers();
   void gotoLine(const char *buffer);
@@ -151,6 +152,7 @@ protected:
   void setColor(SyntaxState &state);
   void toggleMarker();
   void updateScroll();
+  int wordEnd();
   int wordStart();
 
   EditBuffer _buf;
@@ -165,6 +167,7 @@ protected:
   int _indentLevel;
   int _matchingBrace;
   int _ptY;
+  int _pressTick;
   bool _dirty;
 };
 
@@ -197,7 +200,7 @@ struct TextEditHelpWidget : public TextEditInput {
   void createOutline();
   void createSearch(bool replace);
   bool edit(int key, int screenWidth, int charWidth);
-  void paste(const char *text) {}
+  void paste(const char *text);
   bool isDrawTop() { return true; }
   void layout(int w, int h) { _x = w - _width; _height = h; }
   void reset(HelpMode mode);

@@ -1,0 +1,217 @@
+chapter{The Basics of a Program: \SB\ Fundamentals}
+
+\quick{Here you learn about the basics of BASIC, so to speak. This
+chapter deals with the way a \SB\ program composed.}
+
+\section{Source Code Format}
+
+A program consists of a single source file. It is possible to include
+libraries from external source files with the Unit-mechanism (see
+\Cref{modules}).
+
+Source files are simple text files. They can be
+written in \textbf{ASCII} or \textbf{UTF-8}.
+
+The basic program component is a line of text, ending with \Co{CR} or
+\Co{LF/CR} characters.\footnote{Don't worry about this, your operating
+system will handle it right. It may only every be an issue if you use
+source files written in one OS and then transferred to a different one.}
+
+\SB\ is \textbf{case-insensitive}: The names \Co{myvar}
+and \Co{MyVar} will always refer to the same variable or function.
+Likewise, keywords are case-insensitive: Both \Co{print} and \Co{PRINT}
+are legal variants of the same command. \index{case sensitivity}
+
+\textbf{Whitespace} -- i.e., non-printing characters like
+spaces and tabs -- is ignored in \SB, except inside string literals
+where it is retained (see \Cref{stringLiterals}). \twoEquiv\footnote{All listings
+in the vademecum follow the same convention and show the source code as
+you would have typed it in in the IDE. If a line in the listing begins
+with a greater-than sign \Co{>}, this indicates a response of the
+program printed on your screen.} \index{whitespace} 
+
+\begin{lstlisting}
+for a = 0 to 10
+
+for a=0to 10
+\end{lstlisting}
+
+But note that the ommission of whitespace can lead to parsing errors: If
+the above line were abbreviated to
+
+\begin{lstlisting}
+fora=0to10
+\end{lstlisting}
+
+this would cause an error, because \Co{for} and \Co{to} wouldn't be
+recognized as keywords anymore. Rather, \SB\ would consider \Co{fora}
+and \Co{to10} to be variable names.\footnote{As a rule of thumb, it's
+advisable to always leave spaces around keywords.}
+
+Each program line contains one or more commands.  Multiple commands on a
+line are \textbf{seperated by a colon} \Co{:}. \index{: (command
+seperator)} \twoEquiv
+
+\begin{lstlisting}
+print "Hello world!"
+print "Wonderful day."
+
+print "Hello world!" : print "Wonderful day."
+\end{lstlisting}
+
+\textbf{Line continuation}: If the ampersand \Co{\&} is the last character on a line, then the
+interpreter will assume that the current command extends to the next
+line as well. \index{\& (line continuation char.)} \twoEquiv
+
+\begin{lstlisting}
+X = 245 * 198 - sqr(5)
+
+X = 245 * 198 &
+		- sqr(5)
+\end{lstlisting}
+
+\section{Literals}
+
+\subsection{Numbers}
+
+Numbers can be written in the usual manner, using either
+>>conventional<< or scientific notation. All of the following examples
+are legal numbers in \SB:
+
+\begin{lstlisting}
+1, 0, -1, 1.2, -23232.5, 1.902e-50, -.423
+\end{lstlisting}
+
+As is shown in the last example, numbers with an absolute value $<1$
+need not be preceded with \Co{0}.
+
+Integer numbers can also be represented in hexadecimal, octal and binary
+notation with various prefixes:
+
+\begin{description}
+
+\item[hexadecimal]: \Co{\&h}, \Co{0h}, \Co{\&x}, or \Co{0x}
+
+\item[octal]: \Co{\&o} or \Co{0o})
+
+\item[binary]: \Co{\&b} (or \Co{0b})
+
+\end{description}
+
+\index{\&h (hexadec. number prefix)} \index{\&o (octal number prefix)}
+\index{\&b (binary number prefix)} \index{$0$h (hexadec. number prefix)}
+\index{$0$o (octal number prefix)} \index{$0$b (binary number prefix)}
+\index{$0$x (hexadec. number prefix)} \index{\&x (hexadec. number prefix)} 
+
+\begin{lstlisting}
+&hAFFE0815, &o4242, &b100101011
+0hAFFE0815, 0o4242, 0b100101011
+\end{lstlisting}
+
+/* limits for numbers? */
+
+\subsection{String literals \label{stringLiterals}}
+
+String literals are character sequences which are to be treated as
+program data >>as is<<, not as variable or keyword names. String
+literals are bracketed by double quotes \Co{"}.  \index{string literals}
+\index{'' (string delimiter)}
+
+\begin{lstlisting}
+"This is a string literal"
+this will be considered as a sequence of keywords
+\end{lstlisting}
+
+Note that when a string literal is to be extended across more than one
+line, it must be properly closed before the continuation ampersand and
+re-opened on the subsequent line with the \Co{"} delimiter character:
+
+\begin{lstlisting}
+print "Hello &
+		world!"		' error
+
+print "Hello " &
+		"world!"		' correct
+\end{lstlisting}
+
+\section{Identifiers}
+
+Identifiers -- >>names<< for variables and functions -- follow the usual
+conventions: \index{variable names} \index{function names} \index{procedure
+names}
+
+They consist of a letter or an underscore \Co{\_}, followed by one or
+more of the following:\begin{itemize}
+
+\item other letters
+
+\item digits (\Co{0} -- \Co{9})
+
+\item the underscore \Co{\_} \index{\_ (underscore)}
+
+\item the dollar sign \Co{\$} (only as the last character of the
+identifier, see below) \index{\$ (dollar sign)}
+
+\end{itemize}
+
+A single underscore \Co{\_} is a legal complete identifier.
+
+Identifiers can have virtually unlimited length. All characters are
+significant in resolving an identifier (ie, to determine whether two
+identifiers refer to the same variable.)\footnote{This is in contrast to
+many older BASICs. The \emph{Commodore BASIC} shipped with the honorable
+C64, for example, allowed identifiers of arbitrary length, but used only
+the first two letters for resolution: \Co{hoogla} and \Co{hooray} were
+considered to refer to the same variable.}
+
+Traditionally, in BASIC the \textbf{dollar sign} \Co{\$} serves as a
+sigil to indicate that a name identifies a string variable, if used as
+the last character of the identifier (i.e., \Co{my\_name\$}).
+
+Since \SB\ is a typeless language (see below) where variables can hold
+values of any type, such a sigil would be misleading, yet it has been
+retained for the sake of compatibility. It may be placed as the last
+character of an identifier only. Here it serves two distinguish between 
+identifiers (\Co{harry} and \Co{harry\$} are two different identifiers),
+but has otherwise no function.
+
+\section{Comments}
+
+\textbf{Line comments} can be introduced in three ways:
+
+\begin{itemize}
+
+\item With the keyword \Co{rem},
+
+\item With the apostrophe character \Co{'}, \index{' (comment
+introduction)}
+
+\item With a hash sign \Co{\#}. \index{\# (comment introduction)}
+
+\end{itemize}
+
+Everything on the current line following the comment introduction will
+be ignored in program execution.
+
+If the \Co{rem} keyword is used and it is preceded by other commands on
+the current line, it must be seperated from the previous commands by a
+colon \Co{:} If the hash sign is used, it must be the first character on
+the line. (See also the use of a hash sign in >>shebanging<< a script,
+\Cref{installLinux})
+
+\begin{lstlisting}
+for a=0 to 10      ' this is a valid comment
+   print a         : rem this also
+# this is a whole line commented out
+next a
+rem the last comment
+
+print "Hello world!"   rem vain commenting attempt
+\end{lstlisting}
+
+The \Co{rem} in the last line above will cause an error, because it
+needs to be preceded with a colon \Co{:}.
+
+There are no provision for \textbf{block comments}.
+
+

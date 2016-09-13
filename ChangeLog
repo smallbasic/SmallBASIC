@@ -1,3 +1,57 @@
+2016-08-21 (0.12.7)
+	Added 'web' sub-project (sbasicw)
+
+2016-07-30 (0.12.7)
+	Fixed value of i when FOR loop body not executed (node/1611)
+
+2016-07-30 (0.12.7)
+	Fixed screen switching when program screen has different font size
+
+2016-07-16 (0.12.7)
+	Fixed editor display issue with escaped quotes
+
+2016-07-04 (0.12.7)
+	Updated ARRAY command to handle 2d arrays
+	Fixed issue with INSTR
+	Fixed memory issue with REPLACE
+
+2016-07-03 (0.12.7)
+	Updated welcome screen
+	Fixed some memory access issues uncovered with new test all.bas
+
+2016-06-24 (0.12.7)
+	Renamed str var "size" field "length"
+	var cleanup now uses v_detach()
+	implemented var pooling
+
+2016-06-18 (0.12.7)
+	Fixed memory access issue with JOIN
+	Fixed memory access issue with SPRINT
+
+2016-06-15 (0.12.7)
+	Added editor double click to select word
+	Fixed editor stability issues with undo/redo
+	Fixed editor scrolling after paste
+
+2016-06-12 (0.12.7)
+	Updated welcome screen
+	Added editor F10 option to set the command$ variable
+	Fixed editor cursor flicker issue
+	Fixed editor find dialog paste support
+
+2016-06-12 (0.12.7)
+	Fix infinite loop when printing FUNC with extra args
+
+2016-06-07 (0.12.7)
+	Fix memory leak with LINPUT command
+	SDL: editor widget now remembers the undo buffer between program runs
+	Editor now allows run by selection
+
+2016-06-04 (0.12.7)
+	Updated MAP handling for performance
+	Updated error message formatting
+	Fix error with textScreen sub-command
+
 2016-05-14 (0.12.6)
 	Fix to prevent const overwriting another const
 	Updated MID and REPLACE for performance

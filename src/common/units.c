@@ -305,7 +305,7 @@ int unit_exec(int lib_id, int index, var_t *ret) {
     } else {
       v_set(ret, udf_rv.x.vdvar.vptr);
       v_free(udf_rv.x.vdvar.vptr);  // free ret-var
-      free(udf_rv.x.vdvar.vptr);
+      v_detach(udf_rv.x.vdvar.vptr);
     }
 
     activate_task(my_tid);

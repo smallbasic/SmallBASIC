@@ -132,23 +132,11 @@
 #define WORD_GOTO               "GOTO"
 #define WORD_GOSUB              "GOSUB"
 #define WORD_INF                "INF" // infinity
-#define FSERR_OUT_OF_MEMORY     "FS: Out of memory"
 #define FSERR_INVALID_PARAMETER "FS: Invalid parameter"
-#define FSERR_CORRUPTED         "FS: File is corrupted or invalid"
 #define FSERR_NOT_FOUND         "FS: File not found"
-#define FSERR_TYPE_MSM          "FS: Type or creator not what was specified"
-#define FSERR_OVERWRITE         "FS: Couldn't replace existing file"
-#define FSERR_CREATE            "FS: Couldn't create new file"
-#define FSERR_OPEN              "FS: Generic open error"
-#define FSERR_USED              "FS: File is in use" // (exclusive)
-#define FSERR_READ_ONLY         "FS: File is read-only"
 #define FSERR_HANDLE            "FS: Invalid file handle"
-#define FSERR_CLOSE             "FS: Error closing file"
-#define FSERR_EOF               "FS: Past end of file"
 #define FSERR_ACCESS            "FS: Access denied"
 #define FSERR_GENERIC           "FS: Generic I/O error"
-#define FSERR_PALM_EOF          "FS: End-Of-File error!"
-#define FSERR_ANOMALO           "FS: File is not a stream"
 #define FSERR_FMT               "FS(%d): %s"
 #define FSERR_TOO_MANY_FILES    "FS: Too many open files"
 #define FSERR_WRONG_DRIVER      "Unknown device or file-system"
@@ -174,7 +162,6 @@
 #define ERR_UNSUPPORTED         "Unsupported"
 #define ERR_CONST               "LET: Cannot change a constant (CONST always has global scope)"
 #define ERR_NOT_A_VAR           "Not a variable"
-#define ERR_NOT_ARR_OR_FUNC     "NOT an array OR function"
 #define ERR_RANGE               "Out of range"
 #define ERR_MISSING_SEP_OR_PAR  "Missing separator OR parenthesis"
 #define ERR_DIVZERO             "Division by zero"
@@ -190,7 +177,6 @@
 #define ERR_CRITICAL_MISSING_FUNC  "Unsupported built-in function call %ld, please report this bug"
 #define ERR_GPF                 "\n\aOUT OF ADDRESS SPACE\n"
 #define ERR_CRITICAL_MISSING_PROC  "Unsupported built-in procedure call %ld, please report this bug"
-#define ERR_CHAIN_FILE          "CHAIN: File '%s' does not exist"
 #define ERR_RUN_FILE            "RUN/EXEC \"%s\" Failed"
 #define ERR_RUNFUNC_FILE        "RUN(\"%s\"): Failed"
 #define ERR_PARCOUNT_SP         "Parameter count error @%d=%X"
@@ -230,6 +216,4 @@
 #define ERR_FORM_INPUT          "Form has no inputs"
 #define ERR_PARAM_NUM           "Incorrect number of parameters: %d. Expected %d."
 
-// memory manager
-#define MEM_OUT_OF_MEM          "OUT OF MEMORY"
 

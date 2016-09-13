@@ -498,7 +498,6 @@ void Runtime::pollEvents(bool blocking) {
         maEvent = getMotionEvent(EVENT_TYPE_POINTER_DRAGGED, &ev);
         break;
       case SDL_MOUSEBUTTONUP:
-        SDL_SetCursor(_cursorArrow);
         maEvent = getMotionEvent(EVENT_TYPE_POINTER_RELEASED, &ev);
         break;
       case SDL_WINDOWEVENT:
@@ -629,9 +628,12 @@ void Runtime::optionsBox(StringList *items) {
     _menuY = 2;
   }
 
+  int backScreenId = _output->getScreenId(true);
+  int frontScreenId = _output->getScreenId(false);
+  _output->selectBackScreen(MENU_SCREEN);
+
   int width = 0;
   int charWidth = _output->getCharWidth();
-  _output->registerScreen(MENU_SCREEN);
   List_each(String *, it, *items) {
     char *str = (char *)(* it)->c_str();
     int w = (strlen(str) * charWidth);
@@ -651,11 +653,12 @@ void Runtime::optionsBox(StringList *items) {
     _menuY = _output->getHeight() - height;
   }
 
-  int screenId = _output->insetMenuScreen(_menuX, _menuY, width, height);
   int y = 0;
   int index = 0;
   int selectedIndex = -1;
   int releaseCount = 0;
+
+  _output->insetMenuScreen(_menuX, _menuY, width, height);
 
   List_each(String *, it, *items) {
     char *str = (char *)(* it)->c_str();
@@ -669,9 +672,17 @@ void Runtime::optionsBox(StringList *items) {
   _output->redraw();
   while (selectedIndex == -1 && !isClosing()) {
     MAEvent ev = processEvents(true);
-    if (ev.type == EVENT_TYPE_KEY_PRESSED &&
-        ev.key == 27) {
-      break;
+    if (ev.type == EVENT_TYPE_KEY_PRESSED) {
+      if (ev.key == 27) {
+        break;
+      } else if (ev.key == 13) {
+        selectedIndex = _output->getMenuIndex();
+        break;
+      } else if (ev.key == SB_KEY_UP) {
+        _output->handleMenu(true);
+      } else if (ev.key == SB_KEY_DOWN) {
+        _output->handleMenu(false);
+      }
     }
     if (ev.type == EVENT_TYPE_POINTER_RELEASED &&
         ++releaseCount == 2) {
@@ -680,7 +691,8 @@ void Runtime::optionsBox(StringList *items) {
   }
 
   _output->removeInputs();
-  _output->selectScreen(screenId);
+  _output->selectBackScreen(backScreenId);
+  _output->selectFrontScreen(frontScreenId);
   _menuX = 2;
   _menuY = 2;
   if (selectedIndex != -1) {

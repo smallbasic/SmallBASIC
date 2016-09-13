@@ -19,6 +19,8 @@
 #include "common/keymap.h"
 #include "common/messages.h"
 
+#define STR_INIT_SIZE 256
+
 /**
  * LET v[(x)] = any
  * CONST v[(x)] = any
@@ -207,10 +209,10 @@ void cmd_ladd() {
     var_t *elem_p;
     if (var_p->type != V_ARRAY) {
       v_toarray1(var_p, 1);
-      elem_p = (var_t *)var_p->v.a.ptr;
+      elem_p = v_elem(var_p, 0);
     } else {
       v_resize_array(var_p, var_p->v.a.size + 1);
-      elem_p = (var_t *)(var_p->v.a.ptr + (sizeof(var_t) * (var_p->v.a.size - 1)));
+      elem_p = v_elem(var_p, var_p->v.a.size - 1);
     }
 
     // set the value onto the element
@@ -233,7 +235,7 @@ void cmd_ladd() {
 
   // cleanup
   v_free(arg_p);
-  free(arg_p);
+  v_detach(arg_p);
 }
 
 /**
@@ -300,16 +302,15 @@ void cmd_lins() {
     var_t *elem_p;
     if (ladd) {
       // append
-      elem_p = (var_t *)(var_p->v.a.ptr + (sizeof(var_t) * (var_p->v.a.size - 1)));
+      elem_p = v_elem(var_p, var_p->v.a.size - 1);
     } else {
       // move all form idx one down
       int i;
       for (i = var_p->v.a.size - 1; i > idx; i--) {
         // A(i) = A(i-1)
-        v_set((var_t *)(var_p->v.a.ptr + (sizeof(var_t) * i)),
-              (var_t *)(var_p->v.a.ptr + (sizeof(var_t) * (i - 1))));
+        v_set(v_elem(var_p, i), v_elem(var_p, i - 1));
       }
-      elem_p = (var_t *)(var_p->v.a.ptr + (sizeof(var_t) * idx));
+      elem_p = v_elem(var_p, idx);
     }
 
     // set the value onto the element
@@ -332,7 +333,7 @@ void cmd_lins() {
 
   // cleanup
   v_free(arg_p);
-  free(arg_p);
+  v_detach(arg_p);
 }
 
 /**
@@ -399,7 +400,7 @@ void cmd_ldel() {
   }
   // cleanup
   v_free(arg_p);
-  free(arg_p);
+  v_detach(arg_p);
 }
 
 /**
@@ -444,10 +445,11 @@ void cmd_erase() {
  * PRINT ...
  */
 void cmd_print(int output) {
-  byte code, last_op = 0;
-  byte exitf = 0, use_format = 0;
-  var_t var, *vuser_p;
+  byte last_op = 0;
+  byte exitf = 0;
+  byte use_format = 0;
   int handle = 0;
+  var_t var;
 
   // prefix - # (file)
   if (output == PV_FILE) {
@@ -486,24 +488,24 @@ void cmd_print(int output) {
       return;
     }
 
-    vuser_p = code_getvarptr();
+    var_t *vuser_p = code_getvarptr();
     par_getsemicolon();
     if (prog_error) {
       return;
     }
     v_free(vuser_p);
     vuser_p->type = V_STR;
-    vuser_p->v.p.size = 256;
-    vuser_p->v.p.ptr = malloc(vuser_p->v.p.size);
-    vuser_p->v.p.ptr[0] = '\0';
+    vuser_p->v.p.ptr = NULL;
+    vuser_p->v.p.length = 0;
     handle = (mem_t)vuser_p;
   }
 
   // prefix - USING
-  code = code_peek();
+  byte code = code_peek();
   if (code == kwUSING) {
     code_skipnext();
     if (code_peek() != kwTYPE_SEP) {
+      v_init(&var);
       eval(&var);
       if (prog_error) {
         return;
@@ -539,7 +541,7 @@ void cmd_print(int output) {
         }
       }
     } else {
-      if (kw_check_evexit(code)) {
+      if (kw_check_evexit(code) || code == kwTYPE_LEVEL_END) {
         exitf = 1;
         break;
       }
@@ -551,7 +553,7 @@ void cmd_print(int output) {
         if (use_format) {
           switch (var.type) {
           case V_STR:
-            fmt_printS((char *) var.v.p.ptr, output, handle);
+            fmt_printS((char *)var.v.p.ptr, output, handle);
             break;
           case V_INT:
             fmt_printN(var.v.i, output, handle);
@@ -577,11 +579,6 @@ void cmd_print(int output) {
   if (last_op == 0) {
     pv_write("\n", output, handle);
   }
-}
-
-// print for log
-void cmd_logprint() {
-  cmd_print(PV_LOG);
 }
 
 /**
@@ -715,7 +712,7 @@ void cmd_input(int input) {
         int index, size;
         byte ch, quotes;
 
-        size = 256;
+        size = STR_INIT_SIZE;
         inps = malloc(size);
         index = 0;
         quotes = 0;
@@ -729,7 +726,7 @@ void cmd_input(int input) {
           } else if (ch != '\r') {
             // store char
             if (index == (size - 2)) {
-              size += 256;
+              size += STR_INIT_SIZE;
               inps = realloc(inps, size);
             }
 
@@ -982,7 +979,7 @@ bcip_t cmd_push_args(int cmd, bcip_t goto_addr, bcip_t rvid) {
       default:
         // default: the parameter is an expression
         arg = v_new();       // create a new temporary variable; it is the
-        // by-val value 'arg' will be freed at udp's return
+                             // by-val value 'arg' will be freed at udp's return
         eval(arg);           // execute the expression and store the result to 'arg'
 
         if (!prog_error) {
@@ -993,7 +990,7 @@ bcip_t cmd_push_args(int cmd, bcip_t goto_addr, bcip_t rvid) {
           pcount++;
         } else {             // error; clean up and return
           v_free(arg);
-          free(arg);
+          v_detach(arg);
           return 0;
         }
       }
@@ -1095,7 +1092,7 @@ void cmd_call_unit_udp(int cmd, int udp_tid, bcip_t goto_addr, bcip_t rvid) {
           pcount++;
         } else {             // error; clean up and return
           v_free(arg);
-          free(arg);
+          v_detach(arg);
           return;
         }
       }
@@ -1235,7 +1232,7 @@ void cmd_udpret() {
     // pop from stack until caller's node found
     if (node.type == kwTYPE_CRVAR) {  // local variable - cleanup
       v_free(tvar[node.x.vdvar.vid]); // free local variable data
-      free(tvar[node.x.vdvar.vid]);
+      v_detach(tvar[node.x.vdvar.vid]);
       tvar[node.x.vdvar.vid] = node.x.vdvar.vptr;
       // restore ptr (replace to pre-call variable)
     } else if (node.type == kwBYREF) {  // variable 'by reference'
@@ -1297,7 +1294,7 @@ int cmd_exit() {
         if (node.x.vfor.subtype == kwIN) {
           if (node.x.vfor.flags & 1) {  // allocated in for
             v_free(node.x.vfor.arr_ptr);
-            free(node.x.vfor.arr_ptr);
+            v_detach(node.x.vfor.arr_ptr);
           }
         }
       }
@@ -1317,7 +1314,7 @@ int cmd_exit() {
     case kwSELECT:
       // exiting loop from within select statement
       v_free(node.x.vcase.var_ptr);
-      free(node.x.vcase.var_ptr);
+      v_detach(node.x.vcase.var_ptr);
       break;
     case kwPROC:
     case kwFUNC:
@@ -1557,13 +1554,13 @@ void cmd_for() {
             node.x.vfor.step_expr_ip = INVALID_ADDR;
             varstep.type = V_INT;
             varstep.v.i = 1;
-          }                     // STEP kw
-        } else {                  // str for TO
+          }
+        } else {
           if (!prog_error) {
             rt_raise(ERR_SYNTAX);
           }
         }
-      } else {                    // TO keyword
+      } else {
         rt_raise(ERR_SYNTAX);
       }
     }
@@ -1571,17 +1568,27 @@ void cmd_for() {
     // run
     //
     if (!prog_error) {
-      if (v_sign(&varstep) < 0) {
-        code_jump((v_compare(var_p, &var) >= 0) ? true_ip : false_ip);
-      } else {
-        if (v_compare(var_p, &var) <= 0) {
-          code_jump(true_ip);
+      // var_p=FROM, var=TO
+      int sign = v_sign(&varstep);
+      int cmp = v_compare(var_p, &var);
+      if (sign != 0) {
+        bcip_t next_ip;
+        if (sign < 0) {
+          next_ip = cmp >= 0 ? true_ip : false_ip;
         } else {
-          code_jump(false_ip);
+          next_ip = cmp <= 0 ? true_ip : false_ip;
         }
+        code_jump(next_ip);
+        if (next_ip == false_ip) {
+          // skip to after kwNEXT
+          code_skipnext();
+          code_jump(code_getaddr());
+        } else {
+          code_push(&node);
+        }
+      } else {
+        rt_raise(ERR_SYNTAX);
       }
-
-      code_push(&node);
     }
   } else {
     //
@@ -1601,12 +1608,12 @@ void cmd_for() {
       new_var = v_new();
       eval(new_var);
       if (prog_error) {
-        free(new_var);
+        v_detach(new_var);
         return;
       }
       if (new_var->type != V_ARRAY) {
         v_free(new_var);
-        free(new_var);
+        v_detach(new_var);
         err_typemismatch();
         return;
       }
@@ -1826,7 +1833,7 @@ void cmd_next() {
       } else {
         if (node.x.vfor.flags & 1) {  // allocated in for
           v_free(node.x.vfor.arr_ptr);
-          free(node.x.vfor.arr_ptr);
+          v_detach(node.x.vfor.arr_ptr);
         }
       }
       break;
@@ -1835,7 +1842,7 @@ void cmd_next() {
       // if ( !prog_error ) rt_raise("FOR-IN: IN var IS NOT ARRAY");
       if (node.x.vfor.flags & 1) {  // allocated in for
         v_free(node.x.vfor.arr_ptr);
-        free(node.x.vfor.arr_ptr);
+        v_detach(node.x.vfor.arr_ptr);
       }
       break;
     }
@@ -1915,7 +1922,7 @@ void cmd_read() {
           vp->v.p.ptr = malloc(len + 1);
           memcpy(vp->v.p.ptr, prog_source + prog_dp, len);
           *((char *) (vp->v.p.ptr + len)) = '\0';
-          vp->v.p.size = len;
+          vp->v.p.length = len;
           prog_dp += len;
         }
           break;
@@ -2196,8 +2203,7 @@ void cmd_wsplit() {
  * JOIN array(), delimiter, dest-var
  */
 void cmd_wjoin() {
-  var_t *str, del, *var_p, *elem_p, e_str;
-  int i;
+  var_t del, *var_p;;
 
   v_init(&del);
   var_p = par_getvarray();
@@ -2222,38 +2228,45 @@ void cmd_wjoin() {
     v_free(&del);
     return;
   }
-  str = code_getvarptr();
-  v_free(str);
 
-  //
+  var_t *str = code_getvarptr();
+  int size = STR_INIT_SIZE;
+  int len = 0;
+  int del_len = v_strlen(&del);
+  int i;
+
+  v_free(str);
   str->type = V_STR;
-  str->v.p.ptr = malloc(256);
-  str->v.p.size = 256;
+  str->v.p.ptr = malloc(size);
   str->v.p.ptr[0] = '\0';
 
   for (i = 0; i < var_p->v.a.size; i++) {
-    elem_p = (var_t *) (var_p->v.a.ptr + sizeof(var_t) * i);
+    var_t *elem_p = v_elem(var_p, i);
+    var_t e_str;
 
     v_init(&e_str);
     v_set(&e_str, elem_p);
     if (e_str.type != V_STR) {
       v_tostr(&e_str);
     }
-    while ((e_str.v.p.size + del.v.p.size + 1) >= str->v.p.size) {
-      str->v.p.ptr = realloc(str->v.p.ptr, str->v.p.size + 256);
-      str->v.p.size += 256;
+
+    int el_len = v_strlen(&e_str);
+    if (el_len + del_len + 1 >= (size - len)) {
+      size += el_len + del_len + STR_INIT_SIZE;
+      str->v.p.ptr = realloc(str->v.p.ptr, size);
     }
 
-    strcat((char *) str->v.p.ptr, (char *) e_str.v.p.ptr);
+    len += el_len;
+    strcat((char *)str->v.p.ptr, (char *)e_str.v.p.ptr);
     v_free(&e_str);
 
-    if (i != var_p->v.p.size - 1) {
-      strcat((char *) str->v.p.ptr, (char *) del.v.p.ptr);
+    if (i != var_p->v.p.length - 1) {
+      strcat((char *)str->v.p.ptr, (char *)del.v.p.ptr);
+      len += del_len;
     }
   }
 
-  // todo: realloc down or not
-  str->v.p.size = strlen((char *) str->v.p.ptr) + 1;
+  str->v.p.length = len;
 
   // cleanup
   v_free(&del);
@@ -2269,8 +2282,14 @@ void cmd_environ() {
   if (prog_error) {
     return;
   }
-  if (dev_putenv((char *) str.v.p.ptr) == -1) {
+  char *eq = strchr(str.v.p.ptr, '=');
+  if (eq == NULL) {
     rt_raise(ERR_PUTENV);
+  } else {
+    *eq = '\0';
+    if (dev_setenv(str.v.p.ptr, eq + 1) == -1) {
+      rt_raise(ERR_PUTENV);
+    }
   }
   v_free(&str);
 }
@@ -2416,8 +2435,8 @@ int sb_qcmp(var_t *a, var_t *b, bcip_t use_ip) {
 static bcip_t static_qsort_last_use_ip;
 
 int qs_cmp(const void *a, const void *b) {
-  var_t *ea = (var_t *) a;
-  var_t *eb = (var_t *) b;
+  var_t *ea = (var_t *)a;
+  var_t *eb = (var_t *)b;
   return sb_qcmp(ea, eb, static_qsort_last_use_ip);
 }
 
@@ -2448,7 +2467,7 @@ void cmd_sort() {
   if (!errf) {
     if (var_p->v.a.size > 1) {
       static_qsort_last_use_ip = use_ip;
-      qsort(var_p->v.a.ptr, var_p->v.a.size, sizeof(var_t), qs_cmp);
+      qsort(var_p->v.a.data, var_p->v.a.size, sizeof(var_t), qs_cmp);
     }
   }
   // NO RTE anymore... there is no meaning on this because of empty
@@ -2551,10 +2570,8 @@ void cmd_swap(void) {
     return;
   }
   par_getcomma();
-  {
-    if (prog_error) {
-      return;
-    }
+  if (prog_error) {
+    return;
   }
   if (code_isvar()) {
     vb = code_getvarptr();
@@ -2568,7 +2585,7 @@ void cmd_swap(void) {
   v_set(va, vb);
   v_set(vb, vc);
   v_free(vc);
-  free(vc);
+  v_detach(vc);
 }
 
 /**

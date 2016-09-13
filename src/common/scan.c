@@ -559,12 +559,6 @@ char *get_param_sect(char *text, const char *delim, char *dest) {
 }
 
 /*
- */
-int comp_geterror() {
-  return comp_error;
-}
-
-/*
  * checking for missing labels
  */
 int comp_check_labels() {
@@ -911,25 +905,6 @@ char *comp_next_char(char *source) {
   return p;
 }
 
-/*
- */
-char *comp_prev_char(const char *root, const char *ptr) {
-  char *p = (char *)ptr;
-
-  if (p > root) {
-    p--;
-  } else {
-    return (char *)root;
-  }
-  while (p > root) {
-    if (*p != ' ') {
-      return p;
-    }
-    p--;
-  }
-  return p;
-}
-
 /**
  * get next word
  * if buffer's len is zero, then the next element is not a word
@@ -1206,7 +1181,8 @@ void comp_expression(char *expr, byte no_parser) {
     } else if (*ptr == '\"') {
       // string
       ptr = bc_store_string(&bc, ptr);
-    } else if (*ptr == '[') {     // code-defined array
+    } else if (*ptr == '[') {
+      // code-defined array
       ptr++;
       level++;
       bc_add_fcode(&bc, kwCODEARRAY);
@@ -1303,7 +1279,7 @@ void comp_expression(char *expr, byte no_parser) {
   if (!comp_error) {
     if (no_parser == 0) {
       // optimization
-      bc_add_code(&bc, kwTYPE_EOC);
+      bc_eoc(&bc);
       // printf("=== before:\n"); hex_dump(bc.ptr, bc.count);
       expr_parser(&bc);
       // printf("=== after:\n"); hex_dump(bc.ptr, bc.count);
@@ -1365,7 +1341,7 @@ void comp_data_seg(char *source) {
     if (*ptr == '\0') {
       break;
     } else if (*ptr == ',') {
-      bc_add_code(&comp_data, kwTYPE_EOC);
+      bc_eoc(&comp_data);
       ptr++;
     } else {
       // find the end of the element
@@ -1429,8 +1405,7 @@ void comp_data_seg(char *source) {
     }
   }
 
-  bc_add_code(&comp_data, kwTYPE_EOC);
-  // no bc_eoc
+  bc_eoc(&comp_data);
 }
 
 /*
@@ -1573,7 +1548,7 @@ int comp_single_line_if(char *text) {
           return 0;
         }
         // store EOC
-        bc_add_code(&comp_prog, kwTYPE_EOC);
+        bc_eoc(&comp_prog);
 
         // auto-goto
         p = pthen + 6;
@@ -2389,7 +2364,7 @@ int comp_text_line_command(long idx, int decl, int sharp, char *last_cmd) {
       comp_push(comp_prog.count);
       bc_add_ctrl(&comp_prog, idx, 0, 0);
       comp_expression(comp_bc_parm, 0);
-      bc_add_code(&comp_prog, kwTYPE_EOC);
+      bc_eoc(&comp_prog);
     }
     break;
 
@@ -3519,13 +3494,7 @@ char *comp_load(const char *file_name) {
   int h = open(comp_file_name, O_BINARY | O_RDONLY, 0644);
   if (h == -1) {
     buf = NULL;
-#if defined(__CYGWIN__)
-    char temp[1024];
-    getcwd(temp, 1024);
-    panic(MSG_CANT_OPEN_FILE_AT, comp_file_name, temp);
-#else
     panic(MSG_CANT_OPEN_FILE, comp_file_name);
-#endif
   } else {
     int size;
 
@@ -3636,9 +3605,10 @@ char *comp_format_text(const char *source) {
         break;
 
       default:
-        if ((strcaselessn(p, LCN_REM_1, 5) == 0) || (strcaselessn(p, LCN_REM_2, 5) == 0)
-            || (strcaselessn(p, LCN_REM_3, 4) == 0 && last_ch == '\n')
-            || (strcaselessn(p, LCN_REM_4, 4) == 0 && last_ch == '\n')) {
+        if ((strcaselessn(p, 5, LCN_REM_1, 5) == 0)
+            || (strcaselessn(p, 5, LCN_REM_2, 5) == 0)
+            || (strcaselessn(p, 4, LCN_REM_3, 4) == 0 && last_ch == '\n')
+            || (strcaselessn(p, 4, LCN_REM_4, 4) == 0 && last_ch == '\n')) {
           // skip the rest line
           while (*p) {
             if (*p == '\n') {
@@ -4013,12 +3983,7 @@ void comp_preproc_unit_path(char *p) {
       *up++ = *p++;
     }
     *up = '\0';
-#ifdef __MINGW32__
-    sprintf(comp_bc_temp, "UNITPATH=%s", upath);
-    putenv(strdup(comp_bc_temp));
-#else
-    setenv(LCN_UNIT_PATH, upath, 1);
-#endif
+    dev_setenv(LCN_UNIT_PATH, upath);
   }
 }
 
@@ -4307,7 +4272,7 @@ int comp_pass2() {
 
   if (comp_proc_level) {
     sc_raise(MSG_MISSING_END_3);
-  } else {
+  } else if (comp_prog.size) {
     bc_add_code(&comp_prog, kwSTOP);
     comp_first_data_ip = comp_prog.count;
     comp_pass2_scan();

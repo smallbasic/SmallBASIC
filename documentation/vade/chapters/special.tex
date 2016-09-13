@@ -1,0 +1,154 @@
+\chapter{Specials}
+
+\quick{This chapter provides you with an overview over special characters
+and pre-defined constants in \SB.}
+
+\section{Characters and Operators}
+
+\absatz
+
+\begin{tabular}{|c|l|l|}
+\hline
+$<<$ & array appendix & \\
+\hline
+' & comment & \\
+\hline
+\# & comment, >>shebang<< & \\
+\hline
+\& & line continuation & see \ldots \\
+\hline
+\&. & binary/octal/hex notation & \\
+\hline
+$0.$ & binary/octal/hex notation & \\
+\hline
+" & string delimiter & \\
+\hline
++ & plus sign, string concatenation & \\
+\hline
+: & command separator & \\
+\hline
+= & assignment and comparison & \\
+\hline
+$[\ldots]$ & map initializer & \\
+\hline
+\$ & not a string sigil & \\
+\hline
+\at & variable/routine reference & \\
+\hline
+\end{tabular}
+
+\section{Pre-defined Constants}
+
+These constants are pre-defined through the interpreter. They're
+avaiable inside any \SB\ program, and their values can't be changed.
+Consequently, you also can't define your own variables with the same
+names as any of these constants.
+
+If you're missing some required values here, check the reference
+section: \Cref{keywordReference}. Some constants are actually system
+functions.
+
+\absatz
+
+\begin{tabular}{|l|l|}
+
+\hline
+TRUE & $1$, in other contexts any value different from $0$ \\
+\hline
+FALSE & $0$ \\
+\hline
+OSNAME & Operating System name\\
+\hline
+OSVER & Operating System Version\\
+\hline
+SBVER & \SB\ Version \\
+\hline
+PI & The mathematical constant, $3.1415926...$ \\
+\hline
+XMAX & Graphics: Width of the window in pixels$\dagger$ \\
+\hline
+YMAX & Graphics: Height of the window in pixels$\dagger$ \\
+\hline
+BPP & Graphics: bits per pixel (color resolution) \\
+\hline
+VIDADR & Video RAM address (only on specific drivers)\\
+\hline
+CWD & Current working directory\\
+\hline
+HOME & User's home directory\\
+\hline
+COMMAND & Command-line parameters passed to the program\\
+\hline
+\end{tabular}
+
+\absatz
+
+$\dagger$) This value is \emph{not} updated if the dimensions of the
+window are changed during the run of the program.
+
+\section{Supported ESC-Codes in Console Mode}
+
+For text-only terminals, a set of
+\href{http://en.wikipedia.org/wiki/ANSI_escape_code}{ANSI escape
+codes}\footnote{Check out the Wiki article and see which codes you can
+get to work on your machine. >>You can't permanently damage your
+computer that way<<, as the manual for my old Commodore~64 used to say.}
+has been defined to set various pseudo-graphics attributes. \SB\
+supports a partial set of these graphics and adds a few extensions of
+its own to it.
+
+Most of the commands begin with the >>Command Sequence Initializer<<, or
+CSI for short. This is a sequence of two characters with ASCII codes 27
+and 91, which are the \Co{escape} control code and an opening square
+bracket \Co{[}, resp. In the following table, this sequence is represented
+as \Co{\textbackslash e[}. For the other control sequences, the first
+letter is simply a backslash. \absatz
+
+\begin{tabular}{|l|l|}
+\hline
+\textbackslash t & tab (20 px) \\
+\hline
+\textbackslash a  & beep \\
+\hline
+\textbackslash r  & return \\
+\hline
+\textbackslash n  & next line \\
+\hline
+\textbackslash xC  & clear screen (new page) \\
+ & \\
+\hline
+\textbackslash e[K   & clear to end of line \\
+\hline
+\textbackslash e[0m  & reset all attributes to their defaults \\
+\hline
+\textbackslash e[1m  & bold on \\
+\hline
+\textbackslash e[4m  & underline on \\
+\hline
+\textbackslash e[7m  & reverse video \\
+\hline
+\textbackslash e[21m  & bold off \\
+\hline
+\textbackslash e[24m  & underline off \\
+\hline
+\textbackslash e[27m  & reverse off \\
+\hline
+\textbackslash e[3nm  & foreground color, see below\\
+\hline
+\textbackslash e[4nm  & background color, see below\\
+& \\
+\hline
+\textbackslash e[ A  & Displays an alert box \\
+\hline
+\textbackslash e[ K  & Displays the virtual keyboard \\
+\hline
+\textbackslash e[ L  & Displays a label at the bottom of the screen \\
+\hline
+
+\end{tabular}
+
+\absatz
+
+The set of colours supported is:\\
+0 black, 1 red, 2 green, 3 brown, 4 blue, 5 magenta, 6 cyan, 7 white\\
+So, \Co{\textbackslash e[42m} would set your background colour to green.

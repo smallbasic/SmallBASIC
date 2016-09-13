@@ -53,20 +53,23 @@ struct Screen : public Shape {
   void drawLabel();
   void drawShape(Shape *button);
   void drawOverlay(bool vscroll);
+  int  getIndex(FormInput *input) const;
   FormInput *getMenu(FormInput *prev, int px, int py);
+  FormInput *getNextMenu(FormInput *prev, bool up);
   FormInput *getNextField(FormInput *field);
   void getScroll(int &x, int &y) { x = _scrollX; y = _scrollY; }
   void layoutInputs(int newWidth, int newHeight);
   bool overlaps(int px, int py);
   void remove(Shape *button);
   void removeImage(unsigned imageId);
-  void removeInput(FormInput *input);
+  bool removeInput(FormInput *input);
   void removeInputs() { _inputs.removeAll(); }
   void replaceFont(int type = FONT_TYPE_MONOSPACE);
   void resetScroll() { _scrollX = 0; _scrollY = 0; }
   void setColor(long color);
   void setDirty() { if (!_dirty) { _dirty = maGetMilliSecondCount(); } }
   void setFont(bool bold, bool italic, int size);
+  void selectFont() { if (_font != -1) maFontSetCurrent(_font); }
   void setScroll(int x, int y) { _scrollX = x; _scrollY = y; }
   void setTextColor(long fg, long bg);
   void updateInputs(var_p_t form, bool setVars);

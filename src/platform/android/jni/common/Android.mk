@@ -15,7 +15,6 @@ LOCAL_MODULE     := sb_common
 LOCAL_CFLAGS     := -DHAVE_CONFIG_H=1 -DLODEPNG_NO_COMPILE_CPP
 LOCAL_SRC_FILES  :=    \
     $(COMMON)/../lib/matrix.c    \
-    $(COMMON)/../lib/search.c    \
     $(COMMON)/../lib/match.c     \
     $(COMMON)/../lib/jsmn.c      \
     $(COMMON)/../lib/lodepng.c   \
@@ -46,8 +45,6 @@ LOCAL_SRC_FILES  :=    \
     $(COMMON)/geom.c             \
     $(COMMON)/inet.c             \
     $(COMMON)/kw.c               \
-    $(COMMON)/mem.c              \
-    $(COMMON)/panic.c            \
     $(COMMON)/pfill.c            \
     $(COMMON)/plot.c             \
     $(COMMON)/proc.c             \
@@ -57,6 +54,7 @@ LOCAL_SRC_FILES  :=    \
     $(COMMON)/tasks.c            \
     $(COMMON)/var_map.c          \
     $(COMMON)/var_eval.c         \
+    $(COMMON)/hashmap.c          \
     $(COMMON)/keymap.c           \
     $(COMMON)/units.c            \
     $(COMMON)/var.c

@@ -10,7 +10,6 @@
 #include "common/sys.h"
 #include "common/str.h"
 #include "common/kw.h"
-#include "common/panic.h"
 #include "common/var.h"
 #include "common/blib.h"
 #include "common/pproc.h"
@@ -21,13 +20,6 @@
 #include "common/messages.h"
 #include "common/keymap.h"
 
-struct code_array_node_s {
-  var_t *v;
-  var_int_t col;
-  var_int_t row;
-};
-typedef struct code_array_node_s canode_t;
-
 // relative coordinates (current x/y) from blib_graph
 extern int gra_x;
 extern int gra_y;
@@ -37,6 +29,8 @@ static char *date_wd3_table[] = TABLE_WEEKDAYS_3C;
 static char *date_wdN_table[] = TABLE_WEEKDAYS_FULL;
 static char *date_m3_table[] = TABLE_MONTH_3C;
 static char *date_mN_table[] = TABLE_MONTH_FULL;
+
+#define BUF_LEN 64
 
 /*
  */
@@ -318,17 +312,18 @@ int date_weekday(long d, long m, long y) {
 /*
  * format date
  */
-void date_fmt(char *fmt, char *buf, long d, long m, long y) {
+char *date_fmt(char *fmt, long d, long m, long y) {
   int dc, mc, yc, wd, l, i;
   char *p, tmp[32];
+  cstr str;
 
-  buf[0] = '\0';
+  cstr_init(&str, BUF_LEN);
   dc = 0;
   mc = 0;
   yc = 0;
   p = fmt;
   if (!(*p)) {
-    return;
+    return str.buf;
   }
   while (1) {
     if (*p == DATEFMT_DAY_U || *p == DATEFMT_DAY_L) {
@@ -341,89 +336,94 @@ void date_fmt(char *fmt, char *buf, long d, long m, long y) {
       //
       // Separator
       //
-      if (dc) {                 // day
+      if (dc) {
+        // day
         switch (dc) {
         case 1:
           ltostr(d, tmp);
-          strcat(buf, tmp);
+          cstr_append(&str, tmp);
           break;
         case 2:
           ltostr(d, tmp);
           if (d < 10) {
-            strcat(buf, "0");
+            cstr_append(&str, "0");
           }
-          strcat(buf, tmp);
+          cstr_append(&str, tmp);
           break;
-        default:               // weekday
+        default:
+          // weekday
           wd = date_weekday(d, m, y);
           if (wd >= 0 && wd <= 6) {
             if (dc == 3) {
               // 3 letters
-              strcat(buf, date_wd3_table[wd]);
+              cstr_append(&str, date_wd3_table[wd]);
             } else {
               // full name
-              strcat(buf, date_wdN_table[wd]);
+              cstr_append(&str, date_wdN_table[wd]);
             }
           } else {
-            strcat(buf, "***");
+            cstr_append(&str, "***");
           }
         }
 
         dc = 0;
-      }                         // day
-      else if (mc) {            // month
+      }
+      else if (mc) {
+        // month
         switch (mc) {
         case 1:
           ltostr(m, tmp);
-          strcat(buf, tmp);
+          cstr_append(&str, tmp);
           break;
         case 2:
           ltostr(m, tmp);
           if (m < 10) {
-            strcat(buf, "0");
+            cstr_append(&str, "0");
           }
-          strcat(buf, tmp);
+          cstr_append(&str, tmp);
           break;
-        default:               // month
+        default:
+          // month
           if (m >= 1 && m <= 12) {
             if (mc == 3) {
               // 3 letters
-              strcat(buf, date_m3_table[m - 1]);
+              cstr_append(&str, date_m3_table[m - 1]);
             } else {
               // full name
-              strcat(buf, date_mN_table[m - 1]);
+              cstr_append(&str, date_mN_table[m - 1]);
             }
           } else {
-            strcat(buf, "***");
+            cstr_append(&str, "***");
           }
         }
-
         mc = 0;
-      }                         // month
-      else if (yc) {            // year
+      }
+      else if (yc) {
+        // year
         ltostr(y, tmp);
         l = strlen(tmp);
         if (l < yc) {
           for (i = l; i < yc; i++) {
-            strcat(buf, "0");
+            cstr_append(&str, "0");
           }
         } else {
-          strcat(buf, tmp + (l - yc));
+          cstr_append(&str, tmp + (l - yc));
         }
         yc = 0;
-      }                         // year
+      }
 
       // add separator
       tmp[0] = *p;
       tmp[1] = '\0';
-      strcat(buf, tmp);
+      cstr_append(&str, tmp);
     }
 
     if (*p == '\0') {
-      return;
+      break;
     }
-    p++;                        // next
+    p++;
   }
+  return str.buf;
 }
 
 /*
@@ -896,14 +896,14 @@ void cmd_str1(long funcCode, var_t *arg, var_t *r) {
     wp = r->v.p.ptr = (char *)malloc(2);
     wp[0] = v_getint(arg);
     wp[1] = '\0';
-    r->v.p.size = 2;
+    r->v.p.length = 2;
     break;
   case kwSTR:
     //
     // str <- STR$(n)
     //
     r->v.p.ptr = v_str(arg);
-    r->v.p.size = strlen(r->v.p.ptr) + 1;
+    r->v.p.length = strlen(r->v.p.ptr) + 1;
     break;
   case kwCBS:
     //
@@ -913,7 +913,7 @@ void cmd_str1(long funcCode, var_t *arg, var_t *r) {
     v_tostr(arg);
     IF_ERR_RETURN;
     r->v.p.ptr = cstrdup(arg->v.p.ptr);
-    r->v.p.size = strlen(r->v.p.ptr) + 1;
+    r->v.p.length = strlen(r->v.p.ptr) + 1;
     break;
   case kwBCS:
     //
@@ -924,15 +924,15 @@ void cmd_str1(long funcCode, var_t *arg, var_t *r) {
     IF_ERR_RETURN;
 
     r->v.p.ptr = bstrdup(arg->v.p.ptr);
-    r->v.p.size = strlen(r->v.p.ptr) + 1;
+    r->v.p.length = strlen(r->v.p.ptr) + 1;
     break;
   case kwOCT:
     //
     // str <- OCT$(n)
     //
-    r->v.p.ptr = (char *)malloc(64);
+    r->v.p.ptr = (char *)malloc(BUF_LEN);
     sprintf(r->v.p.ptr, "%lo", (unsigned long) v_getint(arg));
-    r->v.p.size = strlen(r->v.p.ptr) + 1;
+    r->v.p.length = strlen(r->v.p.ptr) + 1;
     break;
     //
     // str <- BIN$(n)
@@ -951,15 +951,15 @@ void cmd_str1(long funcCode, var_t *arg, var_t *r) {
     }
 
     r->v.p.ptr = tb;
-    r->v.p.size = strlen(r->v.p.ptr) + 1;
+    r->v.p.length = strlen(r->v.p.ptr) + 1;
     break;
   case kwHEX:
     //
     // str <- HEX$(n)
     //
-    r->v.p.ptr = (char *)malloc(64);
+    r->v.p.ptr = (char *)malloc(BUF_LEN);
     sprintf(r->v.p.ptr, "%lX", (unsigned long) v_getint(arg));
-    r->v.p.size = strlen(r->v.p.ptr) + 1;
+    r->v.p.length = strlen(r->v.p.ptr) + 1;
     break;
   case kwLCASE:
     //
@@ -974,7 +974,7 @@ void cmd_str1(long funcCode, var_t *arg, var_t *r) {
       *p = to_lower(*p);
       p++;
     }
-    r->v.p.size = arg->v.p.size;
+    r->v.p.length = arg->v.p.length;
     break;
   case kwUCASE:
     //
@@ -989,7 +989,7 @@ void cmd_str1(long funcCode, var_t *arg, var_t *r) {
       *p = to_upper(*p);
       p++;
     }
-    r->v.p.size = arg->v.p.size;
+    r->v.p.length = arg->v.p.length;
     break;
   case kwLTRIM:
     //
@@ -1003,7 +1003,7 @@ void cmd_str1(long funcCode, var_t *arg, var_t *r) {
     }
     r->v.p.ptr = (char *)malloc(strlen(p) + 1);
     strcpy(r->v.p.ptr, p);
-    r->v.p.size = strlen(r->v.p.ptr) + 1;
+    r->v.p.length = strlen(r->v.p.ptr) + 1;
     break;
   case kwTRIM:
     //
@@ -1029,7 +1029,7 @@ void cmd_str1(long funcCode, var_t *arg, var_t *r) {
     }
     r->v.p.ptr = (char *)malloc(strlen(arg->v.p.ptr) + 1);
     strcpy(r->v.p.ptr, arg->v.p.ptr);
-    r->v.p.size = strlen(r->v.p.ptr) + 1;
+    r->v.p.length = strlen(r->v.p.ptr) + 1;
 
     // alltrim
     if (funcCode == kwTRIM) {
@@ -1039,7 +1039,7 @@ void cmd_str1(long funcCode, var_t *arg, var_t *r) {
       }
       r->v.p.ptr = (char *)malloc(strlen(p) + 1);
       strcpy(r->v.p.ptr, p);
-      r->v.p.size = strlen(r->v.p.ptr) + 1;
+      r->v.p.length = strlen(r->v.p.ptr) + 1;
       free(tmp_p);
     }
     break;
@@ -1096,15 +1096,15 @@ void cmd_str1(long funcCode, var_t *arg, var_t *r) {
         sprintf(r->v.p.ptr, "\033[9%dm", (int) l - 90);
       break;
     }
-    r->v.p.size = strlen(r->v.p.ptr) + 1;
+    r->v.p.length = strlen(r->v.p.ptr) + 1;
     break;
   case kwTAB:
     l = v_igetval(arg);
     r->v.p.ptr = malloc(16);
     *r->v.p.ptr = '\0';
-    r->v.p.size = 16;
     sprintf(r->v.p.ptr, "\033[%dG", (int) l);
-    break;
+    r->v.p.length = strlen(r->v.p.ptr) + 1;
+   break;
   case kwSPACE:
     //
     // str <- SPACE$(n)
@@ -1115,7 +1115,7 @@ void cmd_str1(long funcCode, var_t *arg, var_t *r) {
       wp[i] = ' ';
     }
     wp[l] = '\0';
-    r->v.p.size = strlen(r->v.p.ptr) + 1;
+    r->v.p.length = strlen(r->v.p.ptr) + 1;
     break;
   case kwENVIRONF:
     //
@@ -1125,19 +1125,16 @@ void cmd_str1(long funcCode, var_t *arg, var_t *r) {
     IF_ERR_RETURN;
     if (*arg->v.p.ptr != '\0') {
       // return the variable
-      char *v;
-      int l;
-
-      v = dev_getenv(arg->v.p.ptr);
+      const char *v = dev_getenv(arg->v.p.ptr);
       if (v) {
-        l = strlen(v) + 1;
+        int l = strlen(v) + 1;
         r->v.p.ptr = malloc(l);
         strcpy(r->v.p.ptr, v);
-        r->v.p.size = l;
+        r->v.p.length = l;
       } else {
         r->v.p.ptr = malloc(2);
         *r->v.p.ptr = '\0';
-        r->v.p.size = 1;
+        r->v.p.length = 1;
       }
     } else {
       // return all
@@ -1149,10 +1146,11 @@ void cmd_str1(long funcCode, var_t *arg, var_t *r) {
       if (count) {
         v_toarray1(r, count);
         for (i = 0; i < count; i++) {
-          elem_p = (var_t *) (r->v.a.ptr + (sizeof(var_t) * i));
+          const char *value = dev_getenv_n(i);
+          elem_p = v_elem(r, i);
           elem_p->type = V_STR;
-          elem_p->v.p.ptr = strdup((char *)dev_getenv_n(i));
-          elem_p->v.p.size = strlen(elem_p->v.p.ptr) + 1;
+          elem_p->v.p.ptr = strdup(value != NULL ? value : "");
+          elem_p->v.p.length = strlen(elem_p->v.p.ptr) + 1;
         }
       } else {
         // no vars found
@@ -1164,7 +1162,7 @@ void cmd_str1(long funcCode, var_t *arg, var_t *r) {
     //
     // str <- TIMESTAMP(file)
     //
-    r->v.p.size = dev_filemtime(arg->v.p.ptr, &r->v.p.ptr);
+    r->v.p.length = dev_filemtime(arg->v.p.ptr, &r->v.p.ptr);
     break;
 
   default:
@@ -1276,8 +1274,8 @@ void cmd_str0(long funcCode, var_t *r) {
     tms = *localtime(&now);
     r->type = V_STR;
     r->v.p.ptr = malloc(32);
-    r->v.p.size = 32;
     sprintf(r->v.p.ptr, "%02d/%02d/%04d", tms.tm_mday, tms.tm_mon + 1, tms.tm_year + 1900);
+    r->v.p.length = strlen(r->v.p.ptr) + 1;
     break;
   case kwTIME:
     //
@@ -1287,8 +1285,8 @@ void cmd_str0(long funcCode, var_t *r) {
     tms = *localtime(&now);
     r->type = V_STR;
     r->v.p.ptr = malloc(32);
-    r->v.p.size = 32;
     sprintf(r->v.p.ptr, "%02d:%02d:%02d", tms.tm_hour, tms.tm_min, tms.tm_sec);
+    r->v.p.length = strlen(r->v.p.ptr) + 1;
     break;
   default:
     rt_raise("Unsupported built-in function call %ld, please report this bug (6)", funcCode);
@@ -1321,7 +1319,7 @@ void cmd_strN(long funcCode, var_t *r) {
         r->v.p.ptr = transdup(s1, s2, "");
       }
       r->type = V_STR;
-      r->v.p.size = strlen(r->v.p.ptr) + 1;
+      r->v.p.length = strlen(r->v.p.ptr) + 1;
     }
     break;
   case kwCHOP:
@@ -1334,7 +1332,7 @@ void cmd_strN(long funcCode, var_t *r) {
         r->v.p.ptr = strdup(s1);
         r->v.p.ptr[strlen(r->v.p.ptr) - 1] = '\0';
         r->type = V_STR;
-        r->v.p.size = strlen(r->v.p.ptr) + 1;
+        r->v.p.length = strlen(r->v.p.ptr) + 1;
       } else {
         v_zerostr(r);
       }
@@ -1370,7 +1368,7 @@ void cmd_strN(long funcCode, var_t *r) {
         for (i = 0; i < count; i++) {
           strcat(r->v.p.ptr, tmp_p);
         }
-        r->v.p.size = strlen(r->v.p.ptr) + 1;
+        r->v.p.length = strlen(r->v.p.ptr) + 1;
       }
     }
     break;
@@ -1383,7 +1381,7 @@ void cmd_strN(long funcCode, var_t *r) {
     if (!prog_error) {
       r->type = V_STR;
       r->v.p.ptr = sqzdup(s1);
-      r->v.p.size = strlen(r->v.p.ptr) + 1;
+      r->v.p.length = strlen(r->v.p.ptr) + 1;
     }
     break;
     //
@@ -1398,7 +1396,7 @@ void cmd_strN(long funcCode, var_t *r) {
       } else {
         r->v.p.ptr = encldup(s1, "\"\"");
       }
-      r->v.p.size = strlen(r->v.p.ptr) + 1;
+      r->v.p.length = strlen(r->v.p.ptr) + 1;
     }
     break;
     //
@@ -1443,7 +1441,7 @@ void cmd_strN(long funcCode, var_t *r) {
           r->v.p.ptr = discldup(s1, "\"\"", "''");
         }
       }
-      r->v.p.size = strlen(r->v.p.ptr) + 1;
+      r->v.p.length = strlen(r->v.p.ptr) + 1;
     }
     break;
 
@@ -1477,7 +1475,7 @@ void cmd_strN(long funcCode, var_t *r) {
           memcpy(r->v.p.ptr, s1, count);
         }
         r->v.p.ptr[count] = '\0';
-        r->v.p.size = count + 1;
+        r->v.p.length = count + 1;
       }
     }
     break;
@@ -1497,7 +1495,7 @@ void cmd_strN(long funcCode, var_t *r) {
         l = strlen(s1) + 1;
         r->v.p.ptr = malloc(l);
         strcpy(r->v.p.ptr, s1);
-        r->v.p.size = l;
+        r->v.p.length = l;
         *p = lc;
       } else {
         v_zerostr(r);
@@ -1524,7 +1522,7 @@ void cmd_strN(long funcCode, var_t *r) {
           memcpy(r->v.p.ptr, s1 + (len - count), count + 1);
         }
         r->v.p.ptr[count] = '\0';
-        r->v.p.size = count + 1;
+        r->v.p.length = count + 1;
       }
     }
     break;
@@ -1543,7 +1541,7 @@ void cmd_strN(long funcCode, var_t *r) {
         l = strlen(p) + 1;
         r->v.p.ptr = malloc(l);
         memcpy(r->v.p.ptr, p, l);
-        r->v.p.size = l;
+        r->v.p.length = l;
       } else {
         v_zerostr(r);
       }
@@ -1574,7 +1572,7 @@ void cmd_strN(long funcCode, var_t *r) {
         l = strlen(s1) + 1;
         r->v.p.ptr = malloc(l);
         memcpy(r->v.p.ptr, s1, l);
-        r->v.p.size = l;
+        r->v.p.length = l;
         *p = lc;
       } else {
         v_zerostr(r);
@@ -1604,7 +1602,7 @@ void cmd_strN(long funcCode, var_t *r) {
         l = strlen(p) + 1;
         r->v.p.ptr = malloc(l);
         memcpy(r->v.p.ptr, p, l);
-        r->v.p.size = l;
+        r->v.p.length = l;
       } else {
         v_zerostr(r);
       }
@@ -1613,7 +1611,7 @@ void cmd_strN(long funcCode, var_t *r) {
 
   case kwREPLACE:
     //
-    // str <- REPLACE$ ( source, pos, str [, len] )
+    // str <- REPLACE$(source, pos, str [, len])
     //
     v_init(&arg2);
 
@@ -1621,37 +1619,44 @@ void cmd_strN(long funcCode, var_t *r) {
     start = par_next_int(1);
     var_p2 = par_next_str(&arg2, 0);
     count = par_getval(-1);
-    if (!prog_error) {
-      int ls1 = v_strlen(var_p1);
-      int ls2 = v_strlen(var_p2);
+    if (count < -1) {
+      err_stridx(count);
+    } else if (!prog_error) {
+      // write str into pos of source the return the new string
+      int len_source = v_strlen(var_p1);
+      int len_str = v_strlen(var_p2);
 
       start--;
-      if (start < 0 || start > ls1) {
+      if (start < 0 || start > len_source) {
         err_stridx(start);
+        v_free(&arg2);
         break;
       }
-
-      r->v.p.ptr = malloc(ls1 + ls2 + 1);
-
-      // copy the left-part
-      if (start > 0) {
-        memcpy(r->v.p.ptr, var_p1->v.p.ptr, start);
-        r->v.p.ptr[start] = '\0';
-      } else {
-        *r->v.p.ptr = '\0';
+      if (count < 0) {
+        // how much of "str" to retain
+        count = len_str;
       }
-      // insert the string
+
+      // calculate the final length
+      r->v.p.length = start + len_str + 1;
+      if (start + count < len_source) {
+        r->v.p.length += (len_source - (start + count));
+      }
+      r->v.p.ptr = malloc(r->v.p.length);
+
+      if (start > 0) {
+        // copy the left side of "source"
+        memcpy(r->v.p.ptr, var_p1->v.p.ptr, start);
+      }
+
+      // insert "str"
+      r->v.p.ptr[start] = '\0';
       strcat(r->v.p.ptr, var_p2->v.p.ptr);
 
-      // add the right-part
-      if (count == -1) {
-        count = ls2;
+      // add the remainder of "source" startin at index "count"
+      if (start + count < len_source) {
+        strcat(r->v.p.ptr, var_p1->v.p.ptr + start + count);
       }
-      if (start + count < ls1) {
-        strcat(r->v.p.ptr, (var_p1->v.p.ptr + start + count));
-      }
-      r->v.p.ptr[ls1 + ls2] = '\0';
-      r->v.p.size = ls1 + ls2 + 1;
     }
     v_free(&arg2);
     break;
@@ -1675,7 +1680,7 @@ void cmd_strN(long funcCode, var_t *r) {
         r->v.p.ptr = malloc(len + 1);
         memcpy(r->v.p.ptr, var_p1->v.p.ptr + start, len);
         r->v.p.ptr[len] = '\0';
-        r->v.p.size = len + 1;
+        r->v.p.length = len + 1;
       }
     }
     break;
@@ -1726,29 +1731,25 @@ void cmd_intN(long funcCode, var_t *r) {
     //
     r->v.i = 0;
     start = 1;
-    par_massget("iSS", &start, &s1, &s2);
-    if (!prog_error) {
-      l = strlen(s1);
-      if (l) {
-        start--;
-        if (start >= l || start < 0) {
-          err_stridx(start);
-        } else {
-          p = s1 + start;
-          l = strlen(s2);
-
-          while (*p) {
-            if (strncmp(p, s2, l) == 0) {
-              r->v.i = (p - s1) + 1;
-              if (funcCode == kwINSTR) {
-                break;
-              }
+    if (par_massget("iSS", &start, &s1, &s2) > 1 &&
+        !prog_error && s1[0] != '\0' && s2[0] != '\0') {
+      start--;
+      if (start >= strlen(s1) || start < 0) {
+        err_stridx(start);
+      } else {
+        p = s1 + start;
+        l = strlen(s2);
+        while (*p) {
+          if (strncmp(p, s2, l) == 0) {
+            r->v.i = (p - s1) + 1;
+            if (funcCode == kwINSTR) {
+              break;
             }
-            p++;
           }
-        }                       // start
-      }                         // l
-    }                           // error
+          p++;
+        }
+      }
+    }
     break;
   case kwISARRAY:
     cmd_is_var_type(V_ARRAY, &arg1, r);
@@ -1778,7 +1779,7 @@ void cmd_intN(long funcCode, var_t *r) {
 
     if (!prog_error) {
       if (var_p->type == V_STR) {
-        char buf[64], *np;
+        char buf[BUF_LEN], *np;
         int type;
         var_int_t lv = 0;
         var_num_t dv = 0;
@@ -2081,26 +2082,24 @@ void cmd_genfunc(long funcCode, var_t *r) {
         rt_raise(ERR_FORMAT_INVALID_FORMAT);
         v_free(&arg);
       } else {
-        char *buf;
-
-        buf = malloc(1024);
+        char *buf = NULL;
         v_init(&arg2);
         eval(&arg2);
         if (!prog_error) {
           switch (arg2.type) {
           case V_STR:
-            format_str(buf, arg.v.p.ptr, arg2.v.p.ptr);
+            buf = format_str(arg.v.p.ptr, arg2.v.p.ptr);
           case V_INT:
             if (arg2.type == V_INT) {
-              format_num(buf, arg.v.p.ptr, arg2.v.i);
+              buf = format_num(arg.v.p.ptr, arg2.v.i);
             }
           case V_NUM:
             if (arg2.type == V_NUM) {
-              format_num(buf, arg.v.p.ptr, arg2.v.n);
+              buf = format_num(arg.v.p.ptr, arg2.v.n);
             }
             r->type = V_STR;
-            r->v.p.size = strlen(buf) + 1;
-            r->v.p.ptr = malloc(r->v.p.size);
+            r->v.p.length = strlen(buf) + 1;
+            r->v.p.ptr = malloc(r->v.p.length);
             strcpy(r->v.p.ptr, buf);
             break;
           default:
@@ -2207,13 +2206,14 @@ void cmd_genfunc(long funcCode, var_t *r) {
       }
     }
 
-    if (funcCode == kwDATEFMT) {  // format
+    if (funcCode == kwDATEFMT) {
+      // format
       r->type = V_STR;
-      r->v.p.size = 96;
-      r->v.p.ptr = malloc(r->v.p.size);
-      date_fmt(arg.v.p.ptr, r->v.p.ptr, d, m, y);
+      r->v.p.ptr = date_fmt(arg.v.p.ptr, d, m, y);
+      r->v.p.length = strlen(r->v.p.ptr) + 1;
       v_free(&arg);
-    } else {                    // weekday
+    } else {
+      // weekday
       r->v.i = date_weekday(d, m, y);
     }
   }
@@ -2224,9 +2224,7 @@ void cmd_genfunc(long funcCode, var_t *r) {
     //
   case kwINPUTF:
     count = par_getint();
-    IF_ERR_RETURN
-    ;
-
+    IF_ERR_RETURN;
     if (code_peek() == kwTYPE_SEP) {
       par_getcomma();
       IF_ERR_RETURN;
@@ -2268,13 +2266,13 @@ void cmd_genfunc(long funcCode, var_t *r) {
         strcat(r->v.p.ptr, tmp);
       }
 
-      r->v.p.size = len + 1;
+      r->v.p.length = len + 1;
       r->v.p.ptr[len] = '\0';
     } else {
       // file
       r->type = V_STR;
       r->v.p.ptr = malloc(count + 1);
-      r->v.p.size = count + 1;
+      r->v.p.length = count + 1;
       dev_fread(handle, (byte *)r->v.p.ptr, count);
       r->v.p.ptr[count] = '\0';
     }
@@ -2608,7 +2606,7 @@ void cmd_genfunc(long funcCode, var_t *r) {
   case kwSTATSPREADP:
     ready = 0;
     tcount = 0;
-    len = 64;
+    len = BUF_LEN;
     dar = (var_num_t*) malloc(sizeof(var_num_t) * len);
 
     do {
@@ -2630,7 +2628,7 @@ void cmd_genfunc(long funcCode, var_t *r) {
               elem_p = v_getelemptr(basevar_p, i);
               if (!prog_error) {
                 if (tcount >= len) {
-                  len += 64;
+                  len += BUF_LEN;
                   dar = (var_num_t*) realloc(dar, sizeof(var_num_t) * len);
                 }
 
@@ -2653,7 +2651,7 @@ void cmd_genfunc(long funcCode, var_t *r) {
         eval(&arg);
         if (!prog_error) {
           if (tcount >= len) {
-            len += 64;
+            len += BUF_LEN;
             dar = (var_num_t*) realloc(dar, sizeof(var_num_t) * len);
           }
 
@@ -2748,10 +2746,12 @@ void cmd_genfunc(long funcCode, var_t *r) {
         mat_tov(r, m2, n, 1, 1);
       }
 
-      if (m1)
+      if (m1) {
         free(m1);
-      if (m2)
+      }
+      if (m2) {
         free(m2);
+      }
     }
   }
     break;
@@ -2812,84 +2812,11 @@ void cmd_genfunc(long funcCode, var_t *r) {
     }
   }
     break;
-    //
-    // array <- CODEARRAY(x1,y1...[;x2,y2...])
-    // its used to create dynamic arrays.
-    // its not a function, its the [ ] operators
-    //
-  case kwCODEARRAY: {
-    var_int_t curcol, ready, count, pos;
-    var_t *e;
-    int32_t rows, cols;
-    tmplist_t lst;
-    canode_t tnode, *tp;
-    tmpnode_t *cur;
 
-    rows = 0;
-    cols = 0;
-    curcol = 0;
-    ready = 0;
-    count = 0;
-    tmplist_init(&lst);
-
-    do {
-      code = code_peek();
-      switch (code) {
-      case kwTYPE_SEP:       // separator
-        code_skipnext();
-        if (code_peek() == ';') { // next row
-          rows++;
-          curcol = 0;
-        } else {                // next col
-          curcol++;
-          if (curcol > cols) {
-            cols = curcol;
-          }
-        }
-        code_skipnext();
-        break;
-      case kwTYPE_LEVEL_END: // ) -- end of parameters
-        ready = 1;
-        break;
-      default:
-        tnode.col = curcol;
-        tnode.row = rows;
-        tnode.v = v_new();
-        eval(tnode.v);
-        if (!prog_error) {
-          tmplist_add(&lst, &tnode, sizeof(canode_t));
-          count++;
-        }
-      }
-
-      //
-    } while (!ready);
-
-    //
-    // create the array
-    //
-    rows++;
-    cols++;
-    if (rows > 1) {
-      v_tomatrix(r, rows, cols);
-    } else {
-      v_toarray1(r, cols);
-    }
-    cur = lst.head;
-    while (cur) {
-      tp = (canode_t *) cur->data;
-      pos = tp->row * cols + tp->col;
-      e = (var_t *) (r->v.a.ptr + (sizeof(var_t) * pos));
-      v_set(e, tp->v);
-      v_free(tp->v);
-      free(tp->v);
-      cur = cur->next;
-    }
-
-    tmplist_clear(&lst);
-  }
-
+  case kwCODEARRAY:
+    map_from_codearray(r);
     break;
+
     //
     // array <- FILES([wildcards])
     //
@@ -2915,11 +2842,10 @@ void cmd_genfunc(long funcCode, var_t *r) {
 
         // add the entries
         for (i = 0; i < count; i++) {
-          elem_p = (var_t *) (r->v.a.ptr + (sizeof(var_t) * i));
-
+          elem_p = v_elem(r, i);
           elem_p->type = V_STR;
-          elem_p->v.p.size = strlen(list[i]) + 1;
-          elem_p->v.p.ptr = malloc(elem_p->v.p.size);
+          elem_p->v.p.length = strlen(list[i]) + 1;
+          elem_p->v.p.ptr = malloc(elem_p->v.p.length);
           strcpy(elem_p->v.p.ptr, list[i]);
         }
       } else {
@@ -2952,8 +2878,7 @@ void cmd_genfunc(long funcCode, var_t *r) {
 
         // add the entries
         for (i = 0, x = xmin; i < count; i++, x += dx) {
-          elem_p = (var_t *) (r->v.a.ptr + (sizeof(var_t) * i));
-
+          elem_p = v_elem(r, i);
           elem_p->type = V_NUM;
           elem_p->v.n = x;
         }

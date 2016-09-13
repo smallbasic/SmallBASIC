@@ -351,13 +351,6 @@ void dev_cls(void);
 /**
  * @ingroup dev_g
  *
- * clear from cursor to end-of-line
- */
-void dev_clreol(void);
-
-/**
- * @ingroup dev_g
- *
  * sets the current x, y for texts or graphics
  *
  * @note AT command
@@ -982,7 +975,7 @@ char *dev_getcwd(void);
  * @param var the name of the variable
  * @return on success the value; otherwise NULL
  */
-char *dev_getenv(const char *var);
+const char *dev_getenv(const char *var);
 
 /**
  * @ingroup dev
@@ -1000,17 +993,18 @@ int dev_env_count();
  * @param n the index of the variable
  * @return on success the value; otherwise NULL
  */
-char *dev_getenv_n(int n);
+const char *dev_getenv_n(int n);
 
 /**
  * @ingroup dev
  *
  * sets a system environment variable
  *
- * @param setvar is a string in style "var=value"
+ * @param key the key to set
+ * @param value the value to set
  * @return non-zero on success
  */
-int dev_putenv(const char *setvar);
+int dev_setenv(const char *key, const char *value);
 
 /**
  * @ingroup dev_f
@@ -1047,6 +1041,25 @@ dword dev_get_millisecond_count();
  * Trace or debug at the given line number
  */
 void dev_trace_line(int lineNo);
+
+/**
+ * @ingroup sys
+ *
+ * print a message and quits
+ *
+ * @param fmt the printf's style format
+ * @param ... the format's parameters
+ */
+void panic(const char *fmt, ...);
+
+/**
+ * @ingroup sys
+ *
+ * write to logfile
+ *
+ * @param buf is the string to write
+ */
+void lwrite(const char *buf);
 
 #if defined(__cplusplus)
 }

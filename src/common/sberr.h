@@ -36,11 +36,11 @@ void rt_raise(const char *fmt, ...);
 #define err_matdim()     rt_raise("%s (%d): Dimension error.\n", __FILE__, __LINE__)
 
 void err_syntax(int keyword, const char *fmt);
+void err_syntax_unknown();
 void err_parm_num(int found, int expected);
 void err_typemismatch(void);
 void err_stackmess(void);
 void err_parm_byref(int n);
-void err_notarray(void);
 void err_out_of_range(void);
 void err_missing_lp(void);
 void err_missing_sep(void);
@@ -71,7 +71,6 @@ void err_parsepoly(int idx, int mark);
 void err_bfn_err(long code);
 void err_gpf(bcip_t addr, int bc);
 void err_pcode_err(long pcode);
-void err_chain_err(const char *file);
 void err_const(void);
 void err_notavar(void);
 void err_run_err(const char *file);

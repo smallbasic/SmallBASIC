@@ -78,6 +78,8 @@ typedef void (*method) (struct var_s *self);
 struct var_s {
   byte type; /**< variable's type */
   byte const_flag; /**< non-zero if constants */
+  byte pooled; /** whether held in pooled memory */
+  byte attached; /** whether attached in pooled memory */
 
   // value
   union {
@@ -93,7 +95,8 @@ struct var_s {
     // associative array/map
     struct {
       void *map; /** pointer the map structure */
-      int32_t size;
+      uint32_t count;
+      uint32_t size;
     } m;
 
     // reference variable
@@ -108,14 +111,14 @@ struct var_s {
     // generic ptr (string)
     struct {
       char *ptr; /**< data ptr (possibly, string pointer) */
-      int32_t size; /**< the size of string */
-      int32_t pos; /**< position in string (used by pv_* functions) */
+      uint32_t length; /**< the string length */
+      uint32_t pos; /**< position in string (used by pv_* functions) */
     } p;
 
     // array
     struct {
-      byte *ptr; /**< array data ptr (sizeof(var_t) * size) */
-      int32_t size; /**< the number of elements */
+      struct var_s *data; /**< array data pointer */
+      uint32_t size; /**< the number of elements */
       int32_t lbound[MAXDIM]; /**< lower bound */
       int32_t ubound[MAXDIM]; /**< upper bound */
       byte maxdim; /**< number of dimensions */
@@ -227,11 +230,27 @@ typedef struct stknode_s stknode_t;
 /**
  * @ingroup var
  *
+ * intialises the var pool
+ */
+void v_init_pool(void);
+
+/**
+ * @ingroup var
+ *
  * creates a new variable
  *
  * @return a newly created var_t object
  */
 var_t *v_new(void);
+
+/**
+ * @ingroup var
+ *
+ * creates a new variable array
+ *
+ * @return a newly created var_t array of the given size
+ */
+void v_new_array(var_t *var, unsigned size);
 
 /**
  * @ingroup var
@@ -401,17 +420,6 @@ void v_tomatrix(var_t *v, int r, int c);
 /**
  * @ingroup var
  *
- * creates and returns a new matrix (array RxC) variable
- *
- * @param r the number of the rows
- * @param c the number of the columns
- * @return a newly created variable
- */
-var_t *v_new_matrix(int r, int c);
-
-/**
- * @ingroup var
- *
  * converts the variable v to an array of R elements.
  * R can be zero for zero-length arrays
  *
@@ -487,7 +495,7 @@ int v_length(var_t *v);
  Old API routines that is good to use them:
 
  v_init(), v_free()                  --- basic
- v_new(), v_clone(), v_new_matrix()  --- create vars in heap, dont forget the free()
+ v_new(), v_clone()                  --- create vars in heap, dont forget the free()
 
  v_resize_array()                    --- resize an 1-dim array
  v_tomatrix(), v_toarray1()          --- convertion to matrix (RxC) or 1D array
@@ -514,17 +522,6 @@ void v_setstr(var_t *var, const char *string);
  * @param string is the string
  */
 void v_setstrn(var_t *var, const char *string, int len);
-
-/**
- * @ingroup var
- *
- * Sets a string value to variable 'var'.
- * printf() style.
- *
- * @param var is the variable
- * @param fmt is the the format
- */
-void v_setstrf(var_t *var, const char *fmt, ...);
 
 /**
  * @ingroup var
@@ -559,49 +556,11 @@ void v_setint(var_t *var, var_int_t integer);
 /**
  * @ingroup var
  *
- * makes 'var' an array of integers and copies the itable elements to it
- *
- * @param var is the variable
- * @param itable is the table of integers
- * @param count the number of the elements
- */
-void v_setintarray(var_t *var, int32_t *itable, int count);
-
-/**
- * @ingroup var
- *
- * makes 'var' an array of reals and copies the ntable elements to it
- *
- * @param var is the variable
- * @param ntable is the table of doubles
- * @param count the number of the elements
- */
-void v_setrealarray(var_t *var, var_num_t *ntable, int count);
-
-/**
- * @ingroup var
- *
- * makes 'var' an array of strings and copies the ctable elements to it
- *
- * @param var is the variable
- * @param ctable is the table of strings
- * @param count the number of the elements
- */
-void v_setstrarray(var_t *var, char **ctable, int count);
-
-/**
- * @ingroup var
- *
  * makes 'var' an empty string variable
  *
  * @param var is the variable
  */
 void v_zerostr(var_t *var);
-
-/**< makes 'var' an empry integer variable
- @ingroup var
- */
-#define v_zeroint(r) v_init((r))
 
 /**
  * @ingroup var
@@ -621,7 +580,7 @@ void v_input2var(const char *str, var_t *var);
  * on the array x. i is a zero-based, one dim, index.
  * @ingroup var
 */
-#define v_elem(x,i)     (var_t *) ( (x)->v.a.ptr + (sizeof(var_t) * (i)))
+#define v_elem(var, i) &((var)->v.a.data[i])
 
 /**
  * < the number of the elements of the array (x)

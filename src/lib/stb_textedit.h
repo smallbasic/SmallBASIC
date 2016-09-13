@@ -1,4 +1,4 @@
-// stb_textedit.h - v1.6  - public domain - Sean Barrett
+// stb_textedit.h - v1.8  - public domain - Sean Barrett
 // Development of this library was sponsored by RAD Game Tools
 //
 // This C header file implements the guts of a multi-line text-editing
@@ -17,9 +17,9 @@
 //
 // LICENSE
 //
-// This software has been placed in the public domain by its author.
-// Where that dedication is not recognized, you are granted a perpetual,
-// irrevocable license to copy and modify this file as you see fit.
+//   This software is dual-licensed to the public domain and under the following
+//   license: you are granted a perpetual, irrevocable license to copy, modify,
+//   publish, and distribute this file as you see fit.
 //
 //
 // DEPENDENCIES
@@ -31,6 +31,8 @@
 //
 // VERSION HISTORY
 //
+//   1.8  (2016-04-02) better keyboard handling when mouse button is down
+//   1.7  (2015-09-13) change y range handling in case baseline is non-0
 //   1.6  (2015-04-15) allow STB_TEXTEDIT_memmove
 //   1.5  (2014-09-10) add support for secondary keys for OS X
 //   1.4  (2014-08-17) fix signed/unsigned warnings
@@ -45,9 +47,13 @@
 // ADDITIONAL CONTRIBUTORS
 //
 //   Ulf Winklemann: move-by-word in 1.1
-//   Scott Graham: mouse selection bugfix in 1.3
 //   Fabian Giesen: secondary key inputs in 1.5
 //   Martins Mozeiko: STB_TEXTEDIT_memmove
+//
+//   Bugfixes:
+//      Scott Graham
+//      Daniel Keller
+//      Omar Cornut
 //
 // USAGE
 //
@@ -380,9 +386,6 @@ static int stb_text_locate_coord(STB_TEXTEDIT_STRING *str, float x, float y)
    float base_y = 0, prev_x;
    int i=0, k;
 
-   if (y < 0)
-      return 0;
-
    r.x0 = r.x1 = 0;
    r.ymin = r.ymax = 0;
    r.num_chars = 0;
@@ -392,6 +395,9 @@ static int stb_text_locate_coord(STB_TEXTEDIT_STRING *str, float x, float y)
       STB_TEXTEDIT_LAYOUTROW(&r, str, i);
       if (r.num_chars <= 0)
          return n;
+
+      if (i==0 && y < base_y + r.ymin)
+         return 0;
 
       if (y < base_y + r.ymax)
          break;
@@ -446,6 +452,8 @@ static void stb_textedit_click(STB_TEXTEDIT_STRING *str, STB_TexteditState *stat
 static void stb_textedit_drag(STB_TEXTEDIT_STRING *str, STB_TexteditState *state, float x, float y)
 {
    int p = stb_text_locate_coord(str, x, y);
+   if (state->select_start == state->select_end)
+      state->select_start = state->cursor;
    state->cursor = state->select_end = p;
 }
 
@@ -988,11 +996,11 @@ retry:
          stb_textedit_clamp(str, state);
          stb_textedit_move_to_first(state);
          stb_textedit_find_charpos(&find, str, state->cursor, state->single_line);
-         state->cursor = find.first_char + find.length;
-         if (STB_TEXTEDIT_GETCHAR(str, state->cursor - 1) == STB_TEXTEDIT_NEWLINE) {
-           state->cursor--;
-         }
+
          state->has_preferred_x = 0;
+         state->cursor = find.first_char + find.length;
+         if (find.length > 0 && STB_TEXTEDIT_GETCHAR(str, state->cursor-1) == STB_TEXTEDIT_NEWLINE)
+            --state->cursor;
          break;
       }
 
@@ -1017,11 +1025,11 @@ retry:
          stb_textedit_clamp(str, state);
          stb_textedit_prep_selection_at_cursor(state);
          stb_textedit_find_charpos(&find, str, state->cursor, state->single_line);
-         state->cursor = state->select_end = find.first_char + find.length;
          state->has_preferred_x = 0;
-         if (STB_TEXTEDIT_GETCHAR(str, state->cursor - 1) == STB_TEXTEDIT_NEWLINE) {
-           state->cursor--;
-         }
+         state->cursor = find.first_char + find.length;
+         if (find.length > 0 && STB_TEXTEDIT_GETCHAR(str, state->cursor-1) == STB_TEXTEDIT_NEWLINE)
+            --state->cursor;
+         state->select_end = state->cursor;
          break;
       }
 
@@ -1076,7 +1084,8 @@ static void stb_textedit_discard_redo(StbUndoState *state)
          int n = state->undo_rec[k].insert_length, i;
          // delete n characters from all other records
          state->redo_char_point = state->redo_char_point + (short) n; // vsnet05
-         STB_TEXTEDIT_memmove(state->undo_char + state->redo_char_point, state->undo_char + state->redo_char_point-n, (size_t) ((STB_TEXTEDIT_UNDOSTATECOUNT - state->redo_char_point)*sizeof(STB_TEXTEDIT_CHARTYPE)));
+         short count = state->redo_char_point > STB_TEXTEDIT_UNDOSTATECOUNT ? STB_TEXTEDIT_UNDOSTATECOUNT : state->redo_char_point;
+         STB_TEXTEDIT_memmove(state->undo_char + state->redo_char_point, state->undo_char + state->redo_char_point-n, (size_t) ((STB_TEXTEDIT_UNDOSTATECOUNT - count)*sizeof(STB_TEXTEDIT_CHARTYPE)));
          for (i=state->redo_point; i < k; ++i)
             if (state->undo_rec[i].char_storage >= 0)
                state->undo_rec[i].char_storage = state->undo_rec[i].char_storage + (short) n; // vsnet05

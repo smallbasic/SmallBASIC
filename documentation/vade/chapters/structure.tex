@@ -1,0 +1,417 @@
+\chapter{Structuring a Program}
+
+\quick{This chapter will give you an overview about how you can avoid
+producing the notorious >>spaghetti code<<, and structure your program
+instead into blocks which are easier to debug and maintain.}
+
+\section{Routines: Procedures and Functions}
+
+Routines (also called >>subroutines<<) are blocks of code set apart from
+the main code. This can be done for a variety of reasons, for example
+simply to break down a complex task into individual stages which are
+more readily analyzed and maintained. Another reason is reusability; if
+the program needs to perform the same task in several stages, it's more
+economical to write the code once and reuse it as is necessary.
+
+Routines come in two flavours: >>Procedures<< and >>functions<<.
+Syntactically, in \SB\ procedures and functions are almost equivalent.
+The only difference is that a function returns a value when called,
+whereas procedures do not. \textbf{A function can only return a single
+variable}, but this may be an arbitrarily complex map. If you need to
+manipulate more than a single value, you can also pass parameters by
+reference, see \Cref{passingParameters} below.
+
+\subsection{Definition}
+
+Procedures and functions are defined by embracing a block of code
+between the \Co{sub} or \Co{func} keyword, resp., at the beginning
+followed by the routine's name, and \Co{end} at the end of the block.
+Parameters are defined as a comma-separated list of variables following
+the routine name in parentheses:
+
+\begin{lstlisting}
+sub x(hoogla, boogla)
+	...
+end
+
+func y(arg1, arg2, arg3)
+	...
+	y= arg1+arg2
+	...
+end
+\end{lstlisting}
+
+For a function, the \textbf{return value} is determined by assigning an
+expression to a variable with the same name as the function, in the
+example above in the line \Co{y= arg1+arg2}.
+
+Note that this is in contrast with most other BASIC dialects which use
+the keyword \Co{return} instead. There, \Co{return} also makes the
+interpreter exit the routine and return control to the calling code immediately.
+Not so in \SB: Here, \textbf{\emph{all code} up to the \Co{end} keyword
+is executed}, with all side effects it may generate.
+
+Routines may be \textbf{defined anywhere} in your code; they don't need to be
+defined before they are invoked.
+
+\subsection{Arguments}
+
+Arguments\footnote{Most times a disctinction between >>arguments<< and
+>>parameters<< is made in computer literature, but we'll treat both as
+synonyms.} are passed to a procedure or a function when invoking it as a
+list of comma-separated variables and constants following the routine
+name. When invoking a procedure, the parentheses are optional, note
+though that you use this feature at your own risk. \textbf{Parameter
+lists in the definition and the call must match} in the number of
+arguments.
+
+\begin{lstlisting}
+y(10, 20)
+...
+sub y(arg1, arg2, arg3)
+	...
+end
+\end{lstlisting}
+
+is not legal.
+
+Calling a function and \textbf{not using the return value} is no problem:
+
+\begin{lstlisting}
+y(10, 20)
+...
+func y(arg1, arg2)
+	y= arg1*arg2
+end
+\end{lstlisting}
+
+will cause no error. The return value is simply discarded. In contrast,
+calling a procedure \emph{in lieu} of a function will confuse the
+interpreter:
+
+\begin{lstlisting}
+my_result= x(10, 20)
+...
+sub x(hoogla, boogla)
+	...
+end
+\end{lstlisting}
+
+creates an error.
+
+\subsection{Variable Scope}
+
+Routines help with the modularization of code by >>encapsulating<< the
+data, which means that routines have only access to a sub-set of all
+variables defined in the program. Most importantly, routines can't read
+or write variables defined in other routines. Hence it's impossible that
+they would accidentally overwrite other variables. Likewise the routines
+also maintain their own >>household<< of variables accessible only to
+them.
+
+The keyword \Co{local} is used to define variables >>attached<< to
+a routine. \index{local variables} The variables come into existance the
+minute the routine is invoked, and they're deleted again as soon as the
+routine is terminated. If a local variable (or a routine parameter) has
+the same name as variable previously defined (in the main program or a
+routine which called the current routine), the previous instance is
+>>shadowed<<, and the routine will access the local variable instead,
+until the current routine is left again. A local variable will also be
+visible to a routine which is called from the routine where the local
+was defined.
+
+The following code may explain the behaviour. It differs in important
+details from that of other programming languages and BASIC dialects:
+
+\begin{lstlisting}
+nagaqk= 100
+zoogla= 200
+gluck
+? "In main:", nagaqk, zoogla
+
+sub gluck
+  local nagaqk
+  nagaqk= 30
+  zoogla= 200
+  boogla
+  ? "In gluck:", nagaqk, zoogla
+end
+
+sub boogla
+  ? "In boogla:", nagaqk, zoogla
+  nagaqk= 15
+  zoogla= 99
+end
+
+> In boogla:	30		200
+> In gluck:		15		99
+> In main:		100	99
+\end{lstlisting}
+
+Let's have a look at what is actually happening here. First, the global
+variables \Co{nagaqk} and \Co{zoogla} are defined and assigned the
+values $100$ and $200$, resp. Next, \Co{gluck} is invoked and defines a
+local variable \Co{nagaqk} which >>shadows<< the global variable of the
+same name. Thus, the value $30$ is assigned to the local instance of
+\Co{nagaqk}, not to the global one. As opposed to that, there only is
+one instance of \Co{zoogla}, and the value $200$ is written to that.
+
+Next, \Co{boogla} is called, which has access to all the >>knowledge<<
+\Co{gluck} has. When the old values of \Co{nagaqk} and \Co{zoogla} are
+overwritten, this happens again to the local copy of \Co{nagaqk}, but to
+the global instance of \Co{zoogla}. Had \Co{boogla} defined its own
+local copy of \Co{nagaqk}, \emph{that} copy would have been overwritten
+rather than \Co{gluck}'s.
+
+The writing done in \Co{boogla} is still >>felt<< in \Co{gluck} when
+control returns there. But when \Co{boogla} is left, its local instance
+of \Co{nagaqk} is deleted and the original instance (defined globally)
+returns to the surface unscathed. Note that for \Co{zoogla} there only
+ever was a single instance. Had \Co{boogla} had its own instance of
+\Co{nagaqk}, the results would also have been different.
+
+Note that local variables can be defined anywhere in the routine. But if
+you access a variable before it's defined as local, you will actually
+create a new \emph{global} variable first:
+
+\begin{lstlisting}
+sub hoogla
+	zoot= 100
+
+	local zoot
+	zoot= 10
+	? zoot
+end hoogla
+
+> 10
+\end{lstlisting}
+
+This creates (or overwrites) a global variable with the name \Co{zoot}
+and the value $100$, then creates a local variable with the same name,
+assigns it the value $10$, and then destroys the local copy at the end
+of the procedure, while the global copy still lives on.
+
+Routines can \textbf{recurse}, ie invoke themselves again before they're
+finished.\footnote{At least, they can do so to a reasonable degree of
+levels.} \index{recursion} Every time a new instance of the routine is
+called, it will also create a new set of parameters and local variables,
+while the old set is >>put aside<< and only restored when the execution
+of the current routine level is finished.
+
+\begin{lstlisting}
+hoogla
+
+sub hoogla
+  local zoogla
+  
+  level= level+1
+  zoogla= level
+  if level<5 then
+    hoogla
+  endif
+  ? zoogla
+end
+
+> 5
+> 4
+> 3
+> 2
+> 1
+\end{lstlisting}
+
+The definitions of \textbf{routines may be >>nested<<}, \index{nested
+routines} ie one routine (the >>child<<) may be defined within the code
+block of another (the >>parent<<).\footnote{Don't confuse the
+terminology here with child and parent processes/threads.} Whether you
+define a routine inside or outside another routine has little bearing on
+the variables household of the child routine. But the child routine is
+only visible from inside the parent routine and its >>siblings<<. To any
+code outside the parent routine, the child will be invisible:
+
+\begin{lstlisting}
+hoogla
+
+child1
+
+sub hoogla
+  local zoogla
+
+  child2
+  sub child1
+    ? "Here I am"
+  end
+  
+  sub child2
+   child1
+	? "I'm here, too"
+  end
+end
+\end{lstlisting}
+
+causes an error in the third line, because \Co{child1} is invisible
+outside \Co{hoogla}. The rest of the code will be executed fine if you
+comment out the third line.
+
+\SB\ provides nothing in the way of \textbf{static variables}, ie local
+routine variables which maintain their value between two subsequent
+calls of the routine. \index{static variables (non-existant)}
+
+\subsection{Passing Parameters \label{passingParameters}}
+
+Per default, parameters are passed to procedures and functions
+\textbf{>>by value<<}, which means that copies of the arguments are
+created for the routine. \index{by value (parameter passing)} Changing
+these copies will have no effect on the variable in the calling code;
+both instances are independent of each other. This is true \textbf{even
+for maps and arrays}. This behaviour comes with a certain penalty,
+namely when you work with complex maps and do a lot of recursion. In
+this case, the interpreter is busy with copying lots of data which will
+also require a lot of memory.
+
+To avoid this, you can require in the definition of a routine that some
+parameters will be passed >>by reference<<. \index{by reference
+(parameter passing)} In this case, no local copy will be created, but
+the routine will work on the same data as the calling code does: Changes
+to the value of a parameter are propagated to the caller. To employ
+passing by reference, the respective parameters in the routine
+definition must each be preceded with the keyword \Co{byref}, or the
+reference operator \Co{\at}: \index{\at\ (reference operator)}
+\index{object reference}
+
+\begin{lstlisting}
+bunga= 10
+chaka= 20
+
+hoogla(bunga, chaka)
+? bunga, chaka
+
+sub hoogla(zoogla, byref boing)
+  zoogla= 99
+  boing= 101
+end
+
+> 10, 101
+\end{lstlisting}
+
+Besides reducing CPU power and memory required, passing parameters by
+reference has the additional effect that a routine can write on the
+parameters passed. This enables you to write procedures which change
+more than one global variable at a time. Bear in mind that the
+\emph{calling code} has no way to >>see<< whether it passes a variable
+by value or by reference; the behaviour is completely in the hand of the
+\emph{called routine}.
+
+Notice that this behaviour is subtly different from the use of the
+reference operator \Co{\at} with a regular variable, see
+\Cref{referenceOperator}. You can (for obvious reasons) not apply the
+reference operator inside the routine's code to a parameter or a local
+variable.
+
+\subsection{One-line Functions}
+
+Sometime the code required for a function is short and neatly fits into
+one line. In this case, \SB\ provides a more concise syntax for function
+definitions, namely with the keyword \Co{def}:
+
+\begin{lstlisting}
+def hoogla(x)= sin(x)*cos(x)
+
+func zoogla(x)
+	zoogla= sin(x)*cos(x)
+end
+\end{lstlisting}
+
+Both definitions above for \Co{hoogla} and \Co{zoogla} are equivalent.
+
+This does not work for procedures.
+
+\section{Modules \label{modules}}
+
+To modularize your code above the level of routines, \SB\ offers the
+option to include other source files, and to create libraries of
+>>units<<.
+
+\subsection{File Inclusion}
+
+In its most simple form, \SB\ lets you import other source files into
+the current file at runtime:
+
+\begin{lstlisting}
+include "bunga.bas"
+\end{lstlisting}
+
+in the code will make the contents of the file \Co{bunga.bas} available
+to the file currently running in the interpreter. >>First level<< code
+\footnote{ie, code outside any routines} in \Co{bunga.bas} (will be
+executed immediately.\footnote{It is an interesting experiment to create
+such an \Co{include}-file during program runtime and import it then.
+Effectively, such a program would >>bootstrap<< itself. Not for the
+faint at heart.} If the included file contains a routine with the same
+name as one defined in the >>mother<< file, an error occurs; the old
+version of the routine is \emph{not} replaced.
+
+Think of it as a simple copy-paste operation.
+
+\subsection{Units}
+
+>>Units<< are a more sophisticated concept in \SB\ which allows the creation
+of genuine program libraries with their own namespace and well-defined
+interfaces.
+
+Units are kept in seperate source files; each file contains exactly one
+unit which bears the same name as the file \emph{sans} the \Co{.bas}
+extension.\footnote{I was informed that this isn't \emph{strictly} true,
+but you can cause great confusion in the IDE if you don't stick to that
+convention.}
+
+\begin{lstlisting}
+file hoogla.bas:
+...
+unit hoogla
+...
+export zoogla, boogla
+zoogla= "Hello world!"
+
+sub boogla(name)
+	print "Goodybe", name, "!"
+end
+\end{lstlisting}
+
+Inside the unit file, you can write code as you would in any source
+file, and define variables (simple and composite) and routines
+(procedures and functions). All of these variables and routines are
+local to the unit file, unless they're defined to be public with the
+keyword \Co{export}.
+
+First level code is executed when the library is loaded, but it takes
+place in a separate namespace, ie a variable called \Co{chaka} in the
+unit file will not conflict with a variable with the same name in the
+mother file; they're two seperate entities.
+
+To use a unit, it must be first be compiled into bytecode. You can do so
+from the IDE, or use the command line:
+
+\begin{lstlisting}
+sbasici hoogla.bas
+\end{lstlisting}
+
+which creates a file \Co{hoogla.sbu}. This must be repeated after
+updates to the unit file. Then it can be loaded with the keyword
+\Co{import} in the mother file which is to use the library. From
+this moment on, all \Co{export}ed variables and routines are available
+to the mother file. Their name there is a combination of the unit name,
+a dot \Co{.} and the variable or routine's >>proper<< name. With the
+above code segment from \Co{hoogla.bas} you get:
+
+\begin{lstlisting}
+file ragaqk.bas:
+
+import hoogla
+? hoogla.zoogla
+hoogla.boogla("Clint")
+
+> Hello world!
+> Goodbye,	Clint	!
+\end{lstlisting}
+
+It should be painfully obvious that a unit can't import itself again.

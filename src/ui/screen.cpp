@@ -195,6 +195,24 @@ void Screen::drawInto(bool background) {
   setDirty();
 }
 
+int Screen::getIndex(FormInput *input) const {
+  int index;
+  if (input == NULL) {
+    index = -1;
+  } else {
+    index = 0;
+    List_each(FormInput *, it, _inputs) {
+      FormInput *next = (*it);
+      if (next == input) {
+        break;
+      } else {
+        index++;
+      }
+    }
+  }
+  return index;
+}
+
 FormInput *Screen::getMenu(FormInput *prev, int px, int py) {
   FormInput *result = _inputs[0];
   if (result != NULL && overlaps(px, py)) {
@@ -217,6 +235,29 @@ FormInput *Screen::getMenu(FormInput *prev, int px, int py) {
     maSetDrawTarget(currentHandle);
   }
   return result;
+}
+
+FormInput *Screen::getNextMenu(FormInput *prev, bool up) {
+  int index;
+  if (prev == NULL) {
+    index = 0;
+  } else {
+    index = getIndex(prev) + (up ? -1 : 1);
+  }
+  FormInput *next = prev;
+  if (index > -1 && index < _inputs.size()) {
+    MAHandle currentHandle = maSetDrawTarget(HANDLE_SCREEN);
+    next = _inputs.get(index);
+    next->_pressed = true;
+    drawShape(next);
+    if (prev != NULL) {
+      prev->_pressed = false;
+      drawShape(prev);
+    }
+    maUpdateScreen();
+    maSetDrawTarget(currentHandle);
+  }
+  return next;
 }
 
 void Screen::layoutInputs(int newWidth, int newHeight) {
@@ -293,14 +334,17 @@ void Screen::remove(Shape *button) {
 }
 
 // remove the image from the list
-void Screen::removeInput(FormInput *input) {
+bool Screen::removeInput(FormInput *input) {
+  bool result = false;
   List_each(FormInput *, it, _inputs) {
     FormInput *next = (*it);
     if (next == input) {
       _inputs.remove(it);
+      result = true;
       break;
     }
   }
+  return result;
 }
 
 // remove the image from the list
@@ -867,6 +911,7 @@ struct RectFilledShape : Shape {
 //
 TextScreen::TextScreen(int width, int height, int fontSize) :
   Screen(0, 0, width, height, fontSize),
+  _over(NULL),
   _inset(0, 0, 0, 0),
   _buffer(NULL),
   _head(0),

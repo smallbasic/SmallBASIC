@@ -11,7 +11,6 @@
 #define _bc_h
 
 #include "common/sys.h"
-#include "common/pmem.h"
 #include "common/kw.h"
 
 #define BC_ALLOC_INCR     1024
@@ -91,16 +90,6 @@ void bc_store1(bc_t *bc, bcip_t offset, byte code);
 /**
  * @ingroup scan
  *
- * add 1 word (2-bytes) to segment
- *
- * @param bc the bc structure
- * @param code the word
- */
-void bc_add_word(bc_t *bc, word code);
-
-/**
- * @ingroup scan
- *
  * add 1 dword (4-bytes) to segment
  *
  * @param bc the bc structure
@@ -125,17 +114,6 @@ void bc_add_strn(bc_t *bc, const char *str, int len);
  * @return a pointer of src to the next character after the second \"
  */
 char *bc_store_string(bc_t *bc, char *src);
-
-/**
- * @ingroup scan
- *
- * strores a string in the segment
- *
- * @param bc the bc structure
- * @param str the raw-string. the string must starts with `. the string must also contains the ending `.
- * @return a pointer of src to the next character after the second `
- */
-char *bc_store_macro(bc_t *bc, char *src);
 
 /**
  * @ingroup scan

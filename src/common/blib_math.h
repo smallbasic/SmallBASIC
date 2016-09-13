@@ -19,7 +19,6 @@
 var_num_t fint(var_num_t x);
 var_num_t frac(var_num_t x);
 int sgn(var_num_t x);
-int zsgn(var_num_t x);
 var_num_t fround(var_num_t x, int dig);
 
 #define SEGLEN(Ax,Ay,Bx,By)     line_length(Ax,Ay,Bx,By)

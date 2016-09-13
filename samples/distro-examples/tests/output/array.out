@@ -1,1 +1,2 @@
 TEST: Arrays, unound, lbound
+array: {"cat":{"name":"lots"},"zz":"thing","zz":"memleak","other":"thing"}

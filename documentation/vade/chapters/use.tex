@@ -1,0 +1,53 @@
+\chapter{User Interface with \SB \label{cUse}}
+
+\quick{How to program output on the screen, and how to receive user
+input.}
+
+\absatz
+
+\SB's display offers a choice of modes or >>philosophies<< to program
+user interaction:
+
+\begin{itemize}
+
+\item The console, emulating a text terminal in the manner of a VT220
+
+\item A number of graphic primitives which allow you to draw text,
+lines, circles, etc.
+
+\item A graphical user interface with more sophisticated items to create
+dialogs and (simple) forms.
+
+\end{itemize}
+
+Bear in mind, though, that those three modes coexist. There is no switch
+from one mode to the other (as it used to be in the old days, when one
+switched from text to graphics mode), but you can freely mix commands
+from between the three modes (and thereby make a mess from your screen).
+
+\textbf{Colors} can be passed as parameters to various commands in two
+different ways:
+
+\begin{itemize}
+
+\item As a simple number between $0$ and $15$, in which case it is meant
+to represent a standard DOS color.
+
+\item As RGB value.\footnote{Theoretically this is limited to devices
+with a sufficiently capable graphics system, but I doubt there are many
+systems in existance which wouldn't fullfil that requirement.}
+
+\end{itemize}
+
+To pass an RGB value, simply call the \Co{RGB()} or \Co{RGBF()}
+function with three parameters as the Red -- Green -- Blue values. In
+the case of \Co{RGB} the parameters must be between $0$ and $255$, in the
+case of \Co{RGBF} (>>float<<) between $0$ and $1$.
+
+\section{The Console \label{cConsole}}
+
+
+
+\section{Graphic Primitives \label{cGraphics}}
+
+\section{Graphical User Interface \label{cGUI}}

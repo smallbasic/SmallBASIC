@@ -9,7 +9,6 @@
 
 #include "common/sys.h"
 #include "common/str.h"
-#include "common/panic.h"
 #include "common/fmt.h"
 
 /**
@@ -74,64 +73,25 @@ void str_alltrim(char *str) {
 /**
  * caseless string compare
  */
-int strcaseless(const char *s1, const char *s2) {
-  const char *p1 = s1;
-  const char *p2 = s2;
-  int ch1, ch2;
-
-  while (*p1) {
-    if (*p1 == '\0' && *p2 != '\0') {
-      return -1;
+int strcaselessn(const char *s1, int s1n, const char *s2, int s2n) {
+  int result, i;
+  for (i = 0;; i++) {
+    if (i == s1n || i == s2n) {
+      result = s1n < s2n ? -1 : s1n > s2n ? 1 : 0;
+      break;
     }
-    if (*p2 == '\0' && *p1 != '\0') {
-      return 1;
+    char c1 = s1[i];
+    char c2 = s2[i];
+    if (c1 != c2) {
+      c1 = to_lower(c1);
+      c2 = to_lower(c2);
+      if (c1 != c2) {
+        result = c1 < c2 ? -1 : 1;
+        break;
+      }
     }
-    ch1 = to_upper(*p1);
-    ch2 = to_upper(*p2);
-    if (ch1 < ch2) {
-      return -1;
-    }
-    if (ch1 > ch2) {
-      return 1;
-    }
-    p1++;
-    p2++;
   }
-  return 0;
-}
-
-/**
- * caseless string compare
- */
-int strcaselessn(const char *s1, const char *s2, int len) {
-  const char *p1 = s1;
-  const char *p2 = s2;
-  int ch1, ch2, count;
-
-  count = 0;
-  while (*p1) {
-    if (count == len) {
-      return 0;
-    }
-    if (*p1 == '\0' && *p2 != '\0') {
-      return -1;
-    }
-    if (*p2 == '\0' && *p1 != '\0') {
-      return 1;
-    }
-    ch1 = to_upper(*p1);
-    ch2 = to_upper(*p2);
-    if (ch1 < ch2) {
-      return -1;
-    }
-    if (ch1 > ch2) {
-      return 1;
-    }
-    p1++;
-    p2++;
-    count++;
-  }
-  return 0;
+  return result;
 }
 
 /**
@@ -276,24 +236,6 @@ int is_all_digits(const char *text) {
     p++;
   }
   return 1;
-}
-
-/**
- * returns true if the text is keyword
- */
-int is_keyword(const char *name) {
-  char *p = (char *) name;
-
-  if (p == NULL) {
-    return 0;
-  }
-  if (is_alpha(name[0])) {
-    while (is_alnum(*p) || (*p == '_')) {
-      p++;
-    }
-    return (*p == '\0');
-  }
-  return 0;
 }
 
 /**
@@ -763,9 +705,6 @@ char *ftostr(var_num_t num, char *dest) {
  *
  */
 char *ltostr(var_int_t num, char *dest) {
-  if (dest == NULL) {
-    panic("l2s(..,null)");
-  }
   sprintf(dest, VAR_INT_FMT, num);
   return dest;
 }
@@ -1112,4 +1051,47 @@ const char *baseof(const char *source, int delim) {
   return source;
 }
 
+/**
+ * memory dump
+ */
+void hex_dump(const unsigned char *block, int size) {
+#if defined(_UnixOS) || defined(_DOS)
+  int i, j;
+
+  printf("\n---HexDump---\n\t");
+  for (i = 0; i < size; i++) {
+    printf("%02X ", block[i]);
+    if (((i + 1) % 16) == 0 || (i == size - 1)) {
+      printf(" %04x ", i);
+      for (j = ((i - 15 <= 0) ? 0 : i - 15); j <= i; j++) {
+        if (block[j] < 32) {
+          printf(".");
+        } else {
+          printf("%c", block[j]);
+        }
+      }
+      printf("\n\t");
+    }
+  }
+
+  printf("\n");
+#endif
+}
+
+void cstr_init(cstr *cs, int size) {
+  cs->length = 0;
+  cs->size = size;
+  cs->buf = malloc(size);
+  cs->buf[0] = '\0';
+}
+
+void cstr_append(cstr *cs, const char *str) {
+  int len = strlen(str);
+  if (cs->size - cs->length < len + 1) {
+    cs->size += len + 1;
+    cs->buf = realloc(cs->buf, cs->size);
+  }
+  strcat(cs->buf, str);
+  cs->length += len;
+}
 

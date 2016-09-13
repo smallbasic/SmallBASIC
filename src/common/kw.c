@@ -143,28 +143,3 @@ int kw_noarg_func(fcode_t code) {
   return 0;
 }
 
-/*
- */
-int kw_iscommand(const char *name) {
-  int i;
-
-  for (i = 0; keyword_table[i].name[0] != '\0'; i++) {
-    if (strcasecmp(name, keyword_table[i].name) == 0) {
-      return -1;
-    }
-  }
-  return 0;
-}
-
-/*
- */
-int kw_isproc(const char *name) {
-  int i;
-
-  for (i = 0; proc_table[i].name[0] != '\0'; i++) {
-    if (strcasecmp(name, proc_table[i].name) == 0) {
-      return -1;
-    }
-  }
-  return 0;
-}

@@ -14,7 +14,11 @@ Build in linux
  $ ./configure --enable-sdl
  $ make
 ```
- On windows, install tools:
+Build the debian package
+ $ sudo apt-get install dpkg-dev build-essential debhelper
+ $ make deb
+```
+On windows, install tools:
  http://www.gtk.org/download/win32.php
 ```
  $ ./configure --host=i686-w64-mingw32 --enable-sdl

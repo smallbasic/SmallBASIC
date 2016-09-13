@@ -46,7 +46,7 @@ if (isstring(m2(3)) == false) then
   throw "m2(3) is not an string"
 end if
 
-m3 = array("{\"cat\":{\"name\":\"lots\"},\"other\":\"thing\",\"zz\":\"thing\"}")
+m3 = array("{\"cat\":{\"name\":\"lots\"},\"other\":\"thing\",\"zz\":\"thing\",\"zz\":\"memleak\"}")
 if (ismap(m3) == false) then
   throw "m3 is not an map"
 end if
@@ -57,8 +57,12 @@ if (isref(m4) == false) then
 end if
 
 if m4.cat.name <> "lots" then
+  ? m3
+  ? m4
   throw "ref/map error"
 end if
+
+print "array: " + m4
 
 dim sim
 sim << 100
@@ -82,3 +86,18 @@ if (dots(0).y != 101) then
    throw "not 101 !!!"
 endif
 
+arr1 = [ 1 , 2 , 3 ; 4 , 5 , 6 ; 7 , 8 , 9       ]
+arr2 = array("   [1,2,3;4,5,6;7,8,9]            ")
+arr3 = array("[1,2,3    ;4,5,6;           7,8,9]")
+if (arr1 != arr2 || arr2 != arr3) then
+  throw "array err"
+endif
+
+const wormHoles = [[4,  4],  [4, 20], [20,  20], [20, 4], [12,12] ]
+if (str(wormHoles) != "[[4,4],[4,20],[20,20],[20,4],[12,12]]") then
+  throw wormHoles
+endif
+x = 4
+y = 4
+if [x,y] in wormHoles then
+endif

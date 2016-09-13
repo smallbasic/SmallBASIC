@@ -472,14 +472,6 @@ int kw_noarg_func(fcode_t code);
 
 /**
  */
-int kw_iscommand(const char *name);
-
-/**
- */
-int kw_isproc(const char *name);
-
-/**
- */
 void prcmd(code_t code);
 
 /**

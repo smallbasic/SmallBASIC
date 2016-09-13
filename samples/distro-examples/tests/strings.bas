@@ -64,5 +64,31 @@ if rightof$(s, "23")!="4567" then ? "rightof() error"
 if leftoflast$(s, "23")!="1" then ? "leftoflast() error"
 if rightoflast$(s, "23")!="4567" then ? "rightoflast() error"
 
+if (0 != instr("qwerty","")) then throw "instr err1"
+if (0 != instr(3,"qwerty","")) then throw "instr err2"
+for i = 1 to 6
+  if (0 != instr(i, "qwerty", "querty")) then throw "instr err3"
+next i
 
+'==11600== Conditional jump or move depends on uninitialised value(s)
+'==11600==    at 0x437B4E: v_strlen (var.c:97)
+'==11600==    by 0x438C4F: v_set (var.c:448)
+'==11600==    by 0x417FCA: eval_call_udf (eval.c:1160)
+'==11600==    by 0x418498: eval (eval.c:1285)
+' note: when first arg="" problem does not occur
+Def lset(s) = Replace(" ", 1, s)
+s=lset(".")
 
+func test_str(s1,s2)
+  if (s1 <> s2) then
+    throw "sprint err1"
+  endif
+  if (len(s1) <> len(s2)) then
+    throw "sprint err2"
+  endif
+end
+
+sprint s1;using"aaa###bbb";123;
+
+test_str(s1, "aaa123bbb")
+test_str("   ", spc(3))

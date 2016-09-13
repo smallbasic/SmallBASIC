@@ -194,7 +194,7 @@ ImageBuffer *load_image(var_t *var) {
       int yoffs = (4 * y * w);
       for (int x = 0; x < w; x++) {
         int pos = y * w + x;
-        var_t *elem = (var_t *) (var->v.a.ptr + (sizeof(var_t) * pos));
+        var_t *elem = v_elem(var, pos);
         pixel_t px = -v_getint(elem);
         uint8_t r, g, b;
         GET_RGB2(px, r, g, b);
@@ -259,7 +259,7 @@ ImageBuffer *load_image(dev_file_t *filep) {
       var_p = v_new();
       http_read(filep, var_p);
       error = lodepng_decode32(&image, &w, &h, (unsigned char *)var_p->v.p.ptr,
-                               var_p->v.p.size);
+                               var_p->v.p.length);
       v_free(var_p);
       free(var_p);
       break;
@@ -401,7 +401,7 @@ void cmd_image_save(var_s *self) {
           uint8_t b = image->_image[offs + 2];
           pixel_t px = SET_RGB(r, g, b);
           int pos = y * w + x;
-          var_t *elem = (var_t *) (array->v.a.ptr + (sizeof(var_t) * pos));
+          var_t *elem = v_elem(array, pos);
           v_setint(elem, -px);
         }
       }
@@ -520,7 +520,7 @@ extern "C" void v_create_image(var_p_t var) {
       var_p_t elem0 = v_elem(&arg, 0);
       if (elem0->type == V_STR) {
         char **data = new char*[arg.v.a.size];
-        for (int i = 0; i < arg.v.a.size; i++) {
+        for (unsigned i = 0; i < arg.v.a.size; i++) {
           var_p_t elem = v_elem(&arg, i);
           data[i] = elem->v.p.ptr;
         }
@@ -531,7 +531,7 @@ extern "C" void v_create_image(var_p_t var) {
         image = load_image(&arg);
       } else if (elem0->type == V_INT) {
         unsigned char *data = new unsigned char[arg.v.a.size];
-        for (int i = 0; i < arg.v.a.size; i++) {
+        for (unsigned i = 0; i < arg.v.a.size; i++) {
           var_p_t elem = v_elem(&arg, i);
           data[i] = (unsigned char)elem->v.i;
         }

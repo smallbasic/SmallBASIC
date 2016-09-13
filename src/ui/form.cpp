@@ -179,6 +179,7 @@ FormInput *create_input(var_p_t v_field) {
 
   const char *label = map_get_str(v_field, FORM_INPUT_LABEL);
   const char *type = map_get_str(v_field, FORM_INPUT_TYPE);
+  const char *help = map_get_str(v_field, FORM_INPUT_HELP);
 
   if (label == NULL) {
     label = "Label";
@@ -198,12 +199,10 @@ FormInput *create_input(var_p_t v_field) {
       widget = new FormLabel(label, x, y, w, h);
     } else if (strcasecmp("link", type) == 0) {
       widget = new FormLink(label, x, y, w, h);
-    } else if (strcasecmp("tab", type) == 0) {
-      widget = new FormTab(label, x, y, w, h);
     } else if (strcasecmp("listbox", type) == 0 ||
                strcasecmp("list", type) == 0) {
       ListModel *model = new ListModel(get_selected_index(v_field), value);
-      widget = new FormListBox(model, x, y, w, h);
+      widget = new FormListBox(model, help, x, y, w, h);
     } else if (strcasecmp("choice", type) == 0 ||
                strcasecmp("dropdown", type) == 0) {
       ListModel *model = new ListModel(get_selected_index(v_field), value);
@@ -222,7 +221,7 @@ FormInput *create_input(var_p_t v_field) {
       if (h * 2 >= charHeight) {
         widget = new TextEditInput(text, charWidth, charHeight, x, y, w, h);
       } else {
-        widget = new FormLineInput(text, maxSize, false, x, y, w, h);
+        widget = new FormLineInput(text, help, maxSize, false, x, y, w, h);
       }
     } else if (strcasecmp("image", type) == 0) {
       const char *name = map_get_str(v_field, FORM_INPUT_NAME);
@@ -249,7 +248,7 @@ extern "C" void v_create_form(var_p_t var) {
     if (arg->type == V_MAP) {
       var_p_t inputs = map_get(arg, FORM_INPUTS);
       if (inputs != NULL && inputs->type == V_ARRAY) {
-        for (int i = 0; i < inputs->v.a.size; i++) {
+        for (unsigned i = 0; i < inputs->v.a.size; i++) {
           var_p_t elem = v_elem(inputs, i);
           if (elem->type == V_MAP) {
             hasInputs = true;
@@ -262,9 +261,9 @@ extern "C" void v_create_form(var_p_t var) {
   if (hasInputs) {
     map_set(var, arg);
     var_p_t v_focus = map_get(var, FORM_FOCUS);
-    int i_focus = v_focus != NULL ? v_getint(v_focus) : -1;
+    unsigned i_focus = v_focus != NULL ? v_getint(v_focus) : -1;
     var_p_t inputs = map_get(var, FORM_INPUTS);
-    for (int i = 0; i < inputs->v.a.size; i++) {
+    for (unsigned i = 0; i < inputs->v.a.size; i++) {
       var_p_t elem = v_elem(inputs, i);
       if (elem->type == V_MAP) {
         FormInput *widget = create_input(elem);

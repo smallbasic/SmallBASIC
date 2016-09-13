@@ -128,7 +128,7 @@ void exec_usefunc(var_t *var, bcip_t ip) {
   // restore X
   v_set(tvar[SYSVAR_X], old_x);
   v_free(old_x);
-  free(old_x);
+  v_detach(old_x);
 }
 
 /*
@@ -156,48 +156,10 @@ void exec_usefunc2(var_t *var1, var_t *var2, bcip_t ip) {
   // restore X,Y
   v_set(tvar[SYSVAR_X], old_x);
   v_free(old_x);
-  free(old_x);
+  v_detach(old_x);
   v_set(tvar[SYSVAR_Y], old_y);
   v_free(old_y);
-  free(old_y);
-}
-
-/*
- * execute a user's expression (using three variable)
- *
- * var1 - the first variable (the X)
- * var2 - the second variable (the Y)
- * var3 - the thrid variable (the Z)
- * ip   - expression's address
- */
-void exec_usefunc3(var_t *var1, var_t *var2, var_t *var3, bcip_t ip) {
-  var_t *old_x, *old_y, *old_z;
-
-  // save X
-  old_x = v_clone(tvar[SYSVAR_X]);
-  old_y = v_clone(tvar[SYSVAR_Y]);
-  old_z = v_clone(tvar[SYSVAR_Z]);
-
-  // run
-  v_set(tvar[SYSVAR_X], var1);
-  v_free(var1);
-  v_set(tvar[SYSVAR_Y], var2);
-  v_free(var2);
-  v_set(tvar[SYSVAR_Z], var3);
-  v_free(var3);
-  code_jump(ip);
-  eval(var1);
-
-  // restore X,Y
-  v_set(tvar[SYSVAR_X], old_x);
-  v_free(old_x);
-  free(old_x);
-  v_set(tvar[SYSVAR_Y], old_y);
-  v_free(old_y);
-  free(old_y);
-  v_set(tvar[SYSVAR_Z], old_z);
-  v_free(old_z);
-  free(old_z);
+  v_detach(old_y);
 }
 
 /*
@@ -205,7 +167,6 @@ void exec_usefunc3(var_t *var1, var_t *var2, var_t *var3, bcip_t ip) {
  */
 void pv_write(char *str, int method, int handle) {
   var_t *vp;
-  int l;
 
   switch (method) {
   case PV_FILE:
@@ -215,13 +176,15 @@ void pv_write(char *str, int method, int handle) {
     lwrite(str);
     break;
   case PV_STRING:
-    vp = (var_t*) (intptr_t) handle;
-    l = strlen(str) + strlen(str) + 1;
-    if (vp->v.p.size <= l) {
-      vp->v.p.size = l + 128;
-      vp->v.p.ptr = realloc(vp->v.p.ptr, vp->v.p.size);
+    vp = (var_t*)(intptr_t)handle;
+    vp->v.p.length += strlen(str);
+    if (vp->v.p.ptr == NULL) {
+      vp->v.p.ptr = malloc(vp->v.p.length + 1);
+      strcpy((char *)vp->v.p.ptr, str);
+    } else {
+      vp->v.p.ptr = realloc(vp->v.p.ptr, vp->v.p.length + 1);
+      strcat((char *)vp->v.p.ptr, str);
     }
-    strcat((char *) vp->v.p.ptr, str);
     break;
   case PV_NET:
     net_print((socket_t) handle, (const char *)str);
@@ -617,6 +580,7 @@ pt_t par_getpt() {
       par_getcomma();
       if (!prog_error) {
         var_t v2;
+        v_init(&v2);
         eval(&v2);
         if (!prog_error) {
           pt.y = v_getreal(&v2);
@@ -628,7 +592,7 @@ pt_t par_getpt() {
   // clean-up
   if (alloc) {
     v_free(var);
-    free(var);
+    v_detach(var);
   }
 
   return pt;
@@ -680,7 +644,7 @@ ipt_t par_getipt() {
   // clean-up
   if (alloc) {
     v_free(var);
-    free(var);
+    v_detach(var);
   }
 
   return pt;
@@ -698,7 +662,7 @@ int par_getpoly(pt_t **poly_pp) {
   // get array
   if (code_isvar()) {
     var = par_getvarray();
-    if (prog_error) {
+    if (var == NULL || prog_error) {
       return 0;
     }
   } else {
@@ -707,21 +671,20 @@ int par_getpoly(pt_t **poly_pp) {
     alloc = 1;
   }
 
-  // zero-length array
-  if (var->v.a.size == 0) {
+  // zero-length or non array
+  if (var->type != V_ARRAY || var->v.a.size == 0) {
     if (alloc) {
       v_free(var);
-      free(var);
+      v_detach(var);
     }
     return 0;
   }
-  //
+
   el = v_elem(var, 0);
   if (el->type == V_ARRAY) {
     style = 1;                  // nested --- [ [x1,y1], [x2,y2], ... ]
   }
-  // else
-  // style = 0; // 2x2 or 1x --- [ x1, y1, x2, y2, ... ]
+  // else style = 0; // 2x2 or 1x --- [ x1, y1, x2, y2, ... ]
 
   // error check
   if (style == 1) {
@@ -729,7 +692,7 @@ int par_getpoly(pt_t **poly_pp) {
       err_parsepoly(-1, 1);
       if (alloc) {
         v_free(var);
-        free(var);
+        v_detach(var);
       }
       return 0;
     }
@@ -740,7 +703,7 @@ int par_getpoly(pt_t **poly_pp) {
       err_parsepoly(-1, 2);
       if (alloc) {
         v_free(var);
-        free(var);
+        v_detach(var);
       }
       return 0;
     }
@@ -758,14 +721,14 @@ int par_getpoly(pt_t **poly_pp) {
       el = v_elem(var, i);
 
       // error check
-      if (el->type != V_ARRAY
-        )
+      if (el->type != V_ARRAY) {
         err_parsepoly(i, 3);
-      else if (el->v.a.size != 2)
+      } else if (el->v.a.size != 2) {
         err_parsepoly(i, 4);
-      if (prog_error)
+      }
+      if (prog_error) {
         break;
-
+      }
       // store point
       poly[i].x = v_getreal(v_elem(el, 0));
       poly[i].y = v_getreal(v_elem(el, 1));
@@ -791,7 +754,7 @@ int par_getpoly(pt_t **poly_pp) {
   }
   if (alloc) {
     v_free(var);
-    free(var);
+    v_detach(var);
   }
 
   return count;
@@ -809,7 +772,7 @@ int par_getipoly(ipt_t **poly_pp) {
   // get array
   if (code_isvar()) {
     var = par_getvarray();
-    if (prog_error) {
+    if (var == NULL || prog_error) {
       return 0;
     }
   } else {
@@ -818,11 +781,11 @@ int par_getipoly(ipt_t **poly_pp) {
     alloc = 1;
   }
 
-  // zero-length array
-  if (var->v.a.size == 0) {
+  // zero-length or non array
+  if (var->type != V_ARRAY || var->v.a.size == 0) {
     if (alloc) {
       v_free(var);
-      free(var);
+      v_detach(var);
     }
     return 0;
   }
@@ -840,7 +803,7 @@ int par_getipoly(ipt_t **poly_pp) {
       err_parsepoly(-1, 1);
       if (alloc) {
         v_free(var);
-        free(var);
+        v_detach(var);
       }
       return 0;
     }
@@ -851,7 +814,7 @@ int par_getipoly(ipt_t **poly_pp) {
       err_parsepoly(-1, 2);
       if (alloc) {
         v_free(var);
-        free(var);
+        v_detach(var);
       }
       return 0;
     }
@@ -902,19 +865,10 @@ int par_getipoly(ipt_t **poly_pp) {
   }
   if (alloc) {
     v_free(var);
-    free(var);
+    v_detach(var);
   }
 
   return count;
-}
-
-/*
- * returns true if the following code is descibing one var code
- * usefull for optimization
- * (one var can be used by the pointer; more than one it must be evaluated)
- */
-int par_isonevar() {
-  return code_isvar();
 }
 
 /*
@@ -922,17 +876,14 @@ int par_isonevar() {
  */
 void par_freepartable(par_t **ptable_pp, int pcount) {
   int i;
-  par_t *ptable;
-
-  ptable = *ptable_pp;
+  par_t *ptable = *ptable_pp;
   if (ptable) {
     for (i = 0; i < pcount; i++) {
       if (ptable[i].flags & PAR_BYVAL) {
         v_free(ptable[i].var);
-        free(ptable[i].var);
+        v_detach(ptable[i].var);
       }
     }
-
     free(ptable);
   }
   *ptable_pp = NULL;
@@ -1026,7 +977,7 @@ int par_getpartable(par_t **ptable_pp, const char *valid_sep) {
         pcount++;
       } else {
         v_free(par);
-        free(par);
+        v_detach(par);
         par_freepartable(ptable_pp, pcount);
         return -1;
       }

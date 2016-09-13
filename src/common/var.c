@@ -1,6 +1,6 @@
 // This file is part of SmallBASIC
 //
-// SmallBasic Variable Manager.
+// SmallBASIC variable manager.
 //
 // This program is distributed under the terms of the GPL v2.0 or later
 // Download the GNU Public License (GPL) from www.gnu.org
@@ -14,15 +14,55 @@
 #include "common/sberr.h"
 #include "common/var_map.h"
 
-#define ARR_ALLOC 256
+#include <malloc.h>
+
+#define INT_STR_LEN 64
+#define VAR_POOL_SIZE 2048
+
+var_t var_pool[VAR_POOL_SIZE];
+int next_pool_free = 0;
+
+void v_init_pool() {
+  int i;
+  next_pool_free = 0;
+  for (i = 0; i < VAR_POOL_SIZE; i++) {
+    v_init(&var_pool[i]);
+    var_pool[i].pooled = 1;
+    var_pool[i].attached = 0;
+  }
+}
 
 /*
  * creates and returns a new variable
  */
 var_t *v_new() {
-  var_t *ptr = (var_t *)malloc(sizeof(var_t));
-  v_init(ptr);
-  return ptr;
+  var_t *result = NULL;
+  int i;
+  for (i = 0; i < VAR_POOL_SIZE; i++) {
+    if (!var_pool[next_pool_free].attached) {
+      result = &var_pool[next_pool_free];
+      result->attached = 1;
+      break;
+    }
+    next_pool_free = (next_pool_free + 1) % VAR_POOL_SIZE;
+  }
+  if (!result) {
+    result = (var_t *)malloc(sizeof(var_t));
+    result->pooled = 0;
+  }
+  v_init(result);
+  return result;
+}
+
+void v_new_array(var_t *var, unsigned size) {
+  var->type = V_ARRAY;
+  var->v.a.size = size;
+  var->v.a.data = (var_t *)malloc(sizeof(var_t) * size);
+  int i = 0;
+  for (i = 0; i < size; i++) {
+    var_t *e = v_elem(var, i);
+    v_init(e);
+  }
 }
 
 /*
@@ -53,7 +93,7 @@ int v_isempty(var_t *var) {
 int v_strlen(const var_t *v) {
   int result;
   if (v->type == V_STR) {
-    result = v->v.p.size;
+    result = v->v.p.length;
     if (result && v->v.p.ptr[result - 1] == '\0') {
       result--;
     }
@@ -67,7 +107,7 @@ int v_strlen(const var_t *v) {
  * returns the length of the variable
  */
 int v_length(var_t *var) {
-  char tmpsb[64];
+  char tmpsb[INT_STR_LEN];
 
   switch (var->type) {
   case V_STR:
@@ -98,13 +138,12 @@ int v_length(var_t *var) {
 var_t *v_getelemptr(var_t *v, dword index) {
   if (v->type == V_ARRAY) {
     if (index < v->v.a.size) {
-      return (var_t *)(v->v.a.ptr + (index * sizeof(var_t)));
+      return v_elem(v, index);
     } else {
       err_vararridx(index, v->v.a.size);
       return NULL;
     }
   }
-
   err_varisnotarray();
   return NULL;
 }
@@ -113,21 +152,17 @@ var_t *v_getelemptr(var_t *v, dword index) {
  * resize an existing array
  */
 void v_resize_array(var_t *v, dword size) {
-  byte *prev;
-  var_t *elem;
-  dword i;
-
   if (v->type == V_ARRAY) {
     if ((int)size < 0) {
       err_evargerr();
       return;
     }
-
+    int i;
     if (size == 0) {
       v_free(v);
       v->type = V_ARRAY;
       v->v.a.size = 0;
-      v->v.a.ptr = NULL;
+      v->v.a.data = NULL;
       v->v.a.ubound[0] = v->v.a.lbound[0] = opt_base;
       v->v.a.maxdim = 1;
     } else if (v->v.a.size > size) {
@@ -135,43 +170,28 @@ void v_resize_array(var_t *v, dword size) {
 
       // free vars
       for (i = size; i < v->v.a.size; i++) {
-        elem = (var_t *)(v->v.a.ptr + (sizeof(var_t) * i));
+        var_t *elem = v_elem(v, i);
         v_free(elem);
       }
-
-      // do not resize array
-      prev = NULL;
 
       // array data
       v->v.a.size = size;
       v->v.a.ubound[0] = v->v.a.lbound[0] + (size - 1);
       v->v.a.maxdim = 1;
-
-      if (prev) {
-        free(prev);
-      }
     } else if (v->v.a.size < size) {
-      // resize up
-      // if there is space do not resize
-      if (v->v.a.size == 0) {
-        prev = v->v.a.ptr;
-        v->v.a.ptr = malloc((size + ARR_ALLOC) * sizeof(var_t));
-      } else {
-        if (v->v.a.size < size) {
-          // resize & copy
-          prev = v->v.a.ptr;
-          v->v.a.ptr = malloc((size + ARR_ALLOC) * sizeof(var_t));
-          if (v->v.a.size > 0) {
-            memcpy(v->v.a.ptr, prev, v->v.a.size * sizeof(var_t));
-          }
-        } else {
-          prev = NULL;
-        }
+      // resize up, if there is space do not resize
+      int prev_size = v->v.a.size;
+      if (prev_size == 0) {
+        v_new_array(v, size);
+      } else if (prev_size < size) {
+        // resize & copy
+        v->v.a.data = (var_t *)realloc(v->v.a.data, sizeof(var_t) * size);
+        v->v.a.size = size;
       }
 
       // init vars
-      for (i = v->v.a.size; i < size; i++) {
-        elem = (var_t *)(v->v.a.ptr + (sizeof(var_t) * i));
+      for (i = prev_size; i < size; i++) {
+        var_t *elem = v_elem(v, i);
         v_init(elem);
       }
 
@@ -179,10 +199,6 @@ void v_resize_array(var_t *v, dword size) {
       v->v.a.size = size;
       v->v.a.ubound[0] = v->v.a.lbound[0] + (size - 1);
       v->v.a.maxdim = 1;
-
-      if (prev) {
-        free(prev);
-      }
     }
   } else {
     err_varisnotarray();
@@ -193,21 +209,8 @@ void v_resize_array(var_t *v, dword size) {
  * create RxC array
  */
 void v_tomatrix(var_t *v, int r, int c) {
-  var_t *e;
-  int i;
-
   v_free(v);
-  v->type = V_ARRAY;
-
-  // create data
-  v->v.a.size = r * c;
-  v->v.a.ptr = malloc(sizeof(var_t) * v->v.a.size);
-  for (i = 0; i < r * c; i++) {
-    e = (var_t *)(v->v.a.ptr + (sizeof(var_t) * i));
-    v_init(e);
-  }
-
-  // array info
+  v_new_array(v, r * c);
   v->v.a.lbound[0] = v->v.a.lbound[1] = opt_base;
   v->v.a.ubound[0] = opt_base + (r - 1);
   v->v.a.ubound[1] = opt_base + (c - 1);
@@ -215,43 +218,19 @@ void v_tomatrix(var_t *v, int r, int c) {
 }
 
 /*
- * create RxC array
- */
-var_t *v_new_matrix(int r, int c) {
-  var_t *v;
-
-  v = v_new();
-  v_tomatrix(v, r, c);
-
-  return v;
-}
-
-/*
  * create array
  */
 void v_toarray1(var_t *v, dword r) {
-  var_t *e;
-  dword i;
-
   v_free(v);
   v->type = V_ARRAY;
-
   if (r > 0) {
-    // create data
-    v->v.a.size = r;
-    v->v.a.ptr = malloc(sizeof(var_t) * (v->v.a.size + ARR_ALLOC));
-    for (i = 0; i < r; i++) {
-      e = (var_t *)(v->v.a.ptr + (sizeof(var_t) * i));
-      v_init(e);
-    }
-
-    // array info
+    v_new_array(v, r);
     v->v.a.maxdim = 1;
     v->v.a.lbound[0] = opt_base;
     v->v.a.ubound[0] = opt_base + (r - 1);
   } else {
     v->v.a.size = 0;
-    v->v.a.ptr = NULL;
+    v->v.a.data = NULL;
     v->v.a.lbound[0] = v->v.a.ubound[0] = opt_base;
     v->v.a.maxdim = 1;
   }
@@ -268,7 +247,7 @@ int v_is_nonzero(var_t *v) {
     // return (v->v.n != 0.0 && v->v.n != -0.0);
     return (ABS(v->v.n) > 1E-308);
   case V_STR:
-    return (v->v.p.size != 0);
+    return (v->v.p.length != 0);
   case V_MAP:
     return !map_is_empty(v);
   case V_PTR:
@@ -353,8 +332,8 @@ int v_compare(var_t *a, var_t *b) {
     // check every element
     int i, ci;
     for (i = 0; i < a->v.a.size; i++) {
-      var_t *ea = (var_t *)(a->v.a.ptr + sizeof(var_t) * i);
-      var_t *eb = (var_t *)(b->v.a.ptr + sizeof(var_t) * i);
+      var_t *ea = v_elem(a, i);
+      var_t *eb = v_elem(b, i);
       if ((ci = v_compare(ea, eb)) != 0) {
         return ci;
       }
@@ -376,7 +355,7 @@ int v_compare(var_t *a, var_t *b) {
  * result = a + b
  */
 void v_add(var_t *result, var_t *a, var_t *b) {
-  char tmpsb[64];
+  char tmpsb[INT_STR_LEN];
 
   if (a->type == V_STR && b->type == V_STR) {
     int length = strlen(a->v.p.ptr) + strlen(b->v.p.ptr);
@@ -385,7 +364,7 @@ void v_add(var_t *result, var_t *a, var_t *b) {
     strcpy(result->v.p.ptr, a->v.p.ptr);
     strcat(result->v.p.ptr, b->v.p.ptr);
     result->v.p.ptr[length] = '\0';
-    result->v.p.size = length + 1;
+    result->v.p.length = length + 1;
     return;
   } else if (a->type == V_INT && b->type == V_INT) {
     result->type = V_INT;
@@ -413,7 +392,7 @@ void v_add(var_t *result, var_t *a, var_t *b) {
       }
     } else {
       result->type = V_STR;
-      result->v.p.ptr = (char *)malloc(strlen(a->v.p.ptr) + 64);
+      result->v.p.ptr = (char *)malloc(strlen(a->v.p.ptr) + INT_STR_LEN);
       strcpy(result->v.p.ptr, a->v.p.ptr);
       if (b->type == V_INT) {
         ltostr(b->v.i, tmpsb);
@@ -421,7 +400,7 @@ void v_add(var_t *result, var_t *a, var_t *b) {
         ftostr(b->v.n, tmpsb);
       }
       strcat(result->v.p.ptr, tmpsb);
-      result->v.p.size = strlen(result->v.p.ptr) + 1;
+      result->v.p.length = strlen(result->v.p.ptr) + 1;
     }
   } else if ((a->type == V_INT || a->type == V_NUM) && b->type == V_STR) {
     if (is_number(b->v.p.ptr)) {
@@ -433,7 +412,7 @@ void v_add(var_t *result, var_t *a, var_t *b) {
       }
     } else {
       result->type = V_STR;
-      result->v.p.ptr = (char *)malloc(strlen(b->v.p.ptr) + 64);
+      result->v.p.ptr = (char *)malloc(strlen(b->v.p.ptr) + INT_STR_LEN);
       if (a->type == V_INT) {
         ltostr(a->v.i, tmpsb);
       } else {
@@ -441,8 +420,13 @@ void v_add(var_t *result, var_t *a, var_t *b) {
       }
       strcpy(result->v.p.ptr, tmpsb);
       strcat(result->v.p.ptr, b->v.p.ptr);
-      result->v.p.size = strlen(result->v.p.ptr) + 1;
+      result->v.p.length = strlen(result->v.p.ptr) + 1;
     }
+  } else if (b->type == V_MAP) {
+    char *map = map_to_str(b);
+    v_set(result, a);
+    v_strcat(result, map);
+    free(map);
   }
 }
 
@@ -459,8 +443,8 @@ void v_set(var_t *dest, const var_t *src) {
     dest->v.i = src->v.i;
     break;
   case V_STR:
-    dest->v.p.size = v_strlen(src) + 1;
-    dest->v.p.ptr = (char *)malloc(dest->v.p.size);
+    dest->v.p.length = v_strlen(src) + 1;
+    dest->v.p.ptr = (char *)malloc(dest->v.p.length);
     strcpy(dest->v.p.ptr, src->v.p.ptr);
     break;
   case V_NUM:
@@ -483,20 +467,19 @@ void v_set(var_t *dest, const var_t *src) {
   case V_ARRAY:
     if (src->v.a.size) {
       memcpy(&dest->v.a, &src->v.a, sizeof(src->v.a));
-      dest->v.a.ptr = malloc(src->v.a.size * sizeof(var_t));
+      v_new_array(dest, src->v.a.size);
 
       // copy each element
       int i;
-      var_t *dest_vp, *src_vp;
       for (i = 0; i < src->v.a.size; i++) {
-        src_vp = (var_t *)(src->v.a.ptr + (sizeof(var_t) * i));
-        dest_vp = (var_t *)(dest->v.a.ptr + (sizeof(var_t) * i));
+        var_t *src_vp = v_elem(src, i);
+        var_t *dest_vp = v_elem(dest, i);
         v_init(dest_vp);
         v_set(dest_vp, src_vp);
       }
     } else {
       dest->v.a.size = 0;
-      dest->v.a.ptr = NULL;
+      dest->v.a.data = NULL;
       dest->v.a.ubound[0] = dest->v.a.lbound[0] = opt_base;
       dest->v.a.maxdim = 1;
     }
@@ -508,8 +491,7 @@ void v_set(var_t *dest, const var_t *src) {
  * return a full copy of the 'source'
  */
 var_t *v_clone(const var_t *source) {
-  var_t *vnew = (var_t *)malloc(sizeof(var_t));
-  v_init(vnew);
+  var_t *vnew = v_new();
   v_set(vnew, source);
   return vnew;
 }
@@ -551,7 +533,7 @@ void v_createstr(var_t *v, const char *src) {
   int l = strlen(src) + 1;
   v->type = V_STR;
   v->v.p.ptr = malloc(l);
-  v->v.p.size = l;
+  v->v.p.length = l;
   strcpy(v->v.p.ptr, src);
 }
 
@@ -562,11 +544,11 @@ char *v_str(var_t *arg) {
   char *buffer;
   switch (arg->type) {
   case V_INT:
-    buffer = malloc(64);
+    buffer = malloc(INT_STR_LEN);
     ltostr(arg->v.i, buffer);
     break;
   case V_NUM:
-    buffer = malloc(64);
+    buffer = malloc(INT_STR_LEN);
     ftostr(arg->v.n, buffer);
     break;
   case V_STR:
@@ -598,7 +580,7 @@ void v_tostr(var_t *arg) {
     int len = strlen(tmp) + 1;
     arg->type = V_STR;
     arg->v.p.ptr = malloc(len);
-    arg->v.p.size = len;
+    arg->v.p.length = len;
     strcpy(arg->v.p.ptr, tmp);
     free(tmp);
   }
@@ -611,8 +593,8 @@ void v_setstr(var_t *var, const char *string) {
   if (var->type != V_STR || strcmp(string, var->v.p.ptr) != 0) {
     v_free(var);
     var->type = V_STR;
-    var->v.p.size = strlen(string) + 1;
-    var->v.p.ptr = malloc(var->v.p.size);
+    var->v.p.length = strlen(string) + 1;
+    var->v.p.ptr = malloc(var->v.p.length);
     strcpy(var->v.p.ptr, string);
   }
 }
@@ -621,26 +603,11 @@ void v_setstrn(var_t *var, const char *string, int len) {
   if (var->type != V_STR || strncmp(string, var->v.p.ptr, len) != 0) {
     v_free(var);
     var->type = V_STR;
-    var->v.p.size = len + 1;
-    var->v.p.ptr = malloc(var->v.p.size);
+    var->v.p.length = len + 1;
+    var->v.p.ptr = malloc(var->v.p.length);
     strncpy(var->v.p.ptr, string, len);
     var->v.p.ptr[len] = '\0';
   }
-}
-
-/*
- * set the value of 'var' to string
- */
-void v_setstrf(var_t *var, const char *fmt, ...) {
-  char *buf;
-  va_list ap;
-
-  va_start(ap, fmt);
-  buf = malloc(0x10000);
-  vsnprintf(buf, 1024, fmt, ap);
-  v_setstr(var, buf);
-  free(buf);
-  va_end(ap);
 }
 
 /*
@@ -651,8 +618,8 @@ void v_strcat(var_t *var, const char *string) {
     v_tostr(var);
   }
   if (var->type == V_STR) {
-    var->v.p.size = strlen(var->v.p.ptr) + strlen(string) + 1;
-    var->v.p.ptr = realloc(var->v.p.ptr, var->v.p.size);
+    var->v.p.length = strlen(var->v.p.ptr) + strlen(string) + 1;
+    var->v.p.ptr = realloc(var->v.p.ptr, var->v.p.length);
     strcat(var->v.p.ptr, string);
   } else {
     err_typemismatch();
@@ -688,48 +655,6 @@ char *v_getstr(var_t *var) {
 }
 
 /*
- * set the value of 'var' to 'itable' integer array
- */
-void v_setintarray(var_t *var, int32_t *itable, int count) {
-  int i;
-  var_t *elem_p;
-
-  v_toarray1(var, count);
-  for (i = 0; i < count; i++) {
-    elem_p = (var_t *)(var->v.a.ptr + sizeof(var_t) * i);
-    v_setint(elem_p, itable[i]);
-  }
-}
-
-/*
- * set the value of 'var' to 'itable' real's array
- */
-void v_setrealarray(var_t *var, var_num_t *ntable, int count) {
-  int i;
-  var_t *elem_p;
-
-  v_toarray1(var, count);
-  for (i = 0; i < count; i++) {
-    elem_p = (var_t *)(var->v.a.ptr + sizeof(var_t) * i);
-    v_setreal(elem_p, ntable[i]);
-  }
-}
-
-/*
- * set the value of 'var' to 'itable' string array
- */
-void v_setstrarray(var_t *var, char **ctable, int count) {
-  int i;
-  var_t *elem_p;
-
-  v_toarray1(var, count);
-  for (i = 0; i < count; i++) {
-    elem_p = (var_t *)(var->v.a.ptr + sizeof(var_t) * i);
-    v_setstr(elem_p, ctable[i]);
-  }
-}
-
-/*
  * set an empty string
  */
 void v_zerostr(var_t *r) {
@@ -737,7 +662,7 @@ void v_zerostr(var_t *r) {
   r->type = V_STR;
   r->v.p.ptr = malloc(1);
   r->v.p.ptr[0] = '\0';
-  r->v.p.size = 1;
+  r->v.p.length = 1;
 }
 
 /*
@@ -754,7 +679,7 @@ void v_input2var(const char *str, var_t *var) {
     v_setstr(var, str);
   } else {
     char *np, *sb;
-    char buf[64];
+    char buf[INT_STR_LEN];
     int type;
     var_int_t lv;
     var_num_t dv;

@@ -117,7 +117,7 @@ int dev_run(const char *cmd, var_t *r, int wait) {
     if (buf != NULL) {
       r->type = V_STR;
       r->v.p.ptr = buf;
-      r->v.p.size = strlen(buf) + 1;
+      r->v.p.length = strlen(buf) + 1;
     } else {
       result = 0;
     }
@@ -147,8 +147,8 @@ int dev_run(const char *cmd, var_t *r, int wait) {
   int result = 1;
   if (r != NULL) {
     r->type = V_STR;
-    r->v.p.size = BUFSIZE + 1;
-    r->v.p.ptr = malloc(r->v.p.size);
+    r->v.p.length = BUFSIZE + 1;
+    r->v.p.ptr = malloc(r->v.p.length);
     r->v.p.ptr[0] = '\0';
 
     int bytes = 0;
@@ -160,9 +160,9 @@ int dev_run(const char *cmd, var_t *r, int wait) {
         bytes = fread(buf, 1, BUFSIZE, fin);
         buf[bytes] = '\0';
         total += bytes;
-        if (total >= r->v.p.size) {
-          r->v.p.size += BUFSIZE + 1;
-          r->v.p.ptr = realloc(r->v.p.ptr, r->v.p.size);
+        if (total >= r->v.p.length) {
+          r->v.p.length += BUFSIZE + 1;
+          r->v.p.ptr = realloc(r->v.p.ptr, r->v.p.length);
         }
         strcat(r->v.p.ptr, buf);
       }
@@ -194,22 +194,19 @@ int dev_run(const char *cmd, var_t *r, int wait) {
 }
 #endif
 
-#ifndef IMPL_DEV_ENV
+#if !defined(IMPL_DEV_ENV)
 
-/**
- * The  putenv() function adds or changes the value of environment variables.  The argument string
- * is of the form name=value. If name does not already exist in the environment, then string is added
- * to the environment.  If name does exist, then the value of name in the environment is changed
- * to value.  The string pointed to by string becomes part of the environment, so
- * altering the string changes the environment.
- *
- * The putenv() function returns zero on success, or -1 if an error occurs.
- *
- * If the value is zero-length then the variable must be deleted. (libc4,libc5 compatible version)
- */
-int dev_putenv(const char *str) {
-  char *p = strdup(str); // no free()
-  return putenv(p);
+int dev_setenv(const char *key, const char *value) {
+#ifdef __MINGW32__
+  // use leaky putenv
+  unsigned size = snprintf(NULL, 0, "%s=%s", key, value) + 1;
+  char *buf = malloc(size);
+  buf[0] = '\0';
+  snprintf(buf, size, "%s=%s", key, value);
+  return putenv(buf);
+#else
+  return setenv(key, value, 1);
+#endif
 }
 
 /**
@@ -218,7 +215,7 @@ int dev_putenv(const char *str) {
  *
  * The getenv() function returns a pointer to the value in the environment, or NULL if there is no match.
  */
-char *dev_getenv(const char *str) {
+const char *dev_getenv(const char *str) {
   return getenv(str);
 }
 
@@ -236,7 +233,7 @@ int dev_env_count() {
 /**
  * returns the value of the n-th system's environment variable
  */
-char *dev_getenv_n(int n) {
+const char *dev_getenv_n(int n) {
   int count = 0;
   while (environ[count]) {
     if (n == count) {
@@ -246,8 +243,7 @@ char *dev_getenv_n(int n) {
   }
   return NULL;
 }
-
-#endif // IMPL_DEV_ENV
+#endif
 
 dword dev_get_millisecond_count(void) {
 #if defined(__MACH__)

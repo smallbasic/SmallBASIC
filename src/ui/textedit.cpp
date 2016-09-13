@@ -15,9 +15,16 @@
 #include "ui/strlib.h"
 #include "ui/kwp.h"
 
+void safe_memmove(void *dest, const void *src, size_t n) {
+  if (n > 0 && dest != NULL && src != NULL) {
+    memmove(dest, src, n);
+  }
+}
+
 #define STB_TEXTEDIT_IS_SPACE(ch) IS_WHITE(ch)
 #define STB_TEXTEDIT_IS_PUNCT(ch) (ch != '_' && ch != '$' && ispunct(ch))
 #define IS_VAR_CHAR(ch) (ch == '_' || ch == '$' || isalpha(ch) || isdigit(ch))
+#define STB_TEXTEDIT_memmove safe_memmove
 #define STB_TEXTEDIT_IMPLEMENTATION
 #include "lib/stb_textedit.h"
 
@@ -34,11 +41,14 @@
 #define TWISTY2_LEN 4
 #define HELP_BG 0x73c990
 #define HELP_FG 0x20242a
+#define DOUBLE_CLICK_MS 200
 
 #if defined(_Win32)
 #include <shlwapi.h>
 #define strcasestr StrStrI
 #endif
+
+extern "C" dword dev_get_millisecond_count();
 
 unsigned g_themeId = 0;
 int g_lineMarker[MAX_MARKERS] = {
@@ -99,6 +109,7 @@ const char *helpText =
   "C-SPC auto-complete\n"
   "C-home top\n"
   "C-end bottom\n"
+  "C-5,6,7 macro\n"
   "A-c change case\n"
   "A-g goto line\n"
   "A-n trim line-endings\n"
@@ -111,7 +122,8 @@ const char *helpText =
   "F2 online help\n"
   "F3,F4 export\n"
   "F5 debug\n"
-  "F9, C-r run\n";
+  "F9, C-r run\n"
+  "F10, set command$\n";
 
 inline bool match(const char *str, const char *pattern , int len) {
   int i, j;
@@ -209,8 +221,14 @@ void EditBuffer::clear() {
 }
 
 int EditBuffer::deleteChars(int pos, int num) {
-  memmove(&_buffer[pos], &_buffer[pos+num], _len - (pos + num));
+  if (_len - (pos + num) > 0) {
+    memmove(&_buffer[pos], &_buffer[pos + num], _len - (pos + num));
+  }
+  // otherwise no more characters to pull back over the hole
   _len -= num;
+  if (_len < 0) {
+    _len = 0;
+  }
   _buffer[_len] = '\0';
   _in->setDirty(true);
   return 1;
@@ -222,7 +240,9 @@ int EditBuffer::insertChars(int pos, const char *text, int num) {
     _size += (required + GROW_SIZE);
     _buffer = (char *)realloc(_buffer, _size);
   }
-  memmove(&_buffer[pos + num], &_buffer[pos], _len - pos);
+  if (_len - pos > 0) {
+    memmove(&_buffer[pos + num], &_buffer[pos], _len - pos);
+  }
   memcpy(&_buffer[pos], text, num);
   _len += num;
   _buffer[_len] = '\0';
@@ -295,6 +315,7 @@ TextEditInput::TextEditInput(const char *text, int chW, int chH,
   _indentLevel(INDENT_LEVEL),
   _matchingBrace(-1),
   _ptY(-1),
+  _pressTick(0),
   _dirty(false) {
   stb_textedit_initialize_state(&_state, false);
 }
@@ -529,6 +550,10 @@ void TextEditInput::drawText(int x, int y, const char *str,
       } else if (state == kText || str[i] == '\"') {
         next = 1;
         while (i + next < length && str[i + next] != '\"') {
+          if (i + next + 1 < length &&
+              str[i + next] == '\\' && str[i + next + 1] == '\"') {
+            next++;
+          }
           next++;
         }
         if (str[i + next] == '\"') {
@@ -705,6 +730,24 @@ bool TextEditInput::find(const char *word, bool next) {
   return result;
 }
 
+char *TextEditInput::getTextSelection() {
+  char *result;
+  if (_state.select_start != _state.select_end) {
+    int start, end;
+    if (_state.select_start > _state.select_end) {
+      end = _state.select_start;
+      start = _state.select_end;
+    } else {
+      start = _state.select_start;
+      end = _state.select_end;
+    }
+    result = _buf.textRange(start, end);
+  } else {
+    result = _buf.textRange(0, _buf._len);
+  }
+  return result;
+}
+
 int *TextEditInput::getMarkers() {
   return g_lineMarker;
 }
@@ -776,7 +819,14 @@ void TextEditInput::clicked(int x, int y, bool pressed) {
   if (x < _marginWidth) {
     _ptY = -1;
   } else if (pressed) {
-    stb_textedit_click(&_buf, &_state, x - _marginWidth, y + (_scroll * _charHeight));
+    int tick = dev_get_millisecond_count();
+    if (_pressTick && tick - _pressTick < DOUBLE_CLICK_MS) {
+      _state.select_start = wordStart();
+      _state.select_end = wordEnd();
+    } else  {
+      stb_textedit_click(&_buf, &_state, x - _marginWidth, y + (_scroll * _charHeight));
+    }
+    _pressTick = tick;
   }
 }
 
@@ -842,6 +892,8 @@ char *TextEditInput::copy(bool cut) {
 void TextEditInput::paste(const char *text) {
   if (text != NULL) {
     stb_textedit_paste(&_buf, &_state, text, strlen(text));
+    _cursorRow = getCursorRow();
+    updateScroll();
   }
 }
 
@@ -1264,11 +1316,7 @@ char *TextEditInput::getSelection(int *start, int *end) {
     *end = _state.select_end;
   } else {
     *start = wordStart();
-    int i = _state.cursor;
-    while (IS_VAR_CHAR(_buf._buffer[i]) && i < _buf._len) {
-      i++;
-    }
-    *end = i;
+    *end = wordEnd();
     result = _buf.textRange(*start, *end);
   }
   return result;
@@ -1520,6 +1568,14 @@ void TextEditInput::updateScroll() {
     // cursor outside current view
     _scroll = _cursorRow - (pageRows / 2);
   }
+}
+
+int TextEditInput::wordEnd() {
+  int i = _state.cursor;
+  while (IS_VAR_CHAR(_buf._buffer[i]) && i < _buf._len) {
+    i++;
+  }
+  return i;
 }
 
 int TextEditInput::wordStart() {
@@ -1841,6 +1897,19 @@ void TextEditHelpWidget::createSearch(bool replace) {
     _editor->find(_buf._buffer, true);
   } else {
     reset(replace ? kSearchReplace : kSearch);
+  }
+}
+
+void TextEditHelpWidget::paste(const char *text) {
+  switch (_mode) {
+  case kSearch:
+  case kSearchReplace:
+  case kReplace:
+  case kLineEdit:
+    TextEditInput::paste(text);
+    break;
+  default:
+    break;
   }
 }
 

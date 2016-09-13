@@ -95,8 +95,7 @@ var_t *code_getvarptr_arridx(var_t *basevar_p) {
 
     if (!prog_error) {
       if ((int) array_index < basevar_p->v.a.size && (int) array_index >= 0) {
-        var_p = (var_t *)(basevar_p->v.a.ptr + (array_index * sizeof(var_t)));
-
+        var_p = v_elem(basevar_p, array_index);
         if (code_peek() == kwTYPE_LEVEL_END) {
           code_skipnext();      // ')', ')' level
           if (code_peek() == kwTYPE_LEVEL_BEGIN) {
@@ -164,8 +163,7 @@ var_t *code_isvar_arridx(var_t *basevar_p) {
 
     if (!prog_error) {
       if ((int) array_index < basevar_p->v.a.size) {
-        var_p = (var_t *)(basevar_p->v.a.ptr + (array_index * sizeof(var_t)));
-
+        var_p = v_elem(basevar_p, array_index);
         if (code_peek() == kwTYPE_LEVEL_END) {
           code_skipnext();      // ')', ')' level
           if (code_peek() == kwTYPE_LEVEL_BEGIN) {
@@ -336,7 +334,7 @@ void v_eval_ref(var_t *v_left) {
 void v_eval_str(var_p_t v) {
   int len = code_getstrlen();
   v->type = V_STR;
-  v->v.p.size = len;
+  v->v.p.length = len;
   v->v.p.ptr = malloc(len + 1);
   memcpy(v->v.p.ptr, &prog_source[prog_ip], len);
   *((char *)(v->v.p.ptr + len)) = '\0';

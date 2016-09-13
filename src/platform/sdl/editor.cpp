@@ -16,10 +16,14 @@
 
 using namespace strlib;
 
+#define MAX_MACRO 20
+
 String g_exportAddr;
 String g_exportToken;
-int cursorPos;
-bool returnToLine;
+int g_macro[MAX_MACRO];
+int g_macro_size;
+bool g_macro_record;
+bool g_returnToLine;
 
 void onlineHelp(Runtime *runtime, TextEditInput *widget) {
   char path[100];
@@ -95,14 +99,21 @@ void System::editSource(String loadPath) {
   int charWidth = _output->getCharWidth();
   int charHeight = _output->getCharHeight();
   int prevScreenId = _output->selectScreen(SOURCE_SCREEN);
-  TextEditInput *editWidget = new TextEditInput(_programSrc, charWidth, charHeight, 0, 0, w, h);
+  TextEditInput *editWidget;
+  if (_editor != NULL) {
+    editWidget = _editor;
+    editWidget->_width = w;
+    editWidget->_height = h;
+  } else {
+    editWidget = new TextEditInput(_programSrc, charWidth, charHeight, 0, 0, w, h);
+  }
   TextEditHelpWidget *helpWidget = new TextEditHelpWidget(editWidget, charWidth, charHeight);
   TextEditInput *widget = editWidget;
   String dirtyFile;
   String cleanFile;
   String recentFile;
   enum InputMode {
-    kInit, kExportAddr, kExportToken
+    kInit, kExportAddr, kExportToken, kCommand
   } inputMode = kInit;
 
   setupStatus(dirtyFile, cleanFile, loadPath);
@@ -111,12 +122,9 @@ void System::editSource(String loadPath) {
   editWidget->setLineNumbers();
   editWidget->setFocus(true);
 
-  if (isBreak() && returnToLine) {
+  if (isBreak() && g_returnToLine) {
     editWidget->setCursorRow(gsb_last_line);
-  } else {
-    editWidget->setCursorPos(cursorPos);
   }
-  cursorPos = 0;
 
   if (gsb_last_error && !isBack()) {
     editWidget->setCursorRow(gsb_last_line - 1);
@@ -130,6 +138,8 @@ void System::editSource(String loadPath) {
   _output->addInput(helpWidget);
   if (gsb_last_error && !isBack()) {
     _output->setStatus("Error. Esc=Close");
+  }  else if (editWidget->isDirty()) {
+    _output->setStatus(dirtyFile);
   } else {
     _output->setStatus(cleanFile);
   }
@@ -161,8 +171,22 @@ void System::editSource(String loadPath) {
       }
 
       switch (event.key) {
+      case SB_KEY_CTRL('5'):
+        _output->setStatus("Recording keyboard macro");
+        g_macro_record = true;
+        g_macro_size = 0;
+        break;
+      case SB_KEY_CTRL('6'):
+        dirty = !editWidget->isDirty();
+        g_macro_record = false;
+        break;
+      case SB_KEY_CTRL('7'):
+        g_macro_record = false;
+        for (int i = 0; i < g_macro_size; i++) {
+          redraw |= widget->edit(g_macro[i], sw, charWidth);
+        }
+        break;
       case SB_KEY_F(8):
-      case SB_KEY_F(10):
       case SB_KEY_F(11):
       case SB_KEY_F(12):
       case SB_KEY_MENU:
@@ -177,10 +201,13 @@ void System::editSource(String loadPath) {
       case SB_KEY_F(9):
       case SB_KEY_CTRL('r'):
         _state = kRunState;
-        cursorPos = editWidget->getCursorPos();
-        if (editWidget->isDirty()) {
-          saveFile(editWidget, loadPath);
-        }
+        break;
+      case SB_KEY_F(10):
+        _output->setStatus("Enter program command line, Esc=Close");
+        widget = helpWidget;
+        helpWidget->createLineEdit(opt_command);
+        helpWidget->show();
+        inputMode = kCommand;
         break;
       case SB_KEY_CTRL('s'):
         saveFile(editWidget, loadPath);
@@ -292,8 +319,8 @@ void System::editSource(String loadPath) {
         showRecentFiles(helpWidget, loadPath);
         break;
       case SB_KEY_ALT('.'):
-        returnToLine = !returnToLine;
-        _output->setStatus(returnToLine ?
+        g_returnToLine = !g_returnToLine;
+        _output->setStatus(g_returnToLine ?
                            "Position the cursor to the last program line after BREAK" :
                            "BREAK restores current cursor position");
         break;
@@ -332,6 +359,10 @@ void System::editSource(String loadPath) {
         redraw = widget->edit(event.key, sw, charWidth);
         break;
       }
+      if (g_macro_record && g_macro_size < MAX_MACRO &&
+          event.key != (int)SB_KEY_CTRL('5')) {
+        g_macro[g_macro_size++] = event.key;
+      }
       if (event.key == SB_KEY_ENTER) {
         if (helpWidget->replaceMode()) {
           _output->setStatus("Replace string with. Esc=Close");
@@ -349,6 +380,12 @@ void System::editSource(String loadPath) {
             inputMode = kInit;
             widget = editWidget;
             exportBuffer(_output, editWidget->getText(), g_exportAddr, g_exportToken);
+            helpWidget->hide();
+            break;
+          case kCommand:
+            strcpy(opt_command, helpWidget->getText());
+            inputMode = kInit;
+            widget = editWidget;
             helpWidget->hide();
             break;
           default:
@@ -384,14 +421,23 @@ void System::editSource(String loadPath) {
                             "Would you like to save it now?";
       int choice = ask("Save changes?", message, isBack());
       if (choice == 0) {
-        if (!editWidget->save(loadPath)) {
-          alert("", "Failed to save file");
-        }
+        saveFile(editWidget, loadPath);
       } else if (choice == 2) {
         // cancel
         _state = kEditState;
       }
     }
+  }
+
+  if (_state == kRunState) {
+    // allow the editor to be restored on return
+    if (!_output->removeInput(editWidget)) {
+      trace("Failed to remove editor input");
+    }
+    _editor = editWidget;
+    _editor->setFocus(false);
+  } else {
+    _editor = NULL;
   }
 
   _output->removeInputs();

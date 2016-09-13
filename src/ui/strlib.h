@@ -154,12 +154,12 @@ struct List {
   /** 
    * Returns an TP pointing to the first element of the List.
    */
-  TP begin() { return _head; }
+  TP begin() const { return _head; }
 
   /**
    * Returns an TP pointing beyond the last element of the List.
    */
-  TP end() { return _head + _count; }
+  TP end() const { return _head + _count; }
 
   /**
    * String specialisation - Add a String to the list

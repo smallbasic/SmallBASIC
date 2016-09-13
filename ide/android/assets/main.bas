@@ -11,6 +11,8 @@ const deleteId = "__bn_delete__"
 const newId = "__bn_new__"
 const viewId = "__bn_view__"
 const closeId = "__bn_close__"
+const menu_gap = -(txtw(" ") / 2)
+const is_sdl = instr(sbver, "SDL") != 0
 
 func spaced(s)
   local ch, len_s
@@ -35,34 +37,56 @@ end
 func mk_menu(value, lab, x)
   local bn
   bn.x = x
-  bn.y = 0
+  bn.y = ypos * char_h
   bn.value = value
-  bn.label = lab
-  bn.color = 7
-  bn.backgroundColor = 1
-  bn.type = "tab"
+  bn.label = "[" + lab + "]"
+  bn.color = 3
+  bn.backgroundColor = 0
+  bn.type = "link"
   mk_menu = bn
 end
 
-sub intro(byref frm)
-  local i, bn
-  for i = 1 to 4
-    bn = mk_bn(0, "Welcome to SmallBASIC", i)
-    bn.type = "label"
-    frm.inputs << bn
-  next i
-  bn = mk_bn(0, spaced("Welcome to SmallBASIC"), 7)
-  bn.type = "label"
-  frm.inputs << bn
+sub info_header(is_welcome)
+  if (is_welcome) then
+    color 7,0
+    print boldOn + spaced("Welcome to SmallBASIC") + boldOff
+    print
+    color 6,0
+    if (is_sdl) then
+      print "Popup menus are accessed by a right mouse click. ";
+    else
+      print "Popup menus are accessed by the menu key (3 vertical dots). ";
+    endif
+    print "From here, you can do things like toggle the ";
+    print "Editor, Run, Adjust Font size..."
+    if (is_sdl) then
+      randomize
+      select case (rnd * 100 % 10)
+      case 0: tip = "Press and hold Ctrl then press 'm' to access the menu."
+      case 1: tip = "Press and hold Ctrl then press 'p' to take a screenshot."
+      case 2: tip = "In the editor, press and hold Ctrl then press 'h' to access help."
+      case 3: tip = "Toggle the editor menu option for different run modes."
+      case 4: tip = "Editor Live Mode makes your program restart whenever the program changes."
+      case 5: tip = "Select the Online option to run a featured program."
+      case 6: tip = "Select View source from the menu to display program code."
+      case 7: tip = "Select the File option to manage .bas files in the current folder."
+      case 8: tip = "You can drop .bas files from the system file manager to load a program."
+      end select
+      print "Tip: " + tip
+    endif
+    print
+  endif
+  color 2,0
 end
 
 sub do_okay_button()
   local frm, button
-  button.x = xmax / 2
+  button.label = "[Close]"
+  button.x = (xmax - txtw(button.label)) / 2
   button.y = -1
-  button.label = "Close"
-  button.backgroundColor = 8
-  button.color = 10
+  button.backgroundColor = 0
+  button.color = 3
+  button.type = "link"
   frm.inputs << button
   frm = form(frm)
   print
@@ -211,32 +235,20 @@ end
 sub manageFiles()
   local f, wnd, bn_edit, bn_files, selectedFile
 
-  sub mk_item(x, lab, value)
-    local bn
-    bn.x = x
-    bn.y = 0
-    bn.label = lab
-    bn.value = value
-    bn.backgroundColor = 1
-    bn.color = 7
-    bn.type = "tab"
-    f.inputs << bn
-  end
-
   sub createUI()
     cls
-    rect 0, 0, xmax, lineSpacing COLOR 1 filled
-    mk_item( 0, "<<", closeId)
-    mk_item(-1, "View", viewId)
-    mk_item(-1, "Rename", renameId)
-    mk_item(-1, "New", newId)
-    mk_item(-1, "Delete", deleteId)
+    f.inputs << mk_menu(closeId, "<<", 0)
+    f.inputs << mk_menu(viewId, "View",  menu_gap)
+    f.inputs << mk_menu(renameId,"Rename", menu_gap)
+    f.inputs << mk_menu(newId, "New", menu_gap)
+    f.inputs << mk_menu(deleteId, "Delete", menu_gap)
     bn_edit.x = 0
     bn_edit.y = char_h + 4
     bn_edit.width = xmax
     bn_edit.type = "text"
     bn_edit.color = "white"
     bn_edit.resizable = TRUE
+    bn_edit.help = "Enter file name, and then click New."
     bn_files.x = x1
     bn_files.y = bn_edit.y + char_h + 2
     bn_files.height = ymax - bn_files.y
@@ -244,6 +256,7 @@ sub manageFiles()
     bn_files.color = 2
     bn_files.type = "list"
     bn_files.resizable = TRUE
+    bn_files.help = "No .bas files in " + cwd
     f.focus = idxEdit
     f.inputs << bn_edit
     f.inputs << bn_files
@@ -271,12 +284,14 @@ sub manageFiles()
   end
 
   sub deleteFile()
-    wnd.ask("Are you sure you wish to delete " + selectedFile + "?", "Delete File")
-    if (wnd.answer == 0) then
-      f.refresh(true)
-      local selectedIndex = f.inputs(idxFiles).selectedIndex
-      kill selectedFile
-      reloadList(selectedIndex)
+    if (len(selectedFile) > 0) then
+      wnd.ask("Are you sure you wish to delete " + selectedFile + "?", "Delete File")
+      if (wnd.answer == 0) then
+        f.refresh(true)
+        local selectedIndex = f.inputs(idxFiles).selectedIndex
+        kill selectedFile
+        reloadList(selectedIndex)
+      endif
     endif
     f.value = ""
   end
@@ -384,38 +399,32 @@ sub manageFiles()
 end
 
 sub main
-  local basList, dirList, path
-  local frm, bn_about, bn_online, bn_new
-  local do_intro
+  local path, frm
+  local is_welcome = (command == "welcome")
 
-  dim basList
-  dim dirList
+  func makeUI(path)
+    local frm, bn_files, bn_online, bn_setup, bn_about, bn_new
+    local basList, dirList
+    dim basList
+    dim dirList
 
-  bn_files = mk_menu("_files", "File", 0)
-  bn_online = mk_menu(onlineUrl, "Online", -1)
-  bn_setup = mk_menu("_setup", "Setup", -1)
-  bn_about = mk_menu("_about", "About", -1)
-  bn_online.isExit = true
+    info_header(is_welcome)
+    is_welcome = false
+    bn_files = mk_menu("_files", "File", 0)
+    bn_online = mk_menu(onlineUrl, "Online", menu_gap)
+    bn_setup = mk_menu("_setup", "Setup", menu_gap)
+    bn_about = mk_menu("_about", "About", menu_gap)
+    bn_online.isExit = true
 
-  func makeUI(path, welcome)
-    local frm
     frm.inputs << bn_files
     frm.inputs << bn_online
-    if (instr(sbver, "SDL") == 0) then
+    if (!is_sdl) then
       frm.inputs << bn_setup
     endif
     frm.inputs << bn_about
-
-    if (welcome) then
-      intro(frm)
-    fi
-
     listFiles frm, path, basList, dirList
     frm.color = 10
-    rect 0, 0, xmax, lineSpacing COLOR 1 filled
-    at 0, 0
-    frm = form(frm)
-    makeUI = frm
+    makeUI = form(frm)
   end
 
   sub go_back
@@ -436,37 +445,31 @@ sub main
     path = backPath
   end
 
-  do_intro = false
-  if (command == "welcome") then
-    do_intro = true
-  fi
   path = cwd
-  frm = makeUI(path, do_intro)
+  frm = makeUI(path)
 
   while 1
     frm.doEvents()
 
     if (isdir(frm.value)) then
-      frm.close()
+      cls
       path = frm.value
       chdir path
-      frm = makeUI(path, false)
+      frm = makeUI(path)
     elif frm.value == "_about" then
-      frm.close()
       do_about()
-      frm = makeUI(path, false)
+      frm = makeUI(path)
     elif frm.value == "_setup" then
-      frm.close()
       do_setup()
-      frm = makeUI(path, false)
+      frm = makeUI(path)
     elif frm.value == "_files" then
-      frm.close()
+      chdir path
       managefiles()
-      frm = makeUI(path, false)
+      frm = makeUI(path)
     elif frm.value == "_back" then
-      frm.close()
+      cls
       go_back()
-      frm = makeUI(path, false)
+      frm = makeUI(path)
     fi
   wend
 end

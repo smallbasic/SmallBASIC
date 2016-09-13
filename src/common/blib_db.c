@@ -130,16 +130,9 @@ void cmd_fseek() {
 }
 
 /*
- * PRINT #fileN; var1 [, varN]
- */
-void cmd_fprint() {
-  cmd_print(PV_FILE);
-}
-
-/*
  * store a variable in binary form
  */
-void write_encoded_var(int handle, var_t * var) {
+void write_encoded_var(int handle, var_t *var) {
   struct file_encoded_var fv;
   var_t *elem;
   int i;
@@ -176,7 +169,7 @@ void write_encoded_var(int handle, var_t * var) {
 
     // write elements
     for (i = 0; i < var->v.a.size; i++) {
-      elem = (var_t *)(var->v.a.ptr + sizeof(var_t) * i);
+      elem = v_elem(var, i);
       write_encoded_var(handle, elem);
     }
     break;
@@ -186,9 +179,8 @@ void write_encoded_var(int handle, var_t * var) {
 /*
  * read a variable from a binary form
  */
-int read_encoded_var(int handle, var_t * var) {
+int read_encoded_var(int handle, var_t *var) {
   struct file_encoded_var fv;
-  var_t *elem;
   int i;
 
   dev_fread(handle, (byte *)&fv, sizeof(struct file_encoded_var));
@@ -214,9 +206,7 @@ int read_encoded_var(int handle, var_t * var) {
     var->v.p.ptr[fv.size] = '\0';
     break;
   case V_ARRAY:
-    var->type = V_ARRAY;
-    var->v.a.ptr = malloc(fv.size * sizeof(var_t));
-    var->v.a.size = fv.size;
+    v_new_array(var, fv.size);
 
     // read additional data about array
     dev_fread(handle, (byte *)&var->v.a.maxdim, 1);
@@ -227,7 +217,7 @@ int read_encoded_var(int handle, var_t * var) {
 
     // write elements
     for (i = 0; i < var->v.a.size; i++) {
-      elem = (var_t *)(var->v.a.ptr + sizeof(var_t) * i);
+      var_t *elem = v_elem(var, i);
       v_init(elem);
       read_encoded_var(handle, elem);
     }
@@ -365,12 +355,10 @@ void cmd_flineinput() {
     // file handle
     par_getsharp();
     if (!prog_error) {
-
       handle = par_getint();
       if (!prog_error) {
         // par_getsemicolon();
         par_getsep();           // allow commas
-
         if (!prog_error) {
           if (dev_fstatus(handle)) {
             // get the variable
@@ -380,7 +368,6 @@ void cmd_flineinput() {
               return;
             }
             var_p = code_getvarptr();
-
             if (!prog_error) {
               v_free(var_p);
               size = 256;
@@ -396,8 +383,9 @@ void cmd_flineinput() {
                   var_p->type = V_INT;
                   var_p->v.i = -1;
                   return;
-                } else if (ch == '\n')
+                } else if (ch == '\n') {
                   break;
+                }
                 else if (ch != '\r') {
                   // store char
                   if (index == (size - 1)) {
@@ -408,14 +396,12 @@ void cmd_flineinput() {
                   index++;
                 }
               }
-
-              //
               var_p->v.p.ptr[index] = '\0';
-              var_p->v.p.size = index + 1;
-
-            }                   // read
-            else
+              var_p->v.p.length = index + 1;
+            }
+            else {
               rt_raise("FIO: FILE IS NOT OPENED");
+            }
           }
         }
       }
@@ -428,20 +414,12 @@ void cmd_flineinput() {
     if (!prog_error) {
       v_free(var_p);
       var_p->type = V_STR;
-      var_p->v.p.ptr = malloc(SB_TEXTLINE_SIZE + 1);
-      var_p->v.p.size = SB_TEXTLINE_SIZE + 1;
-      ((char *)var_p->v.p.ptr)[0] = 0;
+      var_p->v.p.ptr = calloc(SB_TEXTLINE_SIZE + 1, 1);
       dev_gets((char *)var_p->v.p.ptr, SB_TEXTLINE_SIZE);
+      var_p->v.p.length = strlen(var_p->v.p.ptr);
       dev_print("\n");
     }
   }
-}
-
-/*
- * INPUT #fileN; var$ [, var2 [, ...]]
- */
-void cmd_finput() {
-  cmd_input(PV_FILE);
 }
 
 /*
@@ -625,7 +603,7 @@ void cmd_floadln() {
 
     while (!eof) {
       // build var for line
-      var_p = (var_t *)(array_p->v.a.ptr + (sizeof(var_t) * index));
+      var_p = v_elem(array_p, index);
       size = GROW_SIZE;
       var_p->type = V_STR;
       var_p->v.p.ptr = malloc(size);
@@ -674,8 +652,8 @@ void cmd_floadln() {
 
       // store text-line
       var_p->v.p.ptr[bcount] = '\0';
-      var_p->v.p.size = bcount + 1;
-      var_p->v.p.ptr = realloc(var_p->v.p.ptr, var_p->v.p.size);
+      var_p->v.p.length = bcount + 1;
+      var_p->v.p.ptr = realloc(var_p->v.p.ptr, var_p->v.p.length);
 
       // resize array
       if (index >= (array_size - 1)) {
@@ -693,12 +671,12 @@ void cmd_floadln() {
     // build string
     v_free(var_p);
     var_p->type = V_STR;
-    var_p->v.p.size = dev_flength(handle) + 1;
-    var_p->v.p.ptr = malloc(var_p->v.p.size);
-    if (var_p->v.p.size > 1) {
-      dev_fread(handle, (byte *)var_p->v.p.ptr, var_p->v.p.size - 1);
+    var_p->v.p.length = dev_flength(handle) + 1;
+    var_p->v.p.ptr = malloc(var_p->v.p.length);
+    if (var_p->v.p.length > 1) {
+      dev_fread(handle, (byte *)var_p->v.p.ptr, var_p->v.p.length - 1);
     }
-    var_p->v.p.ptr[var_p->v.p.size - 1] = '\0';
+    var_p->v.p.ptr[var_p->v.p.length - 1] = '\0';
   }
   if (flags == DEV_FILE_INPUT) {
     dev_fclose(handle);
@@ -753,7 +731,7 @@ void cmd_fsaveln() {
   if (var_p->type == V_ARRAY) {
     // parameter is an array
     for (i = 0; i < array_p->v.a.size; i++) {
-      var_p = (var_t *)(array_p->v.a.ptr + (sizeof(var_t) * i));
+      var_p = v_elem(array_p, i);
       fprint_var(handle, var_p);
       dev_fwrite(handle, (byte *)"\n", 1);
     }
@@ -851,7 +829,7 @@ void dirwalk(char *dir, char *wc, bcip_t use_ip) {
         exec_usefunc(var, use_ip);
         contf = v_getint(var);
         v_free(var);
-        free(var);
+        v_detach(var);
       }
       if (!contf) {
         break;

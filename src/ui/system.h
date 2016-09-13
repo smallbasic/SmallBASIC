@@ -86,7 +86,7 @@ protected:
   void runMain(const char *mainBasPath);
   void runOnce(const char *startupBas);
   void saveFile(TextEditInput *edit, strlib::String &path);
-  void setupPath();
+  void setupPath(String &loadpath);
   bool setParentPath();
   void setDimensions();
   void showCompletion(bool success);
@@ -120,6 +120,7 @@ protected:
   strlib::Stack<String *> _history;
   strlib::String _loadPath;
   strlib::String _activeFile;
+  TextEditInput *_editor;
   Cache _cache;
   int _touchX;
   int _touchY;

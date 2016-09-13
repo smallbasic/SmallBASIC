@@ -1,0 +1,74 @@
+%**********************************************************************
+% additional commands for LaTeX/the Yabasic Vademecum
+%**********************************************************************
+
+\newcommand{\SB}{\textsc{SmallBASIC}}
+
+\newcommand{\SBversion}{V 0.10.16}
+
+\newcommand{\blindtext}{Lorem ipsum dolor sit amet}
+
+%**********************************************************************
+
+%\newcommand{\newFeature}{\marginpar{\textsf{\small \begin{center}
+%\includegraphics[width=0.8cm]{icon/new} \\ New in V3\end{center}}}}
+
+% allows the use of funky icons on the right margin for warnings etc.
+
+%**********************************************************************
+
+% what does this comment do?
+\newsavebox{\fmbox}
+\newenvironment{fmpage}[1]
+{\begin{lrbox}{\fmbox}\begin{minipage}{#1}}
+{\end{minipage}\end{lrbox}\fbox{\usebox{\fmbox}}}
+
+% give a quick summary of the chapter:
+
+%newcommand{\quick}[1]{\begin{itemize} \item #1 \end{itemize}}
+
+\newcommand{\quick}[1]{\fbox{\parbox{\textwidth}{#1}}}
+
+\newcommand{\gist}[1]{\marginpar{\footnotesize #1}}
+
+% display something as code:
+\newcommand{\co}[1]{\texttt{{#1}}}
+
+\newcommand{\Co}[1]{>>\co{#1}<<}
+
+% references to commands start with "c:"
+% references to sections start with "c"
+
+% insert a reference to a different command in the manual section:
+\newcommand{\sbref}[1]{\hyperref[c:#1]{\co{#1}}}
+
+% insert a reference to a chapter. Argument is a label.
+\newcommand{\Cref}[1]{\ref{#1}\ \nameref{#1}}
+
+% create a complete entry in the manual section:
+\newcommand{\vCommand}[4]{\subsection*{\co{#1} \label{c:#1}} {#2} \par
+\medskip \textbf{Syntax:} \\ \co{#3} \par \medskip \textbf{Description:}
+\\ {#4} \par \medskip}
+%	* command name
+%	* short description
+%	* syntax
+%	* long description
+
+\newcommand{\vCommend}[1]{\par \textbf{See also: #1}}
+
+\newcommand{\at}{\makeatletter @\makeatother}
+
+%**********************************************************************
+
+\newcommand{\stringCausesError}{Passing a string value or a string
+expression raises a syntax error.}
+
+\newcommand{\numericCausesError}{Passing a numerical constant, variable
+or expression raises a syntax error.}
+
+\newcommand{\twoEquiv}{The following two code segments are equivalent:}
+
+
+%**********************************************************************
+\newcommand{\vquote}[2]{\begin{quote} \raggedleft \emph{#1} \\ {#2}
+\end{quote}}

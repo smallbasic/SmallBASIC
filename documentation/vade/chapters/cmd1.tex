@@ -1,0 +1,25 @@
+% here come various phrases which repeat throughout the reference
+% section:
+
+\newcommand{\eArgNumber}{The argument must be a number.}
+
+% here are the actual command references:
+
+\newcommand{\rAbs}{\vCommand{abs}
+{Return the absolute value of the argument}
+{x= abs(y)}
+{Serves to determine the absolute value of its argument \Co{y}. \eArgNumber}
+\vCommend{\sbref{sgn}}}
+
+\newcommand{\rSgn}{\vCommand{sgn}
+{Returns the sign of its argument}
+{x= sgn(y)}
+{Return value is
+\[\text{\co{sgn(y)}}= 
+\begin{cases} -1 & \text{if } y<0 \\
+0 & \text{if } y=0 \\
+1 & \text{if } y>0
+\end{cases}\] \eArgNumber}
+\vCommend{\Cref{noteOnTypes}, \sbref{abs}}}
+
+

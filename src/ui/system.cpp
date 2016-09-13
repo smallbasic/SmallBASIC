@@ -11,6 +11,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <stdio.h>
+#include <errno.h>
 
 #include "common/sbapp.h"
 #include "common/osd.h"
@@ -72,6 +73,7 @@ void Cache::add(const char *key, const char *value) {
 System::System() :
   _output(NULL),
   _state(kInitState),
+  _editor(NULL),
   _cache(MAX_CACHE),
   _touchX(-1),
   _touchY(-1),
@@ -93,9 +95,11 @@ System::System() :
 System::~System() {
   delete [] _systemMenu;
   delete [] _programSrc;
+  delete _editor;
 
   _systemMenu = NULL;
   _programSrc = NULL;
+  _editor = NULL;
 }
 
 void System::checkModifiedTime() {
@@ -127,10 +131,14 @@ bool System::execute(const char *bas) {
     _state = kActiveState;
   }
 
-  opt_command[0] = '\0';
+  if (_editor == NULL) {
+    opt_command[0] = '\0';
+  }
   opt_file_permitted = 1;
+  _output->selectScreen(USER_SCREEN1);
   _output->resetFont();
   _output->flush(true);
+  _userScreenId = -1;
   return result;
 }
 
@@ -191,7 +199,7 @@ char *System::getText(char *dest, int maxSize) {
   int h = _output->textHeight();
   int charWidth = _output->getCharWidth();
 
-  FormInput *widget = new FormLineInput(NULL, maxSize, true, x, y, w, h);
+  FormInput *widget = new FormLineInput(NULL, NULL, maxSize, true, x, y, w, h);
   widget->setFocus(true);
 
   int bg = _output->getBackgroundColor();
@@ -458,7 +466,7 @@ char *System::loadResource(const char *fileName) {
         if (http_read(f, var_p) == 0) {
           systemPrint("\nfailed to read %s\n", fileName);
         } else {
-          int len = var_p->v.p.size;
+          int len = var_p->v.p.length;
           buffer = (char *)malloc(len + 1);
           memcpy(buffer, var_p->v.p.ptr, len);
           buffer[len] = '\0';
@@ -470,7 +478,7 @@ char *System::loadResource(const char *fileName) {
       _output->setStatus(NULL);
       dev_fclose(handle);
       v_free(var_p);
-      free(var_p);
+      v_detach(var_p);
       opt_file_permitted = 0;
     }
   }
@@ -489,18 +497,23 @@ bool System::loadSource(const char *fileName) {
 
 char *System::readSource(const char *fileName) {
   _activeFile.empty();
-  char *buffer = loadResource(fileName);
-  if (!buffer) {
-    int h = open(fileName, O_BINARY | O_RDONLY, 0644);
-    if (h != -1) {
-      int len = lseek(h, 0, SEEK_END);
-      lseek(h, 0, SEEK_SET);
-      buffer = (char *)malloc(len + 1);
-      len = read(h, buffer, len);
-      buffer[len] = '\0';
-      close(h);
-      _activeFile = fileName;
-      _modifiedTime = getModifiedTime();
+  char *buffer;
+  if (_editor != NULL && _loadPath.equals(fileName)) {
+    buffer = _editor->getTextSelection();
+  } else {
+    buffer = loadResource(fileName);
+    if (!buffer) {
+      int h = open(fileName, O_BINARY | O_RDONLY, 0644);
+      if (h != -1) {
+        int len = lseek(h, 0, SEEK_END);
+        lseek(h, 0, SEEK_SET);
+        buffer = (char *)malloc(len + 1);
+        len = read(h, buffer, len);
+        buffer[len] = '\0';
+        close(h);
+        _activeFile = fileName;
+        _modifiedTime = getModifiedTime();
+      }
     }
   }
   if (buffer != NULL) {
@@ -528,25 +541,26 @@ void System::resize() {
 void System::runEdit(const char *startupBas) {
   logEntered();
   _mainBas = false;
-  String loadPath = startupBas;
+  _loadPath = startupBas;
 
   while (true) {
-    if (loadSource(startupBas)) {
-      editSource(loadPath);
+    if (loadSource(_loadPath)) {
+      setupPath(_loadPath);
+      editSource(_loadPath);
       if (isBack() || isClosing()) {
         break;
       } else {
         do {
-          execute(startupBas);
+          execute(_loadPath);
         } while (isRestart());
       }
     } else {
-      FILE *fp = fopen(startupBas, "w");
+      FILE *fp = fopen(_loadPath, "w");
       if (fp) {
         fprintf(fp, "rem Welcome to SmallBASIC\n");
         fclose(fp);
       } else {
-        alert("Error", "Failed to load file");
+        alert("Failed to load file", strerror(errno));
         break;
       }
     }
@@ -576,7 +590,7 @@ void System::runMain(const char *mainBasPath) {
       if (fileExists(_loadPath)) {
         _mainBas = false;
         activePath = _loadPath;
-        setupPath();
+        setupPath(_loadPath);
       } else {
         _mainBas = true;
         _loadPath = mainBasPath;
@@ -642,7 +656,8 @@ void System::runOnce(const char *startupBas) {
 
 void System::saveFile(TextEditInput *edit, strlib::String &path) {
   if (!edit->save(path)) {
-    alert("", "Failed to save file");
+    systemPrint("\nfailed to save: %s. error: %s\n", path.c_str(), strerror(errno));
+    alert(strerror(errno), "Failed to save file");
   } else {
     _modifiedTime = getModifiedTime();
   }
@@ -708,8 +723,8 @@ bool System::setParentPath() {
   return result;
 }
 
-void System::setupPath() {
-  const char *filename = _loadPath;
+void System::setupPath(String &loadPath) {
+  const char *filename = loadPath;
   if (strstr(filename, "://") == NULL) {
     const char *slash = strrchr(filename, '/');
     if (!slash) {
@@ -724,11 +739,11 @@ void System::setupPath() {
         path[len] = 0;
         chdir(path);
         struct stat st_file;
-        if (stat(_loadPath.c_str(), &st_file) < 0) {
+        if (stat(loadPath.c_str(), &st_file) < 0) {
           // reset relative path back to full path
           getcwd(path, FILENAME_MAX);
           strcat(path, filename + len);
-          _loadPath = path;
+          loadPath = path;
         }
       }
     }
@@ -892,12 +907,14 @@ void System::showMenu() {
 void System::showSystemScreen(bool showSrc) {
   int prevScreenId;
   if (showSrc) {
-    prevScreenId = _output->selectBackScreen(SOURCE_SCREEN);
+    prevScreenId = _output->getScreenId(true);
+    _output->selectBackScreen(SOURCE_SCREEN);
     printSource();
     _output->selectBackScreen(prevScreenId);
     _output->selectFrontScreen(SOURCE_SCREEN);
   } else {
-    prevScreenId = _output->selectFrontScreen(CONSOLE_SCREEN);
+    prevScreenId = _output->getScreenId(false);
+    _output->selectFrontScreen(CONSOLE_SCREEN);
   }
   if (_userScreenId == -1) {
     _userScreenId = prevScreenId;
@@ -943,11 +960,12 @@ void System::printErrorLine() {
       errLine++;
     }
 
-    int prevScreen = _output->selectBackScreen(CONSOLE_SCREEN);
+    int prevScreenId = _output->getScreenId(true);
+    _output->selectBackScreen(CONSOLE_SCREEN);
     _output->print("\033[4mError line:\033[0m\n");
     _output->print(errLine);
     *ch = end;
-    _output->selectBackScreen(prevScreen);
+    _output->selectBackScreen(prevScreenId);
   }
 }
 
@@ -1046,9 +1064,10 @@ void System::setRestart() {
 
 void System::systemLog(const char *buf) {
   deviceLog("%s", buf);
-  int prevScreen = _output->selectBackScreen(CONSOLE_SCREEN);
+  int prevScreenId = _output->getScreenId(true);
+  _output->selectBackScreen(CONSOLE_SCREEN);
   _output->print(buf);
-  _output->selectBackScreen(prevScreen);
+  _output->selectBackScreen(prevScreenId);
 }
 
 void System::systemPrint(const char *format, ...) {
@@ -1183,9 +1202,9 @@ int maGetMilliSecondCount(void) {
   return dev_get_millisecond_count();
 }
 
-void create_func(var_p_t form, const char *name, method cb) {
-  var_p_t v_func = map_add_var(form, name, 0);
+void create_func(var_p_t map, const char *name, method cb) {
+  var_p_t v_func = map_add_var(map, name, 0);
   v_func->type = V_FUNC;
-  v_func->v.fn.self = form;
+  v_func->v.fn.self = map;
   v_func->v.fn.cb = cb;
 }

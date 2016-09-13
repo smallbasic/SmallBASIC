@@ -10,7 +10,7 @@ if !WITH_CYGWIN_CONSOLE
   AM_CFLAGS = @PACKAGE_CFLAGS@
 endif
 
-AM_CPPFLAGS = -I$(top_builddir)/src -DPACKAGE_LIB_DIR=\""$(pkglibdir)"\"
+AM_CPPFLAGS = -I$(abs_top_builddir)/src -DPACKAGE_LIB_DIR=\""$(pkglibdir)"\"
 
 EXTRA_DIST =                              \
     keywords.c                            \
@@ -39,7 +39,6 @@ noinst_LIBRARIES = libsb_common.a
 
 libsb_common_a_SOURCES =                  \
     ../lib/match.c ../lib/match.h         \
-    ../lib/search.c ../lib/search.h       \
     ../lib/jsmn.c ../lib/jsmn.h           \
     ../lib/lodepng.c ../lib/lodepng.h     \
     ../lib/matrix.c                       \
@@ -70,8 +69,6 @@ libsb_common_a_SOURCES =                  \
     geom.c geom.h g_bmp.h                 \
     inet.c inet.h                         \
     kw.c kw.h                             \
-    mem.c                                 \
-    panic.c panic.h                       \
     pfill.c                               \
     plot.c                                \
     proc.c pproc.h                        \
@@ -79,6 +76,7 @@ libsb_common_a_SOURCES =                  \
     scan.c scan.h                         \
     str.c str.h                           \
     tasks.c tasks.h                       \
+    hashmap.c hashmap.h                   \
     var_map.c var_map.h                   \
     var_eval.c var_eval.h                 \
     keymap.c keymap.h                     \
@@ -86,7 +84,6 @@ libsb_common_a_SOURCES =                  \
     var.c var.h                           \
     messages.h                            \
     osd.h                                 \
-    pmem.h                                \
     sbapp.h                               \
     smbas.h                               \
     sys.h

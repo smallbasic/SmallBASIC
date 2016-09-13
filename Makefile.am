@@ -14,7 +14,10 @@ test:
 	(cd @TEST_DIR@ && make test)
 
 leak-test:
-	(cd src/platform/unix && make leak-test)
+	(cd src/platform/console && make leak-test)
+
+cppcheck:
+	(cppcheck --quiet --enable=performance src/common src/ui src/platform/android/jni src/platform/sdl)
 
 release:
 	(cd $(SUBDIRS) && make release)

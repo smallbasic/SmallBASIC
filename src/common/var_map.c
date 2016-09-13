@@ -9,46 +9,15 @@
 // Copyright(C) 2010-2014 Chris Warren-Smith. [http://tinyurl.com/ja2ss]
 
 #include "common/sys.h"
-#include "common/var.h"
-#include "common/smbas.h"
-#include "common/sberr.h"
 #include "common/pproc.h"
 #include "common/var_map.h"
-#include "lib/search.h"
+#include "common/hashmap.h"
 #include "lib/jsmn.h"
 
 #define BUFFER_GROW_SIZE 64
 #define BUFFER_PADDING   10
 #define TOKEN_GROW_SIZE  16
-#define ARRAY_GROW_SIZE  16
-
-/**
- * Our internal tree element node
- */
-typedef struct Element {
-  var_p_t key;
-  var_p_t value;
-} Element;
-
-/**
- * Globals for callback access
- */
-typedef struct CallbackData {
-  int method;
-  int handle;
-  int index;
-  int count;
-  int firstElement;
-  Element *el;
-  char *buffer;
-} CallbackData;
-
-/**
- * Cast for node_t->key
- */
-typedef struct Node {
-  Element *element;
-} Node;
+#define ARRAY_GROW_SIZE  8
 
 /**
  * Container for map_from_str
@@ -57,39 +26,36 @@ typedef struct JsonTokens {
   const char *js;
   jsmntok_t *tokens;
   int num_tokens;
+  int code_array;
 } JsonTokens;
 
-/**
- * Returns a new Element
- */
-Element *create_element(var_p_t key) {
-  Element *element = (Element *)malloc(sizeof(Element));
-  element->key = v_new();
-  v_set(element->key, key);
-  element->value = NULL;
-  return element;
+typedef struct cint_list {
+  int *data;
+  int length;
+  int size;
+  int grow_size;
+} cint_list;
+
+void cint_list_init(cint_list *cl, int size) {
+  cl->length = 0;
+  cl->size = size;
+  cl->grow_size = size;
+  cl->data = malloc(sizeof(int) * cl->grow_size);
 }
 
-/**
- * Returns a new Element using the integer based key
- */
-Element *create_int_element(int key) {
-  Element *element = (Element *)malloc(sizeof(Element));
-  element->key = v_new();
-  v_setint(element->key, key);
-  element->value = NULL;
-  return element;
+void cint_list_append(cint_list *cl, int value) {
+  if (cl->size - cl->length == 0) {
+    cl->size += cl->grow_size;
+    cl->data = realloc(cl->data, sizeof(int) * cl->size);
+  }
+  cl->data[cl->length++] = value;
 }
 
-/**
- * initialise the variable as a map
- */
-void map_init(var_p_t map) {
-  v_free(map);
-  map->type = V_MAP;
-  map->v.m.map = NULL;
-  map->v.m.size = 0;
-}
+typedef struct canode_t {
+  var_t *v;
+  var_int_t col;
+  var_int_t row;
+} canode_t;
 
 /**
  * Process the next token
@@ -97,53 +63,10 @@ void map_init(var_p_t map) {
 int map_read_next_token(var_p_t dest, JsonTokens *json, int index);
 
 /**
- * cleanup the given element
+ * initialise the variable as a map
  */
-void delete_element(Element *element) {
-  // cleanup v_new
-  v_free(element->key);
-  free(element->key);
-
-  // cleanup v_new
-  if (element->value) {
-    v_free(element->value);
-    free(element->value);
-  }
-
-  // cleanup create_element()
-  free(element);
-}
-
-/**
- * Callback to compare Element's
- */
-int cmp_fn(const void *a, const void *b) {
-  Element *el_a = (Element *)a;
-  Element *el_b = (Element *)b;
-
-  int result;
-  if (el_a->key->type == V_STR && el_b->key->type == V_STR) {
-    result = strcasecmp(el_a->key->v.p.ptr, el_b->key->v.p.ptr);
-  } else {
-    result = v_compare(el_a->key, el_b->key);
-  }
-  return result;
-}
-
-/**
- * Compare handler for map_resolve_key
- */
-int cmp_fn_var(const void *a, const void *b) {
-  var_p_t key_a = (var_p_t)a;
-  var_p_t key_b = ((Element *)b)->key;
-
-  int result;
-  if (key_a->type == V_STR && key_b->type == V_STR) {
-    result = strcasecmp(key_a->v.p.ptr, key_b->v.p.ptr);
-  } else {
-    result = v_compare(key_a, key_b);
-  }
-  return result;
+void map_init(var_p_t map) {
+  hashmap_create(map, 0);
 }
 
 /**
@@ -173,34 +96,21 @@ int map_to_int(const var_p_t var_p) {
 int map_length(const var_p_t var_p) {
   int result;
   if (var_p->type == V_MAP) {
-    result = var_p->v.m.size;
+    result = var_p->v.m.count;
   } else {
     result = 0;
   }
   return result;
 }
 
-void map_get_recurse(CallbackData *cb, const node_t *nodep, const char *name) {
-  if (nodep->left != NULL) {
-    map_get_recurse(cb, nodep->left, name);
-  }
-  Element *el = ((Node *)nodep)->element;
-  if (el != NULL && el->key->type == V_STR &&
-      strcasecmp(el->key->v.p.ptr, name) == 0) {
-    cb->el = el;
-  }
-  if (nodep->right != NULL) {
-    map_get_recurse(cb, nodep->right, name);
-  }
-}
-
 var_p_t map_get(var_p_t base, const char *name) {
-  CallbackData cb;
-  cb.el = NULL;
+  var_p_t result;
   if (base->type == V_MAP) {
-    map_get_recurse(&cb, base->v.m.map, name);
+    result = hashmap_get(base, name);
+  } else {
+    result = NULL;
   }
-  return cb.el != NULL ? cb.el->value : NULL;
+  return result;
 }
 
 int map_get_bool(var_p_t base, const char *name) {
@@ -223,68 +133,51 @@ int map_get_bool(var_p_t base, const char *name) {
 }
 
 int map_get_int(var_p_t base, const char *name, int def) {
-  int result = def;
   var_p_t var = map_get(base, name);
-  if (var != NULL) {
-    result = v_igetval(var);
-  }
-  return result;
+  return var != NULL ? v_igetval(var) : def;
 }
 
 const char *map_get_str(var_p_t base, const char *name) {
-  char *result = NULL;
+  char *result;
   var_p_t var = map_get(base, name);
   if (var != NULL && var->type == V_STR) {
     result = var->v.p.ptr;
+  } else {
+    result = NULL;
   }
   return result;
-}
-
-void map_elem_recurse(CallbackData *cb, const node_t *nodep) {
-  if (nodep->left != NULL) {
-    map_elem_recurse(cb, nodep->left);
-  }
-
-  if (cb->el == NULL) {
-    Element *element = ((Node *)nodep)->element;
-    if (cb->count++ == cb->index) {
-      cb->el = element;
-    }
-  }
-
-  if (nodep->right != NULL) {
-    map_elem_recurse(cb, nodep->right);
-  }
 }
 
 /**
  * return the element at the nth position
  */
-Element *map_elem(const var_p_t var_p, int index) {
-  CallbackData cb;
-  cb.count = 0;
-  cb.index = index;
-  cb.el = NULL;
-  if (var_p->type == V_MAP) {
-    map_elem_recurse(&cb, var_p->v.m.map);
+int map_elem_cb(hashmap_cb *cb, var_p_t key, var_p_t value) {
+  int result;
+  if (cb->count++ == cb->index) {
+    cb->var = key;
+    result = 1;
+  } else {
+    result = 0;
   }
-  return cb.el;
+  return result;
 }
 
 /**
  * return the element key at the nth position
  */
 var_p_t map_elem_key(const var_p_t var_p, int index) {
-  Element *el = map_elem(var_p, index);
-  return el != NULL ? el->key : NULL;
-}
-
-/**
- * Helper for map_free
- */
-void map_free_cb(void *nodep) {
-  Element *element = (Element *)nodep;
-  delete_element(element);
+  var_p_t result;
+  if (var_p->type == V_MAP) {
+    hashmap_cb cb;
+    cb.count = 0;
+    cb.index = index;
+    cb.var = NULL;
+    hashmap_foreach(var_p, map_elem_cb, &cb);
+    result = cb.var;
+  } else {
+    result = NULL;
+  }
+  return result;
 }
 
 /**
@@ -292,44 +185,8 @@ void map_free_cb(void *nodep) {
  */
 void map_free(var_p_t var_p) {
   if (var_p->type == V_MAP) {
-    tdestroy(var_p->v.m.map, map_free_cb);
+    hashmap_destroy(var_p);
     v_init(var_p);
-  }
-}
-
-/**
- * Inserts the variable into the b-tree, set result to the key value
- */
-void map_insert_key(var_p_t base, Element *key, var_p_t *result) {
-  Node *node = tfind(key, &(base->v.m.map), cmp_fn);
-
-  if (node != NULL) {
-    // item already exists
-    *result = node->element->value;
-    delete_element(key);
-  }
-  else {
-    key->value = *result = v_new();
-    tsearch(key, &(base->v.m.map), cmp_fn);
-    base->v.m.size++;
-  }
-}
-
-/**
- * Resolve the variable into the b-tree without memory allocation
- */
-void map_resolve_key(var_p_t base, var_p_t v_key, var_p_t *result) {
-  Node *node = tfind(v_key, &(base->v.m.map), cmp_fn_var);
-
-  if (node != NULL) {
-    // item already exists
-    *result = node->element->value;
-  }
-  else {
-    Element *key = create_element(v_key);
-    key->value = *result = v_new();
-    tsearch(key, &(base->v.m.map), cmp_fn);
-    base->v.m.size++;
   }
 }
 
@@ -355,15 +212,15 @@ var_p_t map_resolve_fields(const var_p_t base) {
         err_typemismatch();
         return NULL;
       } else {
-        map_init(base);
+        hashmap_create(base, 0);
       }
     }
 
     // evaluate the variable 'key' name
-    var_t key;
-    v_eval_str(&key);
-    map_resolve_key(base, &key, &field);
-    v_free(&key);
+    int len = code_getstrlen();
+    const char *key = (const char *)&prog_source[prog_ip];
+    prog_ip += len;
+    field = hashmap_put(base, key, len);
 
     // evaluate the next sub-element
     field = map_resolve_fields(field);
@@ -377,14 +234,11 @@ var_p_t map_resolve_fields(const var_p_t base) {
  * Adds a new variable onto the map
  */
 var_p_t map_add_var(var_p_t base, const char *name, int value) {
-  var_p_t result;
-  Element *node = (Element *)malloc(sizeof(Element));
-  node->key = v_new();
-  node->value = NULL;
-  v_setstr(node->key, name);
-  map_insert_key(base, node, &result);
-  v_setint(result, value);
-  return result;
+  var_p_t key = v_new();
+  v_setstr(key, name);
+  var_p_t var = hashmap_putv(base, key);
+  v_setint(var, value);
+  return var;
 }
 
 /**
@@ -397,51 +251,43 @@ void map_get_value(var_p_t base, var_p_t var_key, var_p_t *result) {
     int i;
     var_t *clone = v_clone(base);
 
-    map_init(base);
+    hashmap_create(base, 0);
     for (i = 0; i < clone->v.a.size; i++) {
-      const var_t *element = (var_t *)(clone->v.a.ptr + (sizeof(var_t) * i));
-      Element *key = create_int_element(i);
-      key->value = v_new();
-      v_set(key->value, element);
-      tsearch(key, &(base->v.m.map), cmp_fn);
+      const var_t *element = v_elem(clone, i);
+      var_p_t key = v_new();
+      v_setint(key, i);
+      var_p_t value = hashmap_putv(base, key);
+      v_set(value, element);
     }
 
     // free the clone
     v_free(clone);
-    free(clone);
+    v_detach(clone);
   } else if (base->type != V_MAP) {
     if (v_is_nonzero(base)) {
       err_typemismatch();
       return;
     } else {
-      map_init(base);
+      hashmap_create(base, 0);
     }
   }
-  map_resolve_key(base, var_key, result);
+
+  v_tostr(var_key);
+  *result = hashmap_put(base, var_key->v.p.ptr, v_strlen(var_key));
 }
 
 /**
  * Traverse the root to copy into dest
  */
-void map_set_recurse(var_p_t dest, var_p_t root, int start, int end) {
-  int count = end - start;
-  int apex = start + (count / 2);
-
-  Element *element = map_elem(root, apex);
-  Element *key = create_element(element->key);
-  key->value = v_new();
-  v_set(key->value, element->value);
-  tsearch(key, &(dest->v.m.map), cmp_fn);
-  if (key->value->type == V_FUNC) {
-    key->value->v.fn.self = dest;
+int map_set_cb(hashmap_cb *cb, var_p_t var_key, var_p_t value) {
+  var_p_t key = v_new();
+  v_set(key, var_key);
+  var_p_t var = hashmap_putv(cb->var, key);
+  v_set(var, value);
+  if (var->type == V_FUNC) {
+    var->v.fn.self = cb->var;
   }
-
-  if (apex > start) {
-    map_set_recurse(dest, root, start, apex);
-  }
-  if (apex + 1 < end) {
-    map_set_recurse(dest, root, apex + 1, end);
-  }
+  return 0;
 }
 
 /**
@@ -449,9 +295,11 @@ void map_set_recurse(var_p_t dest, var_p_t root, int start, int end) {
  */
 void map_set(var_p_t dest, const var_p_t src) {
   if (dest != src && src->type == V_MAP) {
-    map_init(dest);
-    dest->v.m.size = src->v.m.size;
-    map_set_recurse(dest, src, 0, src->v.m.size);
+    hashmap_cb cb;
+    cb.var = dest;
+    hashmap_create(dest, src->v.m.count);
+    hashmap_foreach(src, map_set_cb, &cb);
+    dest->v.m.count = src->v.m.count;
   }
 }
 
@@ -467,51 +315,38 @@ void map_set_int(var_p_t base, const char *name, var_int_t n) {
 /**
  * Helper for map_to_str
  */
-void map_to_str_cb(CallbackData *cb, const node_t *nodep) {
-  Element *element = ((Node *)nodep)->element;
-  char *key = v_str(element->key);
-  char *value = v_str(element->value);
+int map_to_str_cb(hashmap_cb *cb, var_p_t v_key, var_p_t v_var) {
+  char *key = v_str(v_key);
+  char *value = v_str(v_var);
   int required = strlen(cb->buffer) + strlen(key) + strlen(value) + BUFFER_PADDING;
   if (required >= cb->count) {
     cb->count = required + BUFFER_GROW_SIZE;
     cb->buffer = realloc(cb->buffer, cb->count);
   }
-  if (!cb->firstElement) {
+  if (!cb->start) {
     strcat(cb->buffer, ",");
   }
-  cb->firstElement = 0;
+  cb->start = 0;
   strcat(cb->buffer, "\"");
   strcat(cb->buffer, key);
   strcat(cb->buffer, "\"");
   strcat(cb->buffer, ":");
-  if (element->value->type == V_STR) {
+  if (v_var->type == V_STR) {
     strcat(cb->buffer, "\"");
   }
   strcat(cb->buffer, value);
-  if (element->value->type == V_STR) {
+  if (v_var->type == V_STR) {
     strcat(cb->buffer, "\"");
   }
   free(key);
   free(value);
-}
-
-/**
- * Helper for map_to_str
- */
-void map_to_str_recurse(CallbackData *cb, const node_t *nodep) {
-  if (nodep->left != NULL) {
-    map_to_str_recurse(cb, nodep->left);
-  }
-  map_to_str_cb(cb, nodep);
-  if (nodep->right != NULL) {
-    map_to_str_recurse(cb, nodep->right);
-  }
+  return 0;
 }
 
 /**
  * Print the array element, growing the buffer as needed
  */
-void array_append_elem(CallbackData *cb, var_t *elem) {
+void array_append_elem(hashmap_cb *cb, var_t *elem) {
   char *value = v_str(elem);
   int required = strlen(cb->buffer) + strlen(value) + BUFFER_PADDING;
   if (required >= cb->count) {
@@ -525,7 +360,7 @@ void array_append_elem(CallbackData *cb, var_t *elem) {
 /**
  * print the array variable
  */
-void array_to_str(CallbackData *cb, var_t *var) {
+void array_to_str(hashmap_cb *cb, var_t *var) {
   strcpy(cb->buffer, "[");
   if (var->v.a.maxdim == 2) {
     // NxN
@@ -536,7 +371,7 @@ void array_to_str(CallbackData *cb, var_t *var) {
     for (i = 0; i < rows; i++) {
       for (j = 0; j < cols; j++) {
         int pos = i * cols + j;
-        var_t *elem = (var_t *)(var->v.a.ptr + (sizeof(var_t) * pos));
+        var_t *elem = v_elem(var, pos);
         array_append_elem(cb, elem);
         if (j != cols - 1) {
           strcat(cb->buffer, ",");
@@ -549,7 +384,7 @@ void array_to_str(CallbackData *cb, var_t *var) {
   } else {
     int i;
     for (i = 0; i < var->v.a.size; i++) {
-      var_t *elem = (var_t *)(var->v.a.ptr + (sizeof(var_t) * i));
+      var_t *elem = v_elem(var, i);
       array_append_elem(cb, elem);
       if (i != var->v.a.size - 1) {
         strcat(cb->buffer, ",");
@@ -563,14 +398,14 @@ void array_to_str(CallbackData *cb, var_t *var) {
  * Return the contents of the structure as a string
  */
 char *map_to_str(const var_p_t var_p) {
-  CallbackData cb;
+  hashmap_cb cb;
   cb.count = BUFFER_GROW_SIZE;
   cb.buffer = malloc(cb.count);
 
   if (var_p->type == V_MAP) {
-    cb.firstElement = 1;
+    cb.start = 1;
     strcpy(cb.buffer, "{");
-    map_to_str_recurse(&cb, var_p->v.m.map);
+    hashmap_foreach(var_p, map_to_str_cb, &cb);
     strcat(cb.buffer, "}");
   } else if (var_p->type == V_ARRAY) {
     array_to_str(&cb, var_p);
@@ -590,37 +425,13 @@ void map_write(const var_p_t var_p, int method, int handle) {
 }
 
 /**
- * Creates an array variable
- */
-int map_create_array(var_p_t dest, JsonTokens *json, int end_position, int index) {
-  int size = ARRAY_GROW_SIZE;
-  int item_index = 0;
-  v_toarray1(dest, size);
-  int i = index;
-  while (i < json->num_tokens) {
-    jsmntok_t token = json->tokens[i];
-    if (token.start > end_position) {
-      break;
-    }
-    if (item_index >= size) {
-      size += ARRAY_GROW_SIZE;
-      v_resize_array(dest, size);
-    }
-    var_t *elem = (var_t *)(dest->v.a.ptr + (sizeof(var_t) * item_index));
-    i = map_read_next_token(elem, json, i);
-    item_index++;
-  }
-  v_resize_array(dest, item_index);
-  return i;
-}
-
-/**
  * Process the next primative value
  */
 void map_set_primative(var_p_t dest, const char *s, int len) {
   int value = 0;
   int fract = 0;
   int text = 0;
+  int sign = 1;
   int i;
   for (i = 0; i < len && !text; i++) {
     int n = s[i] - '0';
@@ -628,6 +439,8 @@ void map_set_primative(var_p_t dest, const char *s, int len) {
       value = value * 10 + n;
     } else if (!fract && s[i] == '.') {
       fract = 1;
+    } else if (s[i] == '-' && sign) {
+      sign = -1;
     } else {
       text = 1;
     }
@@ -637,27 +450,137 @@ void map_set_primative(var_p_t dest, const char *s, int len) {
   } else if (fract) {
     v_setreal(dest, atof(s));
   } else {
-    v_setint(dest, value);
+    v_setint(dest, sign * value);
   }
+}
+
+/**
+ * Handle the semi-colon row separator character
+ */
+int map_read_next_array_token(JsonTokens *json, int index, var_p_t dest,
+                              int count, int *new_elems, int *new_rows) {
+  int next;
+  jsmntok_t token = json->tokens[index];
+  var_t *elem = v_elem(dest, count);
+
+  if (token.type == JSMN_PRIMITIVE && json->tokens[0].type == JSMN_ARRAY) {
+    int len = token.end - token.start;
+    const char *str = json->js + token.start;
+    const char *delim = memchr(str, ';', len);
+    if (delim != NULL) {
+      map_set_primative(elem, str, delim - str);
+      while (delim != NULL) {
+        len -= (delim - str) + 1;
+        if (len > 0) {
+          // text exists beyond ';'
+          if (++count >= dest->v.a.size) {
+            int size = dest->v.a.size + ARRAY_GROW_SIZE;
+            v_resize_array(dest, size);
+          }
+          elem = v_elem(dest, count);
+          str = ++delim;
+          map_set_primative(elem, str, len);
+          delim = memchr(str, ';', len);
+          (*new_elems)++;
+        } else {
+          // no more text, just count the new row
+          delim = NULL;
+        }
+        (*new_rows)++;
+      }
+    } else {
+      map_set_primative(elem, json->js + token.start, token.end - token.start);
+    }
+    next = index + 1;
+  } else {
+    next = map_read_next_token(elem, json, index);
+  }
+  return next;
+}
+
+/**
+ * change the grid dimensions when row separator found
+ */
+void map_resize_array(var_p_t dest, int size, int rows, int cols, cint_list *offs) {
+  v_resize_array(dest, size);
+  if (rows > 1) {
+    int idx, row;
+    var_t *var = v_new();
+    v_tomatrix(var, rows, cols);
+    for (idx = 0, row = -1; idx < size; idx++) {
+      if (!offs->data[idx]) {
+        // start of next row
+        row++;
+      }
+      int pos = row * cols + offs->data[idx];
+      v_set(v_elem(var, pos), v_elem(dest, idx));
+    }
+    v_set(dest, var);
+    v_free(var);
+    v_detach(var);
+  }
+}
+
+/**
+ * Creates an array variable
+ */
+int map_create_array(var_p_t dest, JsonTokens *json, int end_position, int index) {
+  int count = 0;
+  int i = index;
+  int cols = 1;
+  int rows = 1;
+  int curcol = 0;
+  cint_list offs;
+
+  cint_list_init(&offs, ARRAY_GROW_SIZE);
+  v_toarray1(dest, ARRAY_GROW_SIZE);
+  while (i < json->num_tokens) {
+    int new_elems = 0;
+    int new_rows = 0;
+    jsmntok_t token = json->tokens[i];
+    if (token.start > end_position) {
+      break;
+    }
+    if (count >= dest->v.a.size) {
+      int size = dest->v.a.size + ARRAY_GROW_SIZE;
+      v_resize_array(dest, size);
+    }
+    cint_list_append(&offs, curcol);
+    i = map_read_next_array_token(json, i, dest, count, &new_elems, &new_rows);
+    if (new_rows) {
+      int j;
+      for (j = 0; j < new_elems; j++) {
+        cint_list_append(&offs, 0);
+        count++;
+      }
+      rows += new_rows;
+      // when no added cells, make curcol reset to zero
+      curcol = !new_elems ? -1 : 0;
+    }
+    if (++curcol > cols) {
+      cols = curcol;
+    }
+    count++;
+  }
+  map_resize_array(dest, count, rows, cols, &offs);
+  free(offs.data);
+  return i;
 }
 
 /**
  * Creates a map variable
  */
 int map_create(var_p_t dest, JsonTokens *json, int end_position, int index) {
-  map_init(dest);
+  hashmap_create(dest, 0);
   int i = index;
   while (i < json->num_tokens) {
     jsmntok_t token = json->tokens[i];
     if (token.start > end_position) {
       break;
     } else if (token.type == JSMN_STRING || token.type == JSMN_PRIMITIVE) {
-      var_p_t value = NULL;
-      Element *element = (Element *)malloc(sizeof(Element));
-      element->key = v_new();
-      element->value = NULL;
-      map_set_primative(element->key, json->js + token.start, token.end - token.start);
-      map_insert_key(dest, element, &value);
+      var_p_t key = v_new();
+      map_set_primative(key, json->js + token.start, token.end - token.start);
+      var_p_t value = hashmap_putv(dest, key);
       i = map_read_next_token(value, json, i + 1);
     } else {
       err_array();
@@ -673,7 +596,7 @@ int map_create(var_p_t dest, JsonTokens *json, int end_position, int index) {
 int map_read_next_token(var_p_t dest, JsonTokens *json, int index) {
   int next;
   jsmntok_t token = json->tokens[index];
-  switch(token.type) {
+  switch (token.type) {
   case JSMN_OBJECT:
     next = map_create(dest, json, token.end, index + 1);
     break;
@@ -709,7 +632,7 @@ void map_from_str(var_p_t dest) {
       int num_tokens = TOKEN_GROW_SIZE;
       jsmntok_t *tokens = malloc(sizeof(jsmntok_t) * num_tokens);
       const char *js = arg.v.p.ptr;
-      size_t len = arg.v.p.size;
+      size_t len = arg.v.p.length;
       int result;
       jsmn_parser parser;
 
@@ -737,4 +660,50 @@ void map_from_str(var_p_t dest) {
   v_free(&arg);
 }
 
+// array <- CODEARRAY(x1,y1...[;x2,y2...])
+// dynamic arrays created with the [] operators
+void map_from_codearray(var_p_t dest) {
+  int count = 0;
+  int cols = 0;
+  int rows = 0;
+  int curcol = 0;
+  int ready = 0;
+  cint_list offs;
+
+  cint_list_init(&offs, ARRAY_GROW_SIZE);
+  v_toarray1(dest, ARRAY_GROW_SIZE);
+
+  do {
+    switch (code_peek()) {
+    case kwTYPE_SEP:
+      code_skipnext();
+      if (code_peek() == ';') {
+        // next row
+        rows++;
+        curcol = 0;
+      } else {
+        // next col
+        if (++curcol > cols) {
+          cols = curcol;
+        }
+      }
+      code_skipnext();
+      break;
+    case kwTYPE_LEVEL_END:
+      // end of parameters
+      ready = 1;
+      break;
+    default:
+      if (count >= dest->v.a.size) {
+        int size = dest->v.a.size + ARRAY_GROW_SIZE;
+        v_resize_array(dest, size);
+      }
+      cint_list_append(&offs, curcol);
+      eval(v_elem(dest, count++));
+    }
+  } while (!ready && !prog_error);
+
+  map_resize_array(dest, count, rows + 1, cols + 1, &offs);
+  free(offs.data);
+}
 

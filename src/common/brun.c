@@ -12,7 +12,6 @@
 #include "config.h"
 
 #include "common/sys.h"
-#include "common/panic.h"
 #include "common/blib.h"
 #include "common/str.h"
 #include "common/fmt.h"
@@ -74,7 +73,7 @@ void free_node(stknode_t *node) {
   switch (node->type) {
   case kwTYPE_CRVAR:
     v_free(tvar[node->x.vdvar.vid]);  // free local variable data
-    free(tvar[node->x.vdvar.vid]);
+    v_detach(tvar[node->x.vdvar.vid]);
     tvar[node->x.vdvar.vid] = node->x.vdvar.vptr; // restore ptr
     break;
 
@@ -85,19 +84,19 @@ void free_node(stknode_t *node) {
   case kwTYPE_VAR:
     if ((node->x.param.vcheck == 1) || (node->x.param.vcheck == 0x81)) {
       v_free(node->x.param.res);
-      free(node->x.param.res);
+      v_detach(node->x.param.res);
     }
     break;
 
   case kwTYPE_RET:
     v_free(node->x.vdvar.vptr); // free ret-var
-    free(node->x.vdvar.vptr);
+    v_detach(node->x.vdvar.vptr);
     break;
 
   case kwFUNC:
   case kwPROC:
     if (node->x.vcall.rvid != INVALID_ADDR) {
-      free(tvar[node->x.vcall.rvid]);
+      v_detach(tvar[node->x.vcall.rvid]);
       tvar[node->x.vcall.rvid] = node->x.vcall.retvar;
     }
     break;
@@ -107,14 +106,14 @@ void free_node(stknode_t *node) {
       if (node->x.vfor.flags & 1) {
         // allocated in for
         v_free(node->x.vfor.arr_ptr);
-        free(node->x.vfor.arr_ptr);
+        v_detach(node->x.vfor.arr_ptr);
       }
     }
     break;
 
   case kwSELECT:
     v_free(node->x.vcase.var_ptr);
-    free(node->x.vcase.var_ptr);
+    v_detach(node->x.vcase.var_ptr);
     break;
   }
 }
@@ -178,19 +177,6 @@ void code_pop_and_free(stknode_t *node) {
       err_stackunderflow();
       node->type = 0xFF;
     }
-  }
-}
-
-/**
- * removes nodes from stack until 'type' node found
- */
-void code_pop_until(int type) {
-  stknode_t node;
-
-  code_pop(&node, type);
-  while (node.type != type) {
-    code_pop(&node, type);
-    IF_ERR_RETURN;
   }
 }
 
@@ -266,7 +252,7 @@ void setsysvar_str(int index, const char *value) {
       var_p->const_flag = 1;
       var_p->v.p.ptr = malloc(l);
       strcpy(var_p->v.p.ptr, value);
-      var_p->v.p.size = l;
+      var_p->v.p.length = l;
     }
   }
   activate_task(tid);
@@ -291,8 +277,8 @@ void exec_setup_predefined_variables() {
   setsysvar_str(SYSVAR_COMMAND, opt_command);
 
 #if defined(_UnixOS)
-  if (dev_getenv("HOME")) {
-    strcpy(homedir, dev_getenv("HOME"));
+  if (getenv("HOME")) {
+    strcpy(homedir, getenv("HOME"));
   }
   else {
     strcpy(homedir, "/tmp/");
@@ -303,9 +289,9 @@ void exec_setup_predefined_variables() {
     homedir[l + 1] = '\0';
   }
 #elif defined(_Win32)
-  if (dev_getenv("HOME")) {
+  if (getenv("HOME")) {
     // this works on cygwin
-    strcpy(homedir, dev_getenv("HOME"));
+    strcpy(homedir, getenv("HOME"));
   }
   else {
     GetModuleFileName(NULL, homedir, sizeof(homedir) - 1);
@@ -387,7 +373,7 @@ void cmd_chain(void) {
     int el;
     int len = 0;
     for (el = 0; el < var.v.a.size; el++) {
-      var_t *el_p = (var_t *)(var.v.a.ptr + sizeof(var_t) * el);
+      var_t *el_p = v_elem(&var, el);
       if (el_p->type == V_STR) {
         int str_len = strlen(el_p->v.p.ptr) + 2;
         if (len) {
@@ -1409,7 +1395,7 @@ int exec_close_task() {
       // free this variable
       if (shared == -1) {
         v_free(tvar[i]);
-        free(tvar[i]);
+        v_detach(tvar[i]);
       }
     }
 
@@ -1499,7 +1485,7 @@ void exec_sync_variables(int dir) {
         activate_task(tid);
         if (tvar[ps->var_id] != vp) {
           v_free(tvar[ps->var_id]);
-          free(tvar[ps->var_id]);
+          v_detach(tvar[ps->var_id]);
         }
         tvar[ps->var_id] = vp;
       } else {
@@ -1520,9 +1506,9 @@ void exec_sync_variables(int dir) {
  */
 void sys_before_comp() {
   // setup prefered screen mode variables
-  if (dev_getenv("SBGRAF")) {
-    if (dev_getenv("SBGRAF")) {
-      comp_preproc_grmode(dev_getenv("SBGRAF"));
+  if (getenv("SBGRAF")) {
+    if (getenv("SBGRAF")) {
+      comp_preproc_grmode(getenv("SBGRAF"));
     }
     opt_graphics = 2;
   }
@@ -1680,6 +1666,8 @@ int sbasic_compile(const char *file) {
  * initialize executor and run a binary
  */
 void sbasic_exec_prepare(const char *filename) {
+  v_init_pool();
+
   // load source
   if (opt_nosave) {
     exec_tid = brun_create_task(filename, ctask->bytecode, 0);

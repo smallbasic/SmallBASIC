@@ -38,14 +38,8 @@ int sgn(var_num_t x) {
 }
 
 /*
- * ZSGN(x)
+ * ROUND(x, digits)
  */
-int zsgn(var_num_t x) {
-  return (x < 0.0) ? -1 : ((x > 0.0) ? 1 : 0);}
-
-  /*
-   * ROUND(x, digits)
-   */
 var_num_t fround(var_num_t x, int dig) {
   var_num_t result = 0.0;
   var_num_t m = floor(pow(10.0, dig));
@@ -54,17 +48,6 @@ var_num_t fround(var_num_t x, int dig) {
     result = -floor((-x * m) + .5) / m;
   } else {
     result = floor((x * m) + .5) / m;
-  }
-  return result;
-}
-
-/*
- * divide n by d with limited precision
- */
-var_num_t m_div(var_num_t n, var_num_t d) {
-  var_num_t result = n;
-  if (d != 0.0) {
-    result = n / d;
   }
   return result;
 }

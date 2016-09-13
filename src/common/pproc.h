@@ -17,7 +17,6 @@
 #include "common/sys.h"
 #include "common/str.h"
 #include "common/kw.h"
-#include "common/panic.h"
 #include "common/var.h"
 #include "common/device.h"
 #include "common/blib.h"
@@ -271,18 +270,6 @@ var_t *par_getvarray(void);
 /**
  * @ingroup par
  *
- * returns true if the following code is descibing one var code
- * usefull for optimization
- * (one var can be used by the pointer; more than one it must be evaluated)
- *
- * @note ignore it for now
- * @return true if the following code is descibing one var code
- */
-int par_isonevar(void);
-
-/**
- * @ingroup par
- *
  * skip parameter.
  * moves IP to the next position.
  */
@@ -397,21 +384,6 @@ void exec_usefunc(var_t *var, bcip_t ip);
  * @param ip the expression's address
  */
 void exec_usefunc2(var_t *var1, var_t *var2, bcip_t ip);
-
-/**
- * @ingroup par
- *
- * execute a user's expression (using three variables).
- * the result will be stored in 'var1'.
- *
- * @note the keyword USE
- *
- * @param var1 the variable (the X)
- * @param var2 the variable (the Y)
- * @param var3 the variable (the Z)
- * @param ip the expression's address
- */
-void exec_usefunc3(var_t *var1, var_t *var2, var_t *var3, bcip_t ip);
 
 /**
  * @ingroup par

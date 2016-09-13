@@ -75,7 +75,7 @@ typedef long int var_int_t;
   #define SB_BIT_SZ "_64 "
 #endif
 
-  // SB's constants
+// SB's constants
 #if defined(_SDL)
  #define SB_STR_VER VERSION " SDL " SB_VERSYS SB_BIT_SZ BUILD_DATE
 #elif defined (_ANDROID)
@@ -83,7 +83,6 @@ typedef long int var_int_t;
 #else
   #define SB_STR_VER VERSION " Console " SB_VERSYS SB_BIT_SZ BUILD_DATE
 #endif
-#define SB_PANICMSG_SIZE    1023
 #define SB_ERRMSG_SIZE      2048
 #define SB_KEYWORD_SIZE     128
 #define SB_SOURCELINE_SIZE  65536 // compiler
@@ -105,8 +104,44 @@ typedef long int var_int_t;
 #define I2MAX(a,b)      ( ((a) > (b)) ? (a) : (b) )     // max
 #define CLAMP(v,l,h)    ((v)<(l) ? (l) : (v) > (h) ? (h) : v) // clamp to specified range
 
-#include "common/pmem.h"
-#include "common/panic.h"
+#if !defined(NULL)
+#define NULL (void*)0L
+#endif
+
+/*
+ * data-types
+ */
+typedef intptr_t mem_t;
+
+#if !defined(byte)
+  typedef unsigned char byte;
+#endif
+
+typedef char *char_p_t;
+
+// 16-bit integer
+typedef unsigned short word;
+
+// 32-bit integer
+typedef unsigned int dword;
+
+// basic code unit
+typedef byte code_t;
+
+typedef int32_t fcode_t;
+typedef int32_t pcode_t;
+typedef int32_t bid_t;
+typedef dword bcip_t;
+
+#define INVALID_ADDR    0xFFFFFFFF
+#define OS_ADDRSZ   4   // size of address pointer (always 4 for 32b addresses)
+#define OS_CODESZ   4   // size of buildin func/proc ptrs (always 4 for 32b mode)
+#define OS_STRLEN   4   // size of strings
+
+#define ADDRSZ      OS_ADDRSZ
+#define CODESZ      OS_CODESZ
+#define BC_CTRLSZ   (ADDRSZ+ADDRSZ)
+
 #include "common/str.h"
 
 #if !defined(O_BINARY)

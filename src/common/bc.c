@@ -66,30 +66,6 @@ void bc_store1(bc_t *bc, bcip_t offset, byte code) {
 }
 
 /*
- * add one command & one byte
- */
-void bc_add2c(bc_t *bc, byte code, byte v) {
-  if (bc->count >= bc->size - 3) {
-    bc_resize(bc, bc->size + BC_ALLOC_INCR);
-  }
-  bc->ptr[bc->count] = code;
-  bc->count++;
-  bc->ptr[bc->count] = v;
-  bc->count++;
-}
-
-/*
- * add one word
- */
-void bc_add_word(bc_t *bc, word p1) {
-  if (bc->count >= bc->size - 4) {
-    bc_resize(bc, bc->size + BC_ALLOC_INCR);
-  }
-  memcpy(bc->ptr + bc->count, &p1, 2);
-  bc->count += 2;
-}
-
-/*
  * add one dword
  */
 void bc_add_dword(bc_t *bc, dword p1) {
@@ -98,19 +74,6 @@ void bc_add_dword(bc_t *bc, dword p1) {
   }
   memcpy(bc->ptr + bc->count, &p1, 4);
   bc->count += 4;
-}
-
-/*
- * add one command and one word
- */
-void bc_add2i(bc_t *bc, byte code, word p1) {
-  if (bc->count >= bc->size - 4) {
-    bc_resize(bc, bc->size + BC_ALLOC_INCR);
-  }
-  bc->ptr[bc->count] = code;
-  bc->count++;
-  memcpy(bc->ptr + bc->count, &p1, 2);
-  bc->count += 2;
 }
 
 /*
@@ -262,37 +225,14 @@ char *bc_store_string(bc_t *bc, char *src) {
 }
 
 /*
- * adds a string.
- * returns a pointer of src to the next "element"
- */
-char *bc_store_macro(bc_t *bc, char *src) {
-  char *p = src, *np;
-  int l;
-
-  p++;                          // == `
-  while (*p) {
-    if (*p == '`') {
-      l = p - src;
-      np = malloc(l + 1);
-      strncpy(np, src + 1, l);
-      np[l - 1] = '\0';
-      bc_add_strn(bc, np, strlen(np));
-      free(np);
-
-      p++;
-      return p;
-    }
-    p++;
-  }
-
-  return p;
-}
-
-/*
  * adds an EOC mark at the current position
  */
 void bc_eoc(bc_t *bc) {
-  bc_add1(bc, kwTYPE_EOC);
+  if (bc && bc->count &&
+      (bc->ptr[bc->count - 1] != kwTYPE_LINE &&
+       bc->ptr[bc->count - 1] != kwTYPE_EOC)) {
+    bc_add1(bc, kwTYPE_EOC);
+  }
 }
 
 /*

@@ -13,6 +13,7 @@ NEXT x
 bw=xmax/3
 bh=ymax/3
 t1=timer
+maxFps=0
 
 while 1
   t=TICKS
@@ -30,12 +31,17 @@ while 1
  NEXT y
 
  fps=1000/(TICKS-t)
+ if (fps>maxfps) then
+   maxfps = fps
+ endif
  iter++
  at bw+10,0
  print format("Fps:  ###.##", fps)
  at bw+10,20
- print format("Cnt:  ###", iter)
+ print format("Best: ###.##", maxfps)
  at bw+10,40
+ print format("Cnt:  ###", iter)
+ at bw+10,60
  print format("Elap: ###", timer-t1)
 
  SHOWPAGE

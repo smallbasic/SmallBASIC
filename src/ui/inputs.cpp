@@ -49,7 +49,7 @@ int get_color(var_p_t value, int def) {
       result = colors[result];
     }
   } else if (value != NULL && value->type == V_STR &&
-             value->v.p.size) {
+             value->v.p.length) {
     const char *n = value->v.p.ptr;
     if (n[0] == '0' && n[1] == 'x' && n[2]) {
       result = strtol(n + 2, NULL, 16);
@@ -267,13 +267,17 @@ void FormInput::setTextColor() {
   maSetColor(hasFocus() || _noFocus ? _fg : lerp(_bg, _fg, 0.7));
 }
 
+void FormInput::setHelpTextColor() {
+  maSetColor(lerp(_bg, _fg, 0.4));
+}
+
 // returns the field var attached to the field
 var_p_t FormInput::getField(var_p_t form) {
   var_p_t result = NULL;
   if (form->type == V_MAP) {
     var_p_t inputs = map_get(form, FORM_INPUTS);
     if (inputs != NULL && inputs->type == V_ARRAY) {
-      for (int i = 0; i < inputs->v.a.size && !result; i++) {
+      for (unsigned i = 0; i < inputs->v.a.size && !result; i++) {
         var_p_t elem = v_elem(inputs, i);
         if (elem->type == V_MAP && (_id == map_get_int(elem, FORM_INPUT_ID, -1))) {
           result = elem;
@@ -423,26 +427,6 @@ void FormLink::draw(int x, int y, int w, int h, int chw) {
 }
 
 //
-// FormTab
-//
-FormTab::FormTab(const char *link, int x, int y, int w, int h) :
-  FormLink(link, x, y, w, h) {
-  _noFocus = true;
-}
-
-void FormTab::draw(int x, int y, int w, int h, int chw) {
-  int x_begin = chw;
-  int x_end = x + MIN(w, _width);
-
-  drawLink(_link.c_str(), x + x_begin, y, w, chw);
-  maLine(x_end, y + 4, x_end, y + _height - 4);
-}
-
-int FormTab::padding(bool vert) const {
-  return vert ? 0 : g_system->getOutput()->getCharWidth() * 2;
-}
-
-//
 // FormEditInput
 //
 FormEditInput::FormEditInput(int x, int y, int w, int h) :
@@ -503,9 +487,10 @@ void FormEditInput::setFocus(bool focus) {
 //
 // FormLineInput
 //
-FormLineInput::FormLineInput(const char *value, int size, bool grow,
+FormLineInput::FormLineInput(const char *value, const char *help, int size, bool grow,
                              int x, int y, int w, int h) :
   FormEditInput(x, y, w, h),
+  _help(help),
   _buffer(NULL),
   _size(size),
   _scroll(0),
@@ -556,23 +541,32 @@ void FormLineInput::draw(int x, int y, int w, int h, int chw) {
   if (len * chw >= _width) {
     len = _width / chw;
   }
-  maDrawText(x, y, _buffer + _scroll, len);
 
-  if (_mark != _point && _mark != -1) {
-    int chars = abs(_mark - _point);
-    int start = MIN(_mark, _point);
-    int width = chars * chw;
-    int px = x + (start * chw);
-    setTextColor();
-    maFillRect(px, y, width, _height);
-    maSetColor(_bg);
-    maDrawText(px, y, _buffer + _scroll + start, chars);
-  } else if (hasFocus()) {
-    int px = x + (_point * chw);
-    maFillRect(px, y, chw, _height);
-    if (_point < len) {
+  if (!len && _help.length()) {
+    if (hasFocus()) {
+      setTextColor();
+      maFillRect(x, y, chw, _height);
+    }
+    setHelpTextColor();
+    drawText(_help.c_str(), x + (chw * 0), y, w, chw);
+  } else {
+    maDrawText(x, y, _buffer + _scroll, len);
+    if (_mark != _point && _mark != -1) {
+      int chars = abs(_mark - _point);
+      int start = MIN(_mark, _point);
+      int width = chars * chw;
+      int px = x + (start * chw);
+      setTextColor();
+      maFillRect(px, y, width, _height);
       maSetColor(_bg);
-      maDrawText(px, y, _buffer + _scroll + _point, 1);
+      maDrawText(px, y, _buffer + _scroll + start, chars);
+    } else if (hasFocus()) {
+      int px = x + (_point * chw);
+      maFillRect(px, y, chw, _height);
+      if (_point < len) {
+        maSetColor(_bg);
+        maDrawText(px, y, _buffer + _scroll + _point, 1);
+      }
     }
   }
 }
@@ -814,7 +808,7 @@ void ListModel::create(var_t *v) {
 
 // construct from an array of values
 void ListModel::fromArray(var_t *v) {
-  for (int i = 0; i < v->v.a.size; i++) {
+  for (unsigned i = 0; i < v->v.a.size; i++) {
     var_t *el_p = v_elem(v, i);
     if (el_p->type == V_STR) {
       _list.add(new strlib::String((const char *)el_p->v.p.ptr));
@@ -986,8 +980,8 @@ bool FormList::edit(int key, int screenWidth, int charWidth) {
 //
 // FormListBox
 //
-FormListBox::FormListBox(ListModel *model, int x, int y, int w, int h) :
-  FormList(model, x, y, w, h) {
+FormListBox::FormListBox(ListModel *model, const char *help, int x, int y, int w, int h) :
+  FormList(model, x, y, w, h), _help(help) {
 }
 
 void FormListBox::draw(int x, int y, int w, int h, int chw) {
@@ -996,21 +990,26 @@ void FormListBox::draw(int x, int y, int w, int h, int chw) {
   MAExtent textSize = maGetTextSize(_model->getTextAt(0));
   int rowHeight = EXTENT_Y(textSize) + 1;
   int textY = y;
-  for (int i = 0; i < _model->rows(); i++) {
-    const char *str = _model->getTextAt(i + _topIndex);
-    if (textY + rowHeight >= y + _height) {
-      break;
+  if (!_model->rows() && _help.length()) {
+    setHelpTextColor();
+    drawText(_help.c_str(), x, textY, w, chw);
+  } else {
+    for (int i = 0; i < _model->rows(); i++) {
+      const char *str = _model->getTextAt(i + _topIndex);
+      if (textY + rowHeight >= y + _height) {
+        break;
+      }
+      if (i == _activeIndex) {
+        setTextColor();
+        maFillRect(x, textY, _width, rowHeight);
+        maSetColor(_bg);
+        drawText(str, x, textY, w, chw);
+      } else {
+        setTextColor();
+        drawText(str, x, textY, w, chw);
+      }
+      textY += rowHeight;
     }
-    if (i == _activeIndex) {
-      setTextColor();
-      maFillRect(x, textY, _width, rowHeight);
-      maSetColor(_bg);
-      drawText(str, x, textY, w, chw);
-    } else {
-      setTextColor();
-      drawText(str, x, textY, w, chw);
-    }
-    textY += rowHeight;
   }
 }
 

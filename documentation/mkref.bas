@@ -25,6 +25,10 @@ if (len(args) == 2 && args(1) == "txt") then
   mk_text_reference(in_map)
 elif (len(args) == 2 && args(1) == "bas") then
   mk_bas(in_map)
+elif (len(args) == 2 && args(1) == "jekyll") then
+  mk_jekyll(in_map)
+elif (len(args) == 2 && args(1) == "test") then
+  mk_test(in_map)
 else
   mk_help(in_map)
 fi
@@ -56,6 +60,15 @@ func fix_comments(comments, keyword)
   comments = translate(comments, "\\r\\n\\r\\n", chr(10))
   comments = translate(comments, "\\r\\n", chr(10))
   fix_comments = comments
+end
+
+func fix_comments_jekyll(comments, keyword)
+  comments = translate(comments, "<code>", "<pre>" + chr(10))
+  comments = translate(comments, "</code>", chr(10) + "</pre>" + chr(10))
+  comments = translate(comments, "p. ", "<p>")
+  comments = translate(comments, "bc. ", "<pre>")
+  comments = fix_comments(comments, keyword)
+  fix_comments_jekyll = comments
 end
 
 sub mk_bas(byref in_map)
@@ -139,5 +152,109 @@ sub mk_text_reference(byref in_map)
       i++
       ? fix_comments(in_map(i).comment_body_value, keyword)
     wend
+  next i
+end
+
+'
+' make post files for smallbasic.github.io
+'
+' local test: $ bundle exec jekyll serve
+'
+sub mk_jekyll(byref in_map)
+  local i, row, group, type, keyword, syntax, brief, comments, buffer, fname
+  local in_map_len = len(in_map) - 1
+  local end_block = "<!-- end heading block -->"
+  dim buffer
+
+  for i = 0 to in_map_len
+    erase buffer
+    row = in_map(i).body_value
+    group = get_field(row, "group=", false)
+    type = get_field(row, "type=", false)
+    keyword = get_field(row, "keyword=", false)
+    syntax = get_field(row, "syntax=", false)
+    brief = get_field(row, "brief=", false)
+    buffer << "---"
+    buffer << "permalink: /" + in_map(i).entity_id
+    buffer << "layout: post"
+    buffer << "title:  \"" + keyword + "\""
+    buffer << "categories: " + lower(group)
+    buffer << "---"
+    buffer << group
+    buffer << ""
+    buffer << syntax
+    buffer << ""
+    buffer << brief
+    buffer << ""
+    pos = instr(row, end_block) + len(end_block)
+    if (pos < len(row)) then
+      buffer << fix_comments_jekyll(mid(row, pos), keyword)
+    endif
+    comments = in_map(i).comment_body_value
+    if (comments != "NULL") then
+      buffer << fix_comments_jekyll(comments, keyword)
+    endif
+    while (i + 1 < in_map_len && in_map(i).entity_id == in_map(i + 1).entity_id)
+      i++
+      buffer << fix_comments_jekyll(in_map(i).comment_body_value, keyword)
+    wend
+    fname = "2016-06-04-" + lower(group) + "-" + lower(keyword) + ".markdown"
+    tsave fname, buffer
+  next i
+end
+
+func cmpFunc(l, r)
+  local f1 = lower(l)
+  local f2 = lower(r)
+  cmpFunc = IFF(f1 == f2, 0, IFF(f1 > f2, 1, -1))
+end
+
+func fname(s)
+  local result
+  result = trim(leftof(s, " "))
+  if (len(result) == 0) then
+    result = s
+  endif
+  fname = result
+end
+
+'
+' make a test program from the syntax field
+'
+sub mk_test(byref in_map)
+  local i, row, type, prev, syntax, el
+  local in_len = len(in_map) - 1
+  dim cmds, funcs
+  for i = 0 to in_len
+    row = in_map(i).body_value
+    type = get_field(row, "type=", false)
+    syntax = trim(get_field(row, "syntax=", false))
+    if (type == "command") then
+      cmds << syntax
+    else if (type == "function") then
+      funcs << syntax
+    endif
+  next i
+
+  sort cmds use cmpFunc(x,y)
+  in_len = len(cmds) - 1
+  prev = ""
+  for i = 0 to in_len
+    row = cmds(i)
+    if (row != prev) then
+      print "print \"" + fname(row) + ":\" ':" + row
+    endif
+    prev = row
+  next i
+
+  sort funcs use cmpFunc(x,y)
+  in_len = len(funcs) - 1
+  prev = ""
+  for i = 0 to in_len
+    row = funcs(i)
+    if (row != prev) then
+      print "print \"" + fname(row) + ":\" + " + row
+    endif
+    prev = row
   next i
 end

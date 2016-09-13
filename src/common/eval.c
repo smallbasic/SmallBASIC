@@ -8,7 +8,6 @@
 // Copyright(C) 2000 Nicholas Christopoulos
 
 #include "common/smbas.h"
-#include "common/panic.h"
 #include "common/pproc.h"
 #include "common/str.h"
 #include "common/kw.h"
@@ -63,11 +62,11 @@ var_num_t *mat_toc(var_t *v, int32_t *rows, int32_t *cols) {
     *rows = 1;
   }
 
-  m = (var_num_t*) malloc(((*rows) * (*cols)) * sizeof(var_num_t));
+  m = (var_num_t *)malloc(((*rows) * (*cols)) * sizeof(var_num_t));
   for (i = 0; i < *rows; i++) {
     for (j = 0; j < *cols; j++) {
       pos = i * (*cols) + j;
-      e = (var_t *) (v->v.a.ptr + (sizeof(var_t) * pos));
+      e = v_elem(v, pos);
       m[pos] = v_getval(e);
     }
   }
@@ -91,7 +90,7 @@ void mat_tov(var_t *v, var_num_t *m, int rows, int cols, int protect_col1) {
   for (i = 0; i < rows; i++) {
     for (j = 0; j < cols; j++) {
       pos = i * cols + j;
-      e = (var_t *) (v->v.a.ptr + (sizeof(var_t) * pos));
+      e = v_elem(v, pos);
       e->type = V_NUM;
       e->v.n = m[pos];
     }
@@ -108,7 +107,7 @@ void mat_op1(var_t *l, int op, var_num_t n) {
 
   m1 = mat_toc(l, &lr, &lc);
   if (m1) {
-    m = (var_num_t*) malloc(sizeof(var_num_t) * lr * lc);
+    m = (var_num_t *)malloc(sizeof(var_num_t) * lr * lc);
     for (i = 0; i < lr; i++) {
       for (j = 0; j < lc; j++) {
         pos = i * lc + j;
@@ -122,7 +121,6 @@ void mat_op1(var_t *l, int op, var_num_t n) {
         }
       }
     }
-
     mat_tov(l, m, lr, lc, 1);
     free(m1);
     free(m);
@@ -158,7 +156,7 @@ void mat_op2(var_t *l, var_t *r, int op) {
       if (rc != lc || lr != rr) {
         err_matdim();
       } else {
-        m = (var_num_t*) malloc(sizeof(var_num_t) * lr * lc);
+        m = (var_num_t *)malloc(sizeof(var_num_t) * lr * lc);
         for (i = 0; i < lr; i++) {
           for (j = 0; j < lc; j++) {
             pos = i * lc + j;
@@ -176,10 +174,11 @@ void mat_op2(var_t *l, var_t *r, int op) {
       free(m1);
       free(m2);
       if (m) {
-        if (r->v.a.maxdim == 1)
+        if (r->v.a.maxdim == 1) {
           mat_tov(l, m, lc, 1, 0);
-        else
+        } else {
           mat_tov(l, m, lr, lc, 1);
+        }
         free(m);
       }
     } else {
@@ -214,19 +213,17 @@ void mat_mul(var_t *l, var_t *r) {
       } else {
         mr = lr;
         mc = rc;
-        m = (var_num_t*) malloc(sizeof(var_num_t) * mr * mc);
-
+        m = (var_num_t *)malloc(sizeof(var_num_t) * mr * mc);
         for (i = 0; i < mr; i++) {
           for (j = 0; j < mc; j++) {
             pos = i * mc + j;
             m[pos] = 0.0;
-            for (k = 0; k < lc; k++)
+            for (k = 0; k < lc; k++) {
               m[pos] = m[pos] + (m1[i * lc + k] * m2[k * rc + j]);
+            }
           }
         }
       }
-
-      // /
       free(m1);
       free(m2);
       if (m) {
@@ -256,11 +253,9 @@ int v_wc_match(var_t *vwc, var_t *v) {
   ri = 0;
   if (v->type == V_ARRAY) {
     int i;
-    var_t *elem_p;
-
     ri = 1;
     for (i = 0; i < v->v.a.size; i++) {
-      elem_p = v_elem(v, i);
+      var_t *elem_p = v_elem(v, i);
       if (v_wc_match(vwc, elem_p) == 0) {
         ri = 0;
         break;
@@ -275,7 +270,7 @@ int v_wc_match(var_t *vwc, var_t *v) {
       ri = wc_match((char *) vwc->v.p.ptr, (char *) vt->v.p.ptr);
     }
     V_FREE(vt);
-    free(vt);
+    v_detach(vt);
   }
   return ri;
 }
@@ -598,10 +593,8 @@ static inline void oper_cmp(var_t *r, var_t *left) {
     ri = 0;
     if (r->type == V_ARRAY) {
       int i;
-      var_t *elem_p;
-
       for (i = 0; i < r->v.a.size; i++) {
-        elem_p = v_elem(r, i);
+        var_t *elem_p = v_elem(r, i);
         if (v_compare(left, elem_p) == 0) {
           ri = i + 1;
           break;
@@ -615,12 +608,11 @@ static inline void oper_cmp(var_t *r, var_t *left) {
           ri = 0;
         }
       } else if (v_is_type(left, V_NUM) || v_is_type(left, V_INT)) {
-        var_t *v;
-        v = v_clone(left);
+        var_t *v = v_clone(left);
         v_tostr(v);
         ri = (strstr(r->v.p.ptr, v->v.p.ptr) != NULL);
         V_FREE(v);
-        free(v);
+        v_detach(v);
       }
     } else if (r->type == V_NUM || r->type == V_INT) {
       ri = (v_compare(left, r) == 0);
@@ -707,6 +699,9 @@ static inline void eval_shortc(var_t *r) {
 
 static inline void eval_var(var_t *r, var_t *var_p) {
   var_t *var_deref;
+  if (prog_error) {
+    return;
+  }
   switch (var_p->type) {
   case V_PTR:
     r->type = var_p->type;
@@ -751,11 +746,11 @@ static inline void eval_push(var_t *r) {
     eval_stk[eval_sp].v.n = r->v.n;
     break;
   case V_STR:
-    len = r->v.p.size;
+    len = r->v.p.length;
     eval_stk[eval_sp].type = V_STR;
     eval_stk[eval_sp].v.p.ptr = malloc(len + 1);
     strcpy(eval_stk[eval_sp].v.p.ptr, r->v.p.ptr);
-    eval_stk[eval_sp].v.p.size = len;
+    eval_stk[eval_sp].v.p.length = len;
     break;
   default:
     v_set(&eval_stk[eval_sp], r);
@@ -1156,7 +1151,6 @@ static inline void eval_callf(var_t *r) {
 }
 
 static inline void eval_call_udf(var_t *r) {
-  prog_ip--;
   bc_loop(1);
   if (!prog_error) {
     stknode_t udf_rv;
@@ -1167,7 +1161,7 @@ static inline void eval_call_udf(var_t *r) {
       v_set(r, udf_rv.x.vdvar.vptr);
       // free ret-var
       V_FREE(udf_rv.x.vdvar.vptr);
-      free(udf_rv.x.vdvar.vptr);
+      v_detach(udf_rv.x.vdvar.vptr);
     }
   }
 }
@@ -1181,11 +1175,11 @@ void eval(var_t *r) {
   byte level = 0;
 
   while (!prog_error) {
-    code_t code = CODE(IP);
-    IP++;
+    byte code = prog_source[prog_ip];
     switch (code) {
     case kwTYPE_INT:
       // integer - constant
+      IP++;
       V_FREE(r);
       r->type = V_INT;
       r->v.i = code_getint();
@@ -1193,6 +1187,7 @@ void eval(var_t *r) {
 
     case kwTYPE_NUM:
       // double - constant
+      IP++;
       V_FREE(r);
       r->type = V_NUM;
       r->v.n = code_getreal();
@@ -1200,80 +1195,90 @@ void eval(var_t *r) {
 
     case kwTYPE_STR:
       // string - constant
+      IP++;
       V_FREE(r);
       v_eval_str(r);
       break;
 
     case kwTYPE_LOGOPR:
+      IP++;
       oper_log(r, left);
       break;
 
     case kwTYPE_CMPOPR:
+      IP++;
       oper_cmp(r, left);
       break;
 
     case kwTYPE_ADDOPR:
+      IP++;
       oper_add(r, left);
       break;
 
     case kwTYPE_MULOPR:
+      IP++;
       oper_mul(r, left);
       break;
 
     case kwTYPE_POWOPR:
+      IP++;
       oper_powr(r, left);
       break;
 
     case kwTYPE_UNROPR:
       // unary
+      IP++;
       oper_unary(r);
       break;
 
-    case kwTYPE_VAR: {
+    case kwTYPE_VAR:
       // variable
       V_FREE(r);
-      IP--;
-      var_t *var_p = code_getvarptr();
-      if (prog_error) {
-        return;
-      }
-      eval_var(r, var_p);
-    }
+      eval_var(r, code_getvarptr());
       break;
 
     case kwTYPE_LEVEL_BEGIN:
       // left parenthesis
+      IP++;
       level++;
       break;
 
     case kwTYPE_LEVEL_END:
       // right parenthesis
       if (level == 0) {
-        IP--;
         eval_sp = eval_pos;
         // warning: normal exit
         return;
       }
       level--;
+      IP++;
       break;
 
     case kwTYPE_EVPUSH:
       // stack = push result
+      IP++;
       eval_push(r);
       break;
 
     case kwTYPE_EVPOP:
       // pop left
-      eval_sp--;
-      left = &eval_stk[eval_sp];
+      IP++;
+      if (!eval_sp) {
+        err_syntax_unknown();
+      } else {
+        eval_sp--;
+        left = &eval_stk[eval_sp];
+      }
       break;
 
     case kwTYPE_EVAL_SC:
+      IP++;
       eval_shortc(r);
       break;
 
     case kwTYPE_CALLF:
       // built-in functions
+      IP++;
       eval_callf(r);
       break;
 
@@ -1286,11 +1291,13 @@ void eval(var_t *r) {
       switch (code) {
       case kwTYPE_CALLEXTF:
         // [lib][index] external functions
+        IP++;
         eval_extf(r);
         break;
 
       case kwTYPE_PTR:
         // UDF pointer - constant
+        IP++;
         V_FREE(r);
         r->type = V_PTR;
         r->const_flag = 1;
@@ -1303,12 +1310,11 @@ void eval(var_t *r) {
         err_evsyntax();
         break;
 
-      default:
+      default: {
         if (code == kwTYPE_EOC ||
             code == kwTYPE_SEP ||
             code == kwTO ||
             kw_check_evexit(code)) {
-          IP--;
           // restore stack pointer
           eval_sp = eval_pos;
 
@@ -1319,8 +1325,8 @@ void eval(var_t *r) {
         if (!opt_quiet) {
           hex_dump(prog_source, prog_length);
         }
-      }
-    };
+      }};
+    }
   }
   // restore stack pointer
   eval_sp = eval_pos;

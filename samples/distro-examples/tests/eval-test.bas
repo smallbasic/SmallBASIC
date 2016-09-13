@@ -207,3 +207,9 @@ assertEq 0xc Eqv 0xa, 0x9, PROGLINE
 ' bit shift operators
 assertEq 0xFF  LSHIFT 1, 0x1FE, PROGLINE
 assertEq 0x1FE RSHIFT 1, 0xFF,  PROGLINE
+
+' value of i when for for does not execute body
+for i=10 to 9 step 2:next
+assertEq i, 10, PROGLINE
+for i=1 to 2 step -1: next
+assertEq i, 1, PROGLINE

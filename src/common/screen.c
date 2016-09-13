@@ -86,13 +86,6 @@ void dev_setpenmode(int enable) {
 }
 
 /**
- * clear to eol
- */
-void dev_clreol() {
-  dev_print("\033[K");
-}
-
-/**
  * returns the x position of cursor (in pixels)
  */
 int dev_getx() {

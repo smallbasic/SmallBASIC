@@ -128,7 +128,7 @@ int http_read(dev_file_t *f, var_t *var_p) {
   v_free(var_p);
   var_p->type = V_STR;
   var_p->v.p.ptr = 0;
-  var_p->v.p.size = 0;
+  var_p->v.p.length = 0;
 
   while (1) {
     int bytes = net_read(f->handle, (char *) rxbuff, sizeof(rxbuff));
@@ -151,10 +151,10 @@ int http_read(dev_file_t *f, var_t *var_p) {
           break;                // no end delimiter
         }
         if (rxbuff[i + 2] == '\n') {
-          var_p->v.p.size = bytes - i - 3;
-          var_p->v.p.ptr = malloc(var_p->v.p.size + 1);
-          memcpy(var_p->v.p.ptr, rxbuff + i + 3, var_p->v.p.size);
-          var_p->v.p.ptr[var_p->v.p.size] = 0;
+          var_p->v.p.length = bytes - i - 3;
+          var_p->v.p.ptr = malloc(var_p->v.p.length + 1);
+          memcpy(var_p->v.p.ptr, rxbuff + i + 3, var_p->v.p.length);
+          var_p->v.p.ptr[var_p->v.p.length] = 0;
           inHeader = 0;
           break;                // found start of content
         }
@@ -175,10 +175,10 @@ int http_read(dev_file_t *f, var_t *var_p) {
         }
       }
     } else {
-      var_p->v.p.ptr = realloc(var_p->v.p.ptr, var_p->v.p.size + bytes + 1);
-      memcpy(var_p->v.p.ptr + var_p->v.p.size, rxbuff, bytes);
-      var_p->v.p.size += bytes;
-      var_p->v.p.ptr[var_p->v.p.size] = 0;
+      var_p->v.p.ptr = realloc(var_p->v.p.ptr, var_p->v.p.length + bytes + 1);
+      memcpy(var_p->v.p.ptr + var_p->v.p.length, rxbuff, bytes);
+      var_p->v.p.length += bytes;
+      var_p->v.p.ptr[var_p->v.p.length] = 0;
     }
   }
 
