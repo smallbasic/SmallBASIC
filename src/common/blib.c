@@ -2020,8 +2020,8 @@ void cmd_pause() {
   long start, now;
 
   var_int_t x = par_getval(0);
+  dev_clrkb();
   if (x == 0) {
-    dev_clrkb();
     while (dev_kbhit() == 0) {
       switch (dev_events(2)) {
       case 0:                  // no event
