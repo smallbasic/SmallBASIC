@@ -1,3 +1,7 @@
+2016-08-21 (0.12.8)
+	Clear keyboard buffer before pause.
+	Fix cursor display with INPUT command
+
 2016-08-21 (0.12.7)
 	Added 'web' sub-project (sbasicw)
 

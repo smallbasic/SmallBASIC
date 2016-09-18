@@ -213,6 +213,7 @@ char *System::getText(char *dest, int maxSize) {
   _output->redraw();
   _state = kModalState;
   maShowVirtualKeyboard();
+  showCursor(kIBeam);
 
   while (isModal()) {
     MAEvent event = getNextEvent();
@@ -248,6 +249,7 @@ char *System::getText(char *dest, int maxSize) {
     _output->print(dest);
   }
 
+  showCursor(kArrow);
   _output->removeInput(widget);
   delete widget;
   return dest;
