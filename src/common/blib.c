@@ -2208,6 +2208,10 @@ void cmd_wjoin() {
 
   v_init(&del);
   var_p = par_getvarray();
+  if (!var_p || var_p->type != V_ARRAY) {
+    err_varisnotarray();
+    return;
+  }
   if (prog_error) {
     return;
   }

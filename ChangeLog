@@ -1,4 +1,7 @@
-2016-08-21 (0.12.8)
+2016-09-19 (0.12.8)
+	Fix error handling for invalid JOIN input
+
+2016-09-18 (0.12.8)
 	Clear keyboard buffer before pause.
 	Fix cursor display with INPUT command
 

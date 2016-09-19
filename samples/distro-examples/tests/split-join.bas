@@ -32,3 +32,15 @@ if (p <> translate(z, ";", ",")) then
   print z
   throw "p <> z"
 endif
+
+did_fail = false
+try
+  x=""
+  z=""
+  join x,",", z
+catch
+  did_fail = true
+end try
+if !did_fail then
+  throw "Join error"
+endif
