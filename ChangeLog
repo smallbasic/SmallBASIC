@@ -1,5 +1,6 @@
 2016-09-19 (0.12.8)
 	Fix error handling for invalid JOIN input
+	Fix array handling to include empty columns
 
 2016-09-18 (0.12.8)
 	Clear keyboard buffer before pause.

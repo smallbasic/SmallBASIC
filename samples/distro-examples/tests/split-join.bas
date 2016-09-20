@@ -44,3 +44,18 @@ end try
 if !did_fail then
   throw "Join error"
 endif
+
+a1=[,1,2,3,4,5,,7,8,]
+a2=["",1,2,3,4,5,"",7,8,""]
+if (a1 != a2) then
+  ? a1
+  ? a2
+  throw "Empty entries not included in array"
+endif
+
+'s=",1,2,3,4,5,,7,8,"
+'split s,",",a
+'if (n != ubound(a)) then
+'  ? a
+'  throw "Final empty entry was ignored"
+'endif

@@ -660,6 +660,15 @@ void map_from_str(var_p_t dest) {
   v_free(&arg);
 }
 
+void map_add_empty_col(var_p_t dest, int count, int curcol, cint_list *offs) {
+  if (count >= dest->v.a.size) {
+    int size = dest->v.a.size + ARRAY_GROW_SIZE;
+    v_resize_array(dest, size);
+  }
+  cint_list_append(offs, curcol);
+  v_setstr(v_elem(dest, count), "");
+}
+
 // array <- CODEARRAY(x1,y1...[;x2,y2...])
 // dynamic arrays created with the [] operators
 void map_from_codearray(var_p_t dest) {
@@ -668,6 +677,7 @@ void map_from_codearray(var_p_t dest) {
   int rows = 0;
   int curcol = 0;
   int ready = 0;
+  int expect_data = 1;
   cint_list offs;
 
   cint_list_init(&offs, ARRAY_GROW_SIZE);
@@ -682,15 +692,24 @@ void map_from_codearray(var_p_t dest) {
         rows++;
         curcol = 0;
       } else {
+        if (expect_data) {
+          // encountered blank column
+          map_add_empty_col(dest, count++, curcol, &offs);
+        }
         // next col
         if (++curcol > cols) {
           cols = curcol;
         }
       }
       code_skipnext();
+      // next should be column data
+      expect_data = 1;
       break;
     case kwTYPE_LEVEL_END:
       // end of parameters
+      if (expect_data) {
+        map_add_empty_col(dest, count++, curcol, &offs);
+      }
       ready = 1;
       break;
     default:
@@ -700,10 +719,11 @@ void map_from_codearray(var_p_t dest) {
       }
       cint_list_append(&offs, curcol);
       eval(v_elem(dest, count++));
+      // next should be separator
+      expect_data = 0;
     }
   } while (!ready && !prog_error);
 
   map_resize_array(dest, count, rows + 1, cols + 1, &offs);
   free(offs.data);
 }
-
