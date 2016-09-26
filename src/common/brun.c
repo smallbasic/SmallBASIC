@@ -1799,10 +1799,9 @@ int sbasic_main(const char *file) {
   // initialize SB's units manager
   unit_mgr_init();
 
-  // modules load
+  // load external C modules
   if (opt_loadmod) {
-    sblmgr_init(1, opt_modlist);  // initialize (load) Linux's C
-    // units
+    sblmgr_init(1, opt_modlist);
   } else {
     sblmgr_init(0, NULL);
   }

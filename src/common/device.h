@@ -769,14 +769,9 @@ typedef enum {
   ft_stream,          /**< simple file */
   ft_random,
   ft_serial_port,     /**< COMx:speed, serial port */
-  ft_printer_port,    /**< LPTx: parallel port */
   ft_socket_client,   /**< SCLT:address:port, socket client */
   ft_socket_server,   // SSVR:address:port
-  ft_http_client,
-  ft_ftp_client,      // FTP is a good example also
-  ft_mail_client,     // MAIL (at least SMTP)
-  ft_ztxt,
-  ft_vfslib           /**< vfs-module */
+  ft_http_client
 } dev_ftype_t;
 
 /**
@@ -797,7 +792,6 @@ typedef struct {
 
   int handle;         /**< the file handle */
   int last_error;     /**< the last error-code */
-  int vfslib;         /**< vfs-module, handle */
   int open_flags;     /**< the open()'s flags */
 } dev_file_t;
 
@@ -805,7 +799,7 @@ typedef struct {
 #define DEV_FILE_INPUT    1 /**< dev_fopen() flags, open file for input (read-only)     @ingroup dev_f */
 #define DEV_FILE_OUTPUT   2 /**< dev_fopen() flags, open file for output (create)     @ingroup dev_f */
 #define DEV_FILE_APPEND   4 /**< dev_fopen() flags, open file for append (append or create) @ingroup dev_f */
-#define DEV_FILE_EXCL   8 /**< dev_fopen() flags, open file exclusive           @ingroup dev_f */
+#define DEV_FILE_EXCL     8 /**< dev_fopen() flags, open file exclusive           @ingroup dev_f */
 
 /**
  * @ingroup dev_f

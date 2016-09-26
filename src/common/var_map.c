@@ -618,6 +618,33 @@ int map_read_next_token(var_p_t dest, JsonTokens *json, int index) {
   return next;
 }
 
+void map_parse_str(const char *js, size_t len, var_p_t dest) {
+  int num_tokens = TOKEN_GROW_SIZE;
+  jsmntok_t *tokens = malloc(sizeof(jsmntok_t) * num_tokens);
+  int result;
+  jsmn_parser parser;
+
+  jsmn_init(&parser);
+  for (result = jsmn_parse(&parser, js, len, tokens, num_tokens);
+       result == JSMN_ERROR_NOMEM;
+       result = jsmn_parse(&parser, js, len, tokens, num_tokens)) {
+    num_tokens += TOKEN_GROW_SIZE;
+    tokens = realloc(tokens, sizeof(jsmntok_t) * num_tokens);
+  }
+  if (result < 0) {
+    err_array();
+  } else if (result > 0) {
+    v_init(dest);
+
+    JsonTokens json;
+    json.tokens = tokens;
+    json.js = js;
+    json.num_tokens = parser.toknext;
+    map_read_next_token(dest, &json, 0);
+  }
+  free(tokens);
+}
+
 /**
  * Initialise a map from a string
  */
@@ -629,32 +656,7 @@ void map_from_str(var_p_t dest) {
     if (arg.type != V_STR) {
       v_set(dest, &arg);
     } else {
-      int num_tokens = TOKEN_GROW_SIZE;
-      jsmntok_t *tokens = malloc(sizeof(jsmntok_t) * num_tokens);
-      const char *js = arg.v.p.ptr;
-      size_t len = arg.v.p.length;
-      int result;
-      jsmn_parser parser;
-
-      jsmn_init(&parser);
-      for (result = jsmn_parse(&parser, js, len, tokens, num_tokens);
-           result == JSMN_ERROR_NOMEM;
-           result = jsmn_parse(&parser, js, len, tokens, num_tokens)) {
-        num_tokens += TOKEN_GROW_SIZE;
-        tokens = realloc(tokens, sizeof(jsmntok_t) * num_tokens);
-      }
-      if (result < 0) {
-        err_array();
-      } else if (result > 0) {
-        v_init(dest);
-
-        JsonTokens json;
-        json.tokens = tokens;
-        json.js = js;
-        json.num_tokens = parser.toknext;
-        map_read_next_token(dest, &json, 0);
-      }
-      free(tokens);
+      map_parse_str(arg.v.p.ptr, arg.v.p.length, dest);
     }
   }
   v_free(&arg);

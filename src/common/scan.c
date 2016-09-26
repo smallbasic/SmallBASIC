@@ -1737,7 +1737,11 @@ void comp_cmd_option(char *src) {
     bc_add_code(&comp_prog, OPTION_MATCH);
     bc_add_addr(&comp_prog, 0);
   } else if (CHKOPT(LCN_PREDEF_WRS) || CHKOPT(LCN_IMPORT_WRS)) {
-    ;                           // ignore it
+    // ignored
+  } else if (CHKOPT(LCN_LOAD_MODULES)) {
+    if (opt_modlist[0] != '\0' && !opt_loadmod) {
+      sblmgr_init(1, opt_modlist);
+    }
   } else {
     sc_raise(MSG_OPTION_ERR, src);
   }

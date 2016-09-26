@@ -478,6 +478,7 @@ struct proc_keyword_s proc_table[] = {
 #define LCN_CATCH               "CATCH"
 #define LCN_END_TRY             "END TRY"
 #define LCN_ANTIALIAS           "ANTIALIAS"
+#define LCN_LOAD_MODULES        "LOAD MODULES"
 
 /* system variables */
 #define LCN_SV_SBVER            "SBVER"

@@ -1,6 +1,6 @@
 // This file is part of SmallBASIC
 //
-// Copyright(C) 2001-2015 Chris Warren-Smith.
+// Copyright(C) 2001-2016 Chris Warren-Smith.
 //
 // This program is distributed under the terms of the GPL v2.0 or later
 // Download the GNU Public License (GPL) from www.gnu.org
@@ -349,6 +349,8 @@ void Runtime::runShell() {
   os_graphics = 1;
   os_color_depth = 16;
   opt_mute_audio = 0;
+  opt_loadmod = 0;
+  strcpy(opt_modlist, "/data/data/net.sourceforge.smallbasic/lib");
 
   _app->activity->callbacks->onContentRectChanged = onContentRectChanged;
   loadConfig();
@@ -941,4 +943,40 @@ void osd_clear_sound_queue() {
 void osd_beep(void) {
   osd_sound(1000, 30, 100, 0);
   osd_sound(500, 30, 100, 0);
+}
+
+//
+// module implementation
+//
+const char *sblib_get_module_name() {
+  return "android";
+}
+
+int sblib_func_count(void) {
+  return 1;
+}
+
+int sblib_func_getname(int index, char *proc_name) {
+  switch (index) {
+  case 0:
+    strcpy(proc_name, "LOCATION");
+    break;
+  }
+  return 1;
+}
+
+int sblib_func_exec(int index, int param_count, slib_par_t *params, var_t *retval) {
+  int result;
+  const char *location;
+  switch (index) {
+  case 0:
+    location = runtime->getString("getLocation");
+    map_parse_str(location, strlen(location), retval);
+    result = 1;
+    break;
+  default:
+    result = 0;
+    break;
+  }
+  return result;
 }

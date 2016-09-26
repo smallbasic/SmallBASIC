@@ -44,6 +44,10 @@ import android.content.DialogInterface.OnCancelListener;
 import android.content.Intent;
 import android.content.res.Resources;
 import android.graphics.Rect;
+import android.location.Criteria;
+import android.location.Location;
+import android.location.LocationManager;
+import android.location.LocationProvider;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -63,7 +67,7 @@ import android.widget.Toast;
  *
  * @author chrisws
  */
-@TargetApi(Build.VERSION_CODES.ICE_CREAM_SANDWICH_MR1)
+@TargetApi(Build.VERSION_CODES.KITKAT)
 public class MainActivity extends NativeActivity {
   private static final String TAG = "smallbasic";
   private static final String WEB_BAS = "web.bas";
@@ -203,6 +207,22 @@ public class MainActivity extends NativeActivity {
     }
     Log.i(TAG, "getIPAddress: " + result);
     return result;
+  }
+
+  public String getLocation() {
+    LocationManager locationService = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
+    Criteria criteria = new Criteria();
+    criteria.setAccuracy(Criteria.ACCURACY_COARSE);
+    String providerName = locationService.getBestProvider(criteria, true);
+    Location location = locationService.getLastKnownLocation(providerName);
+    StringBuilder result = new StringBuilder("{")
+      .append("\"accuracy\":").append(location.getAccuracy()).append(",")
+      .append("\"altitude\":").append(location.getAltitude()).append(",")
+      .append("\"bearing\":").append(location.getBearing()).append(",")
+      .append("\"latitude\":").append(location.getLatitude()).append(",")
+      .append("\"longitude\":").append(location.getLongitude()).append(",")
+      .append("\"speed\":").append(location.getSpeed()).append("}");
+    return result.toString();
   }
 
   public boolean getSoundPlaying() {
