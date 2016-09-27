@@ -253,7 +253,7 @@ int sblib_proc_getname(int index, char *proc_name);
  * @param retval a var_t object to set the return value
  * @return non-zero on success
  */
-int sblib_proc_exec(int index, int param_count, 
+int sblib_proc_exec(int index, int param_count,
                     slib_par_t *params, var_t *retval);
 
 /**
@@ -275,6 +275,15 @@ int sblib_func_count(void);
  * @return non-zero on success
  */
 int sblib_func_getname(int index, char *func_name);
+
+/**
+ * @ingroup modlib
+ *
+ * returns the module name
+ *
+ * @return module name
+ */
+const char *sblib_get_module_name();
 
 /**
  * @ingroup modlib

@@ -43,6 +43,7 @@ extern void sc_raise2(const char *fmt, int line, const char *buff); // sberr
 #define LEN_COMMAND    STRLEN(LCN_COMMAND)
 #define LEN_SHOWPAGE   STRLEN(LCN_SHOWPAGE)
 #define LEN_ANTIALIAS  STRLEN(LCN_ANTIALIAS)
+#define LEN_LDMODULES  STRLEN(LCN_LOAD_MODULES)
 
 #define SKIP_SPACES(p)                          \
   while (*p == ' ' || *p == '\t') {             \
@@ -1738,10 +1739,6 @@ void comp_cmd_option(char *src) {
     bc_add_addr(&comp_prog, 0);
   } else if (CHKOPT(LCN_PREDEF_WRS) || CHKOPT(LCN_IMPORT_WRS)) {
     // ignored
-  } else if (CHKOPT(LCN_LOAD_MODULES)) {
-    if (opt_modlist[0] != '\0' && !opt_loadmod) {
-      sblmgr_init(1, opt_modlist);
-    }
   } else {
     sc_raise(MSG_OPTION_ERR, src);
   }
@@ -3963,6 +3960,9 @@ char *comp_preproc_options(char *p) {
         opt_command[OPT_CMD_SZ - 1] = '\0';
       }
       *pe = lc;
+    } else if (strncmp(LCN_LOAD_MODULES, p, LEN_LDMODULES) == 0 &&
+               opt_modlist[0] != '\0' && !opt_loadmod) {
+      sblmgr_init(1, opt_modlist);
     } else {
       sc_raise(MSG_OPT_PREDEF_ERR, p);
     }

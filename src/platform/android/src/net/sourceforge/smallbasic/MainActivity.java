@@ -214,14 +214,17 @@ public class MainActivity extends NativeActivity {
     Criteria criteria = new Criteria();
     criteria.setAccuracy(Criteria.ACCURACY_COARSE);
     String providerName = locationService.getBestProvider(criteria, true);
-    Location location = locationService.getLastKnownLocation(providerName);
-    StringBuilder result = new StringBuilder("{")
-      .append("\"accuracy\":").append(location.getAccuracy()).append(",")
-      .append("\"altitude\":").append(location.getAltitude()).append(",")
-      .append("\"bearing\":").append(location.getBearing()).append(",")
-      .append("\"latitude\":").append(location.getLatitude()).append(",")
-      .append("\"longitude\":").append(location.getLongitude()).append(",")
-      .append("\"speed\":").append(location.getSpeed()).append("}");
+    StringBuilder result = new StringBuilder("{");
+    if (providerName != null) {
+      Location location = locationService.getLastKnownLocation(providerName);
+      result.append("\"accuracy\":").append(location.getAccuracy()).append(",")
+        .append("\"altitude\":").append(location.getAltitude()).append(",")
+        .append("\"bearing\":").append(location.getBearing()).append(",")
+        .append("\"latitude\":").append(location.getLatitude()).append(",")
+        .append("\"longitude\":").append(location.getLongitude()).append(",")
+        .append("\"speed\":").append(location.getSpeed());
+    }
+    result.append("}");
     return result.toString();
   }
 

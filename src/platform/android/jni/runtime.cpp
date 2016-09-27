@@ -967,14 +967,16 @@ int sblib_func_getname(int index, char *proc_name) {
 
 int sblib_func_exec(int index, int param_count, slib_par_t *params, var_t *retval) {
   int result;
-  const char *location;
+  String location;
   switch (index) {
   case 0:
     location = runtime->getString("getLocation");
-    map_parse_str(location, strlen(location), retval);
+    map_parse_str(location.c_str(), location.length(), retval);
     result = 1;
     break;
   default:
+    location.append("invalid index: ").append(index);
+    v_setstr(retval, location.c_str());
     result = 0;
     break;
   }

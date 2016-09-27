@@ -208,7 +208,7 @@ int slib_llopen(slib_t *lib) {
 #if defined(LNX_EXTLIB)
   lib->handle = dlopen(lib->fullname, RTLD_NOW);
   if (lib->handle == NULL) {
-    panic("SB-LibMgr: error on loading %s\n%s", lib->name, dlerror());
+    log_printf("lib: error on loading %s\n%s", lib->name, dlerror());
   }
   return (lib->handle != NULL);
 #elif defined(__CYGWIN__)
@@ -216,13 +216,13 @@ int slib_llopen(slib_t *lib) {
   cygwin_conv_path(CCP_POSIX_TO_WIN_A, lib->fullname, win32Path, sizeof(win32Path));
   lib->handle = LoadLibrary(win32Path);
   if (lib->handle == NULL) {
-    panic("SB-LibMgr: error on loading %s\n", win32Path);
+    log_printf("lib: error on loading %s\n", win32Path);
   }
   return (lib->handle != NULL);
 #elif defined(WIN_EXTLIB)
   lib->handle = LoadLibrary(lib->fullname);
   if (lib->handle == NULL) {
-    panic("SB-LibMgr: error on loading %s\n", lib->name);
+    log_printf("lib: error on loading %s\n", lib->name);
   }
   return (lib->handle != NULL);
 #else
@@ -263,8 +263,8 @@ void slib_import_routines(slib_t *lib) {
   lib->first_proc = extproccount;
   lib->first_func = extfunccount;
 
-  fcount = (int (*)(void))slib_getoptptr(lib, "sblib_proc_count");
-  fgetname = (int (*)(int, char *))slib_getoptptr(lib, "sblib_proc_getname");
+  fcount = slib_getoptptr(lib, "sblib_proc_count");
+  fgetname = slib_getoptptr(lib, "sblib_proc_getname");
   if (fcount) {
     count = fcount();
     for (i = 0; i < count; i++) {
@@ -273,8 +273,8 @@ void slib_import_routines(slib_t *lib) {
       }
     }
   }
-  fcount = (int (*)(void))slib_getoptptr(lib, "sblib_func_count");
-  fgetname = (int (*)(int, char *))slib_getoptptr(lib, "sblib_func_getname");
+  fcount = slib_getoptptr(lib, "sblib_func_count");
+  fgetname = slib_getoptptr(lib, "sblib_func_getname");
   if (fcount) {
     count = fcount();
     for (i = 0; i < count; i++) {
@@ -309,17 +309,17 @@ void slib_import(const char *name, const char *fullname) {
   lib->id = slib_count;
 
   if (!opt_quiet) {
-    log_printf("SB-LibMgr: importing %s", fullname);
+    log_printf("lib: importing %s", fullname);
   }
   if (slib_llopen(lib)) {
     mok = 1;
 
     // init
-    minit = (int (*)(void))slib_getoptptr(lib, "sblib_init");
+    minit = slib_getoptptr(lib, "sblib_init");
     if (minit) {
       if (!minit()) {
         mok = 0;
-        panic("SB-LibMgr: %s->sblib_init(), failed", lib->name);
+        log_printf("lib: %s->sblib_init(), failed", lib->name);
       }
     }
 
@@ -333,7 +333,7 @@ void slib_import(const char *name, const char *fullname) {
     mok = 1;
   }
   else {
-    log_printf("SB-LibMgr: can't open %s", fullname);
+    log_printf("lib: can't open %s", fullname);
   }
   if (mok) {
     slib_count++;
@@ -361,7 +361,7 @@ void sblmgr_scanlibs(const char *path) {
 
   if ((dp = opendir(path)) == NULL) {
     if (!opt_quiet) {
-      log_printf("SB-LibMgr: module path %s not found.\n", path);
+      log_printf("lib: module path %s not found.\n", path);
     }
     return;
   }
@@ -396,40 +396,13 @@ void sblmgr_scanlibs(const char *path) {
  */
 void sblmgr_init(int mcount, const char *mlist) {
 #if defined(LNX_EXTLIB) || defined(WIN_EXTLIB)
-  int all = 0;
-
   slib_count = 0;
-
-  if (!opt_quiet && mcount) {
-    log_printf("SB-LibMgr: scanning for modules...\n");
-  }
-  if (mcount) {
-    if (mlist) {
-      if (strlen(mlist) == 0) {
-        all = 1;
-      } else {
-        all = 1;
-      }
+  if (mcount && mlist && mlist[0] != '\0') {
+    if (!opt_quiet) {
+      log_printf("lib: scanning for modules...\n");
     }
-    else {
-      all = 1;
-    }
-    if (all) {
-      // the -m argument specifies the location of all modules
-#if defined(LNX_EXTLIB) && !defined(PACKAGE_LIB_DIR)
-      sblmgr_scanlibs(opt_modlist);
-#elif defined(LNX_EXTLIB)
-      sblmgr_scanlibs(opt_modlist[0] ? opt_modlist : PACKAGE_LIB_DIR);
-#elif defined(__CYGWIN__) || defined(__MINGW32__)
-      sblmgr_scanlibs(opt_modlist);
-#elif defined(WIN_EXTLIB)
-      sblmgr_scanlibs("c:\\sbasic\\modules");
-      sblmgr_scanlibs("sbasic\\modules");
-#endif
-    }
-  }
-  if (!opt_quiet) {
-    log_printf("\n");
+    // the -m argument specifies the location of all modules
+    sblmgr_scanlibs(mlist);
   }
 #endif
 }
@@ -446,12 +419,21 @@ void sblmgr_close() {
   for (i = 0; i < slib_count; i++) {
     lib = &slib_table[i];
     if (lib->handle) {
-      mclose = (void (*)(void))slib_getoptptr(lib, "sblib_close");
+      mclose = slib_getoptptr(lib, "sblib_close");
       if (mclose) {
         mclose();
       }
       slib_llclose(lib);
     }
+  }
+  if (slib_count) {
+    slib_count = 0;
+    extproctable = NULL;
+    extprocsize = 0;
+    extproccount = 0;
+    extfunctable = NULL;
+    extfuncsize = 0;
+    extfunccount = 0;
   }
 #endif
 }
@@ -469,7 +451,7 @@ int sblmgr_getfuncname(int lib_id, int index, char *buf) {
     return 0;
   }
   lib = &slib_table[lib_id];
-  mgf = (int (*)(int, char *))slib_getoptptr(lib, "sblib_func_getname");
+  mgf = slib_getoptptr(lib, "sblib_func_getname");
   if (mgf == NULL) {
     return 0;
   }
@@ -492,7 +474,7 @@ int sblmgr_getprocname(int lib_id, int index, char *buf) {
     return 0;
   }
   lib = &slib_table[lib_id];
-  mgp = (int (*)(int, char *))slib_getoptptr(lib, "sblib_proc_getname");
+  mgp = slib_getoptptr(lib, "sblib_proc_getname");
   if (mgp == NULL) {
     return 0;
   }
@@ -623,9 +605,9 @@ int sblmgr_procexec(int lib_id, int index) {
   // error
   if (!success) {
     if (ret.type == V_STR) {
-      rt_raise("SB-LibMgr:\n%s: %s\n", lib->name, ret.v.p.ptr);
+      rt_raise("lib:%s: %s\n", lib->name, ret.v.p.ptr);
     } else {
-      rt_raise("SB-LibMgr:\n%s: not specified error\n", lib->name);
+      rt_raise("lib:%s: not specified error\n", lib->name);
     }
   }
   // clean-up
@@ -673,17 +655,17 @@ int sblmgr_funcexec(int lib_id, int index, var_t *ret) {
 
   // exec
   v_init(ret);
+  log_printf("%d %d", index, lib->first_func);
   success = pexec(index - lib->first_func, pcount, ptable, ret);
 
   // error
   if (!success) {
     if (ret->type == V_STR) {
-      rt_raise("SB-LibMgr:\n%s: %s\n", lib->name, ret->v.p.ptr);
+      rt_raise("lib:%s: %s\n", lib->name, ret->v.p.ptr);
     } else {
-      rt_raise("SB-LibMgr:\n%s: (error not specified)\n", lib->name);
+      rt_raise("lib:%s: (error not specified)\n", lib->name);
     }
   }
-
   // clean-up
   if (ptable) {
     slib_free_ptable(ptable, pcount);
