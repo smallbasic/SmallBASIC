@@ -50,13 +50,38 @@ socket_t g_debugee = -1;
 extern int g_debugPort;
 
 struct SoundObject {
-  double v;
-  double freq;
-  int samplesLeft;
+  SoundObject(double freq, int duration) :
+    _v(0),
+    _freq(freq),
+    _samplesLeft(0),
+    _buffer(NULL),
+    _length(0) {
+    _samplesLeft = duration * FREQUENCY / 1000;
+  }
+  SoundObject(Uint8 *buffer, Uint32 length) :
+    _v(0),
+    _freq(0),
+    _samplesLeft(0),
+    _buffer(buffer),
+    _length(length) {
+  }
+
+  ~SoundObject() {
+    if (_buffer) {
+      SDL_FreeWAV(_buffer);
+      _buffer = NULL;
+    }
+  }
+
+  double _v;
+  double _freq;
+  int    _samplesLeft;
+  Uint8 *_buffer;
+  Uint32 _length;
 };
 
-std::queue<SoundObject> sounds;
-void audio_callback(void *beeper, Uint8 *stream8, int length);
+std::queue<SoundObject> g_sounds;
+void audio_callback(void *data, Uint8 *stream8, int length);
 int debugThread(void *data);
 
 MAEvent *getMotionEvent(int type, SDL_Event *event) {
@@ -772,12 +797,12 @@ void maWait(int timeout) {
 //
 // audio
 //
-void audio_callback(void *beeper, Uint8 *stream8, int length) {
+void audio_callback(void *data, Uint8 *stream8, int length) {
   Sint16 *stream = (Sint16 *)stream8;
   int samples = length / 2;
   int i = 0;
   while (i < samples) {
-    if (sounds.empty()) {
+    if (g_sounds.empty()) {
       while (i < samples) {
         stream[i] = 0;
         i++;
@@ -785,29 +810,30 @@ void audio_callback(void *beeper, Uint8 *stream8, int length) {
       return;
     }
 
-    SoundObject &sound = sounds.front();
-    int samplesToDo = std::min(i + sound.samplesLeft, samples);
-    sound.samplesLeft -= samplesToDo - i;
+    SoundObject &sound = g_sounds.front();
+    if (sound._buffer != NULL) {
+      // mix the sound buffer onto the stream
 
-    while (i < samplesToDo) {
-      stream[i] = AMPLITUDE * std::sin(sound.v * 2 * M_PI / FREQUENCY);
-      sound.v += sound.freq;
-      i++;
-    }
-    if (sound.samplesLeft == 0) {
-      sounds.pop();
+    } else {
+      // mix a generated tone onto the stream
+      int samplesToDo = std::min(i + sound._samplesLeft, samples);
+      sound._samplesLeft -= samplesToDo - i;
+      while (i < samplesToDo) {
+        stream[i] = AMPLITUDE * std::sin(sound._v * 2 * M_PI / FREQUENCY);
+        sound._v += sound._freq;
+        i++;
+      }
+      if (sound._samplesLeft == 0) {
+        g_sounds.pop();
+      }
     }
   }
 }
 
 void do_beep(double freq, int duration) {
-  SoundObject sound;
-  sound.freq = freq;
-  sound.samplesLeft = duration * FREQUENCY / 1000;
-  sound.v = 0;
-
+  SoundObject sound(freq, duration);
   SDL_LockAudio();
-  sounds.push(sound);
+  g_sounds.push(sound);
   SDL_UnlockAudio();
 }
 
@@ -819,7 +845,7 @@ void flush_queue() {
   do {
     SDL_Delay(20);
     SDL_LockAudio();
-    size = sounds.size();
+    size = g_sounds.size();
     if (size != last_size) {
       unplayed++;
     } else {
@@ -844,18 +870,37 @@ int osd_devrestore(void) {
 }
 
 void osd_beep() {
-  SDL_PauseAudio(0);
   do_beep(1000, 30);
   do_beep(500, 30);
+  SDL_PauseAudio(0);
   flush_queue();
 }
 
 void osd_audio(const char *path) {
+  SDL_AudioSpec desiredSpec;
+  desiredSpec.freq = FREQUENCY;
+  desiredSpec.format = AUDIO_S16SYS;
+  desiredSpec.channels = 1;
+  desiredSpec.samples = 2048;
+  desiredSpec.callback = audio_callback;
+  Uint8 *buffer;
+  Uint32 length;
+
+  SDL_AudioSpec *obtainedSpec = SDL_LoadWAV(path, &desiredSpec, &buffer, &length);
+  if (obtainedSpec != NULL) {
+    SoundObject sound(buffer, length);
+    SDL_LockAudio();
+    g_sounds.push(sound);
+    SDL_UnlockAudio();
+    SDL_PauseAudio(0);
+  } else {
+    log_printf("Failed to open wav file: %s", SDL_GetError());
+  }
 }
 
 void osd_sound(int frq, int ms, int vol, int bgplay) {
-  SDL_PauseAudio(0);
   do_beep(frq, ms);
+  SDL_PauseAudio(0);
   if (!bgplay) {
     flush_queue();
   }
