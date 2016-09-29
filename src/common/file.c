@@ -734,7 +734,7 @@ int dev_filemtime(const char *file, char **buffer) {
   } else {
     *buffer = malloc(1);
     *buffer[0] = '\0';
-    err_throw(FSERR_NOT_FOUND);
+    err_file_not_found();
   }
   return size;
 }

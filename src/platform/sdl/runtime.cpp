@@ -850,6 +850,9 @@ void osd_beep() {
   flush_queue();
 }
 
+void osd_audio(const char *path) {
+}
+
 void osd_sound(int frq, int ms, int vol, int bgplay) {
   SDL_PauseAudio(0);
   do_beep(frq, ms);

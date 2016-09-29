@@ -332,6 +332,17 @@ void dev_beep() {
 }
 
 /**
+ * plays an OGG or MP3 file
+ */
+void dev_audio(const char *path) {
+#if !defined(BUILD_CONSOLE)
+  if (!opt_mute_audio) {
+    osd_audio(path);
+  }
+#endif
+}
+
+/**
  * plays a sound
  */
 void dev_sound(int frq, int ms, int vol, int bgplay) {

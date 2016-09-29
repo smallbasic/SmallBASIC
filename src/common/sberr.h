@@ -62,6 +62,7 @@ void err_evtype(void);
 void err_evargerr(void);
 void err_unsup(void);
 void err_file(dword code);
+void err_file_not_found();
 void err_matsig(void);
 void err_stridx(int n);
 void err_parfmt(const char *fmt);

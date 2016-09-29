@@ -47,7 +47,8 @@ import android.graphics.Rect;
 import android.location.Criteria;
 import android.location.Location;
 import android.location.LocationManager;
-import android.location.LocationProvider;
+import android.media.AudioManager;
+import android.media.MediaPlayer;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -79,6 +80,7 @@ public class MainActivity extends NativeActivity {
   private ExecutorService _audioExecutor = Executors.newSingleThreadExecutor();
   private Queue<Sound> _sounds = new ConcurrentLinkedQueue<Sound>();
   private String[] _options = null;
+  private MediaPlayer _mediaPlayer = null;
 
   static {
     System.loadLibrary("smallbasic");
@@ -159,6 +161,10 @@ public class MainActivity extends NativeActivity {
     for (Sound sound : _sounds) {
       sound.setSilent(true);
     }
+    if (_mediaPlayer != null) {
+      _mediaPlayer.release();
+      _mediaPlayer = null;
+    }
   }
 
   public String getClipboardText() {
@@ -211,18 +217,22 @@ public class MainActivity extends NativeActivity {
 
   public String getLocation() {
     LocationManager locationService = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
-    Criteria criteria = new Criteria();
-    criteria.setAccuracy(Criteria.ACCURACY_COARSE);
-    String providerName = locationService.getBestProvider(criteria, true);
+    Location location = locationService.getLastKnownLocation(LocationManager.GPS_PROVIDER);
+    if (location == null) {
+      location = locationService.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
+    }
+    if (location == null) {
+      location = locationService.getLastKnownLocation(LocationManager.PASSIVE_PROVIDER);
+    }
     StringBuilder result = new StringBuilder("{");
-    if (providerName != null) {
-      Location location = locationService.getLastKnownLocation(providerName);
+    if (location != null) {
       result.append("\"accuracy\":").append(location.getAccuracy()).append(",")
         .append("\"altitude\":").append(location.getAltitude()).append(",")
         .append("\"bearing\":").append(location.getBearing()).append(",")
         .append("\"latitude\":").append(location.getLatitude()).append(",")
         .append("\"longitude\":").append(location.getLongitude()).append(",")
-        .append("\"speed\":").append(location.getSpeed());
+        .append("\"speed\":").append(location.getSpeed()).append(",")
+        .append("\"provider\":\"").append(location.getProvider()).append("\"");
     }
     result.append("}");
     return result.toString();
@@ -302,6 +312,28 @@ public class MainActivity extends NativeActivity {
         openOptionsMenu();
       }
     });
+  }
+
+  public void playAudio(final String path) {
+    new Thread(new Runnable() {
+      public void run() {
+        try {
+          Uri uri = Uri.parse("file://" + path);
+          if (_mediaPlayer == null) {
+            _mediaPlayer = new MediaPlayer();
+          } else {
+            _mediaPlayer.reset();
+          }
+          _mediaPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
+          _mediaPlayer.setDataSource(getApplicationContext(), uri);
+          _mediaPlayer.prepare();
+          _mediaPlayer.start();
+        }
+        catch (IOException e) {
+          Log.i(TAG, "Failed: " + e.toString());
+        }
+      }
+    }).start();
   }
 
   public void playTone(int frq, int dur, int vol) {
@@ -396,6 +428,15 @@ public class MainActivity extends NativeActivity {
       }
     } catch (Exception e) {
       Log.i(TAG, "Failed to start web service: ", e);
+    }
+  }
+
+  @Override
+  protected void onStop() {
+    super.onStop();
+    if (_mediaPlayer != null) {
+      _mediaPlayer.release();
+      _mediaPlayer = null;
     }
   }
 
@@ -536,6 +577,7 @@ public class MainActivity extends NativeActivity {
     return b == -1 ? null : out.size() == 0 ? "" : out.toString();
   }
 
+  @SuppressWarnings("resource")
   private void runServer(final int socketNum, final String token) throws IOException {
     ServerSocket serverSocket = new ServerSocket(socketNum);
     Log.i(TAG, "Listening :" + socketNum);

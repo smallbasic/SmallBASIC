@@ -621,7 +621,16 @@ void dev_show_page();
  *
  * produce the standard system's beep :)
  */
-void dev_beep(void); // just a BEEP! :)
+void dev_beep(void);
+
+/**
+ * @ingroup dev_s
+ *
+ * plays an OGG or MP3 file
+ *
+ * @param path the path to the OGG or MP3 file
+ */
+void dev_audio(const char *path);
 
 /**
  * @ingroup dev_s
@@ -634,7 +643,7 @@ void dev_beep(void); // just a BEEP! :)
  * @param vol_prc is the volume (0-99)
  * @param bgplay non-zero for play the tone in background
  */
-void dev_sound(int freq, int dur_ms, int vol_prc, int bgplay); // note:
+void dev_sound(int freq, int dur_ms, int vol_prc, int bgplay);
 
 /**
  * @ingroup dev_f

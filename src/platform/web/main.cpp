@@ -463,6 +463,7 @@ void osd_beep() {}
 void osd_clear_sound_queue() {}
 void osd_refresh() {}
 void osd_setpenmode(int enable) {}
+void osd_audio(const char *path) {}
 void osd_sound(int frq, int ms, int vol, int bgplay) {}
 void v_create_image(var_p_t var) {}
 void v_create_form(var_p_t var) {}

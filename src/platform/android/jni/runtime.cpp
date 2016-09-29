@@ -566,6 +566,10 @@ void Runtime::optionsBox(StringList *items) {
   _app->activity->vm->DetachCurrentThread();
 }
 
+void Runtime::playAudio(const char *path) {
+  setString("playAudio", path);
+}
+
 void Runtime::playTone(int frq, int dur, int vol, bool bgplay) {
   JNIEnv *env;
   _app->activity->vm->AttachCurrentThread(&env, NULL);
@@ -930,6 +934,10 @@ int osd_devinit(void) {
 int osd_devrestore(void) {
   runtime->setRunning(false);
   return 0;
+}
+
+void osd_audio(const char *path) {
+  runtime->playAudio(path);
 }
 
 void osd_sound(int frq, int dur, int vol, int bgplay) {

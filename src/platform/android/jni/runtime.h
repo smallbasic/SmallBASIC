@@ -40,6 +40,7 @@ struct Runtime : public System {
   MAEvent processEvents(int waitFlag);
   void processEvent(MAEvent &event);
   bool hasEvent() { return _eventQueue && _eventQueue->size() > 0; }
+  void playAudio(const char *path);
   void playTone(int frq, int dur, int vol, bool bgplay);
   void pollEvents(bool blocking);
   MAEvent *popEvent();

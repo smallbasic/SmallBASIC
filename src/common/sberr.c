@@ -480,6 +480,10 @@ void err_file(dword code) {
   }
 }
 
+void err_file_not_found() {
+  err_throw(FSERR_NOT_FOUND);
+}
+
 int err_handle_error(const char *err, var_p_t var) {
   int result;
   if (prog_error == errThrow) {
