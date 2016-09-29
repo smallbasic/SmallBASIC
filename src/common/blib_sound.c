@@ -100,8 +100,9 @@ void cmd_play() {
     return;
   }
   if (strncmp("file://", var.v.p.ptr, FILE_PREFIX_LEN) == 0) {
-    if (dev_fexists(var.v.p.ptr)) {
-      dev_audio(var.v.p.ptr + FILE_PREFIX_LEN);
+    const char *path = var.v.p.ptr + FILE_PREFIX_LEN;
+    if (dev_fexists(path)) {
+      dev_audio(path);
     } else {
       err_file_not_found();
     }
