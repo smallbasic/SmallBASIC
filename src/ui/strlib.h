@@ -29,7 +29,7 @@
 namespace strlib {
 
 //--String----------------------------------------------------------------------
- 
+
 struct String {
   String();
   String(const char *s);
@@ -49,7 +49,7 @@ struct String {
   String &append(const char *s);
   String &append(const char *s, int numCopy);
   String &append(FILE *fp, long len);
-  operator const char *() const { return _buffer; } 
+  operator const char *() const { return _buffer; }
   const char *c_str() const { return _buffer; };
   void   empty();
   bool   equals(const String &s, bool ignoreCase = true) const;
@@ -96,7 +96,7 @@ struct List {
   }
 
   /**
-   * Removes the list and the list contents 
+   * Removes the list and the list contents
    */
   void removeAll() {
     for (int i = 0; i < _count; i++) {
@@ -106,7 +106,7 @@ struct List {
   }
 
   /**
-   * Empties the list without deleteing the list objects 
+   * Empties the list without deleteing the list objects
    */
   void emptyList() {
     free(_head);
@@ -116,7 +116,7 @@ struct List {
   /**
    * Returns the number of items in the list
    */
-  int size() const { return _count; } 
+  int size() const { return _count; }
 
   /**
    * Returns T at the given index
@@ -139,19 +139,19 @@ struct List {
     _head[_count - 1] = object;
   }
 
-  /** 
+  /**
    * Removes the element pointed to by TP i.
    */
   void remove(TP i) {
     TP e = end();
-    while(i != (e-1)) {
+    while (i != (e-1)) {
       *i = *(i+1);
       i++;
     }
     _count--;
   }
 
-  /** 
+  /**
    * Returns an TP pointing to the first element of the List.
    */
   TP begin() const { return _head; }
@@ -165,7 +165,14 @@ struct List {
    * String specialisation - Add a String to the list
    */
   void add(const char *s) {
-    add(new String(s, strlen(s))); 
+    add(new String(s, strlen(s)));
+  }
+
+  /**
+   * returns whether the list is empty
+   */
+  bool empty() const {
+    return !_count;
   }
 
   /**
@@ -179,7 +186,7 @@ struct List {
         result = true;
         break;
       }
-    }    
+    }
     return result;
   }
 
@@ -204,7 +211,7 @@ protected:
 
 //--Stack-----------------------------------------------------------------------
 
-template<typename T> 
+template<typename T>
 struct Stack : public List<T> {
   Stack() : List<T>() {}
   Stack(int growSize) : List<T>(growSize) {}
@@ -212,20 +219,43 @@ struct Stack : public List<T> {
   T pop() { return !this->_count ? (T)NULL : this->_head[--this->_count]; }
   void push(T o) { this->add(o); }
 };
- 
+
+//--Queue-----------------------------------------------------------------------
+
+template<typename T>
+struct Queue : public List<T> {
+  Queue() : List<T>() {}
+  Queue(int growSize) : List<T>(growSize) {}
+  T front() { return !this->_count ? (T)NULL : this->_head[0]; }
+  T pop() {
+    T result;
+    if (!this->_count) {
+      result = NULL;
+    } else {
+      result = this->_head[0];
+      this->_count--;
+      for (int i = 0; i < this->_count; i++) {
+        this->_head[i] = this->_head[i + 1];
+      }
+    }
+    return result;
+  }
+  void push(T o) { this->add(o); }
+};
+
 //--Properties------------------------------------------------------------------
 
 struct Properties : public List<String *> {
   Properties() : List<String *>() {}
   Properties(int growSize) : List<String *>(growSize) {}
   virtual ~Properties() {}
-  
+
   void load(const char *s);
   void load(const char *s, int len);
   String *get(const char *key);
   String *get(int i) const;
   String *getKey(int i) const;
-  int length() const { return _count / 2; } 
+  int length() const { return _count / 2; }
   void get(const char *key, List<String *> *arrayValues);
   void operator=(Properties &p);
   void put(String &key, String &value);

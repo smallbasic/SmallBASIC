@@ -24,8 +24,7 @@
 
 #include <SDL_clipboard.h>
 #include <SDL_audio.h>
-#include <queue>
-#include <cmath>
+#include <math.h>
 
 #define WAIT_INTERVAL 5
 #define COND_WAIT_TIME 250
@@ -55,15 +54,15 @@ struct SoundObject {
     _freq(freq),
     _samplesLeft(0),
     _buffer(NULL),
-    _length(0) {
+    _index(0) {
     _samplesLeft = duration * FREQUENCY / 1000;
   }
   SoundObject(Uint8 *buffer, Uint32 length) :
     _v(0),
     _freq(0),
-    _samplesLeft(0),
+    _samplesLeft(length),
     _buffer(buffer),
-    _length(length) {
+    _index(0) {
   }
 
   ~SoundObject() {
@@ -75,12 +74,12 @@ struct SoundObject {
 
   double _v;
   double _freq;
-  int    _samplesLeft;
+  Uint32 _samplesLeft;
   Uint8 *_buffer;
-  Uint32 _length;
+  Uint32 _index;
 };
 
-std::queue<SoundObject> g_sounds;
+strlib::Queue<SoundObject *> g_sounds;
 void audio_callback(void *data, Uint8 *stream8, int length);
 int debugThread(void *data);
 
@@ -799,41 +798,43 @@ void maWait(int timeout) {
 //
 void audio_callback(void *data, Uint8 *stream8, int length) {
   Sint16 *stream = (Sint16 *)stream8;
-  int samples = length / 2;
-  int i = 0;
+  // two bytes per sample
+  Uint32 samples = length / 2;
+  Uint32 i = 0;
   while (i < samples) {
     if (g_sounds.empty()) {
       while (i < samples) {
         stream[i] = 0;
         i++;
       }
+      SDL_PauseAudio(1);
       return;
     }
-
-    SoundObject &sound = g_sounds.front();
-    if (sound._buffer != NULL) {
-      // mix the sound buffer onto the stream
-
+    SoundObject *sound = g_sounds.front();
+    if (sound->_buffer != NULL) {
+      Uint32 len = MIN(sound->_samplesLeft, (Uint32)length);
+      sound->_samplesLeft -= len;
+      memcpy(stream8, sound->_buffer + sound->_index, len);
+      sound->_index += len;
+      i += len;
     } else {
-      // mix a generated tone onto the stream
-      int samplesToDo = std::min(i + sound._samplesLeft, samples);
-      sound._samplesLeft -= samplesToDo - i;
+      // copy a generated tone onto the stream
+      Uint32 samplesToDo = MIN(i + sound->_samplesLeft, samples);
+      sound->_samplesLeft -= samplesToDo - i;
       while (i < samplesToDo) {
-        stream[i] = AMPLITUDE * std::sin(sound._v * 2 * M_PI / FREQUENCY);
-        sound._v += sound._freq;
-        i++;
+        stream[i++] = AMPLITUDE * sin(sound->_v * 2 * M_PI / FREQUENCY);
+        sound->_v += sound->_freq;
       }
-      if (sound._samplesLeft == 0) {
-        g_sounds.pop();
-      }
+    }
+    if (!sound->_samplesLeft) {
+      g_sounds.pop();
     }
   }
 }
 
-void do_beep(double freq, int duration) {
-  SoundObject sound(freq, duration);
+void create_sound(double freq, int duration) {
   SDL_LockAudio();
-  g_sounds.push(sound);
+  g_sounds.push(new SoundObject(freq, duration));
   SDL_UnlockAudio();
 }
 
@@ -870,8 +871,8 @@ int osd_devrestore(void) {
 }
 
 void osd_beep() {
-  do_beep(1000, 30);
-  do_beep(500, 30);
+  create_sound(1000, 30);
+  create_sound(500, 30);
   SDL_PauseAudio(0);
   flush_queue();
 }
@@ -882,24 +883,28 @@ void osd_audio(const char *path) {
   desiredSpec.format = AUDIO_S16SYS;
   desiredSpec.channels = 1;
   desiredSpec.samples = 2048;
-  desiredSpec.callback = audio_callback;
   Uint8 *buffer;
   Uint32 length;
 
   SDL_AudioSpec *obtainedSpec = SDL_LoadWAV(path, &desiredSpec, &buffer, &length);
   if (obtainedSpec != NULL) {
-    SoundObject sound(buffer, length);
-    SDL_LockAudio();
-    g_sounds.push(sound);
-    SDL_UnlockAudio();
-    SDL_PauseAudio(0);
+    if (obtainedSpec->freq == FREQUENCY &&
+        obtainedSpec->channels == 1 &&
+        obtainedSpec->format == AUDIO_S16SYS) {
+      SDL_LockAudio();
+      g_sounds.push(new SoundObject(buffer, length));
+      SDL_UnlockAudio();
+      SDL_PauseAudio(0);
+    } else {
+      log_printf("Failed to open wav file: invalid format");
+    }
   } else {
     log_printf("Failed to open wav file: %s", SDL_GetError());
   }
 }
 
 void osd_sound(int frq, int ms, int vol, int bgplay) {
-  do_beep(frq, ms);
+  create_sound(frq, ms);
   SDL_PauseAudio(0);
   if (!bgplay) {
     flush_queue();
