@@ -912,7 +912,10 @@ void osd_sound(int frq, int ms, int vol, int bgplay) {
 }
 
 void osd_clear_sound_queue() {
-  flush_queue();
+  SDL_PauseAudio(1);
+  SDL_LockAudio();
+  g_sounds.removeAll();
+  SDL_UnlockAudio();
 }
 
 //

@@ -1,6 +1,10 @@
+2016-10-01 (0.12.8)
+	Fixed NOSOUND
+
 2016-09-29 (0.12.8)
 	Added android location API
 	Added sound API
+	Play .WAV files using PLAY("file://" + path)
 
 2016-09-19 (0.12.8)
 	Fix error handling for invalid JOIN input
