@@ -4206,7 +4206,7 @@ int comp_pass1(const char *section, const char *text) {
         if (dot) {
           sc_raise(MSG_UNDEFINED_MAP, comp_udptable[i].name);
         } else {
-          if (comp_is_func(comp_udptable[i].name)) {
+          if (comp_is_func(comp_udptable[i].name) != -1) {
             sc_raise(MSG_FUNC_NOT_ASSIGNED, comp_udptable[i].name);
           } else {
             sc_raise(MSG_UNDEFINED_UDP, comp_udptable[i].name);
