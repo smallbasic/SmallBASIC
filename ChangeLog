@@ -1,3 +1,7 @@
+2016-10-02 (0.12.8)
+	Updated error when calling built-in FUNC without assigning the result
+	Fix TAB to use character positions not pixels
+
 2016-10-01 (0.12.8)
 	Fixed NOSOUND
 

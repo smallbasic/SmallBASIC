@@ -120,6 +120,7 @@
 #define MSG_MISSING_CASE        "SELECT without CASE"
 #define MSG_MISSING_CATCH       "TRY without CATCH"
 #define MSG_MISSING_ENDTRY      "TRY without END TRY"
+#define MSG_FUNC_NOT_ASSIGNED   "The returned value from %s was not assigned"
 
 // executor
 #define WORD_ERROR_AT           "ERROR AT"
