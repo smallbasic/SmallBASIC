@@ -36,6 +36,7 @@ extern void sc_raise2(const char *fmt, int line, const char *buff); // sberr
 #define LEN_DEF_WRS    STRLEN(LCN_DEF_WRS)
 #define LEN_END_WRS    STRLEN(LCN_END_WRS)
 #define LEN_END_SELECT STRLEN(LCN_END_SELECT)
+#define LEN_END_TRY    STRLEN(LCN_END_TRY)
 #define LEN_PREDEF     STRLEN(LCN_PREDEF)
 #define LEN_QUIET      STRLEN(LCN_QUIET)
 #define LEN_GRMODE     STRLEN(LCN_GRMODE)
@@ -406,7 +407,6 @@ bid_t comp_udp_id(const char *proc_name, int scan_tree) {
 bid_t comp_add_udp(const char *proc_name) {
   char *name = comp_bc_temp;
   bid_t idx = -1, i;
-
   comp_prepare_udp_name(name, proc_name);
 
   /*
@@ -4060,7 +4060,8 @@ char *comp_preproc_func_begin(char *p) {
  */
 void comp_preproc_func_end(char *p) {
   // avoid seeing "END SELECT" which doesn't end a SUB/FUNC
-  if (strncmp(p, LCN_END_SELECT, LEN_END_SELECT) != 0) {
+  if (strncmp(p, LCN_END_SELECT, LEN_END_SELECT) != 0 &&
+      strncmp(p, LCN_END_TRY, LEN_END_TRY) != 0) {
     char *dol = strrchr(comp_bc_proc, '/');
     if (dol) {
       *dol = '\0';
@@ -4181,6 +4182,7 @@ int comp_pass1(const char *section, const char *text) {
 
         strcpy(code_line, ps);
         comp_text_line(code_line, 1);
+
         if (comp_error) {
           break;
         }

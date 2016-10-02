@@ -59,3 +59,68 @@ if (9 != ubound(a)) then
   ? a
   throw "Final empty entry was ignored"
 endif
+
+REM
+a=[;;,;]
+b=[0,0;0,0;0,0;0,0]
+if a!=b
+  ?a
+  ?b
+  ?"array initialization failed":?
+'  throw "array initialization failed"
+  fi
+a=[,,,;]
+b=[0,0,0,0;0,0,0,0]
+if a!=b
+  ?a
+  ?b
+  ?"array initialization failed":?
+fi
+
+a=[;;5,;]
+b=[0,0;0,0;5,0;0,0]
+if a!=b
+  ?a
+  ?b
+  ?"3rd row moved to 1st (empty)":?
+fi
+
+a=[0;;5,;]
+b=[0,0;0,0;5,0;0,0]
+if a!=b
+  ?a
+  ?b
+  ?"3rd row moved to 2nd (1st empty)":?
+fi
+
+a=[,2,5,4;;;]
+b=[0,2,5,4;0,0,0,0;0,0,0,0;0,0,0,0]
+if a!=b
+  ?a
+  ?b
+  ?"row ignored when 1st item omitted":?
+fi
+
+a=[0,,,;0;0,,5;]
+b=[0,0,0,0;0,0,0,0;0,0,5,0;0,0,0,0]
+if a!=b
+  ?a
+  ?b
+  ?"row ignored when 1st item omitted":?
+fi
+
+a=[,,,]
+b=[0,0,0,0]
+if a!=b
+  ?a
+  ?b
+  ?"empty items in 1-dim array ignored":?
+fi
+
+a=[0,,5,]
+b=[0,0,5,0]
+if a!=b
+  ?a
+  ?b
+  ?"empty items in 1-dim array ignored":?
+fi
