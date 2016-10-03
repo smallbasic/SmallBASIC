@@ -359,23 +359,29 @@ public class MainActivity extends NativeActivity {
     } else {
       result = false;
     }
+    Log.i(TAG, "removeLocationUpdates="+result);
     return result;
   }
 
   public boolean requestLocationUpdates() {
-    removeLocationUpdates();
-    LocationManager locationService = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
-    Criteria criteria = new Criteria();
-    String provider = locationService.getBestProvider(criteria, true);
+    final LocationManager locationService = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
+    final Criteria criteria = new Criteria();
+    final String provider = locationService.getBestProvider(criteria, true);
     boolean result;
-    if (provider != null && locationService.isProviderEnabled(provider)) {
+    if (_locationListener == null && provider != null &&
+        locationService.isProviderEnabled(provider)) {
       _locationListener = new LocationListener();
-      locationService.requestLocationUpdates(provider, LOCATION_INTERVAL,
-          LOCATION_DISTANCE, _locationListener);
       result = true;
+      runOnUiThread(new Runnable() {
+        public void run() {
+          locationService.requestLocationUpdates(provider, LOCATION_INTERVAL,
+                                                 LOCATION_DISTANCE, _locationListener);
+        }
+      });
     } else {
       result = false;
     }
+    Log.i(TAG, "requestLocationUpdates="+result);
     return result;
   }
 

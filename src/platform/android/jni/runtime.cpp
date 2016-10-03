@@ -961,7 +961,11 @@ const char *sblib_get_module_name() {
 }
 
 int sblib_func_count(void) {
-  return 3;
+  return 1;
+}
+
+int sblib_proc_count(void) {
+  return 2;
 }
 
 int sblib_func_getname(int index, char *proc_name) {
@@ -969,10 +973,16 @@ int sblib_func_getname(int index, char *proc_name) {
   case 0:
     strcpy(proc_name, "LOCATION");
     break;
-  case 1:
+  }
+  return 1;
+}
+
+int sblib_proc_getname(int index, char *proc_name) {
+  switch (index) {
+  case 0:
     strcpy(proc_name, "GPS_ON");
     break;
-  case 2:
+  case 1:
     strcpy(proc_name, "GPS_OFF");
     break;
   }
@@ -988,17 +998,25 @@ int sblib_func_exec(int index, int param_count, slib_par_t *params, var_t *retva
     map_parse_str(location.c_str(), location.length(), retval);
     result = 1;
     break;
-  case 1:
-    v_setint(retval, runtime->getBoolean("requestLocationUpdates"));
-    result = 1;
-    break;
-  case 2:
-    v_setint(retval, runtime->getBoolean("removeLocationUpdates"));
-    result = 1;
-    break;
   default:
     location.append("invalid index: ").append(index);
     v_setstr(retval, location.c_str());
+    result = 0;
+    break;
+  }
+  return result;
+}
+
+int sblib_proc_exec(int index, int param_count, slib_par_t *params, var_t *retval) {
+  int result;
+  switch (index) {
+  case 0:
+    result = runtime->getBoolean("requestLocationUpdates");
+    break;
+  case 1:
+    result = runtime->getBoolean("removeLocationUpdates");
+    break;
+  default:
     result = 0;
     break;
   }
