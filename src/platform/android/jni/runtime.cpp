@@ -256,11 +256,11 @@ void Runtime::construct() {
   }
 }
 
-bool Runtime::getUntrusted() {
+bool Runtime::getBoolean(const char *methodName) {
   JNIEnv *env;
   _app->activity->vm->AttachCurrentThread(&env, NULL);
   jclass clazz = env->GetObjectClass(_app->activity->clazz);
-  jmethodID methodId = env->GetMethodID(clazz, "getUntrusted", "()Z");
+  jmethodID methodId = env->GetMethodID(clazz, methodName, "()Z");
   jboolean result = (jboolean) env->CallBooleanMethod(_app->activity->clazz, methodId);
   env->DeleteLocalRef(clazz);
   _app->activity->vm->DetachCurrentThread();
@@ -362,7 +362,7 @@ void Runtime::runShell() {
 
   String startupBas = getString("getStartupBas");
   if (startupBas.length()) {
-    if (getUntrusted()) {
+    if (getBoolean("getUntrusted")) {
       opt_file_permitted = 0;
     }
     runOnce(startupBas.c_str());
@@ -961,13 +961,19 @@ const char *sblib_get_module_name() {
 }
 
 int sblib_func_count(void) {
-  return 1;
+  return 3;
 }
 
 int sblib_func_getname(int index, char *proc_name) {
   switch (index) {
   case 0:
     strcpy(proc_name, "LOCATION");
+    break;
+  case 1:
+    strcpy(proc_name, "GPS_ON");
+    break;
+  case 2:
+    strcpy(proc_name, "GPS_OFF");
     break;
   }
   return 1;
@@ -982,6 +988,14 @@ int sblib_func_exec(int index, int param_count, slib_par_t *params, var_t *retva
     map_parse_str(location.c_str(), location.length(), retval);
     result = 1;
     break;
+  case 1:
+    v_setint(retval, runtime->getBoolean("requestLocationUpdates"));
+    result = 1;
+    break;
+  case 2:
+    v_setint(retval, runtime->getBoolean("removeLocationUpdates"));
+    result = 1;
+    break;
   default:
     location.append("invalid index: ").append(index);
     v_setstr(retval, location.c_str());
@@ -989,4 +1003,8 @@ int sblib_func_exec(int index, int param_count, slib_par_t *params, var_t *retva
     break;
   }
   return result;
+}
+
+void sblib_close(void) {
+  runtime->getBoolean("removeLocationUpdates");
 }

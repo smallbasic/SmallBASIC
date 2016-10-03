@@ -31,6 +31,7 @@ struct Runtime : public System {
   void debugStep(TextEditInput *edit, TextEditHelpWidget *help, bool cont) {}
   void debugStop() {}
   bool getUntrusted();
+  bool getBoolean(const char *methodName);
   String getString(const char *methodName);
   int getInteger(const char *methodName);
   int getUnicodeChar(int keyCode, int metaState);

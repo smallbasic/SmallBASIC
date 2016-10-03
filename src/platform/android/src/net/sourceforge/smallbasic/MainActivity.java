@@ -75,12 +75,15 @@ public class MainActivity extends NativeActivity {
   private static final String SCHEME_BAS = "qrcode.bas";
   private static final String SCHEME = "smallbasic://x/";
   private static final int BASE_FONT_SIZE = 18;
+  private static final long LOCATION_INTERVAL = 1000;
+  private static final float LOCATION_DISTANCE = 1;
   private String _startupBas = null;
   private boolean _untrusted = false;
   private ExecutorService _audioExecutor = Executors.newSingleThreadExecutor();
   private Queue<Sound> _sounds = new ConcurrentLinkedQueue<Sound>();
   private String[] _options = null;
   private MediaPlayer _mediaPlayer = null;
+  private LocationListener _locationListener = null;
 
   static {
     System.loadLibrary("smallbasic");
@@ -217,7 +220,10 @@ public class MainActivity extends NativeActivity {
 
   public String getLocation() {
     LocationManager locationService = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
-    Location location = locationService.getLastKnownLocation(LocationManager.GPS_PROVIDER);
+    Location location = _locationListener != null ? _locationListener.getLocation() : null;
+    if (location == null) {
+      location = locationService.getLastKnownLocation(LocationManager.GPS_PROVIDER);
+    }
     if (location == null) {
       location = locationService.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
     }
@@ -236,12 +242,6 @@ public class MainActivity extends NativeActivity {
     }
     result.append("}");
     return result.toString();
-  }
-
-  public boolean getSoundPlaying() {
-    boolean result = this._sounds.size() > 0;
-    Log.i(TAG, "getSoundPlaying = " + result);
-    return result;
   }
 
   public String getStartupBas() {
@@ -347,6 +347,36 @@ public class MainActivity extends NativeActivity {
         _sounds.remove(sound);
       }
     });
+  }
+
+  public boolean removeLocationUpdates() {
+    boolean result;
+    if (_locationListener != null) {
+      LocationManager locationService = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
+      locationService.removeUpdates(_locationListener);
+      _locationListener = null;
+      result = true;
+    } else {
+      result = false;
+    }
+    return result;
+  }
+
+  public boolean requestLocationUpdates() {
+    removeLocationUpdates();
+    LocationManager locationService = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
+    Criteria criteria = new Criteria();
+    String provider = locationService.getBestProvider(criteria, true);
+    boolean result;
+    if (provider != null && locationService.isProviderEnabled(provider)) {
+      _locationListener = new LocationListener();
+      locationService.requestLocationUpdates(provider, LOCATION_INTERVAL,
+          LOCATION_DISTANCE, _locationListener);
+      result = true;
+    } else {
+      result = false;
+    }
+    return result;
   }
 
   public void setClipboardText(final String text) {
