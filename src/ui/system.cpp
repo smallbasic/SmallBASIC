@@ -765,16 +765,18 @@ void System::setRunning(bool running) {
     dev_bgcolor = -DEFAULT_BACKGROUND;
     setDimensions();
     dev_clrkb();
-
     _output->setAutoflush(!opt_show_page);
     if (_mainBas || opt_ide != IDE_INTERNAL ||
         _loadPath.indexOf("://", 1) != -1) {
       _loadPath.empty();
     }
     _userScreenId = -1;
-  } else if (!isClosing() && !isRestart() && !isBack()) {
-    _state = kActiveState;
-    _output->setAutoflush(true);
+  } else {
+    osd_clear_sound_queue();
+    if (!isClosing() && !isRestart() && !isBack()) {
+      _state = kActiveState;
+      _output->setAutoflush(true);
+    }
   }
 }
 

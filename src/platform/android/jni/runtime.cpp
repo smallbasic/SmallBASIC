@@ -926,7 +926,6 @@ int maShowVirtualKeyboard(void) {
 // sbasic implementation
 //
 int osd_devinit(void) {
-  runtime->clearSoundQueue();
   runtime->setRunning(true);
   return 1;
 }
@@ -1011,10 +1010,12 @@ int sblib_proc_exec(int index, int param_count, slib_par_t *params, var_t *retva
   int result;
   switch (index) {
   case 0:
-    result = runtime->getBoolean("requestLocationUpdates");
+    runtime->getBoolean("requestLocationUpdates");
+    result = 1;
     break;
   case 1:
-    result = runtime->getBoolean("removeLocationUpdates");
+    runtime->getBoolean("removeLocationUpdates");
+    result = 1;
     break;
   default:
     result = 0;

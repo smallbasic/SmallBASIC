@@ -861,7 +861,6 @@ void flush_queue() {
 //
 int osd_devinit(void) {
   runtime->setRunning(true);
-  osd_clear_sound_queue();
   return 1;
 }
 
