@@ -227,18 +227,14 @@ struct Queue : public List<T> {
   Queue() : List<T>() {}
   Queue(int growSize) : List<T>(growSize) {}
   T front() { return !this->_count ? (T)NULL : this->_head[0]; }
-  T pop() {
-    T result;
-    if (!this->_count) {
-      result = NULL;
-    } else {
-      result = this->_head[0];
+  void pop() {
+    if (this->_count) {
+      delete this->_head[0];
       this->_count--;
       for (int i = 0; i < this->_count; i++) {
         this->_head[i] = this->_head[i + 1];
       }
     }
-    return result;
   }
   void push(T o) { this->add(o); }
 };
