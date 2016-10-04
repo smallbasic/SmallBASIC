@@ -60,21 +60,20 @@ if (9 != ubound(a)) then
   throw "Final empty entry was ignored"
 endif
 
-REM
 a=[;;,;]
 b=[0,0;0,0;0,0;0,0]
 if a!=b
   ?a
   ?b
-  ?"array initialization failed":?
-'  throw "array initialization failed"
-  fi
+  ?"1: array initialization failed":?
+fi
+
 a=[,,,;]
 b=[0,0,0,0;0,0,0,0]
 if a!=b
   ?a
   ?b
-  ?"array initialization failed":?
+  ?"2: array initialization failed":?
 fi
 
 a=[;;5,;]
@@ -82,7 +81,7 @@ b=[0,0;0,0;5,0;0,0]
 if a!=b
   ?a
   ?b
-  ?"3rd row moved to 1st (empty)":?
+  ?"3: 3rd row moved to 1st (empty)":?
 fi
 
 a=[0;;5,;]
@@ -90,7 +89,7 @@ b=[0,0;0,0;5,0;0,0]
 if a!=b
   ?a
   ?b
-  ?"3rd row moved to 2nd (1st empty)":?
+  ?"4: 3rd row moved to 2nd (1st empty)":?
 fi
 
 a=[,2,5,4;;;]
@@ -98,7 +97,7 @@ b=[0,2,5,4;0,0,0,0;0,0,0,0;0,0,0,0]
 if a!=b
   ?a
   ?b
-  ?"row ignored when 1st item omitted":?
+  ?"5: row ignored when 1st item omitted":?
 fi
 
 a=[0,,,;0;0,,5;]
@@ -106,7 +105,7 @@ b=[0,0,0,0;0,0,0,0;0,0,5,0;0,0,0,0]
 if a!=b
   ?a
   ?b
-  ?"row ignored when 1st item omitted":?
+  ?"6: row ignored when 1st item omitted":?
 fi
 
 a=[,,,]
@@ -114,7 +113,7 @@ b=[0,0,0,0]
 if a!=b
   ?a
   ?b
-  ?"empty items in 1-dim array ignored":?
+  ?"7: empty items in 1-dim array ignored":?
 fi
 
 a=[0,,5,]
@@ -122,5 +121,5 @@ b=[0,0,5,0]
 if a!=b
   ?a
   ?b
-  ?"empty items in 1-dim array ignored":?
+  ?"8: empty items in 1-dim array ignored":?
 fi

@@ -1,4 +1,7 @@
 2016-10-02 (0.12.8)
+	Fix regression with array parsing
+
+2016-10-02 (0.12.8)
 	Updated error when calling built-in FUNC without assigning the result
 	Fix TAB to use character positions not pixels
 	Fixed issue with nested try/catch
@@ -13,7 +16,6 @@
 
 2016-09-19 (0.12.8)
 	Fix error handling for invalid JOIN input
-	Fix array handling to include empty columns
 	Fix SPLIT to include final empty position
 
 2016-09-18 (0.12.8)

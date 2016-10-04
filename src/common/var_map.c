@@ -51,11 +51,14 @@ void cint_list_append(cint_list *cl, int value) {
   cl->data[cl->length++] = value;
 }
 
-typedef struct canode_t {
+struct array_node;
+
+typedef struct array_node {
   var_t *v;
-  var_int_t col;
-  var_int_t row;
-} canode_t;
+  int col;
+  int row;
+  struct array_node *next;
+} array_node;
 
 /**
  * Process the next token
@@ -662,15 +665,6 @@ void map_from_str(var_p_t dest) {
   v_free(&arg);
 }
 
-void map_add_empty_col(var_p_t dest, int count, int curcol, cint_list *offs) {
-  if (count >= dest->v.a.size) {
-    int size = dest->v.a.size + ARRAY_GROW_SIZE;
-    v_resize_array(dest, size);
-  }
-  cint_list_append(offs, curcol);
-  v_setstr(v_elem(dest, count), "");
-}
-
 // array <- CODEARRAY(x1,y1...[;x2,y2...])
 // dynamic arrays created with the [] operators
 void map_from_codearray(var_p_t dest) {
@@ -679,11 +673,8 @@ void map_from_codearray(var_p_t dest) {
   int rows = 0;
   int curcol = 0;
   int ready = 0;
-  int expect_data = 1;
-  cint_list offs;
-
-  cint_list_init(&offs, ARRAY_GROW_SIZE);
-  v_toarray1(dest, ARRAY_GROW_SIZE);
+  array_node *node_head = NULL;
+  array_node *node_tail = NULL;
 
   do {
     switch (code_peek()) {
@@ -694,38 +685,50 @@ void map_from_codearray(var_p_t dest) {
         rows++;
         curcol = 0;
       } else {
-        if (expect_data) {
-          // encountered blank column
-          map_add_empty_col(dest, count++, curcol, &offs);
-        }
         // next col
         if (++curcol > cols) {
           cols = curcol;
         }
       }
       code_skipnext();
-      // next should be column data
-      expect_data = 1;
       break;
     case kwTYPE_LEVEL_END:
-      // end of parameters
-      if (expect_data) {
-        map_add_empty_col(dest, count++, curcol, &offs);
-      }
       ready = 1;
       break;
     default:
-      if (count >= dest->v.a.size) {
-        int size = dest->v.a.size + ARRAY_GROW_SIZE;
-        v_resize_array(dest, size);
+      if (node_head == NULL) {
+        node_head = malloc(sizeof(array_node));
+        node_tail = node_head;
+      } else {
+        node_tail->next = malloc(sizeof(array_node));
+        node_tail = node_tail->next;
       }
-      cint_list_append(&offs, curcol);
-      eval(v_elem(dest, count++));
-      // next should be separator
-      expect_data = 0;
+      node_tail->next = NULL;
+      node_tail->col = curcol;
+      node_tail->row = rows;
+      node_tail->v = v_new();
+      eval(node_tail->v);
+      count++;
     }
   } while (!ready && !prog_error);
 
-  map_resize_array(dest, count, rows + 1, cols + 1, &offs);
-  free(offs.data);
+  // create the array
+  rows++;
+  cols++;
+  if (rows > 1) {
+    v_tomatrix(dest, rows, cols);
+  } else {
+    v_toarray1(dest, cols);
+  }
+
+  array_node *node_next = node_head;
+  while (node_next) {
+    int pos = node_next->row * cols + node_next->col;
+    v_set(v_elem(dest, pos), node_next->v);
+    v_free(node_next->v);
+    v_detach(node_next->v);
+    array_node *next = node_next->next;
+    free(node_next);
+    node_next = next;
+  }
 }
