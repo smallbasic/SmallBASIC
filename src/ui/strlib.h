@@ -230,10 +230,7 @@ struct Queue : public List<T> {
   void pop() {
     if (this->_count) {
       delete this->_head[0];
-      this->_count--;
-      for (int i = 0; i < this->_count; i++) {
-        this->_head[i] = this->_head[i + 1];
-      }
+      memmove(this->_head, this->_head + 1, (--this->_count) * sizeof(T*));
     }
   }
   void push(T o) { this->add(o); }
