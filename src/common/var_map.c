@@ -501,8 +501,12 @@ int map_create_array(var_p_t dest, JsonTokens *json, int end_position, int index
       const char *str = json->js + token.start;
       const char *delim = memchr(str, ';', len);
       if (delim != NULL) {
-        map_set_primative(elem, str, delim - str);
-        if (curcol > cols && (delim - str) > 0) {
+        if ((delim - str) > 0) {
+          map_set_primative(elem, str, delim - str);
+        } else {
+          curcol--;
+        }
+        if (curcol > cols) {
           cols = curcol;
         }
         while (delim != NULL) {
