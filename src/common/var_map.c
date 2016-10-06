@@ -503,11 +503,9 @@ int map_create_array(var_p_t dest, JsonTokens *json, int end_position, int index
       if (delim != NULL) {
         if ((delim - str) > 0) {
           map_set_primative(elem, str, delim - str);
-        } else {
-          curcol--;
-        }
-        if (curcol > cols) {
-          cols = curcol;
+          if (curcol > cols) {
+            cols = curcol;
+          }
         }
         while (delim != NULL) {
           rows++;
