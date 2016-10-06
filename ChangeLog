@@ -1,8 +1,11 @@
+2016-10-07 (0.12.8)
+	Added android SENSOR handling
+
 2016-10-02 (0.12.8)
 	Fix regression with array parsing
 
 2016-10-02 (0.12.8)
-	Updated error when calling built-in FUNC without assigning the result
+	Updated error message when calling built-in FUNC without assigning the result
 	Fix TAB to use character positions not pixels
 	Fixed issue with nested try/catch
 

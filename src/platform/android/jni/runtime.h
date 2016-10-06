@@ -1,6 +1,6 @@
 // This file is part of SmallBASIC
 //
-// Copyright(C) 2001-2014 Chris Warren-Smith.
+// Copyright(C) 2001-2016 Chris Warren-Smith.
 //
 // This program is distributed under the terms of the GPL v2.0 or later
 // Download the GNU Public License (GPL) from www.gnu.org
@@ -16,12 +16,14 @@
 #include "platform/android/jni/display.h"
 
 #include <android_native_app_glue.h>
+#include <android/keycodes.h>
+#include <android/sensor.h>
 
 struct Runtime : public System {
   Runtime(android_app *app);
   virtual ~Runtime();
 
-  void addShortcut(const char *path);
+  void addShortcut(const char *path) { setString("addShortcut", path); }
   void alert(const char *title, const char *message);
   void alert(const char *title, bool longDuration=true);
   int ask(const char *title, const char *prompt, bool cancel);
@@ -30,7 +32,8 @@ struct Runtime : public System {
   void debugStart(TextEditInput *edit, const char *file) {}
   void debugStep(TextEditInput *edit, TextEditHelpWidget *help, bool cont) {}
   void debugStop() {}
-  bool getUntrusted();
+  void disableSensor();
+  void enableSensor(int sensorType);
   bool getBoolean(const char *methodName);
   String getString(const char *methodName);
   int getInteger(const char *methodName);
@@ -46,6 +49,8 @@ struct Runtime : public System {
   void pollEvents(bool blocking);
   MAEvent *popEvent();
   void pushEvent(MAEvent *event);
+  void setLocationData(var_t *retval);
+  void setSensorData(var_t *retval);
   void setString(const char *methodName, const char *value);
   void runShell();
   char *loadResource(const char *fileName);
@@ -70,6 +75,10 @@ private:
   Stack<MAEvent *> *_eventQueue;
   pthread_mutex_t _mutex;
   ALooper *_looper;
+  ASensorManager *_sensorManager;
+  const ASensor *_sensor;
+  ASensorEventQueue *_sensorEventQueue;
+  String _sensorData;
 };
 
 #endif

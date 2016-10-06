@@ -120,6 +120,12 @@ static void process_input(android_app *app, android_poll_source *source) {
   }
 }
 
+int get_sensor_events(int fd, int events, void *data) {
+  String *sensorData = (String *)data;
+  // TODO
+  return 1;
+}
+
 // callback from MainActivity.java
 extern "C" JNIEXPORT jboolean JNICALL Java_net_sourceforge_smallbasic_MainActivity_optionSelected
   (JNIEnv *env, jclass jclazz, jint index) {
@@ -155,7 +161,9 @@ Runtime::Runtime(android_app *app) :
   _hasFocus(false),
   _graphics(NULL),
   _app(app),
-  _eventQueue(NULL) {
+  _eventQueue(NULL),
+  _sensor(NULL),
+  _sensorEventQueue(NULL) {
   _app->userData = NULL;
   _app->onAppCmd = handleCommand;
   _app->onInputEvent = handleInput;
@@ -163,6 +171,7 @@ Runtime::Runtime(android_app *app) :
   runtime = this;
   pthread_mutex_init(&_mutex, NULL);
   _looper = ALooper_forThread();
+  _sensorManager = ASensorManager_getInstance();
 }
 
 Runtime::~Runtime() {
@@ -175,10 +184,7 @@ Runtime::~Runtime() {
   _eventQueue = NULL;
   _graphics = NULL;
   pthread_mutex_destroy(&_mutex);
-}
-
-void Runtime::addShortcut(const char *path) {
-  setString("addShortcut", path);
+  disableSensor();
 }
 
 void Runtime::alert(const char *title, const char *message) {
@@ -256,6 +262,35 @@ void Runtime::construct() {
   }
 }
 
+void Runtime::disableSensor() {
+  logEntered();
+  if (_sensorEventQueue) {
+    if (_sensor) {
+      ASensorEventQueue_disableSensor(_sensorEventQueue, _sensor);
+    }
+    ASensorManager_destroyEventQueue(_sensorManager, _sensorEventQueue);
+  }
+  _sensorEventQueue = NULL;
+  _sensor = NULL;
+}
+
+void Runtime::enableSensor(int sensorType) {
+  trace("enableSensor %d", sensorType);
+  if (!_sensorEventQueue) {
+    _sensorEventQueue =
+      ASensorManager_createEventQueue(_sensorManager, _looper, ALOOPER_POLL_CALLBACK,
+                                      get_sensor_events, &_sensorData);
+  } else if (_sensor) {
+    ASensorEventQueue_disableSensor(_sensorEventQueue, _sensor);
+  }
+  _sensor = ASensorManager_getDefaultSensor(_sensorManager, sensorType);
+  if (_sensor) {
+    ASensorEventQueue_enableSensor(_sensorEventQueue, _sensor);
+  } else {
+    trace("sensor not found");
+  }
+}
+
 bool Runtime::getBoolean(const char *methodName) {
   JNIEnv *env;
   _app->activity->vm->AttachCurrentThread(&env, NULL);
@@ -320,17 +355,26 @@ char *Runtime::loadResource(const char *fileName) {
   return buffer;
 }
 
+MAEvent *Runtime::popEvent() {
+  pthread_mutex_lock(&_mutex);
+  MAEvent *result = _eventQueue->pop();
+  pthread_mutex_unlock(&_mutex);
+  return result;
+}
+
 void Runtime::pushEvent(MAEvent *event) {
   pthread_mutex_lock(&_mutex);
   _eventQueue->push(event);
   pthread_mutex_unlock(&_mutex);
 }
 
-MAEvent *Runtime::popEvent() {
-  pthread_mutex_lock(&_mutex);
-  MAEvent *result = _eventQueue->pop();
-  pthread_mutex_unlock(&_mutex);
-  return result;
+void Runtime::setLocationData(var_t *retval) {
+  String location = runtime->getString("getLocation");
+  map_parse_str(location.c_str(), location.length(), retval);
+}
+
+void Runtime::setSensorData(var_t *retval) {
+  map_parse_str(_sensorData.c_str(), _sensorData.length(), retval);
 }
 
 void Runtime::runShell() {
@@ -955,51 +999,89 @@ void osd_beep(void) {
 //
 // module implementation
 //
+void enable_sensor(int param_count, slib_par_t *params) {
+  if (param_count == 1) {
+    switch (v_getint(params[0].var_p)) {
+    case 0:
+      runtime->enableSensor(ASENSOR_TYPE_ACCELEROMETER);
+      break;
+    case 1:
+      runtime->enableSensor(ASENSOR_TYPE_MAGNETIC_FIELD);
+      break;
+    case 2:
+      runtime->enableSensor(ASENSOR_TYPE_GYROSCOPE);
+      break;
+    case 3:
+      runtime->enableSensor(ASENSOR_TYPE_LIGHT);
+      break;
+    case 4:
+      runtime->enableSensor(ASENSOR_TYPE_PROXIMITY);
+      break;
+    default:
+      break;
+    }
+  }
+}
+
+const char *lib_funcs[] = {
+  "LOCATION",
+  "SENSOR"
+};
+
+const char *lib_procs[] = {
+  "GPS_ON",
+  "GPS_OFF",
+  "SENSOR_ON",
+  "SENSOR_OFF"
+};
+
 const char *sblib_get_module_name() {
   return "android";
 }
 
 int sblib_func_count(void) {
-  return 1;
-}
-
-int sblib_proc_count(void) {
-  return 2;
+  return (sizeof(lib_funcs) / sizeof(lib_funcs[0]));
 }
 
 int sblib_func_getname(int index, char *proc_name) {
-  switch (index) {
-  case 0:
-    strcpy(proc_name, "LOCATION");
-    break;
+  int result;
+  if (index < sblib_func_count()) {
+    strcpy(proc_name, lib_funcs[index]);
+    result = 1;
+  } else {
+    result = 0;
   }
-  return 1;
+  return result;
+}
+
+int sblib_proc_count(void) {
+  return (sizeof(lib_procs) / sizeof(lib_procs[0]));
 }
 
 int sblib_proc_getname(int index, char *proc_name) {
-  switch (index) {
-  case 0:
-    strcpy(proc_name, "GPS_ON");
-    break;
-  case 1:
-    strcpy(proc_name, "GPS_OFF");
-    break;
+  int result;
+  if (index < sblib_proc_count()) {
+    strcpy(proc_name, lib_procs[index]);
+    result = 1;
+  } else {
+    result = 0;
   }
-  return 1;
+  return result;
 }
+
 
 int sblib_func_exec(int index, int param_count, slib_par_t *params, var_t *retval) {
   int result;
-  String location;
   switch (index) {
   case 0:
-    location = runtime->getString("getLocation");
-    map_parse_str(location.c_str(), location.length(), retval);
+    runtime->setLocationData(retval);
+    result = 1;
+    break;
+  case 1:
+    runtime->setSensorData(retval);
     result = 1;
     break;
   default:
-    location.append("invalid index: ").append(index);
-    v_setstr(retval, location.c_str());
     result = 0;
     break;
   }
@@ -1017,6 +1099,14 @@ int sblib_proc_exec(int index, int param_count, slib_par_t *params, var_t *retva
     runtime->getBoolean("removeLocationUpdates");
     result = 1;
     break;
+  case 2:
+    enable_sensor(param_count, params);
+    result = 1;
+    break;
+  case 3:
+    runtime->disableSensor();
+    result = 1;
+    break;
   default:
     result = 0;
     break;
@@ -1026,4 +1116,5 @@ int sblib_proc_exec(int index, int param_count, slib_par_t *params, var_t *retva
 
 void sblib_close(void) {
   runtime->getBoolean("removeLocationUpdates");
+  runtime->disableSensor();
 }
