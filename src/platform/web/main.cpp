@@ -155,7 +155,7 @@ MHD_Response *execute(struct MHD_Connection *connection, const char *bas) {
 MHD_Response *serve_file(const char *path) {
   MHD_Response *response;
   struct stat stbuf;
-  int fd = open(path, O_RDONLY);
+  int fd = open(path, O_RDONLY | O_BINARY);
   if (!fstat(fd, &stbuf)) {
     response = MHD_create_response_from_fd(stbuf.st_size, fd);
   } else {
