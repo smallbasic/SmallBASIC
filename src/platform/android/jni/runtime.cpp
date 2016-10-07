@@ -121,8 +121,7 @@ static void process_input(android_app *app, android_poll_source *source) {
 }
 
 int get_sensor_events(int fd, int events, void *data) {
-  String *sensorData = (String *)data;
-  // TODO
+  runtime->readSensorEvents();
   return 1;
 }
 
@@ -279,7 +278,7 @@ void Runtime::enableSensor(int sensorType) {
   if (!_sensorEventQueue) {
     _sensorEventQueue =
       ASensorManager_createEventQueue(_sensorManager, _looper, ALOOPER_POLL_CALLBACK,
-                                      get_sensor_events, &_sensorData);
+                                      get_sensor_events, NULL);
   } else if (_sensor) {
     ASensorEventQueue_disableSensor(_sensorEventQueue, _sensor);
   }
@@ -368,13 +367,35 @@ void Runtime::pushEvent(MAEvent *event) {
   pthread_mutex_unlock(&_mutex);
 }
 
+void Runtime::readSensorEvents() {
+  ASensorEventQueue_getEvents(_sensorEventQueue, &_sensorEvent, 1);
+}
+
 void Runtime::setLocationData(var_t *retval) {
   String location = runtime->getString("getLocation");
   map_parse_str(location.c_str(), location.length(), retval);
 }
 
 void Runtime::setSensorData(var_t *retval) {
-  map_parse_str(_sensorData.c_str(), _sensorData.length(), retval);
+  v_init(retval);
+  map_init(retval);
+  switch (_sensorEvent.type) {
+  case ASENSOR_TYPE_ACCELEROMETER:
+  case ASENSOR_TYPE_MAGNETIC_FIELD:
+  case ASENSOR_TYPE_GYROSCOPE:
+    v_setreal(map_add_var(retval, "x", 0), _sensorEvent.vector.x);
+    v_setreal(map_add_var(retval, "y", 0), _sensorEvent.vector.y);
+    v_setreal(map_add_var(retval, "z", 0), _sensorEvent.vector.z);
+    break;
+  case ASENSOR_TYPE_LIGHT:
+    v_setreal(map_add_var(retval, "light", 0), _sensorEvent.light);
+    break;
+  case ASENSOR_TYPE_PROXIMITY:
+    v_setreal(map_add_var(retval, "distance", 0), _sensorEvent.distance);
+    break;
+  default:
+    break;
+  }
 }
 
 void Runtime::runShell() {

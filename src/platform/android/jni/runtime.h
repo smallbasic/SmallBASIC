@@ -49,6 +49,7 @@ struct Runtime : public System {
   void pollEvents(bool blocking);
   MAEvent *popEvent();
   void pushEvent(MAEvent *event);
+  void readSensorEvents();
   void setLocationData(var_t *retval);
   void setSensorData(var_t *retval);
   void setString(const char *methodName, const char *value);
@@ -78,7 +79,7 @@ private:
   ASensorManager *_sensorManager;
   const ASensor *_sensor;
   ASensorEventQueue *_sensorEventQueue;
-  String _sensorData;
+  ASensorEvent _sensorEvent;
 };
 
 #endif
