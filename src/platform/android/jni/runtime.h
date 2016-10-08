@@ -33,7 +33,7 @@ struct Runtime : public System {
   void debugStep(TextEditInput *edit, TextEditHelpWidget *help, bool cont) {}
   void debugStop() {}
   void disableSensor();
-  void enableSensor(int sensorType);
+  bool enableSensor(int sensorType);
   bool getBoolean(const char *methodName);
   String getString(const char *methodName);
   int getInteger(const char *methodName);

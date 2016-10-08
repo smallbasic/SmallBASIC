@@ -1,3 +1,6 @@
+2016-10-087 (0.12.8)
+	Fix web server file handling in windows version
+
 2016-10-07 (0.12.8)
 	Added android SENSOR handling
 

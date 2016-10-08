@@ -273,8 +273,8 @@ void Runtime::disableSensor() {
   _sensor = NULL;
 }
 
-void Runtime::enableSensor(int sensorType) {
-  trace("enableSensor %d", sensorType);
+bool Runtime::enableSensor(int sensorType) {
+  _sensorEvent.type = 0;
   if (!_sensorEventQueue) {
     _sensorEventQueue =
       ASensorManager_createEventQueue(_sensorManager, _looper, ALOOPER_POLL_CALLBACK,
@@ -283,11 +283,14 @@ void Runtime::enableSensor(int sensorType) {
     ASensorEventQueue_disableSensor(_sensorEventQueue, _sensor);
   }
   _sensor = ASensorManager_getDefaultSensor(_sensorManager, sensorType);
+  bool result;
   if (_sensor) {
     ASensorEventQueue_enableSensor(_sensorEventQueue, _sensor);
+    result = true;
   } else {
-    trace("sensor not found");
+    result = false;
   }
+  return result;
 }
 
 bool Runtime::getBoolean(const char *methodName) {
@@ -379,22 +382,25 @@ void Runtime::setLocationData(var_t *retval) {
 void Runtime::setSensorData(var_t *retval) {
   v_init(retval);
   map_init(retval);
-  switch (_sensorEvent.type) {
-  case ASENSOR_TYPE_ACCELEROMETER:
-  case ASENSOR_TYPE_MAGNETIC_FIELD:
-  case ASENSOR_TYPE_GYROSCOPE:
-    v_setreal(map_add_var(retval, "x", 0), _sensorEvent.vector.x);
-    v_setreal(map_add_var(retval, "y", 0), _sensorEvent.vector.y);
-    v_setreal(map_add_var(retval, "z", 0), _sensorEvent.vector.z);
-    break;
-  case ASENSOR_TYPE_LIGHT:
-    v_setreal(map_add_var(retval, "light", 0), _sensorEvent.light);
-    break;
-  case ASENSOR_TYPE_PROXIMITY:
-    v_setreal(map_add_var(retval, "distance", 0), _sensorEvent.distance);
-    break;
-  default:
-    break;
+  if (_sensor != NULL) {
+    v_setstr(map_add_var(retval, "name", 0), ASensor_getName(_sensor));
+    switch (_sensorEvent.type) {
+    case ASENSOR_TYPE_ACCELEROMETER:
+    case ASENSOR_TYPE_MAGNETIC_FIELD:
+    case ASENSOR_TYPE_GYROSCOPE:
+      v_setreal(map_add_var(retval, "x", 0), _sensorEvent.vector.x);
+      v_setreal(map_add_var(retval, "y", 0), _sensorEvent.vector.y);
+      v_setreal(map_add_var(retval, "z", 0), _sensorEvent.vector.z);
+      break;
+    case ASENSOR_TYPE_LIGHT:
+      v_setreal(map_add_var(retval, "light", 0), _sensorEvent.light);
+      break;
+    case ASENSOR_TYPE_PROXIMITY:
+      v_setreal(map_add_var(retval, "distance", 0), _sensorEvent.distance);
+      break;
+    default:
+      break;
+    }
   }
 }
 
@@ -1020,28 +1026,30 @@ void osd_beep(void) {
 //
 // module implementation
 //
-void enable_sensor(int param_count, slib_par_t *params) {
+bool enable_sensor(int param_count, slib_par_t *params) {
+  bool result = false;
   if (param_count == 1) {
     switch (v_getint(params[0].var_p)) {
     case 0:
-      runtime->enableSensor(ASENSOR_TYPE_ACCELEROMETER);
+      result = runtime->enableSensor(ASENSOR_TYPE_ACCELEROMETER);
       break;
     case 1:
-      runtime->enableSensor(ASENSOR_TYPE_MAGNETIC_FIELD);
+      result = runtime->enableSensor(ASENSOR_TYPE_MAGNETIC_FIELD);
       break;
     case 2:
-      runtime->enableSensor(ASENSOR_TYPE_GYROSCOPE);
+      result = runtime->enableSensor(ASENSOR_TYPE_GYROSCOPE);
       break;
     case 3:
-      runtime->enableSensor(ASENSOR_TYPE_LIGHT);
+      result = runtime->enableSensor(ASENSOR_TYPE_LIGHT);
       break;
     case 4:
-      runtime->enableSensor(ASENSOR_TYPE_PROXIMITY);
+      result = runtime->enableSensor(ASENSOR_TYPE_PROXIMITY);
       break;
     default:
       break;
     }
   }
+  return result;
 }
 
 const char *lib_funcs[] = {
@@ -1121,8 +1129,12 @@ int sblib_proc_exec(int index, int param_count, slib_par_t *params, var_t *retva
     result = 1;
     break;
   case 2:
-    enable_sensor(param_count, params);
-    result = 1;
+    if (enable_sensor(param_count, params)) {
+      result = 1;
+    } else {
+      v_setstr(retval, "sensor not active");
+      result = 0;
+    }
     break;
   case 3:
     runtime->disableSensor();

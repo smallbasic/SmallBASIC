@@ -605,9 +605,9 @@ int sblmgr_procexec(int lib_id, int index) {
   // error
   if (!success) {
     if (ret.type == V_STR) {
-      rt_raise("lib:%s: %s\n", lib->name, ret.v.p.ptr);
+      err_throw("lib:%s: %s\n", lib->name, ret.v.p.ptr);
     } else {
-      rt_raise("lib:%s: Unspecified error\n", lib->name);
+      err_throw("lib:%s: Unspecified error\n", lib->name);
     }
   }
   // clean-up
@@ -660,9 +660,9 @@ int sblmgr_funcexec(int lib_id, int index, var_t *ret) {
   // error
   if (!success) {
     if (ret->type == V_STR) {
-      rt_raise("lib:%s: %s\n", lib->name, ret->v.p.ptr);
+      err_throw("lib:%s: %s\n", lib->name, ret->v.p.ptr);
     } else {
-      rt_raise("lib:%s: Unspecified error\n", lib->name);
+      err_throw("lib:%s: Unspecified error\n", lib->name);
     }
   }
   // clean-up
