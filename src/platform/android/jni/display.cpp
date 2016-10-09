@@ -26,7 +26,7 @@ Canvas::Canvas() :
 }
 
 Canvas::~Canvas() {
-  delete _pixels;
+  delete [] _pixels;
   delete _clip;
   _pixels = NULL;
   _clip = NULL;

@@ -68,7 +68,7 @@ import android.widget.Toast;
  *
  * @author chrisws
  */
-@TargetApi(Build.VERSION_CODES.KITKAT)
+@TargetApi(Build.VERSION_CODES.ICE_CREAM_SANDWICH)
 public class MainActivity extends NativeActivity {
   private static final String TAG = "smallbasic";
   private static final String WEB_BAS = "web.bas";
