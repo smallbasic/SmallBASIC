@@ -374,6 +374,16 @@ void Runtime::readSensorEvents() {
   ASensorEventQueue_getEvents(_sensorEventQueue, &_sensorEvent, 1);
 }
 
+void Runtime::setFloat(const char *methodName, float value) {
+  JNIEnv *env;
+  _app->activity->vm->AttachCurrentThread(&env, NULL);
+  jclass clazz = env->GetObjectClass(_app->activity->clazz);
+  jmethodID methodId = env->GetMethodID(clazz, methodName, "()F");
+  jint result = env->CallFloatMethod(_app->activity->clazz, methodId, value);
+  env->DeleteLocalRef(clazz);
+  _app->activity->vm->DetachCurrentThread();
+}
+
 void Runtime::setLocationData(var_t *retval) {
   String location = runtime->getString("getLocation");
   map_parse_str(location.c_str(), location.length(), retval);
@@ -1048,9 +1058,21 @@ bool enable_sensor(int param_count, slib_par_t *params) {
   return result;
 }
 
-void speak_text(int param_count, slib_par_t *params) {
+void tts_speak(int param_count, slib_par_t *params) {
   if (param_count == 1 && v_is_type(params[0].var_p, V_STR)) {
-    runtime->speak(params[0].var_p->v.p.ptr);
+    runtime->speak(v_getstr(params[0].var_p));
+  }
+}
+
+void tts_pitch(int param_count, slib_par_t *params) {
+  if (param_count == 1 && v_is_type(params[0].var_p, V_NUM)) {
+    runtime->setFloat("setTtsPitch", v_getreal(params[0].var_p));
+  }
+}
+
+void tts_speech_rate(int param_count, slib_par_t *params) {
+  if (param_count == 1 && v_is_type(params[0].var_p, V_NUM)) {
+    runtime->setFloat("setTtsRate", v_getreal(params[0].var_p));
   }
 }
 
@@ -1064,6 +1086,8 @@ const char *lib_procs[] = {
   "GPS_OFF",
   "SENSOR_ON",
   "SENSOR_OFF",
+  "TTS_PITCH",
+  "TTS_SPEECH_RATE",
   "SPEAK"
 };
 
@@ -1144,7 +1168,15 @@ int sblib_proc_exec(int index, int param_count, slib_par_t *params, var_t *retva
     result = 1;
     break;
   case 4:
-    speak_text(param_count, params);
+    tts_pitch(param_count, params);
+    result = 1;
+    break;
+  case 5:
+    tts_speech_rate(param_count, params);
+    result = 1;
+    break;
+  case 6:
+    tts_speak(param_count, params);
     result = 1;
     break;
   default:

@@ -84,14 +84,14 @@ public class MainActivity extends NativeActivity {
   private String[] _options = null;
   private MediaPlayer _mediaPlayer = null;
   private LocationListener _locationListener = null;
-  private TextToSpeechListener _tts;
+  private TextToSpeechHandler _tts;
 
   static {
     System.loadLibrary("smallbasic");
   }
 
-  public static native boolean optionSelected(int index);
   public static native void onResize(int width, int height);
+  public static native boolean optionSelected(int index);
   public static native void runFile(String fileName);
 
   public void addShortcut(final String path) {
@@ -405,6 +405,24 @@ public class MainActivity extends NativeActivity {
     });
   }
 
+  public void setTtsPitch(float pitch) {
+    if (_tts == null) {
+      _tts = new TextToSpeechHandler(this, "");
+    }
+    if (pitch != 0) {
+      _tts.setPitch(pitch);
+    }
+  }
+
+  public void setTtsRate(float speechRate) {
+    if (_tts == null) {
+      _tts = new TextToSpeechHandler(this, "");
+    }
+    if (speechRate != 0) {
+      _tts.setSpeechRate(speechRate);
+    }
+  }
+
   public void showAlert(final String title, final String message) {
     final Activity activity = this;
     runOnUiThread(new Runnable() {
@@ -414,17 +432,6 @@ public class MainActivity extends NativeActivity {
           .setPositiveButton("OK", new DialogInterface.OnClickListener() {
             public void onClick(DialogInterface dialog, int which) {}
           }).show();
-      }
-    });
-  }
-
-  public void showToast(final String message, final boolean longDurarion) {
-    Log.i(TAG, "toast longDuration: " + longDurarion);
-    final Activity activity = this;
-    runOnUiThread(new Runnable() {
-      public void run() {
-        int duration = longDurarion ? Toast.LENGTH_LONG : Toast.LENGTH_SHORT;
-        Toast.makeText(activity, message, duration).show();
       }
     });
   }
@@ -446,9 +453,20 @@ public class MainActivity extends NativeActivity {
     });
   }
 
+  public void showToast(final String message, final boolean longDurarion) {
+    Log.i(TAG, "toast longDuration: " + longDurarion);
+    final Activity activity = this;
+    runOnUiThread(new Runnable() {
+      public void run() {
+        int duration = longDurarion ? Toast.LENGTH_LONG : Toast.LENGTH_SHORT;
+        Toast.makeText(activity, message, duration).show();
+      }
+    });
+  }
+
   public void speak(final String text) {
     if (_tts == null) {
-      _tts = new TextToSpeechListener(this, text);
+      _tts = new TextToSpeechHandler(this, text);
     } else {
       _tts.speak(text);
     }
