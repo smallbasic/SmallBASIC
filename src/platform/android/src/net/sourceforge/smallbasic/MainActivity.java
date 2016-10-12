@@ -84,6 +84,7 @@ public class MainActivity extends NativeActivity {
   private String[] _options = null;
   private MediaPlayer _mediaPlayer = null;
   private LocationListener _locationListener = null;
+  private TextToSpeechListener _tts;
 
   static {
     System.loadLibrary("smallbasic");
@@ -168,6 +169,14 @@ public class MainActivity extends NativeActivity {
       _mediaPlayer.release();
       _mediaPlayer = null;
     }
+  }
+
+  public boolean closeLibHandlers() {
+    if (_tts != null) {
+      _tts.stop();
+    }
+    removeLocationUpdates();
+    return true;
   }
 
   public String getClipboardText() {
@@ -359,7 +368,7 @@ public class MainActivity extends NativeActivity {
     } else {
       result = false;
     }
-    Log.i(TAG, "removeLocationUpdates="+result);
+    Log.i(TAG, "removeRuntimeHandlers="+result);
     return result;
   }
 
@@ -437,6 +446,14 @@ public class MainActivity extends NativeActivity {
     });
   }
 
+  public void speak(final String text) {
+    if (_tts == null) {
+      _tts = new TextToSpeechListener(this, text);
+    } else {
+      _tts.speak(text);
+    }
+  }
+
   @Override
   protected void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
@@ -473,6 +490,10 @@ public class MainActivity extends NativeActivity {
     if (_mediaPlayer != null) {
       _mediaPlayer.release();
       _mediaPlayer = null;
+    }
+    if (_tts != null) {
+      _tts.close();
+      _tts = null;
     }
   }
 
@@ -613,7 +634,6 @@ public class MainActivity extends NativeActivity {
     return b == -1 ? null : out.size() == 0 ? "" : out.toString();
   }
 
-  @SuppressWarnings("resource")
   private void runServer(final int socketNum, final String token) throws IOException {
     ServerSocket serverSocket = new ServerSocket(socketNum);
     Log.i(TAG, "Listening :" + socketNum);

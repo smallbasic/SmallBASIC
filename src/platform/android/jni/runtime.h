@@ -44,7 +44,7 @@ struct Runtime : public System {
   MAEvent processEvents(int waitFlag);
   void processEvent(MAEvent &event);
   bool hasEvent() { return _eventQueue && _eventQueue->size() > 0; }
-  void playAudio(const char *path);
+  void playAudio(const char *path) { setString("playAudio", path); }
   void playTone(int frq, int dur, int vol, bool bgplay);
   void pollEvents(bool blocking);
   MAEvent *popEvent();
@@ -53,6 +53,7 @@ struct Runtime : public System {
   void setLocationData(var_t *retval);
   void setSensorData(var_t *retval);
   void setString(const char *methodName, const char *value);
+  void speak(const char *text) { setString("speak", text); }
   void runShell();
   char *loadResource(const char *fileName);
   void optionsBox(StringList *items);

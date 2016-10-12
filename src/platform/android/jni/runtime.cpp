@@ -637,10 +637,6 @@ void Runtime::optionsBox(StringList *items) {
   _app->activity->vm->DetachCurrentThread();
 }
 
-void Runtime::playAudio(const char *path) {
-  setString("playAudio", path);
-}
-
 void Runtime::playTone(int frq, int dur, int vol, bool bgplay) {
   JNIEnv *env;
   _app->activity->vm->AttachCurrentThread(&env, NULL);
@@ -1052,6 +1048,12 @@ bool enable_sensor(int param_count, slib_par_t *params) {
   return result;
 }
 
+void speak_text(int param_count, slib_par_t *params) {
+  if (param_count == 1 && v_is_type(params[0].var_p, V_STR)) {
+    runtime->speak(params[0].var_p->v.p.ptr);
+  }
+}
+
 const char *lib_funcs[] = {
   "LOCATION",
   "SENSOR"
@@ -1061,7 +1063,8 @@ const char *lib_procs[] = {
   "GPS_ON",
   "GPS_OFF",
   "SENSOR_ON",
-  "SENSOR_OFF"
+  "SENSOR_OFF",
+  "SPEAK"
 };
 
 const char *sblib_get_module_name() {
@@ -1140,6 +1143,10 @@ int sblib_proc_exec(int index, int param_count, slib_par_t *params, var_t *retva
     runtime->disableSensor();
     result = 1;
     break;
+  case 4:
+    speak_text(param_count, params);
+    result = 1;
+    break;
   default:
     result = 0;
     break;
@@ -1148,6 +1155,6 @@ int sblib_proc_exec(int index, int param_count, slib_par_t *params, var_t *retva
 }
 
 void sblib_close(void) {
-  runtime->getBoolean("removeLocationUpdates");
+  runtime->getBoolean("closeLibHandlers");
   runtime->disableSensor();
 }
