@@ -378,8 +378,8 @@ void Runtime::setFloat(const char *methodName, float value) {
   JNIEnv *env;
   _app->activity->vm->AttachCurrentThread(&env, NULL);
   jclass clazz = env->GetObjectClass(_app->activity->clazz);
-  jmethodID methodId = env->GetMethodID(clazz, methodName, "()F");
-  jint result = env->CallFloatMethod(_app->activity->clazz, methodId, value);
+  jmethodID methodId = env->GetMethodID(clazz, methodName, "(F)V");
+  env->CallVoidMethod(_app->activity->clazz, methodId, value);
   env->DeleteLocalRef(clazz);
   _app->activity->vm->DetachCurrentThread();
 }
@@ -1065,13 +1065,15 @@ void tts_speak(int param_count, slib_par_t *params) {
 }
 
 void tts_pitch(int param_count, slib_par_t *params) {
-  if (param_count == 1 && v_is_type(params[0].var_p, V_NUM)) {
+  if (param_count == 1 && (v_is_type(params[0].var_p, V_NUM) ||
+                           v_is_type(params[0].var_p, V_INT))) {
     runtime->setFloat("setTtsPitch", v_getreal(params[0].var_p));
   }
 }
 
 void tts_speech_rate(int param_count, slib_par_t *params) {
-  if (param_count == 1 && v_is_type(params[0].var_p, V_NUM)) {
+  if (param_count == 1 && (v_is_type(params[0].var_p, V_NUM) ||
+                           v_is_type(params[0].var_p, V_INT))) {
     runtime->setFloat("setTtsRate", v_getreal(params[0].var_p));
   }
 }
@@ -1087,7 +1089,7 @@ const char *lib_procs[] = {
   "SENSOR_ON",
   "SENSOR_OFF",
   "TTS_PITCH",
-  "TTS_SPEECH_RATE",
+  "TTS_RATE",
   "SPEAK"
 };
 
@@ -1124,7 +1126,6 @@ int sblib_proc_getname(int index, char *proc_name) {
   }
   return result;
 }
-
 
 int sblib_func_exec(int index, int param_count, slib_par_t *params, var_t *retval) {
   int result;
