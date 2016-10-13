@@ -459,7 +459,7 @@ public class MainActivity extends NativeActivity {
     runOnUiThread(new Runnable() {
       public void run() {
         int duration = longDurarion ? Toast.LENGTH_LONG : Toast.LENGTH_SHORT;
-        Toast.makeText(activity, message, duration).show();
+        Toast.makeText(activity, message.trim(), duration).show();
       }
     });
   }
