@@ -1122,16 +1122,8 @@ int tts_lang(int param_count, slib_par_t *params, var_t *retval) {
 }
 
 int tts_off(int param_count, slib_par_t *params, var_t *retval) {
-  int result;
-  if (param_count == 1 && (v_is_type(params[0].var_p, V_NUM) ||
-                           v_is_type(params[0].var_p, V_INT))) {
-    runtime->getBoolean("setTtsQuiet");
-    result = 1;
-  } else {
-    v_setstr(retval, ERR_PARAM);
-    result = 0;
-  }
-  return result;
+  runtime->getBoolean("setTtsQuiet");
+  return 1;
 }
 
 struct LibProcs {
