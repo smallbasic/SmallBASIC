@@ -66,7 +66,7 @@ struct Runtime : public System {
   void loadEnvConfig(Properties &profile, const char *key);
   void saveConfig();
   void runPath(const char *path);
-  void setClipboardText(const char *str) { setString("setClipboardText", str);}
+  void setClipboardText(const char *s) { setString("setClipboardText", s); }
   char *getClipboardText();
   void setFocus(bool focus) { _hasFocus = focus; }
 
