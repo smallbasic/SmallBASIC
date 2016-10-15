@@ -14,6 +14,7 @@
 #include "platform/android/jni/runtime.h"
 #include "lib/maapi.h"
 #include "ui/utils.h"
+#include "languages/messages.en.h"
 #include "common/sbapp.h"
 #include "common/sys.h"
 #include "common/smbas.h"
@@ -741,8 +742,6 @@ void Runtime::processEvent(MAEvent &event) {
 }
 
 void Runtime::setString(const char *methodName, const char *value) {
-  logEntered();
-
   JNIEnv *env;
   _app->activity->vm->AttachCurrentThread(&env, NULL);
   jclass clazz = env->GetObjectClass(_app->activity->clazz);
@@ -783,10 +782,6 @@ void Runtime::onResize(int width, int height) {
       ALooper_release(_app->looper);
     }
   }
-}
-
-void Runtime::setClipboardText(const char *text) {
-  setString("setClipboardText", text);
 }
 
 char *Runtime::getClipboardText() {
@@ -1032,8 +1027,18 @@ void osd_beep(void) {
 //
 // module implementation
 //
-bool enable_sensor(int param_count, slib_par_t *params) {
-  bool result = false;
+int gps_on(int param_count, slib_par_t *params, var_t *retval) {
+  runtime->getBoolean("requestLocationUpdates");
+  return 1;
+}
+
+int gps_off(int param_count, slib_par_t *params, var_t *retval) {
+  runtime->getBoolean("removeLocationUpdates");
+  return 1;
+}
+
+int sensor_on(int param_count, slib_par_t *params, var_t *retval) {
+  int result = 0;
   if (param_count == 1) {
     switch (v_getint(params[0].var_p)) {
     case 0:
@@ -1055,47 +1060,128 @@ bool enable_sensor(int param_count, slib_par_t *params) {
       break;
     }
   }
+  if (!result) {
+    v_setstr(retval, "sensor not active");
+  }
   return result;
 }
 
-void tts_speak(int param_count, slib_par_t *params) {
-  if (param_count == 1 && v_is_type(params[0].var_p, V_STR)) {
-    runtime->speak(v_getstr(params[0].var_p));
-  }
+int sensor_off(int param_count, slib_par_t *params, var_t *retval) {
+  runtime->disableSensor();
+  return 1;
 }
 
-void tts_pitch(int param_count, slib_par_t *params) {
+int tts_speak(int param_count, slib_par_t *params, var_t *retval) {
+  int result;
+  if (param_count == 1 && v_is_type(params[0].var_p, V_STR)) {
+    runtime->speak(v_getstr(params[0].var_p));
+    result = 1;
+  } else {
+    v_setstr(retval, ERR_PARAM);
+    result = 0;
+  }
+  return result;
+}
+
+int tts_pitch(int param_count, slib_par_t *params, var_t *retval) {
+  int result;
   if (param_count == 1 && (v_is_type(params[0].var_p, V_NUM) ||
                            v_is_type(params[0].var_p, V_INT))) {
     runtime->setFloat("setTtsPitch", v_getreal(params[0].var_p));
+    result = 1;
+  } else {
+    v_setstr(retval, ERR_PARAM);
+    result = 0;
   }
+  return result;
 }
 
-void tts_speech_rate(int param_count, slib_par_t *params) {
+int tts_speech_rate(int param_count, slib_par_t *params, var_t *retval) {
+  int result;
   if (param_count == 1 && (v_is_type(params[0].var_p, V_NUM) ||
                            v_is_type(params[0].var_p, V_INT))) {
     runtime->setFloat("setTtsRate", v_getreal(params[0].var_p));
+    result = 1;
+  } else {
+    v_setstr(retval, ERR_PARAM);
+    result = 0;
   }
+  return result;
+}
+
+int tts_lang(int param_count, slib_par_t *params, var_t *retval) {
+  int result;
+  if (param_count == 1 && v_is_type(params[0].var_p, V_STR)) {
+    runtime->setString("setTtsLocale", v_getstr(params[0].var_p));
+    result = 1;
+  } else {
+    v_setstr(retval, ERR_PARAM);
+    result = 0;
+  }
+  return result;
+}
+
+int tts_off(int param_count, slib_par_t *params, var_t *retval) {
+  int result;
+  if (param_count == 1 && (v_is_type(params[0].var_p, V_NUM) ||
+                           v_is_type(params[0].var_p, V_INT))) {
+    runtime->getBoolean("setTtsQuiet");
+    result = 1;
+  } else {
+    v_setstr(retval, ERR_PARAM);
+    result = 0;
+  }
+  return result;
+}
+
+struct LibProcs {
+  const char *name;
+  int (*command)(int, slib_par_t *, var_t *retval);
+} lib_procs[] = {
+  {"GPS_ON", gps_on},
+  {"GPS_OFF", gps_off},
+  {"SENSOR_ON", sensor_on},
+  {"SENSOR_OFF", sensor_off},
+  {"TTS_PITCH", tts_pitch},
+  {"TTS_RATE", tts_speech_rate},
+  {"TTS_LANG", tts_lang},
+  {"TTS_OFF", tts_off},
+  {"SPEAK", tts_speak}
+};
+
+const char *sblib_get_module_name() {
+  return "android";
+}
+
+int sblib_proc_count(void) {
+  return (sizeof(lib_procs) / sizeof(lib_procs[0]));
+}
+
+int sblib_proc_getname(int index, char *proc_name) {
+  int result;
+  if (index < sblib_proc_count()) {
+    strcpy(proc_name, lib_procs[index].name);
+    result = 1;
+  } else {
+    result = 0;
+  }
+  return result;
+}
+
+int sblib_proc_exec(int index, int param_count, slib_par_t *params, var_t *retval) {
+  int result;
+  if (index < sblib_proc_count()) {
+    result = lib_procs[index].command(param_count, params, retval);
+  } else {
+    result = 0;
+  }
+  return result;
 }
 
 const char *lib_funcs[] = {
   "LOCATION",
   "SENSOR"
 };
-
-const char *lib_procs[] = {
-  "GPS_ON",
-  "GPS_OFF",
-  "SENSOR_ON",
-  "SENSOR_OFF",
-  "TTS_PITCH",
-  "TTS_RATE",
-  "SPEAK"
-};
-
-const char *sblib_get_module_name() {
-  return "android";
-}
 
 int sblib_func_count(void) {
   return (sizeof(lib_funcs) / sizeof(lib_funcs[0]));
@@ -1112,21 +1198,6 @@ int sblib_func_getname(int index, char *proc_name) {
   return result;
 }
 
-int sblib_proc_count(void) {
-  return (sizeof(lib_procs) / sizeof(lib_procs[0]));
-}
-
-int sblib_proc_getname(int index, char *proc_name) {
-  int result;
-  if (index < sblib_proc_count()) {
-    strcpy(proc_name, lib_procs[index]);
-    result = 1;
-  } else {
-    result = 0;
-  }
-  return result;
-}
-
 int sblib_func_exec(int index, int param_count, slib_par_t *params, var_t *retval) {
   int result;
   switch (index) {
@@ -1136,48 +1207,6 @@ int sblib_func_exec(int index, int param_count, slib_par_t *params, var_t *retva
     break;
   case 1:
     runtime->setSensorData(retval);
-    result = 1;
-    break;
-  default:
-    result = 0;
-    break;
-  }
-  return result;
-}
-
-int sblib_proc_exec(int index, int param_count, slib_par_t *params, var_t *retval) {
-  int result;
-  switch (index) {
-  case 0:
-    runtime->getBoolean("requestLocationUpdates");
-    result = 1;
-    break;
-  case 1:
-    runtime->getBoolean("removeLocationUpdates");
-    result = 1;
-    break;
-  case 2:
-    if (enable_sensor(param_count, params)) {
-      result = 1;
-    } else {
-      v_setstr(retval, "sensor not active");
-      result = 0;
-    }
-    break;
-  case 3:
-    runtime->disableSensor();
-    result = 1;
-    break;
-  case 4:
-    tts_pitch(param_count, params);
-    result = 1;
-    break;
-  case 5:
-    tts_speech_rate(param_count, params);
-    result = 1;
-    break;
-  case 6:
-    tts_speak(param_count, params);
     result = 1;
     break;
   default:

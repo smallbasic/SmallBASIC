@@ -405,6 +405,17 @@ public class MainActivity extends NativeActivity {
     });
   }
 
+  public void setTtsLocale(String locale) {
+    if (_tts == null) {
+      _tts = new TextToSpeechHandler(this, "");
+    }
+    try {
+      _tts.setLocale(new Locale(locale));
+    } catch (Exception e) {
+      Log.i(TAG, "setttsLocale failed="+e.toString());
+    }
+  }
+
   public void setTtsPitch(float pitch) {
     if (_tts == null) {
       _tts = new TextToSpeechHandler(this, "");
@@ -412,6 +423,17 @@ public class MainActivity extends NativeActivity {
     if (pitch != 0) {
       _tts.setPitch(pitch);
     }
+  }
+
+  public boolean setTtsQuiet() {
+    boolean result;
+    if (_tts != null) {
+      _tts.stop();
+      result = true;
+    } else {
+      result = false;
+    }
+    return result;
   }
 
   public void setTtsRate(float speechRate) {

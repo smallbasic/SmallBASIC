@@ -14,12 +14,14 @@ public class TextToSpeechHandler implements OnInitListener {
   private String _text;
   private float _pitch;
   private float _speechRate;
+  private Locale _locale;
 
   public TextToSpeechHandler(Context context, String text) {
     _tts = new TextToSpeech(context, this);
     _text = text;
     _pitch = 1f;
     _speechRate = 1f;
+    _locale = Locale.ENGLISH;
   }
 
   public void close() {
@@ -31,11 +33,11 @@ public class TextToSpeechHandler implements OnInitListener {
   @Override
   public void onInit(int status) {
     if (status == TextToSpeech.SUCCESS) {
-      int result = _tts.setLanguage(Locale.ENGLISH);
-      _tts.setPitch(_pitch);
-      _tts.setSpeechRate(_speechRate);
+      int result = _tts.setLanguage(_locale);
       if (result != TextToSpeech.LANG_MISSING_DATA &&
           result != TextToSpeech.LANG_NOT_SUPPORTED) {
+        _tts.setPitch(_pitch);
+        _tts.setSpeechRate(_speechRate);
         _ready = true;
         if (_text != null) {
           speak(_text);
@@ -43,6 +45,19 @@ public class TextToSpeechHandler implements OnInitListener {
       }
     }
     Log.i(TAG, "Tts init: " + _ready);
+  }
+
+  public void setLocale(Locale locale) {
+    this._locale = locale;
+    if (_ready) {
+      int result = _tts.setLanguage(_locale);
+      if (result == TextToSpeech.LANG_MISSING_DATA ||
+          result == TextToSpeech.LANG_NOT_SUPPORTED) {
+        Log.i(TAG, "invalid locale: " + locale);
+        _locale = Locale.ENGLISH;
+        _tts.setLanguage(_locale);
+      }
+    }
   }
 
   public void setPitch(float pitch) {
