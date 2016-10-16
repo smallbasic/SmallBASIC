@@ -83,8 +83,8 @@ public class MainActivity extends NativeActivity {
   private Queue<Sound> _sounds = new ConcurrentLinkedQueue<Sound>();
   private String[] _options = null;
   private MediaPlayer _mediaPlayer = null;
-  private LocationListener _locationListener = null;
-  private TextToSpeechHandler _tts;
+  private LocationAdapter _locationAdapter = null;
+  private TextToSpeechAdapter _tts;
 
   static {
     System.loadLibrary("smallbasic");
@@ -244,7 +244,7 @@ public class MainActivity extends NativeActivity {
 
   public String getLocation() {
     LocationManager locationService = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
-    Location location = _locationListener != null ? _locationListener.getLocation() : null;
+    Location location = _locationAdapter != null ? _locationAdapter.getLocation() : null;
     if (location == null) {
       location = locationService.getLastKnownLocation(LocationManager.GPS_PROVIDER);
     }
@@ -375,10 +375,10 @@ public class MainActivity extends NativeActivity {
 
   public boolean removeLocationUpdates() {
     boolean result;
-    if (_locationListener != null) {
+    if (_locationAdapter != null) {
       LocationManager locationService = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
-      locationService.removeUpdates(_locationListener);
-      _locationListener = null;
+      locationService.removeUpdates(_locationAdapter);
+      _locationAdapter = null;
       result = true;
     } else {
       result = false;
@@ -392,14 +392,14 @@ public class MainActivity extends NativeActivity {
     final Criteria criteria = new Criteria();
     final String provider = locationService.getBestProvider(criteria, true);
     boolean result;
-    if (_locationListener == null && provider != null &&
+    if (_locationAdapter == null && provider != null &&
         locationService.isProviderEnabled(provider)) {
-      _locationListener = new LocationListener();
+      _locationAdapter = new LocationAdapter();
       result = true;
       runOnUiThread(new Runnable() {
         public void run() {
           locationService.requestLocationUpdates(provider, LOCATION_INTERVAL,
-                                                 LOCATION_DISTANCE, _locationListener);
+                                                 LOCATION_DISTANCE, _locationAdapter);
         }
       });
     } else {
@@ -422,7 +422,7 @@ public class MainActivity extends NativeActivity {
 
   public void setTtsLocale(String locale) {
     if (_tts == null) {
-      _tts = new TextToSpeechHandler(this, "");
+      _tts = new TextToSpeechAdapter(this, "");
     }
     try {
       _tts.setLocale(new Locale(locale));
@@ -433,7 +433,7 @@ public class MainActivity extends NativeActivity {
 
   public void setTtsPitch(float pitch) {
     if (_tts == null) {
-      _tts = new TextToSpeechHandler(this, "");
+      _tts = new TextToSpeechAdapter(this, "");
     }
     if (pitch != 0) {
       _tts.setPitch(pitch);
@@ -453,7 +453,7 @@ public class MainActivity extends NativeActivity {
 
   public void setTtsRate(float speechRate) {
     if (_tts == null) {
-      _tts = new TextToSpeechHandler(this, "");
+      _tts = new TextToSpeechAdapter(this, "");
     }
     if (speechRate != 0) {
       _tts.setSpeechRate(speechRate);
@@ -503,7 +503,7 @@ public class MainActivity extends NativeActivity {
 
   public void speak(final String text) {
     if (_tts == null) {
-      _tts = new TextToSpeechHandler(this, text);
+      _tts = new TextToSpeechAdapter(this, text);
     } else {
       _tts.speak(text);
     }

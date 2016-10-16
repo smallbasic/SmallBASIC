@@ -1,12 +1,13 @@
 package net.sourceforge.smallbasic;
 
 import android.location.Location;
+import android.location.LocationListener;
 import android.os.Bundle;
 
-public class LocationListener implements android.location.LocationListener {
+public class LocationAdapter implements LocationListener {
   private Location _location;
 
-  public LocationListener() {
+  public LocationAdapter() {
     setLocation(null);
   }
 

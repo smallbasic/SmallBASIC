@@ -7,7 +7,7 @@ import android.speech.tts.TextToSpeech;
 import android.speech.tts.TextToSpeech.OnInitListener;
 import android.util.Log;
 
-public class TextToSpeechHandler implements OnInitListener {
+public class TextToSpeechAdapter implements OnInitListener {
   private static final String TAG = "smallbasic";
   private TextToSpeech _tts;
   private boolean _ready;
@@ -16,7 +16,7 @@ public class TextToSpeechHandler implements OnInitListener {
   private float _speechRate;
   private Locale _locale;
 
-  public TextToSpeechHandler(Context context, String text) {
+  public TextToSpeechAdapter(Context context, String text) {
     _tts = new TextToSpeech(context, this);
     _text = text;
     _pitch = 1f;
