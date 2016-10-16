@@ -160,6 +160,19 @@ public class MainActivity extends NativeActivity {
     return result.value;
   }
 
+  public void browseFile(final String path) {
+    try {
+      String url = path;
+      if (!url.startsWith("http://") && !url.startsWith("https://")) {
+        url = "http://" + url;
+      }
+      Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
+      startActivity(browserIntent);
+    } catch (Exception e) {
+      Log.i(TAG, "browseFile failed: " + e.toString());
+    }
+  }
+
   public void clearSoundQueue() {
     Log.i(TAG, "clearSoundQueue");
     for (Sound sound : _sounds) {
@@ -213,10 +226,12 @@ public class MainActivity extends NativeActivity {
     try {
       for (Enumeration<NetworkInterface> en = NetworkInterface.getNetworkInterfaces(); en.hasMoreElements();) {
         NetworkInterface intf = en.nextElement();
-        for (Enumeration<InetAddress> enumIpAddr = intf.getInetAddresses(); enumIpAddr.hasMoreElements();) {
-          InetAddress inetAddress = enumIpAddr.nextElement();
-          if (!inetAddress.isLoopbackAddress()) {
-            result = inetAddress.getHostAddress().toString();
+        if (!intf.getDisplayName().startsWith("dummy")) {
+          for (Enumeration<InetAddress> enumIpAddr = intf.getInetAddresses(); enumIpAddr.hasMoreElements();) {
+            InetAddress inetAddress = enumIpAddr.nextElement();
+            if (!inetAddress.isLoopbackAddress()) {
+              result = inetAddress.getHostAddress().toString();
+            }
           }
         }
       }

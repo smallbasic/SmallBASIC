@@ -413,9 +413,10 @@ void FormLabel::draw(int x, int y, int w, int h, int chw) {
 //
 // FormLink
 //
-FormLink::FormLink(const char *link, int x, int y, int w, int h) :
+FormLink::FormLink(const char *link, bool external, int x, int y, int w, int h) :
   FormInput(x, y, w, h),
-  _link(link) {
+  _link(link),
+  _external(external) {
 }
 
 void FormLink::draw(int x, int y, int w, int h, int chw) {

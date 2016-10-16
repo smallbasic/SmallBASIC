@@ -62,6 +62,7 @@ using namespace strlib;
 #define FORM_INPUT_BG "backgroundColor"
 #define FORM_INPUT_FG "color"
 #define FORM_INPUT_IS_EXIT "isExit"
+#define FORM_INPUT_IS_EXTERNAL "isExternal"
 #define FORM_INPUT_RESIZABLE "resizable"
 #define FORM_INPUT_VISIBLE "visible"
 #define FORM_INPUT_INDEX "selectedIndex"
@@ -126,6 +127,7 @@ struct FormInput : public Shape {
   void drawLink(const char *caption, int x, int y, int sw, int chw);
   void drawText(const char *text, int x, int y, int sw, int chw);
   void draw(int x, int y, int w, int h, int chw);
+  const char *getValue();
   bool overlaps(MAPoint2d pt, int scrollX, int scrollY);
   bool hasFocus() const;
   void hide() { _visible = false; }
@@ -183,9 +185,10 @@ private:
 };
 
 struct FormLink : public FormInput {
-  FormLink(const char *link, int x, int y, int w, int h);
+  FormLink(const char *link, bool external, int x, int y, int w, int h);
   virtual ~FormLink() {}
 
+  void clicked(int x, int y, bool pressed);
   const char *getText() const { return _link.c_str(); }
   bool hasHover() { return true; }
 
@@ -194,6 +197,7 @@ struct FormLink : public FormInput {
 
 protected:
   String _link;
+  bool _external;
 };
 
 struct FormEditInput : public FormInput {

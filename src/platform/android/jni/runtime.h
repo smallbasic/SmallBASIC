@@ -27,6 +27,7 @@ struct Runtime : public System {
   void alert(const char *title, const char *message);
   void alert(const char *title, bool longDuration=true);
   int ask(const char *title, const char *prompt, bool cancel);
+  void browseFile(const char *url) { setString("browseFile", url); }
   void clearSoundQueue();
   void construct();
   void debugStart(TextEditInput *edit, const char *file) {}
