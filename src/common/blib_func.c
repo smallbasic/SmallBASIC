@@ -456,14 +456,44 @@ void date_tim2hms(long t, long *h, long *m, long *s) {
 }
 
 /*
+ * f <- FUNC ()
+ */
+var_num_t cmd_math0(long funcCode) {
+  var_num_t r;
+
+  IF_ERR_RETURN_0;
+  switch (funcCode) {
+  case kwXPOS:
+    if (os_graphics) {
+      r = dev_getx() / dev_textwidth("0");
+    } else {
+      r = dev_getx();
+    }
+    break;
+  case kwYPOS:
+    if (os_graphics) {
+      r = dev_gety() / dev_textheight("0");
+    } else {
+      r = dev_gety();
+    }
+    break;
+  case kwRND:
+    r = ((var_num_t) rand()) / (RAND_MAX + 1.0);
+    break;
+  default:
+    rt_raise("Unsupported built-in function call %ld", funcCode);
+    r = 0;
+  }
+  return r;
+}
+
+/*
  * f <- FUNC (f|i)
  */
 var_num_t cmd_math1(long funcCode, var_t *arg) {
-  var_num_t r, x;
-
+  var_num_t r;
+  var_num_t x = v_getval(arg);
   IF_ERR_RETURN_0;
-  x = v_getval(arg);
-
   switch (funcCode) {
   case kwPENF:
     r = dev_getpen(x);
@@ -591,25 +621,8 @@ var_num_t cmd_math1(long funcCode, var_t *arg) {
   case kwCDBL:
     r = x;
     break;
-  case kwXPOS:
-    if (os_graphics) {
-      r = dev_getx() / dev_textwidth("0");
-    } else {
-      r = dev_getx();
-    }
-    break;
-  case kwYPOS:
-    if (os_graphics) {
-      r = dev_gety() / dev_textheight("0");
-    } else {
-      r = dev_gety();
-    }
-    break;
-  case kwRND:
-    r = ((var_num_t) rand()) / (RAND_MAX + 1.0);
-    break;
   default:
-    rt_raise("Unsupported built-in function call %ld, please report this bug (2)", funcCode);
+    rt_raise("Unsupported built-in function call %ld", funcCode);
     r = 0.0;
   };
 
@@ -715,27 +728,22 @@ var_int_t cmd_fre(var_int_t arg) {
 }
 
 /*
- * i <- FUNC (f|i)
+ * i <- FUNC ()
  */
-var_int_t cmd_imath1(long funcCode, var_t *arg) {
+var_int_t cmd_imath0(long funcCode) {
   var_int_t r;
+  struct tm tms;
+  time_t now;
 
   IF_ERR_RETURN_0;
-  var_int_t x = v_getint(arg);
-
   switch (funcCode) {
   case kwTIMER:
     //
     // int <- TIMER // seconds from 00:00
     //
-  {
-    struct tm tms;
-    time_t now;
-
     time(&now);
     tms = *localtime(&now);
     r = tms.tm_hour * 3600L + tms.tm_min * 60L + tms.tm_sec;
-  }
     break;
   case kwTICKS:
     //
@@ -749,6 +757,22 @@ var_int_t cmd_imath1(long funcCode, var_t *arg) {
     //
     r = prog_line;
     break;
+  default:
+    rt_raise("Unsupported built-in function call %ld", funcCode);
+    r = 0;
+  };
+  return r;
+}
+
+/*
+ * i <- FUNC (f|i)
+ */
+var_int_t cmd_imath1(long funcCode, var_t *arg) {
+  var_int_t x = v_getint(arg);
+  var_int_t r;
+
+  IF_ERR_RETURN_0;
+  switch (funcCode) {
   case kwCINT:
     //
     // int <- CINT(float)
@@ -759,12 +783,10 @@ var_int_t cmd_imath1(long funcCode, var_t *arg) {
     //
     // int <- EOF(file-handle)
     //
-#if defined(_UnixOS) || defined(_DOS)
-    if (x == 0) {
+    if (!x) {
       r = feof(stdin);
       break;
     }
-#endif
     r = dev_feof(x);
     break;
   case kwSEEKF:
@@ -793,7 +815,7 @@ var_int_t cmd_imath1(long funcCode, var_t *arg) {
     break;
 
   default:
-    rt_raise("Unsupported built-in function call %ld, please report this bug (3)", funcCode);
+    rt_raise("Unsupported built-in function call %ld", funcCode);
     r = 0;
   };
 
@@ -875,7 +897,7 @@ void cmd_ns1(long funcCode, var_t *arg, var_t *r) {
     r->v.i = dev_fattr(arg->v.p.ptr) & VFS_ATTR_LINK;
     break;
   default:
-    rt_raise("Unsupported built-in function call %ld, please report this bug (4)", funcCode);
+    rt_raise("Unsupported built-in function call %ld", funcCode);
   };
 }
 
@@ -1166,7 +1188,7 @@ void cmd_str1(long funcCode, var_t *arg, var_t *r) {
     break;
 
   default:
-    rt_raise("Unsupported built-in function call %ld, please report this bug (5)", funcCode);
+    rt_raise("Unsupported built-in function call %ld", funcCode);
   };
 }
 
@@ -1289,7 +1311,7 @@ void cmd_str0(long funcCode, var_t *r) {
     r->v.p.length = strlen(r->v.p.ptr) + 1;
     break;
   default:
-    rt_raise("Unsupported built-in function call %ld, please report this bug (6)", funcCode);
+    rt_raise("Unsupported built-in function call %ld", funcCode);
   }
 }
 
@@ -1686,7 +1708,7 @@ void cmd_strN(long funcCode, var_t *r) {
     break;
 
   default:
-    rt_raise("Unsupported built-in function call %ld, please report this bug (7)", funcCode);
+    rt_raise("Unsupported built-in function call %ld", funcCode);
   }
 
   v_free(&arg1);
@@ -1945,7 +1967,7 @@ void cmd_intN(long funcCode, var_t *r) {
     break;
 
   default:
-    rt_raise("Unsupported built-in function call %ld, please report this bug (9)", funcCode);
+    rt_raise("Unsupported built-in function call %ld", funcCode);
   }
 
   v_free(&arg1);
@@ -2011,7 +2033,7 @@ void cmd_numN(long funcCode, var_t *r) {
     }
     break;
   default:
-    rt_raise("Unsupported built-in function call %ld, please report this bug (10)", funcCode);
+    rt_raise("Unsupported built-in function call %ld", funcCode);
   }
 }
 
@@ -2904,6 +2926,6 @@ void cmd_genfunc(long funcCode, var_t *r) {
     break;
 
   default:
-    rt_raise("Unsupported built-in function call %ld, please report this bug (11)", funcCode);
+    rt_raise("Unsupported built-in function call %ld", funcCode);
   };
 }

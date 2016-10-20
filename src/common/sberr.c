@@ -145,6 +145,18 @@ void err_syntax(int keyword, const char *fmt) {
   }
 }
 
+void err_missing_rp() {
+  rt_raise(ERR_MISSING_RP);
+}
+
+void err_matdim() {
+  rt_raise(ERR_MATRIX_DIM);
+}
+
+void err_noargs() {
+  rt_raise(ERR_NO_ARGS);
+}
+
 void err_syntax_unknown() {
   rt_raise(ERR_SYNTAX);
 }

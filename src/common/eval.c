@@ -912,11 +912,18 @@ static inline void eval_callf_imathI1(long fcode, var_t *r) {
 
 static inline void eval_callf_imathI2(long fcode, var_t *r) {
   // int FUNC(void)
-  var_t vtmp;
-  vtmp.type = V_INT;
-  vtmp.v.i = 0;
-  r->type = V_INT;
-  r->v.i = cmd_imath1(fcode, &vtmp);
+  if (CODE_PEEK() == kwTYPE_LEVEL_BEGIN) {
+    IP++;
+    if (CODE_PEEK() != kwTYPE_LEVEL_END) {
+      err_noargs();
+    } else {
+      IP++;
+    }
+  }
+  if (!prog_error) {
+    r->type = V_INT;
+    r->v.i = cmd_imath0(fcode);
+  }
 }
 
 static inline void eval_callf_mathN1(long fcode, var_t *r) {
@@ -942,11 +949,18 @@ static inline void eval_callf_mathN1(long fcode, var_t *r) {
 
 static inline void eval_callf_mathN2(long fcode, var_t *r) {
   // fp FUNC(void)
-  var_t vtmp;
-  vtmp.type = V_NUM;
-  vtmp.v.n = 0;
-  r->type = V_NUM;
-  r->v.n = cmd_math1(fcode, &vtmp);
+  if (CODE_PEEK() == kwTYPE_LEVEL_BEGIN) {
+    IP++;
+    if (CODE_PEEK() != kwTYPE_LEVEL_END) {
+      err_noargs();
+    } else {
+      IP++;
+    }
+  }
+  if (!prog_error) {
+    r->type = V_NUM;
+    r->v.n = cmd_math0(fcode);
+  }
 }
 
 static inline void eval_callf_genfunc(long fcode, var_t *r) {

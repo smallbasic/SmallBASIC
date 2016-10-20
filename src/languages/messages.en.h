@@ -154,6 +154,7 @@
 #define ERR_ARRAY_RANGE         "Array: Index '%d' out of range. (Max = %d)"
 #define ERR_TYPE                "Type mismatch"
 #define ERR_PARAM               "Invalid parameter"
+#define ERR_NO_ARGS             "Function takes no arguments"
 #define EVAL_VAR_IS_ARRAY       "Expr/RT: Variable is an array"
 #define EVAL_VAR_IS_NOT_ARRAY   "Expr/RT: Variable is NOT an array (Use DIM)"
 #define EVAL_NOT_A_NUM          "Expr/RT: Not a number"
