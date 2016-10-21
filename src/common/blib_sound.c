@@ -15,16 +15,18 @@
 #include "common/pproc.h"
 
 static int tones[] = {
-    //c   c#    d     d#    e     f     f#    g     g#    a     a#    b
-    65, 69, 73, 78, 82, 87, 93, 98, 104, 110, 116, 123, 131, 139, 147, 156, 165, 175, 185, 196, 208, 220, 233,
-    247, 262, 277, 294, 311, 330, 349, 370, 392, 415, 440, 466, 494, 523, 554, 587, 622, 659, 698, 740, 784,
-    831, 880, 932, 988, 1046, 1109, 1175, 1245, 1318, 1397, 1480, 1568, 1661, 1760, 1865, 1976, 2093, 2217,
-    2349, 2489, 2637, 2794, 2960, 3136, 3322, 3520, 3729, 3951, 4186, 4435, 4699, 4978, 5274, 5587, 5919,
-    6271, 6645, 7040, 7459, 7902, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, };
+  //c   c#    d     d#    e     f     f#    g     g#    a     a#    b
+  65, 69, 73, 78, 82, 87, 93, 98, 104, 110, 116, 123, 131, 139, 147, 156, 165, 175, 185, 196, 208, 220, 233,
+  247, 262, 277, 294, 311, 330, 349, 370, 392, 415, 440, 466, 494, 523, 554, 587, 622, 659, 698, 740, 784,
+  831, 880, 932, 988, 1046, 1109, 1175, 1245, 1318, 1397, 1480, 1568, 1661, 1760, 1865, 1976, 2093, 2217,
+  2349, 2489, 2637, 2794, 2960, 3136, 3322, 3520, 3729, 3951, 4186, 4435, 4699, 4978, 5274, 5587, 5919,
+  6271, 6645, 7040, 7459, 7902, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, };
 
 static int O = 2, bg = 0, vol = 75;
 static int period, duration, pitch = 440;
 static double L = 4.0, T = 240.0, M = 1.0, TM = 1.0;
+
+#define FILE_PREFIX_LEN 7
 
 //
 // BEEP
@@ -46,32 +48,28 @@ void cmd_sound() {
     if (!prog_error) {
       ms = par_getint();
       if (!prog_error) {
-
         if (code_peek() == kwTYPE_SEP) {
           par_getcomma();
-          if (!prog_error)
+          if (!prog_error) {
             vol = par_getint();
+          }
         }
-
         if (code_peek() == kwBACKG) {
           code_skipnext();
           bg = 1;
         }
-
-        if (!prog_error)
+        if (!prog_error) {
           dev_sound(frq, ms, vol, bg);
+        }
       }
     }
   }
 }
 
-/*
- */
 void cmd_nosound() {
   dev_clear_sound_queue();
 }
 
-//
 void cmd_play_reset() {
   O = 2;
   bg = 0;
@@ -101,14 +99,26 @@ void cmd_play() {
   if (prog_error) {
     return;
   }
+  if (strncmp("file://", var.v.p.ptr, FILE_PREFIX_LEN) == 0) {
+    const char *path = var.v.p.ptr + FILE_PREFIX_LEN;
+    if (dev_fexists(path)) {
+      dev_audio(path);
+    } else {
+      err_file_not_found();
+    }
+    v_free(&var);
+    return;
+  }
+
   str = (char *) malloc(var.v.p.length + 1);
 
   // copy without spaces
   p = (char *) var.v.p.ptr;
   s = str;
   while (*p) {
-    if (*p > 32)
+    if (*p > 32) {
       *s++ = to_upper(*p);
+    }
     p++;
   }
   *s = '\0';
@@ -117,12 +127,9 @@ void cmd_play() {
   // run
   p = str;
   while (*p) {
-
-    //
-    if (dev_events(0) < 0)
+    if (dev_events(0) < 0) {
       break;
-
-    //
+    }
     if (calc_time_f) {
       period = (4.0 / L) * (60000 / T) * TM;
       duration = M * period;
@@ -130,9 +137,7 @@ void cmd_play() {
     }
 
     switch (*p) {
-    /*
-     *      Volume
-     */
+      // Volume
     case 'V':
       n = 0;
       while (is_digit(*(p + 1))) {
@@ -144,16 +149,12 @@ void cmd_play() {
       vol = n;
       break;
 
-      /*
-       *      clear queue
-       */
+      // clear queue
     case 'Q':
       dev_clear_sound_queue();
       break;
 
-      /*
-       *      Octaves
-       */
+      // Octaves
     case '<':
       if (O > 0)
         O--;
@@ -172,9 +173,7 @@ void cmd_play() {
       CPLERR((O < 0 || O > 6), "PLAY: O0-6");
       break;
 
-      /*
-       *      Time
-       */
+      // Time
     case 'L':
       n = 0;
       while (is_digit(*(p + 1))) {
@@ -227,9 +226,7 @@ void cmd_play() {
       calc_time_f = 1;
       break;
 
-      /*
-       *      Pause
-       */
+      // Pause
     case 'P':
       n = 0;
       while (is_digit(*(p + 1))) {
@@ -237,22 +234,19 @@ void cmd_play() {
         n = (n * 10) + (*p - '0');
       }
 
-      // /
       if (*(p + 1) == '.') {
         p++;
         TM = 1.5;
-      } else
+      } else {
         TM = 1.0;
-
+      }
       CPLERR((n < 1 || n > 64), "PLAY: P1-64");
       period = (4.0 / n) * (60000 / T) * TM;
       dev_sound(0, period, vol, bg);
       calc_time_f = 1;
       break;
 
-      /*
-       *      Play N
-       */
+      // Play N
     case 'N':
       n = 0;
       while (is_digit(*(p + 1))) {
@@ -263,8 +257,8 @@ void cmd_play() {
       CPLERR((n < 0 || n > 84), "PLAY: N0-84");
 
       if (n) {
-        //                              oct = n / 12;
-        //                              pitch = tones[n - oct * 12] * (1 << oct);
+        // oct = n / 12;
+        // pitch = tones[n - oct * 12] * (1 << oct);
         pitch = tones[n];
       }
 
@@ -279,9 +273,7 @@ void cmd_play() {
       calc_time_f = 1;
       break;
 
-      /*
-       *      Play note
-       */
+      // Play note
     case 'A':
     case 'B':
     case 'C':
@@ -289,7 +281,6 @@ void cmd_play() {
     case 'E':
     case 'F':
     case 'G':
-
       switch (*p) {
       case 'A':
         n = 13;
@@ -313,8 +304,6 @@ void cmd_play() {
         n = 11;
         break;
       }
-
-      // /
       if (*(p + 1) == '-' || *(p + 1) == '+' || *(p + 1) == '#') {
         p++;
         if (*p == '-')
@@ -322,8 +311,6 @@ void cmd_play() {
         else
           n++;
       }
-
-      // /
       if (is_digit(*(p + 1))) {
         TmpL = 0;
         while (is_digit(*(p + 1))) {
@@ -332,26 +319,24 @@ void cmd_play() {
         }
 
         calc_time_f = 1;
-      } else
+      } else {
         TmpL = L;
-
-      // /
+      }
       if (*(p + 1) == '.') {
         p++;
         TM = 1.5;
-      } else
+      } else {
         TM = 1.0;
-
+      }
       period = (4.0 / TmpL) * (60000 / T) * TM;
       duration = M * period;
 
-      // /
       //                      pitch = tones[n] * (1 << O);
       pitch = tones[(n - 4) + O * 12];
       dev_sound(pitch, duration, vol, bg);
-      if (duration < period)
+      if (duration < period) {
         dev_sound(0, period - duration, vol, bg);
-
+      }
       break;
     default:
       rt_raise("PLAY: '%c' UNSUPPORTED", *p);
@@ -360,8 +345,9 @@ void cmd_play() {
     }
 
     // next
-    if (*p)
+    if (*p) {
       p++;
+    }
   }
 
   free(str);

@@ -1,3 +1,40 @@
+2016-10-20 (0.12.8)
+	Now returns an error when arguments passed to:
+	TIMER, TICKS, PROGLINE, XPOS, YPOS, RND
+
+2016-10-12 (0.12.8)
+	Added android speak API
+
+2016-10-08 (0.12.8)
+	Fix web server file handling in windows version
+
+2016-10-07 (0.12.8)
+	Added android SENSOR handling
+
+2016-10-02 (0.12.8)
+	Fix regression with array parsing
+
+2016-10-02 (0.12.8)
+	Updated error message when calling built-in FUNC without assigning the result
+	Fix TAB to use character positions not pixels
+	Fixed issue with nested try/catch
+
+2016-10-01 (0.12.8)
+	Fixed NOSOUND
+
+2016-09-29 (0.12.8)
+	Added android location API
+	Added sound API
+	Play .WAV files using PLAY("file://" + path)
+
+2016-09-19 (0.12.8)
+	Fix error handling for invalid JOIN input
+	Fix SPLIT to include final empty position
+
+2016-09-18 (0.12.8)
+	Clear keyboard buffer before pause.
+	Fix cursor display with INPUT command
+
 2016-08-21 (0.12.7)
 	Added 'web' sub-project (sbasicw)
 

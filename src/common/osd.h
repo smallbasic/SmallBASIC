@@ -261,6 +261,16 @@ void osd_line(int x1, int y1, int x2, int y2);
  */
 void osd_rect(int x1, int y1, int x2, int y2, int fill);
 
+
+/**
+ * @ingroup lgraf
+ *
+ * plays an OGG or MP3 file
+ *
+ * @param path the path to the OGG or MP3 file
+ */
+void osd_audio(const char *path);
+
 /**
  * @ingroup lgraf
  *

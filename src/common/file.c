@@ -201,18 +201,7 @@ int dev_fopen(int sb_handle, const char *name, int flags) {
                  strncmp(f->name, "SDIN:", 5) == 0 ||
                  strncmp(f->name, "SERR:", 5) == 0) {
         f->type = ft_stream;
-      } else {
-        // external-lib
-        f->vfslib = sblmgr_getvfs(f->name);
-        if (f->vfslib == -1) {
-          // no such driver
-          rt_raise(FSERR_WRONG_DRIVER);
-        } else {
-          f->type = ft_vfslib;
-        }
-        return 0;
       }
-
     } else if (f->name[3] == ':') {
       for (i = 0; i < 4; i++) {
         f->name[i] = to_upper(f->name[i]);
@@ -245,8 +234,6 @@ int dev_fopen(int sb_handle, const char *name, int flags) {
     return http_open(f);
   case ft_serial_port:
     return serial_open(f);
-  case ft_vfslib:
-    return sblmgr_vfsexec(lib_vfs_open, f);
   default:
     err_unsup();
   };
@@ -272,8 +259,6 @@ int dev_fclose(int sb_handle) {
   case ft_socket_client:
   case ft_http_client:
     return sockcl_close(f);
-  case ft_vfslib:
-    return sblmgr_vfsexec(lib_vfs_close, f);
   default:
     err_unsup();
   }
@@ -298,8 +283,6 @@ int dev_fwrite(int sb_handle, byte *data, dword size) {
   case ft_socket_client:
   case ft_http_client:
     return sockcl_write(f, data, size);
-  case ft_vfslib:
-    return sblmgr_vfsexec(lib_vfs_write, f, data, size);
   default:
     err_unsup();
   };
@@ -324,8 +307,6 @@ int dev_fread(int sb_handle, byte *data, dword size) {
   case ft_socket_client:
   case ft_http_client:
     return sockcl_read(f, data, size);
-  case ft_vfslib:
-    return sblmgr_vfsexec(lib_vfs_read, f, data, size);
   default:
     err_unsup();
   }
@@ -345,8 +326,6 @@ dword dev_ftell(int sb_handle) {
   switch (f->type) {
   case ft_stream:
     return stream_tell(f);
-  case ft_vfslib:
-    return sblmgr_vfsexec(lib_vfs_tell, f);
   default:
     err_unsup();
   };
@@ -371,8 +350,6 @@ dword dev_flength(int sb_handle) {
   case ft_socket_client:
   case ft_http_client:
     return sockcl_length(f);
-  case ft_vfslib:
-    return sblmgr_vfsexec(lib_vfs_length, f);
   default:
     err_unsup();
   };
@@ -392,8 +369,6 @@ dword dev_fseek(int sb_handle, dword offset) {
   switch (f->type) {
   case ft_stream:
     return stream_seek(f, offset);
-  case ft_vfslib:
-    return sblmgr_vfsexec(lib_vfs_seek, f, offset);
   default:
     err_unsup();
   };
@@ -418,8 +393,6 @@ int dev_feof(int sb_handle) {
   case ft_socket_client:
   case ft_http_client:
     return sockcl_eof(f);
-  case ft_vfslib:
-    return sblmgr_vfsexec(lib_vfs_eof, f);
   default:
     err_unsup();
   };
@@ -432,19 +405,14 @@ int dev_feof(int sb_handle) {
  * returns true on success
  */
 int dev_fremove(const char *file) {
-  int success, vfslib;
+  int success;
 
   if (!opt_file_permitted) {
     rt_raise(ERR_FILE_PERM);
     return 0;
   }
 
-  // common for all, execute driver's function
-  if ((vfslib = sblmgr_getvfs(file)) != -1) {
-    success = sblmgr_vfsdirexec(lib_vfs_remove, vfslib, file + 5);
-  } else {
-    success = (remove(file) == 0);
-  }
+  success = (remove(file) == 0);
   if (!success) {
     err_throw(FSERR_ACCESS);
   }
@@ -455,16 +423,9 @@ int dev_fremove(const char *file) {
  * returns true if the file exists
  */
 int dev_fexists(const char *file) {
-  int vfslib;
-
   if (!opt_file_permitted) {
     rt_raise(ERR_FILE_PERM);
     return 0;
-  }
-
-  // common for all, execute driver's function
-  if ((vfslib = sblmgr_getvfs(file)) != -1) {
-    return sblmgr_vfsdirexec(lib_vfs_exist, vfslib, file + 5);
   }
 
   return (access(file, 0) == 0);
@@ -618,15 +579,6 @@ void dev_chdir(const char *dir) {
  * create a file-list using wildcards
  */
 char_p_t *dev_create_file_list(const char *wc, int *count) {
-  // common for all, execute driver's function
-  if (wc) {
-    int vfslib;
-
-    if ((vfslib = sblmgr_getvfs(wc)) != -1) {
-      return (char_p_t *) sblmgr_vfsdirexec(lib_vfs_list, vfslib, wc + 5, count);
-    }
-  }
-
   DIR *dp;
   struct dirent *e;
   char *p, wc2[OS_FILENAME_SIZE + 1], *name;
@@ -735,14 +687,8 @@ char *dev_getcwd() {
  * 1-1-1 = link - directory - regular file
  */
 int dev_fattr(const char *file) {
-  int vfslib;
   struct stat st;
   int r = 0;
-
-  // common for all, execute driver's function
-  if ((vfslib = sblmgr_getvfs(file)) != -1) {
-    return sblmgr_vfsdirexec(lib_vfs_attr, vfslib, file + 5);
-  }
 
   if (stat(file, &st) == 0) {
     r |= ((S_ISREG(st.st_mode)) ? VFS_ATTR_FILE : 0);
@@ -758,17 +704,11 @@ int dev_fattr(const char *file) {
  * returns the access rights of the file
  */
 int dev_faccess(const char *file) {
-  int vfslib;
   struct stat st;
 
   if (!opt_file_permitted) {
     rt_raise(ERR_FILE_PERM);
     return 0;
-  }
-
-  // common for all, execute driver's function
-  if ((vfslib = sblmgr_getvfs(file)) != -1) {
-    return sblmgr_vfsdirexec(lib_vfs_access, vfslib, file + 5);
   }
 
   if (stat(file, &st) == 0) {
@@ -794,7 +734,7 @@ int dev_filemtime(const char *file, char **buffer) {
   } else {
     *buffer = malloc(1);
     *buffer[0] = '\0';
-    err_throw(FSERR_NOT_FOUND);
+    err_file_not_found();
   }
   return size;
 }

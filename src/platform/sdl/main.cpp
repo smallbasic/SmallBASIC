@@ -295,7 +295,6 @@ int main(int argc, char* argv[]) {
         // no arg or passed single '-' for long form arg
         showHelp();
         exit(1);
-        break;
       }
       i++;
     }

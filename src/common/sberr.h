@@ -31,10 +31,9 @@ typedef enum {
 
 void sc_raise2(const char *sec, int scline, const char *buff);
 void rt_raise(const char *fmt, ...);
-
-#define err_missing_rp() rt_raise("%s (%d): Missing ')'.\n", __FILE__, __LINE__)
-#define err_matdim()     rt_raise("%s (%d): Dimension error.\n", __FILE__, __LINE__)
-
+void err_missing_rp();
+void err_matdim();
+void err_noargs();
 void err_syntax(int keyword, const char *fmt);
 void err_syntax_unknown();
 void err_parm_num(int found, int expected);
@@ -62,6 +61,7 @@ void err_evtype(void);
 void err_evargerr(void);
 void err_unsup(void);
 void err_file(dword code);
+void err_file_not_found();
 void err_matsig(void);
 void err_stridx(int n);
 void err_parfmt(const char *fmt);

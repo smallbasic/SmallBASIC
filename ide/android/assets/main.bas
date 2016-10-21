@@ -289,8 +289,12 @@ sub manageFiles()
       if (wnd.answer == 0) then
         f.refresh(true)
         local selectedIndex = f.inputs(idxFiles).selectedIndex
-        kill selectedFile
-        reloadList(selectedIndex)
+        try
+          kill selectedFile
+          reloadList(selectedIndex)
+        catch
+          wnd.alert("Error renaming file: " + e)
+        end try
       endif
     endif
     f.value = ""
@@ -306,8 +310,12 @@ sub manageFiles()
     endIf
 
     if (exist(selectedFile) and selectedFile != newFile) then
-      rename selectedFile, newFile
-      reloadList(selectedIndex)
+      try
+        rename selectedFile, newFile
+        reloadList(selectedIndex)
+      catch
+        wnd.alert("Error renaming file: " + e)
+      end try
     endif
     f.value = selectedFile
   end

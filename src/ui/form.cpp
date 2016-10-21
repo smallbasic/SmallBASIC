@@ -24,6 +24,18 @@ enum Mode {
   m_selected
 } mode = m_init;
 
+const char *FormInput::getValue() {
+  const char *result = NULL;
+  var_p_t field = getField(form);
+  if (field != NULL) {
+    var_p_t value = map_get(field, FORM_INPUT_VALUE);
+    if (value->type == V_STR) {
+      result = value->v.p.ptr;
+    }
+  }
+  return result;
+}
+
 void FormInput::clicked(int x, int y, bool pressed) {
   setFocus(true);
   if (!pressed && g_system->isRunning()) {
@@ -35,15 +47,8 @@ void FormInput::clicked(int x, int y, bool pressed) {
       prog_ip = ip;
     } else if (form != NULL) {
       if (_exit) {
-        const char *text = NULL;
-        var_p_t field = getField(form);
-        if (field != NULL) {
-          var_p_t value = map_get(field, FORM_INPUT_VALUE);
-          if (value->type == V_STR) {
-            text = value->v.p.ptr;
-          }
-        }
-        g_system->setLoadBreak(text != NULL ? text : getText());
+        const char *value = getValue();
+        g_system->setLoadBreak(value != NULL ? value : getText());
       }
       else {
         selected();
@@ -99,6 +104,16 @@ void FormListBox::clicked(int x, int y, bool pressed) {
     }
   }
   FormInput::clicked(x, y, pressed);
+}
+
+void FormLink::clicked(int x, int y, bool pressed) {
+  setFocus(true);
+  if (!pressed && _external && form != NULL && g_system->isRunning()) {
+    const char *value = getValue();
+    g_system->browseFile(value != NULL ? value : _link.c_str());
+  } else {
+    FormInput::clicked(x, y, pressed);
+  }
 }
 
 void cmd_form_close(var_s *self) {
@@ -198,7 +213,8 @@ FormInput *create_input(var_p_t v_field) {
     } else if (strcasecmp("label", type) == 0) {
       widget = new FormLabel(label, x, y, w, h);
     } else if (strcasecmp("link", type) == 0) {
-      widget = new FormLink(label, x, y, w, h);
+      bool external = map_get_int(v_field, FORM_INPUT_IS_EXTERNAL, 0);
+      widget = new FormLink(label, external, x, y, w, h);
     } else if (strcasecmp("listbox", type) == 0 ||
                strcasecmp("list", type) == 0) {
       ListModel *model = new ListModel(get_selected_index(v_field), value);

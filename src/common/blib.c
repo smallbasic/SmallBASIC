@@ -2020,6 +2020,7 @@ void cmd_pause() {
   long start, now;
 
   var_int_t x = par_getval(0);
+  dev_clrkb();
   if (x == 0) {
     while (dev_kbhit() == 0) {
       switch (dev_events(2)) {
@@ -2107,7 +2108,7 @@ void cmd_split() {
  */
 void cmd_wsplit() {
   int count, i, wait_q;
-  char *p, *ps, *new_text, *buf, *z;
+  char *p, *ps, *new_text, *z;
   var_t *var_p, *elem_p;
   bcip_t use_ip, exit_ip = INVALID_ADDR;
   char *str = NULL, *del = NULL, *pairs = NULL;
@@ -2139,9 +2140,7 @@ void cmd_wsplit() {
         wait_q = 0;
         p++;
       } else if (wait_q == 0 && (z = strchr(pairs, *p)) != NULL) {
-        int open_q;
-
-        open_q = ((z - pairs) + 1) % 2;
+        int open_q = ((z - pairs) + 1) % 2;
         if (open_q) {
           wait_q = *(z + 1);
         } else {
@@ -2152,36 +2151,37 @@ void cmd_wsplit() {
         *p = '\0';
 
         // add element (ps)
-        if (var_p->v.a.size <= count) { // resize array
+        if (var_p->v.a.size <= count) {
+          // resize array
           v_resize_array(var_p, count + 16);
         }
         // store string
         elem_p = v_elem(var_p, count);
-        buf = strdup(ps);   // trimdup
-        v_setstr(elem_p, buf);
-        free(buf);
+        v_setstr(elem_p, ps);
         count++;
 
         // next word
         p++;
         ps = p;
-      } else
+      } else {
         p++;
-    }
-
-    if (*ps) {
-      // add the last element (ps)
-      if (v_asize(var_p) <= count) {  // resize array
-        v_resize_array(var_p, count + 1);
       }
-      elem_p = v_elem(var_p, count);
-      buf = strdup(ps);     // trimdup
-      v_setstr(elem_p, buf);
-      free(buf);
-
-      count++;
     }
-    v_resize_array(var_p, count); // final resize
+
+    // add the last element (ps)
+    if (v_asize(var_p) <= count) {
+      v_resize_array(var_p, count + 1);
+    }
+    elem_p = v_elem(var_p, count);
+    if (*ps) {
+      v_setstr(elem_p, ps);
+    } else {
+      v_setstr(elem_p, "");
+    }
+    count++;
+
+    // final resize
+    v_resize_array(var_p, count);
 
     // execute user's expression for each element
     if (use_ip != INVALID_ADDR) {
@@ -2207,6 +2207,10 @@ void cmd_wjoin() {
 
   v_init(&del);
   var_p = par_getvarray();
+  if (!var_p || var_p->type != V_ARRAY) {
+    err_varisnotarray();
+    return;
+  }
   if (prog_error) {
     return;
   }

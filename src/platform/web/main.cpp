@@ -155,7 +155,7 @@ MHD_Response *execute(struct MHD_Connection *connection, const char *bas) {
 MHD_Response *serve_file(const char *path) {
   MHD_Response *response;
   struct stat stbuf;
-  int fd = open(path, O_RDONLY);
+  int fd = open(path, O_RDONLY | O_BINARY);
   if (!fstat(fd, &stbuf)) {
     response = MHD_create_response_from_fd(stbuf.st_size, fd);
   } else {
@@ -463,6 +463,7 @@ void osd_beep() {}
 void osd_clear_sound_queue() {}
 void osd_refresh() {}
 void osd_setpenmode(int enable) {}
+void osd_audio(const char *path) {}
 void osd_sound(int frq, int ms, int vol, int bgplay) {}
 void v_create_image(var_p_t var) {}
 void v_create_form(var_p_t var) {}

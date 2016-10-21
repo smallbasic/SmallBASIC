@@ -763,10 +763,7 @@ bool GraphicScreen::setGraphicsRendition(const char c, int escValue, int lineHei
     maFillRect(_curX, _curY, _width - _curX, lineHeight);
     break;
   case 'G':                    // move to column
-    _curX = escValue;
-    break;
-  case 'T':                    // non-standard: move to n/80th of screen width
-    _curX = escValue * _width / 80;
+    _curX = escValue * _charWidth;
     break;
   case 's':                    // save cursor position
     _curYSaved = _curX;

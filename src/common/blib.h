@@ -76,7 +76,9 @@ void cmd_catch();
 void cmd_call_vfunc();
 void cmd_timer();
 
+var_num_t cmd_math0(long funcCode);
 var_num_t cmd_math1(long funcCode, var_t *arg);
+var_int_t cmd_imath0(long funcCode);
 var_int_t cmd_imath1(long funcCode, var_t *arg);
 void cmd_str1(long funcCode, var_t *arg, var_t *r);
 void cmd_ns1(long funcCode, var_t *arg, var_t *r);

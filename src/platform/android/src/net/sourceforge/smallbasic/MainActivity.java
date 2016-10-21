@@ -44,6 +44,11 @@ import android.content.DialogInterface.OnCancelListener;
 import android.content.Intent;
 import android.content.res.Resources;
 import android.graphics.Rect;
+import android.location.Criteria;
+import android.location.Location;
+import android.location.LocationManager;
+import android.media.AudioManager;
+import android.media.MediaPlayer;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -63,25 +68,30 @@ import android.widget.Toast;
  *
  * @author chrisws
  */
-@TargetApi(Build.VERSION_CODES.ICE_CREAM_SANDWICH_MR1)
+@TargetApi(Build.VERSION_CODES.ICE_CREAM_SANDWICH)
 public class MainActivity extends NativeActivity {
   private static final String TAG = "smallbasic";
   private static final String WEB_BAS = "web.bas";
   private static final String SCHEME_BAS = "qrcode.bas";
   private static final String SCHEME = "smallbasic://x/";
   private static final int BASE_FONT_SIZE = 18;
+  private static final long LOCATION_INTERVAL = 1000;
+  private static final float LOCATION_DISTANCE = 1;
   private String _startupBas = null;
   private boolean _untrusted = false;
   private ExecutorService _audioExecutor = Executors.newSingleThreadExecutor();
   private Queue<Sound> _sounds = new ConcurrentLinkedQueue<Sound>();
   private String[] _options = null;
+  private MediaPlayer _mediaPlayer = null;
+  private LocationAdapter _locationAdapter = null;
+  private TextToSpeechAdapter _tts;
 
   static {
     System.loadLibrary("smallbasic");
   }
 
-  public static native boolean optionSelected(int index);
   public static native void onResize(int width, int height);
+  public static native boolean optionSelected(int index);
   public static native void runFile(String fileName);
 
   public void addShortcut(final String path) {
@@ -150,11 +160,36 @@ public class MainActivity extends NativeActivity {
     return result.value;
   }
 
+  public void browseFile(final String path) {
+    try {
+      String url = path;
+      if (!url.startsWith("http://") && !url.startsWith("https://")) {
+        url = "http://" + url;
+      }
+      Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
+      startActivity(browserIntent);
+    } catch (Exception e) {
+      Log.i(TAG, "browseFile failed: " + e.toString());
+    }
+  }
+
   public void clearSoundQueue() {
     Log.i(TAG, "clearSoundQueue");
     for (Sound sound : _sounds) {
       sound.setSilent(true);
     }
+    if (_mediaPlayer != null) {
+      _mediaPlayer.release();
+      _mediaPlayer = null;
+    }
+  }
+
+  public boolean closeLibHandlers() {
+    if (_tts != null) {
+      _tts.stop();
+    }
+    removeLocationUpdates();
+    return true;
   }
 
   public String getClipboardText() {
@@ -191,10 +226,12 @@ public class MainActivity extends NativeActivity {
     try {
       for (Enumeration<NetworkInterface> en = NetworkInterface.getNetworkInterfaces(); en.hasMoreElements();) {
         NetworkInterface intf = en.nextElement();
-        for (Enumeration<InetAddress> enumIpAddr = intf.getInetAddresses(); enumIpAddr.hasMoreElements();) {
-          InetAddress inetAddress = enumIpAddr.nextElement();
-          if (!inetAddress.isLoopbackAddress()) {
-            result = inetAddress.getHostAddress().toString();
+        if (!intf.getDisplayName().startsWith("dummy")) {
+          for (Enumeration<InetAddress> enumIpAddr = intf.getInetAddresses(); enumIpAddr.hasMoreElements();) {
+            InetAddress inetAddress = enumIpAddr.nextElement();
+            if (!inetAddress.isLoopbackAddress()) {
+              result = inetAddress.getHostAddress().toString();
+            }
           }
         }
       }
@@ -205,10 +242,30 @@ public class MainActivity extends NativeActivity {
     return result;
   }
 
-  public boolean getSoundPlaying() {
-    boolean result = this._sounds.size() > 0;
-    Log.i(TAG, "getSoundPlaying = " + result);
-    return result;
+  public String getLocation() {
+    LocationManager locationService = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
+    Location location = _locationAdapter != null ? _locationAdapter.getLocation() : null;
+    if (location == null) {
+      location = locationService.getLastKnownLocation(LocationManager.GPS_PROVIDER);
+    }
+    if (location == null) {
+      location = locationService.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
+    }
+    if (location == null) {
+      location = locationService.getLastKnownLocation(LocationManager.PASSIVE_PROVIDER);
+    }
+    StringBuilder result = new StringBuilder("{");
+    if (location != null) {
+      result.append("\"accuracy\":").append(location.getAccuracy()).append(",")
+        .append("\"altitude\":").append(location.getAltitude()).append(",")
+        .append("\"bearing\":").append(location.getBearing()).append(",")
+        .append("\"latitude\":").append(location.getLatitude()).append(",")
+        .append("\"longitude\":").append(location.getLongitude()).append(",")
+        .append("\"speed\":").append(location.getSpeed()).append(",")
+        .append("\"provider\":\"").append(location.getProvider()).append("\"");
+    }
+    result.append("}");
+    return result.toString();
   }
 
   public String getStartupBas() {
@@ -281,6 +338,28 @@ public class MainActivity extends NativeActivity {
     });
   }
 
+  public void playAudio(final String path) {
+    new Thread(new Runnable() {
+      public void run() {
+        try {
+          Uri uri = Uri.parse("file://" + path);
+          if (_mediaPlayer == null) {
+            _mediaPlayer = new MediaPlayer();
+          } else {
+            _mediaPlayer.reset();
+          }
+          _mediaPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
+          _mediaPlayer.setDataSource(getApplicationContext(), uri);
+          _mediaPlayer.prepare();
+          _mediaPlayer.start();
+        }
+        catch (IOException e) {
+          Log.i(TAG, "Failed: " + e.toString());
+        }
+      }
+    }).start();
+  }
+
   public void playTone(int frq, int dur, int vol) {
     float volume = (vol / 100f);
     final Sound sound = new Sound(frq, dur, volume);
@@ -294,6 +373,42 @@ public class MainActivity extends NativeActivity {
     });
   }
 
+  public boolean removeLocationUpdates() {
+    boolean result;
+    if (_locationAdapter != null) {
+      LocationManager locationService = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
+      locationService.removeUpdates(_locationAdapter);
+      _locationAdapter = null;
+      result = true;
+    } else {
+      result = false;
+    }
+    Log.i(TAG, "removeRuntimeHandlers="+result);
+    return result;
+  }
+
+  public boolean requestLocationUpdates() {
+    final LocationManager locationService = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
+    final Criteria criteria = new Criteria();
+    final String provider = locationService.getBestProvider(criteria, true);
+    boolean result;
+    if (_locationAdapter == null && provider != null &&
+        locationService.isProviderEnabled(provider)) {
+      _locationAdapter = new LocationAdapter();
+      result = true;
+      runOnUiThread(new Runnable() {
+        public void run() {
+          locationService.requestLocationUpdates(provider, LOCATION_INTERVAL,
+                                                 LOCATION_DISTANCE, _locationAdapter);
+        }
+      });
+    } else {
+      result = false;
+    }
+    Log.i(TAG, "requestLocationUpdates="+result);
+    return result;
+  }
+
   public void setClipboardText(final String text) {
     runOnUiThread(new Runnable() {
       public void run() {
@@ -305,6 +420,46 @@ public class MainActivity extends NativeActivity {
     });
   }
 
+  public void setTtsLocale(String locale) {
+    if (_tts == null) {
+      _tts = new TextToSpeechAdapter(this, "");
+    }
+    try {
+      _tts.setLocale(new Locale(locale));
+    } catch (Exception e) {
+      Log.i(TAG, "setttsLocale failed="+e.toString());
+    }
+  }
+
+  public void setTtsPitch(float pitch) {
+    if (_tts == null) {
+      _tts = new TextToSpeechAdapter(this, "");
+    }
+    if (pitch != 0) {
+      _tts.setPitch(pitch);
+    }
+  }
+
+  public boolean setTtsQuiet() {
+    boolean result;
+    if (_tts != null) {
+      _tts.stop();
+      result = true;
+    } else {
+      result = false;
+    }
+    return result;
+  }
+
+  public void setTtsRate(float speechRate) {
+    if (_tts == null) {
+      _tts = new TextToSpeechAdapter(this, "");
+    }
+    if (speechRate != 0) {
+      _tts.setSpeechRate(speechRate);
+    }
+  }
+
   public void showAlert(final String title, final String message) {
     final Activity activity = this;
     runOnUiThread(new Runnable() {
@@ -314,17 +469,6 @@ public class MainActivity extends NativeActivity {
           .setPositiveButton("OK", new DialogInterface.OnClickListener() {
             public void onClick(DialogInterface dialog, int which) {}
           }).show();
-      }
-    });
-  }
-
-  public void showToast(final String message, final boolean longDurarion) {
-    Log.i(TAG, "toast longDuration: " + longDurarion);
-    final Activity activity = this;
-    runOnUiThread(new Runnable() {
-      public void run() {
-        int duration = longDurarion ? Toast.LENGTH_LONG : Toast.LENGTH_SHORT;
-        Toast.makeText(activity, message, duration).show();
       }
     });
   }
@@ -344,6 +488,25 @@ public class MainActivity extends NativeActivity {
         }
       }
     });
+  }
+
+  public void showToast(final String message, final boolean longDurarion) {
+    Log.i(TAG, "toast longDuration: " + longDurarion);
+    final Activity activity = this;
+    runOnUiThread(new Runnable() {
+      public void run() {
+        int duration = longDurarion ? Toast.LENGTH_LONG : Toast.LENGTH_SHORT;
+        Toast.makeText(activity, message.trim(), duration).show();
+      }
+    });
+  }
+
+  public void speak(final String text) {
+    if (_tts == null) {
+      _tts = new TextToSpeechAdapter(this, text);
+    } else {
+      _tts.speak(text);
+    }
   }
 
   @Override
@@ -373,6 +536,19 @@ public class MainActivity extends NativeActivity {
       }
     } catch (Exception e) {
       Log.i(TAG, "Failed to start web service: ", e);
+    }
+  }
+
+  @Override
+  protected void onStop() {
+    super.onStop();
+    if (_mediaPlayer != null) {
+      _mediaPlayer.release();
+      _mediaPlayer = null;
+    }
+    if (_tts != null) {
+      _tts.close();
+      _tts = null;
     }
   }
 

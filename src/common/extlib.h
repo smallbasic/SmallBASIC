@@ -29,9 +29,6 @@
  *
  * <b>Library-modules</b>
  *
- * The library modules must returns as type (sblib_type()) the lib_lang_ext
- * and provide the library-related functions (@ref modlib).
- *
  * The SB before compiles the .bas program, the module-manager
  * asks every module about the number of the functions and procedures
  * which are supported. (sblib_proc_count, sblib_func_count)
@@ -44,24 +41,11 @@
  * and calls the sblib_proc_exec or the sblib_func_exec.
  *
  * See modules/example1.c
- *
- * <b>VFS-driver-modules</b>
- *
- * The vfs-driver modules are similar to library with the exception that
- * must using a specified set of functions/procedures with specified
- * parameters.
- *
- * That set of functions/procedures is the same with the build-in
- * file-system (see fs_stream.c)
- *
  * <b>Notes:</b>
  *
  * Procedure & functions names are limited to 32 characters (33 with \0)
  */
 
-/*
- * VFS extention its not working, yet!
- */
 /**
  * @defgroup mod Module Manager
  */
@@ -70,9 +54,6 @@
  */
 /**
  * @defgroup modlib Module interface - Library
- */
-/**
- * @defgroup modvfs Module interface - VFS driver
  */
 
 #if !defined(_sb_extlib_h)
@@ -88,17 +69,6 @@ extern "C" {
 
 /**
  * @ingroup mod
- * @typedef slib_tp
- * shared-lib supported API
- */
-typedef enum {
-  lib_lang_ext, /**< Language extention */
-  lib_vfs_driver, /**< VFS driver */
-  lib_null
-} slib_tp;
-
-/**
- * @ingroup mod
  * @typedef slib_t
  * shared-lib information structure
  */
@@ -107,7 +77,6 @@ typedef struct {
   char name[256]; /**< name of library (basename) */
   char fullname[1024]; /**< full pathname */
   void *handle; /**< handle to the lib */
-  slib_tp type; /**< type of the API */
   dword flags; /**< flags */
 
   /*
@@ -117,53 +86,11 @@ typedef struct {
   int func_count; /**< if lang.ext.; number of functions */
   int first_proc;
   int first_func;
-
-  /*
-   * ------------------ VFS driver ------------------
-   */
-
-  char vfs_drvname[6]; /**< if vfs; VFS driver name (ex: MEMO:, PDOC:, etc) */
-
 } slib_t;
-
-/**
- * @ingroup modvfs
- * @enum slib_vfs_idx_t
- * function 'index' values for VFS drivers
- */
-enum slib_vfs_idx_t {
-  /*
-   * ---- required ----
-   */
-  lib_vfs_open,               // open a file
-  lib_vfs_close,              // close a file
-  lib_vfs_read,               // read
-  lib_vfs_write,              // write
-  lib_vfs_eof,                // EOF
-
-  /*
-   * ---- optional ----
-   */
-  lib_vfs_tell,               // position in file
-  lib_vfs_length,             // length of file
-  lib_vfs_seek,               // seek
-  lib_vfs_chmod,              // chmod
-  lib_vfs_access,             // returns the file attributes
-  lib_vfs_attr,               //
-  lib_vfs_exist,              //
-  lib_vfs_remove,             // remove a file
-  lib_vfs_list,               // returns array of filenames
-  lib_vfs_chdir,              // change current directory
-  lib_vfs_mkdir,              // create a new directory
-  lib_vfs_rmdir,              // remove a directory
-  lib_vfs_null
-// not used
-};
 
 /*
  *   slib_t flags
  */
-//#define       SBL_LOADED              1
 /**
  * @ingroup mod
  *
@@ -254,38 +181,6 @@ int sblmgr_procexec(int lib, int index);
  */
 int sblmgr_funcexec(int lib, int index, var_t * ret);
 
-/**
- * @ingroup mod
- *
- * search modules for a vfsmodule with that driver-name.
- *
- * @param name the name of the driver (char[6], like "COM1:")
- * @return lib-id on success; otherwise -1
- */
-int sblmgr_getvfs(const char *name);
-
-/**
- * @ingroup mod
- *
- * executes a vfs standard function
- *
- * @param func the function's index
- * @param f the file structure
- * @return it is depended on 'func'
- */
-long sblmgr_vfsexec(enum slib_vfs_idx_t func, dev_file_t * f, ...);
-
-/**
- * @ingroup mod
- *
- * executes a vfs directory-function
- *
- * @param func the function's index
- * @param lib the lib's id
- * @return it is depended on 'func'
- */
-long sblmgr_vfsdirexec(enum slib_vfs_idx_t func, int lib, ...);
-
 /* ---------- Common interface ---------- */
 
 /**
@@ -307,6 +202,15 @@ typedef struct {
  * @return non-zero on success
  */
 int sblib_init(void);
+
+/**
+ * @ingroup modlib
+ *
+ * returns the module name
+ *
+ * @return module name
+ */
+const char *sblib_get_module_name();
 
 /**
  * @ingroup modstd
@@ -358,7 +262,7 @@ int sblib_proc_getname(int index, char *proc_name);
  * @param retval a var_t object to set the return value
  * @return non-zero on success
  */
-int sblib_proc_exec(int index, int param_count, 
+int sblib_proc_exec(int index, int param_count,
                     slib_par_t *params, var_t *retval);
 
 /**
@@ -394,32 +298,6 @@ int sblib_func_getname(int index, char *func_name);
  */
 int sblib_func_exec(int index, int param_count,
                     slib_par_t *params, var_t *retval);
-
-/* ------------- VFS Driver ------------- */
-
-/**
- * @ingroup modvfs
- *
- * returns the driver name (char[6]).
- * (like COM1:, MEMO:, etc)
- *
- * @param dest is a buffer of 6 bytes size to store the name
- */
-void sblib_vfsname(char *dest);
-
-/**
- * @ingroup modvfs
- *
- * executes a VFS function
- *
- * @param index (slib_vfs_idx_t) the function's index
- * @param param_count the number of the parameters
- * @param params the parameters table
- * @param retval a var_t object to set the return value
- * @return non-zero on success
- */
-int sblib_vfs_exec(int index, int param_count,
-                   slib_par_t *params, slib_par_t *retval);
 
 #if defined(__cplusplus)
   }

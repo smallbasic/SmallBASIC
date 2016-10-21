@@ -145,6 +145,18 @@ void err_syntax(int keyword, const char *fmt) {
   }
 }
 
+void err_missing_rp() {
+  rt_raise(ERR_MISSING_RP);
+}
+
+void err_matdim() {
+  rt_raise(ERR_MATRIX_DIM);
+}
+
+void err_noargs() {
+  rt_raise(ERR_NO_ARGS);
+}
+
 void err_syntax_unknown() {
   rt_raise(ERR_SYNTAX);
 }
@@ -478,6 +490,10 @@ void err_file(dword code) {
     err_throw_str(err);
     free(err);
   }
+}
+
+void err_file_not_found() {
+  err_throw(FSERR_NOT_FOUND);
 }
 
 int err_handle_error(const char *err, var_p_t var) {

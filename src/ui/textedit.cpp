@@ -1248,7 +1248,7 @@ int TextEditInput::getIndent(char *spaces, int len, int pos) {
   // count the indent level and find the start of text
   char *buf = lineText(pos);
   int i = 0;
-  while (buf && (buf[i] == ' ' || buf[i] == '\t') && i < len) {
+  while (buf && i < len && (buf[i] == ' ' || buf[i] == '\t')) {
     spaces[i] = buf[i];
     i++;
   }

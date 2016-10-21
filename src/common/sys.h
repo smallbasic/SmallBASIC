@@ -32,7 +32,6 @@ typedef unsigned int bcip_t;
 #include <string.h>
 #include <stdint.h>
 #include <math.h>
-#include <math.h>
 #include <time.h>
 #include <utime.h>
 #include <unistd.h>

@@ -99,5 +99,85 @@ if (str(wormHoles) != "[[4,4],[4,20],[20,20],[20,4],[12,12]]") then
 endif
 x = 4
 y = 4
-if [x,y] in wormHoles then
+if not([x,y] in wormHoles) then
+  ? "fail"
 endif
+
+a=[;;,;]
+b=[0,0;0,0;0,0;0,0]
+c=array("[0,0;0,0;0,0;0,0]")
+if a!=b || a!=c then
+  ?a
+  ?b
+  ?c
+  ?"1: array initialization failed"
+fi
+
+a=[,,,;]
+b=[0,0,0,0;0,0,0,0]
+c=array("[0,0,0,0;0,0,0,0]")
+if a!=b || a!=c then
+  ?a
+  ?b
+  ?"2: array initialization failed"
+fi
+
+a=[;;5,;]
+b=[0,0;0,0;5,0;0,0]
+c=array("[0,0;0,0;5,0;0,0]")
+if a!=b || a!=c then
+  ?a
+  ?b
+  ?c
+  ?"3: 3rd row moved to 1st (empty)"
+fi
+
+a=[0;;5,;]
+b=[0,0;0,0;5,0;0,0]
+c=array("[0,0;0,0;5,0;0,0]")
+if a!=b || a!=c then
+  ?a
+  ?b
+  ?c
+  ?"4: 3rd row moved to 2nd (1st empty)"
+fi
+
+a=[,2,5,4;;;]
+b=[0,2,5,4;0,0,0,0;0,0,0,0;0,0,0,0]
+c=array("[0,2,5,4;0,0,0,0;0,0,0,0;0,0,0,0]")
+if a!=b || a!=c then
+  ?a
+  ?b
+  ?c
+  ?"5: row ignored when 1st item omitted"
+fi
+
+a=[0,,,;0;0,,5;]
+b=[0,0,0,0;0,0,0,0;0,0,5,0;0,0,0,0]
+c=array("[0,0,0,0;0,0,0,0;0,0,5,0;0,0,0,0]")
+if a!=b || a!=c then
+  ?a
+  ?b
+  ?c
+  ?"6: row ignored when 1st item omitted"
+fi
+
+a=[,,,]
+b=[0,0,0,0]
+c=array("[0,0,0,0]")
+if a!=b || a!=c then
+  ?a
+  ?b
+  ?c
+  ?"7: empty items in 1-dim array ignored"
+fi
+
+a=[0,,5,]
+b=[0,0,5,0]
+c=array("[0,0,5,0]")
+if a!=b || a!=c then
+  ?a
+  ?b
+  ?c
+  ?"8: empty items in 1-dim array ignored"
+fi

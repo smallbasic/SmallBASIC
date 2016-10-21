@@ -214,3 +214,17 @@ fi
 end
 
 stack_test
+
+sub manageFiles()
+  sub renameFile()
+    try
+      throw "err"
+    catch e
+      logprint e
+    end try
+  end
+  sub viewFile()
+     print "viewFile entered"
+  end
+  viewFile()
+end

@@ -1,6 +1,6 @@
 // This file is part of SmallBASIC
 //
-// Copyright(C) 2001-2015 Chris Warren-Smith.
+// Copyright(C) 2001-2016 Chris Warren-Smith.
 //
 // This program is distributed under the terms of the GPL v2.0 or later
 // Download the GNU Public License (GPL) from www.gnu.org
@@ -14,6 +14,7 @@
 #include "platform/android/jni/runtime.h"
 #include "lib/maapi.h"
 #include "ui/utils.h"
+#include "languages/messages.en.h"
 #include "common/sbapp.h"
 #include "common/sys.h"
 #include "common/smbas.h"
@@ -120,6 +121,11 @@ static void process_input(android_app *app, android_poll_source *source) {
   }
 }
 
+int get_sensor_events(int fd, int events, void *data) {
+  runtime->readSensorEvents();
+  return 1;
+}
+
 // callback from MainActivity.java
 extern "C" JNIEXPORT jboolean JNICALL Java_net_sourceforge_smallbasic_MainActivity_optionSelected
   (JNIEnv *env, jclass jclazz, jint index) {
@@ -155,7 +161,9 @@ Runtime::Runtime(android_app *app) :
   _hasFocus(false),
   _graphics(NULL),
   _app(app),
-  _eventQueue(NULL) {
+  _eventQueue(NULL),
+  _sensor(NULL),
+  _sensorEventQueue(NULL) {
   _app->userData = NULL;
   _app->onAppCmd = handleCommand;
   _app->onInputEvent = handleInput;
@@ -163,6 +171,7 @@ Runtime::Runtime(android_app *app) :
   runtime = this;
   pthread_mutex_init(&_mutex, NULL);
   _looper = ALooper_forThread();
+  _sensorManager = ASensorManager_getInstance();
 }
 
 Runtime::~Runtime() {
@@ -175,10 +184,7 @@ Runtime::~Runtime() {
   _eventQueue = NULL;
   _graphics = NULL;
   pthread_mutex_destroy(&_mutex);
-}
-
-void Runtime::addShortcut(const char *path) {
-  setString("addShortcut", path);
+  disableSensor();
 }
 
 void Runtime::alert(const char *title, const char *message) {
@@ -256,11 +262,43 @@ void Runtime::construct() {
   }
 }
 
-bool Runtime::getUntrusted() {
+void Runtime::disableSensor() {
+  logEntered();
+  if (_sensorEventQueue) {
+    if (_sensor) {
+      ASensorEventQueue_disableSensor(_sensorEventQueue, _sensor);
+    }
+    ASensorManager_destroyEventQueue(_sensorManager, _sensorEventQueue);
+  }
+  _sensorEventQueue = NULL;
+  _sensor = NULL;
+}
+
+bool Runtime::enableSensor(int sensorType) {
+  _sensorEvent.type = 0;
+  if (!_sensorEventQueue) {
+    _sensorEventQueue =
+      ASensorManager_createEventQueue(_sensorManager, _looper, ALOOPER_POLL_CALLBACK,
+                                      get_sensor_events, NULL);
+  } else if (_sensor) {
+    ASensorEventQueue_disableSensor(_sensorEventQueue, _sensor);
+  }
+  _sensor = ASensorManager_getDefaultSensor(_sensorManager, sensorType);
+  bool result;
+  if (_sensor) {
+    ASensorEventQueue_enableSensor(_sensorEventQueue, _sensor);
+    result = true;
+  } else {
+    result = false;
+  }
+  return result;
+}
+
+bool Runtime::getBoolean(const char *methodName) {
   JNIEnv *env;
   _app->activity->vm->AttachCurrentThread(&env, NULL);
   jclass clazz = env->GetObjectClass(_app->activity->clazz);
-  jmethodID methodId = env->GetMethodID(clazz, "getUntrusted", "()Z");
+  jmethodID methodId = env->GetMethodID(clazz, methodName, "()Z");
   jboolean result = (jboolean) env->CallBooleanMethod(_app->activity->clazz, methodId);
   env->DeleteLocalRef(clazz);
   _app->activity->vm->DetachCurrentThread();
@@ -320,17 +358,61 @@ char *Runtime::loadResource(const char *fileName) {
   return buffer;
 }
 
+MAEvent *Runtime::popEvent() {
+  pthread_mutex_lock(&_mutex);
+  MAEvent *result = _eventQueue->pop();
+  pthread_mutex_unlock(&_mutex);
+  return result;
+}
+
 void Runtime::pushEvent(MAEvent *event) {
   pthread_mutex_lock(&_mutex);
   _eventQueue->push(event);
   pthread_mutex_unlock(&_mutex);
 }
 
-MAEvent *Runtime::popEvent() {
-  pthread_mutex_lock(&_mutex);
-  MAEvent *result = _eventQueue->pop();
-  pthread_mutex_unlock(&_mutex);
-  return result;
+void Runtime::readSensorEvents() {
+  ASensorEventQueue_getEvents(_sensorEventQueue, &_sensorEvent, 1);
+}
+
+void Runtime::setFloat(const char *methodName, float value) {
+  JNIEnv *env;
+  _app->activity->vm->AttachCurrentThread(&env, NULL);
+  jclass clazz = env->GetObjectClass(_app->activity->clazz);
+  jmethodID methodId = env->GetMethodID(clazz, methodName, "(F)V");
+  env->CallVoidMethod(_app->activity->clazz, methodId, value);
+  env->DeleteLocalRef(clazz);
+  _app->activity->vm->DetachCurrentThread();
+}
+
+void Runtime::setLocationData(var_t *retval) {
+  String location = runtime->getString("getLocation");
+  map_parse_str(location.c_str(), location.length(), retval);
+}
+
+void Runtime::setSensorData(var_t *retval) {
+  v_init(retval);
+  map_init(retval);
+  if (_sensor != NULL) {
+    v_setstr(map_add_var(retval, "name", 0), ASensor_getName(_sensor));
+    switch (_sensorEvent.type) {
+    case ASENSOR_TYPE_ACCELEROMETER:
+    case ASENSOR_TYPE_MAGNETIC_FIELD:
+    case ASENSOR_TYPE_GYROSCOPE:
+      v_setreal(map_add_var(retval, "x", 0), _sensorEvent.vector.x);
+      v_setreal(map_add_var(retval, "y", 0), _sensorEvent.vector.y);
+      v_setreal(map_add_var(retval, "z", 0), _sensorEvent.vector.z);
+      break;
+    case ASENSOR_TYPE_LIGHT:
+      v_setreal(map_add_var(retval, "light", 0), _sensorEvent.light);
+      break;
+    case ASENSOR_TYPE_PROXIMITY:
+      v_setreal(map_add_var(retval, "distance", 0), _sensorEvent.distance);
+      break;
+    default:
+      break;
+    }
+  }
 }
 
 void Runtime::runShell() {
@@ -349,6 +431,8 @@ void Runtime::runShell() {
   os_graphics = 1;
   os_color_depth = 16;
   opt_mute_audio = 0;
+  opt_loadmod = 0;
+  strcpy(opt_modlist, "/data/data/net.sourceforge.smallbasic/lib");
 
   _app->activity->callbacks->onContentRectChanged = onContentRectChanged;
   loadConfig();
@@ -360,7 +444,7 @@ void Runtime::runShell() {
 
   String startupBas = getString("getStartupBas");
   if (startupBas.length()) {
-    if (getUntrusted()) {
+    if (getBoolean("getUntrusted")) {
       opt_file_permitted = 0;
     }
     runOnce(startupBas.c_str());
@@ -658,8 +742,6 @@ void Runtime::processEvent(MAEvent &event) {
 }
 
 void Runtime::setString(const char *methodName, const char *value) {
-  logEntered();
-
   JNIEnv *env;
   _app->activity->vm->AttachCurrentThread(&env, NULL);
   jclass clazz = env->GetObjectClass(_app->activity->clazz);
@@ -700,10 +782,6 @@ void Runtime::onResize(int width, int height) {
       ALooper_release(_app->looper);
     }
   }
-}
-
-void Runtime::setClipboardText(const char *text) {
-  setString("setClipboardText", text);
 }
 
 char *Runtime::getClipboardText() {
@@ -920,7 +998,6 @@ int maShowVirtualKeyboard(void) {
 // sbasic implementation
 //
 int osd_devinit(void) {
-  runtime->clearSoundQueue();
   runtime->setRunning(true);
   return 1;
 }
@@ -928,6 +1005,10 @@ int osd_devinit(void) {
 int osd_devrestore(void) {
   runtime->setRunning(false);
   return 0;
+}
+
+void osd_audio(const char *path) {
+  runtime->playAudio(path);
 }
 
 void osd_sound(int frq, int dur, int vol, int bgplay) {
@@ -941,4 +1022,193 @@ void osd_clear_sound_queue() {
 void osd_beep(void) {
   osd_sound(1000, 30, 100, 0);
   osd_sound(500, 30, 100, 0);
+}
+
+//
+// module implementation
+//
+int gps_on(int param_count, slib_par_t *params, var_t *retval) {
+  runtime->getBoolean("requestLocationUpdates");
+  return 1;
+}
+
+int gps_off(int param_count, slib_par_t *params, var_t *retval) {
+  runtime->getBoolean("removeLocationUpdates");
+  return 1;
+}
+
+int sensor_on(int param_count, slib_par_t *params, var_t *retval) {
+  int result = 0;
+  if (param_count == 1) {
+    switch (v_getint(params[0].var_p)) {
+    case 0:
+      result = runtime->enableSensor(ASENSOR_TYPE_ACCELEROMETER);
+      break;
+    case 1:
+      result = runtime->enableSensor(ASENSOR_TYPE_MAGNETIC_FIELD);
+      break;
+    case 2:
+      result = runtime->enableSensor(ASENSOR_TYPE_GYROSCOPE);
+      break;
+    case 3:
+      result = runtime->enableSensor(ASENSOR_TYPE_LIGHT);
+      break;
+    case 4:
+      result = runtime->enableSensor(ASENSOR_TYPE_PROXIMITY);
+      break;
+    default:
+      break;
+    }
+  }
+  if (!result) {
+    v_setstr(retval, "sensor not active");
+  }
+  return result;
+}
+
+int sensor_off(int param_count, slib_par_t *params, var_t *retval) {
+  runtime->disableSensor();
+  return 1;
+}
+
+int tts_speak(int param_count, slib_par_t *params, var_t *retval) {
+  int result;
+  if (param_count == 1 && v_is_type(params[0].var_p, V_STR)) {
+    runtime->speak(v_getstr(params[0].var_p));
+    result = 1;
+  } else {
+    v_setstr(retval, ERR_PARAM);
+    result = 0;
+  }
+  return result;
+}
+
+int tts_pitch(int param_count, slib_par_t *params, var_t *retval) {
+  int result;
+  if (param_count == 1 && (v_is_type(params[0].var_p, V_NUM) ||
+                           v_is_type(params[0].var_p, V_INT))) {
+    runtime->setFloat("setTtsPitch", v_getreal(params[0].var_p));
+    result = 1;
+  } else {
+    v_setstr(retval, ERR_PARAM);
+    result = 0;
+  }
+  return result;
+}
+
+int tts_speech_rate(int param_count, slib_par_t *params, var_t *retval) {
+  int result;
+  if (param_count == 1 && (v_is_type(params[0].var_p, V_NUM) ||
+                           v_is_type(params[0].var_p, V_INT))) {
+    runtime->setFloat("setTtsRate", v_getreal(params[0].var_p));
+    result = 1;
+  } else {
+    v_setstr(retval, ERR_PARAM);
+    result = 0;
+  }
+  return result;
+}
+
+int tts_lang(int param_count, slib_par_t *params, var_t *retval) {
+  int result;
+  if (param_count == 1 && v_is_type(params[0].var_p, V_STR)) {
+    runtime->setString("setTtsLocale", v_getstr(params[0].var_p));
+    result = 1;
+  } else {
+    v_setstr(retval, ERR_PARAM);
+    result = 0;
+  }
+  return result;
+}
+
+int tts_off(int param_count, slib_par_t *params, var_t *retval) {
+  runtime->getBoolean("setTtsQuiet");
+  return 1;
+}
+
+struct LibProcs {
+  const char *name;
+  int (*command)(int, slib_par_t *, var_t *retval);
+} lib_procs[] = {
+  {"GPS_ON", gps_on},
+  {"GPS_OFF", gps_off},
+  {"SENSOR_ON", sensor_on},
+  {"SENSOR_OFF", sensor_off},
+  {"TTS_PITCH", tts_pitch},
+  {"TTS_RATE", tts_speech_rate},
+  {"TTS_LANG", tts_lang},
+  {"TTS_OFF", tts_off},
+  {"SPEAK", tts_speak}
+};
+
+const char *sblib_get_module_name() {
+  return "android";
+}
+
+int sblib_proc_count(void) {
+  return (sizeof(lib_procs) / sizeof(lib_procs[0]));
+}
+
+int sblib_proc_getname(int index, char *proc_name) {
+  int result;
+  if (index < sblib_proc_count()) {
+    strcpy(proc_name, lib_procs[index].name);
+    result = 1;
+  } else {
+    result = 0;
+  }
+  return result;
+}
+
+int sblib_proc_exec(int index, int param_count, slib_par_t *params, var_t *retval) {
+  int result;
+  if (index < sblib_proc_count()) {
+    result = lib_procs[index].command(param_count, params, retval);
+  } else {
+    result = 0;
+  }
+  return result;
+}
+
+const char *lib_funcs[] = {
+  "LOCATION",
+  "SENSOR"
+};
+
+int sblib_func_count(void) {
+  return (sizeof(lib_funcs) / sizeof(lib_funcs[0]));
+}
+
+int sblib_func_getname(int index, char *proc_name) {
+  int result;
+  if (index < sblib_func_count()) {
+    strcpy(proc_name, lib_funcs[index]);
+    result = 1;
+  } else {
+    result = 0;
+  }
+  return result;
+}
+
+int sblib_func_exec(int index, int param_count, slib_par_t *params, var_t *retval) {
+  int result;
+  switch (index) {
+  case 0:
+    runtime->setLocationData(retval);
+    result = 1;
+    break;
+  case 1:
+    runtime->setSensorData(retval);
+    result = 1;
+    break;
+  default:
+    result = 0;
+    break;
+  }
+  return result;
+}
+
+void sblib_close(void) {
+  runtime->getBoolean("closeLibHandlers");
+  runtime->disableSensor();
 }

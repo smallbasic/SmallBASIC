@@ -36,6 +36,7 @@ extern void sc_raise2(const char *fmt, int line, const char *buff); // sberr
 #define LEN_DEF_WRS    STRLEN(LCN_DEF_WRS)
 #define LEN_END_WRS    STRLEN(LCN_END_WRS)
 #define LEN_END_SELECT STRLEN(LCN_END_SELECT)
+#define LEN_END_TRY    STRLEN(LCN_END_TRY)
 #define LEN_PREDEF     STRLEN(LCN_PREDEF)
 #define LEN_QUIET      STRLEN(LCN_QUIET)
 #define LEN_GRMODE     STRLEN(LCN_GRMODE)
@@ -43,6 +44,7 @@ extern void sc_raise2(const char *fmt, int line, const char *buff); // sberr
 #define LEN_COMMAND    STRLEN(LCN_COMMAND)
 #define LEN_SHOWPAGE   STRLEN(LCN_SHOWPAGE)
 #define LEN_ANTIALIAS  STRLEN(LCN_ANTIALIAS)
+#define LEN_LDMODULES  STRLEN(LCN_LOAD_MODULES)
 
 #define SKIP_SPACES(p)                          \
   while (*p == ' ' || *p == '\t') {             \
@@ -405,7 +407,6 @@ bid_t comp_udp_id(const char *proc_name, int scan_tree) {
 bid_t comp_add_udp(const char *proc_name) {
   char *name = comp_bc_temp;
   bid_t idx = -1, i;
-
   comp_prepare_udp_name(name, proc_name);
 
   /*
@@ -1737,7 +1738,7 @@ void comp_cmd_option(char *src) {
     bc_add_code(&comp_prog, OPTION_MATCH);
     bc_add_addr(&comp_prog, 0);
   } else if (CHKOPT(LCN_PREDEF_WRS) || CHKOPT(LCN_IMPORT_WRS)) {
-    ;                           // ignore it
+    // ignored
   } else {
     sc_raise(MSG_OPTION_ERR, src);
   }
@@ -3959,6 +3960,9 @@ char *comp_preproc_options(char *p) {
         opt_command[OPT_CMD_SZ - 1] = '\0';
       }
       *pe = lc;
+    } else if (strncmp(LCN_LOAD_MODULES, p, LEN_LDMODULES) == 0 &&
+               opt_modlist[0] != '\0' && !opt_loadmod) {
+      sblmgr_init(1, opt_modlist);
     } else {
       sc_raise(MSG_OPT_PREDEF_ERR, p);
     }
@@ -4056,7 +4060,8 @@ char *comp_preproc_func_begin(char *p) {
  */
 void comp_preproc_func_end(char *p) {
   // avoid seeing "END SELECT" which doesn't end a SUB/FUNC
-  if (strncmp(p, LCN_END_SELECT, LEN_END_SELECT) != 0) {
+  if (strncmp(p, LCN_END_SELECT, LEN_END_SELECT) != 0 &&
+      strncmp(p, LCN_END_TRY, LEN_END_TRY) != 0) {
     char *dol = strrchr(comp_bc_proc, '/');
     if (dol) {
       *dol = '\0';
@@ -4177,6 +4182,7 @@ int comp_pass1(const char *section, const char *text) {
 
         strcpy(code_line, ps);
         comp_text_line(code_line, 1);
+
         if (comp_error) {
           break;
         }
@@ -4202,7 +4208,11 @@ int comp_pass1(const char *section, const char *text) {
         if (dot) {
           sc_raise(MSG_UNDEFINED_MAP, comp_udptable[i].name);
         } else {
-          sc_raise(MSG_UNDEFINED_UDP, comp_udptable[i].name);
+          if (comp_is_func(comp_udptable[i].name) != -1) {
+            sc_raise(MSG_FUNC_NOT_ASSIGNED, comp_udptable[i].name);
+          } else {
+            sc_raise(MSG_UNDEFINED_UDP, comp_udptable[i].name);
+          }
         }
         break;
       }

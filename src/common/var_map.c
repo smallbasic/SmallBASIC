@@ -29,33 +29,18 @@ typedef struct JsonTokens {
   int code_array;
 } JsonTokens;
 
-typedef struct cint_list {
-  int *data;
-  int length;
-  int size;
-  int grow_size;
-} cint_list;
-
-void cint_list_init(cint_list *cl, int size) {
-  cl->length = 0;
-  cl->size = size;
-  cl->grow_size = size;
-  cl->data = malloc(sizeof(int) * cl->grow_size);
-}
-
-void cint_list_append(cint_list *cl, int value) {
-  if (cl->size - cl->length == 0) {
-    cl->size += cl->grow_size;
-    cl->data = realloc(cl->data, sizeof(int) * cl->size);
-  }
-  cl->data[cl->length++] = value;
-}
-
-typedef struct canode_t {
+struct ArrayNode;
+typedef struct ArrayNode {
   var_t *v;
-  var_int_t col;
-  var_int_t row;
-} canode_t;
+  int col;
+  int row;
+  struct ArrayNode *next;
+} ArrayNode;
+
+typedef struct ArrayList {
+  ArrayNode *head;
+  ArrayNode *tail;
+} ArrayList;
 
 /**
  * Process the next token
@@ -455,69 +440,40 @@ void map_set_primative(var_p_t dest, const char *s, int len) {
 }
 
 /**
- * Handle the semi-colon row separator character
+ * Adds a node to the array list
  */
-int map_read_next_array_token(JsonTokens *json, int index, var_p_t dest,
-                              int count, int *new_elems, int *new_rows) {
-  int next;
-  jsmntok_t token = json->tokens[index];
-  var_t *elem = v_elem(dest, count);
-
-  if (token.type == JSMN_PRIMITIVE && json->tokens[0].type == JSMN_ARRAY) {
-    int len = token.end - token.start;
-    const char *str = json->js + token.start;
-    const char *delim = memchr(str, ';', len);
-    if (delim != NULL) {
-      map_set_primative(elem, str, delim - str);
-      while (delim != NULL) {
-        len -= (delim - str) + 1;
-        if (len > 0) {
-          // text exists beyond ';'
-          if (++count >= dest->v.a.size) {
-            int size = dest->v.a.size + ARRAY_GROW_SIZE;
-            v_resize_array(dest, size);
-          }
-          elem = v_elem(dest, count);
-          str = ++delim;
-          map_set_primative(elem, str, len);
-          delim = memchr(str, ';', len);
-          (*new_elems)++;
-        } else {
-          // no more text, just count the new row
-          delim = NULL;
-        }
-        (*new_rows)++;
-      }
-    } else {
-      map_set_primative(elem, json->js + token.start, token.end - token.start);
-    }
-    next = index + 1;
+var_t *map_array_list_add(ArrayList *list, int row, int col) {
+  if (list->head == NULL) {
+    list->head = malloc(sizeof(ArrayNode));
+    list->tail = list->head;
   } else {
-    next = map_read_next_token(elem, json, index);
+    list->tail->next = malloc(sizeof(ArrayNode));
+    list->tail = list->tail->next;
   }
-  return next;
+  list->tail->next = NULL;
+  list->tail->row = row;
+  list->tail->col = col;
+  list->tail->v = v_new();
+  return list->tail->v;
 }
 
 /**
- * change the grid dimensions when row separator found
+ * Builds the array from the ArrayNode list
  */
-void map_resize_array(var_p_t dest, int size, int rows, int cols, cint_list *offs) {
-  v_resize_array(dest, size);
+void map_build_array(var_p_t dest, ArrayNode *node_next, int rows, int cols) {
   if (rows > 1) {
-    int idx, row;
-    var_t *var = v_new();
-    v_tomatrix(var, rows, cols);
-    for (idx = 0, row = -1; idx < size; idx++) {
-      if (!offs->data[idx]) {
-        // start of next row
-        row++;
-      }
-      int pos = row * cols + offs->data[idx];
-      v_set(v_elem(var, pos), v_elem(dest, idx));
-    }
-    v_set(dest, var);
-    v_free(var);
-    v_detach(var);
+    v_tomatrix(dest, rows, cols);
+  } else {
+    v_toarray1(dest, cols);
+  }
+  while (node_next) {
+    int pos = node_next->row * cols + node_next->col;
+    v_set(v_elem(dest, pos), node_next->v);
+    v_free(node_next->v);
+    v_detach(node_next->v);
+    ArrayNode *next = node_next->next;
+    free(node_next);
+    node_next = next;
   }
 }
 
@@ -525,45 +481,61 @@ void map_resize_array(var_p_t dest, int size, int rows, int cols, cint_list *off
  * Creates an array variable
  */
 int map_create_array(var_p_t dest, JsonTokens *json, int end_position, int index) {
-  int count = 0;
   int i = index;
-  int cols = 1;
-  int rows = 1;
+  int rows = 0;
+  int cols = 0;
   int curcol = 0;
-  cint_list offs;
+  ArrayList list;
 
-  cint_list_init(&offs, ARRAY_GROW_SIZE);
-  v_toarray1(dest, ARRAY_GROW_SIZE);
+  list.head = NULL;
+  list.tail = NULL;
+
   while (i < json->num_tokens) {
-    int new_elems = 0;
-    int new_rows = 0;
     jsmntok_t token = json->tokens[i];
     if (token.start > end_position) {
       break;
     }
-    if (count >= dest->v.a.size) {
-      int size = dest->v.a.size + ARRAY_GROW_SIZE;
-      v_resize_array(dest, size);
-    }
-    cint_list_append(&offs, curcol);
-    i = map_read_next_array_token(json, i, dest, count, &new_elems, &new_rows);
-    if (new_rows) {
-      int j;
-      for (j = 0; j < new_elems; j++) {
-        cint_list_append(&offs, 0);
-        count++;
+    var_t *elem = map_array_list_add(&list, rows, curcol++);
+    if (token.type == JSMN_PRIMITIVE && json->tokens[0].type == JSMN_ARRAY) {
+      int len = token.end - token.start;
+      const char *str = json->js + token.start;
+      const char *delim = memchr(str, ';', len);
+      if (delim != NULL) {
+        if ((delim - str) > 0) {
+          map_set_primative(elem, str, delim - str);
+          if (curcol > cols) {
+            cols = curcol;
+          }
+        }
+        while (delim != NULL) {
+          rows++;
+          curcol = 0;
+          len -= (delim - str) + 1;
+          if (len > 0) {
+            // text exists beyond ';'
+            str = ++delim;
+            if (*str != ';') {
+              elem = map_array_list_add(&list, rows, curcol++);
+              map_set_primative(elem, str, len);
+            }
+            delim = memchr(str, ';', len);
+          } else {
+            // no more text, just count the new row
+            delim = NULL;
+          }
+        }
+      } else {
+        map_set_primative(elem, json->js + token.start, token.end - token.start);
       }
-      rows += new_rows;
-      // when no added cells, make curcol reset to zero
-      curcol = !new_elems ? -1 : 0;
+      i++;
+    } else {
+      i = map_read_next_token(elem, json, i);
     }
-    if (++curcol > cols) {
+    if (curcol > cols) {
       cols = curcol;
     }
-    count++;
   }
-  map_resize_array(dest, count, rows, cols, &offs);
-  free(offs.data);
+  map_build_array(dest, list.head, rows+1, cols);
   return i;
 }
 
@@ -618,6 +590,33 @@ int map_read_next_token(var_p_t dest, JsonTokens *json, int index) {
   return next;
 }
 
+void map_parse_str(const char *js, size_t len, var_p_t dest) {
+  int num_tokens = TOKEN_GROW_SIZE;
+  jsmntok_t *tokens = malloc(sizeof(jsmntok_t) * num_tokens);
+  int result;
+  jsmn_parser parser;
+
+  jsmn_init(&parser);
+  for (result = jsmn_parse(&parser, js, len, tokens, num_tokens);
+       result == JSMN_ERROR_NOMEM;
+       result = jsmn_parse(&parser, js, len, tokens, num_tokens)) {
+    num_tokens += TOKEN_GROW_SIZE;
+    tokens = realloc(tokens, sizeof(jsmntok_t) * num_tokens);
+  }
+  if (result < 0) {
+    err_array();
+  } else if (result > 0) {
+    v_init(dest);
+
+    JsonTokens json;
+    json.tokens = tokens;
+    json.js = js;
+    json.num_tokens = parser.toknext;
+    map_read_next_token(dest, &json, 0);
+  }
+  free(tokens);
+}
+
 /**
  * Initialise a map from a string
  */
@@ -629,32 +628,7 @@ void map_from_str(var_p_t dest) {
     if (arg.type != V_STR) {
       v_set(dest, &arg);
     } else {
-      int num_tokens = TOKEN_GROW_SIZE;
-      jsmntok_t *tokens = malloc(sizeof(jsmntok_t) * num_tokens);
-      const char *js = arg.v.p.ptr;
-      size_t len = arg.v.p.length;
-      int result;
-      jsmn_parser parser;
-
-      jsmn_init(&parser);
-      for (result = jsmn_parse(&parser, js, len, tokens, num_tokens);
-           result == JSMN_ERROR_NOMEM;
-           result = jsmn_parse(&parser, js, len, tokens, num_tokens)) {
-        num_tokens += TOKEN_GROW_SIZE;
-        tokens = realloc(tokens, sizeof(jsmntok_t) * num_tokens);
-      }
-      if (result < 0) {
-        err_array();
-      } else if (result > 0) {
-        v_init(dest);
-
-        JsonTokens json;
-        json.tokens = tokens;
-        json.js = js;
-        json.num_tokens = parser.toknext;
-        map_read_next_token(dest, &json, 0);
-      }
-      free(tokens);
+      map_parse_str(arg.v.p.ptr, arg.v.p.length, dest);
     }
   }
   v_free(&arg);
@@ -663,15 +637,14 @@ void map_from_str(var_p_t dest) {
 // array <- CODEARRAY(x1,y1...[;x2,y2...])
 // dynamic arrays created with the [] operators
 void map_from_codearray(var_p_t dest) {
-  int count = 0;
-  int cols = 0;
   int rows = 0;
+  int cols = 0;
   int curcol = 0;
   int ready = 0;
-  cint_list offs;
+  ArrayList list;
 
-  cint_list_init(&offs, ARRAY_GROW_SIZE);
-  v_toarray1(dest, ARRAY_GROW_SIZE);
+  list.head = NULL;
+  list.tail = NULL;
 
   do {
     switch (code_peek()) {
@@ -681,29 +654,19 @@ void map_from_codearray(var_p_t dest) {
         // next row
         rows++;
         curcol = 0;
-      } else {
+      } else if (++curcol > cols) {
         // next col
-        if (++curcol > cols) {
-          cols = curcol;
-        }
+        cols = curcol;
       }
       code_skipnext();
       break;
     case kwTYPE_LEVEL_END:
-      // end of parameters
       ready = 1;
       break;
     default:
-      if (count >= dest->v.a.size) {
-        int size = dest->v.a.size + ARRAY_GROW_SIZE;
-        v_resize_array(dest, size);
-      }
-      cint_list_append(&offs, curcol);
-      eval(v_elem(dest, count++));
+      eval(map_array_list_add(&list, rows, curcol));
     }
   } while (!ready && !prog_error);
 
-  map_resize_array(dest, count, rows + 1, cols + 1, &offs);
-  free(offs.data);
+  map_build_array(dest, list.head, rows+1, cols+1);
 }
-

@@ -32,3 +32,31 @@ if (p <> translate(z, ";", ",")) then
   print z
   throw "p <> z"
 endif
+
+did_fail = false
+try
+  x=""
+  z=""
+  join x,",", z
+catch
+  did_fail = true
+end try
+if !did_fail then
+  throw "Join error"
+endif
+
+a1=[,1,2,3,4,5,,7,8,]
+a2=["",1,2,3,4,5,"",7,8,""]
+if (a1 != a2 or 9 != ubound(a1)) then
+  ? a1
+  ? a2
+  throw "Empty entries not included in array"
+endif
+
+s=",1,2,3,4,5,,7,8,"
+split s,",",a
+if (9 != ubound(a)) then
+  ? a
+  throw "Final empty entry was ignored"
+endif
+
