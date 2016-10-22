@@ -211,7 +211,8 @@ void printKeywords() {
 
 void setupAppPath(const char *path) {
   g_appPath[0] = '\0';
-  if (path[0] == '/' || (path[1] == ':' && path[2] == '\\')) {
+  if (path[0] == '/' ||
+      (path[1] == ':' && ((path[2] == '\\') || path[2] == '/'))) {
     // full path or C:/
     strcpy(g_appPath, path);
   } else {

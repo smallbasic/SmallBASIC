@@ -1,7 +1,17 @@
 smallbasic (0.12.8) unstable; urgency=low
-  * Various - see web site
+  * Added sound. Play .WAV files using PLAY("file://" + path)
+  * Fixed web server file handling in windows version
+  * Fixed regression with array parsing
+  * Updated error message when calling built-in FUNC without assigning the result
+  * Fixed TAB to use character positions not pixels
+  * Fixed issue with nested try/catch
+  * Fixed NOSOUND
+  * Fixed error handling for invalid JOIN input
+  * Fixed SPLIT to include final empty position
+  * Fixed Clear keyboard buffer before pause.
+  * Fixed cursor display with INPUT command
 
- -- Chris Warren-Smith <cwarrensmith@gmail.com>  Sun, 18 Sept 2016 09:45:25 +1000
+ -- Chris Warren-Smith <cwarrensmith@gmail.com>  Sat, 22 Oct 2016 09:45:25 +1000
 
 smallbasic (0.12.7) unstable; urgency=low
   * Various - see web site
