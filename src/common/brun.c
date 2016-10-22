@@ -1686,7 +1686,7 @@ void sbasic_set_bas_dir(const char *bas_file) {
   int path_len = strrchr(bas_file, OS_DIRSEP) - bas_file;
   char cwd[OS_PATHNAME_SIZE + 1];
 
-  cwd[0] = '\0';;
+  cwd[0] = '\0';
   gsb_bas_dir[0] = '\0';
   getcwd(cwd, sizeof(cwd) - 1);
   char *ch;
@@ -1695,7 +1695,8 @@ void sbasic_set_bas_dir(const char *bas_file) {
       *ch = '/';
     }
   }
-  if (bas_file[0] == OS_DIRSEP) {
+  if (bas_file[0] == '/' ||
+      (bas_file[1] == ':' && ((bas_file[2] == '\\') || bas_file[2] == '/'))) {
     // full path
     strncat(gsb_bas_dir, bas_file, path_len + 1);
   } else if (path_len > 0) {
