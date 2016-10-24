@@ -887,18 +887,20 @@ void osd_audio(const char *path) {
 
   SDL_AudioSpec *obtainedSpec = SDL_LoadWAV(path, &desiredSpec, &buffer, &length);
   if (obtainedSpec != NULL) {
-    if (obtainedSpec->freq == FREQUENCY &&
-        obtainedSpec->channels == 1 &&
-        obtainedSpec->format == AUDIO_S16SYS) {
+    if (obtainedSpec->freq != FREQUENCY) {
+      err_throw("Failed to open wav file: invalid frequency %d", obtainedSpec->freq);
+    } else if (obtainedSpec->channels != 1) {
+      err_throw("Failed to open wav file: invalid channels %d", obtainedSpec->channels);
+    } else if (obtainedSpec->format != AUDIO_S16SYS) {
+      err_throw("Failed to open wav file: invalid format %d", obtainedSpec->format);
+    } else {
       SDL_LockAudio();
       g_sounds.push(new SoundObject(buffer, length));
       SDL_UnlockAudio();
       SDL_PauseAudio(0);
-    } else {
-      log_printf("Failed to open wav file: invalid format");
     }
   } else {
-    log_printf("Failed to open wav file: %s", SDL_GetError());
+    err_throw("Failed to open wav file: %s", SDL_GetError());
   }
 }
 
