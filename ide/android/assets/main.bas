@@ -4,8 +4,9 @@ const boldOff = chr(27) + "[21m"
 const char_h = txth("Q")
 const lineSpacing = 2 + char_h
 const onlineUrl = "http://smallbasic.sourceforge.net/?q=export/code/1243"
-const idxEdit = 5
-const idxFiles = 6
+const idxEdit = 6
+const idxFiles = 7
+const saveasId = "__bn_saveas__"
 const renameId = "__bn_rename__"
 const deleteId = "__bn_delete__"
 const newId = "__bn_new__"
@@ -242,6 +243,7 @@ sub manageFiles()
     f.inputs << mk_menu(renameId,"Rename", menu_gap)
     f.inputs << mk_menu(newId, "New", menu_gap)
     f.inputs << mk_menu(deleteId, "Delete", menu_gap)
+    f.inputs << mk_menu(saveasId, "Save-As", menu_gap)
     bn_edit.x = 0
     bn_edit.y = char_h + 4
     bn_edit.width = xmax
@@ -300,9 +302,14 @@ sub manageFiles()
     f.value = ""
   end
 
+  sub duplicateError()
+    wnd.alert("File " + newFile + " already exists", "Duplicate File")
+  end
+
   sub renameFile()
     ' retrieve the edit value
     f.refresh(true)
+    local tmpArray
     local newFile = f.inputs(idxEdit).value
     local selectedIndex = f.inputs(idxFiles).selectedIndex
     if (lower(right(newFile, 4)) != ".bas") then
@@ -310,19 +317,27 @@ sub manageFiles()
     endIf
 
     if (exist(selectedFile) and selectedFile != newFile) then
-      try
-        rename selectedFile, newFile
+      if (exist(newFile)) then
+        duplicateError()
+      else
+        try
+          if sv_as then
+            tload selectedFile, tmpArray
+            tsave newFile, tmpArray
+          else
+            rename selectedFile, newFile
+          endif
+        catch
+          wnd.alert("Error renaming file: " + e)
+        end try
         reloadList(selectedIndex)
-      catch
-        wnd.alert("Error renaming file: " + e)
-      end try
+      endif
     endif
     f.value = selectedFile
   end
 
   sub viewFile()
     local frm, button
-
     if (!exist(selectedFile)) then
       wnd.alert("Select a file and try again")
     else
@@ -352,7 +367,7 @@ sub manageFiles()
     endIf
     try
       if (exist(newFile)) then
-        wnd.alert("File " + newFile + " already exists", "Duplicate File")
+        duplicateError()
       else
         dim text
         text << "REM SmallBASIC"
@@ -385,6 +400,10 @@ sub manageFiles()
     f.doEvents()
     select case f.value
     case renameId
+      sv_as = false
+      renameFile()
+    case saveasId
+      sv_as = true
       renameFile()
     case deleteId
       deleteFile()

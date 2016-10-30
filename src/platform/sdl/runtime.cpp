@@ -694,6 +694,7 @@ void Runtime::optionsBox(StringList *items) {
   }
 
   _output->redraw();
+  showCursor(kArrow);
   while (selectedIndex == -1 && !isClosing()) {
     MAEvent ev = processEvents(true);
     if (ev.type == EVENT_TYPE_KEY_PRESSED) {
@@ -708,9 +709,11 @@ void Runtime::optionsBox(StringList *items) {
         _output->handleMenu(false);
       }
     }
-    if (ev.type == EVENT_TYPE_POINTER_RELEASED &&
-        ++releaseCount == 2) {
-      break;
+    if (ev.type == EVENT_TYPE_POINTER_RELEASED) {
+      showCursor(kArrow);
+      if (++releaseCount == 2) {
+        break;
+      }
     }
   }
 

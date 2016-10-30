@@ -1,3 +1,7 @@
+2016-10-30 (0.12.9)
+	Fixed cursor when displaying the popup while editing
+	Added "Save-As" option to the file menu (thanks Josip)
+
 2016-10-24 (0.12.9)
 	SDL throw error when invalid .WAV passes to PLAY
 
