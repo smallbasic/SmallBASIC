@@ -14,8 +14,6 @@
 #include "common/sberr.h"
 #include "common/var_map.h"
 
-#include <malloc.h>
-
 #define INT_STR_LEN 64
 #define VAR_POOL_SIZE 2048
 

@@ -168,7 +168,11 @@ MHD_Response *get_response(struct MHD_Connection *connection, const char *path) 
   MHD_Response *response = NULL;
   struct stat stbuf;
   if (path[0] == '\0') {
-    response = serve_file("index.html");
+    if (stat("index.bas", &stbuf) != -1 && S_ISREG(stbuf.st_mode)) {
+      response = execute(connection, "index.bas");
+    } else {
+      response = serve_file("index.html");
+    }
   } else if (strcmp(path, "favicon.ico") == 0) {
     response = serve_file(path);
   } else if (strstr(path, "..") == NULL) {
