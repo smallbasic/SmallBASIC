@@ -309,7 +309,6 @@ sub manageFiles()
   sub renameFile()
     ' retrieve the edit value
     f.refresh(true)
-    local tmpArray
     local newFile = f.inputs(idxEdit).value
     local selectedIndex = f.inputs(idxFiles).selectedIndex
     if (lower(right(newFile, 4)) != ".bas") then
@@ -322,8 +321,7 @@ sub manageFiles()
       else
         try
           if sv_as then
-            tload selectedFile, tmpArray
-            tsave newFile, tmpArray
+            copy selectedFile, newFile
           else
             rename selectedFile, newFile
           endif

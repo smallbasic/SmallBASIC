@@ -1,4 +1,7 @@
 2016-10-30 (0.12.9)
+	Removed debugging output from RUN (windows build)
+
+2016-10-30 (0.12.9)
 	Fixed cursor when displaying the popup while editing
 	Added "Save-As" option to the file menu (thanks Josip)
 

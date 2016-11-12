@@ -51,7 +51,6 @@ char *shell(const char *cmd) {
   sa.nLength = sizeof(sa);
   sa.bInheritHandle = TRUE;
 
-  log_printf("shell: %s\n", cmd);
   if (!CreatePipe(&h_inppip, &h_outpip, &sa, BUFSIZE)) {
     log_printf("CreatePipe failed");
     return NULL;
@@ -92,7 +91,6 @@ char *shell(const char *cmd) {
       strcat(result, cv_buf);
     }
     CloseHandle(pi.hProcess);
-    log_printf("shell completed %d bytes\n", strlen(result));
   }
   else {
     log_printf("Failed to launch %s\n", cmd);
