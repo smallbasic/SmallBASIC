@@ -147,6 +147,7 @@ dword serial_length(dev_file_t *f) {
 
 int serial_open(dev_file_t *f) {
   err_unsup();
+  return 0;
 }
 
 int serial_close(dev_file_t *f) {

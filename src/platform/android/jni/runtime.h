@@ -63,6 +63,7 @@ struct Runtime : public System {
   void showCursor(CursorType cursorType) {}
   void showKeypad(bool show);
   void onResize(int w, int h);
+  void onUnicodeChar(int ch);
   void loadConfig();
   void loadEnvConfig(Properties &profile, const char *key);
   void saveConfig();

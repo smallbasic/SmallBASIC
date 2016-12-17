@@ -57,6 +57,7 @@ import android.util.DisplayMetrics;
 import android.util.Log;
 import android.util.TypedValue;
 import android.view.InputDevice;
+import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -91,6 +92,7 @@ public class MainActivity extends NativeActivity {
   }
 
   public static native void onResize(int width, int height);
+  public static native void onUnicodeChar(int ch);
   public static native boolean optionSelected(int index);
   public static native void runFile(String fileName);
 
@@ -300,6 +302,15 @@ public class MainActivity extends NativeActivity {
     Rect rect = new Rect();
     findViewById(android.R.id.content).getWindowVisibleDisplayFrame(rect);
     onResize(rect.width(), rect.height());
+  }
+
+  @Override
+  public boolean onKeyMultiple(int keyCode, int repeatCount, KeyEvent event) {
+    char ch = event.getCharacters().charAt(0);
+    if (repeatCount == 0 && ch > 126 && ch < 256) {
+      onUnicodeChar(ch);
+    }
+    return super.onKeyMultiple(keyCode, repeatCount, event);
   }
 
   @Override

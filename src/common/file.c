@@ -730,7 +730,8 @@ int dev_filemtime(const char *file, char **buffer) {
     // 2016-02-20 05:23 PM
     size = 20;
     *buffer = malloc(size);
-    size = strftime(*buffer, size, "%Y-%m-%d %I:%M %p", localtime(&st.st_mtime));
+    const time_t t = st.st_mtime;
+    size = strftime(*buffer, size, "%Y-%m-%d %I:%M %p", localtime(&t));
   } else {
     *buffer = malloc(1);
     *buffer[0] = '\0';

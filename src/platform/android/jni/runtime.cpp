@@ -150,6 +150,13 @@ extern "C" JNIEXPORT void JNICALL Java_net_sourceforge_smallbasic_MainActivity_o
   }
 }
 
+extern "C" JNIEXPORT void JNICALL Java_net_sourceforge_smallbasic_MainActivity_onUnicodeChar
+  (JNIEnv *env, jclass jclazz, jint ch) {
+  if (runtime != NULL && !runtime->isClosing() && runtime->isActive() && os_graphics) {
+    runtime->onUnicodeChar(ch);
+  }
+}
+
 void onContentRectChanged(ANativeActivity *activity, const ARect *rect) {
   logEntered();
   runtime->onResize(rect->right, rect->bottom);
@@ -613,7 +620,10 @@ void Runtime::handleKeyEvent(MAEvent &event) {
     event.key = SB_KEY_ENTER;
     break;
   default:
-    event.key = getUnicodeChar(event.nativeKey, event.key);
+    if (event.nativeKey < 127 && event.nativeKey != event.key) {
+      // avoid translating keys send from onUnicodeChar
+      event.key = getUnicodeChar(event.nativeKey, event.key);
+    }
     break;
   }
   trace("native:%d sb:%d", event.nativeKey, event.key);
@@ -782,6 +792,17 @@ void Runtime::onResize(int width, int height) {
       ALooper_release(_app->looper);
     }
   }
+}
+
+void Runtime::onUnicodeChar(int ch) {
+  MAEvent *maEvent = new MAEvent();
+  maEvent->type = EVENT_TYPE_KEY_PRESSED;
+  maEvent->nativeKey = ch;
+  maEvent->key = ch;
+  ALooper_acquire(_app->looper);
+  pushEvent(maEvent);
+  ALooper_wake(_app->looper);
+  ALooper_release(_app->looper);
 }
 
 char *Runtime::getClipboardText() {

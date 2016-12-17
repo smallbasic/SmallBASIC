@@ -25,10 +25,6 @@ static int inetlib_init = 0;
 #include <signal.h>
 #endif
 
-#if !defined(socklen_t)
-#define socklen_t unsigned
-#endif
-
 // the length of time (usec) to block waiting for an event
 #define BLOCK_INTERVAL 250000
 
