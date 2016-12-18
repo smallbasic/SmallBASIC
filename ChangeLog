@@ -1,5 +1,6 @@
 2016-12-18 (0.12.9)
 	ANDROID Allow input of special characters
+	SDL Allow input of special characters
 	Fix compile warnings from clang
 
 2016-10-30 (0.12.9)

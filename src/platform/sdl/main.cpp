@@ -9,6 +9,7 @@
 #include "config.h"
 #include <SDL.h>
 #include <getopt.h>
+#include <locale.h>
 
 #include "ui/utils.h"
 #include "ui/strlib.h"
@@ -256,6 +257,7 @@ void showHelp() {
 int main(int argc, char* argv[]) {
   logEntered();
 
+  setlocale(LC_ALL, "");
   setupAppPath(argv[0]);
   opt_command[0] = '\0';
   opt_verbose = false;

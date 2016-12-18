@@ -25,6 +25,7 @@
 #include <SDL_clipboard.h>
 #include <SDL_audio.h>
 #include <math.h>
+#include <wchar.h>
 
 #define WAIT_INTERVAL 5
 #define COND_WAIT_TIME 250
@@ -444,12 +445,23 @@ void Runtime::pollEvents(bool blocking) {
         mod = SDL_GetModState();
         if (!mod || (mod & (KMOD_SHIFT|KMOD_CAPS))) {
           // ALT + CTRL keys handled in SDL_KEYDOWN
-          for (int i = 0; ev.text.text[i] != 0; i++) {
+          if (ev.text.text[0] < 0) {
+            wchar_t keycode;
+            mbstowcs(&keycode, ev.text.text, 1);
+
             MAEvent *keyEvent = new MAEvent();
             keyEvent->type = EVENT_TYPE_KEY_PRESSED;
-            keyEvent->key = ev.text.text[i];
+            keyEvent->key = (int)keycode;
             keyEvent->nativeKey = 0;
             pushEvent(keyEvent);
+          } else {
+            for (int i = 0; ev.text.text[i] != 0; i++) {
+              MAEvent *keyEvent = new MAEvent();
+              keyEvent->type = EVENT_TYPE_KEY_PRESSED;
+              keyEvent->key = ev.text.text[i];
+              keyEvent->nativeKey = 0;
+              pushEvent(keyEvent);
+            }
           }
         }
         break;
