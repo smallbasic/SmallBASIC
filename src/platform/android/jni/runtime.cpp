@@ -32,8 +32,10 @@
 #define SERVER_TOKEN_KEY "serverToken"
 #define MUTE_AUDIO_KEY "muteAudio"
 #define OPT_IDE_KEY "optIde"
+#define GBOARD_KEY_QUESTION 274
 
 Runtime *runtime;
+MAPoint2d ptDown;
 
 MAEvent *getMotionEvent(int type, AInputEvent *event) {
   MAEvent *result = new MAEvent();
@@ -52,12 +54,18 @@ int32_t handleInput(android_app *app, AInputEvent *event) {
       switch (AKeyEvent_getAction(event) & AMOTION_EVENT_ACTION_MASK) {
       case AMOTION_EVENT_ACTION_DOWN:
         maEvent = getMotionEvent(EVENT_TYPE_POINTER_PRESSED, event);
+        ptDown = maEvent->point;
         break;
       case AMOTION_EVENT_ACTION_MOVE:
         maEvent = getMotionEvent(EVENT_TYPE_POINTER_DRAGGED, event);
         break;
       case AMOTION_EVENT_ACTION_UP:
         maEvent = getMotionEvent(EVENT_TYPE_POINTER_RELEASED, event);
+        if (runtime->isMenu(&ptDown, &maEvent->point)) {
+          maEvent->type = EVENT_TYPE_KEY_PRESSED;
+          maEvent->nativeKey = AKEYCODE_MENU;
+          maEvent->key = 0;
+        }
         break;
       }
       break;
@@ -619,6 +627,9 @@ void Runtime::handleKeyEvent(MAEvent &event) {
   case AKEYCODE_ENTER:
     event.key = SB_KEY_ENTER;
     break;
+  case GBOARD_KEY_QUESTION:
+    event.key = '?';
+    break;
   default:
     if (event.nativeKey < 127 && event.nativeKey != event.key) {
       // avoid translating keys send from onUnicodeChar
@@ -814,6 +825,14 @@ char *Runtime::getClipboardText() {
     result = NULL;
   }
   return result;
+}
+
+bool Runtime::isMenu(MAPoint2d *down, MAPoint2d *up) const {
+  int step = _output->getCharHeight();
+  int start = _graphics->getHeight() - step;
+  int end = start - step;
+  int border = end - (step * 4);
+  return (down->y > start && up->y < end && up->y > border);
 }
 
 //

@@ -578,7 +578,9 @@ MAEvent Runtime::processEvents(int waitFlag) {
   case 1:
     // wait for an event
     _output->flush(true);
-    pollEvents(true);
+    if (!hasEvent()) {
+      pollEvents(true);
+    }
     break;
   case 2:
     _output->flush(false);
