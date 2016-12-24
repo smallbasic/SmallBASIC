@@ -295,6 +295,25 @@ void Screen::layoutInputs(int newWidth, int newHeight) {
   }
 }
 
+// whether the point overlaps the label text
+bool Screen::overLabel(int px, int py) {
+  bool result;
+  if (_label.length()) {
+    MAExtent screenSize = maGetScrSize();
+    int screenW = EXTENT_X(screenSize);
+    int screenH = EXTENT_Y(screenSize);
+    int w = _charWidth * (_label.length() + 2);
+    int h = _charHeight + 2;
+    int top = screenH - h;
+    int left = (screenW - w) / 2;
+    trace("%d %d %d %d %d %d", px, py, left, top, w, h);
+    result = (!OUTSIDE_RECT(px, py, left, top, w, h));
+  } else {
+    result = false;
+  }
+  return result;
+}
+
 // whether the given point overlaps with the screen rectangle
 bool Screen::overlaps(int px, int py) {
   return (!OUTSIDE_RECT(px, py, _x, _y, _width, _height));

@@ -1,5 +1,5 @@
 2016-12-23 (0.12.9)
-	ANDROID: swipe from bottom to show menu
+	ANDROID: swipe left or touch the status window to show menu
 	ANDROID: fix '?' key input using gboard
 
 2016-12-18 (0.12.9)

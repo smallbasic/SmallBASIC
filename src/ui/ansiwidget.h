@@ -65,6 +65,7 @@ struct AnsiWidget {
   void handleMenu(bool up);
   void insetMenuScreen(int x, int y, int w, int h);
   void insetTextScreen(int x, int y, int w, int h);
+  bool isMenu(MAPoint2d *pt) const;
   bool pointerTouchEvent(MAEvent &event);
   bool pointerMoveEvent(MAEvent &event);
   void pointerReleaseEvent(MAEvent &event);

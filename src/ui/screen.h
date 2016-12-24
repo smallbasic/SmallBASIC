@@ -59,6 +59,7 @@ struct Screen : public Shape {
   FormInput *getNextField(FormInput *field);
   void getScroll(int &x, int &y) { x = _scrollX; y = _scrollY; }
   void layoutInputs(int newWidth, int newHeight);
+  bool overLabel(int px, int py);
   bool overlaps(int px, int py);
   void remove(Shape *button);
   void removeImage(unsigned imageId);

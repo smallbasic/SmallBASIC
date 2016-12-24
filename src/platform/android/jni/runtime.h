@@ -71,7 +71,6 @@ struct Runtime : public System {
   void setClipboardText(const char *s) { setString("setClipboardText", s); }
   char *getClipboardText();
   void setFocus(bool focus) { _hasFocus = focus; }
-  bool isMenu(MAPoint2d *down, MAPoint2d *up) const;
 
 private:
   bool _keypadActive;

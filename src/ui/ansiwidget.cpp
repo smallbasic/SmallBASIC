@@ -389,6 +389,20 @@ void AnsiWidget::insetTextScreen(int x, int y, int w, int h) {
   flush(true);
 }
 
+bool AnsiWidget::isMenu(MAPoint2d *pt) const {
+  bool result;
+  if (_activeButton != NULL) {
+    result = false;
+  } else if (_back->overLabel(pt->x, pt->y)) {
+    result = true;
+  } else {
+    result = (abs(_yTouch - pt->y) < _back->_charHeight
+              && (_xTouch - pt->x) > _back->_charWidth * 8
+              && maGetMilliSecondCount() - _touchTime < 500);
+  }
+  return result;
+}
+
 // handler for pointer touch events
 bool AnsiWidget::pointerTouchEvent(MAEvent &event) {
   bool result = false;
