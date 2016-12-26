@@ -62,6 +62,7 @@ struct Runtime : public System {
   void setWindowTitle(const char *title) {}
   void showCursor(CursorType cursorType) {}
   void showKeypad(bool show);
+  void onMenu();
   void onResize(int w, int h);
   void onUnicodeChar(int ch);
   void loadConfig();

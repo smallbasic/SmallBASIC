@@ -389,20 +389,6 @@ void AnsiWidget::insetTextScreen(int x, int y, int w, int h) {
   flush(true);
 }
 
-bool AnsiWidget::isMenu(MAPoint2d *pt) const {
-  bool result;
-  if (_activeButton != NULL) {
-    result = false;
-  } else if (_back->overLabel(pt->x, pt->y)) {
-    result = true;
-  } else {
-    result = (abs(_yTouch - pt->y) < _back->_charHeight
-              && (_xTouch - pt->x) > _back->_charWidth * 8
-              && maGetMilliSecondCount() - _touchTime < 500);
-  }
-  return result;
-}
-
 // handler for pointer touch events
 bool AnsiWidget::pointerTouchEvent(MAEvent &event) {
   bool result = false;
@@ -421,7 +407,8 @@ bool AnsiWidget::pointerTouchEvent(MAEvent &event) {
     }
   }
   // paint the pressed button
-  if (_activeButton != NULL) {
+  if (_activeButton != NULL
+      && !_back->overLabel(event.point.x, event.point.y)) {
     _activeButton->clicked(event.point.x, event.point.y, true);
     drawActiveButton();
   }
@@ -706,5 +693,18 @@ int AnsiWidget::selectScreen(int screenId) {
   _front = _back;
   _front->_dirty = true;
   flush(true);
+  return result;
+}
+
+bool AnsiWidget::showMenu() const {
+  bool result;
+  if (_activeButton != NULL) {
+    result = false;
+  } else if (abs(_xTouch - _xMove) < _back->_charWidth &&
+             abs(_yTouch - _yMove) < _back->_charHeight) {
+    result = true;
+  } else {
+    result = false;
+  }
   return result;
 }

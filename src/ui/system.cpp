@@ -399,8 +399,6 @@ void System::handleMenu(MAEvent &event) {
 }
 
 void System::handleEvent(MAEvent &event) {
-  bool hasHover;
-
   switch (event.type) {
   case EVENT_TYPE_OPTIONS_BOX_BUTTON_CLICKED:
     if (_systemMenu != NULL) {
@@ -418,18 +416,25 @@ void System::handleEvent(MAEvent &event) {
   case EVENT_TYPE_POINTER_PRESSED:
     _touchX = _touchCurX = event.point.x;
     _touchY = _touchCurY = event.point.y;
-    dev_pushkey(SB_KEY_MK_PUSH);
-    _buttonPressed = _output->pointerTouchEvent(event);
-    showCursor(get_focus_edit() != NULL ? kIBeam : kHand);
+    if (_output->overLabel(_touchX, _touchY)) {
+      showMenu();
+    } else {
+      dev_pushkey(SB_KEY_MK_PUSH);
+      _buttonPressed = _output->pointerTouchEvent(event);
+      showCursor(get_focus_edit() != NULL ? kIBeam : kHand);
+    }
     break;
   case EVENT_TYPE_POINTER_DRAGGED:
     _touchCurX = event.point.x;
     _touchCurY = event.point.y;
-    hasHover = _output->hasHover();
     _output->pointerMoveEvent(event);
-    if (hasHover != _output->hasHover()) {
-      showCursor(hasHover ? kArrow : kHand);
+    if (_output->hasHover() || _output->overLabel(_touchCurX, _touchCurY)) {
+      showCursor(kHand);
     } else if (_output->hasMenu()) {
+      showCursor(kArrow);
+    } else if (get_focus_edit()) {
+      showCursor(kIBeam);
+    } else {
       showCursor(kArrow);
     }
     break;
