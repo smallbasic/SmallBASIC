@@ -94,8 +94,8 @@ MAEvent *getMotionEvent(int type, SDL_Event *event) {
 
 Runtime::Runtime(SDL_Window *window) :
   System(),
-  _menuX(2),
-  _menuY(2),
+  _menuX(0),
+  _menuY(0),
   _graphics(NULL),
   _eventQueue(NULL),
   _window(window),
@@ -659,13 +659,6 @@ void Runtime::onResize(int width, int height) {
 }
 
 void Runtime::optionsBox(StringList *items) {
-  if (!_menuX) {
-    _menuX = 2;
-  }
-  if (!_menuY) {
-    _menuY = 2;
-  }
-
   int backScreenId = _output->getScreenId(true);
   int frontScreenId = _output->getScreenId(false);
   _output->selectBackScreen(MENU_SCREEN);
@@ -684,6 +677,14 @@ void Runtime::optionsBox(StringList *items) {
   int charHeight = _output->getCharHeight();
   int textHeight = charHeight + (charHeight / 3);
   int height = textHeight * items->size();
+
+  if (!_menuX) {
+    _menuX = _output->getWidth() - (width + charWidth * 2);
+  }
+  if (!_menuY) {
+    _menuY = _output->getHeight() - height;
+  }
+
   if (_menuX + width >= _output->getWidth()) {
     _menuX = _output->getWidth() - width;
   }
@@ -734,8 +735,8 @@ void Runtime::optionsBox(StringList *items) {
   _output->removeInputs();
   _output->selectBackScreen(backScreenId);
   _output->selectFrontScreen(frontScreenId);
-  _menuX = 2;
-  _menuY = 2;
+  _menuX = 0;
+  _menuY = 0;
   if (selectedIndex != -1) {
     if (_systemMenu == NULL && isRunning() &&
         !form_ui::optionSelected(selectedIndex)) {

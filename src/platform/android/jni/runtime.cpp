@@ -36,9 +36,6 @@
 #define GBOARD_KEY_QUESTION 274
 
 Runtime *runtime;
-pthread_cond_t touch_cond_down;
-pthread_cond_t touch_cond_up;
-pthread_mutex_t touch_mutex;
 
 MAEvent *getMotionEvent(int type, AInputEvent *event) {
   MAEvent *result = new MAEvent();
@@ -46,22 +43,6 @@ MAEvent *getMotionEvent(int type, AInputEvent *event) {
   result->point.x = AMotionEvent_getX(event, 0);
   result->point.y = AMotionEvent_getY(event, 0);
   return result;
-}
-
-void *longPressHandler(void *parm) {
-  struct timespec ts;
-  struct timeval  tp;
-  while (1) {
-    pthread_cond_wait(&touch_cond_down, &touch_mutex);
-    gettimeofday(&tp, NULL);
-    ts.tv_sec  = tp.tv_sec + 1;
-    ts.tv_nsec = tp.tv_usec * 1000;
-    int result = pthread_cond_timedwait(&touch_cond_up, &touch_mutex, &ts);
-    if (result == ETIMEDOUT) {
-      runtime->onMenu();
-    }
-  }
-  return NULL;
 }
 
 int32_t handleInput(android_app *app, AInputEvent *event) {
@@ -73,14 +54,12 @@ int32_t handleInput(android_app *app, AInputEvent *event) {
       switch (AKeyEvent_getAction(event) & AMOTION_EVENT_ACTION_MASK) {
       case AMOTION_EVENT_ACTION_DOWN:
         maEvent = getMotionEvent(EVENT_TYPE_POINTER_PRESSED, event);
-        pthread_cond_signal(&touch_cond_down);
         break;
       case AMOTION_EVENT_ACTION_MOVE:
         maEvent = getMotionEvent(EVENT_TYPE_POINTER_DRAGGED, event);
         break;
       case AMOTION_EVENT_ACTION_UP:
         maEvent = getMotionEvent(EVENT_TYPE_POINTER_RELEASED, event);
-        pthread_cond_signal(&touch_cond_up);
         break;
       }
       break;
@@ -202,11 +181,6 @@ Runtime::Runtime(android_app *app) :
   pthread_mutex_init(&_mutex, NULL);
   _looper = ALooper_forThread();
   _sensorManager = ASensorManager_getInstance();
-  pthread_t id;
-  pthread_cond_init(&touch_cond_down, NULL);
-  pthread_cond_init(&touch_cond_up, NULL);
-  pthread_mutex_init(&touch_mutex, NULL);
-  pthread_create(&id, NULL, longPressHandler, NULL);
 }
 
 Runtime::~Runtime() {
@@ -805,18 +779,6 @@ void Runtime::showKeypad(bool show) {
   env->CallVoidMethod(_app->activity->clazz, methodId, show);
   env->DeleteLocalRef(clazz);
   _app->activity->vm->DetachCurrentThread();
-}
-
-void Runtime::onMenu() {
-  ALooper_acquire(_app->looper);
-  if (_output->showMenu()) {
-    MAEvent *maEvent = new MAEvent();
-    maEvent->type = EVENT_TYPE_KEY_PRESSED;
-    maEvent->nativeKey = AKEYCODE_MENU;
-    runtime->pushEvent(maEvent);
-  }
-  ALooper_wake(_app->looper);
-  ALooper_release(_app->looper);
 }
 
 void Runtime::onResize(int width, int height) {

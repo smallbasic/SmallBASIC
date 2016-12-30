@@ -407,8 +407,7 @@ bool AnsiWidget::pointerTouchEvent(MAEvent &event) {
     }
   }
   // paint the pressed button
-  if (_activeButton != NULL
-      && !_back->overLabel(event.point.x, event.point.y)) {
+  if (_activeButton != NULL) {
     _activeButton->clicked(event.point.x, event.point.y, true);
     drawActiveButton();
   }
@@ -581,13 +580,14 @@ void AnsiWidget::doSwipe(int start, bool moveDown, int distance, int maxScroll) 
 
 // draws the focus screen's active button
 void AnsiWidget::drawActiveButton() {
-#if defined(_FLTK)
-  maUpdateScreen();
-#elif defined(_SDL)
+#if defined(_SDL)
   if (_focus != NULL && !_activeButton->hasHover()) {
     MAHandle currentHandle = maSetDrawTarget(HANDLE_SCREEN);
     _focus->drawShape(_activeButton);
     _focus->drawLabel();
+    if (_activeButton->isFullScreen()) {
+      _focus->drawMenu();
+    }
     maUpdateScreen();
     maSetDrawTarget(currentHandle);
   }
@@ -693,18 +693,5 @@ int AnsiWidget::selectScreen(int screenId) {
   _front = _back;
   _front->_dirty = true;
   flush(true);
-  return result;
-}
-
-bool AnsiWidget::showMenu() const {
-  bool result;
-  if (_activeButton != NULL) {
-    result = false;
-  } else if (abs(_xTouch - _xMove) < _back->_charWidth &&
-             abs(_yTouch - _yMove) < _back->_charHeight) {
-    result = true;
-  } else {
-    result = false;
-  }
   return result;
 }

@@ -67,6 +67,7 @@ struct AnsiWidget {
   void insetMenuScreen(int x, int y, int w, int h);
   void insetTextScreen(int x, int y, int w, int h);
   bool overLabel(int x, int y) { return _back->overLabel(x, y); };
+  bool overMenu(int x, int y) { return _back->overMenu(x, y); };
   bool pointerTouchEvent(MAEvent &event);
   bool pointerMoveEvent(MAEvent &event);
   void pointerReleaseEvent(MAEvent &event);
@@ -95,7 +96,6 @@ struct AnsiWidget {
   void setTextColor(long fg, long bg);
   void setXY(int x, int y);
   void setScrollSize(int scrollSize);
-  bool showMenu() const;
   int  textHeight(void) { return _back->_charHeight; }
   void updateInputs(var_p_t form, bool setv) { _back->updateInputs(form, setv); }
 

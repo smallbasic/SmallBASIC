@@ -416,7 +416,7 @@ void System::handleEvent(MAEvent &event) {
   case EVENT_TYPE_POINTER_PRESSED:
     _touchX = _touchCurX = event.point.x;
     _touchY = _touchCurY = event.point.y;
-    if (_output->overLabel(_touchX, _touchY)) {
+    if (_output->overMenu(_touchX, _touchY)) {
       showMenu();
     } else {
       dev_pushkey(SB_KEY_MK_PUSH);
@@ -428,7 +428,8 @@ void System::handleEvent(MAEvent &event) {
     _touchCurX = event.point.x;
     _touchCurY = event.point.y;
     _output->pointerMoveEvent(event);
-    if (_output->hasHover() || _output->overLabel(_touchCurX, _touchCurY)) {
+    if (_output->hasHover() ||
+        _output->overMenu(_touchCurX, _touchCurY)) {
       showCursor(kHand);
     } else if (_output->hasMenu()) {
       showCursor(kArrow);

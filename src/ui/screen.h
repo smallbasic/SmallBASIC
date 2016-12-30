@@ -51,6 +51,7 @@ struct Screen : public Shape {
   void addImage(ImageDisplay &image);
   int  ansiToMosync(long c);
   void drawLabel();
+  void drawMenu();
   void drawShape(Shape *button);
   void drawOverlay(bool vscroll);
   int  getIndex(FormInput *input) const;
@@ -60,6 +61,7 @@ struct Screen : public Shape {
   void getScroll(int &x, int &y) { x = _scrollX; y = _scrollY; }
   void layoutInputs(int newWidth, int newHeight);
   bool overLabel(int px, int py);
+  bool overMenu(int px, int py);
   bool overlaps(int px, int py);
   void remove(Shape *button);
   void removeImage(unsigned imageId);
