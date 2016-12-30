@@ -202,7 +202,7 @@ void Screen::drawOverlay(bool vscroll) {
 
   drawLabel();
 
-  if (!_inputs.empty() && isFullScreen()) {
+  if ((!_inputs.empty() || _label.length()) && isFullScreen()) {
     // draw the menu widget when in UI mode
     drawMenu();
   }
@@ -330,7 +330,7 @@ bool Screen::overLabel(int px, int py) {
 
 // whether the point overlaps the menu widget
 bool Screen::overMenu(int px, int py) {
-  int w = _charWidth * 2;
+  int w = _charWidth * 3;
   int h = _charHeight * 2;
   return (!OUTSIDE_RECT(px, py, _width - w, _height - h, w, h));
 }

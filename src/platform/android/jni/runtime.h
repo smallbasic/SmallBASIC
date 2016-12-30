@@ -55,11 +55,13 @@ struct Runtime : public System {
   void setLocationData(var_t *retval);
   void setSensorData(var_t *retval);
   void setString(const char *methodName, const char *value);
+  void setStringBytes(const char *methodName, const char *value);
   void speak(const char *text) { setString("speak", text); }
   void runShell();
   char *loadResource(const char *fileName);
   void optionsBox(StringList *items);
   void setWindowTitle(const char *title) {}
+  void share(const char *path) { setString("share", path); }
   void showCursor(CursorType cursorType) {}
   void showKeypad(bool show);
   void onResize(int w, int h);
@@ -68,7 +70,7 @@ struct Runtime : public System {
   void loadEnvConfig(Properties &profile, const char *key);
   void saveConfig();
   void runPath(const char *path);
-  void setClipboardText(const char *s) { setString("setClipboardText", s); }
+  void setClipboardText(const char *s) { setStringBytes("setClipboardText", s); }
   char *getClipboardText();
   void setFocus(bool focus) { _hasFocus = focus; }
 

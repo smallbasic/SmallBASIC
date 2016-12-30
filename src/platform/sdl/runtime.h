@@ -39,6 +39,7 @@ struct Runtime : public System {
   void processEvent(MAEvent &event);
   void pushEvent(MAEvent *event);
   void setWindowTitle(const char *title);
+  void share(const char *path) {}
   void showCursor(CursorType cursorType);
   int runShell(const char *startupBas, int fontScale, int debugPort);
   char *loadResource(const char *fileName);

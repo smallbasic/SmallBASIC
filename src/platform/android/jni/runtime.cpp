@@ -768,6 +768,20 @@ void Runtime::setString(const char *methodName, const char *value) {
   _app->activity->vm->DetachCurrentThread();
 }
 
+void Runtime::setStringBytes(const char *methodName, const char *value) {
+  JNIEnv *env;
+  _app->activity->vm->AttachCurrentThread(&env, NULL);
+  jclass clazz = env->GetObjectClass(_app->activity->clazz);
+  int size = strlen(value);
+  jbyteArray valueByteArray = env->NewByteArray(size);
+  env->SetByteArrayRegion(valueByteArray, 0, size, (const jbyte *)value);
+  jmethodID methodId = env->GetMethodID(clazz, methodName, "([B)V");
+  env->CallVoidMethod(_app->activity->clazz, methodId, valueByteArray);
+  env->DeleteLocalRef(valueByteArray);
+  env->DeleteLocalRef(clazz);
+  _app->activity->vm->DetachCurrentThread();
+}
+
 void Runtime::showKeypad(bool show) {
   logEntered();
   _keypadActive = show;

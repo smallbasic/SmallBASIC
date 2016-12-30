@@ -4,8 +4,7 @@
           android:installLocation="preferExternal"
           android:versionCode="24"
           android:versionName="0.12.9">
-  <!-- This is the platform API where NativeActivity was introduced. -->
-  <uses-sdk android:minSdkVersion="9"/>
+  <uses-sdk android:minSdkVersion="14"/>
 
   <!-- support large + xlarge screens to avoid compatibility mode -->
   <supports-screens android:largeScreens="true" />

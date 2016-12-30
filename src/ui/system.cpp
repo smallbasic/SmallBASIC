@@ -43,7 +43,8 @@
 #define MENU_OUTPUT     19
 #define MENU_HELP       20
 #define MENU_SHORTCUT   21
-#define MENU_SIZE       22
+#define MENU_SHARE      22
+#define MENU_SIZE       23
 #define MENU_COMPETION_0  (MENU_SIZE + 1)
 #define MENU_COMPETION_1  (MENU_SIZE + 2)
 #define MENU_COMPETION_2  (MENU_SIZE + 3)
@@ -371,6 +372,11 @@ void System::handleMenu(MAEvent &event) {
   case MENU_SHORTCUT:
     if (_activeFile.length() > 0) {
       addShortcut(_activeFile.c_str());
+    }
+    break;
+  case MENU_SHARE:
+    if (_activeFile.length() > 0) {
+      share(_activeFile.c_str());
     }
     break;
   case MENU_COMPETION_0:
@@ -897,7 +903,9 @@ void System::showMenu() {
 #if !defined(_SDL)
       if (!_mainBas && _activeFile.length() > 0) {
         items->add(new String("Desktop Shortcut"));
+        items->add(new String("Share"));
         _systemMenu[index++] = MENU_SHORTCUT;
+        _systemMenu[index++] = MENU_SHARE;
       }
 #endif
       sprintf(buffer, "Audio [%s]", (opt_mute_audio ? "OFF" : "ON"));

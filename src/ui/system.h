@@ -68,6 +68,7 @@ struct System {
   virtual char *loadResource(const char *fileName);
   virtual void optionsBox(StringList *items) = 0;
   virtual void setWindowTitle(const char *title) = 0;
+  virtual void share(const char *path) = 0;
   virtual void showCursor(CursorType cursorType) = 0;
   virtual void setClipboardText(const char *text) = 0;
   virtual char *getClipboardText() = 0;

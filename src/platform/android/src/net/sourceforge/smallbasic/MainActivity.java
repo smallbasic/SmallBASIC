@@ -220,6 +220,8 @@ public class MainActivity extends NativeActivity {
       Log.i(TAG, "getClipboardText failed: ", e);
       e.printStackTrace();
     }
+    Log.i(TAG, "getClipboardText: " + result.toString());
+
     return result.toString();
   }
 
@@ -365,7 +367,7 @@ public class MainActivity extends NativeActivity {
           _mediaPlayer.start();
         }
         catch (IOException e) {
-          Log.i(TAG, "Failed: " + e.toString());
+          Log.i(TAG, "Failed: ", e);
         }
       }
     }).start();
@@ -394,7 +396,7 @@ public class MainActivity extends NativeActivity {
     } else {
       result = false;
     }
-    Log.i(TAG, "removeRuntimeHandlers="+result);
+    Log.i(TAG, "removeRuntimeHandlers=" + result);
     return result;
   }
 
@@ -416,19 +418,24 @@ public class MainActivity extends NativeActivity {
     } else {
       result = false;
     }
-    Log.i(TAG, "requestLocationUpdates="+result);
+    Log.i(TAG, "requestLocationUpdates=" + result);
     return result;
   }
 
-  public void setClipboardText(final String text) {
-    runOnUiThread(new Runnable() {
-      public void run() {
-        ClipboardManager clipboard =
-         (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
-        ClipData clip = ClipData.newPlainText("text", text);
-       clipboard.setPrimaryClip(clip);
-      }
-    });
+  public void setClipboardText(final byte[] textBytes) {
+    try {
+      final String text = new String(textBytes, "Cp1252");
+      runOnUiThread(new Runnable() {
+        public void run() {
+          ClipboardManager clipboard =
+            (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
+          ClipData clip = ClipData.newPlainText("text", text);
+          clipboard.setPrimaryClip(clip);
+        }
+      });
+    } catch (UnsupportedEncodingException e) {
+      Log.i(TAG, "setClipboardText failed: ", e);
+    }
   }
 
   public void setTtsLocale(String locale) {
@@ -438,7 +445,7 @@ public class MainActivity extends NativeActivity {
     try {
       _tts.setLocale(new Locale(locale));
     } catch (Exception e) {
-      Log.i(TAG, "setttsLocale failed="+e.toString());
+      Log.i(TAG, "setttsLocale failed:", e);
     }
   }
 
@@ -468,6 +475,18 @@ public class MainActivity extends NativeActivity {
     }
     if (speechRate != 0) {
       _tts.setSpeechRate(speechRate);
+    }
+  }
+
+  public void share(final String path) {
+    File file = new File(path);
+    String buffer = readBuffer(file);
+    if (!buffer.isEmpty()) {
+      Intent sendIntent = new Intent();
+      sendIntent.setAction(Intent.ACTION_SEND);
+      sendIntent.putExtra(Intent.EXTRA_TEXT, buffer);
+      sendIntent.setType("text/plain");
+      startActivity(Intent.createChooser(sendIntent, file.getName()));
     }
   }
 
@@ -529,11 +548,11 @@ public class MainActivity extends NativeActivity {
       String data = intent.getDataString();
       if (data.startsWith(SCHEME)) {
         execScheme(data);
-        Log.i(TAG, "data="+ data);
+        Log.i(TAG, "data=" + data);
       } else {
         _startupBas = uri.getPath();
       }
-      Log.i(TAG, "startupBas="+ _startupBas);
+      Log.i(TAG, "startupBas=" + _startupBas);
     }
     try {
       Properties p = new Properties();
@@ -670,10 +689,9 @@ public class MainActivity extends NativeActivity {
     return result;
   }
 
-  private String readBuffer() {
+  private String readBuffer(File inputFile) {
     StringBuilder result = new StringBuilder();
     try {
-      File inputFile = getApplication().getFileStreamPath(WEB_BAS);
       BufferedReader input = new BufferedReader(new FileReader(inputFile));
       String line = input.readLine();
       while (line != null) {
@@ -727,7 +745,8 @@ public class MainActivity extends NativeActivity {
                 execBuffer(buffer, WEB_BAS, postData.get("run") != null);
                 sendResponse(socket, buildRunForm(buffer, token));
               } else {
-                sendResponse(socket, buildRunForm(readBuffer(), token));
+                File inputFile = getApplication().getFileStreamPath(WEB_BAS);
+                sendResponse(socket, buildRunForm(readBuffer(inputFile), token));
               }
             } else {
               // invalid token

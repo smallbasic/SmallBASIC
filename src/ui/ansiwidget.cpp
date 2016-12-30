@@ -600,6 +600,9 @@ void AnsiWidget::drawActiveButton() {
     MAHandle currentHandle = maSetDrawTarget(HANDLE_SCREEN);
     _focus->drawShape(_activeButton);
     _focus->drawLabel();
+    if (_activeButton->isFullScreen()) {
+      _focus->drawMenu();
+    }
     maUpdateScreen();
     maSetDrawTarget(currentHandle);
   }
