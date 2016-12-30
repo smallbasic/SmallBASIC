@@ -319,10 +319,31 @@ String Runtime::getString(const char *methodName) {
   _app->activity->vm->AttachCurrentThread(&env, NULL);
   jclass clazz = env->GetObjectClass(_app->activity->clazz);
   jmethodID methodId = env->GetMethodID(clazz, methodName, "()Ljava/lang/String;");
-  jstring resultObj = (jstring) env->CallObjectMethod(_app->activity->clazz, methodId);
+  jstring resultObj = (jstring)env->CallObjectMethod(_app->activity->clazz, methodId);
   const char *resultStr = env->GetStringUTFChars(resultObj, JNI_FALSE);
   String result = resultStr;
   env->ReleaseStringUTFChars(resultObj, resultStr);
+  env->DeleteLocalRef(clazz);
+  _app->activity->vm->DetachCurrentThread();
+  return result;
+}
+
+String Runtime::getStringBytes(const char *methodName) {
+  JNIEnv *env;
+  _app->activity->vm->AttachCurrentThread(&env, NULL);
+  jclass clazz = env->GetObjectClass(_app->activity->clazz);
+  jmethodID methodId = env->GetMethodID(clazz, methodName, "()[B");
+  jbyteArray valueByteArray = (jbyteArray)env->CallObjectMethod(_app->activity->clazz, methodId);
+  jsize len = env->GetArrayLength(valueByteArray);
+  String result;
+  if (len) {
+    jbyte *buffer = new jbyte[len + 1];
+    env->GetByteArrayRegion(valueByteArray, 0, len, buffer);
+    buffer[len] = '\0';
+    result = (const char *)buffer;
+    delete [] buffer;
+  }
+  env->DeleteLocalRef(valueByteArray);
   env->DeleteLocalRef(clazz);
   _app->activity->vm->DetachCurrentThread();
   return result;
@@ -826,7 +847,7 @@ void Runtime::onUnicodeChar(int ch) {
 
 char *Runtime::getClipboardText() {
   char *result;
-  String text = getString("getClipboardText");
+  String text = getStringBytes("getClipboardText");
   if (text.length()) {
     result = strdup(text.c_str());
   } else {

@@ -75,6 +75,7 @@ public class MainActivity extends NativeActivity {
   private static final String WEB_BAS = "web.bas";
   private static final String SCHEME_BAS = "qrcode.bas";
   private static final String SCHEME = "smallbasic://x/";
+  private static final String CP1252 = "Cp1252";
   private static final int BASE_FONT_SIZE = 18;
   private static final long LOCATION_INTERVAL = 1000;
   private static final float LOCATION_DISTANCE = 1;
@@ -194,8 +195,8 @@ public class MainActivity extends NativeActivity {
     return true;
   }
 
-  public String getClipboardText() {
-    final StringBuilder result = new StringBuilder();
+  public byte[] getClipboardText() {
+    final StringBuilder text = new StringBuilder();
     final Context context = this;
     final Semaphore mutex = new Semaphore(0);
     final Runnable runnable = new Runnable() {
@@ -207,7 +208,7 @@ public class MainActivity extends NativeActivity {
           ClipData.Item item = clip.getItemAt(0);
           if (item != null) {
             CharSequence data = item.coerceToText(context);
-            result.append(data == null ? "" : data);
+            text.append(data == null ? "" : data);
           }
         }
         mutex.release();
@@ -220,7 +221,14 @@ public class MainActivity extends NativeActivity {
       Log.i(TAG, "getClipboardText failed: ", e);
       e.printStackTrace();
     }
-    return result.toString();
+    byte[] result;
+    try {
+      result = text.toString().getBytes(CP1252);
+    } catch (UnsupportedEncodingException e) {
+      Log.i(TAG, "getClipboardText failed: ", e);
+      result = null;
+    }
+    return result;
   }
 
   public String getIPAddress() {
@@ -422,7 +430,7 @@ public class MainActivity extends NativeActivity {
 
   public void setClipboardText(final byte[] textBytes) {
     try {
-      final String text = new String(textBytes, "Cp1252");
+      final String text = new String(textBytes, CP1252);
       runOnUiThread(new Runnable() {
         public void run() {
           ClipboardManager clipboard =

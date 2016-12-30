@@ -12,8 +12,8 @@
 #include "ui/utils.h"
 #include "common/device.h"
 
-#define FONT_FACE_REGULAR "Envy Code R.ttf"
-#define FONT_FACE_BOLD    "Envy Code R Bold.ttf"
+#define FONT_FACE_REGULAR "Inconsolata-Regular.ttf"
+#define FONT_FACE_BOLD    "Inconsolata-Bold.ttf"
 
 extern ui::Graphics *graphics;
 

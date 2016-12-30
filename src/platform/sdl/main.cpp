@@ -23,12 +23,12 @@
 #endif
 
 extern "C" unsigned
-  lodepng_decode32(unsigned char** out, unsigned* w, unsigned* h,
-                   const unsigned char* in, size_t insize);
+  lodepng_decode32(unsigned char **out, unsigned *w, unsigned *h,
+                   const unsigned char *in, size_t insize);
 
 using namespace strlib;
 
-const char* FONTS[] = {
+const char *FONTS[] = {
   "Envy Code R",
   "Source Code Pro",
   "Ubuntu Mono",

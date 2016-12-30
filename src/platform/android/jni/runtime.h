@@ -37,6 +37,7 @@ struct Runtime : public System {
   bool enableSensor(int sensorType);
   bool getBoolean(const char *methodName);
   String getString(const char *methodName);
+  String getStringBytes(const char *methodName);
   int getInteger(const char *methodName);
   int getUnicodeChar(int keyCode, int metaState);
   void redraw() { _graphics->redraw(); }
