@@ -206,7 +206,7 @@ public class MainActivity extends NativeActivity {
         if (clip != null && clip.getItemCount() > 0) {
           ClipData.Item item = clip.getItemAt(0);
           if (item != null) {
-            String data = item.coerceToText(context).toString();
+            CharSequence data = item.coerceToText(context);
             result.append(data == null ? "" : data);
           }
         }
@@ -220,8 +220,6 @@ public class MainActivity extends NativeActivity {
       Log.i(TAG, "getClipboardText failed: ", e);
       e.printStackTrace();
     }
-    Log.i(TAG, "getClipboardText: " + result.toString());
-
     return result.toString();
   }
 

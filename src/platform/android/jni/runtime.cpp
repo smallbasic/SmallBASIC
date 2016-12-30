@@ -910,67 +910,76 @@ void System::editSource(strlib::String loadPath) {
 
   while (_state == kEditState) {
     MAEvent event = getNextEvent();
-    if (event.type == EVENT_TYPE_KEY_PRESSED && _userScreenId == -1) {
-      dev_clrkb();
-      int sw = _output->getScreenWidth();
-      bool redraw = true;
-      bool dirty = editWidget->isDirty();
-      char *text;
+    switch (event.type) {
+    case EVENT_TYPE_OPTIONS_BOX_BUTTON_CLICKED:
+      if (editWidget->isDirty()) {
+        _output->setStatus(dirtyFile);
+        _output->redraw();
+      }
+      break;
+    case EVENT_TYPE_KEY_PRESSED:
+      if (_userScreenId == -1) {
+        dev_clrkb();
+        int sw = _output->getScreenWidth();
+        bool redraw = true;
+        bool dirty = editWidget->isDirty();
+        char *text;
 
-      switch (event.key) {
-      case SB_KEY_MENU:
-        redraw = false;
-        break;
-      case SB_KEY_F(1):
-        widget = helpWidget;
-        helpWidget->createKeywordIndex();
-        helpWidget->show();
-        helpWidget->setFocus(true);
-        runtime->showKeypad(false);
-        break;
-      case SB_KEY_F(9):
-        _state = kRunState;
-        if (editWidget->isDirty()) {
+        switch (event.key) {
+        case SB_KEY_MENU:
+          redraw = false;
+          break;
+        case SB_KEY_F(1):
+          widget = helpWidget;
+          helpWidget->createKeywordIndex();
+          helpWidget->show();
+          helpWidget->setFocus(true);
+          runtime->showKeypad(false);
+          break;
+        case SB_KEY_F(9):
+          _state = kRunState;
+          if (editWidget->isDirty()) {
+            saveFile(editWidget, loadPath);
+          }
+          break;
+        case SB_KEY_CTRL('s'):
           saveFile(editWidget, loadPath);
-        }
-        break;
-      case SB_KEY_CTRL('s'):
-        saveFile(editWidget, loadPath);
-        break;
-      case SB_KEY_CTRL('c'):
-      case SB_KEY_CTRL('x'):
-        text = widget->copy(event.key == (int)SB_KEY_CTRL('x'));
+          break;
+        case SB_KEY_CTRL('c'):
+        case SB_KEY_CTRL('x'):
+          text = widget->copy(event.key == (int)SB_KEY_CTRL('x'));
         if (text) {
           setClipboardText(text);
           free(text);
         }
         break;
-      case SB_KEY_CTRL('v'):
-        text = getClipboardText();
-        widget->paste(text);
-        free(text);
-        break;
-      case SB_KEY_CTRL('o'):
-        _output->selectScreen(USER_SCREEN1);
-        showCompletion(true);
-        _output->redraw();
-        _state = kActiveState;
-        waitForBack();
-        runtime->showKeypad(true);
-        _output->selectScreen(SOURCE_SCREEN);
-        _state = kEditState;
-        break;
-      default:
-        redraw = widget->edit(event.key, sw, charWidth);
-        break;
-      }
-      if (widget->isDirty() && !dirty) {
-        _output->setStatus(dirtyFile);
-      } else if (!widget->isDirty() && dirty) {
-        _output->setStatus(cleanFile);
-      }
-      if (redraw) {
-        _output->redraw();
+        case SB_KEY_CTRL('v'):
+          text = getClipboardText();
+          widget->paste(text);
+          free(text);
+          break;
+        case SB_KEY_CTRL('o'):
+          _output->selectScreen(USER_SCREEN1);
+          showCompletion(true);
+          _output->redraw();
+          _state = kActiveState;
+          waitForBack();
+          runtime->showKeypad(true);
+          _output->selectScreen(SOURCE_SCREEN);
+          _state = kEditState;
+          break;
+        default:
+          redraw = widget->edit(event.key, sw, charWidth);
+          break;
+        }
+        if (widget->isDirty() && !dirty) {
+          _output->setStatus(dirtyFile);
+        } else if (!widget->isDirty() && dirty) {
+          _output->setStatus(cleanFile);
+        }
+        if (redraw) {
+          _output->redraw();
+        }
       }
     }
 
