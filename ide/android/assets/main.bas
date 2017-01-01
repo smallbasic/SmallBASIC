@@ -103,7 +103,7 @@ sub do_about()
   print
   print "Version "; sbver
   print
-  print "Copyright (c) 2002-2016 Chris Warren-Smith"
+  print "Copyright (c) 2002-2017 Chris Warren-Smith"
   print "Copyright (c) 1999-2006 Nic Christopoulos" + chr(10)
   print "http://smallbasic.sourceforge.net" + chr(10)
   print "SmallBASIC comes with ABSOLUTELY NO WARRANTY. ";
@@ -120,6 +120,8 @@ sub do_about()
 end
 
 sub do_setup()
+  local frm
+
   color 3, 0
   cls
   print boldOn + "Setup web service port number."
@@ -131,6 +133,7 @@ sub do_setup()
   print
   color 15, 3
   input socket
+
   if (len(socket) > 0) then
     env("serverSocket=" + socket)
     randomize timer
@@ -139,10 +142,26 @@ sub do_setup()
       token += chr (asc("A") + ((rnd * 1000) % 20))
     next i
     env("serverToken=" + token)
-    local msg = "You must restart SmallBASIC for this change to take effect"
-    local wnd = window()
-    wnd.alert(msg, "Restart required")
   endif
+
+  color 3, 0
+  cls
+  print "Web service port number: " + env("serverSocket")
+  print
+  print boldOn + "Select display font."
+  print boldOff
+  dim frm.inputs(1)
+  frm.inputs(0).type="list"
+  frm.inputs(0).value="Envy Code R|Inconsolata"
+  frm.inputs(0).selectedIndex=env("fontId")
+  frm.inputs(0).height=TXTH("Q")*2+4
+  frm = form(frm)
+  frm.doEvents()
+  env("fontId=" + frm.inputs(0).selectedIndex)
+
+  local msg = "You must restart SmallBASIC for this change to take effect"
+  local wnd = window()
+  wnd.alert(msg, "Restart required")
   color 7, 0
   cls
 end

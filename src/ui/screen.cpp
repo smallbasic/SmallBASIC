@@ -130,7 +130,7 @@ void Screen::drawMenu() {
   static const char dot[] = {'\260', '\0'};
   int gap = _charHeight / 3;
   int left = _width - _charWidth - (_charWidth / 2);
-  int top = _height - _charHeight + gap;
+  int top = (_height - _charHeight) + gap;
   maSetColor(_fg);
   maDrawText(left, top, dot, 1);
   maDrawText(left, top - gap, dot, 1);

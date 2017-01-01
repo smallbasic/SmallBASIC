@@ -22,13 +22,13 @@ struct Graphics : ui::Graphics {
   Graphics(android_app *app);
   virtual ~Graphics();
 
-  bool construct();
+  bool construct(int fontId);
   void redraw();
   void resize();
   void setSize(int w, int h) { _w = w; _h = h; }
 
 private:
-  bool loadFonts();
+  bool loadFonts(int fontId);
   bool loadFont(const char *name, FT_Face &face, FT_Byte **buffer);
 
   FT_Byte *_fontBuffer;

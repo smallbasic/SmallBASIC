@@ -29,6 +29,7 @@
 #define CONFIG_FILE "/settings.txt"
 #define PATH_KEY "path"
 #define FONT_SCALE_KEY "fontScale2"
+#define FONT_ID_KEY "fontId"
 #define SERVER_SOCKET_KEY "serverSocket"
 #define SERVER_TOKEN_KEY "serverToken"
 #define MUTE_AUDIO_KEY "muteAudio"
@@ -258,7 +259,7 @@ void Runtime::construct() {
   logEntered();
   _state = kClosingState;
   _graphics = new Graphics(_app);
-  if (_graphics && _graphics->construct()) {
+  if (_graphics && _graphics->construct(getFontId())) {
     int w = ANativeWindow_getWidth(_app->window);
     int h = ANativeWindow_getHeight(_app->window);
     _output = new AnsiWidget(w, h);
@@ -488,10 +489,7 @@ void Runtime::runShell() {
 }
 
 void Runtime::loadConfig() {
-  String buffer;
-  String path;
-  Properties profile;
-
+  Properties settings;
   int fontSize = getInteger("getStartupFontSize");
   trace("fontSize = %d", fontSize);
 
@@ -500,17 +498,8 @@ void Runtime::loadConfig() {
   _initialFontSize = _output->getFontSize();
   chdir("/sdcard");
 
-  path.append(_app->activity->internalDataPath);
-  path.append(CONFIG_FILE);
-  FILE *fp = fopen(path.c_str(), "r");
-  if (fp) {
-    fseek(fp, 0, SEEK_END);
-    long len = ftell(fp);
-    rewind(fp);
-    buffer.append(fp, len);
-    fclose(fp);
-    profile.load(buffer.c_str(), buffer.length());
-    String *s = profile.get(FONT_SCALE_KEY);
+  if (loadSettings(settings)) {
+    String *s = settings.get(FONT_SCALE_KEY);
     if (s) {
       _fontScale = s->toInteger();
       trace("_fontScale = %d", _fontScale);
@@ -519,26 +508,49 @@ void Runtime::loadConfig() {
         _output->setFontSize(fontSize);
       }
     }
-    s = profile.get(PATH_KEY);
+    s = settings.get(PATH_KEY);
     if (s) {
       trace("path = %s", s->c_str());
       chdir(s->c_str());
     }
-    s = profile.get(MUTE_AUDIO_KEY);
+    s = settings.get(MUTE_AUDIO_KEY);
     if (s && s->toInteger() == 1) {
       opt_mute_audio = 1;
     }
-    s = profile.get(OPT_IDE_KEY);
+    s = settings.get(OPT_IDE_KEY);
     if (s) {
       opt_ide = s->toInteger();
     }
-    loadEnvConfig(profile, SERVER_SOCKET_KEY);
-    loadEnvConfig(profile, SERVER_TOKEN_KEY);
+    loadEnvConfig(settings, SERVER_SOCKET_KEY);
+    loadEnvConfig(settings, SERVER_TOKEN_KEY);
+    loadEnvConfig(settings, FONT_ID_KEY);
   }
 }
 
-void Runtime::loadEnvConfig(Properties &profile, const char *key) {
-  String *s = profile.get(key);
+bool Runtime::loadSettings(Properties &settings) {
+  bool result;
+  String path;
+
+  path.append(_app->activity->internalDataPath);
+  path.append(CONFIG_FILE);
+  FILE *fp = fopen(path.c_str(), "r");
+  if (fp) {
+    String buffer;
+    fseek(fp, 0, SEEK_END);
+    long len = ftell(fp);
+    rewind(fp);
+    buffer.append(fp, len);
+    fclose(fp);
+    settings.load(buffer.c_str(), buffer.length());
+    result = true;
+  } else {
+    result = false;
+  }
+  return result;
+}
+
+void Runtime::loadEnvConfig(Properties &settings, const char *key) {
+  String *s = settings.get(key);
   if (s) {
     trace("%s = %s", key, s->c_str());
     setenv(key, s->c_str(), 1);
@@ -559,9 +571,9 @@ void Runtime::saveConfig() {
     fprintf(fp, "%s=%d\n", OPT_IDE_KEY, opt_ide);
     for (int i = 0; environ[i] != NULL; i++) {
       char *env = environ[i];
-      if (strstr(env, SERVER_SOCKET_KEY) != NULL) {
-        fprintf(fp, "%s\n", env);
-      } else if (strstr(env, SERVER_TOKEN_KEY) != NULL) {
+      if (strstr(env, SERVER_SOCKET_KEY) != NULL ||
+          strstr(env, SERVER_TOKEN_KEY) != NULL ||
+          strstr(env, FONT_ID_KEY) != NULL) {
         fprintf(fp, "%s\n", env);
       }
     }
@@ -852,6 +864,18 @@ char *Runtime::getClipboardText() {
     result = strdup(text.c_str());
   } else {
     result = NULL;
+  }
+  return result;
+}
+
+int Runtime::getFontId() {
+  int result = 0;
+  Properties settings;
+  if (loadSettings(settings)) {
+    String *s = settings.get(FONT_ID_KEY);
+    if (s) {
+      result = s->toInteger();
+    }
   }
   return result;
 }

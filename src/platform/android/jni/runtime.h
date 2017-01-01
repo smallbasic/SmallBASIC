@@ -68,12 +68,14 @@ struct Runtime : public System {
   void onResize(int w, int h);
   void onUnicodeChar(int ch);
   void loadConfig();
-  void loadEnvConfig(Properties &profile, const char *key);
+  void loadEnvConfig(Properties &settings, const char *key);
+  bool loadSettings(Properties &settings);
   void saveConfig();
   void runPath(const char *path);
   void setClipboardText(const char *s) { setStringBytes("setClipboardText", s); }
   char *getClipboardText();
   void setFocus(bool focus) { _hasFocus = focus; }
+  int  getFontId();
 
 private:
   bool _keypadActive;
