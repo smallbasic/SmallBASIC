@@ -195,12 +195,12 @@ FormInput *create_input(var_p_t v_field) {
   const char *label = map_get_str(v_field, FORM_INPUT_LABEL);
   const char *type = map_get_str(v_field, FORM_INPUT_TYPE);
   const char *help = map_get_str(v_field, FORM_INPUT_HELP);
+  var_p_t value = map_get(v_field, FORM_INPUT_VALUE);
 
   if (label == NULL) {
-    label = "Label";
+    label = "";
   }
 
-  var_p_t value = map_get(v_field, FORM_INPUT_VALUE);
   if (value == NULL) {
     value = map_add_var(v_field, FORM_INPUT_VALUE, 0);
     v_setstr(value, label);
@@ -245,10 +245,12 @@ FormInput *create_input(var_p_t v_field) {
       if (image != NULL) {
         widget = new FormImage(image, x, y);
       }
+    } else if (strcasecmp("print", type) == 0) {
+      const char *text = map_get_str(v_field, FORM_INPUT_VALUE);
+      if (text) {
+        g_system->getOutput()->print(text);
+      }
     }
-  }
-  if (widget == NULL) {
-    widget = new FormButton(label, x, y, w, h);
   }
   return widget;
 }
@@ -283,14 +285,15 @@ extern "C" void v_create_form(var_p_t var) {
       var_p_t elem = v_elem(inputs, i);
       if (elem->type == V_MAP) {
         FormInput *widget = create_input(elem);
-        widget->construct(var, elem, i);
-        out->addInput(widget);
-        if (i_focus == i || inputs->v.a.size == 1) {
-          widget->setFocus(true);
+        if (widget != NULL) {
+          widget->construct(var, elem, i);
+          out->addInput(widget);
+          if (i_focus == i || inputs->v.a.size == 1) {
+            widget->setFocus(true);
+          }
         }
       }
     }
-
     out->setDirty();
     v_zerostr(map_add_var(var, FORM_VALUE, 0));
     create_func(var, "doEvents", cmd_form_do_events);

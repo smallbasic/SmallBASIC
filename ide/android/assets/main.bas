@@ -111,8 +111,6 @@ sub do_about()
   print "redistribute it and/or modify it under the terms of the ";
   print "GNU General Public License version 2 as published by ";
   print "the Free Software Foundation." + chr(10)
-  print "Envy Code R Font v0.8 used with permission ";
-  print "http://damieng.com/envy-code-r" + chr(10)
   print
   server_info()
   do_okay_button()
@@ -150,6 +148,12 @@ sub do_setup()
   print
   print boldOn + "Select display font."
   print boldOff
+  print "Envy Code R:"
+  print "  http://damieng.com/envy-code-r"
+  print "Inconsolata:"
+  print "  Copyright 2006 The Inconsolata Project Authors"
+  print "  http://scripts.sil.org/OFL"
+  print
   dim frm.inputs(1)
   frm.inputs(0).type="list"
   frm.inputs(0).value="Envy Code R|Inconsolata"
@@ -159,7 +163,7 @@ sub do_setup()
   frm.doEvents()
   env("fontId=" + frm.inputs(0).selectedIndex)
 
-  local msg = "You must restart SmallBASIC for this change to take effect"
+  local msg = "You must restart SmallBASIC for this change to take effect."
   local wnd = window()
   wnd.alert(msg, "Restart required")
   color 7, 0
