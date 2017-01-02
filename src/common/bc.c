@@ -37,7 +37,7 @@ void bc_destroy(bc_t *bc) {
 /*
  * Resize a bytecode segment
  */
-void bc_resize(bc_t *bc, dword new_size) {
+void bc_resize(bc_t *bc, uint32_t new_size) {
   if (new_size != bc->size) {
     bc->ptr = realloc(bc->ptr, new_size);
     bc->size = new_size;
@@ -66,9 +66,9 @@ void bc_store1(bc_t *bc, bcip_t offset, byte code) {
 }
 
 /*
- * add one dword
+ * add one uint32_t
  */
-void bc_add_dword(bc_t *bc, dword p1) {
+void bc_add_dword(bc_t *bc, uint32_t p1) {
   if (bc->count >= bc->size - 4) {
     bc_resize(bc, bc->size + BC_ALLOC_INCR);
   }
@@ -247,7 +247,7 @@ void bc_append(bc_t *dst, bc_t *src) {
 /*
  * appends n bytes from src to dst
  */
-void bc_add_n(bc_t *dst, byte *src, dword n) {
+void bc_add_n(bc_t *dst, byte *src, uint32_t n) {
   if (dst->count >= dst->size - n) {
     bc_resize(dst, dst->size + n);
   }

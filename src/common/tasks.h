@@ -123,12 +123,12 @@ typedef struct {
       bcip_t org; /**< READ/DATA beginning position                      */
 
       stknode_t *stack; /**< The program stack                           */
-      dword stack_alloc; /**< The stack size                             */
-      dword sp; /**< Register SP; The stack pointer                      */
+      uint32_t stack_alloc; /**< The stack size                          */
+      uint32_t sp; /**< Register SP; The stack pointer                   */
 
       var_t *eval_stk; /**< eval's stack                                 */
-      word eval_stk_size; /**< eval's stack size                         */
-      word eval_sp; /**< Register ESP; eval's stack pointer              */
+      uint16_t eval_stk_size; /**< eval's stack size                     */
+      uint16_t eval_sp; /**< Register ESP; eval's stack pointer          */
 
       /*
        * Register R; no need
@@ -137,11 +137,11 @@ typedef struct {
        * Register L; no need
        */
 
-      dword varcount; /**< number of global-variables                    */
-      dword labcount; /**< number of labels                              */
-      dword libcount; /**< number of linked libraries                    */
-      dword symcount; /**< number of linked symbols                      */
-      dword expcount; /**< number of exported symbols                    */
+      uint32_t varcount; /**< number of global-variables                */
+      uint32_t labcount; /**< number of labels                          */
+      uint32_t libcount; /**< number of linked libraries                */
+      uint32_t symcount; /**< number of linked symbols                  */
+      uint32_t expcount; /**< number of exported symbols                */
 
       var_t **vartable; /**< The table of variables                      */
       lab_t *labtable; /**< The table of labels                          */

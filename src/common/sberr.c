@@ -482,7 +482,7 @@ void cmd_throw() {
   }
 }
 
-void err_file(dword code) {
+void err_file(uint32_t code) {
   if (!gsb_last_error) {
     char *err = malloc(SB_TEXTLINE_SIZE + 1);
     sprintf(err, FSERR_FMT, code, strerror(code));

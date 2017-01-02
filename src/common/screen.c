@@ -27,8 +27,8 @@
                             c |= ((y > dev_Vy2) << 3); }
 #define CLIPIN(c) ((c & 0xF) == 0)
 
-dword os_ver = 0x40000;
-dword os_color_depth = 16;
+uint32_t os_ver = 0x40000;
+uint32_t os_color_depth = 16;
 byte os_graphics = 0; // CONSOLE
 int os_graf_mx = 80;
 int os_graf_my = 25;

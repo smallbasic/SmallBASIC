@@ -65,7 +65,7 @@ void bc_destroy(bc_t *bc);
  * @param bc the bc structure
  * @param newsize the new size
  */
-void bc_resize(bc_t *bc, dword newsize);
+void bc_resize(bc_t *bc, uint32_t newsize);
 
 /**
  * @ingroup scan
@@ -90,12 +90,12 @@ void bc_store1(bc_t *bc, bcip_t offset, byte code);
 /**
  * @ingroup scan
  *
- * add 1 dword (4-bytes) to segment
+ * add 1 uint32_t (4-bytes) to segment
  *
  * @param bc the bc structure
- * @param code the dword
+ * @param code the uint32_t
  */
-void bc_add_dword(bc_t *bc, dword code);
+void bc_add_dword(bc_t *bc, uint32_t code);
 
 /**
  * @ingroup scan
@@ -143,7 +143,7 @@ void bc_append(bc_t *dest, bc_t *src);
  * @param src the code to be appended to dest
  * @param n the size of the src to be copied
  */
-void bc_add_n(bc_t *dest, byte *src, dword n);
+void bc_add_n(bc_t *dest, byte *src, uint32_t n);
 
 /**
  * @ingroup scan

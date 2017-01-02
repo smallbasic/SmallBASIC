@@ -16,8 +16,8 @@ extern "C" {
 
 int sockcl_open(dev_file_t *f);
 int sockcl_close(dev_file_t *f);
-int sockcl_write(dev_file_t *f, byte *data, dword size);
-int sockcl_read(dev_file_t *f, byte *data, dword size);
+int sockcl_write(dev_file_t *f, byte *data, uint32_t size);
+int sockcl_read(dev_file_t *f, byte *data, uint32_t size);
 int sockcl_eof(dev_file_t *f);
 int sockcl_length(dev_file_t *f);
 int http_open(dev_file_t *f);

@@ -104,7 +104,7 @@ int dev_events(int wait_flag) {
 /**
  * delay for a specified amount of milliseconds
  */
-void dev_delay(dword ms) {
+void dev_delay(uint32_t ms) {
 #if defined(_Win32)
   Sleep(ms);
 #elif defined(_DOS)
@@ -244,7 +244,7 @@ int dev_input_remove_char(char *dest, int pos) {
  */
 char *dev_gets(char *dest, int size) {
   long int ch = 0;
-  word pos, len = 0;
+  uint16_t pos, len = 0;
   int replace_mode = 0;
 
   *dest = '\0';

@@ -195,7 +195,7 @@ int sockcl_close(dev_file_t *f) {
 /*
  * write to a socket
  */
-int sockcl_write(dev_file_t *f, byte *data, dword size) {
+int sockcl_write(dev_file_t *f, byte *data, uint32_t size) {
   net_print((socket_t) (long) f->handle, (char *)data);
   return size;
 }
@@ -203,8 +203,8 @@ int sockcl_write(dev_file_t *f, byte *data, dword size) {
 /*
  * read from a socket
  */
-int sockcl_read(dev_file_t *f, byte *data, dword size) {
-  f->drv_dw[0] = (dword) net_input((socket_t) (long) f->handle, (char *)data, size, NULL);
+int sockcl_read(dev_file_t *f, byte *data, uint32_t size) {
+  f->drv_dw[0] = (uint32_t) net_input((socket_t) (long) f->handle, (char *)data, size, NULL);
   return (((long) f->drv_dw[0]) <= 0) ? 0 : (long) f->drv_dw[0];
 }
 

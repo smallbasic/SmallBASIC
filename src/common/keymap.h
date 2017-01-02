@@ -86,14 +86,14 @@ extern "C" {
 
 void keymap_init();
 void keymap_free();
-void keymap_add(dword key, bcip_t ip);
-int keymap_invoke(dword key);
+void keymap_add(uint32_t key, bcip_t ip);
+int keymap_invoke(uint32_t key);
 int keymap_kbhit();
 int keymap_kbpeek();
 
 void timer_free(timer_s *timer);
 void timer_add(var_num_t timer, bcip_t ip);
-void timer_run(dword now);
+void timer_run(uint32_t now);
 
 #if defined(__cplusplus)
 }

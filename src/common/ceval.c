@@ -36,7 +36,7 @@ void cev_opr_err(void) {
 }
 
 void cev_prim_str() {
-  dword len;
+  uint32_t len;
   memcpy(&len, bc_in->ptr + bc_in->cp, OS_STRLEN);
   IP += OS_STRLEN;
   bc_add_dword(bc_out, len);

@@ -20,8 +20,8 @@
 #define SCAN_WHILE  1
 
 struct tagParams {
-  word xl;  // leftmost pixel in run
-  word xr;  // rightmost pixel in run
+  uint16_t xl;  // leftmost pixel in run
+  uint16_t xr;  // rightmost pixel in run
   int16_t y;  // y-coordinate of run
   byte f;  // TRUE if run is filled (blocked)
 };
@@ -44,16 +44,16 @@ static QUEUE Qup;
 static QUEUE Qdn;
 static int scan_type;
 
-word ff_scan_left(word, word, long, int);
-word ff_scan_right(word, word, long, int);
-word ff_next_branch(word, word, int);
-void ff_add_queue(QUEUE *, word, word, int, int);
-int ff_in_queue(QUEUE *, word, word, int);
+uint16_t ff_scan_left(uint16_t, uint16_t, long, int);
+uint16_t ff_scan_right(uint16_t, uint16_t, long, int);
+uint16_t ff_next_branch(uint16_t, uint16_t, int);
+void ff_add_queue(QUEUE *, uint16_t, uint16_t, int, int);
+int ff_in_queue(QUEUE *, uint16_t, uint16_t, int);
 
-void dev_ffill(word x0, word y0, long fill_color, long border_color) {
+void dev_ffill(uint16_t x0, uint16_t y0, long fill_color, long border_color) {
   int y = y0, qp;
   int bChangeDirection;
-  word x, xl = x0, xr = x0, xln, xrn;
+  uint16_t x, xl = x0, xr = x0, xln, xrn;
   QUEUE *Q;
   long pcolor;
 
@@ -217,7 +217,7 @@ void dev_ffill(word x0, word y0, long fill_color, long border_color) {
   dev_setcolor(pcolor);
 }
 
-word ff_scan_left(word xl, word y, long ucPixel, int f) {
+uint16_t ff_scan_left(uint16_t xl, uint16_t y, long ucPixel, int f) {
   long v;
 
   if (f == SCAN_UNTIL) {
@@ -253,7 +253,7 @@ word ff_scan_left(word xl, word y, long ucPixel, int f) {
   return ++xl;
 }
 
-word ff_scan_right(word xr, word y, long ucPixel, int f) {
+uint16_t ff_scan_right(uint16_t xr, uint16_t y, long ucPixel, int f) {
   long v;
 
   if (f == SCAN_UNTIL) {
@@ -291,8 +291,8 @@ word ff_scan_right(word xr, word y, long ucPixel, int f) {
   return --xr;
 }
 
-word ff_next_branch(word xl, word xr, int y) {
-  word xln;
+uint16_t ff_next_branch(uint16_t xl, uint16_t xr, int y) {
+  uint16_t xln;
 
   // clip y
   if ((y < dev_Vy1) || (y > dev_Vy2)) {
@@ -316,7 +316,7 @@ word ff_next_branch(word xl, word xr, int y) {
   return xln;
 }
 
-void ff_add_queue(QUEUE *Q, word xl, word xr, int y, int f) {
+void ff_add_queue(QUEUE *Q, uint16_t xl, uint16_t xr, int y, int f) {
   int qp;
   int i;
 
@@ -365,7 +365,7 @@ void ff_add_queue(QUEUE *Q, word xl, word xr, int y, int f) {
   }
 }
 
-int ff_in_queue(QUEUE *Q, word xl, word xr, int y) {
+int ff_in_queue(QUEUE *Q, uint16_t xl, uint16_t xr, int y) {
   int qp;
   int bRVal = 0;
 

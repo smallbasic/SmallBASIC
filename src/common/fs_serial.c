@@ -50,16 +50,16 @@ int serial_close(dev_file_t *f) {
   return 1;
 }
 
-int serial_write(dev_file_t *f, byte *data, dword size) {
+int serial_write(dev_file_t *f, byte *data, uint32_t size) {
   return stream_write(f, data, size);
 }
 
-int serial_read(dev_file_t *f, byte *data, dword size) {
+int serial_read(dev_file_t *f, byte *data, uint32_t size) {
   return stream_read(f, data, size);
 }
 
 // Returns the number of the available data on serial port
-dword serial_length(dev_file_t *f) {
+uint32_t serial_length(dev_file_t *f) {
   fd_set readfs;
   struct timeval tv;
 
@@ -124,19 +124,19 @@ int serial_close(dev_file_t *f) {
   return 1;
 }
 
-int serial_write(dev_file_t *f, byte *data, dword size) {
+int serial_write(dev_file_t *f, byte *data, uint32_t size) {
   DWORD bytes;
   f->last_error = !WriteFile((HANDLE) f->handle, data, size, &bytes, NULL);
   return bytes;
 }
 
-int serial_read(dev_file_t *f, byte *data, dword size) {
+int serial_read(dev_file_t *f, byte *data, uint32_t size) {
   DWORD bytes;
   f->last_error = !ReadFile((HANDLE) f->handle, data, size, &bytes, NULL);
   return bytes;
 }
 
-dword serial_length(dev_file_t *f) {
+uint32_t serial_length(dev_file_t *f) {
   COMSTAT cs;
   DWORD de = CE_BREAK;
   ClearCommError((HANDLE) f->handle, &de, &cs);
@@ -154,15 +154,15 @@ int serial_close(dev_file_t *f) {
   return 0;
 }
 
-int serial_write(dev_file_t *f, byte *data, dword size) {
+int serial_write(dev_file_t *f, byte *data, uint32_t size) {
   return 0;
 }
 
-int serial_read(dev_file_t *f, byte *data, dword size) {
+int serial_read(dev_file_t *f, byte *data, uint32_t size) {
   return 0;
 }
 
-dword serial_length(dev_file_t *f) {
+uint32_t serial_length(dev_file_t *f) {
   return 0;
 }
 
@@ -171,6 +171,6 @@ dword serial_length(dev_file_t *f) {
 /*
  * Returns true (EOF) if the connection is broken
  */
-dword serial_eof(dev_file_t *f) {
+uint32_t serial_eof(dev_file_t *f) {
   return f->last_error;
 }

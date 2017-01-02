@@ -497,7 +497,7 @@ void cmd_print(int output) {
     vuser_p->type = V_STR;
     vuser_p->v.p.ptr = NULL;
     vuser_p->v.p.length = 0;
-    handle = (mem_t)vuser_p;
+    handle = (intptr_t)vuser_p;
   }
 
   // prefix - USING
@@ -642,7 +642,7 @@ void cmd_input(int input) {
     }
 
     vuser_p->v.p.pos = 0;
-    handle = (mem_t) vuser_p;
+    handle = (intptr_t)vuser_p;
   }
 
   // prefix: prompt
@@ -1913,7 +1913,7 @@ void cmd_read() {
           prog_dp += OS_REALSZ;
           break;
         case kwTYPE_STR: {
-          dword len;
+          uint32_t len;
           prog_dp++;
           vp->type = V_STR;
           memcpy(&len, prog_source + prog_dp, OS_STRLEN);
@@ -1976,7 +1976,7 @@ void cmd_randomize() {
  * DELAY
  */
 void cmd_delay() {
-  dword ms = par_getint();
+  uint32_t ms = par_getint();
   if (prog_error) {
     return;
   }

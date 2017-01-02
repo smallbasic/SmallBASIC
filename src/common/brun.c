@@ -41,7 +41,7 @@ static int exec_tid;
 /**
  * jump to label
  */
-void code_jump_label(word label_id) {
+void code_jump_label(uint16_t label_id) {
   prog_ip = tlab[label_id].ip;
 }
 
@@ -729,8 +729,8 @@ void bc_loop(int isf) {
   byte code = 0;
 
   // setup event checker time = 50ms
-  dword now = dev_get_millisecond_count();
-  dword next_check = now + EVT_CHECK_EVERY;
+  uint32_t now = dev_get_millisecond_count();
+  uint32_t next_check = now + EVT_CHECK_EVERY;
 
   /**
    * For commands that change the IP use
@@ -1096,7 +1096,7 @@ void dump_stack() {
           case kwGOSUB:
             dev_printf(" RIP: %d", node.x.vgosub.ret_ip);
             if (prog_source[node.x.vgosub.ret_ip] == kwTYPE_LINE) {
-              dev_printf(" = LI %d", (*((word *)(prog_source + node.x.vgosub.ret_ip + 1))) - 1);
+              dev_printf(" = LI %d", (*((uint16_t *)(prog_source + node.x.vgosub.ret_ip + 1))) - 1);
             }
             break;
           }
@@ -1363,7 +1363,7 @@ int brun_create_task(const char *filename, byte *preloaded_bc, int libf) {
  * clean up the current task's (executor's) data
  */
 int exec_close_task() {
-  word i;
+  uint16_t i;
   stknode_t node;
   if (ctask->bytecode) {
     // clean up - format list

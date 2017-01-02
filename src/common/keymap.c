@@ -15,7 +15,7 @@
 #include "common/keymap.h"
 
 //  Keyboard buffer
-dword keybuff[PCKBSIZE];
+uint32_t keybuff[PCKBSIZE];
 int keyhead;
 int keytail;
 
@@ -60,7 +60,7 @@ void keymap_free() {
 /**
  * DEFINEKEY command handler to add a keymap 
  */
-void keymap_add(dword key, bcip_t ip) {
+void keymap_add(uint32_t key, bcip_t ip) {
   key_map_s* km = (key_map_s*) malloc(sizeof (key_map_s));
   km->next = 0;
   km->ip = ip;
@@ -81,7 +81,7 @@ void keymap_add(dword key, bcip_t ip) {
 /**
  * invokes the handler for the given key
  */
-int keymap_invoke(dword key) {
+int keymap_invoke(uint32_t key) {
   int result = 0;
   key_map_s* head = keymap;
   while (head) {
@@ -121,7 +121,7 @@ void dev_clrkb() {
 /**
  * stores a key in keyboard buffer
  */
-void dev_pushkey(dword key) {
+void dev_pushkey(uint32_t key) {
   keybuff[keytail] = key;
   keytail++;
   if (keytail >= PCKBSIZE) {
@@ -194,7 +194,7 @@ void timer_add(var_num_t interval, bcip_t ip) {
   }
 }
 
-void timer_run(dword now) {
+void timer_run(uint32_t now) {
   timer_s* timer = prog_timer;
   while (timer) {
     if (timer->value == 0) {

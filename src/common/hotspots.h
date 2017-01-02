@@ -22,8 +22,8 @@ void err_notavar(void);
  *
  * R(long int) <- Code[IP]; IP+=j
  */
-static inline dword code_getnext32(void) {
-  dword v;
+static inline uint32_t code_getnext32(void) {
+  uint32_t v;
   memcpy(&v, prog_source + prog_ip, 4);
   prog_ip += 4;
   return v;

@@ -198,7 +198,7 @@ int net_peek(socket_t s) {
  */
 socket_t net_connect(const char *server_name, int server_port) {
   socket_t sock;
-  dword inaddr;
+  uint32_t inaddr;
   struct sockaddr_in ad;
   struct hostent *hp;
 

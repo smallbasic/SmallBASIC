@@ -15,9 +15,9 @@
 
 int serial_open(dev_file_t *f);
 int serial_close(dev_file_t *f);
-int serial_write(dev_file_t *f, byte *data, dword size);
-int serial_read(dev_file_t *f, byte *data, dword size);
-dword serial_length(dev_file_t *f);
-dword serial_eof(dev_file_t *f);
+int serial_write(dev_file_t *f, byte *data, uint32_t size);
+int serial_read(dev_file_t *f, byte *data, uint32_t size);
+uint32_t serial_length(dev_file_t *f);
+uint32_t serial_eof(dev_file_t *f);
 
 #endif

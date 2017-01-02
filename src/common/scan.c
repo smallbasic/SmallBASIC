@@ -2685,7 +2685,7 @@ void comp_text_line(char *text, int addLineNo) {
  */
 bcip_t comp_next_bc_cmd(bcip_t ip) {
   code_t code;
-  dword len;
+  uint32_t len;
 
   code = comp_prog.ptr[ip];
   ip++;
@@ -4308,7 +4308,7 @@ byte_code comp_create_bin() {
   byte_code bc;
   byte *cp;
   bc_head_t hdr;
-  dword size;
+  uint32_t size;
   unit_file_t uft;
 
   if (!opt_quiet && !opt_interactive) {

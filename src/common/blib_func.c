@@ -1196,7 +1196,7 @@ void cmd_str1(long funcCode, var_t *arg, var_t *r) {
 // str <- FUNC (void)
 //
 void cmd_str0(long funcCode, var_t *r) {
-  dword ch;
+  uint32_t ch;
   char tmp[3];
   struct tm tms;
   time_t now;
@@ -1956,7 +1956,7 @@ void cmd_intN(long funcCode, var_t *r) {
           | r2int(bc * 255.0, 0, 255);
       break;
     case 2:
-      r->v.i = ((dword) rc << 16) | ((dword) gc << 8) | (dword) bc;
+      r->v.i = ((uint32_t) rc << 16) | ((uint32_t) gc << 8) | (uint32_t) bc;
       break;
     default:
       err_argerr();

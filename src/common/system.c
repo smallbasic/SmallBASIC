@@ -243,22 +243,22 @@ const char *dev_getenv_n(int n) {
 }
 #endif
 
-dword dev_get_millisecond_count(void) {
+uint32_t dev_get_millisecond_count(void) {
 #if defined(__MACH__)
   struct timeval t;
   gettimeofday(&t, NULL);
-  return (dword) (1000L * t.tv_sec + (t.tv_usec / 1000.0));
+  return (uint32_t) (1000L * t.tv_sec + (t.tv_usec / 1000.0));
 #elif defined(_Win32)
   return GetTickCount();
 #else
   struct timespec t;
   t.tv_sec = t.tv_nsec = 0;
   if (0 == clock_gettime(CLOCK_MONOTONIC, &t)) {
-    return (dword) (1000L * t.tv_sec + (t.tv_nsec / 1e6));
+    return (uint32_t) (1000L * t.tv_sec + (t.tv_nsec / 1e6));
   } else {
     struct timeval now;
     gettimeofday(&now, NULL);
-    return (dword) (1000L * now.tv_sec + (now.tv_usec / 1000.0));
+    return (uint32_t) (1000L * now.tv_sec + (now.tv_usec / 1000.0));
   }
 #endif
 }
