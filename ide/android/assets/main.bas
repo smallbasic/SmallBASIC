@@ -261,12 +261,14 @@ sub manageFiles()
 
   sub createUI()
     cls
+    local num_chars = 42
+    local abbr = TXTW(".") * num_chars > xmax
     f.inputs << mk_menu(closeId, "<<", 0)
-    f.inputs << mk_menu(viewId, "View",  menu_gap)
-    f.inputs << mk_menu(renameId,"Rename", menu_gap)
+    f.inputs << mk_menu(viewId, IFF(abbr, "Vw", "View"), menu_gap)
+    f.inputs << mk_menu(renameId, IFF(abbr, "Ren", "Rename"), menu_gap)
     f.inputs << mk_menu(newId, "New", menu_gap)
-    f.inputs << mk_menu(deleteId, "Delete", menu_gap)
-    f.inputs << mk_menu(saveasId, "Save-As", menu_gap)
+    f.inputs << mk_menu(deleteId, IFF(abbr, "Del", "Delete"), menu_gap)
+    f.inputs << mk_menu(saveasId, IFF(abbr, "SvAs", "Save-As"), menu_gap)
     bn_edit.x = 0
     bn_edit.y = char_h + 4
     bn_edit.width = xmax

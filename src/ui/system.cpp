@@ -1203,7 +1203,7 @@ void lwrite(const char *str) {
   }
 }
 
-void dev_delay(dword ms) {
+void dev_delay(uint32_t ms) {
   g_system->getOutput()->flush(true);
   maWait(ms);
 }

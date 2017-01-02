@@ -48,7 +48,7 @@ void safe_memmove(void *dest, const void *src, size_t n) {
 #define strcasestr StrStrI
 #endif
 
-extern "C" dword dev_get_millisecond_count();
+extern "C" uint32_t dev_get_millisecond_count();
 
 unsigned g_themeId = 0;
 int g_lineMarker[MAX_MARKERS] = {
