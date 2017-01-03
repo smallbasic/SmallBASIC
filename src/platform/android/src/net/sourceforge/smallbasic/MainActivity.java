@@ -491,8 +491,10 @@ public class MainActivity extends NativeActivity {
       Intent sendIntent = new Intent();
       sendIntent.setAction(Intent.ACTION_SEND);
       sendIntent.putExtra(Intent.EXTRA_TEXT, buffer);
+      sendIntent.putExtra(Intent.EXTRA_STREAM, Uri.fromFile(file));
+      sendIntent.putExtra(Intent.EXTRA_SUBJECT, file.getName());
       sendIntent.setType("text/plain");
-      startActivity(Intent.createChooser(sendIntent, file.getName()));
+      startActivity(Intent.createChooser(sendIntent, "Share"));
     }
   }
 

@@ -178,7 +178,6 @@ void Graphics::resize() {
 }
 
 bool Graphics::loadFonts(int fontId) {
-  trace("fontId=", result);
   const char *regularName;
   const char *boldName;
   switch (fontId) {
