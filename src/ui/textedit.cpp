@@ -1603,7 +1603,7 @@ TextEditHelpWidget::TextEditHelpWidget(TextEditInput *editor, int chW, int chH, 
 }
 
 TextEditHelpWidget::~TextEditHelpWidget() {
-  _outline.emptyList();
+  _outline.clear();
 }
 
 bool TextEditHelpWidget::closeOnEnter() const {
@@ -1915,7 +1915,7 @@ void TextEditHelpWidget::paste(const char *text) {
 
 void TextEditHelpWidget::reset(HelpMode mode) {
   stb_textedit_clear_state(&_state, mode == kSearch);
-  _outline.emptyList();
+  _outline.clear();
   _mode = mode;
   _buf.clear();
   _scroll = 0;

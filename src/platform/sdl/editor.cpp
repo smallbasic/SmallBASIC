@@ -51,11 +51,11 @@ void setupStatus(String &dirtyFile, String &cleanFile, String &loadPath) {
   } else {
     fileName = loadPath;
   }
-  dirtyFile.empty();
+  dirtyFile.clear();
   dirtyFile.append(" * ");
   dirtyFile.append(fileName);
   dirtyFile.append(help);
-  cleanFile.empty();
+  cleanFile.clear();
   cleanFile.append(" - ");
   cleanFile.append(fileName);
   cleanFile.append(help);

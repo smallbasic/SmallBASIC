@@ -36,7 +36,7 @@ String::~String() {
 }
 
 const String &String::operator=(const String &s) {
-  empty();
+  clear();
   if (_buffer != s._buffer && s._buffer != NULL) {
     _buffer = strdup(s._buffer);
   }
@@ -44,7 +44,7 @@ const String &String::operator=(const String &s) {
 }
 
 const String &String::operator=(const char *s) {
-  empty();
+  clear();
   if (_buffer != s) {
     _buffer = strdup(s);
   }
@@ -115,7 +115,7 @@ String &String::append(FILE *fp, long filelen) {
   return *this;
 }
 
-void String::empty() {
+void String::clear() {
   free(_buffer);
   _buffer = NULL;
 }
@@ -230,7 +230,7 @@ void String::trim() {
     iend--;
   }
   String s = substring(ibegin, iend);
-  empty();
+  clear();
   append(s);
 }
 
@@ -252,8 +252,8 @@ void Properties::load(const char *s, int slen) {
 
   int i = 0;
   while (i < slen) {
-    attr.empty();
-    value.empty();
+    attr.clear();
+    value.clear();
 
     // remove w/s before attribute
     while (i < slen && IS_WHITE(s[i])) {
@@ -364,7 +364,7 @@ void Properties::get(const char *key, List<String *> *arrayValues) {
 void Properties::put(String &key, String &value) {
   String *prev = get(key.c_str());
   if (prev) {
-    prev->empty();
+    prev->clear();
     prev->append(value);
   } else {
     add(new String(key));
@@ -375,7 +375,7 @@ void Properties::put(String &key, String &value) {
 void Properties::put(const char *key, const char *value) {
   String *prev = get(key);
   if (prev) {
-    prev->empty();
+    prev->clear();
     prev->append(value);
   } else {
     String *k = new String();
@@ -410,5 +410,5 @@ void Properties::operator=(Properties &p) {
   for (int i = 0; i < p._count; i++) {
     add(p._head[i]);
   }
-  p.emptyList();
+  p.clear();
 }

@@ -103,12 +103,13 @@ void Screen::clear() {
   _shapes.removeAll();
   _inputs.removeAll();
   _images.removeAll();
-  _label.empty();
+  _label.clear();
 }
 
 void Screen::drawLabel() {
-  if (_label.length()) {
-    int w = _charWidth * (_label.length() + 2);
+  if (!_label.empty()) {
+    int labelLen = _label.length();
+    int w = _charWidth * (labelLen + 2);
     int h = _charHeight + 2;
     int top = _height - h;
     int left = (_width - w) / 2;
@@ -122,7 +123,7 @@ void Screen::drawLabel() {
     maLine(left, top + h - 1, left + w, top + h - 1);
     maLine(left + w, top + 1, left + w, top + h - 1);
     maSetColor(0x403c44);
-    maDrawText(left + _charWidth, textY, _label.c_str(), _label.length());
+    maDrawText(left + _charWidth, textY, _label.c_str(), labelLen);
   }
 }
 
@@ -202,7 +203,7 @@ void Screen::drawOverlay(bool vscroll) {
 
   drawLabel();
 
-  if ((!_inputs.empty() || _label.length()) && isFullScreen()) {
+  if ((!_inputs.empty() || !_label.empty()) && isFullScreen()) {
     // draw the menu widget when in UI mode
     drawMenu();
   }

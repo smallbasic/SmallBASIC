@@ -121,7 +121,7 @@ bool getFont(FcFontSet *fs, const char *familyName, int fontWeight, String &name
           && slant == 0
           && strcasecmp(filename + len - 4, ".ttf") == 0
           && strcasecmp(familyName, (const char *)family) == 0) {
-        name.empty();
+        name.clear();
         name.append(filename);
         result = true;
       }

@@ -51,11 +51,12 @@ struct String {
   String &append(FILE *fp, long len);
   operator const char *() const { return _buffer; }
   const char *c_str() const { return _buffer; };
-  void   empty();
+  void   clear();
   bool   equals(const String &s, bool ignoreCase = true) const;
   bool   equals(const char *s, bool ignoreCase = true) const;
   int    indexOf(char chr, int fromIndex) const;
   int    indexOf(const char *s, int fromIndex) const;
+  bool   empty() const { return _buffer == NULL || _buffer[0] == '\0'; };
   int    lastIndexOf(char chr, int untilIndex) const;
   int    length() const { return (_buffer == NULL ? 0 : strlen(_buffer)); }
   String leftOf(char ch) const;
@@ -102,13 +103,13 @@ struct List {
     for (int i = 0; i < _count; i++) {
       delete _head[i];
     }
-    emptyList();
+    clear();
   }
 
   /**
    * Empties the list without deleteing the list objects
    */
-  void emptyList() {
+  void clear() {
     free(_head);
     init();
   }

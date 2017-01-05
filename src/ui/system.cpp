@@ -61,9 +61,9 @@ System *g_system;
 void Cache::add(const char *key, const char *value) {
   if (_size == _count) {
     // overwrite at next index position
-    _head[_index]->empty();
+    _head[_index]->clear();
     _head[_index]->append(key);
-    _head[_index + 1]->empty();
+    _head[_index + 1]->clear();
     _head[_index + 1]->append(value);
     _index = (_index + 2) % _size;
   } else {
@@ -510,7 +510,7 @@ bool System::loadSource(const char *fileName) {
 }
 
 char *System::readSource(const char *fileName) {
-  _activeFile.empty();
+  _activeFile.clear();
   char *buffer;
   if (_editor != NULL && _loadPath.equals(fileName)) {
     buffer = _editor->getTextSelection();
@@ -616,7 +616,7 @@ void System::runMain(const char *mainBasPath) {
         _loadPath.indexOf("://", 1) == -1 && loadSource(_loadPath)) {
       editSource(_loadPath);
       if (isBack()) {
-        _loadPath.empty();
+        _loadPath.clear();
         _state = kActiveState;
         continue;
       } else if (isClosing()) {
@@ -641,7 +641,7 @@ void System::runMain(const char *mainBasPath) {
           _state = kClosingState;
         } else {
           // don't reload
-          _loadPath.empty();
+          _loadPath.clear();
           _state = kActiveState;
         }
       }
@@ -695,7 +695,7 @@ void System::setBack() {
         delete old;
       }
       if (_history.peek() != NULL) {
-        _loadPath.empty();
+        _loadPath.clear();
         _loadPath.append(_history.peek());
       }
     }
@@ -780,7 +780,7 @@ void System::setRunning(bool running) {
     _output->setAutoflush(!opt_show_page);
     if (_mainBas || opt_ide != IDE_INTERNAL ||
         _loadPath.indexOf("://", 1) != -1) {
-      _loadPath.empty();
+      _loadPath.clear();
     }
     _userScreenId = -1;
   } else {

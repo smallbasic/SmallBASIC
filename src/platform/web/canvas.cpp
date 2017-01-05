@@ -156,8 +156,8 @@ void Canvas::buildHTML(String &result) {
 }
 
 void Canvas::clearScreen() {
-  _html.empty();
-  _script.empty();
+  _html.clear();
+  _script.clear();
   _spanLevel = 0;
   _curx = _cury = 0;
   _bgBody = _bg;
