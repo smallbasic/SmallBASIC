@@ -320,7 +320,7 @@ int Runtime::runShell(const char *startupBas, int fontScale, int debugPort) {
     }
     while (_state == kRestartState) {
       _state = kActiveState;
-      if (_loadPath.length() != 0) {
+      if (!_loadPath.empty()) {
         bas = _loadPath;
       }
       runOnce(bas.c_str());

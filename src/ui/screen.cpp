@@ -317,7 +317,7 @@ void Screen::layoutInputs(int newWidth, int newHeight) {
 // whether the point overlaps the label text
 bool Screen::overLabel(int px, int py) {
   bool result;
-  if (_label.length()) {
+  if (!_label.empty()) {
     int w = _charWidth * (_label.length() + 2);
     int h = _charHeight + 2;
     int top = _height - h;

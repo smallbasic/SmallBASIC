@@ -241,7 +241,7 @@ void System::editSource(String loadPath) {
           onlineHelp((Runtime *)this, editWidget);
           break;
         case SB_KEY_F(4):
-          if (editWidget->getTextLength() && g_exportAddr.length() && g_exportToken.length()) {
+          if (editWidget->getTextLength() && !g_exportAddr.empty() && !g_exportToken.empty()) {
             exportBuffer(_output, editWidget->getText(), g_exportAddr, g_exportToken);
             break;
           }

@@ -469,12 +469,12 @@ void Runtime::runShell() {
   loadConfig();
 
   String ipAddress = getString("getIPAddress");
-  if (ipAddress.length()) {
+  if (!ipAddress.empty()) {
     setenv("IP_ADDR", ipAddress.c_str(), 1);
   }
 
   String startupBas = getString("getStartupBas");
-  if (startupBas.length()) {
+  if (!startupBas.empty()) {
     if (getBoolean("getUntrusted")) {
       opt_file_permitted = 0;
     }
@@ -860,7 +860,7 @@ void Runtime::onUnicodeChar(int ch) {
 char *Runtime::getClipboardText() {
   char *result;
   String text = getStringBytes("getClipboardText");
-  if (text.length()) {
+  if (!text.empty()) {
     result = strdup(text.c_str());
   } else {
     result = NULL;

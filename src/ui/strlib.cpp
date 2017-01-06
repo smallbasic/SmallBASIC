@@ -65,7 +65,7 @@ String &String::append(const String &s) {
 }
 
 String &String::append(const String *s) {
-  if (s && s->length()) {
+  if (s && !s->empty()) {
     append(s->_buffer);
   }
   return *this;
@@ -391,11 +391,11 @@ String Properties::toString() {
   String s;
   for (int i = 0; i < _count; i++) {
     String *nextKey = (String *) _head[i++];
-    if (nextKey == NULL || nextKey->length() == 0 || i == _count) {
+    if (nextKey == NULL || nextKey->empty() || i == _count) {
       break;
     }
     String *nextValue = (String *) _head[i];
-    if (nextValue != NULL && nextValue->length() > 0) {
+    if (nextValue != NULL && !nextValue->empty()) {
       s.append(nextKey->c_str());
       s.append("='");
       s.append(nextValue->c_str());

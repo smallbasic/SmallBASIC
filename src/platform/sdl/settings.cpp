@@ -213,7 +213,7 @@ void saveSettings(SDL_Window *window, int fontScale, bool debug) {
 
     // save the recent editor paths
     for (int i = 0; i < NUM_RECENT_ITEMS; i++) {
-      if (recentPath[i].length() > 0) {
+      if (!recentPath[i].empty()) {
         fprintf(fp, "%s\n", recentPath[i].c_str());
       }
     }
@@ -224,7 +224,8 @@ void saveSettings(SDL_Window *window, int fontScale, bool debug) {
 
 bool getRecentFile(String &path, unsigned position) {
   bool result = false;
-  if (position < NUM_RECENT_ITEMS && recentPath[position].length() > 0 &&
+  if (position < NUM_RECENT_ITEMS &&
+      !recentPath[position].empty() &&
       !recentPath[position].equals(path)) {
     path.clear();
     path.append(recentPath[position]);
@@ -235,7 +236,7 @@ bool getRecentFile(String &path, unsigned position) {
 
 void getRecentFileList(String &fileList, String &current) {
   for (int i = 0; i < NUM_RECENT_ITEMS; i++) {
-    if (recentPath[i].length() > 0) {
+    if (!recentPath[i].empty()) {
       if (recentPath[i].equals(current)) {
         fileList.append(">> ");
       }

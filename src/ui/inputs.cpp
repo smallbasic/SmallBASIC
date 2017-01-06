@@ -543,7 +543,7 @@ void FormLineInput::draw(int x, int y, int w, int h, int chw) {
     len = _width / chw;
   }
 
-  if (!len && _help.length()) {
+  if (!len && !_help.empty()) {
     if (hasFocus()) {
       setTextColor();
       maFillRect(x, y, chw, _height);
@@ -1006,7 +1006,7 @@ void FormListBox::draw(int x, int y, int w, int h, int chw) {
   MAExtent textSize = maGetTextSize(_model->getTextAt(0));
   int rowHeight = EXTENT_Y(textSize) + 1;
   int textY = y;
-  if (!_model->rows() && _help.length()) {
+  if (!_model->rows() && !_help.empty()) {
     setHelpTextColor();
     drawText(_help.c_str(), x, textY, w, chw);
   } else {

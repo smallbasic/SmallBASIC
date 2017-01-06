@@ -104,7 +104,7 @@ System::~System() {
 }
 
 void System::checkModifiedTime() {
-  if (opt_ide == IDE_EXTERNAL && _activeFile.length() > 0 &&
+  if (opt_ide == IDE_EXTERNAL && !_activeFile.empty() &&
       _modifiedTime != getModifiedTime()) {
     setRestart();
   }
@@ -147,7 +147,7 @@ bool System::fileExists(strlib::String &path) {
   bool result = false;
   if (path.indexOf("://", 1) != -1) {
     result = true;
-  } else if (path.length() > 0) {
+  } else if (!path.empty()) {
     struct stat st_file;
     result = stat(path.c_str(), &st_file) == 0;
   }
@@ -258,7 +258,7 @@ char *System::getText(char *dest, int maxSize) {
 
 uint32_t System::getModifiedTime() {
   uint32_t result = 0;
-  if (_activeFile.length() > 0) {
+  if (!_activeFile.empty()) {
     struct stat st_file;
     if (!stat(_activeFile.c_str(), &st_file)) {
       result = st_file.st_mtime;
@@ -370,12 +370,12 @@ void System::handleMenu(MAEvent &event) {
     event.key = SB_KEY_F(1);
     break;
   case MENU_SHORTCUT:
-    if (_activeFile.length() > 0) {
+    if (!_activeFile.empty()) {
       addShortcut(_activeFile.c_str());
     }
     break;
   case MENU_SHARE:
-    if (_activeFile.length() > 0) {
+    if (!_activeFile.empty()) {
       share(_activeFile.c_str());
     }
     break;
@@ -901,7 +901,7 @@ void System::showMenu() {
         _systemMenu[index++] = MENU_EDITMODE;
       }
 #if !defined(_SDL)
-      if (!_mainBas && _activeFile.length() > 0) {
+      if (!_mainBas && !_activeFile.empty()) {
         items->add(new String("Desktop Shortcut"));
         items->add(new String("Share"));
         _systemMenu[index++] = MENU_SHORTCUT;
