@@ -25,6 +25,58 @@ int g_macro_size;
 bool g_macro_record;
 bool g_returnToLine;
 
+struct StatusMessage {
+  StatusMessage(TextEditInput *editor) :
+    _dirty(editor->isDirty()),
+    _row(editor->getRow()),
+    _col(editor->getCol()) {
+  }
+
+  void setFilename(String &loadPath) {
+    int i = loadPath.lastIndexOf('/', 0);
+    if (i != -1) {
+      _fileName = loadPath.substring(i + 1);
+    } else {
+      _fileName = loadPath;
+    }
+  }
+
+  bool update(TextEditInput *editor, AnsiWidget *out, bool force=false) {
+    bool result;
+    bool dirty = editor->isDirty();
+    if (force
+        || _dirty != dirty
+        || _row != editor->getRow()
+        || _col != editor->getCol()) {
+      String message;
+      result = true;
+      if (dirty) {
+        message.append(" * ");
+      } else {
+        message.append(" - ");
+      }
+      message.append(_fileName)
+        .append(" Ctrl+h (C-h)=Help (")
+        .append(editor->getRow())
+        .append(",")
+        .append(editor->getCol())
+        .append(")");
+      out->setStatus(message);
+      _dirty = dirty;
+      _row = editor->getRow();
+      _col = editor->getCol();
+    } else {
+      result = false;
+    }
+    return result;
+  }
+
+  bool _dirty;
+  int _row;
+  int _col;
+  String _fileName;
+};
+
 void onlineHelp(Runtime *runtime, TextEditInput *widget) {
   char path[100];
   const char *nodeId = widget->getNodeId();
@@ -42,30 +94,11 @@ void onlineHelp(Runtime *runtime, TextEditInput *widget) {
   runtime->browseFile(path);
 }
 
-void setupStatus(String &dirtyFile, String &cleanFile, String &loadPath) {
-  const char *help = " Ctrl+h (C-h)=Help";
-  String fileName;
-  int i = loadPath.lastIndexOf('/', 0);
-  if (i != -1) {
-    fileName = loadPath.substring(i + 1);
-  } else {
-    fileName = loadPath;
-  }
-  dirtyFile.clear();
-  dirtyFile.append(" * ");
-  dirtyFile.append(fileName);
-  dirtyFile.append(help);
-  cleanFile.clear();
-  cleanFile.append(" - ");
-  cleanFile.append(fileName);
-  cleanFile.append(help);
-}
-
 void showRecentFiles(TextEditHelpWidget *helpWidget, String &loadPath) {
+  String fileList;
   helpWidget->createMessage();
   helpWidget->show();
   helpWidget->reload(NULL);
-  String fileList;
   getRecentFileList(fileList, loadPath);
   helpWidget->setText(fileList);
 }
@@ -109,18 +142,17 @@ void System::editSource(String loadPath) {
   }
   TextEditHelpWidget *helpWidget = new TextEditHelpWidget(editWidget, charWidth, charHeight);
   TextEditInput *widget = editWidget;
-  String dirtyFile;
-  String cleanFile;
   String recentFile;
+  StatusMessage statusMessage(editWidget);
   enum InputMode {
     kInit, kExportAddr, kExportToken, kCommand
   } inputMode = kInit;
 
-  setupStatus(dirtyFile, cleanFile, loadPath);
   _modifiedTime = getModifiedTime();
   editWidget->updateUI(NULL, NULL);
   editWidget->setLineNumbers();
   editWidget->setFocus(true);
+  statusMessage.setFilename(loadPath);
 
   if (isBreak() && g_returnToLine) {
     editWidget->setCursorRow(gsb_last_line);
@@ -138,24 +170,21 @@ void System::editSource(String loadPath) {
   _output->addInput(helpWidget);
   if (gsb_last_error && !isBack()) {
     _output->setStatus("Error. Esc=Close");
-  }  else if (editWidget->isDirty()) {
-    _output->setStatus(dirtyFile);
   } else {
-    _output->setStatus(cleanFile);
+    statusMessage.update(editWidget, _output, true);
   }
   _output->redraw();
   _state = kEditState;
 
   showCursor(kIBeam);
   setRecentFile(loadPath.c_str());
-  setWindowTitle(loadPath);
+  setWindowTitle(statusMessage._fileName);
 
   while (_state == kEditState) {
     MAEvent event = getNextEvent();
     switch (event.type) {
     case EVENT_TYPE_OPTIONS_BOX_BUTTON_CLICKED:
-      if (editWidget->isDirty()) {
-        _output->setStatus(dirtyFile);
+      if (statusMessage.update(editWidget, _output)) {
         _output->redraw();
       }
       break;
@@ -164,7 +193,6 @@ void System::editSource(String loadPath) {
         dev_clrkb();
         int sw = _output->getScreenWidth();
         bool redraw = true;
-        bool dirty = editWidget->isDirty();
         char *text;
 
         if (_modifiedTime != 0 && _modifiedTime != getModifiedTime()) {
@@ -172,7 +200,6 @@ void System::editSource(String loadPath) {
           if (ask("File has changed on disk", msg, false) == 0) {
             loadSource(loadPath.c_str());
             editWidget->reload(_programSrc);
-            dirty = !editWidget->isDirty();
           }
           _modifiedTime = getModifiedTime();
           event.key = 0;
@@ -185,7 +212,6 @@ void System::editSource(String loadPath) {
           g_macro_size = 0;
           break;
         case SB_KEY_CTRL('6'):
-          dirty = !editWidget->isDirty();
           g_macro_record = false;
           break;
         case SB_KEY_CTRL('7'):
@@ -203,7 +229,6 @@ void System::editSource(String loadPath) {
         case SB_KEY_ESCAPE:
           widget = editWidget;
           helpWidget->hide();
-          dirty = !editWidget->isDirty();
           debugStop();
           break;
         case SB_KEY_F(9):
@@ -347,10 +372,9 @@ void System::editSource(String loadPath) {
         if (getRecentFile(recentFile, event.key - SB_KEY_ALT('1'))) {
           if (loadSource(recentFile.c_str())) {
             editWidget->reload(_programSrc);
-            dirty = !editWidget->isDirty();
-            setupStatus(dirtyFile, cleanFile, recentFile);
+            statusMessage.setFilename(loadPath);
             setLoadPath(recentFile);
-            setWindowTitle(recentFile);
+            setWindowTitle(statusMessage._fileName);
             loadPath = recentFile;
             if (helpWidget->messageMode() && helpWidget->isVisible()) {
               showRecentFiles(helpWidget, loadPath);
@@ -374,7 +398,6 @@ void System::editSource(String loadPath) {
         if (event.key == SB_KEY_ENTER) {
           if (helpWidget->replaceMode()) {
             _output->setStatus("Replace string with. Esc=Close");
-            dirty = editWidget->isDirty();
           } else if (helpWidget->lineEditMode() && helpWidget->getTextLength()) {
             switch (inputMode) {
             case kExportAddr:
@@ -399,26 +422,16 @@ void System::editSource(String loadPath) {
             default:
               break;
             }
-            redraw = true;
           } else if (helpWidget->closeOnEnter() && helpWidget->isVisible()) {
-            if (helpWidget->replaceDoneMode()) {
-              _output->setStatus(dirtyFile);
-            }
             widget = editWidget;
             helpWidget->hide();
-            redraw = true;
-            dirty = !editWidget->isDirty();
           }
+          redraw = true;
         }
 
         helpWidget->setFocus(widget == helpWidget);
         editWidget->setFocus(widget == editWidget);
-
-        if (editWidget->isDirty() && !dirty) {
-          _output->setStatus(dirtyFile);
-        } else if (!editWidget->isDirty() && dirty) {
-          _output->setStatus(cleanFile);
-        }
+        redraw |= statusMessage.update(editWidget, _output);
         if (redraw) {
           _output->redraw();
         }

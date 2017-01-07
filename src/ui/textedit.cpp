@@ -200,6 +200,7 @@ EditBuffer::EditBuffer(TextEditInput *in, const char *text) :
   _buffer(NULL),
   _len(0),
   _size(0),
+  _lines(-1),
   _in(in) {
   if (text != NULL && text[0]) {
     _len = strlen(text);
@@ -310,6 +311,7 @@ TextEditInput::TextEditInput(const char *text, int chW, int chH,
   _charHeight(chH),
   _marginWidth(0),
   _scroll(0),
+  _cursorCol(0),
   _cursorRow(0),
   _cursorLine(0),
   _indentLevel(INDENT_LEVEL),
@@ -1197,20 +1199,23 @@ int TextEditInput::getCompletions(StringList *list, int max) {
   return count;
 }
 
-int TextEditInput::getCursorRow() const {
+int TextEditInput::getCursorRow() {
   StbTexteditRow r;
   int len = _buf._len;
   int row = 0;
+  int i;
 
-  for (int i = 0; i < len;) {
+  for (i = 0; i < len;) {
     layout(&r, i);
     if (_state.cursor == i + r.num_chars &&
         _buf._buffer[i + r.num_chars - 1] == STB_TEXTEDIT_NEWLINE) {
       // at end of line
       row++;
+      _cursorCol = 0;
       break;
     } else if (_state.cursor >= i && _state.cursor < i + r.num_chars) {
       // within line
+      _cursorCol = _state.cursor - i;
       break;
     }
     i += r.num_chars;
@@ -1218,7 +1223,7 @@ int TextEditInput::getCursorRow() const {
       row++;
     }
   }
-  return row + 1;
+  return row;
 }
 
 uint32_t TextEditInput::getHash(const char *str, int offs, int &count) {
