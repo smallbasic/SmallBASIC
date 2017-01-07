@@ -725,7 +725,7 @@ void Runtime::optionsBox(StringList *items) {
       }
     }
     if (ev.type == EVENT_TYPE_POINTER_RELEASED) {
-      showCursor(get_focus_edit() ? kIBeam : kArrow);
+      showCursor(kArrow);
       if (++releaseCount == 2) {
         break;
       }
