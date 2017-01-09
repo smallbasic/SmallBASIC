@@ -61,6 +61,12 @@ struct StatusMessage {
         .append(",")
         .append(editor->getCol())
         .append(")");
+      int digits = snprintf(NULL, 0, "%d%d",
+                            editor->getRow(), editor->getCol());
+      int spaces = 4 - digits;
+      for (int i = 0; i < spaces; i++) {
+        message.append(' ');
+      }
       out->setStatus(message);
       _dirty = dirty;
       _row = editor->getRow();

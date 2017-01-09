@@ -1494,9 +1494,17 @@ void TextEditInput::pageNavigate(bool pageDown, bool shift) {
   int len = _buf._len;
   int row = 0;
   int i = 0;
+  int count = 0;
 
   for (; i < len && row != nextRow; i += r.num_chars, row++) {
     layout(&r, i);
+    count += r.num_chars;
+  }
+
+  if (count == _buf._len) {
+    // at end
+    row--;
+    i -= r.num_chars;
   }
 
   if (shift) {
@@ -1510,6 +1518,7 @@ void TextEditInput::pageNavigate(bool pageDown, bool shift) {
 
   _state.cursor = i;
   _cursorRow = row;
+  _cursorCol = 0;
   updateScroll();
 }
 
