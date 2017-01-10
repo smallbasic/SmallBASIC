@@ -219,9 +219,26 @@ void EditBuffer::clear() {
   free(_buffer);
   _buffer = NULL;
   _len = _size = 0;
+  _lines = -1;
+}
+
+int EditBuffer::countNewlines(const char *text, int num) {
+  int result = 0;
+  for (int i = 0; i < num; i++) {
+    if (text[i] == '\n') {
+      result++;
+    }
+  }
+  return result;
 }
 
 int EditBuffer::deleteChars(int pos, int num) {
+  if (num > 1) {
+    _lines -= countNewlines(_buffer + pos, num);
+  } else if (_buffer[pos] == '\n') {
+    _lines--;
+  }
+
   if (_len - (pos + num) > 0) {
     memmove(&_buffer[pos], &_buffer[pos + num], _len - (pos + num));
   }
@@ -248,7 +265,19 @@ int EditBuffer::insertChars(int pos, const char *text, int num) {
   _len += num;
   _buffer[_len] = '\0';
   _in->setDirty(true);
+  if (num > 1) {
+    _lines += countNewlines(text, num);
+  } else if (text[0] == '\n') {
+    _lines++;
+  }
   return 1;
+}
+
+int EditBuffer::lineCount() {
+  if (_lines < 0) {
+    _lines = 1 + countNewlines(_buffer, _len);
+  }
+  return _lines;
 }
 
 char *EditBuffer::textRange(int start, int end) {
@@ -699,7 +728,7 @@ bool TextEditInput::edit(int key, int screenWidth, int charWidth) {
     }
   } else {
     int pageRows = _height / _charHeight;
-    if (_cursorRow - _scroll > pageRows || _cursorRow < _scroll) {
+    if (_cursorRow - _scroll >= pageRows || _cursorRow < _scroll) {
       // scroll for cursor outside of current frame
       updateScroll();
     }

@@ -60,10 +60,18 @@ struct StatusMessage {
         .append(editor->getRow())
         .append(",")
         .append(editor->getCol())
-        .append(")");
+        .append(") ");
+      if (!editor->getScroll()) {
+        message.append("Top");
+      } else if (editor->getLines() - editor->getScroll() < editor->getPageRows()) {
+        message.append("Bot");
+      } else {
+        int pos = editor->getRow() * 100 / editor->getLines();
+        message.append(pos).append("%");
+      }
       int digits = snprintf(NULL, 0, "%d%d",
                             editor->getRow(), editor->getCol());
-      int spaces = 4 - digits;
+      int spaces = 5 - digits;
       for (int i = 0; i < spaces; i++) {
         message.append(' ');
       }
