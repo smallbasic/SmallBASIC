@@ -3,7 +3,7 @@ const boldOn = chr(27) + "[1m"
 const boldOff = chr(27) + "[21m"
 const char_h = txth("Q")
 const lineSpacing = 2 + char_h
-const onlineUrl = "http://smallbasic.sourceforge.net/?q=export/code/1243"
+const onlineUrl = "http://smallbasic.github.io/samples/index.bas"
 const idxEdit = 6
 const idxFiles = 7
 const saveasId = "__bn_saveas__"
