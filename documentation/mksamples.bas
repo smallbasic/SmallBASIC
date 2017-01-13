@@ -50,8 +50,9 @@ end
 
 sub mk_files(prefix)
   local in_map_len = len(in_map) - 1
-  local folder, filename, code
+  local folder, filename, code, file_index, html, file
 
+  dim file_index
   if (!exist(prefix)) then
     mkdir prefix
   endif
@@ -59,10 +60,29 @@ sub mk_files(prefix)
   for i = 0 to in_map_len
     folder = prefix + "/" + translate(lower(in_map(i).folder), "/", " ")
     filename = folder + "/" + lower(in_map(i).filename)
+    file_index(folder) << filename
     code = update_code(in_map(i).code)
     if (!exist(folder)) then
       mkdir folder
     endif
     tsave filename, code
   next i
+
+  for folder in file_index
+    html = ""
+    for filename in file_index(folder)
+      file = rightoflast(filename, "/")
+      html += "<a href='" + file + "'>" + file + "</a><br/>"
+    next filename
+    tsave folder + "/index.html", html
+  next folder
+
+  html = ""
+  for folder in file_index
+    file = rightoflast(folder, "/")
+    html += "<a href='" + file + "/index.html'>" + file + "</a><br/>"
+  next folder
+  tsave prefix + "/index.html", html
+
+
 end
