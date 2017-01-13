@@ -235,24 +235,16 @@ void setsysvar_num(int index, var_num_t value) {
  * sets the value of an string system-variable
  */
 void setsysvar_str(int index, const char *value) {
-  int tid;
   int i;
-  int l = strlen(value) + 1;
+  int tid = ctask->tid;
 
-  tid = ctask->tid;
   for (i = 0; i < count_tasks(); i++) {
     activate_task(i);
     if (ctask->has_sysvars) {
       var_t *var_p = tvar[index];
-
-      if (var_p->type == V_STR) {
-        free(var_p->v.p.ptr);
-      }
-      var_p->type = V_STR;
+      v_free(var_p);
+      v_createstr(var_p, value);
       var_p->const_flag = 1;
-      var_p->v.p.ptr = malloc(l);
-      strcpy(var_p->v.p.ptr, value);
-      var_p->v.p.length = l;
     }
   }
   activate_task(tid);

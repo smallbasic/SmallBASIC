@@ -576,6 +576,8 @@ void v_tostr(var_t *arg) {
   if (arg->type != V_STR) {
     char *tmp = v_str(arg);
     int len = strlen(tmp) + 1;
+
+    v_free(arg);
     arg->type = V_STR;
     arg->v.p.ptr = malloc(len);
     arg->v.p.length = len;

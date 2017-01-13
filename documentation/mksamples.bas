@@ -1,5 +1,5 @@
 #
-# Generate the input file using the following SQL query:
+# Export samples from the code library: http://smallbasic.sourceforge.net/?q=node/9
 #
 # 1. import site data into mysql
 #   mysql -u <username> -p -h localhost smallbasic < backup_xxx.sql
@@ -34,6 +34,20 @@ in_map = array(in_str)
 
 mk_files("samples")
 
+func update_code(code)
+  local i, c1,c2
+
+  c1 = instr(code, "<code>")
+  c2 = instr(code, "</code>")
+  if (c1 != 0 && c2 != 0) then
+    code = mid(code, c1 + 6, c2 - c1 - 6)
+    code = translate(code, "\r\n", chr(10))
+    code = translate(code, "\\\"", "\"")
+    code = translate(code, "\\\\", "\\")
+  endif
+  update_code = code
+end
+
 sub mk_files(prefix)
   local in_map_len = len(in_map) - 1
   local folder, filename, code
@@ -45,7 +59,7 @@ sub mk_files(prefix)
   for i = 0 to in_map_len
     folder = prefix + "/" + translate(lower(in_map(i).folder), "/", " ")
     filename = folder + "/" + lower(in_map(i).filename)
-    code = in_map(i).code
+    code = update_code(in_map(i).code)
     if (!exist(folder)) then
       mkdir folder
     endif
