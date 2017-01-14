@@ -3651,7 +3651,7 @@ char *comp_format_text(const char *source) {
           p += 2;
         } else if (p[0] == '\\' && (p[1] == '\r' || p[1] == '\n')) {
           // escape adding the newline
-          if (p[1] == '\r') {
+          if (p[1] == '\r' && p[2] == '\n') {
             p++;
           }
           p += 2;
