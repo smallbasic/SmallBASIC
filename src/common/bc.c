@@ -174,7 +174,7 @@ void bc_add_creal(bc_t *bc, var_num_t v) {
  */
 void bc_add_strn(bc_t *bc, const char *str, int len) {
   if (len > BC_MAX_STORE_SIZE) {
-    sc_raise("STRING TOO BIG");
+    sc_raise("String: buffer size limit exceeded");
   } else {
     bc_add_code(bc, kwTYPE_STR);
     bc_add_dword(bc, len);
@@ -209,6 +209,9 @@ char *bc_store_string(bc_t *bc, char *src) {
       np[len] = 0;
       // include " (or \ ) in next segment
       base = ++p;
+    } else if (*p == '\r') {
+      // revert hidden newline
+      *p = '\n';
     } else if (*p == '\"') {
       // end of string detected
       int seglen = p - base;

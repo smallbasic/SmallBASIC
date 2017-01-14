@@ -3519,8 +3519,6 @@ char *comp_load(const char *file_name) {
  * control chars are out
  * remove remarks (')
  *
- * TODO: join-lines character (&)
- *
  * returns a newly created string
  */
 char *comp_format_text(const char *source) {
@@ -3531,6 +3529,7 @@ char *comp_format_text(const char *source) {
   int sl, last_ch = 0, i;
   char *last_nonsp_ptr;
   int adj_line_num = 0;
+  int multi_line_string = 0;
 
   sl = strlen(source);
   new_text = malloc(sl + 2);
@@ -3542,8 +3541,9 @@ char *comp_format_text(const char *source) {
   while (*p) {
     if (!quotes) {
       switch (*p) {
-      case '\n':               // new line
-        if (*last_nonsp_ptr == '&') { // join lines
+      case '\n':
+        if (*last_nonsp_ptr == '&') {
+          // join lines
           p++;
           *last_nonsp_ptr = ' ';
           if (*(last_nonsp_ptr - 1) == ' ') {
@@ -3554,7 +3554,8 @@ char *comp_format_text(const char *source) {
           adj_line_num++;
         } else {
           for (i = 0; i <= adj_line_num; i++) {
-            *ps++ = '\n';       // at least one nl
+            // at least one nl
+            *ps++ = '\n';
           }
           adj_line_num = 0;
           p++;
@@ -3566,8 +3567,8 @@ char *comp_format_text(const char *source) {
         last_nonsp_ptr = ps - 1;
         break;
 
-      case '\'':               // remarks
-        // skip the rest line
+      case '\'':
+        // remarks - skip the rest line
         while (*p) {
           if (*p == '\n') {
             break;
@@ -3576,8 +3577,9 @@ char *comp_format_text(const char *source) {
         }
         break;
 
-      case ' ':                // spaces
+      case ' ':
       case '\t':
+        // spaces
         if (last_ch == ' ' || last_ch == '\n') {
           p++;
         } else {
@@ -3587,7 +3589,12 @@ char *comp_format_text(const char *source) {
         }
         break;
 
-      case '\"':               // quotes
+      case '\"':
+        // quotes
+        if (p[1] == '\"' && p[2] == '\"') {
+          multi_line_string = 1;
+          p += 2;
+        }
         quotes = !quotes;
         last_nonsp_ptr = ps;
         *ps++ = last_ch = *p++;
@@ -3625,7 +3632,7 @@ char *comp_format_text(const char *source) {
             *ps++ = last_ch = to_upper(*p);
             p++;
           } else {
-            // else ignore it
+            // else ignore it (\r filtered here)
             p++;
           }
         }
@@ -3635,7 +3642,39 @@ char *comp_format_text(const char *source) {
       if (*p == '\\' && (*(p + 1) == '\"' || *(p + 1) == '\\')) {
         // add the escaped quote or slash and continue
         *ps++ = *p++;
+      } else if (multi_line_string) {
+        if (p[0] == '\"' && p[1] == '\"' && p[2] == '\"') {
+          // end of multi-line string
+          quotes = 0;
+          multi_line_string = 0;
+          // add the single final quote character
+          p += 2;
+        } else if (p[0] == '\\' && (p[1] == '\r' || p[1] == '\n')) {
+          // escape adding the newline
+          if (p[1] == '\r') {
+            p++;
+          }
+          p += 2;
+          continue;
+        } else if (p[0] == '\r') {
+          p++;
+          continue;
+        } else if (p[0] == '\n') {
+          // hide the newline character from comp_pass1
+          *ps++ = '\r';
+          p++;
+          continue;
+        }
       } else if (*p == '\"' || *p == '\n') {
+        // join to any adjacent quoted text
+        const char *next = p + 1;
+        while (is_space(*next)) {
+          next++;
+        }
+        if (*next == '\"') {
+          p = ++next;
+          continue;
+        }
         // new line auto-ends the quoted string
         quotes = !quotes;
       }
