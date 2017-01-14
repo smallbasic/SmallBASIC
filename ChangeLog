@@ -1,6 +1,9 @@
 2017-01-14 (0.12.9)
 	COMMON: python style here-document
 
+2017-01-08 (0.12.9)
+	UI: editor display cursor row/col position
+
 2017-01-01 (0.12.9)
 	ANDROID: select alternative font
 
@@ -9,6 +12,7 @@
 
 2016-12-30 (0.12.9)
 	ANDROID: added share command
+	UI: added menu widget (three vertical dots)
 
 2016-12-23 (0.12.9)
 	ANDROID: swipe left or touch the status window to show menu
