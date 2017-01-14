@@ -3659,9 +3659,14 @@ char *comp_format_text(const char *source) {
         } else if (p[0] == '\r') {
           p++;
           continue;
+        } else if (p[0] == '\"') {
+          // internal quote escape (see bc_store_string)
+          *ps++ = '\1';
+          p++;
+          continue;
         } else if (p[0] == '\n') {
-          // hide the newline character from comp_pass1
-          *ps++ = '\r';
+          // internal newline escape
+          *ps++ = '\2';
           p++;
           continue;
         }

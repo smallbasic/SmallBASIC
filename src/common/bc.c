@@ -209,7 +209,10 @@ char *bc_store_string(bc_t *bc, char *src) {
       np[len] = 0;
       // include " (or \ ) in next segment
       base = ++p;
-    } else if (*p == '\r') {
+    } else if (*p == '\1') {
+      // revert hidden quote
+      *p = '\"';
+    } else if (*p == '\2') {
       // revert hidden newline
       *p = '\n';
     } else if (*p == '\"') {
