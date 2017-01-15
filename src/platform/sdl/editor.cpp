@@ -61,6 +61,12 @@ struct StatusMessage {
         .append(",")
         .append(editor->getCol())
         .append(") ");
+      int digits = snprintf(NULL, 0, "%d%d",
+                            editor->getRow(), editor->getCol());
+      int spaces = 6 - digits;
+      for (int i = 0; i < spaces; i++) {
+        message.append(' ');
+      }
       if (!editor->getScroll()) {
         message.append("Top");
       } else if (editor->getLines() - editor->getScroll() < editor->getPageRows()) {
@@ -68,12 +74,6 @@ struct StatusMessage {
       } else {
         int pos = editor->getRow() * 100 / editor->getLines();
         message.append(pos).append("%");
-      }
-      int digits = snprintf(NULL, 0, "%d%d",
-                            editor->getRow(), editor->getCol());
-      int spaces = 5 - digits;
-      for (int i = 0; i < spaces; i++) {
-        message.append(' ');
       }
       out->setStatus(message);
       _dirty = dirty;

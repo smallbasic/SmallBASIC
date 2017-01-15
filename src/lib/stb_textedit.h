@@ -505,7 +505,7 @@ static void stb_textedit_find_charpos(StbFindState *find, STB_TEXTEDIT_STRING *s
             prev_start = i;
             i += r.num_chars;
          }
-         find->first_char = i;
+         find->first_char = STB_TEXTEDIT_GETCHAR(str, n - 1) == STB_TEXTEDIT_NEWLINE ? i : prev_start;
          find->length = 0;
          find->prev_first = prev_start;
       }
