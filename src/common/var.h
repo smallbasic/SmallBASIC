@@ -219,6 +219,10 @@ struct stknode_s {
     struct {
       bcip_t catch_ip;
     } vtry;
+
+    struct {
+      var_t *catch_var;
+    } vcatch;
   } x;
 };
 typedef struct stknode_s stknode_t;

@@ -115,6 +115,16 @@ void free_node(stknode_t *node) {
     v_free(node->x.vcase.var_ptr);
     v_detach(node->x.vcase.var_ptr);
     break;
+
+  case kwCATCH:
+    if (node->x.vcatch.catch_var != NULL) {
+      // clear the catch variable once out of scope
+      v_free(node->x.vcatch.catch_var);
+    }
+    break;
+
+  default:
+    break;
   }
 }
 
@@ -1029,6 +1039,7 @@ void bc_loop(int isf) {
         IF_ERR_BREAK;
         continue;
       case kwENDTRY:
+        cmd_end_try();
         continue;
       default:
         log_printf("OUT OF ADDRESS SPACE\n");

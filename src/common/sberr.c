@@ -340,7 +340,7 @@ void inf_break(int pline) {
 }
 
 // assign error to variable or match with next expression
-int err_throw_catch(const char *err) {
+int err_throw_catch(const char *err, var_t **catch_var) {
   var_t *arg;
   var_t v_catch;
   int caught = 1;
@@ -348,6 +348,7 @@ int err_throw_catch(const char *err) {
   case kwTYPE_VAR:
     arg = code_getvarptr();
     v_setstr(arg, err);
+    *catch_var = arg;
     break;
   case kwTYPE_STR:
     v_init(&v_catch);
@@ -383,8 +384,8 @@ void err_throw_str(const char *err) {
   int caught = 0;
   int throw_sp = prog_stack_count;
   int try_sp = err_find_try(throw_sp);
-  int reset_sp;
   int trace_done = 0;
+  var_t *catch_var = NULL;
 
   if (!prog_error && try_sp != -1) {
     bcip_t catch_ip = prog_stack[try_sp].x.vtry.catch_ip;
@@ -397,8 +398,8 @@ void err_throw_str(const char *err) {
     // fetch next catch in the current block
     catch_ip = code_getaddr();
 
-    caught = err_throw_catch(err);
-    reset_sp = try_sp;
+    caught = err_throw_catch(err, &catch_var);
+    int reset_sp = try_sp;
 
     while (!caught && (catch_ip != INVALID_ADDR || try_sp != -1)) {
       // find in the current block
@@ -406,7 +407,7 @@ void err_throw_str(const char *err) {
         code_jump(catch_ip + 1);
         code_getaddr();
         catch_ip = code_getaddr();
-        caught = err_throw_catch(err);
+        caught = err_throw_catch(err, &catch_var);
       }
       // find in the next outer block
       if (!caught && try_sp != -1) {
@@ -417,7 +418,7 @@ void err_throw_str(const char *err) {
           code_jump(catch_ip + 1);
           code_getaddr();
           catch_ip = code_getaddr();
-          caught = err_throw_catch(err);
+          caught = err_throw_catch(err, &catch_var);
         }
       }
     }
@@ -447,6 +448,10 @@ void err_throw_str(const char *err) {
       err_stack_msg();
     }
   } else {
+    stknode_t node;
+    node.x.vcatch.catch_var = catch_var;
+    node.type = kwCATCH;
+    code_push(&node);
     prog_error = errThrow;
   }
 }

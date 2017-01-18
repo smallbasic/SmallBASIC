@@ -228,3 +228,19 @@ sub manageFiles()
   end
   viewFile()
 end
+
+
+try
+  try
+    throw "!!!error!!!"
+  catch inner
+    rem inner catch
+  end try
+catch e1
+  rem outer catch
+end try
+
+if (inner == "!!!error!!!") then
+  throw "inner still in scope"
+endif
+

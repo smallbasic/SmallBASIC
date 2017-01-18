@@ -2781,6 +2781,16 @@ void cmd_catch() {
 }
 
 /**
+ * Handler for code block between CATCH and END_TRY
+ */
+void cmd_end_try() {
+  stknode_t *node = code_stackpeek();
+  if (node != NULL && node->type == kwCATCH) {
+    code_pop_and_free(node);
+  }
+}
+
+/**
  * Call to object method
  */
 void cmd_call_vfunc() {
