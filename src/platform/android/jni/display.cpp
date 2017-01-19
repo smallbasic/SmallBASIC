@@ -12,10 +12,10 @@
 #include "ui/utils.h"
 #include "common/device.h"
 
-#define FONT_FACE_REGULAR_0 "Envy Code R.ttf"
-#define FONT_FACE_BOLD_0    "Envy Code R Bold.ttf"
-#define FONT_FACE_REGULAR_1 "Inconsolata-Regular.ttf"
-#define FONT_FACE_BOLD_1    "Inconsolata-Bold.ttf"
+#define FONT_FACE_REGULAR_0 "Inconsolata-Regular.ttf"
+#define FONT_FACE_BOLD_0    "Inconsolata-Bold.ttf"
+#define FONT_FACE_REGULAR_1 "Envy Code R.ttf"
+#define FONT_FACE_BOLD_1    "Envy Code R Bold.ttf"
 
 extern ui::Graphics *graphics;
 

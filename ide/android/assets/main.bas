@@ -156,7 +156,7 @@ sub do_setup()
   print
   dim frm.inputs(1)
   frm.inputs(0).type="list"
-  frm.inputs(0).value="Envy Code R|Inconsolata"
+  frm.inputs(0).value="Inconsolata|Envy Code R"
   frm.inputs(0).selectedIndex=env("fontId")
   frm.inputs(0).height=TXTH("Q")*2+4
   frm = form(frm)
@@ -264,11 +264,11 @@ sub manageFiles()
     local num_chars = 42
     local abbr = TXTW(".") * num_chars > xmax
     f.inputs << mk_menu(closeId, "<<", 0)
-    f.inputs << mk_menu(viewId, IFF(abbr, "Vw", "View"), menu_gap)
+    f.inputs << mk_menu(viewId, "View", menu_gap)
     f.inputs << mk_menu(renameId, IFF(abbr, "Ren", "Rename"), menu_gap)
     f.inputs << mk_menu(newId, "New", menu_gap)
     f.inputs << mk_menu(deleteId, IFF(abbr, "Del", "Delete"), menu_gap)
-    f.inputs << mk_menu(saveasId, IFF(abbr, "SvAs", "Save-As"), menu_gap)
+    f.inputs << mk_menu(saveasId, IFF(abbr, "SavAs", "Save-As"), menu_gap)
     bn_edit.x = 0
     bn_edit.y = char_h + 4
     bn_edit.width = xmax
