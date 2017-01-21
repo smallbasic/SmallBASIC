@@ -1,3 +1,6 @@
+2017-01-21 (0.12.9)
+	COMMON: allow array access via [] characters
+
 2017-01-18 (0.12.9)
 	COMMON: clear out of scope CATCH variables
 
@@ -18,7 +21,6 @@
 	UI: added menu widget (three vertical dots)
 
 2016-12-23 (0.12.9)
-	ANDROID: swipe left or touch the status window to show menu
 	ANDROID: fix '?' key input using gboard
 
 2016-12-18 (0.12.9)

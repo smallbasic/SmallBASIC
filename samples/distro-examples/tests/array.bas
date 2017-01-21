@@ -181,3 +181,15 @@ if a!=b || a!=c then
   ?c
   ?"8: empty items in 1-dim array ignored"
 fi
+
+REM 0.12.9 allow array access via [] characters
+dim elx.j[2], elj[2]
+elj[0] = 111
+elj[1] = 222
+elx.j[0] = elj[0]
+elx.j[1] = elj[1]
+if (111 <> elx.j[0] || elx.j[1] != 222) then
+  print elx
+  throw "err"
+endif
+

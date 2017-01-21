@@ -1019,15 +1019,12 @@ int comp_is_parenthesized(char *name) {
  */
 void comp_expression(char *expr, byte no_parser) {
   char *ptr = (char *)expr;
-  long idx;
   int level = 0, check_udf = 0;
   int kw_exec_more = 0;
-  int tp;
-  bcip_t stip, cip;
   var_int_t lv = 0;
   var_num_t dv = 0;
-  bc_t bc;
   int addr_opr = 0;
+  bc_t bc;
 
   comp_use_global_vartable = 0; // check local-variables first
   str_alltrim(expr);
@@ -1039,7 +1036,8 @@ void comp_expression(char *expr, byte no_parser) {
 
   while (*ptr) {
     if (is_digit(*ptr) || *ptr == '.' || (*ptr == '&' && strchr("XHOB", *(ptr + 1)))) {
-      // A CONSTANT NUMBER
+      // a constant number
+      int tp;
       ptr = get_numexpr(ptr, comp_bc_name, &tp, &lv, &dv);
       switch (tp) {
       case 1:
@@ -1051,22 +1049,23 @@ void comp_expression(char *expr, byte no_parser) {
       default:
         sc_raise(MSG_EXP_GENERR);
       }
-    } else if (*ptr == '\'' /* || *ptr == '#' */) {  // remarks
+    } else if (*ptr == '\'') {
+      // remarks
       break;
     } else if (is_alpha(*ptr) || *ptr == '?' || *ptr == '_') {
-      // A NAME
+      // a name
       ptr = (char *)comp_next_word(ptr, comp_bc_name);
-      idx = comp_is_func(comp_bc_name);
-      // special case for INPUT
+      long idx = comp_is_func(comp_bc_name);
+      // special case for input
       if (idx == kwINPUTF) {
         if (*comp_next_char(ptr) != '(') {
-          // INPUT is SPECIAL SEPARATOR (OPEN...FOR INPUT...)
+          // INPUT is special separator (OPEN...FOR INPUT...)
           idx = -1;
         }
       }
 
       if (idx != -1) {
-        // IS A FUNCTION
+        // is a function
         if (!kw_noarg_func(idx)) {
           if (*comp_next_char(ptr) != '(') {
             sc_raise(MSG_BF_ARGERR, comp_bc_name);
@@ -1091,7 +1090,7 @@ void comp_expression(char *expr, byte no_parser) {
         }
         check_udf++;
       } else {
-        // CHECK SPECIAL SEPARATORS
+        // check special separators
         idx = comp_is_special_operator(comp_bc_name);
         if (idx != -1) {
           if (idx == kwUSE) {
@@ -1119,13 +1118,13 @@ void comp_expression(char *expr, byte no_parser) {
             bc_add_code(&bc, idx);
           }
         } else {
-          // NOT A COMMAND, CHECK OPERATORS
+          // not a command, check operators
           idx = comp_is_operator(comp_bc_name);
           if (idx != -1) {
             bc_add_code(&bc, idx >> 8);
             bc_add_code(&bc, idx & 0xFF);
           } else {
-            // EXTERNAL FUNCTION
+            // external function
             idx = comp_is_external_func(comp_bc_name);
             if (idx != -1) {
               bc_add_extfcode(&bc, comp_extfunctable[idx].lib_id, comp_extfunctable[idx].symbol_index);
@@ -1139,10 +1138,10 @@ void comp_expression(char *expr, byte no_parser) {
               } else if (idx != -1) {
                 sc_raise(MSG_STATEMENT_ON_RIGHT, comp_bc_name);
               } else {
-                // UDF OR VARIABLE
+                // udf or variable
                 int udf = comp_udp_id(comp_bc_name, 1);
                 if (udf != -1) {
-                  // UDF
+                  // udf
                   if (addr_opr != 0) {
                     // pointer to UDF
                     bc_add_code(&bc, kwTYPE_PTR);
@@ -1154,18 +1153,22 @@ void comp_expression(char *expr, byte no_parser) {
                   bc_add_addr(&bc, 0);  // var place holder
                   ptr = trim_empty_parentheses(ptr);
                 } else {
-                  // VARIABLE
+                  // variable
                   if (addr_opr != 0) {
                     bc_add_code(&bc, kwBYREF);
                   }
                   SKIP_SPACES(ptr);
-                  if (*ptr == '(') {
-                    if (*(ptr + 1) == ')') {
-                      // null array
-                      ptr += 2;
-                    }
+                  if (ptr[0] == '(' && ptr[1] == ')') {
+                    // null array
+                    ptr += 2;
                   }
                   comp_add_variable(&bc, comp_bc_name);
+                  if (ptr[0] == '[') {
+                    // array element using '['
+                    ptr++;
+                    level++;
+                    bc_add_code(&bc, kwTYPE_LEVEL_BEGIN);
+                  }
                 }
               }
             }
@@ -1286,12 +1289,12 @@ void comp_expression(char *expr, byte no_parser) {
       // printf("=== after:\n"); hex_dump(bc.ptr, bc.count);
     }
     if (bc.count) {
-      stip = comp_prog.count;
+      bcip_t stip = comp_prog.count;
       bc_append(&comp_prog, &bc); // merge code segments
 
       // update pass2 stack-nodes
       if (check_udf) {
-        cip = stip;
+        bcip_t cip = stip;
         while ((cip = comp_search_bc(cip, kwUSE)) != INVALID_ADDR) {
           comp_push(cip);
           cip += (1 + ADDRSZ + ADDRSZ);
@@ -1649,37 +1652,43 @@ char *comp_array_params(char *src, char exitChar) {
   char *p = src;
   char *ss = NULL;
   char *se = NULL;
+  char closeBracket = '\0';
   int level = 0;
 
   while (*p) {
     switch (*p) {
+    case '[':
     case '(':
       if (level == 0) {
         ss = p;
       }
       level++;
+      closeBracket = *p == '(' ? ')' : ']';
       break;
     case ')':
-      level--;
-      if (level == 0) {
-        se = p;
-        // store this index
-        if (!ss) {
-          sc_raise(MSG_ARRAY_SE);
-        } else {
-          *ss = ' ';
-          *se = '\0';
-
-          bc_add_code(&comp_prog, kwTYPE_LEVEL_BEGIN);
-          comp_expression(ss, 0);
-          bc_store1(&comp_prog, comp_prog.count - 1, kwTYPE_LEVEL_END);
-
-          *ss = '(';
-          *se = ')';
-          ss = se = NULL;
-        }
-        if (*(p + 1) == '.') {
-          p = comp_array_uds_field(p + 2, &comp_prog);
+    case ']':
+      if (closeBracket == *p) {
+        level--;
+        if (level == 0) {
+          se = p;
+          // store this index
+          if (!ss) {
+            sc_raise(MSG_ARRAY_SE);
+          } else {
+            char ssSave = *ss;
+            char seSave = *se;
+            *ss = ' ';
+            *se = '\0';
+            bc_add_code(&comp_prog, kwTYPE_LEVEL_BEGIN);
+            comp_expression(ss, 0);
+            bc_store1(&comp_prog, comp_prog.count - 1, kwTYPE_LEVEL_END);
+            *ss = ssSave;
+            *se = seSave;
+            ss = se = NULL;
+          }
+          if (*(p + 1) == '.') {
+            p = comp_array_uds_field(p + 2, &comp_prog);
+          }
         }
       }
       break;
@@ -1809,17 +1818,30 @@ void comp_text_line_let(long idx, int ladd, int linc, int ldec, int leqop) {
   char *array_index = NULL;
   int array_index_len = 0;
   int v_func = 0;
+  char closeBracket = '\0';
 
-  if (parms[0] == '(') {
+  if (parms[0] == '(' || parms[0] == '[') {
     int level = 0;
     p = parms;
     while (*p) {
       switch(*p) {
+      case '[':
+        level++;
+        closeBracket = ']';
+        break;
       case '(':
         level++;
+        closeBracket = ')';
+        break;
+      case ']':
+        if (closeBracket == ']') {
+          level--;
+        }
         break;
       case ')':
-        level--;
+        if (closeBracket == ')') {
+          level--;
+        }
         break;
       case '.':
         // advance beyond UDS element
@@ -1831,7 +1853,7 @@ void comp_text_line_let(long idx, int ladd, int linc, int ldec, int leqop) {
         break;
       }
       p++;
-      if (level == 0 && *p != '(' && *p != '.') {
+      if (level == 0 && *p != '[' && *p != '(' && *p != '.') {
         break;
       }
     }
@@ -1918,8 +1940,8 @@ void comp_text_line_let(long idx, int ladd, int linc, int ldec, int leqop) {
         comp_array_params(array_index, 0);
       }
     }
-    else if (parms[0] == '(') {
-      if (*comp_next_char(parms + 1) == ')') {
+    else if (parms[0] == '(' || parms[0] == '[') {
+      if (parms[0] == '(' && *comp_next_char(parms + 1) == ')') {
         // vn()=fillarray
         p = strchr(parms, '=');
         comp_expression(p, 0);
@@ -1949,10 +1971,8 @@ void comp_text_line_let(long idx, int ladd, int linc, int ldec, int leqop) {
 // User-defined procedures/functions
 void comp_text_line_func(long idx, int decl) {
   char *lpar_ptr, *eq_ptr;
-  char_p_t pars[256];
   int count;
   char pname[SB_KEYWORD_SIZE + 1];
-  char vname[SB_KEYWORD_SIZE + 1];
 
   // single-line function (DEF FN)
   if ((eq_ptr = strchr(comp_bc_parm, '='))) {
@@ -2022,6 +2042,8 @@ void comp_text_line_func(long idx, int decl) {
         if (lpar_ptr) {
           int i;
           int vattr;
+          char vname[SB_KEYWORD_SIZE + 1];
+          char_p_t pars[256];
 
           *lpar_ptr = '(';
           comp_getlist_insep(comp_bc_parm, pars, "()", ",", 256, &count);
@@ -2664,7 +2686,8 @@ void comp_text_line(char *text, int addLineNo) {
   }
   if ((idx == kwCONST) ||
       ((comp_bc_parm[0] == '=' ||
-        (comp_bc_parm[0] == '(' && !comp_is_function(comp_bc_name)) ||
+        ((comp_bc_parm[0] == '(' || comp_bc_parm[0] == '[')
+         && !comp_is_function(comp_bc_name)) ||
         ladd || linc || ldec || leqop) && (idx == -1))) {
     comp_text_line_let(idx, ladd, linc, ldec, leqop);
   } else {
