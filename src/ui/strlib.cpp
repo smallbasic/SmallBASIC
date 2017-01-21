@@ -135,7 +135,7 @@ bool String::equals(const String &s, bool ignoreCase) const {
 }
 
 bool String::equals(const char *s, bool ignoreCase) const {
-  return (_buffer == 0 ? s == 0 : ignoreCase ? 
+  return (_buffer == 0 ? s == 0 : ignoreCase ?
           strcasecmp(_buffer, s) == 0 : strcmp(_buffer, s) == 0);
 }
 
@@ -236,13 +236,13 @@ void String::trim() {
 
 //--Properties------------------------------------------------------------------
 
-void Properties::load(const char *s) {
+template<> void Properties<String *>::load(const char *s) {
   if (s && s[0]) {
     load(s, strlen(s));
   }
 }
 
-void Properties::load(const char *s, int slen) {
+template<> void Properties<String *>::load(const char *s, int slen) {
   if (s == 0 || s[0] == 0 || slen == 0) {
     return;
   }
@@ -318,61 +318,7 @@ void Properties::load(const char *s, int slen) {
   }
 }
 
-String *Properties::get(const char *key) {
-  for (int i = 0; i < this->_count; i++) {
-    String *nextKey = (String *) _head[i++];
-    if (nextKey == NULL || i == _count) {
-      return NULL;
-    }
-    String *nextValue = (String *) _head[i];
-    if (nextValue == NULL) {
-      return NULL;
-    }
-    if (nextKey->equals(key)) {
-      return nextValue;
-    }
-  }
-  return NULL;
-}
-
-String *Properties::get(int i) const {
-  int index = (i * 2) + 1;
-  return index < _count ? (String *) _head[index] : 0;
-}
-
-String *Properties::getKey(int i) const {
-  int index = i * 2;
-  return index < _count ? (String *) _head[index] : 0;
-}
-
-void Properties::get(const char *key, List<String *> *arrayValues) {
-  for (int i = 0; i < _count; i++) {
-    String *nextKey = (String *) _head[i++];
-    if (nextKey == NULL || i == _count) {
-      break;
-    }
-    String *nextValue = (String *) _head[i];
-    if (nextValue == NULL) {
-      break;
-    }
-    if (nextKey->equals(key)) {
-      arrayValues->add(new String(*nextValue));
-    }
-  }
-}
-
-void Properties::put(String &key, String &value) {
-  String *prev = get(key.c_str());
-  if (prev) {
-    prev->clear();
-    prev->append(value);
-  } else {
-    add(new String(key));
-    add(new String(value));
-  }
-}
-
-void Properties::put(const char *key, const char *value) {
+template<> void Properties<String *>::put(const char *key, const char *value) {
   String *prev = get(key);
   if (prev) {
     prev->clear();
@@ -387,28 +333,4 @@ void Properties::put(const char *key, const char *value) {
   }
 }
 
-String Properties::toString() {
-  String s;
-  for (int i = 0; i < _count; i++) {
-    String *nextKey = (String *) _head[i++];
-    if (nextKey == NULL || nextKey->empty() || i == _count) {
-      break;
-    }
-    String *nextValue = (String *) _head[i];
-    if (nextValue != NULL && !nextValue->empty()) {
-      s.append(nextKey->c_str());
-      s.append("='");
-      s.append(nextValue->c_str());
-      s.append("'\n");
-    }
-  }
-  return s;
-}
 
-void Properties::operator=(Properties &p) {
-  removeAll();
-  for (int i = 0; i < p._count; i++) {
-    add(p._head[i]);
-  }
-  p.clear();
-}

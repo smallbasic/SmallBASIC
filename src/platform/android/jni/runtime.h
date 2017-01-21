@@ -68,8 +68,8 @@ struct Runtime : public System {
   void onResize(int w, int h);
   void onUnicodeChar(int ch);
   void loadConfig();
-  void loadEnvConfig(Properties &settings, const char *key);
-  bool loadSettings(Properties &settings);
+  void loadEnvConfig(Properties<String *> &settings, const char *key);
+  bool loadSettings(Properties<String *> &settings);
   void saveConfig();
   void runPath(const char *path);
   void setClipboardText(const char *s) { setStringBytes("setClipboardText", s); }

@@ -489,7 +489,7 @@ void Runtime::runShell() {
 }
 
 void Runtime::loadConfig() {
-  Properties settings;
+  Properties<String *> settings;
   int fontSize = getInteger("getStartupFontSize");
   trace("fontSize = %d", fontSize);
 
@@ -527,7 +527,7 @@ void Runtime::loadConfig() {
   }
 }
 
-bool Runtime::loadSettings(Properties &settings) {
+bool Runtime::loadSettings(Properties<String *> &settings) {
   bool result;
   String path;
 
@@ -549,7 +549,7 @@ bool Runtime::loadSettings(Properties &settings) {
   return result;
 }
 
-void Runtime::loadEnvConfig(Properties &settings, const char *key) {
+void Runtime::loadEnvConfig(Properties<String *> &settings, const char *key) {
   String *s = settings.get(key);
   if (s) {
     trace("%s = %s", key, s->c_str());
@@ -870,7 +870,7 @@ char *Runtime::getClipboardText() {
 
 int Runtime::getFontId() {
   int result = 0;
-  Properties settings;
+  Properties<String *> settings;
   if (loadSettings(settings)) {
     String *s = settings.get(FONT_ID_KEY);
     if (s) {

@@ -239,23 +239,54 @@ struct Queue : public List<T> {
 
 //--Properties------------------------------------------------------------------
 
-struct Properties : public List<String *> {
-  Properties() : List<String *>() {}
-  Properties(int growSize) : List<String *>(growSize) {}
+template<typename T>
+struct Properties : public List<T> {
+  Properties() : List<T>() {}
+  Properties(int growSize) : List<T>(growSize) {}
   virtual ~Properties() {}
 
+  T get(const char *key) {
+    for (int i = 0; i < this->_count; i++) {
+      String *nextKey = (String *) this->_head[i++];
+      if (nextKey == NULL || i == this->_count) {
+        return NULL;
+      }
+      T nextValue = this->_head[i];
+      if (nextValue == NULL) {
+        return NULL;
+      }
+      if (nextKey->equals(key)) {
+        return nextValue;
+      }
+    }
+    return NULL;
+  }
+
+  int length() const {
+    return this->_count / 2;
+  }
+
+  // for Properties<String *>
   void load(const char *s);
   void load(const char *s, int len);
-  String *get(const char *key);
-  String *get(int i) const;
-  String *getKey(int i) const;
-  int length() const { return _count / 2; }
-  void get(const char *key, List<String *> *arrayValues);
-  void operator=(Properties &p);
-  void put(String &key, String &value);
   void put(const char *key, const char *value);
-  String toString();
+
+  void put(T key, T value) {
+    String *prev = get(key.c_str());
+    if (prev) {
+      prev->clear();
+      prev->append(value);
+    } else {
+      this->add(new String(*key));
+      this->add(value);
+    }
+  }
 };
+
+// specialisations for String properties
+template<> void strlib::Properties<String *>::load(const char *);
+template<> void Properties<String *>::load(const char *s, int slen);
+template<> void Properties<String *>::put(const char *key, const char *value);
 
 }
 

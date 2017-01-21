@@ -55,15 +55,18 @@ struct SoundObject {
     _freq(freq),
     _samplesLeft(0),
     _buffer(NULL),
-    _index(0) {
+    _index(0),
+    _cached(false) {
     _samplesLeft = duration * FREQUENCY / 1000;
   }
+
   SoundObject(Uint8 *buffer, Uint32 length) :
     _v(0),
     _freq(0),
     _samplesLeft(length),
     _buffer(buffer),
-    _index(0) {
+    _index(0),
+    _cached(true) {
   }
 
   ~SoundObject() {
@@ -78,6 +81,7 @@ struct SoundObject {
   Uint32 _samplesLeft;
   Uint8 *_buffer;
   Uint32 _index;
+  bool _cached;
 };
 
 strlib::Queue<SoundObject *> g_sounds;
@@ -845,6 +849,7 @@ void audio_callback(void *data, Uint8 *stream8, int length) {
       }
     }
     if (!sound->_samplesLeft) {
+      // TODO: delete or cache?
       g_sounds.pop();
     }
   }
