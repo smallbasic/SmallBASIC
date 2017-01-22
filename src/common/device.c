@@ -358,9 +358,7 @@ void dev_sound(int frq, int ms, int vol, int bgplay) {
  */
 void dev_clear_sound_queue() {
 #if !defined(BUILD_CONSOLE)
-  if (!opt_mute_audio) {
-    osd_clear_sound_queue();
-  }
+  osd_clear_sound_queue();
 #endif
 }
 

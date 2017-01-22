@@ -75,7 +75,7 @@ private:
 //--List------------------------------------------------------------------------
 
 #define List_each(type, itr, v) \
-  for (strlib::List<type>::TP itr = (v).begin(); itr != (v).end(); itr++)
+  for (strlib::List<type>::TP itr = (v).begin(); itr < (v).end(); itr++)
 
 template<typename T>
 struct List {
@@ -163,11 +163,9 @@ struct List {
   TP end() const { return _head + _count; }
 
   /**
-   * String specialisation - Add a String to the list
+   * String specialisation - Add a String to the list of strings
    */
-  void add(const char *s) {
-    add(new String(s, strlen(s)));
-  }
+  void add(const char *s);
 
   /**
    * returns whether the list is empty
@@ -177,13 +175,18 @@ struct List {
   }
 
   /**
-   * Returns whether string exists in the list
+   * Returns whether string exists in the list of strings
    */
-  bool exists(const char *s) {
+  bool contains(const char *s);
+
+  /**
+   * Returns whether T exists in the list
+   */
+  bool contains(T t) {
     bool result = false;
-    for (TP it = begin(); it != end(); it++) {
+    for (T *it = begin(); it < end(); it++) {
       T next = (*it);
-      if (next->equals(s)) {
+      if (next == t) {
         result = true;
         break;
       }
@@ -210,6 +213,10 @@ protected:
   int _size;
 };
 
+// specialisations for String List
+template<> void List<String *>::add(const char *s);
+template<> bool List<String *>::contains(const char *s);
+
 //--Stack-----------------------------------------------------------------------
 
 template<typename T>
@@ -228,9 +235,11 @@ struct Queue : public List<T> {
   Queue() : List<T>() {}
   Queue(int growSize) : List<T>(growSize) {}
   T front() { return !this->_count ? (T)NULL : this->_head[0]; }
-  void pop() {
+  void pop(bool free=true) {
     if (this->_count) {
-      delete this->_head[0];
+      if (free) {
+        delete this->_head[0];
+      }
       memmove(this->_head, this->_head + 1, (--this->_count) * sizeof(T*));
     }
   }
@@ -245,21 +254,31 @@ struct Properties : public List<T> {
   Properties(int growSize) : List<T>(growSize) {}
   virtual ~Properties() {}
 
-  T get(const char *key) {
+  /**
+   * find the position of the key in the list
+   */
+  int find(const char *key) {
+    int result = -1;
     for (int i = 0; i < this->_count; i++) {
-      String *nextKey = (String *) this->_head[i++];
+      String *nextKey = (String *)this->_head[i++];
       if (nextKey == NULL || i == this->_count) {
-        return NULL;
+        break;
       }
       T nextValue = this->_head[i];
       if (nextValue == NULL) {
-        return NULL;
+        break;
       }
       if (nextKey->equals(key)) {
-        return nextValue;
+        result = i;
+        break;
       }
     }
-    return NULL;
+    return result;
+  }
+
+  T get(const char *key) {
+    int index = find(key);
+    return index == -1 ? NULL : this->_head[index];
   }
 
   int length() const {
@@ -271,13 +290,12 @@ struct Properties : public List<T> {
   void load(const char *s, int len);
   void put(const char *key, const char *value);
 
-  void put(T key, T value) {
-    String *prev = get(key.c_str());
-    if (prev) {
-      prev->clear();
-      prev->append(value);
+  void put(const char *key, T value) {
+    int index = find(key);
+    if (index != -1) {
+      this->_head[index] = value;
     } else {
-      this->add(new String(*key));
+      this->add((T)new String(key));
       this->add(value);
     }
   }

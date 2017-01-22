@@ -234,6 +234,24 @@ void String::trim() {
   append(s);
 }
 
+//--List------------------------------------------------------------------
+
+template<> void List<String *>::add(const char *s) {
+  add(new String(s, strlen(s)));
+}
+
+template<> bool List<String *>::contains(const char *s) {
+  bool result = false;
+  for (String **it = begin(); it != end(); it++) {
+    String *next = (*it);
+    if (next->equals(s)) {
+      result = true;
+      break;
+    }
+  }
+  return result;
+}
+
 //--Properties------------------------------------------------------------------
 
 template<> void Properties<String *>::load(const char *s) {
@@ -324,12 +342,8 @@ template<> void Properties<String *>::put(const char *key, const char *value) {
     prev->clear();
     prev->append(value);
   } else {
-    String *k = new String();
-    String *v = new String();
-    k->append(key);
-    v->append(value);
-    add(k);
-    add(v);
+    add(new String(key));
+    add(new String(value));
   }
 }
 

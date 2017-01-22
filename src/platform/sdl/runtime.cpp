@@ -57,34 +57,42 @@ struct SoundObject {
     _buffer(NULL),
     _index(0),
     _cached(false) {
-    _samplesLeft = duration * FREQUENCY / 1000;
+    _samplesLeft = _samples = duration * FREQUENCY / 1000;
   }
 
   SoundObject(Uint8 *buffer, Uint32 length) :
     _v(0),
     _freq(0),
     _samplesLeft(length),
+    _samples(length),
     _buffer(buffer),
     _index(0),
     _cached(true) {
   }
 
-  ~SoundObject() {
+  virtual ~SoundObject() {
     if (_buffer) {
       SDL_FreeWAV(_buffer);
       _buffer = NULL;
     }
   }
 
+  void reset() {
+    _index = 0;
+    _samplesLeft = _samples;
+  }
+  
   double _v;
   double _freq;
   Uint32 _samplesLeft;
+  Uint32 _samples;
   Uint8 *_buffer;
   Uint32 _index;
   bool _cached;
 };
 
 strlib::Queue<SoundObject *> g_sounds;
+strlib::Properties<SoundObject *> g_soundCache;
 void audio_callback(void *data, Uint8 *stream8, int length);
 int debugThread(void *data);
 
@@ -849,8 +857,7 @@ void audio_callback(void *data, Uint8 *stream8, int length) {
       }
     }
     if (!sound->_samplesLeft) {
-      // TODO: delete or cache?
-      g_sounds.pop();
+      g_sounds.pop(!sound->_cached);
     }
   }
 }
@@ -888,6 +895,22 @@ int osd_devinit(void) {
 }
 
 int osd_devrestore(void) {
+  SDL_PauseAudio(1);
+  SDL_LockAudio();
+
+  // remove any cached sounds from the queue
+  List_each(SoundObject *, it, g_sounds) {
+    SoundObject *next = *it;
+    if (next != NULL && next->_cached) {
+      g_sounds.remove(it);
+    }
+  }
+
+  // delete the cached sounds
+  g_soundCache.removeAll();
+
+  SDL_UnlockAudio();
+
   runtime->setRunning(false);
   return 0;
 }
@@ -908,22 +931,33 @@ void osd_audio(const char *path) {
   Uint8 *buffer;
   Uint32 length;
 
-  SDL_AudioSpec *obtainedSpec = SDL_LoadWAV(path, &desiredSpec, &buffer, &length);
-  if (obtainedSpec != NULL) {
-    if (obtainedSpec->freq != FREQUENCY) {
-      err_throw("Failed to open wav file: invalid frequency %d", obtainedSpec->freq);
-    } else if (obtainedSpec->channels != 1) {
-      err_throw("Failed to open wav file: invalid channels %d", obtainedSpec->channels);
-    } else if (obtainedSpec->format != AUDIO_S16SYS) {
-      err_throw("Failed to open wav file: invalid format %d", obtainedSpec->format);
-    } else {
-      SDL_LockAudio();
-      g_sounds.push(new SoundObject(buffer, length));
-      SDL_UnlockAudio();
-      SDL_PauseAudio(0);
-    }
+  SoundObject *cachedSound = g_soundCache.get(path);
+  if (cachedSound) {
+    SDL_LockAudio();
+    cachedSound->reset();
+    g_sounds.push(cachedSound);
+    SDL_UnlockAudio();
+    SDL_PauseAudio(0);
   } else {
-    err_throw("Failed to open wav file: %s", SDL_GetError());
+    SDL_AudioSpec *obtainedSpec = SDL_LoadWAV(path, &desiredSpec, &buffer, &length);
+    if (obtainedSpec != NULL) {
+      if (obtainedSpec->freq != FREQUENCY) {
+        err_throw("Failed to open wav file: invalid frequency %d", obtainedSpec->freq);
+      } else if (obtainedSpec->channels != 1) {
+        err_throw("Failed to open wav file: invalid channels %d", obtainedSpec->channels);
+      } else if (obtainedSpec->format != AUDIO_S16SYS) {
+        err_throw("Failed to open wav file: invalid format %d", obtainedSpec->format);
+      } else {
+        SDL_LockAudio();
+        SoundObject *cachedSound = new SoundObject(buffer, length);
+        g_sounds.push(cachedSound);
+        g_soundCache.put(path, cachedSound);
+        SDL_UnlockAudio();
+        SDL_PauseAudio(0);
+      }
+    } else {
+      err_throw("Failed to open wav file: %s", SDL_GetError());
+    }
   }
 }
 

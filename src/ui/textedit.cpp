@@ -1787,7 +1787,7 @@ void TextEditHelpWidget::createCompletionHelp() {
       if (end - found > len && (IS_WHITE(pre) || pre == '.')) {
         String next;
         next.append(found, end - found);
-        if (!words.exists(next)) {
+        if (!words.contains(next)) {
           words.add(next);
           _buf.append(found, end - found);
           _buf.append("\n", 1);
