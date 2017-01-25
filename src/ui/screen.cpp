@@ -569,6 +569,11 @@ void GraphicScreen::drawBase(bool vscroll, bool update) {
   maSetDrawTarget(currentHandle);
 }
 
+void GraphicScreen::drawEllipse(int xc, int yc, int rx, int ry, int fill) {
+  drawInto();
+  maEllipse(xc, yc, rx, ry, fill);
+}
+
 void GraphicScreen::drawInto(bool background) {
   Screen::drawInto(background);
   maSetDrawTarget(_image);

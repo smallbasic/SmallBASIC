@@ -32,6 +32,7 @@ struct Screen : public Shape {
   virtual bool construct() = 0;
   virtual void clear();
   virtual void drawBase(bool vscroll, bool update=true) = 0;
+  virtual void drawEllipse(int xc, int yc, int rx, int ry, int fill) = 0;
   virtual void drawInto(bool background=false);
   virtual void drawLine(int x1, int y1, int x2, int y2) = 0;
   virtual void drawRect(int x1, int y1, int x2, int y2) = 0;
@@ -103,6 +104,7 @@ struct GraphicScreen : public Screen {
   bool construct();
   void clear();
   void drawBase(bool vscroll, bool update=true);
+  void drawEllipse(int xc, int yc, int rx, int ry, int fill);
   void drawInto(bool background=false);
   void drawLine(int x1, int y1, int x2, int y2);
   void drawRect(int x1, int y1, int x2, int y2);
@@ -322,6 +324,7 @@ struct TextScreen : public Screen {
   void clear();
   void drawBase(bool vscroll, bool update=true);
   void drawText(const char *text, int len, int x, int lineHeight);
+  void drawEllipse(int xc, int yc, int rx, int ry, int fill) {}
   void drawLine(int x1, int y1, int x2, int y2);
   void drawRect(int x1, int y1, int x2, int y2);
   void drawRectFilled(int x1, int y1, int x2, int y2);

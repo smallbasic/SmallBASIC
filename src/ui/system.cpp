@@ -1146,6 +1146,10 @@ void osd_line(int x1, int y1, int x2, int y2) {
   g_system->getOutput()->drawLine(x1, y1, x2, y2);
 }
 
+void osd_ellipse(int xc, int yc, int xr, int yr, int fill) {
+  g_system->getOutput()->drawEllipse(xc, yc, xr, yr, fill);
+}
+
 void osd_rect(int x1, int y1, int x2, int y2, int fill) {
   if (fill) {
     g_system->getOutput()->drawRectFilled(x1, y1, x2, y2);

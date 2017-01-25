@@ -39,6 +39,7 @@ struct AnsiWidget {
   void clearScreen();
   bool construct();
   void draw();
+  void drawEllipse(int xc, int yc, int rx, int ry, int fill);
   void drawOverlay(bool vscroll) { _back->drawOverlay(vscroll); }
   void drawLine(int x1, int y1, int x2, int y2);
   void drawRect(int x1, int y1, int x2, int y2);

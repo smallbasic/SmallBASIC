@@ -118,6 +118,56 @@ void Graphics::deleteFont(Font *font) {
   delete font;
 }
 
+void Graphics::drawEllipse(int xc, int yc, int rx, int ry, int fill) {
+  int x = 0;
+  int y = ry;
+  double a = rx;
+  double b = ry;
+  double aSquared = a * a;
+  double twoASquared = 2 * aSquared;
+  double bSquared = b * b;
+  double twoBSquared = 2 * bSquared;
+  double d = bSquared - aSquared * b + aSquared / 4L;
+  double dx = 0;
+  double dy = twoASquared * b;
+
+  while (dx < dy) {
+    if (fill) {
+      set4Line(x, y, xc, yc);
+    } else {
+      set4Pixel(x, y, xc, yc);
+    }
+
+    if (d > 0L) {
+      y--;
+      dy -= twoASquared;
+      d -= dy;
+    }
+
+    x++;
+    dx += twoBSquared;
+    d += bSquared + dx;
+  }
+
+  d += (3L * (aSquared - bSquared) / 2L - (dx + dy)) / 2L;
+
+  while (y >= 0) {
+    if (fill) {
+      set4Line(x, y, xc, yc);
+    } else {
+      set4Pixel(x, y, xc, yc);
+    }
+    if (d < 0L) {
+      x++;
+      dx += twoBSquared;
+      d += dx;
+    }
+    y--;
+    dy -= twoASquared;
+    d += aSquared - dy;
+  }
+}
+
 void Graphics::drawLine(int startX, int startY, int endX, int endY) {
   if (_drawTarget) {
     if (startY == endY) {
@@ -349,6 +399,18 @@ MAExtent Graphics::getTextSize(const char *str, int len) {
   return (MAExtent)((width << 16) + height);
 }
 
+void Graphics::set4Pixel(int x, int y, int xc, int yc) {
+  drawPixel(xc + x, yc + y);
+  drawPixel(xc - x, yc + y);
+  drawPixel(xc + x, yc - y);
+  drawPixel(xc - x, yc - y);
+}
+
+void Graphics::set4Line(int x, int y, int xc, int yc) {
+  drawLine(xc - x, yc + y, xc + x, yc + y);
+  drawLine(xc - x, yc - y, xc + x, yc - y);
+}
+
 void Graphics::setClip(int x, int y, int w, int h) {
   if (_drawTarget) {
     _drawTarget->setClip(x, y, w, h);
@@ -486,6 +548,10 @@ void maFillRect(int left, int top, int width, int height) {
   if (drawTarget) {
     drawTarget->fillRect(left, top, width, height, graphics->getDrawColor());
   }
+}
+
+void maEllipse(int xc, int yc, int rx, int ry, int fill) {
+  graphics->drawEllipse(xc, yc, rx, ry, fill);
 }
 
 void maDrawText(int left, int top, const char *str, int length) {

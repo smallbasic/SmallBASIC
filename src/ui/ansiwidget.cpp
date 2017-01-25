@@ -129,6 +129,11 @@ void AnsiWidget::addImage(ImageDisplay &image) {
   flush(false, false, MAX_PENDING_GRAPHICS);
 }
 
+void AnsiWidget::drawEllipse(int xc, int yc, int rx, int ry, int fill) {
+  _back->drawEllipse(xc, yc, rx, ry, fill);
+  flush(false, false, MAX_PENDING_GRAPHICS);
+}
+
 // draw a line onto the offscreen buffer
 void AnsiWidget::drawLine(int x1, int y1, int x2, int y2) {
   _back->drawLine(x1, y1, x2, y2);

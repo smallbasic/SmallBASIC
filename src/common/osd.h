@@ -261,6 +261,18 @@ void osd_line(int x1, int y1, int x2, int y2);
  */
 void osd_rect(int x1, int y1, int x2, int y2, int fill);
 
+/**
+ * @ingroup lgraf
+ *
+ * draw an ellipse using foreground color
+ *
+ * @param xc x-center
+ * @param yc y-center
+ * @param xr x-radius
+ * @param yr y-radius
+ * @param fill non-zero to fill it with foreground color
+ */
+void osd_ellipse(int xc, int yc, int xr, int yr, int fill);
 
 /**
  * @ingroup lgraf

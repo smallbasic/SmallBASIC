@@ -142,6 +142,12 @@ void maPlot(int posX, int posY);
 void maLine(int startX, int startY, int endX, int endY);
 
 /**
+ * Draws an ellipse using the current color.
+ * \see maSetColor()
+ */
+void maEllipse(int xc, int yc, int rx, int ry, int fill);
+
+/**
  * Draws a filled rectangle using the current color.
  * Width and height must be greater than zero.
  * \see maSetColor()
