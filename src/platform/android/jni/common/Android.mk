@@ -28,7 +28,6 @@ LOCAL_SRC_FILES  :=    \
     $(COMMON)/blib_sound.c       \
     $(COMMON)/brun.c             \
     $(COMMON)/ceval.c            \
-    $(COMMON)/circle.c           \
     $(COMMON)/decomp.c           \
     $(COMMON)/device.c           \
     $(COMMON)/screen.c           \
