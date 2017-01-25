@@ -567,8 +567,7 @@ void dev_ellipse(int xc, int yc, int xr, int yr, double aspect, int fill);
  * @param ae angle-end in rad
  * @param aspect x/y (use 1)
  */
-void dev_arc(int xc, int yc, double r, double as, double ae,
-             double aspect);
+void dev_arc(int xc, int yc, double r, double as, double ae, double aspect);
 
 /**
  * @ingroup dev_g

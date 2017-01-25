@@ -277,6 +277,20 @@ void osd_ellipse(int xc, int yc, int xr, int yr, int fill);
 /**
  * @ingroup lgraf
  *
+ * draw an arc
+ *
+ * @param xc x-center
+ * @param yc y-center
+ * @param r  radius
+ * @param as angle-start in rad
+ * @param ae angle-end in rad
+ * @param aspect x/y (use 1)
+ */
+void osd_arc(int xc, int yc, double r, double as, double ae, double aspect);
+
+/**
+ * @ingroup lgraf
+ *
  * plays an OGG or MP3 file
  *
  * @param path the path to the OGG or MP3 file

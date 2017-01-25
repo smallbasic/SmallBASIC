@@ -129,6 +129,11 @@ void AnsiWidget::addImage(ImageDisplay &image) {
   flush(false, false, MAX_PENDING_GRAPHICS);
 }
 
+void AnsiWidget::drawArc(int xc, int yc, double r, double start, double end, double aspect) {
+  _back->drawArc(xc, yc, r, start, end, aspect);
+  flush(false, false, MAX_PENDING_GRAPHICS);
+}
+
 void AnsiWidget::drawEllipse(int xc, int yc, int rx, int ry, int fill) {
   _back->drawEllipse(xc, yc, rx, ry, fill);
   flush(false, false, MAX_PENDING_GRAPHICS);

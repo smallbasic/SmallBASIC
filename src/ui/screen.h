@@ -31,6 +31,7 @@ struct Screen : public Shape {
   virtual void calcTab() = 0;
   virtual bool construct() = 0;
   virtual void clear();
+  virtual void drawArc(int xc, int yc, double r, double start, double end, double aspect) = 0;
   virtual void drawBase(bool vscroll, bool update=true) = 0;
   virtual void drawEllipse(int xc, int yc, int rx, int ry, int fill) = 0;
   virtual void drawInto(bool background=false);
@@ -103,6 +104,7 @@ struct GraphicScreen : public Screen {
   void calcTab();
   bool construct();
   void clear();
+  void drawArc(int xc, int yc, double r, double start, double end, double aspect);
   void drawBase(bool vscroll, bool update=true);
   void drawEllipse(int xc, int yc, int rx, int ry, int fill);
   void drawInto(bool background=false);
@@ -322,10 +324,11 @@ struct TextScreen : public Screen {
   void calcTab();
   bool construct();
   void clear();
+  void drawArc(int xc, int yc, double r, double start, double end, double aspect) {}
   void drawBase(bool vscroll, bool update=true);
-  void drawText(const char *text, int len, int x, int lineHeight);
   void drawEllipse(int xc, int yc, int rx, int ry, int fill) {}
   void drawLine(int x1, int y1, int x2, int y2);
+  void drawText(const char *text, int len, int x, int lineHeight);
   void drawRect(int x1, int y1, int x2, int y2);
   void drawRectFilled(int x1, int y1, int x2, int y2);
   int  getPixel(int x, int y) { return 0; }

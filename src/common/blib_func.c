@@ -550,7 +550,7 @@ var_num_t cmd_math1(long funcCode, var_t *arg) {
     r = 1.0 / cos(x);
     break;
   case kwASEC:
-    r = atan(sqrt(x * x - 1.0)) + (ZSGN(x) - 1.0) * SB_PI / 2.0;
+    r = atan(sqrt(x * x - 1.0)) + (ZSGN(x) - 1.0) * M_PI / 2.0;
     break;
   case kwSECH:
     r = 2.0 / (exp(x) + exp(-x));
@@ -562,7 +562,7 @@ var_num_t cmd_math1(long funcCode, var_t *arg) {
     r = 1.0 / sin(x);
     break;
   case kwACSC:
-    r = atan(1.0 / sqrt(x * x - 1.0)) + (ZSGN(x) - 1.0) * SB_PI / 2.0;
+    r = atan(1.0 / sqrt(x * x - 1.0)) + (ZSGN(x) - 1.0) * M_PI / 2.0;
     break;
   case kwCSCH:
     r = 2.0 / (exp(x) - exp(-x));
@@ -574,7 +574,7 @@ var_num_t cmd_math1(long funcCode, var_t *arg) {
     r = 1.0 / tan(x);
     break;
   case kwACOT:
-    r = SB_PI / 2.0 - atan(x);
+    r = M_PI / 2.0 - atan(x);
     break;
   case kwCOTH:
     r = 2.0 * exp(-x) / (exp(x) - exp(-x)) + 1.0;
@@ -613,10 +613,10 @@ var_num_t cmd_math1(long funcCode, var_t *arg) {
     r = (x < 0) ? x + floor(-x) : x - floor(x);
     break;
   case kwDEG:
-    r = x * 180.0 / SB_PI;
+    r = x * 180.0 / M_PI;
     break;
   case kwRAD:
-    r = x * SB_PI / 180.0;
+    r = x * M_PI / 180.0;
     break;
   case kwCDBL:
     r = x;

@@ -88,7 +88,6 @@ typedef long int var_int_t;
 #define SB_TEXTLINE_SIZE    8192  // RTL
 #define SB_EXEC_STACK_SIZE  256   // executor's stack size
 #define SB_EVAL_STACK_SIZE  16    // evaluation stack size
-#define SB_PI               3.14159265358979323846
 
 // STD MACROS
 #define ABS(x)    ( ((x) < 0) ? -(x) : (x) )            // absolute value

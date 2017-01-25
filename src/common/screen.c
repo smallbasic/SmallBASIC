@@ -286,6 +286,10 @@ void dev_ellipse(int xc, int yc, int xr, int yr, double aspect, int fill) {
   osd_ellipse(W2X(xc), W2Y(yc), xr, yr * aspect, fill);
 }
 
+void dev_arc(int xc, int yc, double r, double start, double end, double aspect) {
+  osd_arc(W2X(xc), W2Y(yc), r, start, end, aspect);
+}
+
 /**
  * @ingroup lgraf
  *

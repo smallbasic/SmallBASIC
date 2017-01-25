@@ -74,6 +74,7 @@ struct Graphics {
 
   Font *createFont(int style, int size);
   void deleteFont(Font *font);
+  void drawArc(int xc, int yc, double r, double start, double end, double aspect);
   void drawEllipse(int xc, int yc, int rx, int ry, int fill);
   void drawImageRegion(Canvas *src, const MAPoint2d *dstPoint, const MARect *srcRect);
   void drawLine(int startX, int startY, int endX, int endY);

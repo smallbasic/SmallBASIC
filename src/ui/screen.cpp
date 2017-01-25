@@ -549,6 +549,11 @@ void GraphicScreen::clear() {
   Screen::clear();
 }
 
+void GraphicScreen::drawArc(int xc, int yc, double r, double start, double end, double aspect) {
+  drawInto();
+  maArc(xc, yc, r, start, end, aspect);
+}
+
 void GraphicScreen::drawBase(bool vscroll, bool update) {
   MARect srcRect;
   MAPoint2d dstPoint;

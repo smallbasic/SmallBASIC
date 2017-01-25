@@ -118,6 +118,32 @@ void Graphics::deleteFont(Font *font) {
   delete font;
 }
 
+void Graphics::drawArc(int xc, int yc, double r, double start, double end, double aspect) {
+  if (r < 1) {
+    r = 1;
+  }
+  while (end < start) {
+    end += M_PI * 2.0;
+  }
+
+  double th = (end - start) / r;
+  double xs = xc + r * cos(start);
+  double ys = yc + r * aspect * sin(start);
+  double xe = xc + r * cos(end);
+  double ye = yc + r * aspect * sin(end);
+  int x = xs;
+  int y = ys;
+  for (int i = 1; i < r; i++) {
+    double ph = start + i * th;
+    xs = xc + r * cos(ph);
+    ys = yc + r * aspect * sin(ph);
+    drawLine(x, y, xs, ys);
+    x = xs;
+    y = ys;
+  }
+  drawLine(x, y, xe, ye);
+}
+
 void Graphics::drawEllipse(int xc, int yc, int rx, int ry, int fill) {
   int x = 0;
   int y = ry;
@@ -548,6 +574,10 @@ void maFillRect(int left, int top, int width, int height) {
   if (drawTarget) {
     drawTarget->fillRect(left, top, width, height, graphics->getDrawColor());
   }
+}
+
+void maArc(int xc, int yc, double r, double start, double end, double aspect) {
+  graphics->drawArc(xc, yc, r, start, end, aspect);
 }
 
 void maEllipse(int xc, int yc, int rx, int ry, int fill) {
