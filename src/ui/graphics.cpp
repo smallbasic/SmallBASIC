@@ -30,10 +30,6 @@ inline double fpart(double x) {
   return result;
 }
 
-inline double rfpart(double x) {
-  return 1 - fpart(x);
-}
-
 #define _SWAP(a, b) \
   { __typeof__(a) tmp; tmp = a; a = b; b = tmp; }
 
@@ -149,48 +145,65 @@ void Graphics::drawEllipse(int xc, int yc, int rx, int ry, int fill) {
   int y = ry;
   double a = rx;
   double b = ry;
-  double aSquared = a * a;
-  double twoASquared = 2 * aSquared;
-  double bSquared = b * b;
-  double twoBSquared = 2 * bSquared;
-  double d = bSquared - aSquared * b + aSquared / 4L;
+  double asq = a * a;
+  double asq2 = 2 * asq;
+  double bsq = b * b;
+  double bsq2 = 2 * bsq;
+  double d = bsq - asq * b + asq / 4L;
   double dx = 0;
-  double dy = twoASquared * b;
+  double dy = asq2 * b;
 
   while (dx < dy) {
     if (fill) {
-      set4Line(x, y, xc, yc);
+      line2(xc, yc, x, y);
     } else {
-      set4Pixel(x, y, xc, yc);
+      plot4(xc, yc, x, y);
     }
 
     if (d > 0L) {
       y--;
-      dy -= twoASquared;
+      dy -= asq2;
       d -= dy;
     }
 
     x++;
-    dx += twoBSquared;
-    d += bSquared + dx;
+    dx += bsq2;
+    d += bsq + dx;
   }
 
-  d += (3L * (aSquared - bSquared) / 2L - (dx + dy)) / 2L;
+  d += (3L * (asq - bsq) / 2L - (dx + dy)) / 2L;
 
   while (y >= 0) {
     if (fill) {
-      set4Line(x, y, xc, yc);
+      line2(xc, yc, x, y);
     } else {
-      set4Pixel(x, y, xc, yc);
+      plot4(xc, yc, x, y);
     }
     if (d < 0L) {
       x++;
-      dx += twoBSquared;
+      dx += bsq2;
       d += dx;
     }
     y--;
-    dy -= twoASquared;
-    d += aSquared - dy;
+    dy -= asq2;
+    d += asq - dy;
+  }
+}
+
+void Graphics::drawAaEllipse(int xc, int yc, int rx, int ry) {
+  double asq = rx * rx;
+  double bsq = ry * ry;
+  double xend = round(asq / sqrt(asq + bsq));
+  double yend = round(bsq / sqrt(asq + bsq));
+
+  for (int x = 0; x < xend; x++) {
+    double ya = ry * sqrt(1 - pow(x, 2) / asq);
+    aaPlotX8(xc, yc, x, (int)floor(ya), fpart(ya));
+  }
+
+  for (int y = 0; y < yend; y++) {
+    double xa = rx * sqrt(1 - pow(y, 2) / bsq);
+    aaPlotY8(xc, yc, (int)floor(xa), y, fpart(xa));
   }
 }
 
@@ -250,7 +263,7 @@ void Graphics::drawLine(int startX, int startY, int endX, int endY) {
       }
     } else if (opt_antialias) {
       // gradient
-      wuLine(startX, startY, endX, endY);
+      aaLine(startX, startY, endX, endY);
     } else {
       g_line(startX, startY, endX, endY, maPlot);
     }
@@ -425,18 +438,6 @@ MAExtent Graphics::getTextSize(const char *str, int len) {
   return (MAExtent)((width << 16) + height);
 }
 
-void Graphics::set4Pixel(int x, int y, int xc, int yc) {
-  drawPixel(xc + x, yc + y);
-  drawPixel(xc - x, yc + y);
-  drawPixel(xc + x, yc - y);
-  drawPixel(xc - x, yc - y);
-}
-
-void Graphics::set4Line(int x, int y, int xc, int yc) {
-  drawLine(xc - x, yc + y, xc + x, yc + y);
-  drawLine(xc - x, yc - y, xc + x, yc - y);
-}
-
 void Graphics::setClip(int x, int y, int w, int h) {
   if (_drawTarget) {
     _drawTarget->setClip(x, y, w, h);
@@ -457,7 +458,7 @@ MAHandle Graphics::setDrawTarget(MAHandle maHandle) {
 }
 
 // see: http://en.wikipedia.org/wiki/Xiaolin_Wu%27s_line_algorithm
-void Graphics::wuLine(int x0, int y0, int x1, int y1) {
+void Graphics::aaLine(int x0, int y0, int x1, int y1) {
   int steep = abs(y1 - y0) > abs(x1 - x0);
 
   if (steep) {
@@ -476,20 +477,22 @@ void Graphics::wuLine(int x0, int y0, int x1, int y1) {
   // handle first endpoint
   double xend = round(x0);
   double yend = y0 + gradient * (xend - x0);
-  double xgap = rfpart(x0 + 0.5);
+  double xgap = 1 - fpart(x0 + 0.5);
 
-  int xpxl1 = (int)xend; // this will be used in the main loop
+  // this will be used in the main loop
+  int xpxl1 = (int)xend;
   int ypxl1 = (int)yend;
 
   if (steep) {
-    wuPlot(ypxl1,   xpxl1, rfpart(yend) * xgap);
-    wuPlot(ypxl1+1, xpxl1,  fpart(yend) * xgap);
+    aaPlot(ypxl1,   xpxl1, 1 - fpart(yend) * xgap);
+    aaPlot(ypxl1+1, xpxl1,  1 - fpart(yend) * xgap);
   } else {
-    wuPlot(xpxl1, ypxl1  , rfpart(yend) * xgap);
-    wuPlot(xpxl1, ypxl1+1,  fpart(yend) * xgap);
+    aaPlot(xpxl1, ypxl1  , 1 - fpart(yend) * xgap);
+    aaPlot(xpxl1, ypxl1+1,  fpart(yend) * xgap);
   }
 
-  double intery = yend + gradient; // first y-intersection for the main loop
+  // first y-intersection for the main loop
+  double intery = yend + gradient;
 
   // handle second endpoint
   xend = round(x1);
@@ -498,26 +501,27 @@ void Graphics::wuLine(int x0, int y0, int x1, int y1) {
 
   int xpxl2 = (int)xend;
   int ypxl2 = (int)yend;
+
   if (steep) {
-    wuPlot(ypxl2  , xpxl2, rfpart(yend) * xgap);
-    wuPlot(ypxl2+1, xpxl2,  fpart(yend) * xgap);
+    aaPlot(ypxl2  , xpxl2, 1 - fpart(yend) * xgap);
+    aaPlot(ypxl2+1, xpxl2,  fpart(yend) * xgap);
     for (int x = xpxl1 + 1; x < xpxl2; x++) {
-      wuPlot((int)intery,   x, rfpart(intery));
-      wuPlot((int)intery+1, x, fpart(intery));
+      aaPlot((int)intery,   x, 1 - fpart(intery));
+      aaPlot((int)intery+1, x, fpart(intery));
       intery += gradient;
     }
   } else {
-    wuPlot(xpxl2, ypxl2,  rfpart(yend) * xgap);
-    wuPlot(xpxl2, ypxl2+1, fpart(yend) * xgap);
+    aaPlot(xpxl2, ypxl2,  1 - fpart(yend) * xgap);
+    aaPlot(xpxl2, ypxl2+1, fpart(yend) * xgap);
     for (int x = xpxl1 + 1; x < xpxl2; x++) {
-      wuPlot(x, (int)intery,   rfpart(intery));
-      wuPlot(x, (int)intery+1, fpart(intery));
+      aaPlot(x, (int)intery,   1 - fpart(intery));
+      aaPlot(x, (int)intery+1, fpart(intery));
       intery += gradient;
     }
   }
 }
 
-void Graphics::wuPlot(int posX, int posY, double c) {
+void Graphics::aaPlot(int posX, int posY, double c) {
   if (_drawTarget
       && posX >= _drawTarget->x()
       && posY >= _drawTarget->y()
@@ -535,6 +539,42 @@ void Graphics::wuPlot(int posX, int posY, double c) {
     dB = (uint8_t)(sB * c + dB * (1 - c));
     line[posX] = SET_RGB(dR, dG, dB);
   }
+}
+
+void Graphics::aaPlotX8(int xc, int yc, int x, int y, double c) {
+  double ic = 1 - c;
+  aaPlot(xc + x, yc + y,  ic);
+  aaPlot(xc + x, yc + y+1, c);
+  aaPlot(xc + x, yc - y,  ic);
+  aaPlot(xc + x, yc - y-1, c);
+  aaPlot(xc - x, yc + y,  ic);
+  aaPlot(xc - x, yc + y+1, c);
+  aaPlot(xc - x, yc - y,  ic);
+  aaPlot(xc - x, yc - y-1, c);
+}
+
+void Graphics::aaPlotY8(int xc, int yc, int x, int y, double c) {
+  double ic = 1 - c;
+  aaPlot(xc + x, yc + y,  ic);
+  aaPlot(xc + x+1, yc + y, c);
+  aaPlot(xc + x, yc - y,  ic);
+  aaPlot(xc + x+1, yc - y, c);
+  aaPlot(xc - x, yc + y,  ic);
+  aaPlot(xc - x-1, yc + y, c);
+  aaPlot(xc - x, yc - y,  ic);
+  aaPlot(xc - x-1, yc - y, c);
+}
+
+void Graphics::plot4(int xc, int yc, int x, int y) {
+  drawPixel(xc + x, yc + y);
+  drawPixel(xc - x, yc + y);
+  drawPixel(xc + x, yc - y);
+  drawPixel(xc - x, yc - y);
+}
+
+void Graphics::line2(int xc, int yc, int x, int y) {
+  drawLine(xc - x, yc + y, xc + x, yc + y);
+  drawLine(xc - x, yc - y, xc + x, yc - y);
 }
 
 //
@@ -581,7 +621,11 @@ void maArc(int xc, int yc, double r, double start, double end, double aspect) {
 }
 
 void maEllipse(int xc, int yc, int rx, int ry, int fill) {
-  graphics->drawEllipse(xc, yc, rx, ry, fill);
+  if (opt_antialias && !fill) {
+    graphics->drawAaEllipse(xc, yc, rx, ry);
+  } else {
+    graphics->drawEllipse(xc, yc, rx, ry, fill);
+  }
 }
 
 void maDrawText(int left, int top, const char *str, int length) {

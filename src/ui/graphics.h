@@ -76,6 +76,7 @@ struct Graphics {
   void deleteFont(Font *font);
   void drawArc(int xc, int yc, double r, double start, double end, double aspect);
   void drawEllipse(int xc, int yc, int rx, int ry, int fill);
+  void drawAaEllipse(int xc, int yc, int rx, int ry);
   void drawImageRegion(Canvas *src, const MAPoint2d *dstPoint, const MARect *srcRect);
   void drawLine(int startX, int startY, int endX, int endY);
   void drawPixel(int posX, int posY);
@@ -91,8 +92,6 @@ struct Graphics {
   MAExtent getTextSize(const char *str, int len);
   int getHeight() { return _screen->_h; }
   int getWidth() { return _screen->_w; }
-  void set4Line(int x, int y, int xc, int yc);
-  void set4Pixel(int x, int y, int xc, int yc);
   void setClip(int x, int y, int w, int h);
   void setColor(pixel_t color) { _drawColor = color; }
   void setFont(Font *font) { _font = font; }
@@ -100,8 +99,12 @@ struct Graphics {
 
 protected:
   void drawChar(FT_Bitmap *bitmap, FT_Int x, FT_Int y);
-  void wuLine(int x0, int y0, int x1, int y1);
-  void wuPlot(int x, int y, double c);
+  void aaLine(int x0, int y0, int x1, int y1);
+  void aaPlot(int x, int y, double c);
+  void aaPlotX8(int xc, int yc, int x, int y, double c);
+  void aaPlotY8(int xc, int yc, int x, int y, double c);
+  void plot4(int xc, int yc, int x, int y);
+  void line2(int xc, int yc, int x, int y);
 
   FT_Library _fontLibrary;
   FT_Face _fontFace;
