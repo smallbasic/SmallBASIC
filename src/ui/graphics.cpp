@@ -196,12 +196,12 @@ void Graphics::drawAaEllipse(int xc, int yc, int rx, int ry) {
   double xend = round(asq / sqrt(asq + bsq));
   double yend = round(bsq / sqrt(asq + bsq));
 
-  for (int x = 0; x < xend; x++) {
+  for (int x = 0; x <= xend; x++) {
     double ya = ry * sqrt(1 - pow(x, 2) / asq);
     aaPlotX8(xc, yc, x, (int)floor(ya), fpart(ya));
   }
 
-  for (int y = 0; y < yend; y++) {
+  for (int y = 0; y <= yend; y++) {
     double xa = rx * sqrt(1 - pow(y, 2) / bsq);
     aaPlotY8(xc, yc, (int)floor(xa), y, fpart(xa));
   }
