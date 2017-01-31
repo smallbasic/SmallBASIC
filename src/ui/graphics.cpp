@@ -140,7 +140,7 @@ void Graphics::drawArc(int xc, int yc, double r, double start, double end, doubl
   drawLine(x, y, xe, ye);
 }
 
-void Graphics::drawEllipse(int xc, int yc, int rx, int ry, int fill) {
+void Graphics::drawEllipse(int xc, int yc, int rx, int ry, bool fill) {
   int x = 0;
   int y = ry;
   double a = rx;
@@ -190,7 +190,7 @@ void Graphics::drawEllipse(int xc, int yc, int rx, int ry, int fill) {
   }
 }
 
-void Graphics::drawAaEllipse(int xc, int yc, int rx, int ry) {
+void Graphics::drawAaEllipse(int xc, int yc, int rx, int ry, bool fill) {
   double asq = rx * rx;
   double bsq = ry * ry;
   double xend = round(asq / sqrt(asq + bsq));
@@ -198,12 +198,12 @@ void Graphics::drawAaEllipse(int xc, int yc, int rx, int ry) {
 
   for (int x = 0; x <= xend; x++) {
     double ya = ry * sqrt(1 - pow(x, 2) / asq);
-    aaPlotX8(xc, yc, x, (int)floor(ya), fpart(ya));
+    aaPlotX8(xc, yc, x, (int)floor(ya), fpart(ya), fill);
   }
 
   for (int y = 0; y <= yend; y++) {
     double xa = rx * sqrt(1 - pow(y, 2) / bsq);
-    aaPlotY8(xc, yc, (int)floor(xa), y, fpart(xa));
+    aaPlotY8(xc, yc, (int)floor(xa), y, fpart(xa), fill);
   }
 }
 
@@ -541,7 +541,15 @@ void Graphics::aaPlot(int posX, int posY, double c) {
   }
 }
 
-void Graphics::aaPlotX8(int xc, int yc, int x, int y, double c) {
+void Graphics::aaPlotX8(int xc, int yc, int x, int y, double c, bool fill) {
+  if (fill) {
+    int x1 = xc + x;
+    int x2 = xc - x;
+    int y1 = yc + y;
+    int y2 = yc - y;
+    drawLine(x1, y1, x2, y1);
+    drawLine(x1, y2, x2, y2);
+  }
   double ic = 1 - c;
   aaPlot(xc + x, yc + y,  ic);
   aaPlot(xc + x, yc + y+1, c);
@@ -551,9 +559,18 @@ void Graphics::aaPlotX8(int xc, int yc, int x, int y, double c) {
   aaPlot(xc - x, yc + y+1, c);
   aaPlot(xc - x, yc - y,  ic);
   aaPlot(xc - x, yc - y-1, c);
+
 }
 
-void Graphics::aaPlotY8(int xc, int yc, int x, int y, double c) {
+void Graphics::aaPlotY8(int xc, int yc, int x, int y, double c, bool fill) {
+  if (fill) {
+    int x1 = xc + x;
+    int x2 = xc - x;
+    int y1 = yc + y;
+    int y2 = yc - y;
+    drawLine(x1, y1, x2, y1);
+    drawLine(x1, y2, x2, y2);
+  }
   double ic = 1 - c;
   aaPlot(xc + x, yc + y,  ic);
   aaPlot(xc + x+1, yc + y, c);
@@ -621,8 +638,8 @@ void maArc(int xc, int yc, double r, double start, double end, double aspect) {
 }
 
 void maEllipse(int xc, int yc, int rx, int ry, int fill) {
-  if (opt_antialias && !fill) {
-    graphics->drawAaEllipse(xc, yc, rx, ry);
+  if (opt_antialias) {
+    graphics->drawAaEllipse(xc, yc, rx, ry, fill);
   } else {
     graphics->drawEllipse(xc, yc, rx, ry, fill);
   }
