@@ -190,6 +190,7 @@ void Graphics::drawEllipse(int xc, int yc, int rx, int ry, bool fill) {
   }
 }
 
+// see: https://yellowsplash.wordpress.com/2009/10/23/fast-antialiased-circles-and-ellipses-from-xiaolin-wus-concepts/
 void Graphics::drawAaEllipse(int xc, int yc, int rx, int ry, bool fill) {
   double asq = rx * rx;
   double bsq = ry * ry;
