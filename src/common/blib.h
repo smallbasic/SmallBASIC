@@ -75,6 +75,7 @@ void cmd_try();
 void cmd_catch();
 void cmd_end_try();
 void cmd_call_vfunc();
+void cmd_call_object_vfunc();
 void cmd_timer();
 
 var_num_t cmd_math0(long funcCode);

@@ -1,4 +1,7 @@
 2017-01-25 (0.12.9)
+	UI: CIRCLE drawing is now anti-aliased
+
+2017-01-25 (0.12.9)
 	UI: improved CIRCLE performance
 
 2017-01-21 (0.12.9)

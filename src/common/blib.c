@@ -1230,13 +1230,22 @@ void cmd_udpret() {
   code_pop(&node, 0);
   while ((node.type != kwPROC) && (node.type != kwFUNC)) {
     // pop from stack until caller's node found
-    if (node.type == kwTYPE_CRVAR) {  // local variable - cleanup
-      v_free(tvar[node.x.vdvar.vid]); // free local variable data
+    // local variable - cleanup
+    switch (node.type) {
+    case kwTYPE_CRVAR:
+      // free local variable data
+      v_free(tvar[node.x.vdvar.vid]);
       v_detach(tvar[node.x.vdvar.vid]);
-      tvar[node.x.vdvar.vid] = node.x.vdvar.vptr;
       // restore ptr (replace to pre-call variable)
-    } else if (node.type == kwBYREF) {  // variable 'by reference'
-      tvar[node.x.vdvar.vid] = node.x.vdvar.vptr; // restore ptr
+      tvar[node.x.vdvar.vid] = node.x.vdvar.vptr;
+      break;
+    case kwBYREF:
+      // variable 'by reference', restore ptr
+      tvar[node.x.vdvar.vid] = node.x.vdvar.vptr;
+      break;
+    case kwTYPE_CALL_VFUNC:
+      // clean 'self' variable
+      break;
     }
     // pop next node
     code_pop(&node, 0);
@@ -1315,6 +1324,9 @@ int cmd_exit() {
       // exiting loop from within select statement
       v_free(node.x.vcase.var_ptr);
       v_detach(node.x.vcase.var_ptr);
+      break;
+    case kwTYPE_CALL_VFUNC:
+      // TODO
       break;
     case kwPROC:
     case kwFUNC:
@@ -2791,12 +2803,41 @@ void cmd_end_try() {
 }
 
 /**
+ * Function call from MAP V_PTR
+ */
+void cmd_call_object_vfunc() {
+  stknode_t node;
+  code_pop_and_free(&node);
+  if (node.type != kwTYPE_CALL_VFUNC) {
+    err_stackmess();
+  } else {
+    var_t *var_p = node.x.param.res;
+    prog_ip = cmd_push_args(kwFUNC, var_p->v.ap.p, var_p->v.ap.v);
+    // TODO
+
+  }
+}
+
+/**
  * Call to object method
  */
 void cmd_call_vfunc() {
   var_t *v_func = code_getvarptr_parens(1);
-  if (v_func == NULL || v_func->type != V_FUNC) {
+  if (v_func == NULL || (v_func->type != V_FUNC && v_func->type != V_PTR)) {
     rt_raise(ERR_NO_FUNC);
+  } else if (v_func->type == V_PTR) {
+    prog_ip = cmd_push_args(kwPROC, v_func->v.ap.p, v_func->v.ap.v);
+    if (code_peek() == kwTYPE_PARAM) {
+      code_skipnext();
+      cmd_param();
+
+      stknode_t node;
+      node.x.param.res = NULL; // TODO attach to global self variable
+      node.type = kwTYPE_CALL_VFUNC;
+      code_push(&node);
+    } else {
+      rt_raise(ERR_NO_FUNC);
+    }
   } else {
     if (code_peek() == kwTYPE_LEVEL_BEGIN) {
       code_skipnext();

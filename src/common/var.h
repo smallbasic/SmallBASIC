@@ -53,7 +53,7 @@
 #define SYSVAR_COMMAND      8  /**< system variable, COMMAND$  @ingroup var */
 #define SYSVAR_X            9  /**< system variable, X         @ingroup var */
 #define SYSVAR_Y            10 /**< system variable, Y         @ingroup var */
-#define SYSVAR_Z            11 /**< system variable, Z         @ingroup var */
+#define SYSVAR_SELF         11 /**< system variable, SELF      @ingroup var */
 #define SYSVAR_COUNT        12
 
 /**

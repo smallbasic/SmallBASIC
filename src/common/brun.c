@@ -277,6 +277,7 @@ void exec_setup_predefined_variables() {
   setsysvar_int(SYSVAR_FALSE, 0);
   setsysvar_str(SYSVAR_CWD, dev_getcwd());
   setsysvar_str(SYSVAR_COMMAND, opt_command);
+  setsysvar_int(SYSVAR_SELF, 0);
 
 #if defined(_UnixOS)
   if (getenv("HOME")) {
@@ -922,6 +923,15 @@ void bc_loop(int isf) {
         break;
       case kwOPTION:
         cmd_options();
+        break;
+      case kwTYPE_CALL_VFUNC:
+        if (isf) {
+          cmd_call_object_vfunc();
+          proc_level++;
+        } else {
+          err_syntax(kwTYPE_CALL_VFUNC, "%G");
+        }
+        IF_ERR_BREAK;
         break;
       case kwTYPE_CALLEXTP:
         bc_loop_call_extp();

@@ -1158,12 +1158,14 @@ void comp_expression(char *expr, byte no_parser) {
                     bc_add_code(&bc, kwBYREF);
                   }
                   SKIP_SPACES(ptr);
-                  if (ptr[0] == '(' && ptr[1] == ')') {
+                  comp_add_variable(&bc, comp_bc_name);
+                  if (ptr[0] == '(' && strchr(comp_bc_name, '.') != NULL) {
+                    // TODO breaks array indexing: 's = " " + m.b(0).foo'
+                    // bc_add_code(&bc, kwTYPE_CALL_VFUNC);
+                  } else if (ptr[0] == '(' && ptr[1] == ')') {
                     // null array
                     ptr += 2;
-                  }
-                  comp_add_variable(&bc, comp_bc_name);
-                  if (ptr[0] == '[') {
+                  } else if (ptr[0] == '[') {
                     // array element using '['
                     ptr++;
                     level++;
@@ -3447,7 +3449,7 @@ void comp_init() {
   comp_vartable[comp_var_getID(LCN_SV_COMMAND)].dolar_sup = 1;
   comp_var_getID(LCN_SV_X);
   comp_var_getID(LCN_SV_Y);
-  comp_var_getID(LCN_SV_Z);
+  comp_var_getID(LCN_SV_SELF);
 }
 
 /*

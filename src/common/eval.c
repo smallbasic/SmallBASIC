@@ -697,6 +697,41 @@ static inline void eval_shortc(var_t *r) {
   }
 }
 
+static inline void eval_call_udf(var_t *r) {
+  bc_loop(1);
+  if (!prog_error) {
+    stknode_t udf_rv;
+    code_pop(&udf_rv, kwTYPE_RET);
+    if (udf_rv.type != kwTYPE_RET) {
+      err_stackmess();
+    } else {
+      v_set(r, udf_rv.x.vdvar.vptr);
+      // free ret-var
+      V_FREE(udf_rv.x.vdvar.vptr);
+      v_detach(udf_rv.x.vdvar.vptr);
+    }
+  }
+}
+
+static inline void eval_var_ptr(var_t *r, var_t *var_p) {
+  if (CODE_PEEK() == kwTYPE_CALL_VFUNC) {
+    // func method()
+    //   method = "hello"
+    // end
+    // f.method = @method
+    // n = f.method()    <--- assign V_PTR
+    stknode_t node;
+    node.x.param.res = var_p;
+    node.type = kwTYPE_CALL_VFUNC;
+    code_push(&node);
+    eval_call_udf(r);
+  } else {
+    r->type = V_PTR;
+    r->v.ap.p = var_p->v.ap.p;
+    r->v.ap.v = var_p->v.ap.v;
+  }
+}
+
 static inline void eval_var(var_t *r, var_t *var_p) {
   var_t *var_deref;
   if (prog_error) {
@@ -704,9 +739,7 @@ static inline void eval_var(var_t *r, var_t *var_p) {
   }
   switch (var_p->type) {
   case V_PTR:
-    r->type = var_p->type;
-    r->v.ap.p = var_p->v.ap.p;
-    r->v.ap.v = var_p->v.ap.v;
+    eval_var_ptr(r, var_p);
     break;
   case V_INT:
     r->type = V_INT;
@@ -777,11 +810,17 @@ static inline void eval_extf(var_t *r) {
   V_FREE(r);
   if (lib & UID_UNIT_BIT) {
     unit_exec(lib & (~UID_UNIT_BIT), idx, r);
-    // if ( prog_error )
-    // return;
   } else {
     sblmgr_funcexec(lib, prog_symtable[idx].exp_idx, r);
   }
+}
+
+static inline void eval_ptr(var_t *r) {
+  V_FREE(r);
+  r->type = V_PTR;
+  r->const_flag = 1;
+  r->v.ap.p = code_getaddr();
+  r->v.ap.v = code_getaddr();
 }
 
 static inline void eval_callf_str1(long fcode, var_t *r) {
@@ -1164,22 +1203,6 @@ static inline void eval_callf(var_t *r) {
   }
 }
 
-static inline void eval_call_udf(var_t *r) {
-  bc_loop(1);
-  if (!prog_error) {
-    stknode_t udf_rv;
-    code_pop(&udf_rv, kwTYPE_RET);
-    if (udf_rv.type != kwTYPE_RET) {
-      err_stackmess();
-    } else {
-      v_set(r, udf_rv.x.vdvar.vptr);
-      // free ret-var
-      V_FREE(udf_rv.x.vdvar.vptr);
-      v_detach(udf_rv.x.vdvar.vptr);
-    }
-  }
-}
-
 /**
  * executes the expression (Code[IP]) and returns the result (r)
  */
@@ -1312,11 +1335,7 @@ void eval(var_t *r) {
       case kwTYPE_PTR:
         // UDF pointer - constant
         IP++;
-        V_FREE(r);
-        r->type = V_PTR;
-        r->const_flag = 1;
-        r->v.ap.p = code_getaddr();
-        r->v.ap.v = code_getaddr();
+        eval_ptr(r);
         break;
 
       case kwBYREF:
