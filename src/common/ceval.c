@@ -32,7 +32,7 @@ void cev_missing_rp(void) {
 }
 
 void cev_opr_err(void) {
-  sc_raise("(EXPR): SYNTAX ERROR");
+  sc_raise("(EXPR): SYNTAX ERROR (%d)", CODE(IP));
 }
 
 void cev_prim_str() {

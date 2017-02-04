@@ -181,7 +181,7 @@ void map_free(var_p_t var_p) {
  * Scan byte code for node kwTYPE_UDS_EL and attach as field elements
  * if they don't already exist.
  */
-var_p_t map_resolve_fields(const var_p_t base) {
+var_p_t map_resolve_fields(var_p_t base) {
   var_p_t field = NULL;
   if (code_peek() == kwTYPE_UDS_EL) {
     code_skipnext();
@@ -192,6 +192,9 @@ var_p_t map_resolve_fields(const var_p_t base) {
       code_skipnext();
     }
 
+    if (base->type == V_REF) {
+      base = base->v.ref;
+    }
     if (base->type != V_MAP) {
       if (v_is_nonzero(base)) {
         err_typemismatch();

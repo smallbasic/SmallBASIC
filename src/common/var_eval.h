@@ -17,6 +17,13 @@ extern "C" {
 /**
  * @ingroup var
  *
+ * resolve map
+ */
+var_t *code_resolve_map(var_t* var_p, int until_parens);
+
+/**
+ * @ingroup var
+ *
  * resolve var pointer
  */
 var_t *code_resolve_varptr(var_t* var_p, int until_parens);

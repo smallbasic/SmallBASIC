@@ -42,7 +42,7 @@ void FormInput::clicked(int x, int y, bool pressed) {
     if (_onclick) {
       bcip_t ip = prog_ip;
       prog_ip = _onclick;
-      cmd_push_args(kwPROC, prog_ip, INVALID_ADDR);
+      cmd_push_args(kwPROC, prog_ip, INVALID_ADDR, NULL);
       bc_loop(2);
       prog_ip = ip;
     } else if (form != NULL) {

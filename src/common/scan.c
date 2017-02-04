@@ -1159,11 +1159,9 @@ void comp_expression(char *expr, byte no_parser) {
                   }
                   SKIP_SPACES(ptr);
                   comp_add_variable(&bc, comp_bc_name);
-                  if (ptr[0] == '(' && strchr(comp_bc_name, '.') != NULL) {
-                    // TODO breaks array indexing: 's = " " + m.b(0).foo'
-                    // bc_add_code(&bc, kwTYPE_CALL_VFUNC);
-                  } else if (ptr[0] == '(' && ptr[1] == ')') {
-                    // null array
+                  if (ptr[0] == '(' && ptr[1] == ')'
+                      && strchr(comp_bc_name, '.') == NULL) {
+                    // null array on non UDS
                     ptr += 2;
                   } else if (ptr[0] == '[') {
                     // array element using '['

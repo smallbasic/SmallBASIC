@@ -714,22 +714,9 @@ static inline void eval_call_udf(var_t *r) {
 }
 
 static inline void eval_var_ptr(var_t *r, var_t *var_p) {
-  if (CODE_PEEK() == kwTYPE_CALL_VFUNC) {
-    // func method()
-    //   method = "hello"
-    // end
-    // f.method = @method
-    // n = f.method()    <--- assign V_PTR
-    stknode_t node;
-    node.x.param.res = var_p;
-    node.type = kwTYPE_CALL_VFUNC;
-    code_push(&node);
-    eval_call_udf(r);
-  } else {
-    r->type = V_PTR;
-    r->v.ap.p = var_p->v.ap.p;
-    r->v.ap.v = var_p->v.ap.v;
-  }
+  r->type = V_PTR;
+  r->v.ap.p = var_p->v.ap.p;
+  r->v.ap.v = var_p->v.ap.v;
 }
 
 static inline void eval_var(var_t *r, var_t *var_p) {

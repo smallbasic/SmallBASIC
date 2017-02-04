@@ -1,5 +1,4 @@
-dim foo
-
+foo = array("{}")
 key="blah"
 foo(key) = "something"
 foo("other") = 123

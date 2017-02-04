@@ -232,7 +232,6 @@ void setsysvar_num(int index, var_num_t value) {
     activate_task(i);
     if (ctask->has_sysvars) {
       var_t *var_p = tvar[index];
-
       var_p->type = V_NUM;
       var_p->const_flag = 1;
       var_p->v.n = value;
@@ -722,7 +721,7 @@ static inline void bc_loop_end() {
  *
  * @param isf if 1, the program must return if found return (by level <= 0);
  * otherwise an RTE will generated
- * if 2; like 1, but increase the proc_level because UDF call it was executed internaly
+ * if 2; like 1, but increase the proc_level because UDF call executed internaly
  */
 void bc_loop(int isf) {
   byte pops;
@@ -923,15 +922,6 @@ void bc_loop(int isf) {
         break;
       case kwOPTION:
         cmd_options();
-        break;
-      case kwTYPE_CALL_VFUNC:
-        if (isf) {
-          cmd_call_object_vfunc();
-          proc_level++;
-        } else {
-          err_syntax(kwTYPE_CALL_VFUNC, "%G");
-        }
-        IF_ERR_BREAK;
         break;
       case kwTYPE_CALLEXTP:
         bc_loop_call_extp();

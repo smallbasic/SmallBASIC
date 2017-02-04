@@ -922,7 +922,7 @@ void cmd_gosub() {
  * @param target sub/func
  * @param return-variable ID
  */
-bcip_t cmd_push_args(int cmd, bcip_t goto_addr, bcip_t rvid) {
+bcip_t cmd_push_args(int cmd, bcip_t goto_addr, bcip_t rvid, var_t *self) {
   stknode_t param;
   bcip_t ofs;
   bcip_t pcount = 0;
@@ -1002,6 +1002,7 @@ bcip_t cmd_push_args(int cmd, bcip_t goto_addr, bcip_t rvid) {
   param.x.vcall.pcount = pcount;  // number parameter-nodes in the stack
   param.x.vcall.ret_ip = prog_ip; // where to go after exit (caller's next address)
   param.x.vcall.rvid = rvid; // return-variable ID
+  param.x.vcall.self = self; // object instance data
 
   if (rvid != INVALID_ADDR) {
     // if we call a function
@@ -1019,7 +1020,7 @@ bcip_t cmd_push_args(int cmd, bcip_t goto_addr, bcip_t rvid) {
 void cmd_udp(int cmd) {
   bcip_t goto_addr = code_getaddr();
   bcip_t rvid = code_getaddr();
-  prog_ip = cmd_push_args(cmd, goto_addr, rvid);
+  prog_ip = cmd_push_args(cmd, goto_addr, rvid, NULL);
 }
 
 /**
@@ -1112,6 +1113,7 @@ void cmd_call_unit_udp(int cmd, int udp_tid, bcip_t goto_addr, bcip_t rvid) {
   // (the number of parameter-nodes in the stack)
   param.x.vcall.ret_ip = prog_ip; // where to go after exit (caller's next address)
   param.x.vcall.rvid = rvid; // return-variable ID
+  param.x.vcall.self = NULL;
 
   if (rvid != INVALID_ADDR) {// if we call a function
     param.x.vcall.retvar = tvar[rvid];  // store previous data of RVID
@@ -1174,6 +1176,13 @@ void cmd_param() {
     // are different from the number that was passed by the caller
     err_parm_num(ncall.x.vcall.pcount, pcount);
     return;
+  }
+
+  if (ctask->has_sysvars && ncall.x.vcall.self != NULL) {
+    var_t *self = tvar[SYSVAR_SELF];
+    self->const_flag = 0;
+    self->type = V_REF;
+    self->v.ref = ncall.x.vcall.self;
   }
 
   if (pcount) {              // get parameters
@@ -1266,6 +1275,14 @@ void cmd_udpret() {
       code_push(&rval);
 
       tvar[node.x.vcall.rvid] = node.x.vcall.retvar;  // restore ptr
+    }
+
+    // restore self variable
+    if (ctask->has_sysvars && node.x.vcall.self != NULL) {
+      var_t *self = tvar[SYSVAR_SELF];
+      self->const_flag = 1;
+      self->type = V_INT;
+      self->v.i = 0;
     }
   }
 
@@ -2803,22 +2820,6 @@ void cmd_end_try() {
 }
 
 /**
- * Function call from MAP V_PTR
- */
-void cmd_call_object_vfunc() {
-  stknode_t node;
-  code_pop_and_free(&node);
-  if (node.type != kwTYPE_CALL_VFUNC) {
-    err_stackmess();
-  } else {
-    var_t *var_p = node.x.param.res;
-    prog_ip = cmd_push_args(kwFUNC, var_p->v.ap.p, var_p->v.ap.v);
-    // TODO
-
-  }
-}
-
-/**
  * Call to object method
  */
 void cmd_call_vfunc() {
@@ -2826,15 +2827,10 @@ void cmd_call_vfunc() {
   if (v_func == NULL || (v_func->type != V_FUNC && v_func->type != V_PTR)) {
     rt_raise(ERR_NO_FUNC);
   } else if (v_func->type == V_PTR) {
-    prog_ip = cmd_push_args(kwPROC, v_func->v.ap.p, v_func->v.ap.v);
+    prog_ip = cmd_push_args(kwPROC, v_func->v.ap.p, v_func->v.ap.v, v_func);
     if (code_peek() == kwTYPE_PARAM) {
       code_skipnext();
       cmd_param();
-
-      stknode_t node;
-      node.x.param.res = NULL; // TODO attach to global self variable
-      node.type = kwTYPE_CALL_VFUNC;
-      code_push(&node);
     } else {
       rt_raise(ERR_NO_FUNC);
     }

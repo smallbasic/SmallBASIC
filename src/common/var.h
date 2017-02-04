@@ -188,10 +188,11 @@ struct stknode_s {
      *  CALL UDP/F
      */
     struct {
-      bcip_t ret_ip; /**< return ip */
+      bcip_t ret_ip;   /**< return ip */
       uint16_t pcount; /**< number of parameters */
-      bid_t rvid; /**< return-variable ID */
-      var_t *retvar; /**< return-variable data */
+      bid_t rvid;      /**< return-variable ID */
+      var_t *retvar;   /**< return-variable data */
+      var_t *self;     /**< object instance data */
 
       // unit - version
       int task_id; /**< task_id or -1 (this task) */
