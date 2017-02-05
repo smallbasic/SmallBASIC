@@ -17,16 +17,23 @@ extern "C" {
 /**
  * @ingroup var
  *
+ * returns the map field along with the field parent
+ */
+var_t *code_getvarptr_map(var_t **map);
+
+/**
+ * @ingroup var
+ *
  * resolve map
  */
-var_t *code_resolve_map(var_t* var_p, int until_parens);
+var_t *code_resolve_map(var_t *var_p, int until_parens);
 
 /**
  * @ingroup var
  *
  * resolve var pointer
  */
-var_t *code_resolve_varptr(var_t* var_p, int until_parens);
+var_t *code_resolve_varptr(var_t *var_p, int until_parens);
 
 /**
  * @ingroup var

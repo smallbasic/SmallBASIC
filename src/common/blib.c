@@ -2823,11 +2823,12 @@ void cmd_end_try() {
  * Call to object method
  */
 void cmd_call_vfunc() {
-  var_t *v_func = code_getvarptr_parens(1);
+  var_t *map = NULL;
+  var_t *v_func = code_getvarptr_map(&map);
   if (v_func == NULL || (v_func->type != V_FUNC && v_func->type != V_PTR)) {
     rt_raise(ERR_NO_FUNC);
   } else if (v_func->type == V_PTR) {
-    prog_ip = cmd_push_args(kwPROC, v_func->v.ap.p, v_func->v.ap.v, v_func);
+    prog_ip = cmd_push_args(kwPROC, v_func->v.ap.p, v_func->v.ap.v, map);
     if (code_peek() == kwTYPE_PARAM) {
       code_skipnext();
       cmd_param();

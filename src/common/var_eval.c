@@ -66,6 +66,21 @@ bcip_t get_array_idx(var_t *array) {
   return idx;
 }
 
+/**
+ * Returns the map field along with the parent map
+ */
+var_t *code_getvarptr_map(var_t **var_map) {
+  var_t *var_p = NULL;
+  if (code_peek() == kwTYPE_VAR) {
+    code_skipnext();
+    *var_map = tvar[code_getaddr()];
+    if (code_peek() == kwTYPE_UDS_EL) {
+      var_p = code_resolve_map(*var_map, 1);
+    }
+  }
+  return var_p;
+}
+
 var_t *code_get_map_element(var_t *map, var_t *field) {
   var_t *result = NULL;
 
@@ -80,7 +95,10 @@ var_t *code_get_map_element(var_t *map, var_t *field) {
       if (udf_rv.type != kwTYPE_RET) {
         err_stackmess();
       } else {
-        result = udf_rv.x.vdvar.vptr;
+        v_set(map, udf_rv.x.vdvar.vptr);
+        v_free(udf_rv.x.vdvar.vptr);
+        v_detach(udf_rv.x.vdvar.vptr);
+        result = map;
       }
     }
   } else {
@@ -142,7 +160,6 @@ var_t *code_getvarptr_arridx(var_t *basevar_p) {
  */
 var_t *code_resolve_varptr(var_t *var_p, int until_parens) {
   int deref = 1;
-  var_p = eval_ref_var(var_p);
   while (deref && var_p != NULL) {
     switch (code_peek()) {
     case kwTYPE_LEVEL_BEGIN:
@@ -158,7 +175,6 @@ var_t *code_resolve_varptr(var_t *var_p, int until_parens) {
     default:
       deref = 0;
     }
-    var_p = eval_ref_var(var_p);
   }
   return var_p;
 }
