@@ -2819,7 +2819,9 @@ void cmd_call_vfunc() {
     if (code_peek() == kwTYPE_LEVEL_BEGIN) {
       code_skipnext();
     }
+    v_set_self(map);
     v_func->v.fn.cb(v_func->v.fn.self);
+    v_set_self(NULL);
     if (code_peek() == kwTYPE_LEVEL_END) {
       code_skipnext();
     }
