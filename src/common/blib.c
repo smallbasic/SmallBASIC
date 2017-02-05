@@ -1231,18 +1231,15 @@ void cmd_udpret() {
   while ((node.type != kwPROC) && (node.type != kwFUNC)) {
     // pop from stack until caller's node found
     // local variable - cleanup
-    switch (node.type) {
-    case kwTYPE_CRVAR:
+    if (node.type == kwTYPE_CRVAR) {
       // free local variable data
       v_free(tvar[node.x.vdvar.vid]);
       v_detach(tvar[node.x.vdvar.vid]);
       // restore ptr (replace to pre-call variable)
       tvar[node.x.vdvar.vid] = node.x.vdvar.vptr;
-      break;
-    case kwBYREF:
+    } else if (node.type == kwBYREF) {
       // variable 'by reference', restore ptr
       tvar[node.x.vdvar.vid] = node.x.vdvar.vptr;
-      break;
     }
     // pop next node
     code_pop(&node, 0);
