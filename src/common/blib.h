@@ -25,7 +25,7 @@ void dump_stack(void);
 
 // first class
 void cmd_udp(int);
-bcip_t cmd_push_args(int cmd, bcip_t goto_addr, bcip_t rvid, var_t *self);
+bcip_t cmd_push_args(int cmd, bcip_t goto_addr, bcip_t rvid);
 void cmd_call_unit_udp(int cmd, int udp_tid, bcip_t goto_addr, bcip_t rvid);
 void cmd_udpret(void);
 void cmd_crvar(void);

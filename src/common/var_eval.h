@@ -17,6 +17,13 @@ extern "C" {
 /**
  * @ingroup var
  *
+ * prepares the self variable
+ */
+void v_set_self(var_t *self);
+
+/**
+ * @ingroup var
+ *
  * returns the map field along with the field parent
  */
 var_t *code_getvarptr_map(var_t **map);

@@ -922,7 +922,7 @@ void cmd_gosub() {
  * @param target sub/func
  * @param return-variable ID
  */
-bcip_t cmd_push_args(int cmd, bcip_t goto_addr, bcip_t rvid, var_t *self) {
+bcip_t cmd_push_args(int cmd, bcip_t goto_addr, bcip_t rvid) {
   stknode_t param;
   bcip_t ofs;
   bcip_t pcount = 0;
@@ -1002,13 +1002,12 @@ bcip_t cmd_push_args(int cmd, bcip_t goto_addr, bcip_t rvid, var_t *self) {
   param.x.vcall.pcount = pcount;  // number parameter-nodes in the stack
   param.x.vcall.ret_ip = prog_ip; // where to go after exit (caller's next address)
   param.x.vcall.rvid = rvid; // return-variable ID
-  param.x.vcall.self = self; // object instance data
 
   if (rvid != INVALID_ADDR) {
     // if we call a function
     param.x.vcall.retvar = tvar[rvid];  // store previous data of RVID
     tvar[rvid] = v_new();    // create a temporary variable to store the function's result
-    // value will be restored on udp-return
+                             // value will be restored on udp-return
   }
 
   param.x.vcall.task_id = -1;
@@ -1020,7 +1019,7 @@ bcip_t cmd_push_args(int cmd, bcip_t goto_addr, bcip_t rvid, var_t *self) {
 void cmd_udp(int cmd) {
   bcip_t goto_addr = code_getaddr();
   bcip_t rvid = code_getaddr();
-  prog_ip = cmd_push_args(cmd, goto_addr, rvid, NULL);
+  prog_ip = cmd_push_args(cmd, goto_addr, rvid);
 }
 
 /**
@@ -1113,7 +1112,6 @@ void cmd_call_unit_udp(int cmd, int udp_tid, bcip_t goto_addr, bcip_t rvid) {
   // (the number of parameter-nodes in the stack)
   param.x.vcall.ret_ip = prog_ip; // where to go after exit (caller's next address)
   param.x.vcall.rvid = rvid; // return-variable ID
-  param.x.vcall.self = NULL;
 
   if (rvid != INVALID_ADDR) {// if we call a function
     param.x.vcall.retvar = tvar[rvid];  // store previous data of RVID
@@ -1176,13 +1174,6 @@ void cmd_param() {
     // are different from the number that was passed by the caller
     err_parm_num(ncall.x.vcall.pcount, pcount);
     return;
-  }
-
-  if (ctask->has_sysvars && ncall.x.vcall.self != NULL) {
-    var_t *self = tvar[SYSVAR_SELF];
-    self->const_flag = 0;
-    self->type = V_REF;
-    self->v.ref = ncall.x.vcall.self;
   }
 
   if (pcount) {              // get parameters
@@ -1252,9 +1243,6 @@ void cmd_udpret() {
       // variable 'by reference', restore ptr
       tvar[node.x.vdvar.vid] = node.x.vdvar.vptr;
       break;
-    case kwTYPE_CALL_VFUNC:
-      // clean 'self' variable
-      break;
     }
     // pop next node
     code_pop(&node, 0);
@@ -1275,14 +1263,6 @@ void cmd_udpret() {
       code_push(&rval);
 
       tvar[node.x.vcall.rvid] = node.x.vcall.retvar;  // restore ptr
-    }
-
-    // restore self variable
-    if (ctask->has_sysvars && node.x.vcall.self != NULL) {
-      var_t *self = tvar[SYSVAR_SELF];
-      self->const_flag = 1;
-      self->type = V_INT;
-      self->v.i = 0;
     }
   }
 
@@ -1341,9 +1321,6 @@ int cmd_exit() {
       // exiting loop from within select statement
       v_free(node.x.vcase.var_ptr);
       v_detach(node.x.vcase.var_ptr);
-      break;
-    case kwTYPE_CALL_VFUNC:
-      // TODO
       break;
     case kwPROC:
     case kwFUNC:
@@ -2828,10 +2805,13 @@ void cmd_call_vfunc() {
   if (v_func == NULL || (v_func->type != V_FUNC && v_func->type != V_PTR)) {
     rt_raise(ERR_NO_FUNC);
   } else if (v_func->type == V_PTR) {
-    prog_ip = cmd_push_args(kwPROC, v_func->v.ap.p, v_func->v.ap.v, map);
+    prog_ip = cmd_push_args(kwPROC, v_func->v.ap.p, v_func->v.ap.v);
     if (code_peek() == kwTYPE_PARAM) {
       code_skipnext();
       cmd_param();
+      v_set_self(map);
+      bc_loop(2);
+      v_set_self(NULL);
     } else {
       rt_raise(ERR_NO_FUNC);
     }

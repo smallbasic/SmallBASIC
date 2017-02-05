@@ -81,14 +81,32 @@ var_t *code_getvarptr_map(var_t **var_map) {
   return var_p;
 }
 
+void v_set_self(var_t *var) {
+  if (ctask->has_sysvars) {
+    var_t *self = tvar[SYSVAR_SELF];
+    if (var != NULL) {
+      self->const_flag = 0;
+      self->type = V_REF;
+      self->v.ref = var;
+    } else if (self->type != V_INT) {
+      self->const_flag = 1;
+      self->type = V_INT;
+      self->v.i = 0;
+    }
+  }
+}
+
 var_t *code_get_map_element(var_t *map, var_t *field) {
   var_t *result = NULL;
 
   if (code_peek() != kwTYPE_LEVEL_BEGIN) {
     err_arrmis_lp();
   } else if (field->type == V_PTR) {
-    prog_ip = cmd_push_args(kwFUNC, field->v.ap.p, field->v.ap.v, map);
+    prog_ip = cmd_push_args(kwFUNC, field->v.ap.p, field->v.ap.v);
+    v_set_self(map);
     bc_loop(2);
+    v_set_self(NULL);
+
     if (!prog_error) {
       stknode_t udf_rv;
       code_pop(&udf_rv, kwTYPE_RET);
