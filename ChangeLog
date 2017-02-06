@@ -1,4 +1,7 @@
 2017-02-05 (0.12.9)
+	COMMON: update parameter handling for performance
+
+2017-02-05 (0.12.9)
 	COMMON: can now attach SUB/FUNCs as MAP fields
 
 2017-01-25 (0.12.9)

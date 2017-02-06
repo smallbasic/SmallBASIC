@@ -1126,20 +1126,19 @@ void cmd_call_unit_udp(int cmd, int udp_tid, bcip_t goto_addr, bcip_t rvid) {
 
 /**
  * Create dynamic-variables (actually local-variables)
- *
- * In older versions ( <= 5.8?) there was only one variable-table...
- * The global's one.
  */
 void cmd_crvar() {
   int i;
-  int count = code_getnext();    // number of variables to create
+
+  // number of variables to create
+  int count = code_getnext();
   for (i = 0; i < count; i++) {
-    bcip_t vid = code_getaddr();    // an ID on global-variable-table is used
+    // an ID on global-variable-table is used
+    bcip_t vid = code_getaddr();
     stknode_t node;
 
     // store previous variable to stack
     // we will restore it at 'return'
-    // that is why everything working well
     node.type = kwTYPE_CRVAR;
     node.x.vdvar.vid = vid;
     node.x.vdvar.vptr = tvar[vid];
@@ -1160,64 +1159,57 @@ void cmd_crvar() {
  * 'by reference' parameters are stored as local variables in the stack (kwTYPE_BYREF)
  */
 void cmd_param() {
-  stknode_t ncall;
-  code_pop(&ncall, 0);          // get caller's info-node
+  // get caller's info-node
+  stknode_t *ncall = &prog_stack[prog_stack_count - 1];
 
-  if ((ncall.type != kwPROC) && (ncall.type != kwFUNC)) {
+  if (ncall->type != kwPROC && ncall->type != kwFUNC) {
     err_stackmess();
     return;
   }
-  int pcount = code_getnext();
 
-  if (pcount != ncall.x.vcall.pcount) {
+  int pcount = code_getnext();
+  if (pcount != ncall->x.vcall.pcount) {
     // the number of the parameters that are required by this procedure/function
     // are different from the number that was passed by the caller
-    err_parm_num(ncall.x.vcall.pcount, pcount);
+    err_parm_num(ncall->x.vcall.pcount, pcount);
     return;
   }
 
-  if (pcount) {              // get parameters
+  if (pcount) {
     int i;
-    stknode_t *param = (stknode_t *) malloc(sizeof(stknode_t) * pcount);
-    for (i = pcount - 1; i > -1; i--) {
-      code_pop(&param[i], 0);
-    }
-    code_push(&ncall);       // push call's pars (again); we will needed at 'return'
-
-    for (i = 0; i < pcount; i++) {  // check parameters one-by-one
+    for (i = 0; i < pcount; i++) {
+      // check parameters one-by-one
       byte vattr = code_getnext();
       bid_t vid = code_getaddr();
-      var_t *param_var = param[i].x.param.res;
-      stknode_t node;
+      int stack_pos = (prog_stack_count - 1 - pcount) + i;
+      stknode_t *node = &prog_stack[stack_pos];
+      var_t *param_var = node->x.param.res;
 
-      if ((vattr & 0x80) == 0) {  // UDP requires a 'by value' parameter
-        node.type = kwTYPE_CRVAR;
-        node.x.vdvar.vid = vid;
-        node.x.vdvar.vptr = tvar[vid];
-        code_push(&node);    // store previous variable (with the same ID) to stack
+      if ((vattr & 0x80) == 0) {
+        // UDP requires a 'by value' parameter
+        node->type = kwTYPE_CRVAR;
+        node->x.vdvar.vid = vid;
+        node->x.vdvar.vptr = tvar[vid];
 
         // assign
-        if (param[i].x.param.vcheck == 1) {
-          tvar[vid] = param_var;  // its already cloned by the CALL (expr)
+        if (node->x.param.vcheck == 1) {
+          // its already cloned by the CALL (expr)
+          tvar[vid] = param_var;
         } else {
           tvar[vid] = v_clone(param_var);
         }
-      } else {               // UDP requires 'by reference' parameter
-        if (param[i].x.param.vcheck == 1) {
-          err_parm_byref(i); // error; the parameter can be used only 'by value'
-          break;
-        } else {
-          node.type = kwBYREF;
-          node.x.vdvar.vid = vid;
-          node.x.vdvar.vptr = tvar[vid];
-          code_push(&node);  // store previous variable to stack (with the same ID)
-          tvar[vid] = param_var;  // use the 'var_t'
-        }
+      } else if (node->x.param.vcheck == 1) {
+        // error - the parameter can be used only 'by value'
+        err_parm_byref(i);
+        break;
+      } else {
+        // UDP requires 'by reference' parameter
+        node->type = kwBYREF;
+        node->x.vdvar.vid = vid;
+        node->x.vdvar.vptr = tvar[vid];
+        tvar[vid] = param_var;
       }
     }
-    free(param);
-  } else {
-    code_push(&ncall);       // push caller's info node
   }
 }
 
@@ -1225,11 +1217,30 @@ void cmd_param() {
  * Return from user-defined procedure or function
  */
 void cmd_udpret() {
-  stknode_t node, rval;
+  stknode_t ncall;
+  code_pop(&ncall, 0);
 
-  code_pop(&node, 0);
-  while ((node.type != kwPROC) && (node.type != kwFUNC)) {
-    // pop from stack until caller's node found
+  // handle any values set with cmd_crvar()
+  while (ncall.type == kwTYPE_CRVAR) {
+    v_free(tvar[ncall.x.vdvar.vid]);
+    v_detach(tvar[ncall.x.vdvar.vid]);
+    tvar[ncall.x.vdvar.vid] = ncall.x.vdvar.vptr;
+    code_pop(&ncall, 0);
+  }
+
+  // next node should be the call node
+  if (ncall.type != kwPROC && ncall.type != kwFUNC) {
+    rt_raise(ERR_SYNTAX);
+    dump_stack();
+    return;
+  }
+
+  // handle parameters
+  int i;
+  for (i = ncall.x.vcall.pcount; i > 0 && !prog_error; i--) {
+    stknode_t node;
+    code_pop(&node, 0);
+
     // local variable - cleanup
     if (node.type == kwTYPE_CRVAR) {
       // free local variable data
@@ -1241,29 +1252,21 @@ void cmd_udpret() {
       // variable 'by reference', restore ptr
       tvar[node.x.vdvar.vid] = node.x.vdvar.vptr;
     }
-    // pop next node
-    code_pop(&node, 0);
-    if (prog_error) {
-      return;
-    }
   }
 
-  if ((node.type != kwPROC) && (node.type != kwFUNC)) {
-    rt_raise(ERR_SYNTAX);
-    dump_stack();
-  } else {
-    // restore return value
-    if (node.x.vcall.rvid != (bid_t) INVALID_ADDR) {
-      // it is a function store value to stack
-      rval.type = kwTYPE_RET;
-      rval.x.vdvar.vptr = tvar[node.x.vcall.rvid];
-      code_push(&rval);
-
-      tvar[node.x.vcall.rvid] = node.x.vcall.retvar;  // restore ptr
-    }
+  // restore return value
+  if (ncall.x.vcall.rvid != (bid_t) INVALID_ADDR) {
+    // it is a function store value to stack
+    stknode_t rval;
+    rval.type = kwTYPE_RET;
+    rval.x.vdvar.vptr = tvar[ncall.x.vcall.rvid];
+    code_push(&rval);
+    // restore ptr
+    tvar[ncall.x.vcall.rvid] = ncall.x.vcall.retvar;
   }
 
-  prog_ip = node.x.vcall.ret_ip;  // jump to caller's next address
+  // jump to caller's next address
+  prog_ip = ncall.x.vcall.ret_ip;
 }
 
 /**
