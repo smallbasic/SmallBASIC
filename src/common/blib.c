@@ -1152,8 +1152,8 @@ void cmd_crvar() {
 /**
  * user defined procedure or function - parse parameters code
  *
- * this code will be called by udp/f to pop parameter node
- * which was stored in stack by the cmd_udp (call to udp/f)
+ * this code will be called by udp/f to check parameter nodes
+ * stored in stack by the cmd_udp (call to udp/f)
  *
  * 'by value' parameters are stored as local variables in the stack (kwTYPE_CRVAR)
  * 'by reference' parameters are stored as local variables in the stack (kwTYPE_BYREF)
@@ -1184,21 +1184,26 @@ void cmd_param() {
       int stack_pos = (prog_stack_count - 1 - pcount) + i;
       stknode_t *node = &prog_stack[stack_pos];
       var_t *param_var = node->x.param.res;
+      int vcheck = node->x.param.vcheck;
 
-      if ((vattr & 0x80) == 0) {
+      if (node->type != kwTYPE_VAR) {
+        err_stackmess();
+        break;
+      }
+      else if ((vattr & 0x80) == 0) {
         // UDP requires a 'by value' parameter
         node->type = kwTYPE_CRVAR;
         node->x.vdvar.vid = vid;
         node->x.vdvar.vptr = tvar[vid];
 
         // assign
-        if (node->x.param.vcheck == 1) {
+        if (vcheck == 1) {
           // its already cloned by the CALL (expr)
           tvar[vid] = param_var;
         } else {
           tvar[vid] = v_clone(param_var);
         }
-      } else if (node->x.param.vcheck == 1) {
+      } else if (vcheck == 1) {
         // error - the parameter can be used only 'by value'
         err_parm_byref(i);
         break;
