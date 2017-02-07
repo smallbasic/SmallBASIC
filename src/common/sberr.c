@@ -431,12 +431,12 @@ void err_throw_str(const char *err) {
     }
 
     // cleanup the stack
-    stknode_t node;
     int sp;
+    int nodeType = 0;
     for (sp = throw_sp; sp > reset_sp; sp--) {
-      code_pop_and_free(&node);
+      nodeType = code_pop_and_free();
     }
-    if (node.type != kwTRY) {
+    if (nodeType != kwTRY) {
       err_stackmess();
     }
   }

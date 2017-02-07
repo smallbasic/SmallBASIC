@@ -160,34 +160,18 @@ void code_pop(stknode_t *node, int expected_type) {
 }
 
 /**
- * Returns and deletes the topmost node from stack (POP)
+ * POPs and frees the topmost node from stack and returns the node type
  */
-void code_pop_and_free(stknode_t *node) {
+int code_pop_and_free() {
+  int type;
   if (prog_stack_count) {
-    stknode_t *cur_node;
-
     prog_stack_count--;
-    if (node) {
-      *node = prog_stack[prog_stack_count];
-    }
-#if defined(_UnixOS) && defined(_CHECK_STACK)
-    int i;
-    for (i = 0; keyword_table[i].name[0] != '\0'; i++) {
-      if (prog_stack[prog_stack_count].type == keyword_table[i].code) {
-        printf("%3d: POP %s (%d)\n", prog_stack_count,
-            keyword_table[i].name, prog_line);
-        break;
-      }
-    }
-#endif
-    cur_node = &prog_stack[prog_stack_count];
-    free_node(cur_node);
+    type = prog_stack[prog_stack_count].type;
+    free_node(&prog_stack[prog_stack_count]);
   } else {
-    if (node) {
-      err_stackunderflow();
-      node->type = 0xFF;
-    }
+    type = 0xFF;
   }
+  return type;
 }
 
 /**
@@ -812,7 +796,7 @@ void bc_loop(int isf) {
         // clear the stack (whatever you can)
         pops = code_getnext();
         while (pops > 0) {
-          code_pop_and_free(NULL);
+          code_pop_and_free();
           pops--;
         }
 
@@ -1367,7 +1351,6 @@ int brun_create_task(const char *filename, byte *preloaded_bc, int libf) {
  */
 int exec_close_task() {
   uint16_t i;
-  stknode_t node;
   if (ctask->bytecode) {
     // clean up - format list
     free_format();
@@ -1379,7 +1362,7 @@ int exec_close_task() {
 
     // clean up - prog stack
     while (prog_stack_count > 0) {
-      code_pop_and_free(&node);
+      code_pop_and_free();
     }
     free(prog_stack);
     // clean up - variables

@@ -2731,10 +2731,8 @@ void cmd_case_else() {
  * free the stored select expression created in cmd_select()
  */
 void cmd_end_select() {
-  stknode_t node;
-
-  code_pop_and_free(&node);
-  if (node.type != kwSELECT) {
+  int nodeType = code_pop_and_free();
+  if (nodeType != kwSELECT) {
     err_stackmess();
   } else {
     code_jump(code_getaddr());
@@ -2781,9 +2779,8 @@ void cmd_try() {
  * Handler for unthrown/uncaught exceptions
  */
 void cmd_catch() {
-  stknode_t node;
-  code_pop_and_free(&node);
-  if (node.type != kwTRY) {
+  int nodeType = code_pop_and_free();
+  if (nodeType != kwTRY) {
     err_stackmess();
   } else {
     // skip to end-try
@@ -2797,7 +2794,7 @@ void cmd_catch() {
 void cmd_end_try() {
   stknode_t *node = code_stackpeek();
   if (node != NULL && node->type == kwCATCH) {
-    code_pop_and_free(node);
+    code_pop_and_free();
   }
 }
 

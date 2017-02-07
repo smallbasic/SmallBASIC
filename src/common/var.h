@@ -686,11 +686,10 @@ void code_pop(stknode_t *node, int expected_type);
 /**
  * @ingroup exec
  *
- * Returns and deletes the topmost node from stack (POP)
+ * POPs and frees the topmost node from stack and returns the node type
  *
- * @param node the stack node
  */
-void code_pop_and_free(stknode_t *node);
+int code_pop_and_free();
 
 /**
  * @ingroup exec
