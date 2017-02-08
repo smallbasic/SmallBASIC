@@ -1041,6 +1041,14 @@ char *comp_scan_json(char *json, bc_t *bc) {
     case '}':
       curley_brace--;
       break;
+    case '\1':
+      // revert hidden quote
+      *p = '\"';
+      break;
+    case '\2':
+      // revert hidden newline
+      *p = '\n';
+      break;
     default:
       break;
     }
@@ -3687,12 +3695,7 @@ char *comp_format_text(const char *source) {
       case '{':
         curley_brace++;
         quotes = 1;
-        break;
-
-      case '}':
-        if (--curley_brace == 0) {
-          quotes = 0;
-        }
+        multi_line_string = 1;
         break;
 
       default:
@@ -3752,6 +3755,11 @@ char *comp_format_text(const char *source) {
           *ps++ = '\2';
           p++;
           continue;
+        } else if (curley_brace && p[0] == '}') {
+          if (--curley_brace == 0) {
+            quotes = 0;
+            multi_line_string = 0;
+          }
         }
       } else if (*p == '\"' || *p == '\n') {
         // join to any adjacent quoted text
