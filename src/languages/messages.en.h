@@ -37,6 +37,7 @@
 #define MSG_EXP_MIS_DQ          "Expression: Missing (\"), string remains open"
 #define MSG_EXP_MIS_RP          "Expression: Missing \')\'"
 #define MSG_EXP_MIS_LP          "Expression: Missing \'(\'"
+#define MSG_EXP_MIS_RB          "Expression: Missing \'}\'"
 #define MSG_LABEL_NOT_DEFINED   "Label '%s' is not defined"
 #define MSG_WRONG_UNIT          "Unknown unit '%s'; use IMPORT\n"
 #define MSG_NEW_LABEL           "%d: new label [%s], index %d\n"

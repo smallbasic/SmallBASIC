@@ -1,3 +1,6 @@
+2017-02-08 (0.12.9)
+	COMMON: create MAP from single line JSON without ARRAY command
+
 2017-02-05 (0.12.9)
 	COMMON: update parameter handling for performance
 

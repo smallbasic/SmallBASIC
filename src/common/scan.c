@@ -73,6 +73,10 @@ void err_comp_missing_lp() {
   sc_raise(MSG_EXP_MIS_LP);
 }
 
+void err_comp_missing_rb() {
+  sc_raise(MSG_EXP_MIS_RB);
+}
+
 void err_comp_label_not_def(const char *name) {
   sc_raise(MSG_LABEL_NOT_DEFINED, name);
 }
@@ -491,6 +495,7 @@ char *get_param_sect(char *text, const char *delim, char *dest) {
   char *p = (char *)text;
   char *d = dest;
   int quotes = 0, level = 0, skip_ch = 0;
+  int curley_brace = 0;
 
   if (p == NULL) {
     *dest = '\0';
@@ -524,11 +529,17 @@ char *get_param_sect(char *text, const char *delim, char *dest) {
       case '\r':
         skip_ch = 1;
         break;
+      case '{':
+        curley_brace++;
+        break;
+      case '}':
+        curley_brace--;
+        break;
       };
     }
 
     // delim check
-    if (delim != NULL && level <= 0 && quotes == 0) {
+    if (delim != NULL && level <= 0 && quotes == 0 && curley_brace == 0) {
       if (strchr(delim, *p) != NULL) {
         break;
       }
@@ -554,6 +565,9 @@ char *get_param_sect(char *text, const char *delim, char *dest) {
   }
   if (level < 0) {
     err_comp_missing_lp();
+  }
+  if (curley_brace  > 0) {
+    err_comp_missing_rb();
   }
   str_alltrim(dest);
   return p;
@@ -944,7 +958,8 @@ const char *comp_next_word(const char *text, char *dest) {
     return p;
   }
 
-  if (is_alnum(*p) || *p == '_') {  // don't forget the numeric-labels
+  if (is_alnum(*p) || *p == '_') {
+    // don't forget the numeric-labels
     while (is_alnum(*p) || (*p == '_') || (*p == '.')) {
       *d = *p;
       d++;
@@ -1012,6 +1027,34 @@ int comp_is_parenthesized(char *name) {
     result = (last == ')');
   }
   return result;
+}
+
+char *comp_scan_json(char *json, bc_t *bc) {
+  int curley_brace = 1;
+  char *p = json + 1;
+
+  while (*p != '\0' && curley_brace > 0) {
+    switch (*p) {
+    case '{':
+      curley_brace++;
+      break;
+    case '}':
+      curley_brace--;
+      break;
+    default:
+      break;
+    }
+    p++;
+  }
+  if (curley_brace == 0) {
+    bc_add_fcode(bc, kwARRAY);
+    bc_add_code(bc, kwTYPE_LEVEL_BEGIN);
+    bc_add_strn(bc, json, p - json);
+    bc_add_code(bc, kwTYPE_LEVEL_END);
+  } else {
+    err_comp_missing_rb();
+  }
+  return p;
 }
 
 /*
@@ -1204,6 +1247,9 @@ void comp_expression(char *expr, byte no_parser) {
       if (*ptr == '.') {
         ptr = comp_array_uds_field(ptr + 1, &bc);
       }
+    } else if (*ptr == '{') {
+      ptr = comp_scan_json(ptr, &bc);
+      check_udf++;
     } else if (is_space(*ptr)) {
       // null characters
       ptr++;
@@ -1519,7 +1565,8 @@ char *comp_getlist_insep(char *source, char_p_t * args, char *sep, char *delims,
  * IF expr THEN ... ELSE ... ---> IF expr THEN (:) .... (:ELSE:) ... (:FI)
  */
 int comp_single_line_if(char *text) {
-  char *p = (char *)text;       // *text points to 'expr'
+  // *text points to 'expr'
+  char *p = (char *)text;
   char *pthen, *pelse;
   char buf[SB_SOURCELINE_SIZE + 1];
 
@@ -1609,15 +1656,15 @@ int comp_single_line_if(char *text) {
         comp_block_level--;
         comp_block_id--;
         return 1;
-      } else {                    // *p == ':'
+      } else {
+        // *p == ':'
         return 0;
       }
     } else {
       break;
     }
   } while (pthen != NULL);
-
-  return 0;                     // false
+  return 0;
 }
 
 /**
@@ -2635,7 +2682,8 @@ void comp_text_line(char *text, int addLineNo) {
         char *next = trim_empty_parentheses(comp_bc_parm);
         comp_expression(next, 0);
       }
-      if (*p == ':') {          // command separator
+      if (*p == ':') {
+        // command separator
         bc_eoc(&comp_prog);
         p++;
         comp_text_line(p, 0);
@@ -3553,6 +3601,7 @@ char *comp_format_text(const char *source) {
   char *last_nonsp_ptr;
   int adj_line_num = 0;
   int multi_line_string = 0;
+  int curley_brace = 0;
 
   sl = strlen(source);
   new_text = malloc(sl + 2);
@@ -3632,6 +3681,17 @@ char *comp_format_text(const char *source) {
           last_ch = *p;
           last_nonsp_ptr = ps;
           *ps++ = *p++;
+        }
+        break;
+
+      case '{':
+        curley_brace++;
+        quotes = 1;
+        break;
+
+      case '}':
+        if (--curley_brace == 0) {
+          quotes = 0;
         }
         break;
 
@@ -3741,15 +3801,17 @@ void comp_preproc_grmode(const char *source) {
   p = buffer;
 
   // searching the end of the string
-  while (*p) {                  // while *p is not '\0'
-    if (*p == '\n' || *p == ':') {  // yeap, we must close the string
+  while (*p) {
+    // while *p is not '\0'
+    if (*p == '\n' || *p == ':') {
+      // yeap, we must close the string
       // here (enter or
       // command-seperator)
       // it is supposed that remarks had already removed from source
-      *p = '\0';                // terminate the string
+      *p = '\0';
       break;
     }
-    p++;                        // next
+    p++;
   }
 
   // get parameters
