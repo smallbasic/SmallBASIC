@@ -39,7 +39,12 @@ if (n != "pop-result") then
 fi
 
 m = array("{a:10,b:{c:20}}")
-ma = {a:10,b:{c:20}}
+ma = {
+  a:10,
+  b: {
+    c:20
+  }
+}
 if (m != ma) then
   throw "array error"
 endif

@@ -3696,6 +3696,7 @@ char *comp_format_text(const char *source) {
         curley_brace++;
         quotes = 1;
         multi_line_string = 1;
+        *ps++ = *p++;
         break;
 
       default:
@@ -3760,6 +3761,8 @@ char *comp_format_text(const char *source) {
             quotes = 0;
             multi_line_string = 0;
           }
+        } else if (p[0] == '{') {
+          curley_brace++;
         }
       } else if (*p == '\"' || *p == '\n') {
         // join to any adjacent quoted text
