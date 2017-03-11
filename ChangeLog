@@ -1,3 +1,6 @@
+2017-03-12 (0.12.9)
+	COMMON: fix internal error handling long string variables
+
 2017-02-08 (0.12.9)
 	COMMON: create MAP from single line JSON without ARRAY command
 
