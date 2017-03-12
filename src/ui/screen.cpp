@@ -490,6 +490,7 @@ void Screen::updateInputs(var_p_t form, bool setVars) {
         _inputs.remove(it);
         delete next;
         setDirty();
+        it--;
       } else if (next->updateUI(form, field)) {
         setDirty();
       }

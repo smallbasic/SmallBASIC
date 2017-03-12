@@ -903,6 +903,7 @@ int osd_devrestore(void) {
     SoundObject *next = *it;
     if (next != NULL && next->_cached) {
       g_sounds.remove(it);
+      it--;
     }
   }
 
