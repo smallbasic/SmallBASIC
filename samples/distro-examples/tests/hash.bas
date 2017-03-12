@@ -48,3 +48,16 @@ ma = {
 if (m != ma) then
   throw "array error"
 endif
+
+### fix bug in bc.c, fix regression in var_eval.c
+f = {"refresh":func,"doEvents":func,"focus":6,"inputs":[{"backgroundColor":0,"color":3,"label":"[<<]","x":0,"ID":0,"value":"__bn_close__","y":0,"type":"link"},{"backgroundColor":0,"color":3,"label":"[View]","x":-3,"ID":1,"value":"__bn_view__","y":0,"type":"link"},{"backgroundColor":0,"color":3,"label":"[Rename]","x":-3,"ID":2,"value":"__bn_rename__","y":0,"type":"link"},{"backgroundColor":0,"color":3,"label":"[New]","x":-3,"ID":3,"value":"__bn_new__","y":0,"type":"link"},{"backgroundColor":0,"color":3,"label":"[Delete]","x":-3,"ID":4,"value":"__bn_delete__","y":0,"type":"link"},{"backgroundColor":0,"color":3,"label":"[Save-As]","x":-3,"ID":5,"value":"__bn_saveas__","y":0,"type":"link"},{"help":"Enter file name, and then click New.","y":17,"type":"text","color":"white","width":636,"ID":6,"value":"","x":0,"resizable":1},{"height":448,"value":"","y":32,"type":"list","color":2,"resizable":1,"selectedIndex":0,"help":"No .bas files in /home/chrisws/src/SmallBASIC/ide/android/assets/","width":636,"x":0,"ID":7}],"value":0,"close":func}
+
+if (not isarray(f.inputs)) then
+  throw "pre: inputs not a map"
+endif
+
+f.inputs[6].value= "123"
+
+if (not isarray(f.inputs)) then
+  throw "post: inputs not a map"
+endif

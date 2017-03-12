@@ -207,49 +207,47 @@ FormInput *create_input(var_p_t v_field) {
   }
 
   FormInput *widget = NULL;
-  if (type != NULL) {
-    if (strcasecmp("button", type) == 0) {
-      widget = new FormButton(label, x, y, w, h);
-    } else if (strcasecmp("label", type) == 0) {
-      widget = new FormLabel(label, x, y, w, h);
-    } else if (strcasecmp("link", type) == 0) {
-      bool external = map_get_int(v_field, FORM_INPUT_IS_EXTERNAL, 0);
-      widget = new FormLink(label, external, x, y, w, h);
-    } else if (strcasecmp("listbox", type) == 0 ||
-               strcasecmp("list", type) == 0) {
-      ListModel *model = new ListModel(get_selected_index(v_field), value);
-      widget = new FormListBox(model, help, x, y, w, h);
-    } else if (strcasecmp("choice", type) == 0 ||
-               strcasecmp("dropdown", type) == 0) {
-      ListModel *model = new ListModel(get_selected_index(v_field), value);
-      widget = new FormDropList(model, x, y, w, h);
-    } else if (strcasecmp("text", type) == 0) {
-      int maxSize = map_get_int(v_field, FORM_INPUT_LENGTH, -1);
-      int charHeight = g_system->getOutput()->getCharHeight();
-      int charWidth = g_system->getOutput()->getCharWidth();
-      if (maxSize < 1 || maxSize > 1024) {
-        maxSize = 100;
-      }
-      const char *text = NULL;
-      if (value->type == V_STR) {
-        text = value->v.p.ptr;
-      }
-      if (h * 2 >= charHeight) {
-        widget = new TextEditInput(text, charWidth, charHeight, x, y, w, h);
-      } else {
-        widget = new FormLineInput(text, help, maxSize, false, x, y, w, h);
-      }
-    } else if (strcasecmp("image", type) == 0) {
-      const char *name = map_get_str(v_field, FORM_INPUT_NAME);
-      ImageDisplay *image = create_display_image(v_field, name);
-      if (image != NULL) {
-        widget = new FormImage(image, x, y);
-      }
-    } else if (strcasecmp("print", type) == 0) {
-      const char *text = map_get_str(v_field, FORM_INPUT_VALUE);
-      if (text) {
-        g_system->getOutput()->print(text);
-      }
+  if (type == NULL || strcasecmp("button", type) == 0) {
+    widget = new FormButton(label, x, y, w, h);
+  } else if (strcasecmp("label", type) == 0) {
+    widget = new FormLabel(label, x, y, w, h);
+  } else if (strcasecmp("link", type) == 0) {
+    bool external = map_get_int(v_field, FORM_INPUT_IS_EXTERNAL, 0);
+    widget = new FormLink(label, external, x, y, w, h);
+  } else if (strcasecmp("listbox", type) == 0 ||
+             strcasecmp("list", type) == 0) {
+    ListModel *model = new ListModel(get_selected_index(v_field), value);
+    widget = new FormListBox(model, help, x, y, w, h);
+  } else if (strcasecmp("choice", type) == 0 ||
+             strcasecmp("dropdown", type) == 0) {
+    ListModel *model = new ListModel(get_selected_index(v_field), value);
+    widget = new FormDropList(model, x, y, w, h);
+  } else if (strcasecmp("text", type) == 0) {
+    int maxSize = map_get_int(v_field, FORM_INPUT_LENGTH, -1);
+    int charHeight = g_system->getOutput()->getCharHeight();
+    int charWidth = g_system->getOutput()->getCharWidth();
+    if (maxSize < 1 || maxSize > 1024) {
+      maxSize = 100;
+    }
+    const char *text = NULL;
+    if (value->type == V_STR) {
+      text = value->v.p.ptr;
+    }
+    if (h * 2 >= charHeight) {
+      widget = new TextEditInput(text, charWidth, charHeight, x, y, w, h);
+    } else {
+      widget = new FormLineInput(text, help, maxSize, false, x, y, w, h);
+    }
+  } else if (strcasecmp("image", type) == 0) {
+    const char *name = map_get_str(v_field, FORM_INPUT_NAME);
+    ImageDisplay *image = create_display_image(v_field, name);
+    if (image != NULL) {
+      widget = new FormImage(image, x, y);
+    }
+  } else if (strcasecmp("print", type) == 0) {
+    const char *text = map_get_str(v_field, FORM_INPUT_VALUE);
+    if (text) {
+      g_system->getOutput()->print(text);
     }
   }
   return widget;

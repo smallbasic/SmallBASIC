@@ -96,48 +96,6 @@ void v_set_self(var_t *var) {
   }
 }
 
-var_t *code_get_map_element(var_t *map, var_t *field) {
-  var_t *result = NULL;
-
-  if (code_peek() != kwTYPE_LEVEL_BEGIN) {
-    err_arrmis_lp();
-  } else if (field->type == V_PTR) {
-    prog_ip = cmd_push_args(kwFUNC, field->v.ap.p, field->v.ap.v);
-    v_set_self(map);
-    bc_loop(2);
-    v_set_self(NULL);
-
-    if (!prog_error) {
-      stknode_t udf_rv;
-      code_pop(&udf_rv, kwTYPE_RET);
-      if (udf_rv.type != kwTYPE_RET) {
-        err_stackmess();
-      } else {
-        v_set(map, udf_rv.x.vdvar.vptr);
-        v_free(udf_rv.x.vdvar.vptr);
-        v_detach(udf_rv.x.vdvar.vptr);
-        result = map;
-      }
-    }
-  } else {
-    code_skipnext();
-
-    var_t var;
-    v_init(&var);
-    eval(&var);
-    if (!prog_error) {
-      map_get_value(field, &var, &result);
-      if (code_peek() == kwTYPE_LEVEL_END) {
-        code_skipnext();
-      } else {
-        err_missing_sep();
-      }
-    }
-    v_free(&var);
-  }
-  return result;
-}
-
 /**
  * Used by code_getvarptr() to retrieve an element ptr of an array
  */
@@ -171,6 +129,49 @@ var_t *code_getvarptr_arridx(var_t *basevar_p) {
     }
   }
   return var_p;
+}
+
+var_t *code_get_map_element(var_t *map, var_t *field) {
+  var_t *result = NULL;
+
+  if (code_peek() != kwTYPE_LEVEL_BEGIN) {
+    err_arrmis_lp();
+  } else if (field->type == V_PTR) {
+    prog_ip = cmd_push_args(kwFUNC, field->v.ap.p, field->v.ap.v);
+    v_set_self(map);
+    bc_loop(2);
+    v_set_self(NULL);
+
+    if (!prog_error) {
+      stknode_t udf_rv;
+      code_pop(&udf_rv, kwTYPE_RET);
+      if (udf_rv.type != kwTYPE_RET) {
+        err_stackmess();
+      } else {
+        v_set(map, udf_rv.x.vdvar.vptr);
+        v_free(udf_rv.x.vdvar.vptr);
+        v_detach(udf_rv.x.vdvar.vptr);
+        result = map;
+      }
+    }
+  } else if (field->type == V_ARRAY) {
+    result = code_getvarptr_arridx(field);
+  } else {
+    code_skipnext();
+    var_t var;
+    v_init(&var);
+    eval(&var);
+    if (!prog_error) {
+      map_get_value(field, &var, &result);
+      if (code_peek() == kwTYPE_LEVEL_END) {
+        code_skipnext();
+      } else {
+        err_missing_sep();
+      }
+    }
+    v_free(&var);
+  }
+  return result;
 }
 
 /**
