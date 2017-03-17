@@ -43,7 +43,8 @@
 #define MENU_OUTPUT     19
 #define MENU_HELP       20
 #define MENU_SHORTCUT   21
-#define MENU_SIZE       22
+#define MENU_SHARE      22
+#define MENU_SIZE       23
 #define MENU_COMPETION_0  (MENU_SIZE + 1)
 #define MENU_COMPETION_1  (MENU_SIZE + 2)
 #define MENU_COMPETION_2  (MENU_SIZE + 3)
@@ -60,9 +61,9 @@ System *g_system;
 void Cache::add(const char *key, const char *value) {
   if (_size == _count) {
     // overwrite at next index position
-    _head[_index]->empty();
+    _head[_index]->clear();
     _head[_index]->append(key);
-    _head[_index + 1]->empty();
+    _head[_index + 1]->clear();
     _head[_index + 1]->append(value);
     _index = (_index + 2) % _size;
   } else {
@@ -103,7 +104,7 @@ System::~System() {
 }
 
 void System::checkModifiedTime() {
-  if (opt_ide == IDE_EXTERNAL && _activeFile.length() > 0 &&
+  if (opt_ide == IDE_EXTERNAL && !_activeFile.empty() &&
       _modifiedTime != getModifiedTime()) {
     setRestart();
   }
@@ -146,7 +147,7 @@ bool System::fileExists(strlib::String &path) {
   bool result = false;
   if (path.indexOf("://", 1) != -1) {
     result = true;
-  } else if (path.length() > 0) {
+  } else if (!path.empty()) {
     struct stat st_file;
     result = stat(path.c_str(), &st_file) == 0;
   }
@@ -257,7 +258,7 @@ char *System::getText(char *dest, int maxSize) {
 
 uint32_t System::getModifiedTime() {
   uint32_t result = 0;
-  if (_activeFile.length() > 0) {
+  if (!_activeFile.empty()) {
     struct stat st_file;
     if (!stat(_activeFile.c_str(), &st_file)) {
       result = st_file.st_mtime;
@@ -369,8 +370,13 @@ void System::handleMenu(MAEvent &event) {
     event.key = SB_KEY_F(1);
     break;
   case MENU_SHORTCUT:
-    if (_activeFile.length() > 0) {
+    if (!_activeFile.empty()) {
       addShortcut(_activeFile.c_str());
+    }
+    break;
+  case MENU_SHARE:
+    if (!_activeFile.empty()) {
+      share(_activeFile.c_str());
     }
     break;
   case MENU_COMPETION_0:
@@ -399,8 +405,6 @@ void System::handleMenu(MAEvent &event) {
 }
 
 void System::handleEvent(MAEvent &event) {
-  bool hasHover;
-
   switch (event.type) {
   case EVENT_TYPE_OPTIONS_BOX_BUTTON_CLICKED:
     if (_systemMenu != NULL) {
@@ -418,18 +422,26 @@ void System::handleEvent(MAEvent &event) {
   case EVENT_TYPE_POINTER_PRESSED:
     _touchX = _touchCurX = event.point.x;
     _touchY = _touchCurY = event.point.y;
-    dev_pushkey(SB_KEY_MK_PUSH);
-    _buttonPressed = _output->pointerTouchEvent(event);
-    showCursor(get_focus_edit() != NULL ? kIBeam : kHand);
+    if (_output->overMenu(_touchX, _touchY)) {
+      showMenu();
+    } else {
+      dev_pushkey(SB_KEY_MK_PUSH);
+      _buttonPressed = _output->pointerTouchEvent(event);
+      showCursor(get_focus_edit() != NULL ? kIBeam : kHand);
+    }
     break;
   case EVENT_TYPE_POINTER_DRAGGED:
     _touchCurX = event.point.x;
     _touchCurY = event.point.y;
-    hasHover = _output->hasHover();
     _output->pointerMoveEvent(event);
-    if (hasHover != _output->hasHover()) {
-      showCursor(hasHover ? kArrow : kHand);
+    if (_output->hasHover() ||
+        _output->overMenu(_touchCurX, _touchCurY)) {
+      showCursor(kHand);
     } else if (_output->hasMenu()) {
+      showCursor(kArrow);
+    } else if (get_focus_edit()) {
+      showCursor(kIBeam);
+    } else {
       showCursor(kArrow);
     }
     break;
@@ -498,7 +510,7 @@ bool System::loadSource(const char *fileName) {
 }
 
 char *System::readSource(const char *fileName) {
-  _activeFile.empty();
+  _activeFile.clear();
   char *buffer;
   if (_editor != NULL && _loadPath.equals(fileName)) {
     buffer = _editor->getTextSelection();
@@ -604,7 +616,7 @@ void System::runMain(const char *mainBasPath) {
         _loadPath.indexOf("://", 1) == -1 && loadSource(_loadPath)) {
       editSource(_loadPath);
       if (isBack()) {
-        _loadPath.empty();
+        _loadPath.clear();
         _state = kActiveState;
         continue;
       } else if (isClosing()) {
@@ -629,7 +641,7 @@ void System::runMain(const char *mainBasPath) {
           _state = kClosingState;
         } else {
           // don't reload
-          _loadPath.empty();
+          _loadPath.clear();
           _state = kActiveState;
         }
       }
@@ -683,7 +695,7 @@ void System::setBack() {
         delete old;
       }
       if (_history.peek() != NULL) {
-        _loadPath.empty();
+        _loadPath.clear();
         _loadPath.append(_history.peek());
       }
     }
@@ -768,7 +780,7 @@ void System::setRunning(bool running) {
     _output->setAutoflush(!opt_show_page);
     if (_mainBas || opt_ide != IDE_INTERNAL ||
         _loadPath.indexOf("://", 1) != -1) {
-      _loadPath.empty();
+      _loadPath.clear();
     }
     _userScreenId = -1;
   } else {
@@ -889,9 +901,11 @@ void System::showMenu() {
         _systemMenu[index++] = MENU_EDITMODE;
       }
 #if !defined(_SDL)
-      if (!_mainBas && _activeFile.length() > 0) {
+      if (!_mainBas && !_activeFile.empty()) {
         items->add(new String("Desktop Shortcut"));
+        items->add(new String("Share"));
         _systemMenu[index++] = MENU_SHORTCUT;
+        _systemMenu[index++] = MENU_SHARE;
       }
 #endif
       sprintf(buffer, "Audio [%s]", (opt_mute_audio ? "OFF" : "ON"));
@@ -1132,6 +1146,14 @@ void osd_line(int x1, int y1, int x2, int y2) {
   g_system->getOutput()->drawLine(x1, y1, x2, y2);
 }
 
+void osd_arc(int xc, int yc, double r, double start, double end, double aspect) {
+  g_system->getOutput()->drawArc(xc, yc, r, start, end, aspect);
+}
+
+void osd_ellipse(int xc, int yc, int xr, int yr, int fill) {
+  g_system->getOutput()->drawEllipse(xc, yc, xr, yr, fill);
+}
+
 void osd_rect(int x1, int y1, int x2, int y2, int fill) {
   if (fill) {
     g_system->getOutput()->drawRectFilled(x1, y1, x2, y2);
@@ -1189,7 +1211,7 @@ void lwrite(const char *str) {
   }
 }
 
-void dev_delay(dword ms) {
+void dev_delay(uint32_t ms) {
   g_system->getOutput()->flush(true);
   maWait(ms);
 }

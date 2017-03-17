@@ -163,7 +163,7 @@ void restoreSettings(SDL_Rect &rect, int &fontScale, bool debug, bool restoreDir
     for (int i = 0; i < NUM_RECENT_ITEMS; i++) {
       int len = nextString(fp);
       if (len > 1) {
-        recentPath[i].empty();
+        recentPath[i].clear();
         recentPath[i].append(fp, len);
       } else {
         break;
@@ -213,7 +213,7 @@ void saveSettings(SDL_Window *window, int fontScale, bool debug) {
 
     // save the recent editor paths
     for (int i = 0; i < NUM_RECENT_ITEMS; i++) {
-      if (recentPath[i].length() > 0) {
+      if (!recentPath[i].empty()) {
         fprintf(fp, "%s\n", recentPath[i].c_str());
       }
     }
@@ -224,9 +224,10 @@ void saveSettings(SDL_Window *window, int fontScale, bool debug) {
 
 bool getRecentFile(String &path, unsigned position) {
   bool result = false;
-  if (position < NUM_RECENT_ITEMS && recentPath[position].length() > 0 &&
+  if (position < NUM_RECENT_ITEMS &&
+      !recentPath[position].empty() &&
       !recentPath[position].equals(path)) {
-    path.empty();
+    path.clear();
     path.append(recentPath[position]);
     result = true;
   }
@@ -235,7 +236,7 @@ bool getRecentFile(String &path, unsigned position) {
 
 void getRecentFileList(String &fileList, String &current) {
   for (int i = 0; i < NUM_RECENT_ITEMS; i++) {
-    if (recentPath[i].length() > 0) {
+    if (!recentPath[i].empty()) {
       if (recentPath[i].equals(current)) {
         fileList.append(">> ");
       }
@@ -255,12 +256,12 @@ void setRecentFile(const char *filename) {
   if (!found) {
     // shift items downwards
     for (int i = NUM_RECENT_ITEMS - 1; i > 0; i--) {
-      recentPath[i].empty();
+      recentPath[i].clear();
       recentPath[i].append(recentPath[i - 1]);
     }
 
     // create new item in first position
-    recentPath[0].empty();
+    recentPath[0].clear();
     recentPath[0].append(filename);
   }
 }

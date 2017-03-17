@@ -32,7 +32,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Semaphore;
 import java.util.zip.GZIPInputStream;
 
-import android.annotation.TargetApi;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.NativeActivity;
@@ -50,13 +49,13 @@ import android.location.LocationManager;
 import android.media.AudioManager;
 import android.media.MediaPlayer;
 import android.net.Uri;
-import android.os.Build;
 import android.os.Bundle;
 import android.util.Base64;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.util.TypedValue;
 import android.view.InputDevice;
+import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -68,12 +67,12 @@ import android.widget.Toast;
  *
  * @author chrisws
  */
-@TargetApi(Build.VERSION_CODES.ICE_CREAM_SANDWICH)
 public class MainActivity extends NativeActivity {
   private static final String TAG = "smallbasic";
   private static final String WEB_BAS = "web.bas";
   private static final String SCHEME_BAS = "qrcode.bas";
   private static final String SCHEME = "smallbasic://x/";
+  private static final String CP1252 = "Cp1252";
   private static final int BASE_FONT_SIZE = 18;
   private static final long LOCATION_INTERVAL = 1000;
   private static final float LOCATION_DISTANCE = 1;
@@ -91,6 +90,7 @@ public class MainActivity extends NativeActivity {
   }
 
   public static native void onResize(int width, int height);
+  public static native void onUnicodeChar(int ch);
   public static native boolean optionSelected(int index);
   public static native void runFile(String fileName);
 
@@ -192,8 +192,8 @@ public class MainActivity extends NativeActivity {
     return true;
   }
 
-  public String getClipboardText() {
-    final StringBuilder result = new StringBuilder();
+  public byte[] getClipboardText() {
+    final StringBuilder text = new StringBuilder();
     final Context context = this;
     final Semaphore mutex = new Semaphore(0);
     final Runnable runnable = new Runnable() {
@@ -204,8 +204,8 @@ public class MainActivity extends NativeActivity {
         if (clip != null && clip.getItemCount() > 0) {
           ClipData.Item item = clip.getItemAt(0);
           if (item != null) {
-            String data = item.coerceToText(context).toString();
-            result.append(data == null ? "" : data);
+            CharSequence data = item.coerceToText(context);
+            text.append(data == null ? "" : data);
           }
         }
         mutex.release();
@@ -218,7 +218,14 @@ public class MainActivity extends NativeActivity {
       Log.i(TAG, "getClipboardText failed: ", e);
       e.printStackTrace();
     }
-    return result.toString();
+    byte[] result;
+    try {
+      result = text.toString().getBytes(CP1252);
+    } catch (UnsupportedEncodingException e) {
+      Log.i(TAG, "getClipboardText failed: ", e);
+      result = null;
+    }
+    return result;
   }
 
   public String getIPAddress() {
@@ -303,6 +310,15 @@ public class MainActivity extends NativeActivity {
   }
 
   @Override
+  public boolean onKeyMultiple(int keyCode, int repeatCount, KeyEvent event) {
+    char ch = event.getCharacters().charAt(0);
+    if (repeatCount == 0 && ch > 126 && ch < 256) {
+      onUnicodeChar(ch);
+    }
+    return super.onKeyMultiple(keyCode, repeatCount, event);
+  }
+
+  @Override
   public boolean onOptionsItemSelected(MenuItem item) {
     if (this._options != null) {
       int index = 0;
@@ -354,7 +370,7 @@ public class MainActivity extends NativeActivity {
           _mediaPlayer.start();
         }
         catch (IOException e) {
-          Log.i(TAG, "Failed: " + e.toString());
+          Log.i(TAG, "Failed: ", e);
         }
       }
     }).start();
@@ -383,7 +399,7 @@ public class MainActivity extends NativeActivity {
     } else {
       result = false;
     }
-    Log.i(TAG, "removeRuntimeHandlers="+result);
+    Log.i(TAG, "removeRuntimeHandlers=" + result);
     return result;
   }
 
@@ -405,19 +421,24 @@ public class MainActivity extends NativeActivity {
     } else {
       result = false;
     }
-    Log.i(TAG, "requestLocationUpdates="+result);
+    Log.i(TAG, "requestLocationUpdates=" + result);
     return result;
   }
 
-  public void setClipboardText(final String text) {
-    runOnUiThread(new Runnable() {
-      public void run() {
-        ClipboardManager clipboard =
-         (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
-        ClipData clip = ClipData.newPlainText("text", text);
-       clipboard.setPrimaryClip(clip);
-      }
-    });
+  public void setClipboardText(final byte[] textBytes) {
+    try {
+      final String text = new String(textBytes, CP1252);
+      runOnUiThread(new Runnable() {
+        public void run() {
+          ClipboardManager clipboard =
+            (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
+          ClipData clip = ClipData.newPlainText("text", text);
+          clipboard.setPrimaryClip(clip);
+        }
+      });
+    } catch (UnsupportedEncodingException e) {
+      Log.i(TAG, "setClipboardText failed: ", e);
+    }
   }
 
   public void setTtsLocale(String locale) {
@@ -427,7 +448,7 @@ public class MainActivity extends NativeActivity {
     try {
       _tts.setLocale(new Locale(locale));
     } catch (Exception e) {
-      Log.i(TAG, "setttsLocale failed="+e.toString());
+      Log.i(TAG, "setttsLocale failed:", e);
     }
   }
 
@@ -457,6 +478,20 @@ public class MainActivity extends NativeActivity {
     }
     if (speechRate != 0) {
       _tts.setSpeechRate(speechRate);
+    }
+  }
+
+  public void share(final String path) {
+    File file = new File(path);
+    String buffer = readBuffer(file);
+    if (!buffer.isEmpty()) {
+      Intent sendIntent = new Intent();
+      sendIntent.setAction(Intent.ACTION_SEND);
+      sendIntent.putExtra(Intent.EXTRA_TEXT, buffer);
+      sendIntent.putExtra(Intent.EXTRA_STREAM, Uri.fromFile(file));
+      sendIntent.putExtra(Intent.EXTRA_SUBJECT, file.getName());
+      sendIntent.setType("text/plain");
+      startActivity(Intent.createChooser(sendIntent, "Share"));
     }
   }
 
@@ -518,11 +553,11 @@ public class MainActivity extends NativeActivity {
       String data = intent.getDataString();
       if (data.startsWith(SCHEME)) {
         execScheme(data);
-        Log.i(TAG, "data="+ data);
+        Log.i(TAG, "data=" + data);
       } else {
         _startupBas = uri.getPath();
       }
-      Log.i(TAG, "startupBas="+ _startupBas);
+      Log.i(TAG, "startupBas=" + _startupBas);
     }
     try {
       Properties p = new Properties();
@@ -659,10 +694,9 @@ public class MainActivity extends NativeActivity {
     return result;
   }
 
-  private String readBuffer() {
+  private String readBuffer(File inputFile) {
     StringBuilder result = new StringBuilder();
     try {
-      File inputFile = getApplication().getFileStreamPath(WEB_BAS);
       BufferedReader input = new BufferedReader(new FileReader(inputFile));
       String line = input.readLine();
       while (line != null) {
@@ -716,7 +750,8 @@ public class MainActivity extends NativeActivity {
                 execBuffer(buffer, WEB_BAS, postData.get("run") != null);
                 sendResponse(socket, buildRunForm(buffer, token));
               } else {
-                sendResponse(socket, buildRunForm(readBuffer(), token));
+                File inputFile = getApplication().getFileStreamPath(WEB_BAS);
+                sendResponse(socket, buildRunForm(readBuffer(inputFile), token));
               }
             } else {
               // invalid token

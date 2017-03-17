@@ -21,7 +21,7 @@
 void create_func(var_p_t form, const char *name, method cb);
 void reset_image_cache();
 
-struct Cache : public strlib::Properties {
+struct Cache : public strlib::Properties<String *> {
   Cache(int size) : Properties(size * 2), _index(0) {}
   void add(const char *key, const char *value);
   int _index;
@@ -68,6 +68,7 @@ struct System {
   virtual char *loadResource(const char *fileName);
   virtual void optionsBox(StringList *items) = 0;
   virtual void setWindowTitle(const char *title) = 0;
+  virtual void share(const char *path) = 0;
   virtual void showCursor(CursorType cursorType) = 0;
   virtual void setClipboardText(const char *text) = 0;
   virtual char *getClipboardText() = 0;

@@ -14,8 +14,6 @@
 #include "common/sberr.h"
 #include "common/var_map.h"
 
-#include <malloc.h>
-
 #define INT_STR_LEN 64
 #define VAR_POOL_SIZE 2048
 
@@ -135,7 +133,7 @@ int v_length(var_t *var) {
 /*
  * return array element pointer
  */
-var_t *v_getelemptr(var_t *v, dword index) {
+var_t *v_getelemptr(var_t *v, uint32_t index) {
   if (v->type == V_ARRAY) {
     if (index < v->v.a.size) {
       return v_elem(v, index);
@@ -151,7 +149,7 @@ var_t *v_getelemptr(var_t *v, dword index) {
 /*
  * resize an existing array
  */
-void v_resize_array(var_t *v, dword size) {
+void v_resize_array(var_t *v, uint32_t size) {
   if (v->type == V_ARRAY) {
     if ((int)size < 0) {
       err_evargerr();
@@ -220,7 +218,7 @@ void v_tomatrix(var_t *v, int r, int c) {
 /*
  * create array
  */
-void v_toarray1(var_t *v, dword r) {
+void v_toarray1(var_t *v, uint32_t r) {
   v_free(v);
   v->type = V_ARRAY;
   if (r > 0) {
@@ -578,6 +576,8 @@ void v_tostr(var_t *arg) {
   if (arg->type != V_STR) {
     char *tmp = v_str(arg);
     int len = strlen(tmp) + 1;
+
+    v_free(arg);
     arg->type = V_STR;
     arg->v.p.ptr = malloc(len);
     arg->v.p.length = len;

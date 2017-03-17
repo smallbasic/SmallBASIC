@@ -77,7 +77,7 @@ typedef struct {
   char name[256]; /**< name of library (basename) */
   char fullname[1024]; /**< full pathname */
   void *handle; /**< handle to the lib */
-  dword flags; /**< flags */
+  uint32_t flags; /**< flags */
 
   /*
    * ------------------ Language ------------------

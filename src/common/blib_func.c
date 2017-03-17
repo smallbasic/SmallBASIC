@@ -550,7 +550,7 @@ var_num_t cmd_math1(long funcCode, var_t *arg) {
     r = 1.0 / cos(x);
     break;
   case kwASEC:
-    r = atan(sqrt(x * x - 1.0)) + (ZSGN(x) - 1.0) * SB_PI / 2.0;
+    r = atan(sqrt(x * x - 1.0)) + (ZSGN(x) - 1.0) * M_PI / 2.0;
     break;
   case kwSECH:
     r = 2.0 / (exp(x) + exp(-x));
@@ -562,7 +562,7 @@ var_num_t cmd_math1(long funcCode, var_t *arg) {
     r = 1.0 / sin(x);
     break;
   case kwACSC:
-    r = atan(1.0 / sqrt(x * x - 1.0)) + (ZSGN(x) - 1.0) * SB_PI / 2.0;
+    r = atan(1.0 / sqrt(x * x - 1.0)) + (ZSGN(x) - 1.0) * M_PI / 2.0;
     break;
   case kwCSCH:
     r = 2.0 / (exp(x) - exp(-x));
@@ -574,7 +574,7 @@ var_num_t cmd_math1(long funcCode, var_t *arg) {
     r = 1.0 / tan(x);
     break;
   case kwACOT:
-    r = SB_PI / 2.0 - atan(x);
+    r = M_PI / 2.0 - atan(x);
     break;
   case kwCOTH:
     r = 2.0 * exp(-x) / (exp(x) - exp(-x)) + 1.0;
@@ -613,10 +613,10 @@ var_num_t cmd_math1(long funcCode, var_t *arg) {
     r = (x < 0) ? x + floor(-x) : x - floor(x);
     break;
   case kwDEG:
-    r = x * 180.0 / SB_PI;
+    r = x * 180.0 / M_PI;
     break;
   case kwRAD:
-    r = x * SB_PI / 180.0;
+    r = x * M_PI / 180.0;
     break;
   case kwCDBL:
     r = x;
@@ -1196,7 +1196,7 @@ void cmd_str1(long funcCode, var_t *arg, var_t *r) {
 // str <- FUNC (void)
 //
 void cmd_str0(long funcCode, var_t *r) {
-  dword ch;
+  uint32_t ch;
   char tmp[3];
   struct tm tms;
   time_t now;
@@ -1956,7 +1956,7 @@ void cmd_intN(long funcCode, var_t *r) {
           | r2int(bc * 255.0, 0, 255);
       break;
     case 2:
-      r->v.i = ((dword) rc << 16) | ((dword) gc << 8) | (dword) bc;
+      r->v.i = ((uint32_t) rc << 16) | ((uint32_t) gc << 8) | (uint32_t) bc;
       break;
     default:
       err_argerr();

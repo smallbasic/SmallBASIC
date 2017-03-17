@@ -51,11 +51,12 @@ struct String {
   String &append(FILE *fp, long len);
   operator const char *() const { return _buffer; }
   const char *c_str() const { return _buffer; };
-  void   empty();
+  void   clear();
   bool   equals(const String &s, bool ignoreCase = true) const;
   bool   equals(const char *s, bool ignoreCase = true) const;
   int    indexOf(char chr, int fromIndex) const;
   int    indexOf(const char *s, int fromIndex) const;
+  bool   empty() const { return _buffer == NULL || _buffer[0] == '\0'; };
   int    lastIndexOf(char chr, int untilIndex) const;
   int    length() const { return (_buffer == NULL ? 0 : strlen(_buffer)); }
   String leftOf(char ch) const;
@@ -74,7 +75,7 @@ private:
 //--List------------------------------------------------------------------------
 
 #define List_each(type, itr, v) \
-  for (strlib::List<type>::TP itr = (v).begin(); itr != (v).end(); itr++)
+  for (strlib::List<type>::TP itr = (v).begin(); itr < (v).end(); itr++)
 
 template<typename T>
 struct List {
@@ -102,13 +103,13 @@ struct List {
     for (int i = 0; i < _count; i++) {
       delete _head[i];
     }
-    emptyList();
+    clear();
   }
 
   /**
    * Empties the list without deleteing the list objects
    */
-  void emptyList() {
+  void clear() {
     free(_head);
     init();
   }
@@ -162,11 +163,9 @@ struct List {
   TP end() const { return _head + _count; }
 
   /**
-   * String specialisation - Add a String to the list
+   * String specialisation - Add a String to the list of strings
    */
-  void add(const char *s) {
-    add(new String(s, strlen(s)));
-  }
+  void add(const char *s);
 
   /**
    * returns whether the list is empty
@@ -176,13 +175,18 @@ struct List {
   }
 
   /**
-   * Returns whether string exists in the list
+   * Returns whether string exists in the list of strings
    */
-  bool exists(const char *s) {
+  bool contains(const char *s);
+
+  /**
+   * Returns whether T exists in the list
+   */
+  bool contains(T t) {
     bool result = false;
-    for (TP it = begin(); it != end(); it++) {
+    for (T *it = begin(); it < end(); it++) {
       T next = (*it);
-      if (next->equals(s)) {
+      if (next == t) {
         result = true;
         break;
       }
@@ -209,6 +213,10 @@ protected:
   int _size;
 };
 
+// specialisations for String List
+template<> void List<String *>::add(const char *s);
+template<> bool List<String *>::contains(const char *s);
+
 //--Stack-----------------------------------------------------------------------
 
 template<typename T>
@@ -227,9 +235,11 @@ struct Queue : public List<T> {
   Queue() : List<T>() {}
   Queue(int growSize) : List<T>(growSize) {}
   T front() { return !this->_count ? (T)NULL : this->_head[0]; }
-  void pop() {
+  void pop(bool free=true) {
     if (this->_count) {
-      delete this->_head[0];
+      if (free) {
+        delete this->_head[0];
+      }
       memmove(this->_head, this->_head + 1, (--this->_count) * sizeof(T*));
     }
   }
@@ -238,23 +248,63 @@ struct Queue : public List<T> {
 
 //--Properties------------------------------------------------------------------
 
-struct Properties : public List<String *> {
-  Properties() : List<String *>() {}
-  Properties(int growSize) : List<String *>(growSize) {}
+template<typename T>
+struct Properties : public List<T> {
+  Properties() : List<T>() {}
+  Properties(int growSize) : List<T>(growSize) {}
   virtual ~Properties() {}
 
+  /**
+   * find the position of the key in the list
+   */
+  int find(const char *key) {
+    int result = -1;
+    for (int i = 0; i < this->_count; i++) {
+      String *nextKey = (String *)this->_head[i++];
+      if (nextKey == NULL || i == this->_count) {
+        break;
+      }
+      T nextValue = this->_head[i];
+      if (nextValue == NULL) {
+        break;
+      }
+      if (nextKey->equals(key)) {
+        result = i;
+        break;
+      }
+    }
+    return result;
+  }
+
+  T get(const char *key) {
+    int index = find(key);
+    return index == -1 ? NULL : this->_head[index];
+  }
+
+  int length() const {
+    return this->_count / 2;
+  }
+
+  // for Properties<String *>
   void load(const char *s);
   void load(const char *s, int len);
-  String *get(const char *key);
-  String *get(int i) const;
-  String *getKey(int i) const;
-  int length() const { return _count / 2; }
-  void get(const char *key, List<String *> *arrayValues);
-  void operator=(Properties &p);
-  void put(String &key, String &value);
   void put(const char *key, const char *value);
-  String toString();
+
+  void put(const char *key, T value) {
+    int index = find(key);
+    if (index != -1) {
+      this->_head[index] = value;
+    } else {
+      this->add((T)new String(key));
+      this->add(value);
+    }
+  }
 };
+
+// specialisations for String properties
+template<> void strlib::Properties<String *>::load(const char *);
+template<> void Properties<String *>::load(const char *s, int slen);
+template<> void Properties<String *>::put(const char *key, const char *value);
 
 }
 

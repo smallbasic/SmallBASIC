@@ -10,6 +10,7 @@
 #include <android/native_window.h>
 #include <android/keycodes.h>
 #include <jni.h>
+#include <errno.h>
 
 #include "platform/android/jni/runtime.h"
 #include "lib/maapi.h"
@@ -28,10 +29,12 @@
 #define CONFIG_FILE "/settings.txt"
 #define PATH_KEY "path"
 #define FONT_SCALE_KEY "fontScale2"
+#define FONT_ID_KEY "fontId"
 #define SERVER_SOCKET_KEY "serverSocket"
 #define SERVER_TOKEN_KEY "serverToken"
 #define MUTE_AUDIO_KEY "muteAudio"
 #define OPT_IDE_KEY "optIde"
+#define GBOARD_KEY_QUESTION 274
 
 Runtime *runtime;
 
@@ -150,6 +153,13 @@ extern "C" JNIEXPORT void JNICALL Java_net_sourceforge_smallbasic_MainActivity_o
   }
 }
 
+extern "C" JNIEXPORT void JNICALL Java_net_sourceforge_smallbasic_MainActivity_onUnicodeChar
+  (JNIEnv *env, jclass jclazz, jint ch) {
+  if (runtime != NULL && !runtime->isClosing() && runtime->isActive() && os_graphics) {
+    runtime->onUnicodeChar(ch);
+  }
+}
+
 void onContentRectChanged(ANativeActivity *activity, const ARect *rect) {
   logEntered();
   runtime->onResize(rect->right, rect->bottom);
@@ -249,7 +259,7 @@ void Runtime::construct() {
   logEntered();
   _state = kClosingState;
   _graphics = new Graphics(_app);
-  if (_graphics && _graphics->construct()) {
+  if (_graphics && _graphics->construct(getFontId())) {
     int w = ANativeWindow_getWidth(_app->window);
     int h = ANativeWindow_getHeight(_app->window);
     _output = new AnsiWidget(w, h);
@@ -310,10 +320,31 @@ String Runtime::getString(const char *methodName) {
   _app->activity->vm->AttachCurrentThread(&env, NULL);
   jclass clazz = env->GetObjectClass(_app->activity->clazz);
   jmethodID methodId = env->GetMethodID(clazz, methodName, "()Ljava/lang/String;");
-  jstring resultObj = (jstring) env->CallObjectMethod(_app->activity->clazz, methodId);
+  jstring resultObj = (jstring)env->CallObjectMethod(_app->activity->clazz, methodId);
   const char *resultStr = env->GetStringUTFChars(resultObj, JNI_FALSE);
   String result = resultStr;
   env->ReleaseStringUTFChars(resultObj, resultStr);
+  env->DeleteLocalRef(clazz);
+  _app->activity->vm->DetachCurrentThread();
+  return result;
+}
+
+String Runtime::getStringBytes(const char *methodName) {
+  JNIEnv *env;
+  _app->activity->vm->AttachCurrentThread(&env, NULL);
+  jclass clazz = env->GetObjectClass(_app->activity->clazz);
+  jmethodID methodId = env->GetMethodID(clazz, methodName, "()[B");
+  jbyteArray valueByteArray = (jbyteArray)env->CallObjectMethod(_app->activity->clazz, methodId);
+  jsize len = env->GetArrayLength(valueByteArray);
+  String result;
+  if (len) {
+    jbyte *buffer = new jbyte[len + 1];
+    env->GetByteArrayRegion(valueByteArray, 0, len, buffer);
+    buffer[len] = '\0';
+    result = (const char *)buffer;
+    delete [] buffer;
+  }
+  env->DeleteLocalRef(valueByteArray);
   env->DeleteLocalRef(clazz);
   _app->activity->vm->DetachCurrentThread();
   return result;
@@ -438,12 +469,12 @@ void Runtime::runShell() {
   loadConfig();
 
   String ipAddress = getString("getIPAddress");
-  if (ipAddress.length()) {
+  if (!ipAddress.empty()) {
     setenv("IP_ADDR", ipAddress.c_str(), 1);
   }
 
   String startupBas = getString("getStartupBas");
-  if (startupBas.length()) {
+  if (!startupBas.empty()) {
     if (getBoolean("getUntrusted")) {
       opt_file_permitted = 0;
     }
@@ -458,10 +489,7 @@ void Runtime::runShell() {
 }
 
 void Runtime::loadConfig() {
-  String buffer;
-  String path;
-  Properties profile;
-
+  Properties<String *> settings;
   int fontSize = getInteger("getStartupFontSize");
   trace("fontSize = %d", fontSize);
 
@@ -470,17 +498,8 @@ void Runtime::loadConfig() {
   _initialFontSize = _output->getFontSize();
   chdir("/sdcard");
 
-  path.append(_app->activity->internalDataPath);
-  path.append(CONFIG_FILE);
-  FILE *fp = fopen(path.c_str(), "r");
-  if (fp) {
-    fseek(fp, 0, SEEK_END);
-    long len = ftell(fp);
-    rewind(fp);
-    buffer.append(fp, len);
-    fclose(fp);
-    profile.load(buffer.c_str(), buffer.length());
-    String *s = profile.get(FONT_SCALE_KEY);
+  if (loadSettings(settings)) {
+    String *s = settings.get(FONT_SCALE_KEY);
     if (s) {
       _fontScale = s->toInteger();
       trace("_fontScale = %d", _fontScale);
@@ -489,26 +508,49 @@ void Runtime::loadConfig() {
         _output->setFontSize(fontSize);
       }
     }
-    s = profile.get(PATH_KEY);
+    s = settings.get(PATH_KEY);
     if (s) {
       trace("path = %s", s->c_str());
       chdir(s->c_str());
     }
-    s = profile.get(MUTE_AUDIO_KEY);
+    s = settings.get(MUTE_AUDIO_KEY);
     if (s && s->toInteger() == 1) {
       opt_mute_audio = 1;
     }
-    s = profile.get(OPT_IDE_KEY);
+    s = settings.get(OPT_IDE_KEY);
     if (s) {
       opt_ide = s->toInteger();
     }
-    loadEnvConfig(profile, SERVER_SOCKET_KEY);
-    loadEnvConfig(profile, SERVER_TOKEN_KEY);
+    loadEnvConfig(settings, SERVER_SOCKET_KEY);
+    loadEnvConfig(settings, SERVER_TOKEN_KEY);
+    loadEnvConfig(settings, FONT_ID_KEY);
   }
 }
 
-void Runtime::loadEnvConfig(Properties &profile, const char *key) {
-  String *s = profile.get(key);
+bool Runtime::loadSettings(Properties<String *> &settings) {
+  bool result;
+  String path;
+
+  path.append(_app->activity->internalDataPath);
+  path.append(CONFIG_FILE);
+  FILE *fp = fopen(path.c_str(), "r");
+  if (fp) {
+    String buffer;
+    fseek(fp, 0, SEEK_END);
+    long len = ftell(fp);
+    rewind(fp);
+    buffer.append(fp, len);
+    fclose(fp);
+    settings.load(buffer.c_str(), buffer.length());
+    result = true;
+  } else {
+    result = false;
+  }
+  return result;
+}
+
+void Runtime::loadEnvConfig(Properties<String *> &settings, const char *key) {
+  String *s = settings.get(key);
   if (s) {
     trace("%s = %s", key, s->c_str());
     setenv(key, s->c_str(), 1);
@@ -529,9 +571,9 @@ void Runtime::saveConfig() {
     fprintf(fp, "%s=%d\n", OPT_IDE_KEY, opt_ide);
     for (int i = 0; environ[i] != NULL; i++) {
       char *env = environ[i];
-      if (strstr(env, SERVER_SOCKET_KEY) != NULL) {
-        fprintf(fp, "%s\n", env);
-      } else if (strstr(env, SERVER_TOKEN_KEY) != NULL) {
+      if (strstr(env, SERVER_SOCKET_KEY) != NULL ||
+          strstr(env, SERVER_TOKEN_KEY) != NULL ||
+          strstr(env, FONT_ID_KEY) != NULL) {
         fprintf(fp, "%s\n", env);
       }
     }
@@ -612,8 +654,14 @@ void Runtime::handleKeyEvent(MAEvent &event) {
   case AKEYCODE_ENTER:
     event.key = SB_KEY_ENTER;
     break;
+  case GBOARD_KEY_QUESTION:
+    event.key = '?';
+    break;
   default:
-    event.key = getUnicodeChar(event.nativeKey, event.key);
+    if (event.nativeKey < 127 && event.nativeKey != event.key) {
+      // avoid translating keys send from onUnicodeChar
+      event.key = getUnicodeChar(event.nativeKey, event.key);
+    }
     break;
   }
   trace("native:%d sb:%d", event.nativeKey, event.key);
@@ -753,6 +801,20 @@ void Runtime::setString(const char *methodName, const char *value) {
   _app->activity->vm->DetachCurrentThread();
 }
 
+void Runtime::setStringBytes(const char *methodName, const char *value) {
+  JNIEnv *env;
+  _app->activity->vm->AttachCurrentThread(&env, NULL);
+  jclass clazz = env->GetObjectClass(_app->activity->clazz);
+  int size = strlen(value);
+  jbyteArray valueByteArray = env->NewByteArray(size);
+  env->SetByteArrayRegion(valueByteArray, 0, size, (const jbyte *)value);
+  jmethodID methodId = env->GetMethodID(clazz, methodName, "([B)V");
+  env->CallVoidMethod(_app->activity->clazz, methodId, valueByteArray);
+  env->DeleteLocalRef(valueByteArray);
+  env->DeleteLocalRef(clazz);
+  _app->activity->vm->DetachCurrentThread();
+}
+
 void Runtime::showKeypad(bool show) {
   logEntered();
   _keypadActive = show;
@@ -784,13 +846,36 @@ void Runtime::onResize(int width, int height) {
   }
 }
 
+void Runtime::onUnicodeChar(int ch) {
+  MAEvent *maEvent = new MAEvent();
+  maEvent->type = EVENT_TYPE_KEY_PRESSED;
+  maEvent->nativeKey = ch;
+  maEvent->key = ch;
+  ALooper_acquire(_app->looper);
+  pushEvent(maEvent);
+  ALooper_wake(_app->looper);
+  ALooper_release(_app->looper);
+}
+
 char *Runtime::getClipboardText() {
   char *result;
-  String text = getString("getClipboardText");
-  if (text.length()) {
+  String text = getStringBytes("getClipboardText");
+  if (!text.empty()) {
     result = strdup(text.c_str());
   } else {
     result = NULL;
+  }
+  return result;
+}
+
+int Runtime::getFontId() {
+  int result = 0;
+  Properties<String *> settings;
+  if (loadSettings(settings)) {
+    String *s = settings.get(FONT_ID_KEY);
+    if (s) {
+      result = s->toInteger();
+    }
   }
   return result;
 }
@@ -870,67 +955,76 @@ void System::editSource(strlib::String loadPath) {
 
   while (_state == kEditState) {
     MAEvent event = getNextEvent();
-    if (event.type == EVENT_TYPE_KEY_PRESSED && _userScreenId == -1) {
-      dev_clrkb();
-      int sw = _output->getScreenWidth();
-      bool redraw = true;
-      bool dirty = editWidget->isDirty();
-      char *text;
+    switch (event.type) {
+    case EVENT_TYPE_OPTIONS_BOX_BUTTON_CLICKED:
+      if (editWidget->isDirty()) {
+        _output->setStatus(dirtyFile);
+        _output->redraw();
+      }
+      break;
+    case EVENT_TYPE_KEY_PRESSED:
+      if (_userScreenId == -1) {
+        dev_clrkb();
+        int sw = _output->getScreenWidth();
+        bool redraw = true;
+        bool dirty = editWidget->isDirty();
+        char *text;
 
-      switch (event.key) {
-      case SB_KEY_MENU:
-        redraw = false;
-        break;
-      case SB_KEY_F(1):
-        widget = helpWidget;
-        helpWidget->createKeywordIndex();
-        helpWidget->show();
-        helpWidget->setFocus(true);
-        runtime->showKeypad(false);
-        break;
-      case SB_KEY_F(9):
-        _state = kRunState;
-        if (editWidget->isDirty()) {
+        switch (event.key) {
+        case SB_KEY_MENU:
+          redraw = false;
+          break;
+        case SB_KEY_F(1):
+          widget = helpWidget;
+          helpWidget->createKeywordIndex();
+          helpWidget->show();
+          helpWidget->setFocus(true);
+          runtime->showKeypad(false);
+          break;
+        case SB_KEY_F(9):
+          _state = kRunState;
+          if (editWidget->isDirty()) {
+            saveFile(editWidget, loadPath);
+          }
+          break;
+        case SB_KEY_CTRL('s'):
           saveFile(editWidget, loadPath);
-        }
-        break;
-      case SB_KEY_CTRL('s'):
-        saveFile(editWidget, loadPath);
-        break;
-      case SB_KEY_CTRL('c'):
-      case SB_KEY_CTRL('x'):
-        text = widget->copy(event.key == (int)SB_KEY_CTRL('x'));
+          break;
+        case SB_KEY_CTRL('c'):
+        case SB_KEY_CTRL('x'):
+          text = widget->copy(event.key == (int)SB_KEY_CTRL('x'));
         if (text) {
           setClipboardText(text);
           free(text);
         }
         break;
-      case SB_KEY_CTRL('v'):
-        text = getClipboardText();
-        widget->paste(text);
-        free(text);
-        break;
-      case SB_KEY_CTRL('o'):
-        _output->selectScreen(USER_SCREEN1);
-        showCompletion(true);
-        _output->redraw();
-        _state = kActiveState;
-        waitForBack();
-        runtime->showKeypad(true);
-        _output->selectScreen(SOURCE_SCREEN);
-        _state = kEditState;
-        break;
-      default:
-        redraw = widget->edit(event.key, sw, charWidth);
-        break;
-      }
-      if (widget->isDirty() && !dirty) {
-        _output->setStatus(dirtyFile);
-      } else if (!widget->isDirty() && dirty) {
-        _output->setStatus(cleanFile);
-      }
-      if (redraw) {
-        _output->redraw();
+        case SB_KEY_CTRL('v'):
+          text = getClipboardText();
+          widget->paste(text);
+          free(text);
+          break;
+        case SB_KEY_CTRL('o'):
+          _output->selectScreen(USER_SCREEN1);
+          showCompletion(true);
+          _output->redraw();
+          _state = kActiveState;
+          waitForBack();
+          runtime->showKeypad(true);
+          _output->selectScreen(SOURCE_SCREEN);
+          _state = kEditState;
+          break;
+        default:
+          redraw = widget->edit(event.key, sw, charWidth);
+          break;
+        }
+        if (widget->isDirty() && !dirty) {
+          _output->setStatus(dirtyFile);
+        } else if (!widget->isDirty() && dirty) {
+          _output->setStatus(cleanFile);
+        }
+        if (redraw) {
+          _output->redraw();
+        }
       }
     }
 

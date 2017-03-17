@@ -255,7 +255,7 @@ void logprint_var(var_t *v) {
  */
 void par_skip() {
   byte exitf = 0, code;
-  dword len;
+  uint32_t len;
   int level = 0;
 
   do {

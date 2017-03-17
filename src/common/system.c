@@ -51,7 +51,6 @@ char *shell(const char *cmd) {
   sa.nLength = sizeof(sa);
   sa.bInheritHandle = TRUE;
 
-  log_printf("shell: %s\n", cmd);
   if (!CreatePipe(&h_inppip, &h_outpip, &sa, BUFSIZE)) {
     log_printf("CreatePipe failed");
     return NULL;
@@ -92,7 +91,6 @@ char *shell(const char *cmd) {
       strcat(result, cv_buf);
     }
     CloseHandle(pi.hProcess);
-    log_printf("shell completed %d bytes\n", strlen(result));
   }
   else {
     log_printf("Failed to launch %s\n", cmd);
@@ -245,22 +243,22 @@ const char *dev_getenv_n(int n) {
 }
 #endif
 
-dword dev_get_millisecond_count(void) {
+uint32_t dev_get_millisecond_count(void) {
 #if defined(__MACH__)
   struct timeval t;
   gettimeofday(&t, NULL);
-  return (dword) (1000L * t.tv_sec + (t.tv_usec / 1000.0));
+  return (uint32_t) (1000L * t.tv_sec + (t.tv_usec / 1000.0));
 #elif defined(_Win32)
   return GetTickCount();
 #else
   struct timespec t;
   t.tv_sec = t.tv_nsec = 0;
   if (0 == clock_gettime(CLOCK_MONOTONIC, &t)) {
-    return (dword) (1000L * t.tv_sec + (t.tv_nsec / 1e6));
+    return (uint32_t) (1000L * t.tv_sec + (t.tv_nsec / 1e6));
   } else {
     struct timeval now;
     gettimeofday(&now, NULL);
-    return (dword) (1000L * now.tv_sec + (now.tv_usec / 1000.0));
+    return (uint32_t) (1000L * now.tv_sec + (now.tv_usec / 1000.0));
   }
 #endif
 }

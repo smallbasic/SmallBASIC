@@ -22,7 +22,7 @@ struct file_encoded_var {
   byte sign;                    // always '$'
   byte version;                 //
   byte type;
-  dword size;
+  uint32_t size;
 };
 
 /*
@@ -107,7 +107,7 @@ void cmd_fclose() {
  */
 void cmd_fseek() {
   int handle;
-  dword pos;
+  uint32_t pos;
 
   // file handle
   par_getsharp();
@@ -540,7 +540,7 @@ void cmd_floadln() {
   byte ch, type = 0;
   char buf[BUFMAX];
   int eof, eol, bufLen, bufIndex;
-  dword unreadBytes;
+  uint32_t unreadBytes;
 
   if (code_peek() == kwTYPE_SEP) {
     // "filename" is an already open file number
@@ -764,7 +764,7 @@ void cmd_flock() {
  */
 void cmd_chmod() {
   var_t str;
-  dword mode;
+  uint32_t mode;
 
   par_getstr(&str);
   if (prog_error)

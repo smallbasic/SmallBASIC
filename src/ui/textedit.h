@@ -57,16 +57,19 @@ struct EditBuffer {
   char *_buffer;
   int _len;
   int _size;
+  int _lines;
   TextEditInput *_in;
 
   EditBuffer(TextEditInput *in, const char *text);
   virtual ~EditBuffer();
 
-  void clear();
   void append(const char *text, int len) { insertChars(_len, text, len); }
   void append(const char *text) { insertChars(_len, text, strlen(text)); }
-  int deleteChars(int pos, int num);
-  int insertChars(int pos, const char *text, int num);
+  void clear();
+  int  countNewlines(const char *text, int num);
+  int  deleteChars(int pos, int num);
+  int  insertChars(int pos, const char *text, int num);
+  int  lineCount();
   void removeTrailingSpaces(STB_TexteditState *state);
   char *textRange(int start, int end);
 };
@@ -82,6 +85,11 @@ struct TextEditInput : public FormEditInput {
   bool edit(int key, int screenWidth, int charWidth);
   bool find(const char *word, bool next);
   int  getCursorPos() const { return _state.cursor; }
+  int  getCol() const { return _cursorCol; }
+  int  getRow() const { return _cursorRow + 1; }
+  int  getPageRows() const { return _height / _charHeight; }
+  int  getLines() { return _buf.lineCount(); }
+  int  getScroll() const { return _scroll; }
   const char *getText() const { return _buf._buffer; }
   char *getTextSelection();
   int  getTextLength() const { return _buf._len; }
@@ -134,7 +142,7 @@ protected:
   void editTab();
   bool endStatement(const char *buf);
   void findMatchingBrace();
-  int  getCursorRow() const;
+  int  getCursorRow();
   uint32_t getHash(const char *str, int offs, int &count);
   int  getIndent(char *spaces, int len, int pos);
   int  getLineChars(StbTexteditRow *row, int pos);
@@ -162,6 +170,7 @@ protected:
   int _charHeight;
   int _marginWidth;
   int _scroll;
+  int _cursorCol;
   int _cursorRow;
   int _cursorLine;
   int _indentLevel;

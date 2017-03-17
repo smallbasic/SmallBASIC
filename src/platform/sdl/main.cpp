@@ -9,6 +9,7 @@
 #include "config.h"
 #include <SDL.h>
 #include <getopt.h>
+#include <locale.h>
 
 #include "ui/utils.h"
 #include "ui/strlib.h"
@@ -22,12 +23,12 @@
 #endif
 
 extern "C" unsigned
-  lodepng_decode32(unsigned char** out, unsigned* w, unsigned* h,
-                   const unsigned char* in, size_t insize);
+  lodepng_decode32(unsigned char **out, unsigned *w, unsigned *h,
+                   const unsigned char *in, size_t insize);
 
 using namespace strlib;
 
-const char* FONTS[] = {
+const char *FONTS[] = {
   "Envy Code R",
   "Source Code Pro",
   "Ubuntu Mono",
@@ -120,7 +121,7 @@ bool getFont(FcFontSet *fs, const char *familyName, int fontWeight, String &name
           && slant == 0
           && strcasecmp(filename + len - 4, ".ttf") == 0
           && strcasecmp(familyName, (const char *)family) == 0) {
-        name.empty();
+        name.clear();
         name.append(filename);
         result = true;
       }
@@ -256,6 +257,7 @@ void showHelp() {
 int main(int argc, char* argv[]) {
   logEntered();
 
+  setlocale(LC_ALL, "");
   setupAppPath(argv[0]);
   opt_command[0] = '\0';
   opt_verbose = false;

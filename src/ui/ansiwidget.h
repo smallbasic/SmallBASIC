@@ -39,6 +39,8 @@ struct AnsiWidget {
   void clearScreen();
   bool construct();
   void draw();
+  void drawArc(int xc, int yc, double r, double start, double end, double aspect);
+  void drawEllipse(int xc, int yc, int rx, int ry, int fill);
   void drawOverlay(bool vscroll) { _back->drawOverlay(vscroll); }
   void drawLine(int x1, int y1, int x2, int y2);
   void drawRect(int x1, int y1, int x2, int y2);
@@ -60,11 +62,14 @@ struct AnsiWidget {
   int  getX() { return _back->_curX; }
   int  getY() { return _back->_curY; }
   int  getMenuIndex() const { return _back->getIndex(_activeButton); }
+  bool hasActiveButton() const { return _activeButton != NULL; }
   bool hasHover() const { return _hoverInput != NULL; }
   bool hasMenu() const { return _back == _screens[MENU_SCREEN]; }
   void handleMenu(bool up);
   void insetMenuScreen(int x, int y, int w, int h);
   void insetTextScreen(int x, int y, int w, int h);
+  bool overLabel(int x, int y) { return _back->overLabel(x, y); };
+  bool overMenu(int x, int y) { return _back->overMenu(x, y); };
   bool pointerTouchEvent(MAEvent &event);
   bool pointerMoveEvent(MAEvent &event);
   void pointerReleaseEvent(MAEvent &event);

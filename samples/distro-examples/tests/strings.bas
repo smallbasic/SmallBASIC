@@ -92,3 +92,19 @@ sprint s1;using"aaa###bbb";123;
 
 test_str(s1, "aaa123bbb")
 test_str("   ", spc(3))
+
+s1= """\
+hello\
+hello\
+hello\
+"""
+s2="hello"
+   "hello"
+   "hello"
+s3 = "hellohellohello"
+if (s1 <> s2 || s1 <> s3) then
+  ? "s1=" + s1
+  ? "s2=" + s2
+  ? "s3=" + s3
+  throw "not equal"
+endif

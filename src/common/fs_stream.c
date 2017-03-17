@@ -100,7 +100,7 @@ int stream_close(dev_file_t *f) {
 
 /*
  */
-int stream_write(dev_file_t *f, byte *data, dword size) {
+int stream_write(dev_file_t *f, byte *data, uint32_t size) {
   int r;
 
   r = write(f->handle, data, size);
@@ -112,7 +112,7 @@ int stream_write(dev_file_t *f, byte *data, dword size) {
 
 /*
  */
-int stream_read(dev_file_t *f, byte *data, dword size) {
+int stream_read(dev_file_t *f, byte *data, uint32_t size) {
   int r;
 
   r = read(f->handle, data, size);
@@ -125,14 +125,14 @@ int stream_read(dev_file_t *f, byte *data, dword size) {
 /*
  * returns the current position
  */
-dword stream_tell(dev_file_t *f) {
+uint32_t stream_tell(dev_file_t *f) {
   return lseek(f->handle, 0, SEEK_CUR);
 }
 
 /*
  * returns the file-length
  */
-dword stream_length(dev_file_t *f) {
+uint32_t stream_length(dev_file_t *f) {
   long pos, endpos;
 
   pos = lseek(f->handle, 0, SEEK_CUR);
@@ -148,7 +148,7 @@ dword stream_length(dev_file_t *f) {
 
 /*
  */
-dword stream_seek(dev_file_t *f, dword offset) {
+uint32_t stream_seek(dev_file_t *f, uint32_t offset) {
   return lseek(f->handle, offset, SEEK_SET);
 }
 

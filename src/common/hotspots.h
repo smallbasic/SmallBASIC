@@ -22,8 +22,8 @@ void err_notavar(void);
  *
  * R(long int) <- Code[IP]; IP+=j
  */
-static inline dword code_getnext32(void) {
-  dword v;
+static inline uint32_t code_getnext32(void) {
+  uint32_t v;
   memcpy(&v, prog_source + prog_ip, 4);
   prog_ip += 4;
   return v;
@@ -135,10 +135,12 @@ static inline var_t *code_getvarptr_parens(int until_parens) {
     code_skipnext();
     var_p = tvar[code_getaddr()];
     if (code_peek() == kwTYPE_UDS_EL) {
-      var_p = code_resolve_varptr(var_p, until_parens);
+      var_p = code_resolve_map(var_p, until_parens);
     } else {
       switch (var_p->type) {
       case V_MAP:
+        var_p = code_resolve_map(var_p, until_parens);
+        break;
       case V_ARRAY:
         var_p = code_resolve_varptr(var_p, until_parens);
         break;

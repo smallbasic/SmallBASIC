@@ -53,7 +53,7 @@
 #define SYSVAR_COMMAND      8  /**< system variable, COMMAND$  @ingroup var */
 #define SYSVAR_X            9  /**< system variable, X         @ingroup var */
 #define SYSVAR_Y            10 /**< system variable, Y         @ingroup var */
-#define SYSVAR_Z            11 /**< system variable, Z         @ingroup var */
+#define SYSVAR_SELF         11 /**< system variable, SELF      @ingroup var */
 #define SYSVAR_COUNT        12
 
 /**
@@ -188,10 +188,10 @@ struct stknode_s {
      *  CALL UDP/F
      */
     struct {
-      bcip_t ret_ip; /**< return ip */
-      word pcount; /**< number of parameters */
-      bid_t rvid; /**< return-variable ID */
-      var_t *retvar; /**< return-variable data */
+      bcip_t ret_ip;   /**< return ip */
+      uint16_t pcount; /**< number of parameters */
+      bid_t rvid;      /**< return-variable ID */
+      var_t *retvar;   /**< return-variable data */
 
       // unit - version
       int task_id; /**< task_id or -1 (this task) */
@@ -209,7 +209,7 @@ struct stknode_s {
      *  parameter (CALL UDP/F)
      */
     struct {
-      word vcheck; /**< checks (1=BYVAL ONLY, 3=BYVAL|BYREF, 2=BYREF ONLY) */
+      uint16_t vcheck; /**< checks (1=BYVAL ONLY, 3=BYVAL|BYREF, 2=BYREF ONLY) */
       var_t *res; /**< variable pointer (for BYVAL this is a clone) */
     } param;
 
@@ -219,6 +219,10 @@ struct stknode_s {
     struct {
       bcip_t catch_ip;
     } vtry;
+
+    struct {
+      var_t *catch_var;
+    } vcatch;
   } x;
 };
 typedef struct stknode_s stknode_t;
@@ -335,7 +339,7 @@ int v_sign(var_t *x);
  * @param index is the element's index number
  * @return the var_t pointer of an array element
  */
-var_t *v_getelemptr(var_t *v, dword index);
+var_t *v_getelemptr(var_t *v, uint32_t index);
 
 /**
  * @ingroup var
@@ -404,7 +408,7 @@ var_t *v_clone(const var_t *source);
  * @param v the variable
  * @param size the number of the elements
  */
-void v_resize_array(var_t *v, dword size);
+void v_resize_array(var_t *v, uint32_t size);
 
 /**
  * @ingroup var
@@ -426,7 +430,7 @@ void v_tomatrix(var_t *v, int r, int c);
  * @param v the variable
  * @param r the number of the elements
  */
-void v_toarray1(var_t *v, dword r);
+void v_toarray1(var_t *v, uint32_t r);
 
 /**
  * @ingroup var
@@ -657,7 +661,7 @@ void v_create_form(var_p_t var);
  */
 void v_create_window(var_p_t var);
 
-void code_jump_label(word label_id);  // IP <- LABEL_IP_TABLE[label_id]
+void code_jump_label(uint16_t label_id);  // IP <- LABEL_IP_TABLE[label_id]
 
 #define code_jump(newip) prog_ip=(newip) /**< IP <- NewIP @ingroup exec */
 
@@ -682,11 +686,10 @@ void code_pop(stknode_t *node, int expected_type);
 /**
  * @ingroup exec
  *
- * Returns and deletes the topmost node from stack (POP)
+ * POPs and frees the topmost node from stack and returns the node type
  *
- * @param node the stack node
  */
-void code_pop_and_free(stknode_t *node);
+int code_pop_and_free();
 
 /**
  * @ingroup exec
@@ -710,10 +713,10 @@ stknode_t *code_stackpeek();
 #define code_peek16(o)      ((prog_source[(o)]<<8)|prog_source[(o)+1])
 #define code_peek32(o)      (((bcip_t)code_peek16((o)) << 16) + (bcip_t)code_peek16((o)+2))
 #else
-#define code_getnext16()    (*((word *)(prog_source+(prog_ip+=2)-2)))
-#define code_peeknext16()   (*((word *)(prog_source+prog_ip)))
-#define code_peek16(o)      (*((word *)(prog_source+(o))))
-#define code_peek32(o)      (*((dword *)(prog_source+(o))))
+#define code_getnext16()    (*((uint16_t *)(prog_source+(prog_ip+=2)-2)))
+#define code_peeknext16()   (*((uint16_t *)(prog_source+prog_ip)))
+#define code_peek16(o)      (*((uint16_t *)(prog_source+(o))))
+#define code_peek32(o)      (*((uint32_t *)(prog_source+(o))))
 #endif
 
 #define code_skipopr()   code_skipnext16()    /**< skip operator  @ingroup exec */

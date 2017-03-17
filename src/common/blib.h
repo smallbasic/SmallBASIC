@@ -73,6 +73,7 @@ void cmd_bcopy(void);
 void cmd_calladr(void);
 void cmd_try();
 void cmd_catch();
+void cmd_end_try();
 void cmd_call_vfunc();
 void cmd_timer();
 

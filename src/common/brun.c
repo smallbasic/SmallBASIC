@@ -41,7 +41,7 @@ static int exec_tid;
 /**
  * jump to label
  */
-void code_jump_label(word label_id) {
+void code_jump_label(uint16_t label_id) {
   prog_ip = tlab[label_id].ip;
 }
 
@@ -115,6 +115,16 @@ void free_node(stknode_t *node) {
     v_free(node->x.vcase.var_ptr);
     v_detach(node->x.vcase.var_ptr);
     break;
+
+  case kwCATCH:
+    if (node->x.vcatch.catch_var != NULL) {
+      // clear the catch variable once out of scope
+      v_free(node->x.vcatch.catch_var);
+    }
+    break;
+
+  default:
+    break;
   }
 }
 
@@ -150,34 +160,18 @@ void code_pop(stknode_t *node, int expected_type) {
 }
 
 /**
- * Returns and deletes the topmost node from stack (POP)
+ * POPs and frees the topmost node from stack and returns the node type
  */
-void code_pop_and_free(stknode_t *node) {
+int code_pop_and_free() {
+  int type;
   if (prog_stack_count) {
-    stknode_t *cur_node;
-
     prog_stack_count--;
-    if (node) {
-      *node = prog_stack[prog_stack_count];
-    }
-#if defined(_UnixOS) && defined(_CHECK_STACK)
-    int i;
-    for (i = 0; keyword_table[i].name[0] != '\0'; i++) {
-      if (prog_stack[prog_stack_count].type == keyword_table[i].code) {
-        printf("%3d: POP %s (%d)\n", prog_stack_count,
-            keyword_table[i].name, prog_line);
-        break;
-      }
-    }
-#endif
-    cur_node = &prog_stack[prog_stack_count];
-    free_node(cur_node);
+    type = prog_stack[prog_stack_count].type;
+    free_node(&prog_stack[prog_stack_count]);
   } else {
-    if (node) {
-      err_stackunderflow();
-      node->type = 0xFF;
-    }
+    type = 0xFF;
   }
+  return type;
 }
 
 /**
@@ -222,7 +216,6 @@ void setsysvar_num(int index, var_num_t value) {
     activate_task(i);
     if (ctask->has_sysvars) {
       var_t *var_p = tvar[index];
-
       var_p->type = V_NUM;
       var_p->const_flag = 1;
       var_p->v.n = value;
@@ -235,24 +228,16 @@ void setsysvar_num(int index, var_num_t value) {
  * sets the value of an string system-variable
  */
 void setsysvar_str(int index, const char *value) {
-  int tid;
   int i;
-  int l = strlen(value) + 1;
+  int tid = ctask->tid;
 
-  tid = ctask->tid;
   for (i = 0; i < count_tasks(); i++) {
     activate_task(i);
     if (ctask->has_sysvars) {
       var_t *var_p = tvar[index];
-
-      if (var_p->type == V_STR) {
-        free(var_p->v.p.ptr);
-      }
-      var_p->type = V_STR;
+      v_free(var_p);
+      v_createstr(var_p, value);
       var_p->const_flag = 1;
-      var_p->v.p.ptr = malloc(l);
-      strcpy(var_p->v.p.ptr, value);
-      var_p->v.p.length = l;
     }
   }
   activate_task(tid);
@@ -268,13 +253,14 @@ void exec_setup_predefined_variables() {
   // needed here (otherwise task will not updated)
   ctask->has_sysvars = 1;
   setsysvar_str(SYSVAR_SBVER, SB_STR_VER);
-  setsysvar_num(SYSVAR_PI, SB_PI);
+  setsysvar_num(SYSVAR_PI, M_PI);
   setsysvar_int(SYSVAR_XMAX, os_graf_mx - 1);
   setsysvar_int(SYSVAR_YMAX, os_graf_my - 1);
   setsysvar_int(SYSVAR_TRUE, 1);
   setsysvar_int(SYSVAR_FALSE, 0);
   setsysvar_str(SYSVAR_CWD, dev_getcwd());
   setsysvar_str(SYSVAR_COMMAND, opt_command);
+  setsysvar_int(SYSVAR_SELF, 0);
 
 #if defined(_UnixOS)
   if (getenv("HOME")) {
@@ -719,7 +705,7 @@ static inline void bc_loop_end() {
  *
  * @param isf if 1, the program must return if found return (by level <= 0);
  * otherwise an RTE will generated
- * if 2; like 1, but increase the proc_level because UDF call it was executed internaly
+ * if 2; like 1, but increase the proc_level because UDF call executed internaly
  */
 void bc_loop(int isf) {
   byte pops;
@@ -729,8 +715,8 @@ void bc_loop(int isf) {
   byte code = 0;
 
   // setup event checker time = 50ms
-  dword now = dev_get_millisecond_count();
-  dword next_check = now + EVT_CHECK_EVERY;
+  uint32_t now = dev_get_millisecond_count();
+  uint32_t next_check = now + EVT_CHECK_EVERY;
 
   /**
    * For commands that change the IP use
@@ -810,7 +796,7 @@ void bc_loop(int isf) {
         // clear the stack (whatever you can)
         pops = code_getnext();
         while (pops > 0) {
-          code_pop_and_free(NULL);
+          code_pop_and_free();
           pops--;
         }
 
@@ -1037,6 +1023,7 @@ void bc_loop(int isf) {
         IF_ERR_BREAK;
         continue;
       case kwENDTRY:
+        cmd_end_try();
         continue;
       default:
         log_printf("OUT OF ADDRESS SPACE\n");
@@ -1096,7 +1083,7 @@ void dump_stack() {
           case kwGOSUB:
             dev_printf(" RIP: %d", node.x.vgosub.ret_ip);
             if (prog_source[node.x.vgosub.ret_ip] == kwTYPE_LINE) {
-              dev_printf(" = LI %d", (*((word *)(prog_source + node.x.vgosub.ret_ip + 1))) - 1);
+              dev_printf(" = LI %d", (*((uint16_t *)(prog_source + node.x.vgosub.ret_ip + 1))) - 1);
             }
             break;
           }
@@ -1363,8 +1350,7 @@ int brun_create_task(const char *filename, byte *preloaded_bc, int libf) {
  * clean up the current task's (executor's) data
  */
 int exec_close_task() {
-  word i;
-  stknode_t node;
+  uint16_t i;
   if (ctask->bytecode) {
     // clean up - format list
     free_format();
@@ -1376,7 +1362,7 @@ int exec_close_task() {
 
     // clean up - prog stack
     while (prog_stack_count > 0) {
-      code_pop_and_free(&node);
+      code_pop_and_free();
     }
     free(prog_stack);
     // clean up - variables

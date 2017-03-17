@@ -25,6 +25,7 @@
 #include <SDL_clipboard.h>
 #include <SDL_audio.h>
 #include <math.h>
+#include <wchar.h>
 
 #define WAIT_INTERVAL 5
 #define COND_WAIT_TIME 250
@@ -54,32 +55,44 @@ struct SoundObject {
     _freq(freq),
     _samplesLeft(0),
     _buffer(NULL),
-    _index(0) {
-    _samplesLeft = duration * FREQUENCY / 1000;
+    _index(0),
+    _cached(false) {
+    _samplesLeft = _samples = duration * FREQUENCY / 1000;
   }
+
   SoundObject(Uint8 *buffer, Uint32 length) :
     _v(0),
     _freq(0),
     _samplesLeft(length),
+    _samples(length),
     _buffer(buffer),
-    _index(0) {
+    _index(0),
+    _cached(true) {
   }
 
-  ~SoundObject() {
+  virtual ~SoundObject() {
     if (_buffer) {
       SDL_FreeWAV(_buffer);
       _buffer = NULL;
     }
   }
 
+  void reset() {
+    _index = 0;
+    _samplesLeft = _samples;
+  }
+  
   double _v;
   double _freq;
   Uint32 _samplesLeft;
+  Uint32 _samples;
   Uint8 *_buffer;
   Uint32 _index;
+  bool _cached;
 };
 
 strlib::Queue<SoundObject *> g_sounds;
+strlib::Properties<SoundObject *> g_soundCache;
 void audio_callback(void *data, Uint8 *stream8, int length);
 int debugThread(void *data);
 
@@ -93,8 +106,8 @@ MAEvent *getMotionEvent(int type, SDL_Event *event) {
 
 Runtime::Runtime(SDL_Window *window) :
   System(),
-  _menuX(2),
-  _menuY(2),
+  _menuX(0),
+  _menuY(0),
   _graphics(NULL),
   _eventQueue(NULL),
   _window(window),
@@ -319,7 +332,7 @@ int Runtime::runShell(const char *startupBas, int fontScale, int debugPort) {
     }
     while (_state == kRestartState) {
       _state = kActiveState;
-      if (_loadPath.length() != 0) {
+      if (!_loadPath.empty()) {
         bas = _loadPath;
       }
       runOnce(bas.c_str());
@@ -444,12 +457,23 @@ void Runtime::pollEvents(bool blocking) {
         mod = SDL_GetModState();
         if (!mod || (mod & (KMOD_SHIFT|KMOD_CAPS))) {
           // ALT + CTRL keys handled in SDL_KEYDOWN
-          for (int i = 0; ev.text.text[i] != 0; i++) {
+          if (ev.text.text[0] < 0) {
+            wchar_t keycode;
+            mbstowcs(&keycode, ev.text.text, 1);
+
             MAEvent *keyEvent = new MAEvent();
             keyEvent->type = EVENT_TYPE_KEY_PRESSED;
-            keyEvent->key = ev.text.text[i];
+            keyEvent->key = (int)keycode;
             keyEvent->nativeKey = 0;
             pushEvent(keyEvent);
+          } else {
+            for (int i = 0; ev.text.text[i] != 0; i++) {
+              MAEvent *keyEvent = new MAEvent();
+              keyEvent->type = EVENT_TYPE_KEY_PRESSED;
+              keyEvent->key = ev.text.text[i];
+              keyEvent->nativeKey = 0;
+              pushEvent(keyEvent);
+            }
           }
         }
         break;
@@ -566,7 +590,9 @@ MAEvent Runtime::processEvents(int waitFlag) {
   case 1:
     // wait for an event
     _output->flush(true);
-    pollEvents(true);
+    if (!hasEvent()) {
+      pollEvents(true);
+    }
     break;
   case 2:
     _output->flush(false);
@@ -645,13 +671,6 @@ void Runtime::onResize(int width, int height) {
 }
 
 void Runtime::optionsBox(StringList *items) {
-  if (!_menuX) {
-    _menuX = 2;
-  }
-  if (!_menuY) {
-    _menuY = 2;
-  }
-
   int backScreenId = _output->getScreenId(true);
   int frontScreenId = _output->getScreenId(false);
   _output->selectBackScreen(MENU_SCREEN);
@@ -670,6 +689,14 @@ void Runtime::optionsBox(StringList *items) {
   int charHeight = _output->getCharHeight();
   int textHeight = charHeight + (charHeight / 3);
   int height = textHeight * items->size();
+
+  if (!_menuX) {
+    _menuX = _output->getWidth() - (width + charWidth * 2);
+  }
+  if (!_menuY) {
+    _menuY = _output->getHeight() - height;
+  }
+
   if (_menuX + width >= _output->getWidth()) {
     _menuX = _output->getWidth() - width;
   }
@@ -694,6 +721,7 @@ void Runtime::optionsBox(StringList *items) {
   }
 
   _output->redraw();
+  showCursor(kArrow);
   while (selectedIndex == -1 && !isClosing()) {
     MAEvent ev = processEvents(true);
     if (ev.type == EVENT_TYPE_KEY_PRESSED) {
@@ -708,17 +736,19 @@ void Runtime::optionsBox(StringList *items) {
         _output->handleMenu(false);
       }
     }
-    if (ev.type == EVENT_TYPE_POINTER_RELEASED &&
-        ++releaseCount == 2) {
-      break;
+    if (ev.type == EVENT_TYPE_POINTER_RELEASED) {
+      showCursor(kArrow);
+      if (++releaseCount == 2) {
+        break;
+      }
     }
   }
 
   _output->removeInputs();
   _output->selectBackScreen(backScreenId);
   _output->selectFrontScreen(frontScreenId);
-  _menuX = 2;
-  _menuY = 2;
+  _menuX = 0;
+  _menuY = 0;
   if (selectedIndex != -1) {
     if (_systemMenu == NULL && isRunning() &&
         !form_ui::optionSelected(selectedIndex)) {
@@ -827,7 +857,7 @@ void audio_callback(void *data, Uint8 *stream8, int length) {
       }
     }
     if (!sound->_samplesLeft) {
-      g_sounds.pop();
+      g_sounds.pop(!sound->_cached);
     }
   }
 }
@@ -865,6 +895,23 @@ int osd_devinit(void) {
 }
 
 int osd_devrestore(void) {
+  SDL_PauseAudio(1);
+  SDL_LockAudio();
+
+  // remove any cached sounds from the queue
+  List_each(SoundObject *, it, g_sounds) {
+    SoundObject *next = *it;
+    if (next != NULL && next->_cached) {
+      g_sounds.remove(it);
+      it--;
+    }
+  }
+
+  // delete the cached sounds
+  g_soundCache.removeAll();
+
+  SDL_UnlockAudio();
+
   runtime->setRunning(false);
   return 0;
 }
@@ -885,20 +932,33 @@ void osd_audio(const char *path) {
   Uint8 *buffer;
   Uint32 length;
 
-  SDL_AudioSpec *obtainedSpec = SDL_LoadWAV(path, &desiredSpec, &buffer, &length);
-  if (obtainedSpec != NULL) {
-    if (obtainedSpec->freq == FREQUENCY &&
-        obtainedSpec->channels == 1 &&
-        obtainedSpec->format == AUDIO_S16SYS) {
-      SDL_LockAudio();
-      g_sounds.push(new SoundObject(buffer, length));
-      SDL_UnlockAudio();
-      SDL_PauseAudio(0);
-    } else {
-      log_printf("Failed to open wav file: invalid format");
-    }
+  SoundObject *cachedSound = g_soundCache.get(path);
+  if (cachedSound) {
+    SDL_LockAudio();
+    cachedSound->reset();
+    g_sounds.push(cachedSound);
+    SDL_UnlockAudio();
+    SDL_PauseAudio(0);
   } else {
-    log_printf("Failed to open wav file: %s", SDL_GetError());
+    SDL_AudioSpec *obtainedSpec = SDL_LoadWAV(path, &desiredSpec, &buffer, &length);
+    if (obtainedSpec != NULL) {
+      if (obtainedSpec->freq != FREQUENCY) {
+        err_throw("Failed to open wav file: invalid frequency %d", obtainedSpec->freq);
+      } else if (obtainedSpec->channels != 1) {
+        err_throw("Failed to open wav file: invalid channels %d", obtainedSpec->channels);
+      } else if (obtainedSpec->format != AUDIO_S16SYS) {
+        err_throw("Failed to open wav file: invalid format %d", obtainedSpec->format);
+      } else {
+        SDL_LockAudio();
+        SoundObject *cachedSound = new SoundObject(buffer, length);
+        g_sounds.push(cachedSound);
+        g_soundCache.put(path, cachedSound);
+        SDL_UnlockAudio();
+        SDL_PauseAudio(0);
+      }
+    } else {
+      err_throw("Failed to open wav file: %s", SDL_GetError());
+    }
   }
 }
 

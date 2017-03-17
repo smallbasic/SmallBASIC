@@ -12,8 +12,10 @@
 #include "ui/utils.h"
 #include "common/device.h"
 
-#define FONT_FACE_REGULAR "Envy Code R.ttf"
-#define FONT_FACE_BOLD    "Envy Code R Bold.ttf"
+#define FONT_FACE_REGULAR_0 "Inconsolata-Regular.ttf"
+#define FONT_FACE_BOLD_0    "Inconsolata-Bold.ttf"
+#define FONT_FACE_REGULAR_1 "Envy Code R.ttf"
+#define FONT_FACE_BOLD_1    "Envy Code R Bold.ttf"
 
 extern ui::Graphics *graphics;
 
@@ -126,14 +128,14 @@ Graphics::~Graphics() {
   _fontBufferB = NULL;
 }
 
-bool Graphics::construct() {
+bool Graphics::construct(int fontId) {
   logEntered();
 
   _w = ANativeWindow_getWidth(_app->window);
   _h = ANativeWindow_getHeight(_app->window);
 
   bool result = false;
-  if (loadFonts()) {
+  if (loadFonts(fontId)) {
     _screen = new Canvas();
     if (_screen && _screen->create(_w, _h)) {
       _drawTarget = _screen;
@@ -175,10 +177,22 @@ void Graphics::resize() {
   _drawTarget = NULL;
 }
 
-bool Graphics::loadFonts() {
+bool Graphics::loadFonts(int fontId) {
+  const char *regularName;
+  const char *boldName;
+  switch (fontId) {
+  case 1:
+    regularName = FONT_FACE_REGULAR_1;
+    boldName = FONT_FACE_BOLD_1;
+    break;
+  default:
+    regularName = FONT_FACE_REGULAR_0;
+    boldName = FONT_FACE_BOLD_0;
+    break;
+  }
   return (!FT_Init_FreeType(&_fontLibrary) &&
-          loadFont(FONT_FACE_REGULAR, _fontFace, &_fontBuffer) &&
-          loadFont(FONT_FACE_BOLD, _fontFaceB, &_fontBufferB));
+          loadFont(regularName, _fontFace, &_fontBuffer) &&
+          loadFont(boldName, _fontFaceB, &_fontBufferB));
 }
 
 bool Graphics::loadFont(const char *name, FT_Face &face, FT_Byte **buffer) {

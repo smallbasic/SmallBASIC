@@ -27,8 +27,8 @@
                             c |= ((y > dev_Vy2) << 3); }
 #define CLIPIN(c) ((c & 0xF) == 0)
 
-dword os_ver = 0x40000;
-dword os_color_depth = 16;
+uint32_t os_ver = 0x40000;
+uint32_t os_color_depth = 16;
 byte os_graphics = 0; // CONSOLE
 int os_graf_mx = 80;
 int os_graf_my = 25;
@@ -203,10 +203,9 @@ void dev_setpixel(int x, int y) {
 long dev_getpixel(int x, int y) {
   x = W2X(x);
   y = W2Y(y);
-  if (x >= dev_Vx1 && x <= dev_Vx2) {
-    if (y >= dev_Vy1 && y <= dev_Vy2) {
-      return osd_getpixel(x, y);
-    }
+  if ((x >= dev_Vx1 && x <= dev_Vx2) &&
+      (y >= dev_Vy1 && y <= dev_Vy2)) {
+    return osd_getpixel(x, y);
   }
   return 0;
 }
@@ -282,6 +281,27 @@ void dev_line(int x1, int y1, int x2, int y2) {
     osd_line(x1, y1, x2, y2);
   }
 }
+
+void dev_ellipse(int xc, int yc, int xr, int yr, double aspect, int fill) {
+  osd_ellipse(W2X(xc), W2Y(yc), xr, yr * aspect, fill);
+}
+
+void dev_arc(int xc, int yc, double r, double start, double end, double aspect) {
+  osd_arc(W2X(xc), W2Y(yc), r, start, end, aspect);
+}
+
+/**
+ * @ingroup lgraf
+ *
+ * draw a line using foreground color
+ *
+ * @param x1 line coordinates
+ * @param y1 line coordinates
+ * @param x2 line coordinates
+ * @param y2 line coordinates
+ */
+void osd_line(int x1, int y1, int x2, int y2);
+
 
 /**
  * draw rectangle (filled or not)

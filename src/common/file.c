@@ -268,7 +268,7 @@ int dev_fclose(int sb_handle) {
 /**
  * returns true on success
  */
-int dev_fwrite(int sb_handle, byte *data, dword size) {
+int dev_fwrite(int sb_handle, byte *data, uint32_t size) {
   dev_file_t *f;
 
   if ((f = dev_getfileptr(sb_handle)) == NULL) {
@@ -292,7 +292,7 @@ int dev_fwrite(int sb_handle, byte *data, dword size) {
 /**
  * returns true on success
  */
-int dev_fread(int sb_handle, byte *data, dword size) {
+int dev_fread(int sb_handle, byte *data, uint32_t size) {
   dev_file_t *f;
 
   if ((f = dev_getfileptr(sb_handle)) == NULL) {
@@ -316,7 +316,7 @@ int dev_fread(int sb_handle, byte *data, dword size) {
 /**
  *
  */
-dword dev_ftell(int sb_handle) {
+uint32_t dev_ftell(int sb_handle) {
   dev_file_t *f;
 
   if ((f = dev_getfileptr(sb_handle)) == NULL) {
@@ -335,7 +335,7 @@ dword dev_ftell(int sb_handle) {
 /**
  *
  */
-dword dev_flength(int sb_handle) {
+uint32_t dev_flength(int sb_handle) {
   dev_file_t *f;
 
   if ((f = dev_getfileptr(sb_handle)) == NULL) {
@@ -359,7 +359,7 @@ dword dev_flength(int sb_handle) {
 /**
  *
  */
-dword dev_fseek(int sb_handle, dword offset) {
+uint32_t dev_fseek(int sb_handle, uint32_t offset) {
   dev_file_t *f;
 
   if ((f = dev_getfileptr(sb_handle)) == NULL) {
@@ -438,7 +438,7 @@ int dev_fexists(const char *file) {
 int dev_fcopy(const char *file, const char *newfile) {
   int src, dst;
   byte *buf;
-  dword i, block_size, block_num, remain, file_len;
+  uint32_t i, block_size, block_num, remain, file_len;
 
   if (!opt_file_permitted) {
     rt_raise(ERR_FILE_PERM);
@@ -730,7 +730,8 @@ int dev_filemtime(const char *file, char **buffer) {
     // 2016-02-20 05:23 PM
     size = 20;
     *buffer = malloc(size);
-    size = strftime(*buffer, size, "%Y-%m-%d %I:%M %p", localtime(&st.st_mtime));
+    const time_t t = st.st_mtime;
+    size = strftime(*buffer, size, "%Y-%m-%d %I:%M %p", localtime(&t));
   } else {
     *buffer = malloc(1);
     *buffer[0] = '\0';

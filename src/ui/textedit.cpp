@@ -48,7 +48,7 @@ void safe_memmove(void *dest, const void *src, size_t n) {
 #define strcasestr StrStrI
 #endif
 
-extern "C" dword dev_get_millisecond_count();
+extern "C" uint32_t dev_get_millisecond_count();
 
 unsigned g_themeId = 0;
 int g_lineMarker[MAX_MARKERS] = {
@@ -200,6 +200,7 @@ EditBuffer::EditBuffer(TextEditInput *in, const char *text) :
   _buffer(NULL),
   _len(0),
   _size(0),
+  _lines(-1),
   _in(in) {
   if (text != NULL && text[0]) {
     _len = strlen(text);
@@ -218,9 +219,26 @@ void EditBuffer::clear() {
   free(_buffer);
   _buffer = NULL;
   _len = _size = 0;
+  _lines = -1;
+}
+
+int EditBuffer::countNewlines(const char *text, int num) {
+  int result = 0;
+  for (int i = 0; i < num; i++) {
+    if (text[i] == '\n') {
+      result++;
+    }
+  }
+  return result;
 }
 
 int EditBuffer::deleteChars(int pos, int num) {
+  if (num > 1) {
+    _lines -= countNewlines(_buffer + pos, num);
+  } else if (_buffer[pos] == '\n') {
+    _lines--;
+  }
+
   if (_len - (pos + num) > 0) {
     memmove(&_buffer[pos], &_buffer[pos + num], _len - (pos + num));
   }
@@ -247,7 +265,19 @@ int EditBuffer::insertChars(int pos, const char *text, int num) {
   _len += num;
   _buffer[_len] = '\0';
   _in->setDirty(true);
+  if (num > 1) {
+    _lines += countNewlines(text, num);
+  } else if (text[0] == '\n') {
+    _lines++;
+  }
   return 1;
+}
+
+int EditBuffer::lineCount() {
+  if (_lines < 0) {
+    _lines = 1 + countNewlines(_buffer, _len);
+  }
+  return _lines;
 }
 
 char *EditBuffer::textRange(int start, int end) {
@@ -310,6 +340,7 @@ TextEditInput::TextEditInput(const char *text, int chW, int chH,
   _charHeight(chH),
   _marginWidth(0),
   _scroll(0),
+  _cursorCol(0),
   _cursorRow(0),
   _cursorLine(0),
   _indentLevel(INDENT_LEVEL),
@@ -697,7 +728,7 @@ bool TextEditInput::edit(int key, int screenWidth, int charWidth) {
     }
   } else {
     int pageRows = _height / _charHeight;
-    if (_cursorRow - _scroll > pageRows || _cursorRow < _scroll) {
+    if (_cursorRow - _scroll >= pageRows || _cursorRow < _scroll) {
       // scroll for cursor outside of current frame
       updateScroll();
     }
@@ -1197,20 +1228,23 @@ int TextEditInput::getCompletions(StringList *list, int max) {
   return count;
 }
 
-int TextEditInput::getCursorRow() const {
+int TextEditInput::getCursorRow() {
   StbTexteditRow r;
   int len = _buf._len;
   int row = 0;
+  int i;
 
-  for (int i = 0; i < len;) {
+  for (i = 0; i < len;) {
     layout(&r, i);
     if (_state.cursor == i + r.num_chars &&
         _buf._buffer[i + r.num_chars - 1] == STB_TEXTEDIT_NEWLINE) {
       // at end of line
       row++;
+      _cursorCol = 0;
       break;
     } else if (_state.cursor >= i && _state.cursor < i + r.num_chars) {
       // within line
+      _cursorCol = _state.cursor - i;
       break;
     }
     i += r.num_chars;
@@ -1218,7 +1252,7 @@ int TextEditInput::getCursorRow() const {
       row++;
     }
   }
-  return row + 1;
+  return row;
 }
 
 uint32_t TextEditInput::getHash(const char *str, int offs, int &count) {
@@ -1489,9 +1523,17 @@ void TextEditInput::pageNavigate(bool pageDown, bool shift) {
   int len = _buf._len;
   int row = 0;
   int i = 0;
+  int count = 0;
 
   for (; i < len && row != nextRow; i += r.num_chars, row++) {
     layout(&r, i);
+    count += r.num_chars;
+  }
+
+  if (count == _buf._len) {
+    // at end
+    row--;
+    i -= r.num_chars;
   }
 
   if (shift) {
@@ -1505,6 +1547,7 @@ void TextEditInput::pageNavigate(bool pageDown, bool shift) {
 
   _state.cursor = i;
   _cursorRow = row;
+  _cursorCol = 0;
   updateScroll();
 }
 
@@ -1603,7 +1646,7 @@ TextEditHelpWidget::TextEditHelpWidget(TextEditInput *editor, int chW, int chH, 
 }
 
 TextEditHelpWidget::~TextEditHelpWidget() {
-  _outline.emptyList();
+  _outline.clear();
 }
 
 bool TextEditHelpWidget::closeOnEnter() const {
@@ -1744,7 +1787,7 @@ void TextEditHelpWidget::createCompletionHelp() {
       if (end - found > len && (IS_WHITE(pre) || pre == '.')) {
         String next;
         next.append(found, end - found);
-        if (!words.exists(next)) {
+        if (!words.contains(next)) {
           words.add(next);
           _buf.append(found, end - found);
           _buf.append("\n", 1);
@@ -1915,7 +1958,7 @@ void TextEditHelpWidget::paste(const char *text) {
 
 void TextEditHelpWidget::reset(HelpMode mode) {
   stb_textedit_clear_state(&_state, mode == kSearch);
-  _outline.emptyList();
+  _outline.clear();
   _mode = mode;
   _buf.clear();
   _scroll = 0;

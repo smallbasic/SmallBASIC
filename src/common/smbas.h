@@ -27,22 +27,22 @@ extern "C" {
  */
 typedef struct {
   char sign[4]; /**< always "SBEx" */
-  dword ver; /**< version of this structure */
-  dword sbver; /**< version of SB */
-  dword flags; /**< flags
+  uint32_t ver; /**< version of this structure */
+  uint32_t sbver; /**< version of SB */
+  uint32_t flags; /**< flags
    b0 = Big-endian CPU
    b1 = BC 16bit
    b2 = BC 32bit */
 
-  dword size; /**< total size (include label-table and bc) */
-  dword bc_count; /**< BC length */
-  dword var_count; /**< number of variables */
-  dword lab_count; /**< number of labels */
-  dword data_ip; /**< default DATA position */
+  uint32_t size; /**< total size (include label-table and bc) */
+  uint32_t bc_count; /**< BC length */
+  uint32_t var_count; /**< number of variables */
+  uint32_t lab_count; /**< number of labels */
+  uint32_t data_ip; /**< default DATA position */
 
   // ver 2
-  dword lib_count; /**< libraries count (needed units) */
-  dword sym_count; /**< symbol count (linked-symbols) */
+  uint32_t lib_count; /**< libraries count (needed units) */
+  uint32_t sym_count; /**< symbol count (linked-symbols) */
 } bc_head_t;
 
 /**

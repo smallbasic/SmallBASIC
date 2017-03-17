@@ -543,7 +543,7 @@ void FormLineInput::draw(int x, int y, int w, int h, int chw) {
     len = _width / chw;
   }
 
-  if (!len && _help.length()) {
+  if (!len && !_help.empty()) {
     if (hasFocus()) {
       setTextColor();
       maFillRect(x, y, chw, _height);
@@ -573,38 +573,12 @@ void FormLineInput::draw(int x, int y, int w, int h, int chw) {
 }
 
 bool FormLineInput::edit(int key, int screenWidth, int charWidth) {
+  int wChars;
   int len = _buffer == NULL ? 0 : strlen(_buffer);
-  key = getControlKey(key);
-  if (key >= SB_KEY_SPACE && key < SB_KEY_DELETE && !_controlMode) {
-    // insert
-    if (_mark != _point) {
-      cut();
-    }
-    if (len < _size - 1) {
-      int j = len;
-      int point = _scroll + _point;
-      if (point < len) {
-        // insert
-        while (j >= point) {
-          _buffer[j + 1] = _buffer[j];
-          j--;
-        }
-      }
-      _buffer[point] = key;
-      _buffer[++len] = '\0';
 
-      if (_grow && (_x + _width + charWidth < screenWidth)
-          && (len * charWidth) >= _width) {
-        _width += charWidth;
-      }
-      int maxPoint = (MIN(_width, screenWidth) / charWidth) - 1;
-      if (_point < maxPoint) {
-        _point++;
-      } else {
-        _scroll++;
-      }
-    }
-  } else if (key == SB_KEY_BACKSPACE) {
+  key = getControlKey(key);
+  switch (key) {
+  case SB_KEY_BACKSPACE:
     // backspace
     if (len > 0) {
       if (_mark != _point) {
@@ -623,7 +597,8 @@ bool FormLineInput::edit(int key, int screenWidth, int charWidth) {
         _buffer[j] = '\0';
       }
     }
-  } else if (key == SB_KEY_DELETE) {
+    break;
+  case SB_KEY_DELETE:
     if (_mark != _point) {
       cut();
     } else {
@@ -634,24 +609,30 @@ bool FormLineInput::edit(int key, int screenWidth, int charWidth) {
       }
       _buffer[j] = '\0';
     }
-  } else if (key == SB_KEY_LEFT) {
+    break;
+  case SB_KEY_LEFT:
     if (_point > 0) {
       _point--;
     } else if (_scroll > 0) {
       _scroll--;
     }
-  } else if (key == SB_KEY_RIGHT && (_scroll + _point) < len) {
-    int maxPoint = (_width / charWidth) - 1;
-    if (_point < maxPoint) {
-      _point++;
-    } else {
-      _scroll++;
+    break;
+  case SB_KEY_RIGHT:
+    if ((_scroll + _point) < len) {
+      int maxPoint = (_width / charWidth) - 1;
+      if (_point < maxPoint) {
+        _point++;
+      } else {
+        _scroll++;
+      }
     }
-  } else if (key == SB_KEY_HOME) {
+    break;
+  case SB_KEY_HOME:
     _scroll = 0;
     _mark = _point = 0;
-  } else if (key == SB_KEY_END) {
-    int wChars = (_width / charWidth) - 1;
+    break;
+  case SB_KEY_END:
+    wChars = (_width / charWidth) - 1;
     if (len > wChars) {
       _mark = _point = wChars;
       _scroll = len - wChars;
@@ -659,8 +640,42 @@ bool FormLineInput::edit(int key, int screenWidth, int charWidth) {
       _mark = _point = len;
       _scroll = 0;
     }
-  } else if (key > 0) {
-    maShowVirtualKeyboard();
+    break;
+  default:
+    if (key >= SB_KEY_SPACE && !_controlMode) {
+      // insert
+      if (_mark != _point) {
+        cut();
+      }
+      if (len < _size - 1) {
+        int j = len;
+        int point = _scroll + _point;
+        if (point < len) {
+          // insert
+          while (j >= point) {
+            _buffer[j + 1] = _buffer[j];
+            j--;
+          }
+        }
+
+        _buffer[point] = key;
+        _buffer[++len] = '\0';
+
+        if (_grow && (_x + _width + charWidth < screenWidth)
+            && (len * charWidth) >= _width) {
+          _width += charWidth;
+        }
+        int maxPoint = (MIN(_width, screenWidth) / charWidth) - 1;
+        if (_point < maxPoint) {
+          _point++;
+        } else {
+          _scroll++;
+        }
+      }
+    } else if (key > 0) {
+      maShowVirtualKeyboard();
+    }
+    break;
   }
   if (key != -1) {
     _mark = _point;
@@ -991,7 +1006,7 @@ void FormListBox::draw(int x, int y, int w, int h, int chw) {
   MAExtent textSize = maGetTextSize(_model->getTextAt(0));
   int rowHeight = EXTENT_Y(textSize) + 1;
   int textY = y;
-  if (!_model->rows() && _help.length()) {
+  if (!_model->rows() && !_help.empty()) {
     setHelpTextColor();
     drawText(_help.c_str(), x, textY, w, chw);
   } else {

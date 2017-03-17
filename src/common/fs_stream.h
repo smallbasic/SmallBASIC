@@ -15,11 +15,11 @@
 
 int stream_open(dev_file_t *f);
 int stream_close(dev_file_t *f);
-int stream_write(dev_file_t *f, byte *data, dword size);
-int stream_read(dev_file_t *f, byte *data, dword size);
-dword stream_tell(dev_file_t *f);
-dword stream_length(dev_file_t *f);
-dword stream_seek(dev_file_t *f, dword offset);
+int stream_write(dev_file_t *f, byte *data, uint32_t size);
+int stream_read(dev_file_t *f, byte *data, uint32_t size);
+uint32_t stream_tell(dev_file_t *f);
+uint32_t stream_length(dev_file_t *f);
+uint32_t stream_seek(dev_file_t *f, uint32_t offset);
 int stream_eof(dev_file_t *f);
 
 #endif

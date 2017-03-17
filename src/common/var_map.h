@@ -25,7 +25,7 @@ int map_get_int(var_p_t base, const char *name, int def);
 const char *map_get_str(var_p_t base, const char *name);
 var_p_t map_get(var_p_t base, const char *name);
 var_p_t map_elem_key(const var_p_t var_p, int index);
-var_p_t map_resolve_fields(const var_p_t base);
+var_p_t map_resolve_fields(var_p_t base);
 var_p_t map_add_var(var_p_t base, const char *name, int value);
 void map_init(var_p_t map);
 void map_free(var_p_t var_p);

@@ -99,7 +99,7 @@ void g_line(int x1, int y1, int x2, int y2, void (*dotproc) (int, int));
  *
  * @code
  * byte  os_charset;   // System's charset (see os_charset_codes)
- * dword os_color_depth; // The number of bits of the supported colors
+ * uint32_t os_color_depth; // The number of bits of the supported colors
  *             // (i.e.: 8 for 256 colors, 15 or 16 for 64K, 24 or 32 for 1.6M)
  * byte  os_graphics;  // Non-zero if the driver supports graphics
  * int   os_graf_mx;   // Graphic mode: screen width
@@ -128,7 +128,7 @@ enum os_charset_codes {
 extern byte os_charset;
 
 extern byte os_color;         // true if the output has real colors (256+ colors)
-extern dword os_color_depth;  // the number of bits of the supported colors
+extern uint32_t os_color_depth;  // the number of bits of the supported colors
                               // (ex: 8 for 256 colors, 15 or 16 for 64K, 24 or 32 for 1.6M)
 extern byte os_graphics;      // non-zero if the driver supports graphics
 extern int os_graf_mx;        // graphic mode: maximum x
@@ -197,7 +197,7 @@ int dev_restore(void);
  *
  * @param ch the key-code
  */
-void dev_pushkey(dword ch);
+void dev_pushkey(uint32_t ch);
 
 /**
  * @ingroup dev_i
@@ -255,7 +255,7 @@ int dev_events(int dead_loop);
  *
  * @param ms the milliseconds to pause
  */
-void dev_delay(dword ms);
+void dev_delay(uint32_t ms);
 
 /**
  * @ingroup dev_i
@@ -567,8 +567,7 @@ void dev_ellipse(int xc, int yc, int xr, int yr, double aspect, int fill);
  * @param ae angle-end in rad
  * @param aspect x/y (use 1)
  */
-void dev_arc(int xc, int yc, double r, double as, double ae,
-             double aspect);
+void dev_arc(int xc, int yc, double r, double as, double ae, double aspect);
 
 /**
  * @ingroup dev_g
@@ -590,7 +589,7 @@ void dev_arc(int xc, int yc, double r, double as, double ae,
  * @param fill_color the color to use for fill
  * @param border_color the color of the border, use -1 for scan-while algorithm
  */
-void dev_ffill(word x0, word y0, long fill_color, long border_color);
+void dev_ffill(uint16_t x0, uint16_t y0, long fill_color, long border_color);
 
 /**
  * @ingroup dev_g
@@ -793,7 +792,7 @@ typedef struct {
   int port;           /**< the port (if device) */
   long devspeed;      /**< the speed (if device) */
   byte *drv_data;     /**< driver data used by low-level driver authors, (don't forget to set it to null on close()) */
-  dword drv_dw[4];    /**< driver data used by low-level driver authors */
+  uint32_t drv_dw[4];    /**< driver data used by low-level driver authors */
 
 #if USE_TERM_IO
   struct termios oldtio, newtio;  /**< termios info */
@@ -857,7 +856,7 @@ int dev_fopen(int SBHandle, const char *name, int flags);
  * @param SBHandle is the RTL's file-handle
  * @return the size of the available data
  */
-dword dev_flength(int SBHandle);
+uint32_t dev_flength(int SBHandle);
 
 /**
  * @ingroup dev_f
@@ -878,7 +877,7 @@ int dev_fclose(int SBHandle);
  * @param offset the new position
  * @returns the new position
  */
-dword dev_fseek(int SBHandle, dword offset);
+uint32_t dev_fseek(int SBHandle, uint32_t offset);
 
 /**
  * @ingroup dev_f
@@ -888,7 +887,7 @@ dword dev_fseek(int SBHandle, dword offset);
  * @param SBHandle is the RTL's file-handle
  * @return the file-position-pointer
  */
-dword dev_ftell(int SBHandle);
+uint32_t dev_ftell(int SBHandle);
 
 /**
  * @ingroup dev_f
@@ -910,7 +909,7 @@ int dev_feof(int SBHandle);
  * @param size is the size of the data
  * @return non-zero on success
  */
-int dev_fwrite(int SBHandle, byte *buff, dword size);
+int dev_fwrite(int SBHandle, byte *buff, uint32_t size);
 
 /**
  * @ingroup dev_f
@@ -922,7 +921,7 @@ int dev_fwrite(int SBHandle, byte *buff, dword size);
  * @param size is the number of bytes to read
  * @return non-zero on success
  */
-int dev_fread(int SBHandle, byte *buff, dword size);
+int dev_fread(int SBHandle, byte *buff, uint32_t size);
 
 /**
  * @ingroup dev_f
@@ -1036,7 +1035,7 @@ void dev_destroy_file_list(char_p_t *list, int count);
  * Returns the number of milliseconds that has passed since
  * some unknown point in time.
  */
-dword dev_get_millisecond_count();
+uint32_t dev_get_millisecond_count();
 
 /**
  * @ingroup dev_f

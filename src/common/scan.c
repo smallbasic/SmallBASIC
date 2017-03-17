@@ -73,6 +73,10 @@ void err_comp_missing_lp() {
   sc_raise(MSG_EXP_MIS_LP);
 }
 
+void err_comp_missing_rb() {
+  sc_raise(MSG_EXP_MIS_RB);
+}
+
 void err_comp_label_not_def(const char *name) {
   sc_raise(MSG_LABEL_NOT_DEFINED, name);
 }
@@ -491,6 +495,7 @@ char *get_param_sect(char *text, const char *delim, char *dest) {
   char *p = (char *)text;
   char *d = dest;
   int quotes = 0, level = 0, skip_ch = 0;
+  int curley_brace = 0;
 
   if (p == NULL) {
     *dest = '\0';
@@ -524,11 +529,17 @@ char *get_param_sect(char *text, const char *delim, char *dest) {
       case '\r':
         skip_ch = 1;
         break;
+      case '{':
+        curley_brace++;
+        break;
+      case '}':
+        curley_brace--;
+        break;
       };
     }
 
     // delim check
-    if (delim != NULL && level <= 0 && quotes == 0) {
+    if (delim != NULL && level <= 0 && quotes == 0 && curley_brace == 0) {
       if (strchr(delim, *p) != NULL) {
         break;
       }
@@ -554,6 +565,9 @@ char *get_param_sect(char *text, const char *delim, char *dest) {
   }
   if (level < 0) {
     err_comp_missing_lp();
+  }
+  if (curley_brace  > 0) {
+    err_comp_missing_rb();
   }
   str_alltrim(dest);
   return p;
@@ -944,7 +958,8 @@ const char *comp_next_word(const char *text, char *dest) {
     return p;
   }
 
-  if (is_alnum(*p) || *p == '_') {  // don't forget the numeric-labels
+  if (is_alnum(*p) || *p == '_') {
+    // don't forget the numeric-labels
     while (is_alnum(*p) || (*p == '_') || (*p == '.')) {
       *d = *p;
       d++;
@@ -1014,20 +1029,53 @@ int comp_is_parenthesized(char *name) {
   return result;
 }
 
+char *comp_scan_json(char *json, bc_t *bc) {
+  int curley_brace = 1;
+  char *p = json + 1;
+
+  while (*p != '\0' && curley_brace > 0) {
+    switch (*p) {
+    case '{':
+      curley_brace++;
+      break;
+    case '}':
+      curley_brace--;
+      break;
+    case '\1':
+      // revert hidden quote
+      *p = '\"';
+      break;
+    case '\2':
+      // revert hidden newline
+      *p = '\n';
+      break;
+    default:
+      break;
+    }
+    p++;
+  }
+  if (curley_brace == 0) {
+    bc_add_fcode(bc, kwARRAY);
+    bc_add_code(bc, kwTYPE_LEVEL_BEGIN);
+    bc_add_strn(bc, json, p - json);
+    bc_add_code(bc, kwTYPE_LEVEL_END);
+  } else {
+    err_comp_missing_rb();
+  }
+  return p;
+}
+
 /*
  * scan expression
  */
 void comp_expression(char *expr, byte no_parser) {
   char *ptr = (char *)expr;
-  long idx;
   int level = 0, check_udf = 0;
   int kw_exec_more = 0;
-  int tp;
-  bcip_t stip, cip;
   var_int_t lv = 0;
   var_num_t dv = 0;
-  bc_t bc;
   int addr_opr = 0;
+  bc_t bc;
 
   comp_use_global_vartable = 0; // check local-variables first
   str_alltrim(expr);
@@ -1039,7 +1087,8 @@ void comp_expression(char *expr, byte no_parser) {
 
   while (*ptr) {
     if (is_digit(*ptr) || *ptr == '.' || (*ptr == '&' && strchr("XHOB", *(ptr + 1)))) {
-      // A CONSTANT NUMBER
+      // a constant number
+      int tp;
       ptr = get_numexpr(ptr, comp_bc_name, &tp, &lv, &dv);
       switch (tp) {
       case 1:
@@ -1051,22 +1100,23 @@ void comp_expression(char *expr, byte no_parser) {
       default:
         sc_raise(MSG_EXP_GENERR);
       }
-    } else if (*ptr == '\'' /* || *ptr == '#' */) {  // remarks
+    } else if (*ptr == '\'') {
+      // remarks
       break;
     } else if (is_alpha(*ptr) || *ptr == '?' || *ptr == '_') {
-      // A NAME
+      // a name
       ptr = (char *)comp_next_word(ptr, comp_bc_name);
-      idx = comp_is_func(comp_bc_name);
-      // special case for INPUT
+      long idx = comp_is_func(comp_bc_name);
+      // special case for input
       if (idx == kwINPUTF) {
         if (*comp_next_char(ptr) != '(') {
-          // INPUT is SPECIAL SEPARATOR (OPEN...FOR INPUT...)
+          // INPUT is special separator (OPEN...FOR INPUT...)
           idx = -1;
         }
       }
 
       if (idx != -1) {
-        // IS A FUNCTION
+        // is a function
         if (!kw_noarg_func(idx)) {
           if (*comp_next_char(ptr) != '(') {
             sc_raise(MSG_BF_ARGERR, comp_bc_name);
@@ -1091,7 +1141,7 @@ void comp_expression(char *expr, byte no_parser) {
         }
         check_udf++;
       } else {
-        // CHECK SPECIAL SEPARATORS
+        // check special separators
         idx = comp_is_special_operator(comp_bc_name);
         if (idx != -1) {
           if (idx == kwUSE) {
@@ -1119,13 +1169,13 @@ void comp_expression(char *expr, byte no_parser) {
             bc_add_code(&bc, idx);
           }
         } else {
-          // NOT A COMMAND, CHECK OPERATORS
+          // not a command, check operators
           idx = comp_is_operator(comp_bc_name);
           if (idx != -1) {
             bc_add_code(&bc, idx >> 8);
             bc_add_code(&bc, idx & 0xFF);
           } else {
-            // EXTERNAL FUNCTION
+            // external function
             idx = comp_is_external_func(comp_bc_name);
             if (idx != -1) {
               bc_add_extfcode(&bc, comp_extfunctable[idx].lib_id, comp_extfunctable[idx].symbol_index);
@@ -1139,10 +1189,10 @@ void comp_expression(char *expr, byte no_parser) {
               } else if (idx != -1) {
                 sc_raise(MSG_STATEMENT_ON_RIGHT, comp_bc_name);
               } else {
-                // UDF OR VARIABLE
+                // udf or variable
                 int udf = comp_udp_id(comp_bc_name, 1);
                 if (udf != -1) {
-                  // UDF
+                  // udf
                   if (addr_opr != 0) {
                     // pointer to UDF
                     bc_add_code(&bc, kwTYPE_PTR);
@@ -1154,18 +1204,22 @@ void comp_expression(char *expr, byte no_parser) {
                   bc_add_addr(&bc, 0);  // var place holder
                   ptr = trim_empty_parentheses(ptr);
                 } else {
-                  // VARIABLE
+                  // variable
                   if (addr_opr != 0) {
                     bc_add_code(&bc, kwBYREF);
                   }
                   SKIP_SPACES(ptr);
-                  if (*ptr == '(') {
-                    if (*(ptr + 1) == ')') {
-                      // null array
-                      ptr += 2;
-                    }
-                  }
                   comp_add_variable(&bc, comp_bc_name);
+                  if (ptr[0] == '(' && ptr[1] == ')'
+                      && strchr(comp_bc_name, '.') == NULL) {
+                    // null array on non UDS
+                    ptr += 2;
+                  } else if (ptr[0] == '[') {
+                    // array element using '['
+                    ptr++;
+                    level++;
+                    bc_add_code(&bc, kwTYPE_LEVEL_BEGIN);
+                  }
                 }
               }
             }
@@ -1201,6 +1255,9 @@ void comp_expression(char *expr, byte no_parser) {
       if (*ptr == '.') {
         ptr = comp_array_uds_field(ptr + 1, &bc);
       }
+    } else if (*ptr == '{') {
+      ptr = comp_scan_json(ptr, &bc);
+      check_udf++;
     } else if (is_space(*ptr)) {
       // null characters
       ptr++;
@@ -1286,12 +1343,12 @@ void comp_expression(char *expr, byte no_parser) {
       // printf("=== after:\n"); hex_dump(bc.ptr, bc.count);
     }
     if (bc.count) {
-      stip = comp_prog.count;
+      bcip_t stip = comp_prog.count;
       bc_append(&comp_prog, &bc); // merge code segments
 
       // update pass2 stack-nodes
       if (check_udf) {
-        cip = stip;
+        bcip_t cip = stip;
         while ((cip = comp_search_bc(cip, kwUSE)) != INVALID_ADDR) {
           comp_push(cip);
           cip += (1 + ADDRSZ + ADDRSZ);
@@ -1516,7 +1573,8 @@ char *comp_getlist_insep(char *source, char_p_t * args, char *sep, char *delims,
  * IF expr THEN ... ELSE ... ---> IF expr THEN (:) .... (:ELSE:) ... (:FI)
  */
 int comp_single_line_if(char *text) {
-  char *p = (char *)text;       // *text points to 'expr'
+  // *text points to 'expr'
+  char *p = (char *)text;
   char *pthen, *pelse;
   char buf[SB_SOURCELINE_SIZE + 1];
 
@@ -1606,15 +1664,15 @@ int comp_single_line_if(char *text) {
         comp_block_level--;
         comp_block_id--;
         return 1;
-      } else {                    // *p == ':'
+      } else {
+        // *p == ':'
         return 0;
       }
     } else {
       break;
     }
   } while (pthen != NULL);
-
-  return 0;                     // false
+  return 0;
 }
 
 /**
@@ -1649,37 +1707,43 @@ char *comp_array_params(char *src, char exitChar) {
   char *p = src;
   char *ss = NULL;
   char *se = NULL;
+  char closeBracket = '\0';
   int level = 0;
 
   while (*p) {
     switch (*p) {
+    case '[':
     case '(':
       if (level == 0) {
         ss = p;
       }
       level++;
+      closeBracket = *p == '(' ? ')' : ']';
       break;
     case ')':
-      level--;
-      if (level == 0) {
-        se = p;
-        // store this index
-        if (!ss) {
-          sc_raise(MSG_ARRAY_SE);
-        } else {
-          *ss = ' ';
-          *se = '\0';
-
-          bc_add_code(&comp_prog, kwTYPE_LEVEL_BEGIN);
-          comp_expression(ss, 0);
-          bc_store1(&comp_prog, comp_prog.count - 1, kwTYPE_LEVEL_END);
-
-          *ss = '(';
-          *se = ')';
-          ss = se = NULL;
-        }
-        if (*(p + 1) == '.') {
-          p = comp_array_uds_field(p + 2, &comp_prog);
+    case ']':
+      if (closeBracket == *p) {
+        level--;
+        if (level == 0) {
+          se = p;
+          // store this index
+          if (!ss) {
+            sc_raise(MSG_ARRAY_SE);
+          } else {
+            char ssSave = *ss;
+            char seSave = *se;
+            *ss = ' ';
+            *se = '\0';
+            bc_add_code(&comp_prog, kwTYPE_LEVEL_BEGIN);
+            comp_expression(ss, 0);
+            bc_store1(&comp_prog, comp_prog.count - 1, kwTYPE_LEVEL_END);
+            *ss = ssSave;
+            *se = seSave;
+            ss = se = NULL;
+          }
+          if (*(p + 1) == '.') {
+            p = comp_array_uds_field(p + 2, &comp_prog);
+          }
         }
       }
       break;
@@ -1809,17 +1873,30 @@ void comp_text_line_let(long idx, int ladd, int linc, int ldec, int leqop) {
   char *array_index = NULL;
   int array_index_len = 0;
   int v_func = 0;
+  char closeBracket = '\0';
 
-  if (parms[0] == '(') {
+  if (parms[0] == '(' || parms[0] == '[') {
     int level = 0;
     p = parms;
     while (*p) {
       switch(*p) {
+      case '[':
+        level++;
+        closeBracket = ']';
+        break;
       case '(':
         level++;
+        closeBracket = ')';
+        break;
+      case ']':
+        if (closeBracket == ']') {
+          level--;
+        }
         break;
       case ')':
-        level--;
+        if (closeBracket == ')') {
+          level--;
+        }
         break;
       case '.':
         // advance beyond UDS element
@@ -1831,7 +1908,7 @@ void comp_text_line_let(long idx, int ladd, int linc, int ldec, int leqop) {
         break;
       }
       p++;
-      if (level == 0 && *p != '(' && *p != '.') {
+      if (level == 0 && *p != '[' && *p != '(' && *p != '.') {
         break;
       }
     }
@@ -1918,8 +1995,8 @@ void comp_text_line_let(long idx, int ladd, int linc, int ldec, int leqop) {
         comp_array_params(array_index, 0);
       }
     }
-    else if (parms[0] == '(') {
-      if (*comp_next_char(parms + 1) == ')') {
+    else if (parms[0] == '(' || parms[0] == '[') {
+      if (parms[0] == '(' && *comp_next_char(parms + 1) == ')') {
         // vn()=fillarray
         p = strchr(parms, '=');
         comp_expression(p, 0);
@@ -1949,10 +2026,8 @@ void comp_text_line_let(long idx, int ladd, int linc, int ldec, int leqop) {
 // User-defined procedures/functions
 void comp_text_line_func(long idx, int decl) {
   char *lpar_ptr, *eq_ptr;
-  char_p_t pars[256];
   int count;
   char pname[SB_KEYWORD_SIZE + 1];
-  char vname[SB_KEYWORD_SIZE + 1];
 
   // single-line function (DEF FN)
   if ((eq_ptr = strchr(comp_bc_parm, '='))) {
@@ -2022,6 +2097,8 @@ void comp_text_line_func(long idx, int decl) {
         if (lpar_ptr) {
           int i;
           int vattr;
+          char vname[SB_KEYWORD_SIZE + 1];
+          char_p_t pars[256];
 
           *lpar_ptr = '(';
           comp_getlist_insep(comp_bc_parm, pars, "()", ",", 256, &count);
@@ -2613,7 +2690,8 @@ void comp_text_line(char *text, int addLineNo) {
         char *next = trim_empty_parentheses(comp_bc_parm);
         comp_expression(next, 0);
       }
-      if (*p == ':') {          // command separator
+      if (*p == ':') {
+        // command separator
         bc_eoc(&comp_prog);
         p++;
         comp_text_line(p, 0);
@@ -2664,7 +2742,8 @@ void comp_text_line(char *text, int addLineNo) {
   }
   if ((idx == kwCONST) ||
       ((comp_bc_parm[0] == '=' ||
-        (comp_bc_parm[0] == '(' && !comp_is_function(comp_bc_name)) ||
+        ((comp_bc_parm[0] == '(' || comp_bc_parm[0] == '[')
+         && !comp_is_function(comp_bc_name)) ||
         ladd || linc || ldec || leqop) && (idx == -1))) {
     comp_text_line_let(idx, ladd, linc, ldec, leqop);
   } else {
@@ -2685,7 +2764,7 @@ void comp_text_line(char *text, int addLineNo) {
  */
 bcip_t comp_next_bc_cmd(bcip_t ip) {
   code_t code;
-  dword len;
+  uint32_t len;
 
   code = comp_prog.ptr[ip];
   ip++;
@@ -3424,7 +3503,7 @@ void comp_init() {
   comp_vartable[comp_var_getID(LCN_SV_COMMAND)].dolar_sup = 1;
   comp_var_getID(LCN_SV_X);
   comp_var_getID(LCN_SV_Y);
-  comp_var_getID(LCN_SV_Z);
+  comp_var_getID(LCN_SV_SELF);
 }
 
 /*
@@ -3519,8 +3598,6 @@ char *comp_load(const char *file_name) {
  * control chars are out
  * remove remarks (')
  *
- * TODO: join-lines character (&)
- *
  * returns a newly created string
  */
 char *comp_format_text(const char *source) {
@@ -3531,6 +3608,8 @@ char *comp_format_text(const char *source) {
   int sl, last_ch = 0, i;
   char *last_nonsp_ptr;
   int adj_line_num = 0;
+  int multi_line_string = 0;
+  int curley_brace = 0;
 
   sl = strlen(source);
   new_text = malloc(sl + 2);
@@ -3542,8 +3621,9 @@ char *comp_format_text(const char *source) {
   while (*p) {
     if (!quotes) {
       switch (*p) {
-      case '\n':               // new line
-        if (*last_nonsp_ptr == '&') { // join lines
+      case '\n':
+        if (*last_nonsp_ptr == '&') {
+          // join lines
           p++;
           *last_nonsp_ptr = ' ';
           if (*(last_nonsp_ptr - 1) == ' ') {
@@ -3554,7 +3634,8 @@ char *comp_format_text(const char *source) {
           adj_line_num++;
         } else {
           for (i = 0; i <= adj_line_num; i++) {
-            *ps++ = '\n';       // at least one nl
+            // at least one nl
+            *ps++ = '\n';
           }
           adj_line_num = 0;
           p++;
@@ -3566,8 +3647,8 @@ char *comp_format_text(const char *source) {
         last_nonsp_ptr = ps - 1;
         break;
 
-      case '\'':               // remarks
-        // skip the rest line
+      case '\'':
+        // remarks - skip the rest line
         while (*p) {
           if (*p == '\n') {
             break;
@@ -3576,8 +3657,9 @@ char *comp_format_text(const char *source) {
         }
         break;
 
-      case ' ':                // spaces
+      case ' ':
       case '\t':
+        // spaces
         if (last_ch == ' ' || last_ch == '\n') {
           p++;
         } else {
@@ -3587,7 +3669,12 @@ char *comp_format_text(const char *source) {
         }
         break;
 
-      case '\"':               // quotes
+      case '\"':
+        // quotes
+        if (p[1] == '\"' && p[2] == '\"') {
+          multi_line_string = 1;
+          p += 2;
+        }
         quotes = !quotes;
         last_nonsp_ptr = ps;
         *ps++ = last_ch = *p++;
@@ -3603,6 +3690,13 @@ char *comp_format_text(const char *source) {
           last_nonsp_ptr = ps;
           *ps++ = *p++;
         }
+        break;
+
+      case '{':
+        curley_brace++;
+        quotes = 1;
+        multi_line_string = 1;
+        *ps++ = *p++;
         break;
 
       default:
@@ -3625,7 +3719,7 @@ char *comp_format_text(const char *source) {
             *ps++ = last_ch = to_upper(*p);
             p++;
           } else {
-            // else ignore it
+            // else ignore it (\r filtered here)
             p++;
           }
         }
@@ -3635,7 +3729,51 @@ char *comp_format_text(const char *source) {
       if (*p == '\\' && (*(p + 1) == '\"' || *(p + 1) == '\\')) {
         // add the escaped quote or slash and continue
         *ps++ = *p++;
+      } else if (multi_line_string) {
+        if (p[0] == '\"' && p[1] == '\"' && p[2] == '\"') {
+          // end of multi-line string
+          quotes = 0;
+          multi_line_string = 0;
+          // add the single final quote character
+          p += 2;
+        } else if (p[0] == '\\' && (p[1] == '\r' || p[1] == '\n')) {
+          // escape adding the newline
+          if (p[1] == '\r' && p[2] == '\n') {
+            p++;
+          }
+          p += 2;
+          continue;
+        } else if (p[0] == '\r') {
+          p++;
+          continue;
+        } else if (p[0] == '\"') {
+          // internal quote escape (see bc_store_string)
+          *ps++ = '\1';
+          p++;
+          continue;
+        } else if (p[0] == '\n') {
+          // internal newline escape
+          *ps++ = '\2';
+          p++;
+          continue;
+        } else if (curley_brace && p[0] == '}') {
+          if (--curley_brace == 0) {
+            quotes = 0;
+            multi_line_string = 0;
+          }
+        } else if (p[0] == '{') {
+          curley_brace++;
+        }
       } else if (*p == '\"' || *p == '\n') {
+        // join to any adjacent quoted text
+        const char *next = p + 1;
+        while (is_space(*next)) {
+          next++;
+        }
+        if (*next == '\"') {
+          p = ++next;
+          continue;
+        }
         // new line auto-ends the quoted string
         quotes = !quotes;
       }
@@ -3674,15 +3812,17 @@ void comp_preproc_grmode(const char *source) {
   p = buffer;
 
   // searching the end of the string
-  while (*p) {                  // while *p is not '\0'
-    if (*p == '\n' || *p == ':') {  // yeap, we must close the string
+  while (*p) {
+    // while *p is not '\0'
+    if (*p == '\n' || *p == ':') {
+      // yeap, we must close the string
       // here (enter or
       // command-seperator)
       // it is supposed that remarks had already removed from source
-      *p = '\0';                // terminate the string
+      *p = '\0';
       break;
     }
-    p++;                        // next
+    p++;
   }
 
   // get parameters
@@ -4308,7 +4448,7 @@ byte_code comp_create_bin() {
   byte_code bc;
   byte *cp;
   bc_head_t hdr;
-  dword size;
+  uint32_t size;
   unit_file_t uft;
 
   if (!opt_quiet && !opt_interactive) {

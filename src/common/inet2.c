@@ -25,10 +25,6 @@ static int inetlib_init = 0;
 #include <signal.h>
 #endif
 
-#if !defined(socklen_t)
-#define socklen_t unsigned
-#endif
-
 // the length of time (usec) to block waiting for an event
 #define BLOCK_INTERVAL 250000
 
@@ -202,7 +198,7 @@ int net_peek(socket_t s) {
  */
 socket_t net_connect(const char *server_name, int server_port) {
   socket_t sock;
-  dword inaddr;
+  uint32_t inaddr;
   struct sockaddr_in ad;
   struct hostent *hp;
 

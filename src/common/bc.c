@@ -37,7 +37,7 @@ void bc_destroy(bc_t *bc) {
 /*
  * Resize a bytecode segment
  */
-void bc_resize(bc_t *bc, dword new_size) {
+void bc_resize(bc_t *bc, uint32_t new_size) {
   if (new_size != bc->size) {
     bc->ptr = realloc(bc->ptr, new_size);
     bc->size = new_size;
@@ -51,7 +51,7 @@ void bc_resize(bc_t *bc, dword new_size) {
  * add one command
  */
 void bc_add1(bc_t *bc, byte code) {
-  if (bc->count >= (bc->size - 2)) {
+  if (bc->count + sizeof(byte) >= bc->size) {
     bc_resize(bc, bc->size + BC_ALLOC_INCR);
   }
   bc->ptr[bc->count] = code;
@@ -66,10 +66,10 @@ void bc_store1(bc_t *bc, bcip_t offset, byte code) {
 }
 
 /*
- * add one dword
+ * add one uint32_t
  */
-void bc_add_dword(bc_t *bc, dword p1) {
-  if (bc->count >= bc->size - 4) {
+void bc_add_dword(bc_t *bc, uint32_t p1) {
+  if (bc->count + sizeof(uint32_t) >= bc->size) {
     bc_resize(bc, bc->size + BC_ALLOC_INCR);
   }
   memcpy(bc->ptr + bc->count, &p1, 4);
@@ -80,7 +80,7 @@ void bc_add_dword(bc_t *bc, dword p1) {
  * add one command and one long int (32 bits)
  */
 void bc_add2l(bc_t *bc, byte code, long p1) {
-  if (bc->count >= bc->size - 8) {
+  if (bc->count + sizeof(long) >= bc->size) {
     bc_resize(bc, bc->size + BC_ALLOC_INCR);
   }
   bc->ptr[bc->count] = code;
@@ -125,7 +125,7 @@ void bc_add_extpcode(bc_t *bc, int lib, long idx) {
  * add an address
  */
 void bc_add_addr(bc_t *bc, bcip_t idx) {
-  if (bc->count >= bc->size - 4) {
+  if (bc->count + sizeof(bcip_t) >= bc->size) {
     bc_resize(bc, bc->size + BC_ALLOC_INCR);
   }
   memcpy(bc->ptr + bc->count, &idx, 4);
@@ -147,7 +147,7 @@ void bc_add_ctrl(bc_t *bc, code_t code, bcip_t true_ip, bcip_t false_ip) {
  * add an integer
  */
 void bc_add_cint(bc_t *bc, var_int_t v) {
-  if (bc->count >= bc->size - 8) {
+  if (bc->count + sizeof(var_int_t) >= bc->size) {
     bc_resize(bc, bc->size + BC_ALLOC_INCR);
   }
   bc->ptr[bc->count] = kwTYPE_INT;
@@ -160,7 +160,7 @@ void bc_add_cint(bc_t *bc, var_int_t v) {
  * add an real
  */
 void bc_add_creal(bc_t *bc, var_num_t v) {
-  if (bc->count >= bc->size - 16) {
+  if (bc->count + sizeof(var_num_t) >= bc->size) {
     bc_resize(bc, bc->size + BC_ALLOC_INCR);
   }
   bc->ptr[bc->count] = kwTYPE_NUM;
@@ -174,12 +174,12 @@ void bc_add_creal(bc_t *bc, var_num_t v) {
  */
 void bc_add_strn(bc_t *bc, const char *str, int len) {
   if (len > BC_MAX_STORE_SIZE) {
-    sc_raise("STRING TOO BIG");
+    sc_raise("String: buffer size limit exceeded");
   } else {
     bc_add_code(bc, kwTYPE_STR);
     bc_add_dword(bc, len);
-    if (bc->count >= bc->size - len) {
-      bc_resize(bc, bc->size + BC_ALLOC_INCR);
+    if (bc->count + len >= bc->size) {
+      bc_resize(bc, bc->size + BC_ALLOC_INCR + len);
     }
     memcpy(bc->ptr + bc->count, str, len);
     bc->count += len;
@@ -209,6 +209,12 @@ char *bc_store_string(bc_t *bc, char *src) {
       np[len] = 0;
       // include " (or \ ) in next segment
       base = ++p;
+    } else if (*p == '\1') {
+      // revert hidden quote
+      *p = '\"';
+    } else if (*p == '\2') {
+      // revert hidden newline
+      *p = '\n';
     } else if (*p == '\"') {
       // end of string detected
       int seglen = p - base;
@@ -247,9 +253,9 @@ void bc_append(bc_t *dst, bc_t *src) {
 /*
  * appends n bytes from src to dst
  */
-void bc_add_n(bc_t *dst, byte *src, dword n) {
-  if (dst->count >= dst->size - n) {
-    bc_resize(dst, dst->size + n);
+void bc_add_n(bc_t *dst, byte *src, uint32_t n) {
+  if (dst->count + n >= dst->size) {
+    bc_resize(dst, dst->size + BC_ALLOC_INCR + n);
   }
   memcpy(dst->ptr + dst->count, src, n);
   dst->count += n;

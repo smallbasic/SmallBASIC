@@ -18,34 +18,25 @@
 /**
  * Convertion multi-dim index to one-dim index
  */
-bcip_t getarrayidx(var_t *array, var_t **var_map_val) {
+bcip_t get_array_idx(var_t *array) {
   bcip_t idx = 0;
   bcip_t lev = 0;
   bcip_t m = 0;
   var_t var;
-  bcip_t i;
 
   do {
     v_init(&var);
     eval(&var);
-    IF_ERR_RETURN_0;
 
-    if (var.type == V_STR || array->type == V_MAP) {
-      // array element is a string or element is addressing a map
-      map_get_value(array, &var, var_map_val);
-
-      if (code_peek() == kwTYPE_LEVEL_END) {
-        code_skipnext();
-      } else {
-        err_missing_sep();
-      }
-      v_free(&var);
-      return 0;
+    if (prog_error) {
+      break;
+    } else if (var.type == V_STR || array->type == V_MAP) {
+      err_varnotnum();
+      break;
     } else {
+      bcip_t i;
       bcip_t idim = v_getint(&var);
       v_free(&var);
-      IF_ERR_RETURN_0;
-
       idim = idim - array->v.a.lbound[lev];
 
       m = idim;
@@ -65,7 +56,7 @@ bcip_t getarrayidx(var_t *array, var_t **var_map_val) {
       // next
       lev++;
     }
-  } while (code_peek() != kwTYPE_LEVEL_END);
+  } while (!prog_error && code_peek() != kwTYPE_LEVEL_END);
 
   if (!prog_error) {
     if ((int) array->v.a.maxdim != lev) {
@@ -76,28 +67,51 @@ bcip_t getarrayidx(var_t *array, var_t **var_map_val) {
 }
 
 /**
+ * Returns the map field along with the parent map
+ */
+var_t *code_getvarptr_map(var_t **var_map) {
+  var_t *var_p = NULL;
+  if (code_peek() == kwTYPE_VAR) {
+    code_skipnext();
+    *var_map = tvar[code_getaddr()];
+    if (code_peek() == kwTYPE_UDS_EL) {
+      var_p = code_resolve_map(*var_map, 1);
+    }
+  }
+  return var_p;
+}
+
+void v_set_self(var_t *var) {
+  if (ctask->has_sysvars) {
+    var_t *self = tvar[SYSVAR_SELF];
+    if (var != NULL) {
+      self->const_flag = 0;
+      self->type = V_REF;
+      self->v.ref = var;
+    } else if (self->type != V_INT) {
+      self->const_flag = 1;
+      self->type = V_INT;
+      self->v.i = 0;
+    }
+  }
+}
+
+/**
  * Used by code_getvarptr() to retrieve an element ptr of an array
  */
 var_t *code_getvarptr_arridx(var_t *basevar_p) {
-  bcip_t array_index;
   var_t *var_p = NULL;
 
   if (code_peek() != kwTYPE_LEVEL_BEGIN) {
     err_arrmis_lp();
   } else {
-    code_skipnext(); // '('
-    array_index = getarrayidx(basevar_p, &var_p);
-
-    if (var_p != NULL) {
-      // map value
-      return var_p;
-    }
-
+    code_skipnext();
+    bcip_t array_index = get_array_idx(basevar_p);
     if (!prog_error) {
       if ((int) array_index < basevar_p->v.a.size && (int) array_index >= 0) {
         var_p = v_elem(basevar_p, array_index);
         if (code_peek() == kwTYPE_LEVEL_END) {
-          code_skipnext();      // ')', ')' level
+          code_skipnext();
           if (code_peek() == kwTYPE_LEVEL_BEGIN) {
             // there is a second array inside
             if (var_p->type != V_ARRAY) {
@@ -117,12 +131,54 @@ var_t *code_getvarptr_arridx(var_t *basevar_p) {
   return var_p;
 }
 
+var_t *code_get_map_element(var_t *map, var_t *field) {
+  var_t *result = NULL;
+
+  if (code_peek() != kwTYPE_LEVEL_BEGIN) {
+    err_arrmis_lp();
+  } else if (field->type == V_PTR) {
+    prog_ip = cmd_push_args(kwFUNC, field->v.ap.p, field->v.ap.v);
+    v_set_self(map);
+    bc_loop(2);
+    v_set_self(NULL);
+
+    if (!prog_error) {
+      stknode_t udf_rv;
+      code_pop(&udf_rv, kwTYPE_RET);
+      if (udf_rv.type != kwTYPE_RET) {
+        err_stackmess();
+      } else {
+        v_set(map, udf_rv.x.vdvar.vptr);
+        v_free(udf_rv.x.vdvar.vptr);
+        v_detach(udf_rv.x.vdvar.vptr);
+        result = map;
+      }
+    }
+  } else if (field->type == V_ARRAY) {
+    result = code_getvarptr_arridx(field);
+  } else {
+    code_skipnext();
+    var_t var;
+    v_init(&var);
+    eval(&var);
+    if (!prog_error) {
+      map_get_value(field, &var, &result);
+      if (code_peek() == kwTYPE_LEVEL_END) {
+        code_skipnext();
+      } else {
+        err_missing_sep();
+      }
+    }
+    v_free(&var);
+  }
+  return result;
+}
+
 /**
  * resolve a composite variable reference, eg: ar.ch(0).foo
  */
 var_t *code_resolve_varptr(var_t *var_p, int until_parens) {
   int deref = 1;
-  var_p = eval_ref_var(var_p);
   while (deref && var_p != NULL) {
     switch (code_peek()) {
     case kwTYPE_LEVEL_BEGIN:
@@ -138,56 +194,39 @@ var_t *code_resolve_varptr(var_t *var_p, int until_parens) {
     default:
       deref = 0;
     }
+  }
+  return var_p;
+}
+
+/**
+ * resolve a composite variable reference, eg: ar.ch(0).foo
+ */
+var_t *code_resolve_map(var_t *var_p, int until_parens) {
+  int deref = 1;
+  var_t *v_parent = var_p;
+  var_p = eval_ref_var(var_p);
+  while (deref && var_p != NULL) {
+    switch (code_peek()) {
+    case kwTYPE_LEVEL_BEGIN:
+      if (until_parens) {
+        deref = 0;
+      } else {
+        var_p = code_get_map_element(v_parent, var_p);
+      }
+      break;
+    case kwTYPE_UDS_EL:
+      var_p = map_resolve_fields(var_p);
+      break;
+    default:
+      deref = 0;
+    }
     var_p = eval_ref_var(var_p);
   }
   return var_p;
 }
 
 /**
- * Used by code_isvar() to retrieve an element ptr of an array
- */
-var_t *code_isvar_arridx(var_t *basevar_p) {
-  bcip_t array_index;
-  var_t *var_p = NULL;
-
-  if (code_peek() != kwTYPE_LEVEL_BEGIN) {
-    return NULL;
-  } else {
-    code_skipnext(); // '('
-    array_index = getarrayidx(basevar_p, &var_p);
-
-    if (var_p != NULL) {
-      // map value
-      return var_p;
-    }
-
-    if (!prog_error) {
-      if ((int) array_index < basevar_p->v.a.size) {
-        var_p = v_elem(basevar_p, array_index);
-        if (code_peek() == kwTYPE_LEVEL_END) {
-          code_skipnext();      // ')', ')' level
-          if (code_peek() == kwTYPE_LEVEL_BEGIN) {
-            // there is a second array inside
-            if (var_p->type != V_ARRAY) {
-              return NULL;
-            } else {
-              return code_isvar_arridx(var_p);
-            }
-          }
-        } else {
-          return NULL;
-        }
-      } else {
-        return NULL;
-      }
-    }
-  }
-
-  return var_p;
-}
-
-/**
- * returns true if the next code is a variable. if the following code is an 
+ * returns true if the next code is a variable. if the following code is an
  * expression (no matter if the first item is a variable), returns false
  */
 int code_isvar() {

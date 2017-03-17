@@ -88,7 +88,6 @@ typedef long int var_int_t;
 #define SB_TEXTLINE_SIZE    8192  // RTL
 #define SB_EXEC_STACK_SIZE  256   // executor's stack size
 #define SB_EVAL_STACK_SIZE  16    // evaluation stack size
-#define SB_PI               3.14159265358979323846
 
 // STD MACROS
 #define ABS(x)    ( ((x) < 0) ? -(x) : (x) )            // absolute value
@@ -110,27 +109,13 @@ typedef long int var_int_t;
 /*
  * data-types
  */
-typedef intptr_t mem_t;
-
-#if !defined(byte)
-  typedef unsigned char byte;
-#endif
-
 typedef char *char_p_t;
-
-// 16-bit integer
-typedef unsigned short word;
-
-// 32-bit integer
-typedef unsigned int dword;
-
-// basic code unit
-typedef byte code_t;
-
+typedef uint8_t byte;
+typedef uint8_t code_t;
 typedef int32_t fcode_t;
 typedef int32_t pcode_t;
 typedef int32_t bid_t;
-typedef dword bcip_t;
+typedef uint32_t bcip_t;
 
 #define INVALID_ADDR    0xFFFFFFFF
 #define OS_ADDRSZ   4   // size of address pointer (always 4 for 32b addresses)

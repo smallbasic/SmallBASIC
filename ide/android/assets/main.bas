@@ -3,9 +3,10 @@ const boldOn = chr(27) + "[1m"
 const boldOff = chr(27) + "[21m"
 const char_h = txth("Q")
 const lineSpacing = 2 + char_h
-const onlineUrl = "http://smallbasic.sourceforge.net/?q=export/code/1243"
-const idxEdit = 5
-const idxFiles = 6
+const onlineUrl = "http://smallbasic.github.io/samples/index.bas"
+const idxEdit = 6
+const idxFiles = 7
+const saveasId = "__bn_saveas__"
 const renameId = "__bn_rename__"
 const deleteId = "__bn_delete__"
 const newId = "__bn_new__"
@@ -102,7 +103,7 @@ sub do_about()
   print
   print "Version "; sbver
   print
-  print "Copyright (c) 2002-2016 Chris Warren-Smith"
+  print "Copyright (c) 2002-2017 Chris Warren-Smith"
   print "Copyright (c) 1999-2006 Nic Christopoulos" + chr(10)
   print "http://smallbasic.sourceforge.net" + chr(10)
   print "SmallBASIC comes with ABSOLUTELY NO WARRANTY. ";
@@ -110,8 +111,6 @@ sub do_about()
   print "redistribute it and/or modify it under the terms of the ";
   print "GNU General Public License version 2 as published by ";
   print "the Free Software Foundation." + chr(10)
-  print "Envy Code R Font v0.8 used with permission ";
-  print "http://damieng.com/envy-code-r" + chr(10)
   print
   server_info()
   do_okay_button()
@@ -119,6 +118,8 @@ sub do_about()
 end
 
 sub do_setup()
+  local frm
+
   color 3, 0
   cls
   print boldOn + "Setup web service port number."
@@ -130,6 +131,7 @@ sub do_setup()
   print
   color 15, 3
   input socket
+
   if (len(socket) > 0) then
     env("serverSocket=" + socket)
     randomize timer
@@ -138,10 +140,32 @@ sub do_setup()
       token += chr (asc("A") + ((rnd * 1000) % 20))
     next i
     env("serverToken=" + token)
-    local msg = "You must restart SmallBASIC for this change to take effect"
-    local wnd = window()
-    wnd.alert(msg, "Restart required")
   endif
+
+  color 3, 0
+  cls
+  print "Web service port number: " + env("serverSocket")
+  print
+  print boldOn + "Select display font."
+  print boldOff
+  print "Envy Code R:"
+  print "  http://damieng.com/envy-code-r"
+  print "Inconsolata:"
+  print "  Copyright 2006 The Inconsolata Project Authors"
+  print "  http://scripts.sil.org/OFL"
+  print
+  dim frm.inputs(1)
+  frm.inputs(0).type="list"
+  frm.inputs(0).value="Inconsolata|Envy Code R"
+  frm.inputs(0).selectedIndex=env("fontId")
+  frm.inputs(0).height=TXTH("Q")*2+4
+  frm = form(frm)
+  frm.doEvents()
+  env("fontId=" + frm.inputs(0).selectedIndex)
+
+  local msg = "You must restart SmallBASIC for this change to take effect."
+  local wnd = window()
+  wnd.alert(msg, "Restart required")
   color 7, 0
   cls
 end
@@ -237,11 +261,14 @@ sub manageFiles()
 
   sub createUI()
     cls
+    local num_chars = 42
+    local abbr = TXTW(".") * num_chars > xmax
     f.inputs << mk_menu(closeId, "<<", 0)
-    f.inputs << mk_menu(viewId, "View",  menu_gap)
-    f.inputs << mk_menu(renameId,"Rename", menu_gap)
+    f.inputs << mk_menu(viewId, "View", menu_gap)
+    f.inputs << mk_menu(renameId, IFF(abbr, "Ren", "Rename"), menu_gap)
     f.inputs << mk_menu(newId, "New", menu_gap)
-    f.inputs << mk_menu(deleteId, "Delete", menu_gap)
+    f.inputs << mk_menu(deleteId, IFF(abbr, "Del", "Delete"), menu_gap)
+    f.inputs << mk_menu(saveasId, IFF(abbr, "SavAs", "Save-As"), menu_gap)
     bn_edit.x = 0
     bn_edit.y = char_h + 4
     bn_edit.width = xmax
@@ -300,6 +327,10 @@ sub manageFiles()
     f.value = ""
   end
 
+  sub duplicateError()
+    wnd.alert("File " + newFile + " already exists", "Duplicate File")
+  end
+
   sub renameFile()
     ' retrieve the edit value
     f.refresh(true)
@@ -310,19 +341,26 @@ sub manageFiles()
     endIf
 
     if (exist(selectedFile) and selectedFile != newFile) then
-      try
-        rename selectedFile, newFile
+      if (exist(newFile)) then
+        duplicateError()
+      else
+        try
+          if sv_as then
+            copy selectedFile, newFile
+          else
+            rename selectedFile, newFile
+          endif
+        catch
+          wnd.alert("Error renaming file: " + e)
+        end try
         reloadList(selectedIndex)
-      catch
-        wnd.alert("Error renaming file: " + e)
-      end try
+      endif
     endif
     f.value = selectedFile
   end
 
   sub viewFile()
     local frm, button
-
     if (!exist(selectedFile)) then
       wnd.alert("Select a file and try again")
     else
@@ -352,7 +390,7 @@ sub manageFiles()
     endIf
     try
       if (exist(newFile)) then
-        wnd.alert("File " + newFile + " already exists", "Duplicate File")
+        duplicateError()
       else
         dim text
         text << "REM SmallBASIC"
@@ -385,6 +423,10 @@ sub manageFiles()
     f.doEvents()
     select case f.value
     case renameId
+      sv_as = false
+      renameFile()
+    case saveasId
+      sv_as = true
       renameFile()
     case deleteId
       deleteFile()

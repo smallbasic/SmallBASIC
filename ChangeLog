@@ -1,3 +1,61 @@
+2017-03-12 (0.12.9)
+	COMMON: fix internal error handling long string variables
+
+2017-02-08 (0.12.9)
+	COMMON: create MAP from single line JSON without ARRAY command
+
+2017-02-05 (0.12.9)
+	COMMON: update parameter handling for performance
+
+2017-02-05 (0.12.9)
+	COMMON: can now attach SUB/FUNCs as MAP fields
+
+2017-01-25 (0.12.9)
+	UI: CIRCLE drawing is now anti-aliased
+
+2017-01-25 (0.12.9)
+	UI: improved CIRCLE performance
+
+2017-01-21 (0.12.9)
+	COMMON: allow array access via [] characters
+
+2017-01-18 (0.12.9)
+	COMMON: clear out of scope CATCH variables
+
+2017-01-14 (0.12.9)
+	COMMON: python style here-document
+
+2017-01-08 (0.12.9)
+	UI: editor display cursor row/col position
+
+2017-01-01 (0.12.9)
+	ANDROID: select alternative font
+
+2016-12-31 (0.12.9)
+	UI: show unsaved indicator following paste
+
+2016-12-30 (0.12.9)
+	ANDROID: added share command
+	UI: added menu widget (three vertical dots)
+
+2016-12-23 (0.12.9)
+	ANDROID: fix '?' key input using gboard
+
+2016-12-18 (0.12.9)
+	ANDROID Allow input of special characters
+	SDL Allow input of special characters
+	Fix compile warnings from clang
+
+2016-10-30 (0.12.9)
+	Removed debugging output from RUN (windows build)
+
+2016-10-30 (0.12.9)
+	Fixed cursor when displaying the popup while editing
+	Added "Save-As" option to the file menu (thanks Josip)
+
+2016-10-24 (0.12.9)
+	SDL throw error when invalid .WAV passes to PLAY
+
 2016-10-20 (0.12.8)
 	Now returns an error when arguments passed to:
 	TIMER, TICKS, PROGLINE, XPOS, YPOS, RND

@@ -27,6 +27,11 @@ int compareZIndex(const void *p1, const void *p2) {
   return (*i1)->_zIndex < (*i2)->_zIndex ? -1 : (*i1)->_zIndex == (*i2)->_zIndex ? 0 : 1;
 }
 
+bool Shape::isFullScreen() const {
+  MAExtent screenSize = maGetScrSize();
+  return _width == EXTENT_X(screenSize) && _height == EXTENT_Y(screenSize);
+}
+
 Screen::Screen(int x, int y, int width, int height, int fontSize) :
   Shape(x, y, width, height),
   _font(0),
@@ -98,18 +103,16 @@ void Screen::clear() {
   _shapes.removeAll();
   _inputs.removeAll();
   _images.removeAll();
-  _label.empty();
+  _label.clear();
 }
 
 void Screen::drawLabel() {
-  if (_label.length()) {
-    MAExtent screenSize = maGetScrSize();
-    int screenW = EXTENT_X(screenSize);
-    int screenH = EXTENT_Y(screenSize);
-    int w = _charWidth * (_label.length() + 2);
+  if (!_label.empty()) {
+    int labelLen = _label.length();
+    int w = _charWidth * (labelLen + 2);
     int h = _charHeight + 2;
-    int top = screenH - h;
-    int left = (screenW - w) / 2;
+    int top = _height - h;
+    int left = (_width - w) / 2;
     int textY = top + ((h - _charHeight) / 2);
 
     maSetColor(0xbfbfbf);
@@ -120,8 +123,19 @@ void Screen::drawLabel() {
     maLine(left, top + h - 1, left + w, top + h - 1);
     maLine(left + w, top + 1, left + w, top + h - 1);
     maSetColor(0x403c44);
-    maDrawText(left + _charWidth, textY, _label.c_str(), _label.length());
+    maDrawText(left + _charWidth, textY, _label.c_str(), labelLen);
   }
+}
+
+void Screen::drawMenu() {
+  static const char dot[] = {'\260', '\0'};
+  int gap = _charHeight / 3;
+  int left = _width - _charWidth - (_charWidth / 2);
+  int top = (_height - _charHeight) + gap;
+  maSetColor(_fg);
+  maDrawText(left, top, dot, 1);
+  maDrawText(left, top - gap, dot, 1);
+  maDrawText(left, top - gap - gap, dot, 1);
 }
 
 void Screen::drawShape(Shape *rect) {
@@ -188,6 +202,11 @@ void Screen::drawOverlay(bool vscroll) {
   }
 
   drawLabel();
+
+  if ((!_inputs.empty() || !_label.empty()) && isFullScreen()) {
+    // draw the menu widget when in UI mode
+    drawMenu();
+  }
 }
 
 void Screen::drawInto(bool background) {
@@ -293,6 +312,28 @@ void Screen::layoutInputs(int newWidth, int newHeight) {
       r1->layout(newWidth, newHeight);
     }
   }
+}
+
+// whether the point overlaps the label text
+bool Screen::overLabel(int px, int py) {
+  bool result;
+  if (!_label.empty()) {
+    int w = _charWidth * (_label.length() + 2);
+    int h = _charHeight + 2;
+    int top = _height - h;
+    int left = (_width - w) / 2;
+    result = (!OUTSIDE_RECT(px, py, left, top, w, h));
+  } else {
+    result = false;
+  }
+  return result;
+}
+
+// whether the point overlaps the menu widget
+bool Screen::overMenu(int px, int py) {
+  int w = _charWidth * 3;
+  int h = _charHeight * 2;
+  return (!OUTSIDE_RECT(px, py, _width - w, _height - h, w, h));
 }
 
 // whether the given point overlaps with the screen rectangle
@@ -449,6 +490,7 @@ void Screen::updateInputs(var_p_t form, bool setVars) {
         _inputs.remove(it);
         delete next;
         setDirty();
+        it--;
       } else if (next->updateUI(form, field)) {
         setDirty();
       }
@@ -508,6 +550,11 @@ void GraphicScreen::clear() {
   Screen::clear();
 }
 
+void GraphicScreen::drawArc(int xc, int yc, double r, double start, double end, double aspect) {
+  drawInto();
+  maArc(xc, yc, r, start, end, aspect);
+}
+
 void GraphicScreen::drawBase(bool vscroll, bool update) {
   MARect srcRect;
   MAPoint2d dstPoint;
@@ -520,14 +567,17 @@ void GraphicScreen::drawBase(bool vscroll, bool update) {
   MAHandle currentHandle = maSetDrawTarget(HANDLE_SCREEN);
   maDrawImageRegion(_image, &srcRect, &dstPoint, TRANS_NONE);
 
-#if !defined(_FLTK)
   drawOverlay(vscroll);
-#endif
   _dirty = 0;
   if (update) {
     maUpdateScreen();
   }
   maSetDrawTarget(currentHandle);
+}
+
+void GraphicScreen::drawEllipse(int xc, int yc, int rx, int ry, int fill) {
+  drawInto();
+  maEllipse(xc, yc, rx, ry, fill);
 }
 
 void GraphicScreen::drawInto(bool background) {
@@ -1023,9 +1073,7 @@ void TextScreen::drawBase(bool vscroll, bool update) {
   }
 
   // draw the base components
-#if !defined(_FLTK)
   drawOverlay(vscroll);
-#endif
   _dirty = 0;
   maUpdateScreen();
   maSetDrawTarget(currentHandle);

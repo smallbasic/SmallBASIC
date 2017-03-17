@@ -166,7 +166,7 @@ int process_options(int argc, char *argv[]) {
           break;
 
         case 'm':
-          // load run-time modules 
+          // load run-time modules
           opt_loadmod = 1;
           if (i + 1 < argc) {
             strcpy(opt_modlist, argv[++i]);
@@ -261,7 +261,7 @@ int process_options(int argc, char *argv[]) {
 #elif defined(_UnixOS)
     sprintf(g_file, "%ctmp%csb%d.bas", OS_DIRSEP, OS_DIRSEP, getpid());
 #else
-    sprintf(g_file, "sb%d.bas", getpid());      // for minimal GNU systems like 
+    sprintf(g_file, "sb%d.bas", getpid());      // for minimal GNU systems like
     // MINGW
 #endif
 

@@ -37,6 +37,7 @@ struct Runtime : public System {
   bool enableSensor(int sensorType);
   bool getBoolean(const char *methodName);
   String getString(const char *methodName);
+  String getStringBytes(const char *methodName);
   int getInteger(const char *methodName);
   int getUnicodeChar(int keyCode, int metaState);
   void redraw() { _graphics->redraw(); }
@@ -55,21 +56,26 @@ struct Runtime : public System {
   void setLocationData(var_t *retval);
   void setSensorData(var_t *retval);
   void setString(const char *methodName, const char *value);
+  void setStringBytes(const char *methodName, const char *value);
   void speak(const char *text) { setString("speak", text); }
   void runShell();
   char *loadResource(const char *fileName);
   void optionsBox(StringList *items);
   void setWindowTitle(const char *title) {}
+  void share(const char *path) { setString("share", path); }
   void showCursor(CursorType cursorType) {}
   void showKeypad(bool show);
   void onResize(int w, int h);
+  void onUnicodeChar(int ch);
   void loadConfig();
-  void loadEnvConfig(Properties &profile, const char *key);
+  void loadEnvConfig(Properties<String *> &settings, const char *key);
+  bool loadSettings(Properties<String *> &settings);
   void saveConfig();
   void runPath(const char *path);
-  void setClipboardText(const char *s) { setString("setClipboardText", s); }
+  void setClipboardText(const char *s) { setStringBytes("setClipboardText", s); }
   char *getClipboardText();
   void setFocus(bool focus) { _hasFocus = focus; }
+  int  getFontId();
 
 private:
   bool _keypadActive;

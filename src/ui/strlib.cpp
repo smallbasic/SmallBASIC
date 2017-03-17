@@ -36,7 +36,7 @@ String::~String() {
 }
 
 const String &String::operator=(const String &s) {
-  empty();
+  clear();
   if (_buffer != s._buffer && s._buffer != NULL) {
     _buffer = strdup(s._buffer);
   }
@@ -44,7 +44,7 @@ const String &String::operator=(const String &s) {
 }
 
 const String &String::operator=(const char *s) {
-  empty();
+  clear();
   if (_buffer != s) {
     _buffer = strdup(s);
   }
@@ -65,7 +65,7 @@ String &String::append(const String &s) {
 }
 
 String &String::append(const String *s) {
-  if (s && s->length()) {
+  if (s && !s->empty()) {
     append(s->_buffer);
   }
   return *this;
@@ -115,7 +115,7 @@ String &String::append(FILE *fp, long filelen) {
   return *this;
 }
 
-void String::empty() {
+void String::clear() {
   free(_buffer);
   _buffer = NULL;
 }
@@ -135,7 +135,7 @@ bool String::equals(const String &s, bool ignoreCase) const {
 }
 
 bool String::equals(const char *s, bool ignoreCase) const {
-  return (_buffer == 0 ? s == 0 : ignoreCase ? 
+  return (_buffer == 0 ? s == 0 : ignoreCase ?
           strcasecmp(_buffer, s) == 0 : strcmp(_buffer, s) == 0);
 }
 
@@ -230,19 +230,37 @@ void String::trim() {
     iend--;
   }
   String s = substring(ibegin, iend);
-  empty();
+  clear();
   append(s);
+}
+
+//--List------------------------------------------------------------------
+
+template<> void List<String *>::add(const char *s) {
+  add(new String(s, strlen(s)));
+}
+
+template<> bool List<String *>::contains(const char *s) {
+  bool result = false;
+  for (String **it = begin(); it != end(); it++) {
+    String *next = (*it);
+    if (next->equals(s)) {
+      result = true;
+      break;
+    }
+  }
+  return result;
 }
 
 //--Properties------------------------------------------------------------------
 
-void Properties::load(const char *s) {
+template<> void Properties<String *>::load(const char *s) {
   if (s && s[0]) {
     load(s, strlen(s));
   }
 }
 
-void Properties::load(const char *s, int slen) {
+template<> void Properties<String *>::load(const char *s, int slen) {
   if (s == 0 || s[0] == 0 || slen == 0) {
     return;
   }
@@ -252,8 +270,8 @@ void Properties::load(const char *s, int slen) {
 
   int i = 0;
   while (i < slen) {
-    attr.empty();
-    value.empty();
+    attr.clear();
+    value.clear();
 
     // remove w/s before attribute
     while (i < slen && IS_WHITE(s[i])) {
@@ -318,53 +336,10 @@ void Properties::load(const char *s, int slen) {
   }
 }
 
-String *Properties::get(const char *key) {
-  for (int i = 0; i < this->_count; i++) {
-    String *nextKey = (String *) _head[i++];
-    if (nextKey == NULL || i == _count) {
-      return NULL;
-    }
-    String *nextValue = (String *) _head[i];
-    if (nextValue == NULL) {
-      return NULL;
-    }
-    if (nextKey->equals(key)) {
-      return nextValue;
-    }
-  }
-  return NULL;
-}
-
-String *Properties::get(int i) const {
-  int index = (i * 2) + 1;
-  return index < _count ? (String *) _head[index] : 0;
-}
-
-String *Properties::getKey(int i) const {
-  int index = i * 2;
-  return index < _count ? (String *) _head[index] : 0;
-}
-
-void Properties::get(const char *key, List<String *> *arrayValues) {
-  for (int i = 0; i < _count; i++) {
-    String *nextKey = (String *) _head[i++];
-    if (nextKey == NULL || i == _count) {
-      break;
-    }
-    String *nextValue = (String *) _head[i];
-    if (nextValue == NULL) {
-      break;
-    }
-    if (nextKey->equals(key)) {
-      arrayValues->add(new String(*nextValue));
-    }
-  }
-}
-
-void Properties::put(String &key, String &value) {
-  String *prev = get(key.c_str());
+template<> void Properties<String *>::put(const char *key, const char *value) {
+  String *prev = get(key);
   if (prev) {
-    prev->empty();
+    prev->clear();
     prev->append(value);
   } else {
     add(new String(key));
@@ -372,43 +347,4 @@ void Properties::put(String &key, String &value) {
   }
 }
 
-void Properties::put(const char *key, const char *value) {
-  String *prev = get(key);
-  if (prev) {
-    prev->empty();
-    prev->append(value);
-  } else {
-    String *k = new String();
-    String *v = new String();
-    k->append(key);
-    v->append(value);
-    add(k);
-    add(v);
-  }
-}
 
-String Properties::toString() {
-  String s;
-  for (int i = 0; i < _count; i++) {
-    String *nextKey = (String *) _head[i++];
-    if (nextKey == NULL || nextKey->length() == 0 || i == _count) {
-      break;
-    }
-    String *nextValue = (String *) _head[i];
-    if (nextValue != NULL && nextValue->length() > 0) {
-      s.append(nextKey->c_str());
-      s.append("='");
-      s.append(nextValue->c_str());
-      s.append("'\n");
-    }
-  }
-  return s;
-}
-
-void Properties::operator=(Properties &p) {
-  removeAll();
-  for (int i = 0; i < p._count; i++) {
-    add(p._head[i]);
-  }
-  p.emptyList();
-}

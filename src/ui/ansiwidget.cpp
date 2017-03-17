@@ -129,6 +129,16 @@ void AnsiWidget::addImage(ImageDisplay &image) {
   flush(false, false, MAX_PENDING_GRAPHICS);
 }
 
+void AnsiWidget::drawArc(int xc, int yc, double r, double start, double end, double aspect) {
+  _back->drawArc(xc, yc, r, start, end, aspect);
+  flush(false, false, MAX_PENDING_GRAPHICS);
+}
+
+void AnsiWidget::drawEllipse(int xc, int yc, int rx, int ry, int fill) {
+  _back->drawEllipse(xc, yc, rx, ry, fill);
+  flush(false, false, MAX_PENDING_GRAPHICS);
+}
+
 // draw a line onto the offscreen buffer
 void AnsiWidget::drawLine(int x1, int y1, int x2, int y2) {
   _back->drawLine(x1, y1, x2, y2);
@@ -580,13 +590,14 @@ void AnsiWidget::doSwipe(int start, bool moveDown, int distance, int maxScroll) 
 
 // draws the focus screen's active button
 void AnsiWidget::drawActiveButton() {
-#if defined(_FLTK)
-  maUpdateScreen();
-#elif defined(_SDL)
+#if defined(_SDL)
   if (_focus != NULL && !_activeButton->hasHover()) {
     MAHandle currentHandle = maSetDrawTarget(HANDLE_SCREEN);
     _focus->drawShape(_activeButton);
     _focus->drawLabel();
+    if (_activeButton->isFullScreen()) {
+      _focus->drawMenu();
+    }
     maUpdateScreen();
     maSetDrawTarget(currentHandle);
   }
@@ -599,6 +610,9 @@ void AnsiWidget::drawActiveButton() {
     MAHandle currentHandle = maSetDrawTarget(HANDLE_SCREEN);
     _focus->drawShape(_activeButton);
     _focus->drawLabel();
+    if (_activeButton->isFullScreen()) {
+      _focus->drawMenu();
+    }
     maUpdateScreen();
     maSetDrawTarget(currentHandle);
   }

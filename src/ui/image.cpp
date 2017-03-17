@@ -261,7 +261,7 @@ ImageBuffer *load_image(dev_file_t *filep) {
       error = lodepng_decode32(&image, &w, &h, (unsigned char *)var_p->v.p.ptr,
                                var_p->v.p.length);
       v_free(var_p);
-      free(var_p);
+      v_detach(var_p);
       break;
     case ft_stream:
       error = lodepng_decode32_file(&image, &w, &h, filep->name);

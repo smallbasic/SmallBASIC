@@ -70,7 +70,7 @@ void eval(var_t *result);
  * sets the data-p. the data-p is used for READ/DATA commands.
  * actually it is points to the next position of which the READ will use.
  */
-void set_dataip(word label_id);
+void set_dataip(uint16_t label_id);
 
 /**
  * @ingroup exec

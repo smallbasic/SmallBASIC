@@ -96,6 +96,14 @@ void osd_setcolor(long color) {
 void osd_line(int x1, int y1, int x2, int y2) {
 }
 
+// draw an ellipse
+void osd_ellipse(int xc, int yc, int xr, int yr, int fill) {
+}
+
+// draw an arc
+void osd_arc(int xc, int yc, double r, double as, double ae, double aspect) {
+}
+
 // draw a pixel
 void osd_setpixel(int x, int y) {
 }

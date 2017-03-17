@@ -195,60 +195,60 @@ FormInput *create_input(var_p_t v_field) {
   const char *label = map_get_str(v_field, FORM_INPUT_LABEL);
   const char *type = map_get_str(v_field, FORM_INPUT_TYPE);
   const char *help = map_get_str(v_field, FORM_INPUT_HELP);
+  var_p_t value = map_get(v_field, FORM_INPUT_VALUE);
 
   if (label == NULL) {
-    label = "Label";
+    label = "";
   }
 
-  var_p_t value = map_get(v_field, FORM_INPUT_VALUE);
   if (value == NULL) {
     value = map_add_var(v_field, FORM_INPUT_VALUE, 0);
     v_setstr(value, label);
   }
 
   FormInput *widget = NULL;
-  if (type != NULL) {
-    if (strcasecmp("button", type) == 0) {
-      widget = new FormButton(label, x, y, w, h);
-    } else if (strcasecmp("label", type) == 0) {
-      widget = new FormLabel(label, x, y, w, h);
-    } else if (strcasecmp("link", type) == 0) {
-      bool external = map_get_int(v_field, FORM_INPUT_IS_EXTERNAL, 0);
-      widget = new FormLink(label, external, x, y, w, h);
-    } else if (strcasecmp("listbox", type) == 0 ||
-               strcasecmp("list", type) == 0) {
-      ListModel *model = new ListModel(get_selected_index(v_field), value);
-      widget = new FormListBox(model, help, x, y, w, h);
-    } else if (strcasecmp("choice", type) == 0 ||
-               strcasecmp("dropdown", type) == 0) {
-      ListModel *model = new ListModel(get_selected_index(v_field), value);
-      widget = new FormDropList(model, x, y, w, h);
-    } else if (strcasecmp("text", type) == 0) {
-      int maxSize = map_get_int(v_field, FORM_INPUT_LENGTH, -1);
-      int charHeight = g_system->getOutput()->getCharHeight();
-      int charWidth = g_system->getOutput()->getCharWidth();
-      if (maxSize < 1 || maxSize > 1024) {
-        maxSize = 100;
-      }
-      const char *text = NULL;
-      if (value->type == V_STR) {
-        text = value->v.p.ptr;
-      }
-      if (h * 2 >= charHeight) {
-        widget = new TextEditInput(text, charWidth, charHeight, x, y, w, h);
-      } else {
-        widget = new FormLineInput(text, help, maxSize, false, x, y, w, h);
-      }
-    } else if (strcasecmp("image", type) == 0) {
-      const char *name = map_get_str(v_field, FORM_INPUT_NAME);
-      ImageDisplay *image = create_display_image(v_field, name);
-      if (image != NULL) {
-        widget = new FormImage(image, x, y);
-      }
-    }
-  }
-  if (widget == NULL) {
+  if (type == NULL || strcasecmp("button", type) == 0) {
     widget = new FormButton(label, x, y, w, h);
+  } else if (strcasecmp("label", type) == 0) {
+    widget = new FormLabel(label, x, y, w, h);
+  } else if (strcasecmp("link", type) == 0) {
+    bool external = map_get_int(v_field, FORM_INPUT_IS_EXTERNAL, 0);
+    widget = new FormLink(label, external, x, y, w, h);
+  } else if (strcasecmp("listbox", type) == 0 ||
+             strcasecmp("list", type) == 0) {
+    ListModel *model = new ListModel(get_selected_index(v_field), value);
+    widget = new FormListBox(model, help, x, y, w, h);
+  } else if (strcasecmp("choice", type) == 0 ||
+             strcasecmp("dropdown", type) == 0) {
+    ListModel *model = new ListModel(get_selected_index(v_field), value);
+    widget = new FormDropList(model, x, y, w, h);
+  } else if (strcasecmp("text", type) == 0) {
+    int maxSize = map_get_int(v_field, FORM_INPUT_LENGTH, -1);
+    int charHeight = g_system->getOutput()->getCharHeight();
+    int charWidth = g_system->getOutput()->getCharWidth();
+    if (maxSize < 1 || maxSize > 1024) {
+      maxSize = 100;
+    }
+    const char *text = NULL;
+    if (value->type == V_STR) {
+      text = value->v.p.ptr;
+    }
+    if (h * 2 >= charHeight) {
+      widget = new TextEditInput(text, charWidth, charHeight, x, y, w, h);
+    } else {
+      widget = new FormLineInput(text, help, maxSize, false, x, y, w, h);
+    }
+  } else if (strcasecmp("image", type) == 0) {
+    const char *name = map_get_str(v_field, FORM_INPUT_NAME);
+    ImageDisplay *image = create_display_image(v_field, name);
+    if (image != NULL) {
+      widget = new FormImage(image, x, y);
+    }
+  } else if (strcasecmp("print", type) == 0) {
+    const char *text = map_get_str(v_field, FORM_INPUT_VALUE);
+    if (text) {
+      g_system->getOutput()->print(text);
+    }
   }
   return widget;
 }
@@ -283,14 +283,15 @@ extern "C" void v_create_form(var_p_t var) {
       var_p_t elem = v_elem(inputs, i);
       if (elem->type == V_MAP) {
         FormInput *widget = create_input(elem);
-        widget->construct(var, elem, i);
-        out->addInput(widget);
-        if (i_focus == i || inputs->v.a.size == 1) {
-          widget->setFocus(true);
+        if (widget != NULL) {
+          widget->construct(var, elem, i);
+          out->addInput(widget);
+          if (i_focus == i || inputs->v.a.size == 1) {
+            widget->setFocus(true);
+          }
         }
       }
     }
-
     out->setDirty();
     v_zerostr(map_add_var(var, FORM_VALUE, 0));
     create_func(var, "doEvents", cmd_form_do_events);

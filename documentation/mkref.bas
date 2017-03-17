@@ -1,6 +1,11 @@
 #
 # Generate the input file using the following SQL query:
 #
+# 1. import site data into mysql
+#   mysql -u <username> -p -h localhost smallbasic < backup_xxx.sql
+#
+# 2. export from mysql
+#
 # select FDB.body_value, FDCB.comment_body_value, FDB.entity_id
 # from d7_field_data_body as FDB
 # left outer join d7_comment as C on C.nid = FDB.entity_id
@@ -8,7 +13,7 @@
 # where FDB.body_value like '%sbasic reference%'
 # order by FDB.body_value, FDB.entity_id
 #
-# Then export the results in JSON format
+# 3. Select the JSON export format from mysql-workbench
 #
 
 split trim(command), " ", args

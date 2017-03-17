@@ -1,10 +1,8 @@
 package net.sourceforge.smallbasic;
 
-import android.annotation.TargetApi;
 import android.media.AudioFormat;
 import android.media.AudioManager;
 import android.media.AudioTrack;
-import android.os.Build;
 import android.util.Log;
 
 /**
@@ -12,7 +10,6 @@ import android.util.Log;
  * 
  * @author chrisws
  */
-@TargetApi(Build.VERSION_CODES.ICE_CREAM_SANDWICH)
 public class Sound {
   private static final String TAG = "smallbasic";
   private static final int AUDIO_SAMPLE_RATE = 8000;
