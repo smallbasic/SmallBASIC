@@ -193,3 +193,13 @@ if (111 <> elx.j[0] || elx.j[1] != 222) then
   throw "err"
 endif
 
+rem ------------------------------------
+dim z()
+dim x(1),y(10),h(1 to 3,0 to 7)
+h[1,0]=1
+h[3,7]=11
+local l
+dim l.arr()
+if (len(l.arr) != 0) then
+  throw "new array field should be empty"
+endif
