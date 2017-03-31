@@ -359,7 +359,7 @@ char *sqzdup(const char *source);
  * @param with is what to replace with
  * @return a newly created string
  */
-char *transdup(const char *src, const char *what, const char *with);
+char *transdup(const char *src, const char *what, const char *with, int ignore_case);
 
 /**
  * @ingroup str

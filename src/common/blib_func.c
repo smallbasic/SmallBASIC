@@ -1333,12 +1333,13 @@ void cmd_strN(long funcCode, var_t *r) {
     //
     // s <- TRANSLATE(source, what [, with])
     //
-    par_massget("SSs", &s1, &s2, &s3);
+    i = 0;
+    par_massget("SSsi", &s1, &s2, &s3, &i);
     if (!prog_error) {
       if (s3) {
-        r->v.p.ptr = transdup(s1, s2, s3);
+        r->v.p.ptr = transdup(s1, s2, s3, i);
       } else {
-        r->v.p.ptr = transdup(s1, s2, "");
+        r->v.p.ptr = transdup(s1, s2, "", i);
       }
       r->type = V_STR;
       r->v.p.length = strlen(r->v.p.ptr) + 1;
