@@ -108,3 +108,9 @@ if (s1 <> s2 || s1 <> s3) then
   ? "s3=" + s3
   throw "not equal"
 endif
+
+rem ------------------------------------------------
+rem test case insensitive translate
+if "food" != translate("foo bar", " BAR", "d", true) then
+  throw "bad translate"
+fi
