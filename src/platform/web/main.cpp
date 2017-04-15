@@ -1,6 +1,6 @@
 // This file is part of SmallBASIC
 //
-// Copyright(C) 2001-2016 Chris Warren-Smith.
+// Copyright(C) 2001-2017 Chris Warren-Smith.
 //
 // This program is distributed under the terms of the GPL v2.0 or later
 // Download the GNU Public License (GPL) from www.gnu.org
@@ -21,8 +21,8 @@
 #include "platform/web/canvas.h"
 
 Canvas g_canvas;
-dword g_start = 0;
-dword g_maxTime = 2000;
+uint32_t g_start = 0;
+uint32_t g_maxTime = 2000;
 bool g_graphicText = true;
 struct MHD_Connection *g_connection;
 StringList g_cookies;
@@ -469,8 +469,10 @@ void osd_refresh() {}
 void osd_setpenmode(int enable) {}
 void osd_audio(const char *path) {}
 void osd_sound(int frq, int ms, int vol, int bgplay) {}
+void osd_ellipse(int xc, int yc, int xr, int yr, int fill) {}
+void osd_arc(int xc, int yc, double r, double as, double ae, double aspect) {}
 void v_create_image(var_p_t var) {}
 void v_create_form(var_p_t var) {}
 void v_create_window(var_p_t var) {}
 void dev_show_page() {}
-void dev_delay(dword ms) {}
+void dev_delay(uint32_t ms) {}

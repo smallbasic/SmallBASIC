@@ -62,15 +62,11 @@ void cmd_dim(int preserve) {
   int exitf = 0;
 
   do {
-    var_t *var_p = NULL;
-    var_t arg, array;
-    int i, size;
-    byte code, zaf = 0;
-
-    code = code_peek();
+    byte code = code_peek();
     if (code == kwTYPE_LINE || code == kwTYPE_EOC) {
       exitf = 1;
     } else {
+      var_t array;
       array.v.a.maxdim = 0;
       if (code_peek() == kwTYPE_SEP) {
         code_skipnext();
@@ -79,13 +75,15 @@ void cmd_dim(int preserve) {
         }
       }
 
-      var_p = code_getvarptr_parens(1);
+      var_t *var_p = code_getvarptr_parens(1);
+      byte zero_length = 1;
 
       if (!prog_error) {
         if (code_peek() == kwTYPE_LEVEL_BEGIN) {
           code_skipnext();
-          zaf = 0;
-          do {
+          while (code_peek() != kwTYPE_LEVEL_END) {
+            zero_length = 0;
+            var_t arg;
             v_init(&arg);
             eval(&arg);
             if (prog_error) {
@@ -113,12 +111,11 @@ void cmd_dim(int preserve) {
                 err_missing_comma();
               }
             }
-
-          } while (code_peek() != kwTYPE_LEVEL_END);
-
-          code_skipnext();      // ')', level
+          }
+          // skip end separator
+          code_skipnext();
         } else {
-          zaf = 1;              // zero-length array
+          zero_length = 1;
         }
       } else {
         rt_raise(ERR_SYNTAX);
@@ -128,10 +125,11 @@ void cmd_dim(int preserve) {
       // run...
       //
       if (!prog_error) {
-        if (zaf) {
+        if (zero_length) {
           v_toarray1(var_p, 0);
         } else {
-          size = 1;
+          int i;
+          int size = 1;
           for (i = 0; i < array.v.a.maxdim; i++) {
             size = size * (ABS(array.v.a.ubound[i] - array.v.a.lbound[i]) + 1);
           }

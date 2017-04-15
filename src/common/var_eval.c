@@ -241,8 +241,9 @@ int code_isvar() {
     var_p = basevar_p = tvar[code_getaddr()];
     switch (basevar_p->type) {
     case V_MAP:
+      var_p = code_resolve_map(var_p, 0);
+      break;
     case V_ARRAY:
-      // variable is an array or map
       var_p = code_resolve_varptr(var_p, 0);
       break;
     default:

@@ -11,6 +11,8 @@
 #include "common/str.h"
 #include "common/fmt.h"
 
+#define BUF_SIZE 256
+
 /**
  * removes spaces and returns a new string
  */
@@ -97,24 +99,28 @@ int strcaselessn(const char *s1, int s1n, const char *s2, int s2n) {
 /**
  *
  */
-char *transdup(const char *src, const char *what, const char *with) {
-  char *p = (char *) src;
-  char *dest, *d;
-  int lwhat, lwith, size, len;
+char *transdup(const char *src, const char *what, const char *with, int ignore_case) {
+  int lwhat = strlen(what);
+  int lwith = strlen(with);
+  int size = BUF_SIZE;
+  char *p = (char *)src;
+  char *dest = malloc(size);
+  char *d = dest;
 
-  lwhat = strlen(what);
-  lwith = strlen(with);
-
-  size = 256;
-  dest = malloc(size);
-  d = dest;
   *d = '\0';
 
   while (*p) {
-    if (strncmp(p, what, lwhat) == 0) {
+    int eq;
+    if (ignore_case) {
+      eq = strncasecmp(p, what, lwhat);
+    }
+    else {
+      eq = strncmp(p, what, lwhat);
+    }
+    if (eq == 0) {
       if ((d - dest) + lwith >= size - 1) {
-        len = d - dest;
-        size += 256;
+        int len = d - dest;
+        size += BUF_SIZE;
         dest = realloc(dest, size);
         d = dest + len;
       }
@@ -123,8 +129,8 @@ char *transdup(const char *src, const char *what, const char *with) {
       p += (lwhat - 1);
     } else {
       if ((d - dest) + 1 >= size - 1) {
-        len = d - dest;
-        size += 256;
+        int len = d - dest;
+        size += BUF_SIZE;
         dest = realloc(dest, size);
         d = dest + len;
       }
@@ -510,7 +516,7 @@ char *get_numexpr(char *text, char *dest, int *type, var_int_t *lv, var_num_t *d
  *
  */
 var_num_t numexpr_sb_strtof(char *source) {
-  char buf[256], *np;
+  char buf[BUF_SIZE], *np;
   int type;
   var_int_t lv;
   var_num_t dv;
@@ -529,7 +535,7 @@ var_num_t numexpr_sb_strtof(char *source) {
  *
  */
 var_int_t numexpr_strtol(char *source) {
-  char buf[256], *np;
+  char buf[BUF_SIZE], *np;
   int type;
   var_int_t lv;
   var_num_t dv;

@@ -6,7 +6,7 @@
 #
 # 2. export from mysql:
 #
-# select pn.title as folder, n.title as filename, fdb.body_value as code
+# select pn.title as folder, n.title as filename, n.nid as node, fdb.body_value as code
 # from 
 #  d7_field_data_body as fdb 
 #     left join d7_node as n on n.nid = fdb.entity_id,
@@ -30,6 +30,7 @@ in_str = translate(in_str, "\'", "'")
 in_str = translate(in_str, "'folder' :", "\"folder\":")
 in_str = translate(in_str, "'filename' :", "\"filename\":")
 in_str = translate(in_str, "'code' :", "\"code\":")
+in_str = translate(in_str, "'node' :", "\"node\":")
 in_map = array(in_str)
 
 mk_files("samples")
@@ -50,27 +51,32 @@ end
 
 sub mk_files(prefix)
   local in_map_len = len(in_map) - 1
-  local folder, filename, code, file_index, html, file
+  local folder, filename, node, code, file_index, html, file
 
-  dim file_index
+  file_index = {}
   if (!exist(prefix)) then
     mkdir prefix
+  endif
+
+  if (!exist(prefix + "/node")) then
+    mkdir prefix + "/node"
   endif
 
   for i = 0 to in_map_len
     folder = prefix + "/" + translate(lower(in_map(i).folder), "/", " ")
     filename = folder + "/" + lower(in_map(i).filename)
-    file_index(folder) << filename
+    file_index[folder] << filename
     code = update_code(in_map(i).code)
     if (!exist(folder)) then
       mkdir folder
     endif
     tsave filename, code
+    tsave prefix + "/node/" + in_map(i).node + ".bas", code
   next i
 
   for folder in file_index
     html = ""
-    for filename in file_index(folder)
+    for filename in file_index[folder]
       file = rightoflast(filename, "/")
       html += "<a href='" + file + "'>" + file + "</a><br/>"
     next filename
@@ -83,6 +89,5 @@ sub mk_files(prefix)
     html += "<a href='" + file + "/index.html'>" + file + "</a><br/>"
   next folder
   tsave prefix + "/index.html", html
-
 
 end
