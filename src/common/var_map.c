@@ -253,7 +253,8 @@ void map_get_value(var_p_t base, var_p_t var_key, var_p_t *result) {
     v_detach(clone);
   } else if (base->type != V_MAP) {
     if (v_is_nonzero(base)) {
-      err_typemismatch();
+      *result = v_new();
+      v_set(*result, base);
       return;
     } else {
       hashmap_create(base, 0);

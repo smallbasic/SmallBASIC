@@ -16,7 +16,7 @@
 #include "common/var_eval.h"
 
 /**
- * Convertion multi-dim index to one-dim index
+ * Convert multi-dim index to one-dim index
  */
 bcip_t get_array_idx(var_t *array) {
   bcip_t idx = 0;

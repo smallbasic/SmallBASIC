@@ -219,3 +219,9 @@ next i
 if found != 3 then
   throw "elements not found"
 fi
+
+rem  --- 0.12.10
+s.v=[[1,99,3],[4,5,6]]
+if (s.v[0][1] != 99) then
+  throw "illegal access"
+endif

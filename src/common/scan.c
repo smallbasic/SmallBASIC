@@ -1029,6 +1029,30 @@ int comp_is_parenthesized(char *name) {
   return result;
 }
 
+/*
+ * return whether the following code is a code array declaration
+ */
+int comp_is_code_array(char *p) {
+  int result = 0;
+  int level = 1;
+  while (*p && level) {
+    switch(*p) {
+    case '[':
+      level++;
+      break;
+    case ']':
+      level--;
+      break;
+    case ',':
+    case ';':
+      result = 1;
+      break;
+    }
+    p++;
+  }
+  return result;
+}
+
 char *comp_scan_json(char *json, bc_t *bc) {
   int curley_brace = 1;
   char *p = json + 1;
@@ -1240,13 +1264,16 @@ void comp_expression(char *expr, byte no_parser) {
       // code-defined array
       ptr++;
       level++;
-      bc_add_fcode(&bc, kwCODEARRAY);
+      if (comp_is_code_array(ptr)) {
+        // otherwise treat as array index
+        bc_add_fcode(&bc, kwCODEARRAY);
+      }
       bc_add_code(&bc, kwTYPE_LEVEL_BEGIN);
     } else if (*ptr == '(') {
       // parenthesis
+      ptr++;
       level++;
       bc_add_code(&bc, kwTYPE_LEVEL_BEGIN);
-      ptr++;
     } else if (*ptr == ')' || *ptr == ']') {
       // parenthesis
       bc_add_code(&bc, kwTYPE_LEVEL_END);
