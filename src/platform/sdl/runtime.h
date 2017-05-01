@@ -29,6 +29,7 @@ struct Runtime : public System {
   void debugStart(TextEditInput *edit, const char *file);
   void debugStep(TextEditInput *edit, TextEditHelpWidget *help, bool cont);
   void debugStop();
+  void enableCursor(bool enabled);
   void redraw() { _graphics->redraw(); }
   void handleKeyEvent(MAEvent &event);
   bool hasEvent() { return _eventQueue && _eventQueue->size() > 0; }

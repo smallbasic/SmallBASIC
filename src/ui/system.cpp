@@ -135,6 +135,7 @@ bool System::execute(const char *bas) {
   if (_editor == NULL) {
     opt_command[0] = '\0';
   }
+  enableCursor(true);
   opt_file_permitted = 1;
   _output->selectScreen(USER_SCREEN1);
   _output->resetFont();
@@ -1175,7 +1176,7 @@ void osd_setcolor(long color) {
 }
 
 void osd_setpenmode(int enable) {
-  // touch mode is always active
+  g_system->enableCursor(enable);
 }
 
 void osd_setpixel(int x, int y) {

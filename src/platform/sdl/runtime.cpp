@@ -271,6 +271,10 @@ void Runtime::debugStop() {
   }
 }
 
+void Runtime::enableCursor(bool enabled) {
+  SDL_ShowCursor(enabled ? SDL_ENABLE : SDL_DISABLE);
+}
+
 void Runtime::pushEvent(MAEvent *event) {
   _eventQueue->push(event);
 }

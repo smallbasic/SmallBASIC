@@ -1,5 +1,6 @@
 2017-04-30 (0.12.10)
 	COMMON: Fix square bracket access to 2D arrays
+	SDL: PEN OFF command now hides the cursor
 
 2017-04-01 (0.12.9)
 	COMMON: TRANSLATE now takes optional ignore-case argument
