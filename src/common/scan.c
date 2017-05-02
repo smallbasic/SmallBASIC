@@ -2621,6 +2621,21 @@ int comp_text_line_command(long idx, int decl, int sharp, char *last_cmd) {
     }
     break;
 
+  case kwRETURN:
+    if (comp_bc_proc[0]) {
+      // synonym for FUNCNAME=result
+      bc_add_code(&comp_prog, kwLET);
+      comp_add_variable(&comp_prog, comp_bc_proc);
+      bc_add_code(&comp_prog, kwTYPE_CMPOPR);
+      bc_add_code(&comp_prog, '=');
+      comp_expression(comp_bc_parm, 0);
+    } else {
+      // return from GOSUB
+      bc_add_code(&comp_prog, idx);
+      comp_expression(comp_bc_parm, 0);
+    }
+    break;
+
   case -1:
     comp_text_line_ext_func();
     break;

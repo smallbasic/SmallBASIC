@@ -1,4 +1,7 @@
 2017-04-30 (0.12.10)
+	COMMON: FUNC can now use RETURN statement as synonym for FUNCNAME=result
+
+2017-04-30 (0.12.10)
 	COMMON: Fix square bracket access to 2D arrays
 	SDL: PEN OFF command now hides the cursor
 

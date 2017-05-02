@@ -213,3 +213,12 @@ for i=10 to 9 step 2:next
 assertEq i, 10, PROGLINE
 for i=1 to 2 step -1: next
 assertEq i, 1, PROGLINE
+
+' 0.12.10
+func x
+  return 101
+end
+func f
+  return x()-1
+end
+if f() != 100 then throw "func return error"
