@@ -1,3 +1,6 @@
+2017-05-04 (0.12.10)
+	UI: The FORM command now reports an error when IMAGE input fails to load
+
 2017-04-30 (0.12.10)
 	COMMON: FUNC can now use RETURN statement as synonym for FUNCNAME=result
 
