@@ -218,7 +218,9 @@ assertEq i, 1, PROGLINE
 func x
   return 101
 end
-func f
+func f(x)
+  if (x==1) then return "x"
+  if (x==2) then return "y"
   return x()-1
 end
-if f() != 100 then throw "func return error"
+if f(99) != 100 then throw "func return error"

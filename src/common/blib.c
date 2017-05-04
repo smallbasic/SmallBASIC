@@ -1357,25 +1357,36 @@ int cmd_exit() {
  * RETURN
  */
 void cmd_return() {
-  stknode_t node;
-
-  // get return-address and remove any other item (sub items) from stack
-  code_pop(&node, kwGOSUB);
-
-  // 'GOTO'
-  while (node.type != kwGOSUB) {
-    code_pop(&node, kwGOSUB);
-    if (prog_error) {
-      return;
+  if (code_peek() == kwFUNC_RETURN) {
+    // FUNC return statement
+    code_skipnext();
+    code_jump(code_getaddr());
+    stknode_t *node = code_stackpeek();
+    while (node != NULL && node->type != kwFUNC) {
+      code_pop_and_free();
+      node = code_stackpeek();
     }
-  }
+  } else {
+    // GOSUB/ RETURN
+    stknode_t node;
+    // get return-address and remove any other item (sub items) from stack
+    code_pop(&node, kwGOSUB);
 
-  if (node.type != kwGOSUB) {
-    rt_raise(ERR_SYNTAX);
-    dump_stack();
-  }
+    // 'GOTO'
+    while (node.type != kwGOSUB) {
+      code_pop(&node, kwGOSUB);
+      if (prog_error) {
+        return;
+      }
+    }
 
-  code_jump(node.x.vgosub.ret_ip);
+    if (node.type != kwGOSUB) {
+      rt_raise(ERR_SYNTAX);
+      dump_stack();
+    }
+
+    code_jump(node.x.vgosub.ret_ip);
+  }
 }
 
 /**

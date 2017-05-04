@@ -160,7 +160,6 @@ enum keyword {                // line 50
   kwFILEWRITE,
   kwFILEREAD,
   kwCLOSE,
-  kwSCRMODE,
   kwSEEK,
   kwTYPE,
   kwSPRINT,
@@ -175,6 +174,7 @@ enum keyword {                // line 50
   kwTRY,
   kwCATCH,
   kwENDTRY,
+  kwFUNC_RETURN,
   kwNULL
 };
 
