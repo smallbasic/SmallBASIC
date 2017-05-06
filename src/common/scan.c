@@ -2624,16 +2624,17 @@ int comp_text_line_command(long idx, int decl, int sharp, char *last_cmd) {
   case kwRETURN:
     if (comp_bc_proc[0]) {
       // synonym for FUNC=result
-      bc_add_code(&comp_prog, kwLET);
-      comp_add_variable(&comp_prog, comp_bc_proc);
-      bc_add_code(&comp_prog, kwTYPE_CMPOPR);
-      bc_add_code(&comp_prog, '=');
-      comp_expression(comp_bc_parm, 0);
+      if (comp_bc_parm[0]) {
+        bc_add_code(&comp_prog, kwLET);
+        comp_add_variable(&comp_prog, comp_bc_proc);
+        bc_add_code(&comp_prog, kwTYPE_CMPOPR);
+        bc_add_code(&comp_prog, '=');
+        comp_expression(comp_bc_parm, 0);
+      }
       bc_add_code(&comp_prog, kwRETURN);
-
       comp_push(comp_prog.count);
       bc_add_code(&comp_prog, kwFUNC_RETURN);
-      bc_add_addr(&comp_prog, 0);
+      bc_add_addr(&comp_prog, comp_proc_level);
     } else {
       // return from GOSUB
       bc_add_code(&comp_prog, idx);
@@ -2974,17 +2975,6 @@ bcip_t comp_search_bc_stack_backward(bcip_t start, code_t code, byte level, bid_
     }
   }
   return INVALID_ADDR;
-}
-
-/*
- * search stack starting at level
- */
-bcip_t comp_search_bc_stack_scan(bcip_t start, code_t code, byte level) {
-  bcip_t result = comp_search_bc_stack(start, code, level, -1);
-  while (result == INVALID_ADDR && level > 0) {
-    result = comp_search_bc_stack(start, code, --level, -1);
-  }
-  return result;
 }
 
 /*
@@ -3491,7 +3481,8 @@ void comp_pass2_scan() {
 
     case kwFUNC_RETURN:
       // address for the FUNCs kwTYPE_RET
-      true_ip = comp_search_bc_stack_scan(i + 1, kwTYPE_RET, node->level);
+      level = comp_prog.ptr[node->pos + 1];
+      true_ip = comp_search_bc_stack(i + 1, kwTYPE_RET, level, -1);
       if (true_ip != INVALID_ADDR) {
         // otherwise error handled elsewhere
         memcpy(comp_prog.ptr + node->pos + 1, &true_ip, ADDRSZ);

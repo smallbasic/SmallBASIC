@@ -224,3 +224,18 @@ func f(x)
   return x()-1
 end
 if f(99) != 100 then throw "func return error"
+
+sub my_sub(arg1)
+  sub test_sub(arg2)
+     if (arg2==111) then return
+     print "failed 1"
+  end
+  test_sub(arg1)
+  if (true) then
+     if (arg1==111) then return
+  endif
+  print "failed 2"
+  return
+end
+my_sub(111)
+

@@ -1362,7 +1362,7 @@ void cmd_return() {
     code_skipnext();
     code_jump(code_getaddr());
     stknode_t *node = code_stackpeek();
-    while (node != NULL && node->type != kwFUNC) {
+    while (node != NULL && node->type != kwPROC && node->type != kwFUNC) {
       code_pop_and_free();
       node = code_stackpeek();
     }

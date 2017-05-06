@@ -22,10 +22,6 @@
 extern "C" {
 #endif
 
-#if defined(__CYGWIN__)
-typedef unsigned int bcip_t;
-#endif
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
@@ -40,10 +36,6 @@ typedef unsigned int bcip_t;
 #include <ctype.h>
 #include <assert.h>
 #include <stdlib.h>
-
-#if defined(NONSTANDARD_PORT)
-#include <portdefs.h>
-#endif
 
 #define DBL_EPSILON 0.00000000000001
 #define EPSILON DBL_EPSILON
