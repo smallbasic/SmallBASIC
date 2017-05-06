@@ -3702,7 +3702,6 @@ char *comp_format_text(const char *source) {
         }
 
         SKIP_SPACES(p);
-        comp_line++;
         last_ch = '\n';
         last_nonsp_ptr = ps - 1;
         break;
@@ -3813,6 +3812,7 @@ char *comp_format_text(const char *source) {
           continue;
         } else if (p[0] == '\n') {
           // internal newline escape
+          comp_line++;
           *ps++ = '\2';
           p++;
           continue;
@@ -4360,9 +4360,7 @@ int comp_pass1(const char *section, const char *text) {
   char *new_text = comp_format_text(text);
 
   comp_preproc_pass1(new_text);
-
   if (!comp_error) {
-    comp_line = 0;
     if (!opt_quiet && !opt_interactive) {
       log_printf(MSG_PASS1_COUNT, comp_line + 1);
     }

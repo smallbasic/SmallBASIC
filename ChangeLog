@@ -1,3 +1,7 @@
+2017-05-06 (0.12.10)
+	COMMON: SUB can now use RETURN statement
+	COMMON: Fix line number count when using multi-line strings
+
 2017-05-04 (0.12.10)
 	UI: The FORM command now reports an error when IMAGE input fails to load
 
