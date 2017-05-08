@@ -239,3 +239,30 @@ sub my_sub(arg1)
 end
 my_sub(111)
 
+rem --- FUNC method uses SELF for temporary storage
+func Grid()
+  func get_x
+     return self.x
+  end
+  sub incr_x
+     self.x++
+  end
+  result = {}
+  result.x = 0
+  result.get_x = @get_x
+  result.incr_x = @incr_x
+  return result
+end
+
+g=Grid()
+gx = 0
+for i = 0 to 2
+  g.incr_x()
+  gx = g.get_x()
+next i
+
+if (gx != 3) then
+  throw "method error"
+endif
+
+rem -------

@@ -81,14 +81,16 @@ var_t *code_getvarptr_map(var_t **var_map) {
   return var_p;
 }
 
-void v_set_self(var_t *var) {
+void v_set_self(var_t *map) {
   if (ctask->has_sysvars) {
     var_t *self = tvar[SYSVAR_SELF];
-    if (var != NULL) {
+    // does not free any previous map since held as V_REF
+    v_free(self);
+    if (map != NULL) {
       self->const_flag = 0;
       self->type = V_REF;
-      self->v.ref = var;
-    } else if (self->type != V_INT) {
+      self->v.ref = map;
+    } else {
       self->const_flag = 1;
       self->type = V_INT;
       self->v.i = 0;
@@ -148,10 +150,12 @@ var_t *code_get_map_element(var_t *map, var_t *field) {
       if (udf_rv.type != kwTYPE_RET) {
         err_stackmess();
       } else {
-        v_set(map, udf_rv.x.vdvar.vptr);
+        // result must exist until processed in eval()
+        var_t *var = tvar[SYSVAR_SELF];
+        v_set(var, udf_rv.x.vdvar.vptr);
         v_free(udf_rv.x.vdvar.vptr);
         v_detach(udf_rv.x.vdvar.vptr);
-        result = map;
+        result = var;
       }
     }
   } else if (field->type == V_ARRAY) {
