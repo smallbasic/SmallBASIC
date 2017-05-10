@@ -230,6 +230,43 @@ var_p_t map_add_var(var_p_t base, const char *name, int value) {
 }
 
 /**
+ * Helper for map_get_parent
+ */
+int map_get_parent_cb(hashmap_cb *cb, var_p_t var_key, var_p_t value) {
+  int result;
+  if (value == cb->var) {
+    cb->count++;
+    result = 1;
+  } else if (value->type == V_MAP && cb->count == 0) {
+    hashmap_foreach(value, map_get_parent_cb, cb);
+    if (cb->count == 1) {
+      cb->parent = value;
+      cb->count++;
+      result = 1;
+    } else {
+      result = 0;
+    }
+  } else {
+    result = 0;
+  }
+  return result;
+}
+
+/**
+ * Returns the immediate parent of the given field
+ */
+var_p_t map_get_parent(var_p_t base, var_p_t field) {
+  hashmap_cb cb;
+
+  cb.var = field;
+  cb.parent = base;
+  cb.count = 0;
+  hashmap_foreach(base, map_get_parent_cb, &cb);
+
+  return cb.parent;
+}
+
+/**
  * Return the variable in base keyed by key, if not found then creates
  * an empty variable that will be returned in a further call
  */
@@ -269,12 +306,14 @@ void map_get_value(var_p_t base, var_p_t var_key, var_p_t *result) {
  * Traverse the root to copy into dest
  */
 int map_set_cb(hashmap_cb *cb, var_p_t var_key, var_p_t value) {
-  var_p_t key = v_new();
-  v_set(key, var_key);
-  var_p_t var = hashmap_putv(cb->var, key);
-  v_set(var, value);
-  if (var->type == V_FUNC) {
-    var->v.fn.self = cb->var;
+  if (var_key->type != V_STR || var_key->v.p.ptr[0] != MAP_TMP_FIELD[0]) {
+    var_p_t key = v_new();
+    v_set(key, var_key);
+    var_p_t var = hashmap_putv(cb->var, key);
+    v_set(var, value);
+    if (var->type == V_FUNC) {
+      var->v.fn.self = cb->var;
+    }
   }
   return 0;
 }

@@ -2820,9 +2820,10 @@ void cmd_call_vfunc() {
     if (code_peek() == kwTYPE_PARAM) {
       code_skipnext();
       cmd_param();
-      v_set_self(map);
+      map = map_get_parent(eval_ref_var(map), v_func);
+      var_t *self = v_set_self(map);
       bc_loop(2);
-      v_set_self(NULL);
+      v_set_self(self);
     } else {
       rt_raise(ERR_NO_FUNC);
     }

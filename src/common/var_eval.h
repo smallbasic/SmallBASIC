@@ -19,7 +19,7 @@ extern "C" {
  *
  * prepares the self variable
  */
-void v_set_self(var_t *self);
+var_t *v_set_self(var_t *self);
 
 /**
  * @ingroup var

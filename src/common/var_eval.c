@@ -81,21 +81,19 @@ var_t *code_getvarptr_map(var_t **var_map) {
   return var_p;
 }
 
-void v_set_self(var_t *map) {
-  if (ctask->has_sysvars) {
-    var_t *self = tvar[SYSVAR_SELF];
-    // does not free any previous map since held as V_REF
-    v_free(self);
-    if (map != NULL) {
-      self->const_flag = 0;
-      self->type = V_REF;
-      self->v.ref = map;
-    } else {
-      self->const_flag = 1;
-      self->type = V_INT;
-      self->v.i = 0;
-    }
+var_t *v_set_self(var_t *map) {
+  var_t *self = tvar[SYSVAR_SELF];
+  var_t *result = (self->type == V_REF) ? self->v.ref : NULL;
+  if (map != NULL) {
+    self->const_flag = 0;
+    self->type = V_REF;
+    self->v.ref = map;
+  } else {
+    self->const_flag = 1;
+    self->type = V_INT;
+    self->v.i = 0;
   }
+  return result;
 }
 
 /**
@@ -140,9 +138,10 @@ var_t *code_get_map_element(var_t *map, var_t *field) {
     err_arrmis_lp();
   } else if (field->type == V_PTR) {
     prog_ip = cmd_push_args(kwFUNC, field->v.ap.p, field->v.ap.v);
-    v_set_self(map);
+    map = map_get_parent(eval_ref_var(map), field);
+    var_t *self = v_set_self(map);
     bc_loop(2);
-    v_set_self(NULL);
+    v_set_self(self);
 
     if (!prog_error) {
       stknode_t udf_rv;
@@ -151,7 +150,10 @@ var_t *code_get_map_element(var_t *map, var_t *field) {
         err_stackmess();
       } else {
         // result must exist until processed in eval()
-        var_t *var = tvar[SYSVAR_SELF];
+        var_p_t var = map_get(map, MAP_TMP_FIELD);
+        if (var == NULL) {
+          var = map_add_var(map, MAP_TMP_FIELD, 0);
+        }
         v_set(var, udf_rv.x.vdvar.vptr);
         v_free(udf_rv.x.vdvar.vptr);
         v_detach(udf_rv.x.vdvar.vptr);

@@ -265,4 +265,27 @@ if (gx != 3) then
   throw "method error"
 endif
 
+func GridBox(og)
+  func gridWrapper()
+    self.my_g.incr_x()
+    return self.my_g.x
+  end
+  result = {}
+  result.my_g = og
+  result.nested = @gridWrapper
+  result.my_x = 3
+  return result
+end
+
+gb = GridBox(g)
+bx = gb.nested()
+if (bx != 4) then
+  throw "nested method error1: " + bx
+endif
+bx = gb.my_x
+if (bx  != 3) then
+  throw "nested method error2: " + bx
+endif
+
+
 rem -------
