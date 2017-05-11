@@ -26,7 +26,7 @@ func Display()
   color 0,rgb(15,40,15)
   cls
 
-  func display(grid)
+  sub display(grid)
     local i,j,x,y,v,c
     y = 0
     x = 0
@@ -86,36 +86,38 @@ func Grid()
   end
 
   # Move the Grid
-  func move(dir)
+  sub move(dir)
+    local result
     select case dir
-      case 0: return moveUD(False)
-      case 1: return moveUD(True)
-      case 2: return moveLR(False)
-      case 3: return moveLR(True)
-      case else: throw "Invalid dir:" + dir
+      case 0: result = moveUD(False)
+      case 1: result = moveUD(True)
+      case 2: result = moveLR(False)
+      case 3: result = moveLR(True)
+      case else: throw "Invalid move:" + dir
     end select
+    return result
   end
 
   # Move Up or Down
-  func moveUD(move_down)
-    local x,y,incr,i1,i2,moved
-
-    incr = iff(move_down, 1, -1)
-    i1 = iff(move_down, 0, self.size)
-    i2 = iff(move_down, self.size, 0)
-    
-    moved = False
+  func moveUD(move_up)
+    local x,y,y1,y2,incr,moved
     dim cells
+
+    incr = iff(move_up, 1, -1)
+    y1 = iff(move_up, 0, self.size)
+    y2 = iff(move_up, self.size, 0)
+
+    moved = False
     for x = 0 to self.size
       erase cells
-      for y = i1 to i2 step incr
+      for y = y1 to y2 step incr
         cell = self.map[y][x]
-        if cell != 0 then append cells,cell
+        if cell != 0 then append cells, cell
       next y
 
       merge(cells)
 
-      for y = i1 to i2 step incr
+      for y = y1 to y2 step incr
         if len(cells) then
           value = cells[0]
           delete cells, 0
@@ -130,30 +132,39 @@ func Grid()
   end
 
   # move left or right
-  func moveLR(move_right)
-    local moved,i,j
+  func moveLR(move_left)
+    local x,y,x1,x2,incr,moved
     dim cells
 
+    incr = iff(move_left, 1, -1)
+    x1 = iff(move_left, 0, self.size)
+    x2 = iff(move_left, self.size, 0)
+
     moved = False
-    for i = 0 to self.size
+    for y = 0 to self.size
       erase cells
-      for j in r
-        cell = self.map[i][j]
-        if cell != 0 then cells.append(cell)
-      next j
+      for x = x1 to x2 step incr
+        cell = self.map[y][x]
+        if cell != 0 then append cells, cell
+      next y
       merge(cells)
-      for j in r
-        #value = cells.pop(0) if cells else 0
-        if self.map[i][j] != value then moved = True
-        self.map[i][j] = value
-      next j
-    next i
+      for x = x1 to x2 step incr
+        if len(cells) then
+          value = cells[0]
+          delete cells, 0
+        else
+          value = 0
+        endif
+        if self.map[y][x] != value then moved = True
+        self.map[y][x] = value
+      next y
+    next y
     return moved
   end
 
   # Merge Tiles
   sub merge(byref cells)
-    if len(cells) <= 1 then return cells
+    if len(cells) <= 1 then return
     local i = 0
     while i < len(cells) - 1
       if cells[i] == cells[i+1] then
@@ -191,7 +202,7 @@ func Grid()
   end
 
   # Return All Available Moves
-  sub getAvailableMoves(dirs)
+  func getAvailableMoves(dirs)
     local x
     dim availableMoves
     for x in dirs
@@ -231,16 +242,16 @@ func Grid()
   return result
 end
 
-func Game()
-  local w
+sub Game
+  g = Grid()
+  d = Display()
+  g.insertTile(2,1,4)
+  g.insertTile(2,2,4)
+  d.show(g)
+  pause
+  g.move(3)
+  d.show(g)
+  pause
 end
 
-g = Grid()
-d = Display()
-g.insertTile(2,1,4)
-g.insertTile(2,2,4)
-d.show(g)
-pause
-g.move(0)
-d.show(g)
-pause
+Game()
