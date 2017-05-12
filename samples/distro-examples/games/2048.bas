@@ -51,6 +51,22 @@ func Display()
 end
 
 func Grid()
+  const kUP = 0
+  const kDOWN = 1
+  const kLEFT = 2
+  const kRIGHT = 3
+  const vecIndex = [kUP, kDOWN, kLEFT, kRIGHT]
+  const directionVectors = [[-1, 0], [1, 0], [0, -1], [0, 1]]
+
+  # Make a Deep Copy of This Object
+  func clone()
+    local result
+    result = self
+    result.map = self.map
+    result.size = self.size
+    return result
+  end
+
   sub insertTile(x,y,v)
     self.map[y][x] = v
   end
@@ -89,10 +105,10 @@ func Grid()
   sub move(dir)
     local result
     select case dir
-      case 0: result = moveUD(False)
-      case 1: result = moveUD(True)
-      case 2: result = moveLR(False)
-      case 3: result = moveLR(True)
+      case kUP: result = moveUD(False)
+      case kDOWN: result = moveUD(True)
+      case kLEFT: result = moveLR(False)
+      case kRIGHT: result = moveLR(True)
       case else: throw "Invalid move:" + dir
     end select
     return result
@@ -175,18 +191,19 @@ func Grid()
     wend
   end
 
-  sub canMove(dirs)
-    local x,y
+  func canMove(dirs)
+    local i,x,y, checkingMoves, adjCellValue
+
     # Init Moves to be Checked
-    checkingMoves = Set(dirs)
+    checkingMoves = IFF(len(dirs)==0, vecIndex, dirs)
     for y = 0 to self.size
       for x = 0 to self.size
         # If Current Cell is Filled
-        if self.map[x][y] then
+        if self.map[x][y] != 0 then
           # Look Ajacent Cell Value
           for i in checkingMoves then
             move = directionVectors[i]
-            adjCellValue = self.getCellValue((x + move[0], y + move[1]))
+            adjCellValue = getCellValue((x + move[0], y + move[1]))
             # If Value is the Same or Adjacent Cell is Empty
             if adjCellValue == self.map[x][y] or adjCellValue == 0 then
               return True
@@ -203,13 +220,13 @@ func Grid()
 
   # Return All Available Moves
   func getAvailableMoves(dirs)
-    local x
+    local x, gridCopy
+    dirs=IFF(len(dirs) == 0, vecindex,dirs)
     dim availableMoves
     for x in dirs
-      gridCopy = self.clone()
-
+      gridCopy = clone()
       if gridCopy.move(x) then
-        availableMoves.append(x)
+        append availableMoves, x
       endif
     next x
     return availableMoves
@@ -249,7 +266,9 @@ sub Game
   g.insertTile(2,2,4)
   d.show(g)
   pause
-  g.move(3)
+  logprint g.canMove([kDOWN])
+  g.move(g.kDOWN)
+  logprint g.canMove([kDOWN])
   d.show(g)
   pause
 end
