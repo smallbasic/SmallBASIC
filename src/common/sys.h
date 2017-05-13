@@ -104,8 +104,6 @@ typedef long int var_int_t;
 typedef char *char_p_t;
 typedef uint8_t byte;
 typedef uint8_t code_t;
-typedef int32_t fcode_t;
-typedef int32_t pcode_t;
 typedef int32_t bid_t;
 typedef uint32_t bcip_t;
 

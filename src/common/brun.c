@@ -472,7 +472,7 @@ void cmd_options(void) {
 }
 
 static inline void bc_loop_call_proc() {
-  pcode_t pcode = code_getaddr();
+  bcip_t pcode = code_getaddr();
   switch (pcode) {
   case kwCLS:
     dev_cls();

@@ -1,4 +1,8 @@
 2017-05-08 (0.12.10)
+	COMMON: Optimise execution between repeated kwLINE,kwGOTO segments
+	COMMON: Cleanup redundant typedefs
+
+2017-05-08 (0.12.10)
 	COMMON: Fix FUNC call as pseudo class method
 
 2017-05-06 (0.12.10)

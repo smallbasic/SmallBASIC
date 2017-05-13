@@ -58,7 +58,7 @@ extern void sc_raise2(const char *fmt, int line, const char *buff); // sberr
 
 typedef struct  {
   byte *code;
-  long size;
+  uint32_t size;
 } byte_code;
 
 void err_wrongproc(const char *name) {
@@ -834,8 +834,8 @@ int comp_is_keyword(const char *name) {
 /*
  * returns the keyword code (buildin functions)
  */
-fcode_t comp_is_func(const char *name) {
-  fcode_t i;
+bid_t comp_is_func(const char *name) {
+  bid_t i;
   int idx;
   byte dolar_sup = 0;
 
@@ -864,8 +864,8 @@ fcode_t comp_is_func(const char *name) {
 /*
  * returns the keyword code (buildin procedures)
  */
-pcode_t comp_is_proc(const char *name) {
-  pcode_t i;
+bid_t comp_is_proc(const char *name) {
+  bid_t i;
 
   for (i = 0; proc_table[i].name[0] != '\0'; i++) {
     if (strcmp(proc_table[i].name, name) == 0) {
@@ -894,7 +894,7 @@ int comp_is_special_operator(const char *name) {
 /*
  * returns the keyword code (operators)
  */
-long comp_is_operator(const char *name) {
+int comp_is_operator(const char *name) {
   int i;
 
   for (i = 0; opr_table[i].name[0] != '\0'; i++) {
@@ -1130,7 +1130,7 @@ void comp_expression(char *expr, byte no_parser) {
     } else if (is_alpha(*ptr) || *ptr == '?' || *ptr == '_') {
       // a name
       ptr = (char *)comp_next_word(ptr, comp_bc_name);
-      long idx = comp_is_func(comp_bc_name);
+      bid_t idx = comp_is_func(comp_bc_name);
       // special case for input
       if (idx == kwINPUTF) {
         if (*comp_next_char(ptr) != '(') {
@@ -1894,7 +1894,7 @@ void comp_get_unary(const char *p, int *ladd, int *linc, int *ldec, int *leqop) 
   }
 }
 
-void comp_text_line_let(long idx, int ladd, int linc, int ldec, int leqop) {
+void comp_text_line_let(bid_t idx, int ladd, int linc, int ldec, int leqop) {
   char *p;
   char *parms = comp_bc_parm;
   char *array_index = NULL;
@@ -2051,7 +2051,7 @@ void comp_text_line_let(long idx, int ladd, int linc, int ldec, int leqop) {
 }
 
 // User-defined procedures/functions
-void comp_text_line_func(long idx, int decl) {
+void comp_text_line_func(bid_t idx, int decl) {
   char *lpar_ptr, *eq_ptr;
   int count;
   char pname[SB_KEYWORD_SIZE + 1];
@@ -2304,7 +2304,7 @@ void comp_text_line_for() {
   }
 }
 
-void comp_text_line_end(long idx) {
+void comp_text_line_end(bid_t idx) {
   if (strncmp(comp_bc_parm, LCN_IF, 2) == 0 ||
       strncmp(comp_bc_parm, LCN_TRY, 3) == 0 ||
       strncmp(comp_bc_parm, LCN_SELECT, 6) == 0) {
@@ -2371,7 +2371,7 @@ void comp_text_line_ext_func() {
   }
 }
 
-int comp_text_line_command(long idx, int decl, int sharp, char *last_cmd) {
+int comp_text_line_command(bid_t idx, int decl, int sharp, char *last_cmd) {
   char_p_t pars[256];
   int count, i, index;
   char vname[SB_KEYWORD_SIZE + 1];
@@ -2659,7 +2659,7 @@ int comp_text_line_command(long idx, int decl, int sharp, char *last_cmd) {
  * Pass 1: scan source line
  */
 void comp_text_line(char *text, int addLineNo) {
-  long idx;
+  bid_t idx;
   int decl = 0;
 
   if (comp_error) {
@@ -2830,7 +2830,7 @@ bcip_t comp_next_bc_cmd(bcip_t ip) {
     ip += len;
     break;
   case kwTYPE_CALLF:
-  case kwTYPE_CALLP:           // [fcode_t]
+  case kwTYPE_CALLP:           // [bid_t]
     ip += CODESZ;
     break;
   case kwTYPE_CALLEXTF:
@@ -3184,7 +3184,9 @@ void comp_pass2_scan() {
       true_ip = comp_search_bc_stack(i + 1, kwTYPE_RET, node->level, -1) + 1;
       if (true_ip == INVALID_ADDR) {
         sc_raise(MSG_UDP_MISSING_END);
-        print_pass2_stack(i, kwTYPE_RET, node->level);
+        if (!opt_quiet && !opt_interactive) {
+          print_pass2_stack(i, kwTYPE_RET, node->level);
+        }
         return;
       }
       memcpy(comp_prog.ptr + node->pos - (ADDRSZ + 1), &true_ip, ADDRSZ);
@@ -3494,6 +3496,50 @@ void comp_pass2_scan() {
   if (!opt_quiet && !opt_interactive) {
     log_printf(MSG_PASS2_COUNT, comp_sp, comp_sp);
     log_printf("\n");
+  }
+}
+
+int comp_read_goto(bcip_t ip, bcip_t *addr, code_t *level) {
+  memcpy(addr, comp_prog.ptr + ip, sizeof(bcip_t));
+  ip += sizeof(bcip_t);
+  *level = comp_prog.ptr[ip];
+  return ip + 1;
+}
+
+void comp_optimise() {
+  // scan for repeated kwTYPE_LINE... kwGOTO blocks
+  for (bcip_t ip = 0; ip < comp_prog.count; ip = comp_next_bc_cmd(ip)) {
+    if (comp_prog.ptr[ip] == kwTYPE_LINE) {
+      ip += 1 + sizeof(bcip_t);
+      if (comp_prog.ptr[ip] == kwGOTO) {
+        bcip_t addr;
+        bcip_t new_addr = 0;
+        bcip_t new_addr_ip = ip + 1;
+        code_t level;
+
+        ip = comp_read_goto(ip + 1, &addr, &level);
+        bcip_t goto_ip = addr;
+
+        while (comp_prog.ptr[goto_ip] == kwTYPE_LINE) {
+          goto_ip += 1 + sizeof(bcip_t);
+          if (comp_prog.ptr[goto_ip] == kwGOTO) {
+            code_t next_level;
+            comp_read_goto(goto_ip + 1, &addr, &next_level);
+            goto_ip = addr;
+            if (next_level == level) {
+              // found replacement GOTO address
+              new_addr = addr;
+            }
+          } else {
+            break;
+          }
+        }
+        if (new_addr != 0) {
+          // patch in replacement address
+          memcpy(comp_prog.ptr + new_addr_ip, &new_addr, sizeof(bcip_t));
+        }
+      }
+    }
   }
 }
 
@@ -4484,6 +4530,7 @@ int comp_pass2() {
     bc_add_code(&comp_prog, kwSTOP);
     comp_first_data_ip = comp_prog.count;
     comp_pass2_scan();
+    comp_optimise();
   }
 
   if (comp_block_level && (comp_error == 0)) {

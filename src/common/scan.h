@@ -62,7 +62,7 @@ struct spopr_keyword_s {
  */
 struct func_keyword_s {
   const char name[16]; /**< keyword name */
-  fcode_t fcode; /**< keyword code */
+  bid_t fcode; /**< keyword code */
 };
 
 /**
@@ -73,7 +73,7 @@ struct func_keyword_s {
  */
 struct proc_keyword_s {
   const char name[16]; /**< keyword name */
-  pcode_t pcode; /**< keyword code */
+  bid_t pcode; /**< keyword code */
 };
 
 /**
@@ -85,7 +85,7 @@ struct proc_keyword_s {
 typedef struct {
   char name[SB_KEYWORD_SIZE + 1]; /**< keyword name */
   int  lib_id; /**< library id */
-  pcode_t pcode; /**< keyword code */
+  bid_t pcode; /**< keyword code */
   int symbol_index; /**< symbol index on symbol-table */
 } ext_proc_node_t;
 
@@ -98,7 +98,7 @@ typedef struct {
 typedef struct {
   char name[SB_KEYWORD_SIZE + 1]; /**< keyword name */
   int lib_id; /**< library id */
-  fcode_t fcode; /**< keyword code */
+  bid_t fcode; /**< keyword code */
   int symbol_index; /**< symbol index on symbol-table */
 } ext_func_node_t;
 
@@ -274,7 +274,7 @@ int comp_is_keyword(const char *name);
  * @param name is the function name
  * @return non-zero if found
  */
-fcode_t comp_is_func(const char *name);
+bid_t comp_is_func(const char *name);
 
 /**
  * @ingroup scan
@@ -284,7 +284,7 @@ fcode_t comp_is_func(const char *name);
  * @param name is the procedure name
  * @return non-zero if found
  */
-pcode_t comp_is_proc(const char *name);
+bid_t comp_is_proc(const char *name);
 
 /**
  * @ingroup scan
@@ -304,7 +304,7 @@ int comp_is_special_operator(const char *name);
  * @param name is the string
  * @return non-zero if found
  */
-long comp_is_operator(const char *name);
+int comp_is_operator(const char *name);
 
 /**
  * @ingroup scan

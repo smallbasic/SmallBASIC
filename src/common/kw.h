@@ -447,7 +447,7 @@ int kw_getcmdname(code_t code, char *dest);
  * @param dest is the buffer to store the keyword
  * @return non-zero on success
  */
-int kw_getfuncname(fcode_t code, char *dest);
+int kw_getfuncname(bid_t code, char *dest);
 
 /**
  * @ingroup sys
@@ -458,7 +458,7 @@ int kw_getfuncname(fcode_t code, char *dest);
  * @param dest is the buffer to store the keyword
  * @return non-zero on success
  */
-int kw_getprocname(pcode_t code, char *dest);
+int kw_getprocname(bid_t code, char *dest);
 
 /**
  * @ingroup sys
@@ -468,15 +468,7 @@ int kw_getprocname(pcode_t code, char *dest);
  * @param code is the code
  * @return non-zero if 'code' is a function that does not requires parameters
  */
-int kw_noarg_func(fcode_t code);
-
-/**
- */
-void prcmd(code_t code);
-
-/**
- */
-void prfunc(long code);
+int kw_noarg_func(bid_t code);
 
 #define OPTION_BASE                     1
 #define OPTION_UICS                     2

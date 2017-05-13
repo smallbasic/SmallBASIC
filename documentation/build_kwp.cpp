@@ -10,8 +10,7 @@
 #include "../src/ui/strlib.h"
 
 #define code_t int
-#define fcode_t int
-#define pcode_t int
+#define bid_t int
 
 struct keyword_s {
   char name[16];
@@ -26,12 +25,12 @@ struct opr_keyword_s {
 
 struct func_keyword_s {
   char name[16];
-  fcode_t fcode;
+  bid_t fcode;
 };
 
 struct proc_keyword_s {
   char name[16];
-  pcode_t pcode;
+  bid_t pcode;
 };
 
 struct spopr_keyword_s {

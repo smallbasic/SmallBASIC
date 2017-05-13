@@ -72,41 +72,41 @@ void bc_add_dword(bc_t *bc, uint32_t p1) {
   if (bc->count + sizeof(uint32_t) >= bc->size) {
     bc_resize(bc, bc->size + BC_ALLOC_INCR);
   }
-  memcpy(bc->ptr + bc->count, &p1, 4);
-  bc->count += 4;
+  memcpy(bc->ptr + bc->count, &p1, sizeof(uint32_t));
+  bc->count += sizeof(uint32_t);
 }
 
 /*
  * add one command and one long int (32 bits)
  */
-void bc_add2l(bc_t *bc, byte code, long p1) {
-  if (bc->count + sizeof(long) >= bc->size) {
+void bc_add2l(bc_t *bc, byte code, bid_t p1) {
+  if (bc->count + sizeof(bid_t) >= bc->size) {
     bc_resize(bc, bc->size + BC_ALLOC_INCR);
   }
   bc->ptr[bc->count] = code;
   bc->count++;
-  memcpy(bc->ptr + bc->count, &p1, 4);
-  bc->count += 4;
+  memcpy(bc->ptr + bc->count, &p1, sizeof(bid_t));
+  bc->count += sizeof(bid_t);
 }
 
 /*
  * add buildin function call
  */
-void bc_add_fcode(bc_t *bc, long idx) {
+void bc_add_fcode(bc_t *bc, bid_t idx) {
   bc_add2l(bc, kwTYPE_CALLF, idx);
 }
 
 /*
  * add buildin procedure call
  */
-void bc_add_pcode(bc_t *bc, long idx) {
+void bc_add_pcode(bc_t *bc, bid_t idx) {
   bc_add2l(bc, kwTYPE_CALLP, idx);
 }
 
 /*
  * add an external function-call
  */
-void bc_add_extfcode(bc_t *bc, int lib, long idx) {
+void bc_add_extfcode(bc_t *bc, uint32_t lib, uint32_t idx) {
   bc_add_code(bc, kwTYPE_CALLEXTF);
   bc_add_dword(bc, lib);
   bc_add_dword(bc, idx);
@@ -115,7 +115,7 @@ void bc_add_extfcode(bc_t *bc, int lib, long idx) {
 /*
  * add an external procedure-call
  */
-void bc_add_extpcode(bc_t *bc, int lib, long idx) {
+void bc_add_extpcode(bc_t *bc, uint32_t lib, uint32_t idx) {
   bc_add_code(bc, kwTYPE_CALLEXTP);
   bc_add_dword(bc, lib);
   bc_add_dword(bc, idx);
@@ -128,8 +128,8 @@ void bc_add_addr(bc_t *bc, bcip_t idx) {
   if (bc->count + sizeof(bcip_t) >= bc->size) {
     bc_resize(bc, bc->size + BC_ALLOC_INCR);
   }
-  memcpy(bc->ptr + bc->count, &idx, 4);
-  bc->count += 4;
+  memcpy(bc->ptr + bc->count, &idx, sizeof(bcip_t));
+  bc->count += sizeof(bcip_t);
 }
 
 /*
