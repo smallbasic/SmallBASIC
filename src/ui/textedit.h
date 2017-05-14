@@ -68,6 +68,7 @@ struct EditBuffer {
   void clear();
   int  countNewlines(const char *text, int num);
   int  deleteChars(int pos, int num);
+  char getChar(int pos);
   int  insertChars(int pos, const char *text, int num);
   int  lineCount();
   void removeTrailingSpaces(STB_TexteditState *state);
@@ -257,7 +258,7 @@ private:
 #define STB_TEXTEDIT_GETWIDTH_NEWLINE 0.0f
 #define STB_TEXTEDIT_KEYTOTEXT(k) k
 #define STB_TEXTEDIT_STRINGLEN(o) o->_len
-#define STB_TEXTEDIT_GETCHAR(o,i) o->_buffer[i]
+#define STB_TEXTEDIT_GETCHAR(o,i) o->getChar(i)
 #define STB_TEXTEDIT_GETWIDTH(o,n,i)      o->_in->charWidth(n, i)
 #define STB_TEXTEDIT_LAYOUTROW(r,o,n)     o->_in->layout(r, n)
 #define STB_TEXTEDIT_DELETECHARS(o,i,n)   o->deleteChars(i, n)

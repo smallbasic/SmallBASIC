@@ -252,6 +252,16 @@ int EditBuffer::deleteChars(int pos, int num) {
   return 1;
 }
 
+char EditBuffer::getChar(int pos) {
+  char result;
+  if (_buffer != NULL && pos >= 0 && pos < _len) {
+    result = _buffer[pos];
+  } else {
+    result = '\0';
+  }
+  return result;
+}
+
 int EditBuffer::insertChars(int pos, const char *text, int num) {
   int required = _len + num + 1;
   if (required >= _size) {
