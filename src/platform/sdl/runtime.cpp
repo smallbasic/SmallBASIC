@@ -81,7 +81,7 @@ struct SoundObject {
     _index = 0;
     _samplesLeft = _samples;
   }
-  
+
   double _v;
   double _freq;
   Uint32 _samplesLeft;
@@ -994,15 +994,44 @@ void signalTrace(SDL_bool debugBreak, SDL_bool debugError = SDL_FALSE) {
 }
 
 void dumpStack(socket_t socket) {
-  for (int i = prog_stack_count - 1;  i > -1; i--) {
+  net_print(socket, "Stack:\n");
+  for (int i = prog_stack_count - 1; i > -1; i--) {
     stknode_t node = prog_stack[i];
     switch (node.type) {
     case kwFUNC:
-      net_print(socket, "FUNC\n");
+      net_print(socket, " FUNC\n");
       break;
     case kwPROC:
-      net_print(socket, "SUB\n");
+      net_print(socket, " SUB\n");
       break;
+    }
+  }
+}
+
+void dumpVariables(socket_t socket) {
+  net_print(socket, "Variables:\n");
+
+  bool localScope = false;
+  for (int i = prog_stack_count - 1; !localScope && i > -1; i--) {
+    stknode_t node = prog_stack[i];
+    switch (node.type) {
+    case kwTYPE_CRVAR:
+      // local variable
+      pv_writevar(tvar[node.x.vdvar.vid], PV_NET, socket);
+      net_print(socket, "\n");
+      break;
+    case kwFUNC:
+    case kwPROC:
+      localScope = true;
+      break;
+    }
+  }
+  if (!localScope) {
+    for (unsigned i = SYSVAR_COUNT; i < prog_varcount; i++) {
+      if (!v_isempty(tvar[i])) {
+        pv_writevar(tvar[i], PV_NET, socket);
+        net_print(socket, "\n");
+      }
     }
   }
 }
@@ -1042,14 +1071,7 @@ int debugThread(void *data) {
         if (!runtime->isRunning()) {
           net_printf(socket, "\n");
         } else {
-          net_print(socket, "Variables:\n");
-          for (unsigned i = SYSVAR_COUNT; i < prog_varcount; i++) {
-            if (!v_isempty(tvar[i])) {
-              pv_writevar(tvar[i], PV_NET, socket);
-              net_print(socket, "\n");
-            }
-          }
-          net_print(socket, "Stack:\n");
+          dumpVariables(socket);
           dumpStack(socket);
           net_print(socket, "\1");
         }

@@ -263,18 +263,18 @@ void System::editSource(String loadPath) {
         case SB_KEY_CTRL('x'):
         case SB_KEY_CTRL(SB_KEY_INSERT):
           text = widget->copy(event.key == (int)SB_KEY_CTRL('x'));
-        if (text) {
-          setClipboardText(text);
-          free(text);
-        }
-        break;
+          if (text) {
+            setClipboardText(text);
+            free(text);
+          }
+          break;
         case SB_KEY_F(1):
         case SB_KEY_ALT('h'):
           _output->setStatus("Keyword Help. F2=online, Esc=Close");
-        widget = helpWidget;
-        helpWidget->createKeywordIndex();
-        helpWidget->show();
-        break;
+          widget = helpWidget;
+          helpWidget->createKeywordIndex();
+          helpWidget->show();
+          break;
         case SB_KEY_F(2):
           redraw = false;
           onlineHelp((Runtime *)this, editWidget);
@@ -348,9 +348,9 @@ void System::editSource(String loadPath) {
         case SB_KEY_CTRL('v'):
         case SB_KEY_SHIFT(SB_KEY_INSERT):
           text = getClipboardText();
-        widget->paste(text);
-        free(text);
-        break;
+          widget->paste(text);
+          free(text);
+          break;
         case SB_KEY_CTRL('o'):
           _output->selectScreen(USER_SCREEN1);
           showCompletion(true);
@@ -383,24 +383,24 @@ void System::editSource(String loadPath) {
           if (editWidget->isDirty()) {
             saveFile(editWidget, loadPath);
           }
-        if (getRecentFile(recentFile, event.key - SB_KEY_ALT('1'))) {
-          if (loadSource(recentFile.c_str())) {
-            editWidget->reload(_programSrc);
-            statusMessage.setFilename(loadPath);
-            setLoadPath(recentFile);
-            setWindowTitle(statusMessage._fileName);
-            loadPath = recentFile;
-            if (helpWidget->messageMode() && helpWidget->isVisible()) {
-              showRecentFiles(helpWidget, loadPath);
+          if (getRecentFile(recentFile, event.key - SB_KEY_ALT('1'))) {
+            if (loadSource(recentFile.c_str())) {
+              editWidget->reload(_programSrc);
+              statusMessage.setFilename(loadPath);
+              setLoadPath(recentFile);
+              setWindowTitle(statusMessage._fileName);
+              loadPath = recentFile;
+              if (helpWidget->messageMode() && helpWidget->isVisible()) {
+                showRecentFiles(helpWidget, loadPath);
+              }
+            } else {
+              String message("Failed to load recent file: ");
+              message.append(recentFile);
+              _output->setStatus(message);
             }
-          } else {
-            String message("Failed to load recent file: ");
-            message.append(recentFile);
-            _output->setStatus(message);
           }
-        }
-        _modifiedTime = getModifiedTime();
-        break;
+          _modifiedTime = getModifiedTime();
+          break;
         default:
           redraw = widget->edit(event.key, sw, charWidth);
           break;

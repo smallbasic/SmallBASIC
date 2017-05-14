@@ -1689,6 +1689,9 @@ bool TextEditHelpWidget::edit(int key, int screenWidth, int charWidth) {
       result = TextEditInput::edit(key, screenWidth, charWidth);
     }
     break;
+  case kMessage:
+    //  readonly mode
+    break;
   default:
     switch (key) {
     case STB_TEXTEDIT_K_LEFT:
