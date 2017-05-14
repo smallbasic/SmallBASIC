@@ -302,6 +302,8 @@ void System::editSource(String loadPath) {
           helpWidget->createMessage();
           helpWidget->show();
           debugStart(editWidget, loadPath.c_str());
+          statusMessage._row = editWidget->getRow();
+          statusMessage._col = editWidget->getCol();
           break;
         case SB_KEY_F(6):
           debugStep(editWidget, helpWidget, false);
