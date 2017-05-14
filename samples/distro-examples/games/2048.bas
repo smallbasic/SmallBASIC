@@ -45,6 +45,7 @@ func Display()
     next i
   end
 
+  local result
   result = {}
   result.show=@display
   return result
@@ -244,7 +245,7 @@ func Grid()
     endif
   end
 
-  result = {}
+  local result = {}
   result.getAvailableCells = @getavailablecells
   result.getMaxTile = @getmaxtile
   result.canInsert = @caninsert
@@ -259,13 +260,109 @@ func Grid()
   return result
 end
 
+func GameManager()
+  sub updateAlarm(currTime)
+    if currTime - self.prevTime > timeLimit + allowance then
+      self.over = True
+    else
+      'while time.clock() - self.prevTime < timeLimit + allowance
+      '  pass
+      'self.prevTime = time.clock()
+    endif
+  end
+
+  sub start()
+    local i, playerTurn, maxTile, gridCopy, move
+
+    for i = 0 to self.initTiles
+      insertRandonTile()
+    next i
+
+    self.displayer.display(self.grid)
+
+    # Player AI Goes First
+    playerTurn = true
+    maxTile = 0
+
+    self.prevTime = time.clock()
+    while not self.isGameOver() and not self.over
+      # Copy to Ensure AI Cannot Change the Real Grid to Cheat
+      gridCopy = self.grid.clone()
+
+      move = None
+
+      if playerTurn then
+        print "Player's Turn:",
+        move = self.playerAI.getMove(gridCopy)
+        'print actionDic[move]
+
+        # Validate Move
+        if move >= 0 and move < 4 then
+          if self.grid.canMove([move]) then
+            self.grid.move(move)
+
+            # Update maxTile
+            maxTile = self.grid.getMaxTile()
+          else
+            print "Invalid PlayerAI Move"
+            self.over = True
+          endif
+        else
+          print "Invalid PlayerAI Move - 1"
+          self.over = True
+        endif
+      else
+        print "Computer's turn:"
+        move = self.computerAI.getMove(gridCopy)
+
+        # Validate Move
+        if move and self.grid.canInsert(move) then
+          self.grid.setCellValue(move, self.getNewTileValue())
+        else
+          print "Invalid Computer AI Move"
+          self.over = True
+        endif
+      endif
+      if not self.over then
+        self.displayer.display(self.grid)
+      endif
+      # Exceeding the Time Allotted for Any Turn Terminates the Game
+      'self.updateAlarm(time.clock())
+      playerTurn = IFF(playerTurn, false, true)
+    wend
+    print maxTile
+  end
+
+  func isGameOver()
+    return not self.grid.canMove()
+  end
+
+  func getNewTileValue()
+    if randint(0,99) < 100 * self.probability then
+      return self.possibleNewTiles[0]
+    else
+      return self.possibleNewTiles[1]
+    endif
+  end
+
+  sub insertRandonTile()
+    local tileValue, cells, cell
+    tileValue = self.getNewTileValue()
+    cells = self.grid.getAvailableCells()
+    cell = cells[randint(0, len(cells) - 1)]
+    self.grid.setCellValue(cell, tileValue)
+  end
+
+  local result = {}
+  return result
+end
+
 sub Game
   g = Grid()
   d = Display()
   g.insertTile(2,1,4)
   g.insertTile(2,2,4)
   d.show(g)
-  pause
   logprint g.canMove([kDOWN])
   g.move(g.kDOWN)
   logprint g.canMove([kDOWN])
