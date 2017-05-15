@@ -260,7 +260,136 @@ func Grid()
   return result
 end
 
-func GameManager()
+func PlayerAI()
+  # https://en.wikipedia.org/wiki/Evaluation_function
+  func getUtility(state)
+    local x,y
+    local numEmpty = 0
+    local result = 0.0
+    local highest = 0
+
+    for y = 0 to self.size
+      for x = 0 to self.size
+        if (state.map[y][x] != 0) then
+          result += state.map[y][x] * monotonicityPattern[y][x]
+        endif
+        if state.map[y][x] > highest then
+          highest = state.map[y][x]
+        else
+          numEmpty += 1
+          if (state.map[0][3] != highest) then
+            result += highest * 100
+          if (numEmpty == 0) then
+            result = 0
+          elif (result != 0) then
+            result = 1 / result
+          endif
+        endif
+      next x
+    next y
+    return result
+  end
+
+  # whether to stop evaluating lower depths
+  func isTerminal(move, depth)
+    if move == None then return True
+    if depth >= self.maxDepth then return True
+    'if ((time.clock() - self.startTime) > self.timeLimit) then
+    '  self.timeout = True
+    '  return True
+    'endif
+    return False
+  end
+
+  func maximise(state, a, b, move, depth)
+    local availablemoves, child
+    if (isTerminal(move, depth)) then return (move, getUtility(state))
+
+    availableMoves = False
+    maxMove = None
+    maxUtility = ninf
+    # 0 stands for "Up", 1 stands for "Down", 2 stands for "Left", and 3 stands for "Right".
+    for nextMove in [0,3,1,2]
+      child = cloneGrid(state)
+      if child.move(nextMove) then
+        availableMoves = True
+        # get the estimated attack/response move
+        [_, utility] = minimise(child, a, b, nextMove, depth + 1)
+        if (utility > maxUtility) then [maxMove, maxUtility] = [nextMove, utility]
+        if (maxUtility >= b) then
+          # this node will not be selected in ancestor min function
+          # we are larger than a sibling node so will be discounted
+          exit for
+        endif
+        if (maxUtility > a) then a = maxUtility
+      endif
+    next nextmove
+    if (availableMoves == False) then
+      # terminal state detected
+      return (move, self.getUtility(state))
+    endif
+    return (maxMove, maxUtility)
+  end
+
+  func minimise(state, a, b, move, depth)
+    local child
+
+    local availableCells = state.getAvailableCells()
+    if (isTerminal(move, depth) or len(availableCells) == 0) then
+      return (move, self.getUtility(state))
+    endif
+
+    local minimisingMoves = []
+    if len(availableCells) > 2 then
+      # filter to cells in the top right area
+      for emptyPos in availableCells:
+        [y, x] = emptyPos
+        if (emptyCellPattern[y][x] == 0) then  minimisingMoves.append(emptyPos)
+      next emptypos
+    else
+      # try the remaining 1 or 2 cells
+      minimisingMoves = availableCells
+    endif
+    if len(minimisingMoves) == 0 then return [move, self.getUtility(state)]
+
+    [minMove, minUtility] = [None, inf]
+    for nextMove in minimisingMoves
+      child = cloneGrid(state)
+      child.insertTile(nextMove, 2)
+      [_, utility] = maximise(child, a, b, move, depth + 1)
+      if (utility < minUtility) then [minMove, minUtility] = [move, utility]
+      if (minUtility <= a) then exit for
+      if (minUtility < b) then b = minUtility
+    next nextmove
+    return (minMove, minUtility)
+  end
+
+  func getMove(grid)
+    self.startTime = time.clock()
+    self.timeout = False
+    [move, utility] = self.maximise(grid, ninf, inf, 0, 0)
+    if (self.tuned == False) then
+      if self.timeout == True then
+        self.tuned = True
+      else
+        self.maxDepth += 1
+      endif
+    endif
+    return move
+  end
+
+  result = {}
+  result.startTime = 0
+  result.startMaxScore = 0
+  result.timeLimit = 0.09
+  result.maxDepth = 4
+  result.timeout = False
+  result.tuned = False
+  return result
+end
+
+
+func Game()
   sub updateAlarm(currTime)
     if currTime - self.prevTime > timeLimit + allowance then
       self.over = True
@@ -357,7 +486,7 @@ func GameManager()
   return result
 end
 
-sub Game
+sub _Game
   g = Grid()
   d = Display()
   g.insertTile(2,1,4)
