@@ -97,6 +97,7 @@ enum keyword {                // line 50
   kwUNIT,
   kwLET,
   kwCONST,
+  kwPACKED_LET,
   kwEND,
   kwSTOP,
   kwPRINT,

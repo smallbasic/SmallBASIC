@@ -287,5 +287,12 @@ if (bx  != 3) then
   throw "nested method error2: " + bx
 endif
 
-
 rem -------
+func tuple()
+  return [10,20,30]
+end
+
+(a1,b1,c1) = tuple()
+if a1 != 10 or b1 != 20 or c1 != 30 then
+  throw "packing error"
+endif

@@ -1,4 +1,7 @@
 2017-05-14 (0.12.10)
+	COMMON: Assign multiple variables from an ARRAY
+
+2017-05-14 (0.12.10)
 	COMMON: Optimise execution between repeated kwLINE,kwGOTO segments
 	COMMON: Cleanup redundant typedefs
 	SDL: Debugger only show local variables when in SUB or FUNC

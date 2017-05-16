@@ -790,6 +790,9 @@ void bc_loop(int isf) {
       case kwCONST:
         cmd_let(1);
         break;
+      case kwPACKED_LET:
+        cmd_packed_let();
+        break;
       case kwGOTO:
         next_ip = code_getaddr();
 

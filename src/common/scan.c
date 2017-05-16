@@ -1954,6 +1954,12 @@ void comp_text_line_let(bid_t idx, int ladd, int linc, int ldec, int leqop) {
         comp_bc_parm[len] = '\0';
 
         comp_get_unary(comp_bc_parm, &ladd, &linc, &ldec, &leqop);
+      } else if (idx == -1 && !comp_bc_name[0]) {
+        // packed assignment - (a,b,c) = [1,2,3]
+        bc_add_code(&comp_prog, kwPACKED_LET);
+        comp_array_params(parms, '=');
+        comp_expression(p + 1, 0);
+        return;
       }
     }
   }

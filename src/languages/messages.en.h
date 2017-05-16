@@ -218,5 +218,5 @@
 #define ERR_IMAGE_SAVE          "Failed to save image"
 #define ERR_FORM_INPUT          "Form has no inputs"
 #define ERR_PARAM_NUM           "Incorrect number of parameters: %d. Expected %d."
-
-
+#define ERR_PACK_TOO_MANY       "Too many values to unpack"
+#define ERR_PACK_TOO_FEW        "Need more than %d values to unpack"

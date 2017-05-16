@@ -20,6 +20,7 @@
 #include "common/messages.h"
 
 #define STR_INIT_SIZE 256
+#define PKG_INIT_SIZE 5
 
 /**
  * LET v[(x)] = any
@@ -52,6 +53,60 @@ void cmd_let(int is_const) {
       }
       v_free(&v_right);
     }
+  }
+}
+
+void cmd_packed_let() {
+  if (code_peek() != kwTYPE_LEVEL_BEGIN) {
+    err_missing_comma();
+  } else {
+    code_skipnext();
+
+    int size = PKG_INIT_SIZE;
+    int count = 0;
+    var_t **vars = (var_t **)malloc(sizeof(var_t **) * size);
+
+    while (code_peek() != kwTYPE_LEVEL_END && !prog_error) {
+      if (count + 1 > size) {
+        size += PKG_INIT_SIZE;
+        vars = (var_t **)realloc(vars, sizeof(var_t **) * size);
+      }
+      vars[count++] = code_getvarptr();
+
+      // skip separator
+      if (code_peek() == kwTYPE_SEP) {
+        code_skipnext();
+        if (code_getnext() != ',') {
+          err_missing_comma();
+        }
+      }
+    }
+    // skip end separator
+    code_skipnext();
+
+    var_t v_right;
+    v_init(&v_right);
+    eval(&v_right);
+
+    if (!prog_error) {
+      int arrayCount = v_right.type == V_ARRAY ? v_asize(&v_right) : 1;
+      if (arrayCount == count) {
+        if (count == 1) {
+          // right can be another data type
+          v_set(vars[0], &v_right);
+        } else {
+          for (int i = 0; i < count; i++) {
+            v_set(vars[i], v_elem(&v_right, i));
+          }
+        }
+      } else if (arrayCount > count) {
+        rt_raise(ERR_PACK_TOO_MANY);
+      } else {
+        rt_raise(ERR_PACK_TOO_FEW, arrayCount);
+      }
+    }
+    v_free(&v_right);
+    free(vars);
   }
 }
 
