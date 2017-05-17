@@ -3021,6 +3021,10 @@ void print_pass2_stack(bcip_t pos, code_t lcode, int level) {
   code_t end_code[] = { kwWEND, kwUNTIL, kwENDIF, kwNEXT, kwTYPE_RET, 0 };
   code_t code = lcode;
 
+  if (opt_quiet || opt_interactive) {
+    return;
+  }
+
   kw_getcmdname(code, cmd);
 
   ip = comp_search_bc_stack(pos + 1, code, level - 1, -1);
@@ -3197,9 +3201,7 @@ void comp_pass2_scan() {
       true_ip = comp_search_bc_stack(i + 1, kwTYPE_RET, node->level, -1) + 1;
       if (true_ip == INVALID_ADDR) {
         sc_raise(MSG_UDP_MISSING_END);
-        if (!opt_quiet && !opt_interactive) {
-          print_pass2_stack(i, kwTYPE_RET, node->level);
-        }
+        print_pass2_stack(i, kwTYPE_RET, node->level);
         return;
       }
       memcpy(comp_prog.ptr + node->pos - (ADDRSZ + 1), &true_ip, ADDRSZ);
@@ -3521,7 +3523,7 @@ int comp_read_goto(bcip_t ip, bcip_t *addr, code_t *level) {
 
 void comp_optimise() {
   // scan for repeated kwTYPE_LINE... kwGOTO blocks
-  for (bcip_t ip = 0; ip < comp_prog.count; ip = comp_next_bc_cmd(ip)) {
+  for (bcip_t ip = 0; !comp_error && ip < comp_prog.count; ip = comp_next_bc_cmd(ip)) {
     if (comp_prog.ptr[ip] == kwTYPE_LINE) {
       ip += 1 + sizeof(bcip_t);
       if (comp_prog.ptr[ip] == kwGOTO) {
