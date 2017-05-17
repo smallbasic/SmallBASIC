@@ -68,7 +68,13 @@ func Grid()
     return result
   end
 
-  sub insertTile(x,y,v)
+  sub insertTile(x, y, v)
+    self.map[y][x] = v
+  end
+
+  sub setCellValue(cell, v)
+    local x,y
+    (x,y) = cell
     self.map[y][x] = v
   end
 
@@ -255,6 +261,7 @@ func Grid()
   result.merge = @merge
   result.getAvailableMoves = @getavailablemoves
   result.getCellValue = @getCellValue
+  result.setCellValue = @setCellValue
   result.map = [[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0]]
   result.size = 3
   return result
@@ -279,6 +286,7 @@ func PlayerAI()
           numEmpty += 1
           if (state.map[0][3] != highest) then
             result += highest * 100
+          endif
           if (numEmpty == 0) then
             result = 0
           elif (result != 0) then
@@ -344,7 +352,7 @@ func PlayerAI()
       # filter to cells in the top right area
       for emptyPos in availableCells:
         [y, x] = emptyPos
-        if (emptyCellPattern[y][x] == 0) then  minimisingMoves.append(emptyPos)
+        if (emptyCellPattern[y][x] == 0) then minimisingMoves.append(emptyPos)
       next emptypos
     else
       # try the remaining 1 or 2 cells
@@ -365,7 +373,7 @@ func PlayerAI()
   end
 
   func getMove(grid)
-    self.startTime = time.clock()
+    self.startTime = ticks
     self.timeout = False
     [move, utility] = self.maximise(grid, ninf, inf, 0, 0)
     if (self.tuned == False) then
@@ -388,7 +396,6 @@ func PlayerAI()
   return result
 end
 
-
 func Game()
   sub updateAlarm(currTime)
     if currTime - self.prevTime > timeLimit + allowance then
@@ -403,11 +410,11 @@ func Game()
   sub start()
     local i, playerTurn, maxTile, gridCopy, move
 
-    for i = 0 to self.initTiles
+    for i = 1 to self.initTiles
       insertRandonTile()
     next i
 
-    self.displayer.display(self.grid)
+    self.displayer.show(self.grid)
 
     # Player AI Goes First
     playerTurn = true
@@ -453,7 +460,7 @@ func Game()
         endif
       endif
       if not self.over then
-        self.displayer.display(self.grid)
+        self.displayer.show(self.grid)
       endif
       # Exceeding the Time Allotted for Any Turn Terminates the Game
       'self.updateAlarm(time.clock())
@@ -467,7 +474,7 @@ func Game()
   end
 
   func getNewTileValue()
-    if randint(0,99) < 100 * self.probability then
+    if rnd < self.probability then
       return self.possibleNewTiles[0]
     else
       return self.possibleNewTiles[1]
@@ -475,18 +482,26 @@ func Game()
   end
 
   sub insertRandonTile()
-    local tileValue, cells, cell
-    tileValue = self.getNewTileValue()
-    cells = self.grid.getAvailableCells()
-    cell = cells[randint(0, len(cells) - 1)]
+    local tileValue = getNewTileValue()
+    local cells = self.grid.getAvailableCells()
+    local cell = cells[rnd * 1000 mod len(cells)]
     self.grid.setCellValue(cell, tileValue)
   end
 
   local result = {}
+  result.start = @start
+  result.grid = Grid()
+  result.possibleNewTiles = [2, 4]
+  result.probability = 0.9
+  result.initTiles  = 2
+'  result.computerAI = PlayerAI()
+'  result.playerAI   = PlayerAI()
+  result.displayer = Display()
+  result.over       = False
   return result
 end
 
-sub _Game
+sub _Test
   g = Grid()
   d = Display()
   g.insertTile(2,1,4)
@@ -499,4 +514,5 @@ sub _Game
   pause
 end
 
-Game()
+g = Game()
+g.start()
