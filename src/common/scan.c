@@ -3535,7 +3535,7 @@ void comp_optimise() {
         ip = comp_read_goto(ip + 1, &addr, &level);
         bcip_t goto_ip = addr;
 
-        while (comp_prog.ptr[goto_ip] == kwTYPE_LINE) {
+        while (goto_ip > 0 && comp_prog.ptr[goto_ip] == kwTYPE_LINE) {
           goto_ip += 1 + sizeof(bcip_t);
           if (comp_prog.ptr[goto_ip] == kwGOTO) {
             code_t next_level;
