@@ -807,13 +807,17 @@ void comp_push(bcip_t ip) {
  * returns the keyword code
  */
 int comp_is_keyword(const char *name) {
-  int i, idx;
+  int i;
   byte dolar_sup = 0;
+
+  if (name == NULL || name[0] == '\0') {
+    return -1;
+  }
 
   // Code to enable the $ but not for keywords (INKEY$=INKEY,
   // PRINT$=PRINT !!!)
   // I don't want to increase the size of keywords table.
-  idx = strlen(name) - 1;
+  int idx = strlen(name) - 1;
   if (name[idx] == '$') {
     *((char *)(name + idx)) = '\0';
     dolar_sup++;
@@ -835,14 +839,17 @@ int comp_is_keyword(const char *name) {
  * returns the keyword code (buildin functions)
  */
 bid_t comp_is_func(const char *name) {
-  bid_t i;
-  int idx;
+  int i;
   byte dolar_sup = 0;
+
+  if (name == NULL || name[0] == '\0') {
+    return -1;
+  }
 
   // Code to enable the $ but not for keywords (INKEY$=INKEY,
   // PRINT$=PRINT !!!)
   // I don't want to increase the size of keywords table.
-  idx = strlen(name) - 1;
+  int idx = strlen(name) - 1;
   if (name[idx] == '$') {
     *((char *)(name + idx)) = '\0';
     dolar_sup++;
