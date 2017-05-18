@@ -18,16 +18,25 @@ func Display()
     32768 : 15
   }
 
-  sz = xmax/8
-  offs = 10
-  gap = 3
-  w=window()
+  const sz = min(xmax,ymax)/6
+  const offs = 10
+  const gap = 3
+  const w = window()
+  const bgc = rgb(15,40,15)
+
   w.setFont(sz/4,0,1,0)
-  color 0,rgb(15,40,15)
-  cls
+  color 0, bgc: cls
+
+  sub println(s)
+    logprint s
+    color 15, bgc
+    at offs, self.y_out
+    print s + chr(27) + "[K"
+  end
 
   sub display(grid)
     local i,j,x,y,v,c
+
     y = 0
     x = 0
     for i = 0 to grid.size
@@ -43,11 +52,12 @@ func Display()
       y += sz
       x = 0
     next i
+    self.y_out = y + 10
   end
 
-  local result
-  result = {}
+  local result = {}
   result.show=@display
+  result.println=@println
   return result
 end
 
@@ -316,7 +326,8 @@ func PlayerAI()
     availableMoves = False
     maxMove = None
     maxUtility = ninf
-    # 0 stands for "Up", 1 stands for "Down", 2 stands for "Left", and 3 stands for "Right".
+    # 0 stands for "Up", 1 stands for "Down", 2 stands for "Left", 
+    # and 3 stands for "Right".
     for nextMove in [0,3,1,2]
       child = cloneGrid(state)
       if child.move(nextMove) then
@@ -340,7 +351,7 @@ func PlayerAI()
   end
 
   func minimise(state, a, b, move, depth)
-    local child
+    local child,x,y,minMove,utility,emptyPos
 
     local availableCells = state.getAvailableCells()
     if (isTerminal(move, depth) or len(availableCells) == 0) then
@@ -352,7 +363,9 @@ func PlayerAI()
       # filter to cells in the top right area
       for emptyPos in availableCells:
         [y, x] = emptyPos
-        if (emptyCellPattern[y][x] == 0) then minimisingMoves.append(emptyPos)
+        if (emptyCellPattern[y][x] == 0) then
+          append minimisingMoves, emptyPos
+        endif
       next emptypos
     else
       # try the remaining 1 or 2 cells
@@ -373,6 +386,7 @@ func PlayerAI()
   end
 
   func getMove(grid)
+    local move,utility
     self.startTime = ticks
     self.timeout = False
     [move, utility] = self.maximise(grid, ninf, inf, 0, 0)
@@ -386,13 +400,27 @@ func PlayerAI()
     return move
   end
 
-  result = {}
+  local result = {}
   result.startTime = 0
   result.startMaxScore = 0
   result.timeLimit = 0.09
   result.maxDepth = 4
   result.timeout = False
   result.tuned = False
+  return result
+end
+
+func ComputerAI()
+  sub getMove(grid)
+    local cells = grid.getAvailableCells()
+    if len(cells) = 0 then
+      return -1
+    endif
+    return cells[rnd * 1000 mod len(cells)]
+  end
+
+  local result = {}
+  result.getMove=@getMode
   return result
 end
 
@@ -409,18 +437,23 @@ func Game()
 
   sub start()
     local i, playerTurn, maxTile, gridCopy, move
+    local computerAI, playerAI, displayer
+
+    computerAI = ComputerAI()
+    playerAI   = PlayerAI()
+    displayer = Display()
 
     for i = 1 to self.initTiles
       insertRandonTile()
     next i
 
-    self.displayer.show(self.grid)
+    displayer.show(self.grid)
 
     # Player AI Goes First
     playerTurn = true
     maxTile = 0
 
-    self.prevTime = time.clock()
+    self.prevTime = timer
     while not self.isGameOver() and not self.over
       # Copy to Ensure AI Cannot Change the Real Grid to Cheat
       gridCopy = self.grid.clone()
@@ -428,8 +461,8 @@ func Game()
       move = None
 
       if playerTurn then
-        print "Player's Turn:",
-        move = self.playerAI.getMove(gridCopy)
+        displayer.println("Player's Turn:")
+        move = playerAI.getMove(gridCopy)
         'print actionDic[move]
 
         # Validate Move
@@ -440,33 +473,33 @@ func Game()
             # Update maxTile
             maxTile = self.grid.getMaxTile()
           else
-            print "Invalid PlayerAI Move"
+            displayer.println("Invalid PlayerAI Move")
             self.over = True
           endif
         else
-          print "Invalid PlayerAI Move - 1"
+          displayer.println("Invalid PlayerAI Move - 1")
           self.over = True
         endif
       else
-        print "Computer's turn:"
-        move = self.computerAI.getMove(gridCopy)
+        displayer.println("Computer's turn:")
+        move = computerAI.getMove(gridCopy)
 
         # Validate Move
         if move and self.grid.canInsert(move) then
           self.grid.setCellValue(move, self.getNewTileValue())
         else
-          print "Invalid Computer AI Move"
+          displayer.println("Invalid Computer AI Move")
           self.over = True
         endif
       endif
       if not self.over then
-        self.displayer.show(self.grid)
+        displayer.show(self.grid)
       endif
       # Exceeding the Time Allotted for Any Turn Terminates the Game
       'self.updateAlarm(time.clock())
       playerTurn = IFF(playerTurn, false, true)
     wend
-    print maxTile
+    displayer.println(maxTile)
   end
 
   func isGameOver()
@@ -494,24 +527,8 @@ func Game()
   result.possibleNewTiles = [2, 4]
   result.probability = 0.9
   result.initTiles  = 2
-'  result.computerAI = PlayerAI()
-'  result.playerAI   = PlayerAI()
-  result.displayer = Display()
   result.over       = False
   return result
-end
-
-sub _Test
-  g = Grid()
-  d = Display()
-  g.insertTile(2,1,4)
-  g.insertTile(2,2,4)
-  d.show(g)
-  logprint g.canMove([kDOWN])
-  g.move(g.kDOWN)
-  logprint g.canMove([kDOWN])
-  d.show(g)
-  pause
 end
 
 g = Game()
