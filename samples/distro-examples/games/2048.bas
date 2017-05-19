@@ -1,3 +1,8 @@
+const kUP = 0
+const kDOWN = 1
+const kLEFT = 2
+const kRIGHT = 3
+
 func Display()
   colorMap = {
     0 	: 0,
@@ -62,10 +67,6 @@ func Display()
 end
 
 func Grid()
-  const kUP = 0
-  const kDOWN = 1
-  const kLEFT = 2
-  const kRIGHT = 3
   const vecIndex = [kUP, kDOWN, kLEFT, kRIGHT]
   const directionVectors = [[-1, 0], [1, 0], [0, -1], [0, 1]]
 
@@ -434,8 +435,27 @@ func Game()
     else
       'while time.clock() - self.prevTime < timeLimit + allowance
       '  pass
-      'self.prevTime = time.clock()
+      self.prevTime = timer
     endif
+  end
+
+  func isGameOver()
+    return not self.grid.canMove([])
+  end
+
+  func getNewTileValue()
+    if rnd < self.probability then
+      return self.possibleNewTiles[0]
+    else
+      return self.possibleNewTiles[1]
+    endif
+  end
+
+  sub insertRandomTile()
+    local tileValue = getNewTileValue()
+    local cells = self.grid.getAvailableCells()
+    local cell = cells[rnd * 1000 mod len(cells)]
+    self.grid.setCellValue(cell, tileValue)
   end
 
   sub start()
@@ -447,7 +467,7 @@ func Game()
     displayer = Display()
 
     for i = 1 to self.initTiles
-      insertRandonTile()
+      insertRandomTile()
     next i
 
     displayer.show(self.grid)
@@ -457,19 +477,21 @@ func Game()
     maxTile = 0
 
     self.prevTime = timer
-    while not self.isGameOver() and not self.over
+    while not isGameOver() and not self.over
       # Copy to Ensure AI Cannot Change the Real Grid to Cheat
       gridCopy = self.grid.clone()
+      delay 100
       move = None
 
       if playerTurn then
         displayer.println("Player's Turn:")
         move = playerAI.getMove(gridCopy)
 
-        # Validate Move
+        # Validate and set Move
         if move >= 0 and move < 4 then
           if self.grid.canMove([move]) then
             self.grid.move(move)
+            gridCopy = self.grid.clone()
 
             # Update maxTile
             maxTile = self.grid.getMaxTile()
@@ -486,7 +508,7 @@ func Game()
         move = computerAI.getMove(gridCopy)
         # Validate Move
         if isarray(move) and self.grid.canInsert(move) then
-          self.grid.setCellValue(move, self.getNewTileValue())
+          self.grid.setCellValue(move, getNewTileValue())
         else
           displayer.println("Invalid Computer AI Move")
           self.over = True
@@ -496,28 +518,9 @@ func Game()
         displayer.show(self.grid)
       endif
       # Exceeding the Time Allotted for Any Turn Terminates the Game
-      'self.updateAlarm(time.clock())
+      updateAlarm(time)
       playerTurn = IFF(playerTurn, false, true)
     wend
-  end
-
-  func isGameOver()
-    return not self.grid.canMove()
-  end
-
-  func getNewTileValue()
-    if rnd < self.probability then
-      return self.possibleNewTiles[0]
-    else
-      return self.possibleNewTiles[1]
-    endif
-  end
-
-  sub insertRandonTile()
-    local tileValue = getNewTileValue()
-    local cells = self.grid.getAvailableCells()
-    local cell = cells[rnd * 1000 mod len(cells)]
-    self.grid.setCellValue(cell, tileValue)
   end
 
   randomize
@@ -533,3 +536,4 @@ end
 
 g = Game()
 g.start()
+pause
