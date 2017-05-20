@@ -296,3 +296,12 @@ end
 if a1 != 10 or b1 != 20 or c1 != 30 then
   throw "packing error"
 endif
+
+a = nil
+b = 0
+if a != nil then
+  throw "nil error1"
+endif
+if a == b then
+  throw "nil error2"
+endif

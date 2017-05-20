@@ -725,9 +725,6 @@ static inline void eval_var(var_t *r, var_t *var_p) {
     return;
   }
   switch (var_p->type) {
-  case V_PTR:
-    eval_var_ptr(r, var_p);
-    break;
   case V_INT:
     r->type = V_INT;
     r->v.i = var_p->v.i;
@@ -737,7 +734,14 @@ static inline void eval_var(var_t *r, var_t *var_p) {
     r->v.n = var_p->v.n;
     break;
   case V_STR:
+    v_set(r, var_p);
+    break;
   case V_ARRAY:
+    v_set(r, var_p);
+    break;
+  case V_PTR:
+    eval_var_ptr(r, var_p);
+    break;
   case V_MAP:
     v_set(r, var_p);
     break;
@@ -749,6 +753,10 @@ static inline void eval_var(var_t *r, var_t *var_p) {
     break;
   case V_FUNC:
     var_p->v.fn.cb(r);
+    break;
+  case V_NONE:
+    r->type = V_NONE;
+    r->const_flag = 1;
     break;
   }
 }

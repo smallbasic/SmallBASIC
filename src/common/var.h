@@ -38,6 +38,7 @@
 #define V_MAP       5 /**< variable type, associative array            @ingroup var */
 #define V_REF       6 /**< variable type, reference another var        @ingroup var */
 #define V_FUNC      7 /**< variable type, object method                @ingroup var */
+#define V_NONE      8 /**< variable type, null value                   @ingroup var */
 
 /*
  *   predefined system variables - index
@@ -54,7 +55,8 @@
 #define SYSVAR_X            9  /**< system variable, X         @ingroup var */
 #define SYSVAR_Y            10 /**< system variable, Y         @ingroup var */
 #define SYSVAR_SELF         11 /**< system variable, SELF      @ingroup var */
-#define SYSVAR_COUNT        12
+#define SYSVAR_NONE         12 /**< system variable, NONE      @ingroup var */
+#define SYSVAR_COUNT        13
 
 /**
  * @ingroup var

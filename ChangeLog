@@ -1,3 +1,6 @@
+2017-05-20 (0.12.10)
+	COMMON: Implemented Nil system constant
+
 2017-05-14 (0.12.10)
 	COMMON: Assign multiple variables from an ARRAY
 

@@ -3625,6 +3625,7 @@ void comp_init() {
   comp_var_getID(LCN_SV_X);
   comp_var_getID(LCN_SV_Y);
   comp_var_getID(LCN_SV_SELF);
+  comp_var_getID(LCN_SV_NONE);
 }
 
 /*

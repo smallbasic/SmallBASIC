@@ -69,18 +69,18 @@ void v_new_array(var_t *var, unsigned size) {
  */
 int v_isempty(var_t *var) {
   switch (var->type) {
-  case V_STR:
-    return (v_strlen(var) == 0);
   case V_INT:
     return (var->v.i == 0);
-  case V_MAP:
-    return map_is_empty(var);
-  case V_PTR:
-    return (var->v.ap.p == 0);
   case V_NUM:
     return (var->v.n == 0.0);
+  case V_STR:
+    return (v_strlen(var) == 0);
   case V_ARRAY:
     return (var->v.a.size == 0);
+  case V_PTR:
+    return (var->v.ap.p == 0);
+  case V_MAP:
+    return map_is_empty(var);
   case V_REF:
     return v_isempty(var->v.ref);
   }
@@ -108,26 +108,25 @@ int v_length(var_t *var) {
   char tmpsb[INT_STR_LEN];
 
   switch (var->type) {
-  case V_STR:
-    return v_strlen(var);
-  case V_MAP:
-    return map_length(var);
-  case V_PTR:
-    ltostr(var->v.ap.p, tmpsb);
-    return strlen(tmpsb);
   case V_INT:
     ltostr(var->v.i, tmpsb);
     return strlen(tmpsb);
   case V_NUM:
     ftostr(var->v.n, tmpsb);
     return strlen(tmpsb);
+  case V_STR:
+    return v_strlen(var);
   case V_ARRAY:
     return var->v.a.size;
+  case V_PTR:
+    ltostr(var->v.ap.p, tmpsb);
+    return strlen(tmpsb);
+  case V_MAP:
+    return map_length(var);
   case V_REF:
     return v_length(var->v.ref);
   }
-
-  return 1;
+  return 0;
 }
 
 /*
@@ -243,15 +242,16 @@ int v_is_nonzero(var_t *v) {
     return (v->v.i != 0);
   case V_NUM:
     // return (v->v.n != 0.0 && v->v.n != -0.0);
+    // TODO: fixme
     return (ABS(v->v.n) > 1E-308);
   case V_STR:
     return (v->v.p.length != 0);
-  case V_MAP:
-    return !map_is_empty(v);
-  case V_PTR:
-    return (v->v.ap.p != 0);
   case V_ARRAY:
     return (v->v.a.size != 0);
+  case V_PTR:
+    return (v->v.ap.p != 0);
+  case V_MAP:
+    return !map_is_empty(v);
   };
   return 0;
 }
@@ -342,6 +342,11 @@ int v_compare(var_t *a, var_t *b) {
 
   if (a->type == V_MAP && b->type == V_MAP) {
     return map_compare(a, b);
+  }
+
+  if (a->type == V_NONE || b->type == V_NONE) {
+    // return equal (0) when both NONE
+    return (a->type != b->type);
   }
 
   err_evtype();
@@ -440,27 +445,13 @@ void v_set(var_t *dest, const var_t *src) {
   case V_INT:
     dest->v.i = src->v.i;
     break;
+  case V_NUM:
+    dest->v.n = src->v.n;
+    break;
   case V_STR:
     dest->v.p.length = v_strlen(src) + 1;
     dest->v.p.ptr = (char *)malloc(dest->v.p.length);
     strcpy(dest->v.p.ptr, src->v.p.ptr);
-    break;
-  case V_NUM:
-    dest->v.n = src->v.n;
-    break;
-  case V_MAP:
-    map_set(dest, (const var_p_t)src);
-    break;
-  case V_PTR:
-    dest->v.ap.p = src->v.ap.p;
-    dest->v.ap.v = src->v.ap.v;
-    break;
-  case V_REF:
-    dest->v.ref = src->v.ref;
-    break;
-  case V_FUNC:
-    dest->v.fn.cb = src->v.fn.cb;
-    dest->v.fn.self = src->v.fn.self;
     break;
   case V_ARRAY:
     if (src->v.a.size) {
@@ -481,6 +472,24 @@ void v_set(var_t *dest, const var_t *src) {
       dest->v.a.ubound[0] = dest->v.a.lbound[0] = opt_base;
       dest->v.a.maxdim = 1;
     }
+    break;
+  case V_PTR:
+    dest->v.ap.p = src->v.ap.p;
+    dest->v.ap.v = src->v.ap.v;
+    break;
+  case V_MAP:
+    map_set(dest, (const var_p_t)src);
+    break;
+  case V_REF:
+    dest->v.ref = src->v.ref;
+    break;
+  case V_FUNC:
+    dest->v.fn.cb = src->v.fn.cb;
+    dest->v.fn.self = src->v.fn.self;
+    break;
+  case V_NONE:
+    dest->type = V_NONE;
+    dest->const_flag = 1;
     break;
   }
 }
@@ -560,6 +569,10 @@ char *v_str(var_t *arg) {
   case V_PTR:
     buffer = malloc(5);
     strcpy(buffer, "func");
+    break;
+  case V_NONE:
+    buffer = malloc(5);
+    strcpy(buffer, SB_KW_NONE_STR);
     break;
   default:
     buffer = malloc(1);

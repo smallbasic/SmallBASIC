@@ -185,9 +185,9 @@ stknode_t *code_stackpeek() {
 }
 
 /**
- * sets the value of an integer system-variable
+ * sets the value of an system-variable with the given type
  */
-void setsysvar_int(int index, var_int_t value) {
+void setsysvar_var(int index, var_int_t value, int type) {
   int tid;
   int i;
 
@@ -196,12 +196,19 @@ void setsysvar_int(int index, var_int_t value) {
     activate_task(i);
     if (ctask->has_sysvars) {
       var_t *var_p = tvar[index];
-      var_p->type = V_INT;
+      var_p->type = type;
       var_p->const_flag = 1;
       var_p->v.i = value;
     }
   }
   activate_task(tid);
+}
+
+/**
+ * sets the value of an integer system-variable
+ */
+void setsysvar_int(int index, var_int_t value) {
+  setsysvar_var(index, value, V_INT);
 }
 
 /**
@@ -261,6 +268,7 @@ void exec_setup_predefined_variables() {
   setsysvar_str(SYSVAR_CWD, dev_getcwd());
   setsysvar_str(SYSVAR_COMMAND, opt_command);
   setsysvar_int(SYSVAR_SELF, 0);
+  setsysvar_var(SYSVAR_NONE, 0, V_NONE);
 
 #if defined(_UnixOS)
   if (getenv("HOME")) {

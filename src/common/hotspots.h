@@ -66,16 +66,16 @@ static inline var_int_t code_getint() {
  */
 static inline var_num_t v_getval(var_t *v) {
   switch (v ? v->type : -1) {
-  case V_MAP:
-    return map_to_int(v);
-  case V_PTR:
-    return v->v.ap.p;
   case V_INT:
     return v->v.i;
   case V_NUM:
     return v->v.n;
   case V_STR:
     return numexpr_sb_strtof((char *) v->v.p.ptr);
+  case V_PTR:
+    return v->v.ap.p;
+  case V_MAP:
+    return map_to_int(v);
   default:
     if (v == NULL) {
       err_evsyntax();
@@ -99,16 +99,16 @@ static inline var_num_t v_getval(var_t *v) {
  */
 static inline var_int_t v_igetval(var_t *v) {
   switch (v ? v->type : -1) {
-  case V_MAP:
-    return map_to_int(v);
-  case V_PTR:
-    return v->v.ap.p;
   case V_INT:
     return v->v.i;
   case V_NUM:
     return v->v.n;
   case V_STR:
     return numexpr_strtol((char *) v->v.p.ptr);
+  case V_PTR:
+    return v->v.ap.p;
+  case V_MAP:
+    return map_to_int(v);
   default:
     if (v == NULL) {
       err_evsyntax();

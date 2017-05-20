@@ -204,6 +204,14 @@ void pv_writevar(var_t *var, int method, int handle) {
   memset(tmpsb, 0, sizeof(tmpsb));
 
   switch (var->type) {
+  case V_INT:
+    ltostr(var->v.i, tmpsb);
+    pv_write(tmpsb, method, handle);
+    break;
+  case V_NUM:
+    ftostr(var->v.n, tmpsb);
+    pv_write(tmpsb, method, handle);
+    break;
   case V_STR:
     pv_write((char *)var->v.p.ptr, method, handle);
     break;
@@ -215,16 +223,11 @@ void pv_writevar(var_t *var, int method, int handle) {
     ltostr(var->v.ap.p, tmpsb);
     pv_write(tmpsb, method, handle);
     break;
-  case V_INT:
-    ltostr(var->v.i, tmpsb);
-    pv_write(tmpsb, method, handle);
-    break;
-  case V_NUM:
-    ftostr(var->v.n, tmpsb);
-    pv_write(tmpsb, method, handle);
-    break;
   case V_REF:
     pv_writevar(var->v.ref, method, handle);
+    break;
+  case V_NONE:
+    pv_write(SB_KW_NONE_STR, method, handle);
     break;
   }
 }
