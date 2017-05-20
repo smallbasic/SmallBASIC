@@ -2,6 +2,20 @@ const kUP = 0
 const kDOWN = 1
 const kLEFT = 2
 const kRIGHT = 3
+const vecIndex = [kUP, kDOWN, kLEFT, kRIGHT]
+const directionVectors = [[-1, 0], [1, 0], [0, -1], [0, 1]]
+const inf maxint
+const ninf = -maxint - 1
+const emptyCellPattern =&
+[[0,0,0,0],&
+ [1,1,0,0],&
+ [1,1,1,0],&
+ [1,1,1,0]]
+const monotonicityPattern =&
+ [[16,  8,  1,  0],&
+ [32, 16,  8,  1],&
+ [64, 32, 16,  8],&
+ [128,64, 32, 16]]
 
 func Display()
   colorMap = {
@@ -67,8 +81,21 @@ func Display()
 end
 
 func Grid()
-  const vecIndex = [kUP, kDOWN, kLEFT, kRIGHT]
-  const directionVectors = [[-1, 0], [1, 0], [0, -1], [0, 1]]
+  func createGrid()
+    local result = {}
+    result.clone=@clone
+    result.getAvailableCells = @getavailablecells
+    result.getMaxTile = @getmaxtile
+    result.canInsert = @caninsert
+    result.canMove = @canmove
+    result.move = @move
+    result.insertTile = @inserttile
+    result.merge = @merge
+    result.getAvailableMoves = @getavailablemoves
+    result.getCellValue = @getCellValue
+    result.setCellValue = @setCellValue
+    return result
+  end
 
   # Make a Deep Copy of This Object
   func clone()
@@ -122,7 +149,7 @@ func Grid()
   end
 
   # Move the Grid
-  sub move(dir)
+  func move(dir)
     local result
     select case dir
       case kUP: result = moveUD(False)
@@ -264,18 +291,7 @@ func Grid()
     endif
   end
 
-  local result = {}
-  result.clone=@clone
-  result.getAvailableCells = @getavailablecells
-  result.getMaxTile = @getmaxtile
-  result.canInsert = @caninsert
-  result.canMove = @canmove
-  result.move = @move
-  result.insertTile = @inserttile
-  result.merge = @merge
-  result.getAvailableMoves = @getavailablemoves
-  result.getCellValue = @getCellValue
-  result.setCellValue = @setCellValue
+  local result = createGrid()
   result.map = [[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0]]
   result.size = 3
   return result
@@ -314,7 +330,7 @@ func PlayerAI()
 
   # whether to stop evaluating lower depths
   func isTerminal(move, depth)
-    if move == None then return True
+    if move == Nil then return True
     if depth >= self.maxDepth then return True
     'if ((time.clock() - self.startTime) > self.timeLimit) then
     '  self.timeout = True
@@ -324,16 +340,17 @@ func PlayerAI()
   end
 
   func maximise(state, a, b, move, depth)
-    local availablemoves, child
+    local availableMoves, child, maxMove, maxUtility, nextMove
+
     if (isTerminal(move, depth)) then return [move, getUtility(state)]
 
     availableMoves = False
-    maxMove = None
+    maxMove = Inf
     maxUtility = ninf
     # 0 stands for "Up", 1 stands for "Down", 2 stands for "Left",
     # and 3 stands for "Right".
     for nextMove in [0,3,1,2]
-      child = cloneGrid(state)
+      child = state.clone()
       if child.move(nextMove) then
         availableMoves = True
         # get the estimated attack/response move
@@ -349,9 +366,9 @@ func PlayerAI()
     next nextmove
     if (availableMoves == False) then
       # terminal state detected
-      return (move, self.getUtility(state))
+      return [move, getUtility(state)]
     endif
-    return (maxMove, maxUtility)
+    return [maxMove, maxUtility]
   end
 
   func minimise(state, a, b, move, depth)
@@ -359,7 +376,7 @@ func PlayerAI()
 
     local availableCells = state.getAvailableCells()
     if (isTerminal(move, depth) or len(availableCells) == 0) then
-      return (move, self.getUtility(state))
+      return [move, getUtility(state)]
     endif
 
     local minimisingMoves = []
@@ -375,9 +392,9 @@ func PlayerAI()
       # try the remaining 1 or 2 cells
       minimisingMoves = availableCells
     endif
-    if len(minimisingMoves) == 0 then return [move, self.getUtility(state)]
+    if len(minimisingMoves) == 0 then return [move, getUtility(state)]
 
-    [minMove, minUtility] = [None, inf]
+    [minMove, minUtility] = [Inf, inf]
     for nextMove in minimisingMoves
       child = cloneGrid(state)
       child.insertTile(nextMove, 2)
@@ -390,10 +407,10 @@ func PlayerAI()
   end
 
   func getMove(grid)
-    local move,utility
+    local move, utility
     self.startTime = ticks
     self.timeout = False
-    [move, utility] = self.maximise(grid, ninf, inf, 0, 0)
+    [move, utility] = maximise(grid, ninf, inf, 0, 0)
     if (self.tuned == False) then
       if self.timeout == True then
         self.tuned = True
@@ -405,6 +422,7 @@ func PlayerAI()
   end
 
   local result = {}
+  result.getMove=@getMove
   result.startTime = 0
   result.startMaxScore = 0
   result.timeLimit = 0.09
@@ -480,8 +498,8 @@ func Game()
     while not isGameOver() and not self.over
       # Copy to Ensure AI Cannot Change the Real Grid to Cheat
       gridCopy = self.grid.clone()
-      delay 100
-      move = None
+      'delay 50
+      move = Inf
 
       if playerTurn then
         displayer.println("Player's Turn:")
