@@ -56,7 +56,8 @@
 #define SYSVAR_Y            10 /**< system variable, Y         @ingroup var */
 #define SYSVAR_SELF         11 /**< system variable, SELF      @ingroup var */
 #define SYSVAR_NONE         12 /**< system variable, NONE      @ingroup var */
-#define SYSVAR_COUNT        13
+#define SYSVAR_MAXINT       13 /**< system variable, INTMAX    @ingroup var */
+#define SYSVAR_COUNT        14
 
 /**
  * @ingroup var

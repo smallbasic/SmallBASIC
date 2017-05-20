@@ -305,3 +305,7 @@ endif
 if a == b then
   throw "nil error2"
 endif
+
+if (maxint == 0)
+  throw "maxint not defined"
+endif

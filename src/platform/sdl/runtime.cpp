@@ -200,7 +200,6 @@ void Runtime::construct(const char *font, const char *boldFont) {
 void Runtime::debugStart(TextEditInput *editWidget, const char *file) {
   char buf[OS_PATHNAME_SIZE + 1];
   bool open;
-  int size;
 
   if (g_debugee != -1) {
     net_print(g_debugee, "l\n");
@@ -217,7 +216,7 @@ void Runtime::debugStart(TextEditInput *editWidget, const char *file) {
     g_debugee = net_connect("localhost", g_debugPort);
     if (g_debugee != -1) {
       net_print(g_debugee, "l\n");
-      size = net_input(g_debugee, buf, sizeof(buf), "\n");
+      int size = net_input(g_debugee, buf, sizeof(buf), "\n");
       if (size > 0) {
         int *marker = editWidget->getMarkers();
         for (int i = 0; i < MAX_MARKERS; i++) {
@@ -239,11 +238,10 @@ void Runtime::debugStart(TextEditInput *editWidget, const char *file) {
 void Runtime::debugStep(TextEditInput *edit, TextEditHelpWidget *help, bool cont) {
   if (g_debugee != -1) {
     char buf[OS_PATHNAME_SIZE + 1];
-    int size;
     net_print(g_debugee, cont ? "c\n" : "n\n");
     pause(PAUSE_DEBUG_STEP);
     net_print(g_debugee, "l\n");
-    size = net_input(g_debugee, buf, sizeof(buf), "\n");
+    int size = net_input(g_debugee, buf, sizeof(buf), "\n");
     if (size > 0) {
       edit->gotoLine(buf);
       net_print(g_debugee, "v\n");

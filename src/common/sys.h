@@ -22,20 +22,19 @@
 extern "C" {
 #endif
 
+#include <ctype.h>
+#include <fcntl.h>
+#include <limits.h>
+#include <math.h>
+#include <stdarg.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <stdarg.h>
 #include <string.h>
-#include <stdint.h>
-#include <math.h>
-#include <time.h>
-#include <utime.h>
-#include <unistd.h>
 #include <sys/stat.h>
-#include <fcntl.h>
-#include <ctype.h>
-#include <assert.h>
-#include <stdlib.h>
+#include <time.h>
+#include <unistd.h>
+#include <utime.h>
 
 #define DBL_EPSILON 0.00000000000001
 #define EPSILON DBL_EPSILON
@@ -43,6 +42,7 @@ extern "C" {
 
 typedef double var_num_t;
 typedef long int var_int_t;
+#define VAR_MAX_INT     LONG_MAX
 #define VAR_NUM_FMT     "%f"
 #define VAR_INT_FMT     "%ld"
 #define VAR_INT_NUM_FMT "%.0f"

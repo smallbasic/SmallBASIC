@@ -17,8 +17,6 @@ struct HLine {
 };
 
 struct HLineList {
-  int Length; /* # of horizontal lines */
-  int YStart; /* Y coordinate of topmost line */
   struct HLine *HLinePtr; /* pointer to list of horz lines */
 };
 
