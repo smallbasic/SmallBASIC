@@ -6,6 +6,7 @@ const vecIndex = [kUP, kDOWN, kLEFT, kRIGHT]
 const directionVectors = [[-1, 0], [1, 0], [0, -1], [0, 1]]
 const inf maxint
 const ninf = -maxint - 1
+const timeLimit = 105
 const emptyCellPattern =&
 [[0,0,0,0],&
  [1,1,0,0],&
@@ -80,7 +81,7 @@ func Display()
   return result
 end
 
-func Grid()
+func GridClass()
   func createGrid()
     local result = {}
     result.clone=@clone
@@ -99,14 +100,14 @@ func Grid()
 
   # Make a Deep Copy of This Object
   func clone()
-    local result
-    result = self
+    local result = self
     result.map = self.map
-    result.size = self.size
     return result
   end
 
-  sub insertTile(x, y, v)
+  sub insertTile(cell, v)
+    local x,y
+    (x,y) = cell
     self.map[y][x] = v
   end
 
@@ -149,13 +150,14 @@ func Grid()
   end
 
   # Move the Grid
+  # 0 = "Up", 1 = "Down", 2 = "Left", 3 = "Right".
   func move(dir)
     local result
     select case dir
-      case kUP: result = moveUD(False)
-      case kDOWN: result = moveUD(True)
-      case kLEFT: result = moveLR(False)
-      case kRIGHT: result = moveLR(True)
+      case kUP: result = moveUD(True)
+      case kDOWN: result = moveUD(False)
+      case kLEFT: result = moveLR(True)
+      case kRIGHT: result = moveLR(False)
       case else: throw "Invalid move:" + dir
     end select
     return result
@@ -187,7 +189,9 @@ func Grid()
         else
           value = 0
         endif
-        if self.map[y][x] != value then moved = True
+        if self.map[y][x] != value then
+          moved = True
+        endif
         self.map[y][x] = value
       next y
     next x
@@ -218,7 +222,9 @@ func Grid()
         else
           value = 0
         endif
-        if self.map[y][x] != value then moved = True
+        if self.map[y][x] != value then
+          moved = True
+        endif
         self.map[y][x] = value
       next y
     next y
@@ -331,11 +337,13 @@ func PlayerAI()
   # whether to stop evaluating lower depths
   func isTerminal(move, depth)
     if move == Nil then return True
-    if depth >= self.maxDepth then return True
-    'if ((time.clock() - self.startTime) > self.timeLimit) then
-    '  self.timeout = True
-    '  return True
-    'endif
+    if depth >= self.maxDepth then
+      return True
+    endif
+    if ((ticks - self.startTime) > self.timeLimit) then
+      self.timeout = True
+      return True
+    endif
     return False
   end
 
@@ -347,15 +355,15 @@ func PlayerAI()
     availableMoves = False
     maxMove = Inf
     maxUtility = ninf
-    # 0 stands for "Up", 1 stands for "Down", 2 stands for "Left",
-    # and 3 stands for "Right".
     for nextMove in [0,3,1,2]
       child = state.clone()
       if child.move(nextMove) then
         availableMoves = True
         # get the estimated attack/response move
         [_, utility] = minimise(child, a, b, nextMove, depth + 1)
-        if (utility > maxUtility) then [maxMove, maxUtility] = [nextMove, utility]
+        if (utility > maxUtility) then
+          [maxMove, maxUtility] = [nextMove, utility]
+        endif
         if (maxUtility >= b) then
           # this node will not be selected in ancestor min function
           # we are larger than a sibling node so will be discounted
@@ -372,7 +380,7 @@ func PlayerAI()
   end
 
   func minimise(state, a, b, move, depth)
-    local child,x,y,minMove,utility,emptyPos
+    local child,x,y,minMove,utility,emptyPos,nextMove
 
     local availableCells = state.getAvailableCells()
     if (isTerminal(move, depth) or len(availableCells) == 0) then
@@ -396,20 +404,21 @@ func PlayerAI()
 
     [minMove, minUtility] = [Inf, inf]
     for nextMove in minimisingMoves
-      child = cloneGrid(state)
+      child = state.clone()
       child.insertTile(nextMove, 2)
       [_, utility] = maximise(child, a, b, move, depth + 1)
       if (utility < minUtility) then [minMove, minUtility] = [move, utility]
       if (minUtility <= a) then exit for
       if (minUtility < b) then b = minUtility
     next nextmove
-    return (minMove, minUtility)
+    return [minMove, minUtility]
   end
 
-  func getMove(grid)
+  func getMove(byref grid)
     local move, utility
     self.startTime = ticks
     self.timeout = False
+
     [move, utility] = maximise(grid, ninf, inf, 0, 0)
     if (self.tuned == False) then
       if self.timeout == True then
@@ -448,12 +457,10 @@ end
 
 func Game()
   sub updateAlarm(currTime)
-    if currTime - self.prevTime > timeLimit + allowance then
+    if currTime - self.prevTime > timeLimit then
       self.over = True
     else
-      'while time.clock() - self.prevTime < timeLimit + allowance
-      '  pass
-      self.prevTime = timer
+      self.prevTime = ticks
     endif
   end
 
@@ -494,11 +501,12 @@ func Game()
     playerTurn = true
     maxTile = 0
 
-    self.prevTime = timer
+    self.prevTime = ticks
+
     while not isGameOver() and not self.over
       # Copy to Ensure AI Cannot Change the Real Grid to Cheat
       gridCopy = self.grid.clone()
-      'delay 50
+      delay 15
       move = Inf
 
       if playerTurn then
@@ -536,7 +544,7 @@ func Game()
         displayer.show(self.grid)
       endif
       # Exceeding the Time Allotted for Any Turn Terminates the Game
-      updateAlarm(time)
+      updateAlarm(ticks)
       playerTurn = IFF(playerTurn, false, true)
     wend
   end
@@ -544,7 +552,7 @@ func Game()
   randomize
   local result = {}
   result.start = @start
-  result.grid = Grid()
+  result.grid = GridClass()
   result.possibleNewTiles = [2, 4]
   result.probability = 0.9
   result.initTiles = 2
