@@ -4,9 +4,9 @@ const kLEFT = 2
 const kRIGHT = 3
 const vecIndex = [kUP, kDOWN, kLEFT, kRIGHT]
 const directionVectors = [[-1, 0], [1, 0], [0, -1], [0, 1]]
-const inf maxint
+const inf = maxint
 const ninf = -maxint - 1
-const timeLimit = 105
+const timeLimit = 5000
 const emptyCellPattern =&
 [[0,0,0,0],&
  [1,1,0,0],&
@@ -14,36 +14,34 @@ const emptyCellPattern =&
  [1,1,1,0]]
 const monotonicityPattern =&
  [[16,  8,  1,  0],&
- [32, 16,  8,  1],&
- [64, 32, 16,  8],&
- [128,64, 32, 16]]
+  [32, 16,  8,  1],&
+  [64, 32, 16,  8],&
+  [128,64, 32, 16]]
+const colorMap = {
+  0 	: 0,
+  2  : 1,
+  4  : 2,
+  8  : 3,
+  16 : 4,
+  32 : 5,
+  64 : 6,
+  128 : 7,
+  256 : 8,
+  512 : 9,
+  1024 : 10,
+  2048 : 11,
+  4096 : 12,
+  8192 : 13,
+  16384 : 14,
+  32768 : 15
+}
+const sz = min(xmax,ymax)/6
+const offs = 10
+const gap = 3
+const w = window()
+const bgc = rgb(15,40,15)
 
 func Display()
-  colorMap = {
-    0 	: 0,
-    2  : 1,
-    4  : 2,
-    8  : 3,
-    16 : 4,
-    32 : 5,
-    64 : 6,
-    128 : 7,
-    256 : 8,
-    512 : 9,
-    1024 : 10,
-    2048 : 11,
-    4096 : 12,
-    8192 : 13,
-    16384 : 14,
-    32768 : 15
-  }
-
-  const sz = min(xmax,ymax)/6
-  const offs = 10
-  const gap = 3
-  const w = window()
-  const bgc = rgb(15,40,15)
-
   w.setFont(sz/4,0,1,0)
   color 0, bgc: cls
 
@@ -72,7 +70,6 @@ func Display()
       x = 0
     next i
     self.y_out = y + 10
-    showpage
   end
 
   local result = {}
@@ -165,14 +162,14 @@ func GridClass()
 
   # Move Up or Down
   func moveUD(move_up)
-    local x,y,y1,y2,incr,moved
-    dim cells
+    local x,y,y1,y2,incr,moved,cells,cell,value
+    dim cells(self.size)
 
     incr = iff(move_up, 1, -1)
     y1 = iff(move_up, 0, self.size)
     y2 = iff(move_up, self.size, 0)
-
     moved = False
+
     for x = 0 to self.size
       erase cells
       for y = y1 to y2 step incr
@@ -190,9 +187,9 @@ func GridClass()
           value = 0
         endif
         if self.map[y][x] != value then
+          self.map[y][x] = value
           moved = True
         endif
-        self.map[y][x] = value
       next y
     next x
     return moved
@@ -200,14 +197,14 @@ func GridClass()
 
   # move left or right
   func moveLR(move_left)
-    local x,y,x1,x2,incr,moved
-    dim cells
+    local x,y,x1,x2,incr,moved,cells,cell,value
+    dim cells(self.size)
 
     incr = iff(move_left, 1, -1)
     x1 = iff(move_left, 0, self.size)
     x2 = iff(move_left, self.size, 0)
-
     moved = False
+
     for y = 0 to self.size
       erase cells
       for x = x1 to x2 step incr
@@ -215,6 +212,7 @@ func GridClass()
         if cell != 0 then append cells, cell
       next y
       merge(cells)
+      'if (y==0) then   logprint cells
       for x = x1 to x2 step incr
         if len(cells) then
           value = cells[0]
@@ -224,8 +222,8 @@ func GridClass()
         endif
         if self.map[y][x] != value then
           moved = True
+          self.map[y][x] = value
         endif
-        self.map[y][x] = value
       next y
     next y
     return moved
@@ -233,7 +231,10 @@ func GridClass()
 
   # Merge Tiles
   sub merge(byref cells)
-    if len(cells) <= 1 then return
+    local num_cells = len(cells)
+    if num_cells <= 1 or num_cells == self.size then
+      return
+    endif
     local i = 0
     while i < len(cells) - 1
       if cells[i] == cells[i+1] then
@@ -245,25 +246,25 @@ func GridClass()
   end
 
   func canMove(dirs)
-    local i,x,y, checkingMoves, adjCellValue
+    local i, x, y, xm, ym, checkingMoves, adjCellValue
 
     # Init Moves to be Checked
     checkingMoves = IFF(len(dirs)==0, vecIndex, dirs)
     for y = 0 to self.size
       for x = 0 to self.size
         # If Current Cell is Filled
-        if self.map[x][y] != 0 then
+        if self.map[y][x] != 0 then
           # Look Ajacent Cell Value
           for i in checkingMoves then
-            move = directionVectors[i]
-            adjCellValue = getCellValue((x + move[0], y + move[1]))
+            [ym, xm] = directionVectors[i]
+            adjCellValue = getCellValue(x + xm, y + ym)
             # If Value is the Same or Adjacent Cell is Empty
-            if adjCellValue == self.map[x][y] or adjCellValue == 0 then
+            if adjCellValue == self.map[y][x] or adjCellValue == 0 then
               return True
             endif
           next i
         # Else if Current Cell is Empty
-        elif self.map[x][y] == 0 then
+        elif self.map[y][x] == 0 then
           return True
         endif
       next x
@@ -341,6 +342,7 @@ func PlayerAI()
       return True
     endif
     if ((ticks - self.startTime) > self.timeLimit) then
+      logprint "timeout at depth: "+ depth
       self.timeout = True
       return True
     endif
@@ -391,7 +393,7 @@ func PlayerAI()
     if len(availableCells) > 2 then
       # filter to cells in the top right area
       for emptyPos in availableCells:
-        [y, x] = emptyPos
+        [x,y] = emptyPos
         if (emptyCellPattern[y][x] == 0) then
           append minimisingMoves, emptyPos
         endif
@@ -432,9 +434,10 @@ func PlayerAI()
 
   local result = {}
   result.getMove=@getMove
+  result.getUtility=@getUtility
   result.startTime = 0
   result.startMaxScore = 0
-  result.timeLimit = 0.09
+  result.timeLimit = 250
   result.maxDepth = 4
   result.timeout = False
   result.tuned = False
@@ -458,6 +461,7 @@ end
 func Game()
   sub updateAlarm(currTime)
     if currTime - self.prevTime > timeLimit then
+      logprint "timeout!"
       self.over = True
     else
       self.prevTime = ticks
@@ -484,7 +488,7 @@ func Game()
   end
 
   sub start()
-    local i, playerTurn, maxTile, gridCopy, move
+    local i, playerTurn, maxTile, prevMaxTile, gridCopy, move
     local computerAI, playerAI, displayer
 
     computerAI = ComputerAI()
@@ -506,7 +510,7 @@ func Game()
     while not isGameOver() and not self.over
       # Copy to Ensure AI Cannot Change the Real Grid to Cheat
       gridCopy = self.grid.clone()
-      delay 15
+      'delay 10
       move = Inf
 
       if playerTurn then
@@ -517,10 +521,13 @@ func Game()
         if move >= 0 and move < 4 then
           if self.grid.canMove([move]) then
             self.grid.move(move)
-            gridCopy = self.grid.clone()
 
             # Update maxTile
             maxTile = self.grid.getMaxTile()
+            if maxTile < prevMaxTile then
+              throw "maxTile now less"
+            endif
+            prevMaxTile = maxTile
           else
             displayer.println("Invalid PlayerAI Move")
             self.over = True
