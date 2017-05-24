@@ -35,6 +35,12 @@ const colorMap = {
   16384 : 14,
   32768 : 15
 }
+const actionDict = {
+ 0: "UP",
+ 1: "DOWN",
+ 2: "LEFT",
+ 3: "RIGHT"
+}
 const sz = min(xmax,ymax)/6
 const offs = 10
 const gap = 3
@@ -42,9 +48,6 @@ const w = window()
 const bgc = rgb(15,40,15)
 
 func Display()
-  w.setFont(sz/4,0,1,0)
-  color 0, bgc: cls
-
   sub println(s)
     color 15, bgc
     at offs, self.y_out
@@ -71,6 +74,9 @@ func Display()
     next i
     self.y_out = y + 10
   end
+
+  w.setFont(sz/4,0,1,0)
+  color 0, bgc: cls
 
   local result = {}
   result.show=@display
@@ -104,13 +110,13 @@ func GridClass()
 
   sub insertTile(cell, v)
     local x,y
-    (x,y) = cell
+    (y,x) = cell
     self.map[y][x] = v
   end
 
   sub setCellValue(cell, v)
     local x,y
-    (x,y) = cell
+    (y,x) = cell
     self.map[y][x] = v
   end
 
@@ -120,7 +126,7 @@ func GridClass()
     for y = 0 to self.size
       for x = 0 to self.size
         if self.map[y][x] == 0 then
-          append cells, [x,y]
+          append cells, [y,x]
         endif
       next x
     next y
@@ -142,7 +148,7 @@ func GridClass()
   # Check If Able to Insert a Tile in Position
   func canInsert(cell)
     local x,y
-    (x,y)=cell
+    (y,x)=cell
     return getCellValue(x, y) == 0
   end
 
@@ -212,7 +218,6 @@ func GridClass()
         if cell != 0 then append cells, cell
       next y
       merge(cells)
-      'if (y==0) then   logprint cells
       for x = x1 to x2 step incr
         if len(cells) then
           value = cells[0]
@@ -274,8 +279,8 @@ func GridClass()
 
   # Return All Available Moves
   func getAvailableMoves(dirs)
-    local x, gridCopy
-    dirs=IFF(len(dirs) == 0, vecindex,dirs)
+    local x, gridCopy, availableMoves
+    dirs=IFF(len(dirs) == 0, vecindex, dirs)
     dim availableMoves
     for x in dirs
       gridCopy = clone()
@@ -294,7 +299,7 @@ func GridClass()
     if not crossBound(x, y) then
       return self.map[y][x]
     else
-      return -1
+      return Nil
     endif
   end
 
@@ -311,27 +316,28 @@ func PlayerAI()
     local numEmpty = 0
     local result = 0.0
     local highest = 0
+    local size=state.size
 
-    for y = 0 to self.size
-      for x = 0 to self.size
+    for y = 0 to size
+      for x = 0 to size
         if (state.map[y][x] != 0) then
           result += state.map[y][x] * monotonicityPattern[y][x]
-        endif
-        if state.map[y][x] > highest then
-          highest = state.map[y][x]
-        else
-          numEmpty += 1
-          if (state.map[0][3] != highest) then
-            result += highest * 100
-          endif
-          if (numEmpty == 0) then
-            result = 0
-          elif (result != 0) then
-            result = 1 / result
+          if state.map[y][x] > highest then
+            highest = state.map[y][x]
+          else
+            numEmpty += 1
           endif
         endif
       next x
     next y
+    if (state.map[0][3] != highest) then
+      result += highest * 100
+    endif
+    if (numEmpty == 0) then
+      result = 0
+    elif (result != 0) then
+      result = 1 / result
+    endif
     return result
   end
 
@@ -342,7 +348,6 @@ func PlayerAI()
       return True
     endif
     if ((ticks - self.startTime) > self.timeLimit) then
-      logprint "timeout at depth: "+ depth
       self.timeout = True
       return True
     endif
@@ -355,8 +360,7 @@ func PlayerAI()
     if (isTerminal(move, depth)) then return [move, getUtility(state)]
 
     availableMoves = False
-    maxMove = Inf
-    maxUtility = ninf
+    [maxMove, maxUtility] = [Nil, ninf]
     for nextMove in [0,3,1,2]
       child = state.clone()
       if child.move(nextMove) then
@@ -404,7 +408,7 @@ func PlayerAI()
     endif
     if len(minimisingMoves) == 0 then return [move, getUtility(state)]
 
-    [minMove, minUtility] = [Inf, inf]
+    [minMove, minUtility] = [Nil, inf]
     for nextMove in minimisingMoves
       child = state.clone()
       child.insertTile(nextMove, 2)
@@ -437,8 +441,8 @@ func PlayerAI()
   result.getUtility=@getUtility
   result.startTime = 0
   result.startMaxScore = 0
-  result.timeLimit = 250
-  result.maxDepth = 4
+  result.timeLimit = 150
+  result.maxDepth = 10
   result.timeout = False
   result.tuned = False
   return result
@@ -462,7 +466,7 @@ func Game()
   sub updateAlarm(currTime)
     if currTime - self.prevTime > timeLimit then
       logprint "timeout!"
-      self.over = True
+      'self.over = True
     else
       self.prevTime = ticks
     endif
@@ -489,7 +493,7 @@ func Game()
 
   sub start()
     local i, playerTurn, maxTile, prevMaxTile, gridCopy, move
-    local computerAI, playerAI, displayer
+    local computerAI, playerAI, displayer, moveStr
 
     computerAI = ComputerAI()
     playerAI   = PlayerAI()
@@ -510,18 +514,22 @@ func Game()
     while not isGameOver() and not self.over
       # Copy to Ensure AI Cannot Change the Real Grid to Cheat
       gridCopy = self.grid.clone()
-      'delay 10
-      move = Inf
+      'delay 200
+      move = Nil
 
       if playerTurn then
-        displayer.println("Player's Turn:")
         move = playerAI.getMove(gridCopy)
-
+        moveStr = actionDict[move]
+        displayer.println("Player's Turn:" + moveStr)
+logprint moveStr
         # Validate and set Move
-        if move >= 0 and move < 4 then
+        if move != Nil and move >= 0 and move < 4 then
           if self.grid.canMove([move]) then
+        displayer.show(self.grid)
+        pause
             self.grid.move(move)
-
+        displayer.show(self.grid)
+        pause
             # Update maxTile
             maxTile = self.grid.getMaxTile()
             if maxTile < prevMaxTile then
@@ -537,8 +545,9 @@ func Game()
           self.over = True
         endif
       else
-        displayer.println("Computer's turn:")
+        displayer.println("Computers's Turn")
         move = computerAI.getMove(gridCopy)
+
         # Validate Move
         if isarray(move) and self.grid.canInsert(move) then
           self.grid.setCellValue(move, getNewTileValue())
@@ -554,6 +563,7 @@ func Game()
       updateAlarm(ticks)
       playerTurn = IFF(playerTurn, false, true)
     wend
+    displayer.println("Game over. (max tile: " + self.grid.getMaxTile() + ")")
   end
 
   randomize
