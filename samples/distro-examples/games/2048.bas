@@ -73,6 +73,7 @@ func Display()
       x = 0
     next i
     self.y_out = y + 10
+    showpage
   end
 
   w.setFont(sz/4,0,1,0)
@@ -237,9 +238,7 @@ func GridClass()
   # Merge Tiles
   sub merge(byref cells)
     local num_cells = len(cells)
-    if num_cells <= 1 or num_cells == self.size then
-      return
-    endif
+    if num_cells <= 1 then return
     local i = 0
     while i < len(cells) - 1
       if cells[i] == cells[i+1] then
@@ -431,6 +430,7 @@ func PlayerAI()
         self.tuned = True
       else
         self.maxDepth += 1
+        logprint self.maxDepth
       endif
     endif
     return move
@@ -441,8 +441,8 @@ func PlayerAI()
   result.getUtility=@getUtility
   result.startTime = 0
   result.startMaxScore = 0
-  result.timeLimit = 150
-  result.maxDepth = 10
+  result.timeLimit = 105
+  result.maxDepth = 4
   result.timeout = False
   result.tuned = False
   return result
@@ -466,7 +466,7 @@ func Game()
   sub updateAlarm(currTime)
     if currTime - self.prevTime > timeLimit then
       logprint "timeout!"
-      'self.over = True
+      self.over = True
     else
       self.prevTime = ticks
     endif
@@ -514,22 +514,16 @@ func Game()
     while not isGameOver() and not self.over
       # Copy to Ensure AI Cannot Change the Real Grid to Cheat
       gridCopy = self.grid.clone()
-      'delay 200
       move = Nil
 
       if playerTurn then
         move = playerAI.getMove(gridCopy)
         moveStr = actionDict[move]
-        displayer.println("Player's Turn:" + moveStr)
-logprint moveStr
+        displayer.println(moveStr)
         # Validate and set Move
         if move != Nil and move >= 0 and move < 4 then
           if self.grid.canMove([move]) then
-        displayer.show(self.grid)
-        pause
             self.grid.move(move)
-        displayer.show(self.grid)
-        pause
             # Update maxTile
             maxTile = self.grid.getMaxTile()
             if maxTile < prevMaxTile then
@@ -545,14 +539,13 @@ logprint moveStr
           self.over = True
         endif
       else
-        displayer.println("Computers's Turn")
         move = computerAI.getMove(gridCopy)
 
         # Validate Move
         if isarray(move) and self.grid.canInsert(move) then
           self.grid.setCellValue(move, getNewTileValue())
         else
-          displayer.println("Invalid Computer AI Move")
+          logprint "Invalid Computer AI Move"
           self.over = True
         endif
       endif
@@ -564,6 +557,7 @@ logprint moveStr
       playerTurn = IFF(playerTurn, false, true)
     wend
     displayer.println("Game over. (max tile: " + self.grid.getMaxTile() + ")")
+    displayer.show(self.grid)
   end
 
   randomize
@@ -580,3 +574,8 @@ end
 g = Game()
 g.start()
 pause
+
+'g=GridClass()
+'g.map = [[0,2,4,4],[0,2,0,4],[0,0,0,4],[0,0,0,2]]
+'g.move(kright)
+'logprint g.map
