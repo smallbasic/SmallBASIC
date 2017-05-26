@@ -204,7 +204,7 @@ if (len(l.arr) != 0) then
   throw "new array field should be empty"
 endif
 
-rem ------------------------------------------------
+rem ------------------------------------
 rem test for MAP IN regression
 m = {}
 m["blah"] << "this"
@@ -224,4 +224,11 @@ rem  --- 0.12.10
 s.v=[[1,99,3],[4,5,6]]
 if (s.v[0][1] != 99) then
   throw "illegal access"
+endif
+
+rem ------------------------------------
+rem define an empty array with [] notation
+aaa=[]
+if (!isarray(aaa) or len(aaa) != 0) then
+  throw "invalid empty array"
 endif

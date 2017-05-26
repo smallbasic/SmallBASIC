@@ -1038,10 +1038,13 @@ int comp_is_parenthesized(char *name) {
 
 /*
  * return whether the following code is a code array declaration
+ *
+ * returns true for empty brackets []
  */
 int comp_is_code_array(char *p) {
   int result = 0;
   int level = 1;
+  int count = 0;
   while (*p && level) {
     switch(*p) {
     case '[':
@@ -1054,10 +1057,13 @@ int comp_is_code_array(char *p) {
     case ';':
       result = 1;
       break;
+    default:
+      count++;
+      break;
     }
     p++;
   }
-  return result;
+  return !count || result;
 }
 
 char *comp_scan_json(char *json, bc_t *bc) {

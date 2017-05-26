@@ -684,6 +684,7 @@ void map_from_codearray(var_p_t dest) {
   int cols = 0;
   int curcol = 0;
   int ready = 0;
+  int seps = 0;
   ArrayList list;
 
   list.head = NULL;
@@ -692,6 +693,7 @@ void map_from_codearray(var_p_t dest) {
   do {
     switch (code_peek()) {
     case kwTYPE_SEP:
+      seps++;
       code_skipnext();
       if (code_peek() == ';') {
         // next row
@@ -711,5 +713,9 @@ void map_from_codearray(var_p_t dest) {
     }
   } while (!ready && !prog_error);
 
-  map_build_array(dest, list.head, rows+1, cols+1);
+  if (!seps && list.head == NULL) {
+    v_toarray1(dest, 0);
+  } else {
+    map_build_array(dest, list.head, rows+1, cols+1);
+  }
 }

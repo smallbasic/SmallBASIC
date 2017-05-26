@@ -1,3 +1,6 @@
+2017-05-27 (0.12.10)
+	COMMON: Can now declare an empty array with: a=[]
+
 2017-05-20 (0.12.10)
 	COMMON: Implemented Nil system constant
 	COMMON: Implemented Maxint system constant
