@@ -1,5 +1,6 @@
 2017-05-27 (0.12.10)
 	COMMON: Can now declare an empty array with: a=[]
+	COMMON: REPLACE str argument can now be a number type
 
 2017-05-20 (0.12.10)
 	COMMON: Implemented Nil system constant

@@ -1647,7 +1647,15 @@ void cmd_strN(long funcCode, var_t *r) {
     } else if (!prog_error) {
       // write str into pos of source the return the new string
       int len_source = v_strlen(var_p1);
-      int len_str = v_strlen(var_p2);
+      int len_str;
+      char *str;
+      if (var_p2->type != V_STR) {
+        str = v_str(var_p2);
+        len_str = strlen(str);
+      } else {
+        str = NULL;
+        len_str = v_strlen(var_p2);
+      }
 
       start--;
       if (start < 0 || start > len_source) {
@@ -1674,7 +1682,13 @@ void cmd_strN(long funcCode, var_t *r) {
 
       // insert "str"
       r->v.p.ptr[start] = '\0';
-      strcat(r->v.p.ptr, var_p2->v.p.ptr);
+
+      if (str != NULL) {
+        strcat(r->v.p.ptr, str);
+        free(str);
+      } else {
+        strcat(r->v.p.ptr, var_p2->v.p.ptr);
+      }
 
       // add the remainder of "source" startin at index "count"
       if (start + count < len_source) {
