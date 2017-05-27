@@ -1,6 +1,6 @@
 // This file is part of SmallBASIC
 //
-// Copyright(C) 2001-2015 Chris Warren-Smith.
+// Copyright(C) 2001-2017 Chris Warren-Smith.
 //
 // This program is distributed under the terms of the GPL v2.0 or later
 // Download the GNU Public License (GPL) from www.gnu.org
@@ -111,6 +111,7 @@ void System::checkModifiedTime() {
 }
 
 bool System::execute(const char *bas) {
+  _stackTrace.removeAll();
   _output->reset();
   reset_image_cache();
 
@@ -508,6 +509,16 @@ bool System::loadSource(const char *fileName) {
     return true;
   }
   return false;
+}
+
+void System::logStack(const char *keyword, int type, int line) {
+#if defined(_SDL)
+  if (_editor != NULL) {
+    if (type == kwPROC || type == kwFUNC) {
+      _stackTrace.add(new StackTraceNode(keyword, type, line));
+    }
+  }
+#endif
 }
 
 char *System::readSource(const char *fileName) {
@@ -1234,4 +1245,8 @@ void create_func(var_p_t map, const char *name, method cb) {
   v_func->type = V_FUNC;
   v_func->v.fn.self = map;
   v_func->v.fn.cb = cb;
+}
+
+void dev_log_stack(const char *keyword, int type, int line) {
+  return g_system->logStack(keyword, type, line);
 }

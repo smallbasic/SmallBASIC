@@ -1,6 +1,6 @@
 // This file is part of SmallBASIC
 //
-// Copyright(C) 2001-2015 Chris Warren-Smith.
+// Copyright(C) 2001-2017 Chris Warren-Smith.
 //
 // This program is distributed under the terms of the GPL v2.0 or later
 // Download the GNU Public License (GPL) from www.gnu.org
@@ -1717,9 +1717,12 @@ bool TextEditHelpWidget::edit(int key, int screenWidth, int charWidth) {
     case STB_TEXTEDIT_K_WORDLEFT:
     case STB_TEXTEDIT_K_WORDRIGHT:
       result = TextEditInput::edit(key, screenWidth, charWidth);
-      if (_mode == kOutline && _outline.size()) {
-        int cursor = (intptr_t)_outline[_cursorRow - 1];
+      if (_mode == kOutline && _cursorRow < _outline.size()) {
+        int cursor = (intptr_t)_outline[_cursorRow];
         _editor->setCursor(cursor);
+      } else if (_mode == kStacktrace && _cursorRow < _outline.size()) {
+        int cursorRow = (intptr_t)_outline[_cursorRow];
+        _editor->setCursorRow(cursorRow - 1);
       }
       break;
     case SB_KEY_ENTER:
@@ -1954,6 +1957,25 @@ void TextEditHelpWidget::createSearch(bool replace) {
   } else {
     reset(replace ? kSearchReplace : kSearch);
   }
+}
+
+void TextEditHelpWidget::createStackTrace(const char *error, int line, StackTrace &trace) {
+  reset(kStacktrace);
+
+  _outline.add((int *)(intptr_t)line);
+  _buf.append("Error:\n");
+
+  List_each(StackTraceNode *, it, trace) {
+    StackTraceNode *node = (*it);
+    _outline.add((int *)(intptr_t)node->_line);
+    _buf.append(" ", 1);
+    _buf.append(node->_keyword);
+    _buf.append("\n", 1);
+  }
+
+  _buf.append("\n", 1);
+  _buf.append(error);
+  _buf.append("\n", 1);
 }
 
 void TextEditHelpWidget::paste(const char *text) {

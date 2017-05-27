@@ -175,6 +175,7 @@ void System::editSource(String loadPath) {
   if (gsb_last_error && !isBack()) {
     editWidget->setCursorRow(gsb_last_line - 1);
     helpWidget->setText(gsb_last_errmsg);
+    helpWidget->createStackTrace(gsb_last_errmsg, gsb_last_line, _stackTrace);
     widget = helpWidget;
     helpWidget->show();
   }
@@ -183,7 +184,7 @@ void System::editSource(String loadPath) {
   _output->addInput(editWidget);
   _output->addInput(helpWidget);
   if (gsb_last_error && !isBack()) {
-    _output->setStatus("Error. Esc=Close");
+    _output->setStatus("Error. Arrow to position stack, Esc=Close");
   } else {
     statusMessage.update(editWidget, _output, true);
   }

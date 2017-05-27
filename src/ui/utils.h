@@ -16,39 +16,19 @@
  #define MIN(a,b) ((a>b) ? (b) : (a))
 #endif
 
-#if defined(_FLTK)
- #define DEFAULT_FOREGROUND 0
- #define DEFAULT_BACKGROUND 0xecedef
- #define HANDLE_SCREEN_BUFFER HANDLE_SCREEN + 1
-#else
- #define DEFAULT_FOREGROUND 0xa1a1a1
- #define DEFAULT_BACKGROUND 0
- #define HANDLE_SCREEN_BUFFER HANDLE_SCREEN
-#endif
-
+#define DEFAULT_FOREGROUND 0
+#define DEFAULT_BACKGROUND 0xecedef
+#define HANDLE_SCREEN_BUFFER HANDLE_SCREEN + 1
 #define USER_MESSAGE_EXIT 1000
 
 #define OUTSIDE_RECT(px, py, x, y, w, h) \
   (px < (x) || py < (y) || px > ((x)+(w)) || py > ((y)+(h)))
 
-#if defined(VARIANT_MOSYNC_EMULATOR)
- #define _DEBUG
-#endif
-
-#if defined(MAPIP)
- #include <mavsprintf.h>
- #define deviceLog lprintfln
-#elif defined(_FLTK)
- extern "C" void trace(const char *format, ...);
- #define deviceLog trace
-#elif defined (_TIZEN)
- #include <FBaseLog.h>
- #define deviceLog AppLog
-#elif defined (_ANDROID)
+#if defined(_ANDROID)
  #include <android/log.h>
  #define deviceLog(...) __android_log_print(ANDROID_LOG_INFO, \
                         "smallbasic", __VA_ARGS__)
-#elif defined (_SDL)
+#elif defined(_SDL)
  void appLog(const char *format, ...);
  #define deviceLog(...) appLog(__VA_ARGS__)
 #endif

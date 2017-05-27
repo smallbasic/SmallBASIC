@@ -1,6 +1,6 @@
 // This file is part of SmallBASIC
 //
-// Copyright(C) 2001-2014 Chris Warren-Smith.
+// Copyright(C) 2001-2017 Chris Warren-Smith.
 //
 // This program is distributed under the terms of the GPL v2.0 or later
 // Download the GNU Public License (GPL) from www.gnu.org
@@ -13,10 +13,6 @@
 #include "ui/strlib.h"
 #include "ui/ansiwidget.h"
 #include "ui/textedit.h"
-
-#if defined(_FLTK)
-  #include "platform/fltk/system.h"
-#else
 
 void create_func(var_p_t form, const char *name, method cb);
 void reset_image_cache();
@@ -43,6 +39,7 @@ struct System {
   bool isRestart() { return _state == kRestartState; }
   bool isRunning() { return _state == kRunState || _state == kModalState; }
   bool isSystemScreen() { return _userScreenId != -1; }
+  void logStack(const char *keyword, int type, int line);
   char *readSource(const char *fileName);
   void setBack();
   void setExit(bool quit);
@@ -123,6 +120,7 @@ protected:
   strlib::Stack<String *> _history;
   strlib::String _loadPath;
   strlib::String _activeFile;
+  StackTrace _stackTrace;
   TextEditInput *_editor;
   Cache _cache;
   int _touchX;
@@ -142,4 +140,4 @@ protected:
 };
 
 #endif
-#endif
+

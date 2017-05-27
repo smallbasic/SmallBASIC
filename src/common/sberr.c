@@ -50,7 +50,9 @@ void err_stack_msg() {
     default:
       for (i_kw = 0; keyword_table[i_kw].name[0] != '\0'; i_kw++) {
         if (node.type == keyword_table[i_kw].code) {
+          dev_log_stack(keyword_table[i_kw].name, node.type, node.line);
           log_printf(" %s: %d", keyword_table[i_kw].name, node.line);
+          break;
         }
       }
     }

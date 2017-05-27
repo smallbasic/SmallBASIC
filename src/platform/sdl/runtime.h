@@ -44,6 +44,7 @@ struct Runtime : public System {
   void showCursor(CursorType cursorType);
   int runShell(const char *startupBas, int fontScale, int debugPort);
   char *loadResource(const char *fileName);
+  void logStack(int line, bool subOrFunc);
   void optionsBox(StringList *items);
   void onResize(int w, int h);
   void setClipboardText(const char *text);

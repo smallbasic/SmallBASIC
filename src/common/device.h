@@ -344,6 +344,13 @@ void log_printf(const char *fmt, ...);
 /**
  * @ingroup dev_g
  *
+ * stack trace logger
+ */
+void dev_log_stack(const char *keyword, int type, int line);
+
+/**
+ * @ingroup dev_g
+ *
  * clear screen
  */
 void dev_cls(void);
