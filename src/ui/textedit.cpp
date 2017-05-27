@@ -1976,6 +1976,8 @@ void TextEditHelpWidget::createStackTrace(const char *error, int line, StackTrac
   _buf.append("\n", 1);
   _buf.append(error);
   _buf.append("\n", 1);
+  _outline.add((int *)(intptr_t)line);
+  _outline.add((int *)(intptr_t)line);
 }
 
 void TextEditHelpWidget::paste(const char *text) {

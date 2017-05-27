@@ -184,10 +184,13 @@ void System::editSource(String loadPath) {
   _output->addInput(editWidget);
   _output->addInput(helpWidget);
   if (gsb_last_error && !isBack()) {
-    _output->setStatus("Error. Arrow to position stack, Esc=Close");
+    _output->setStatus(_stackTrace.size() ?
+                       "Error. Esc=Close, Up/Down=Caller" :
+                       "Error. Esc=Close");
   } else {
     statusMessage.update(editWidget, _output, true);
   }
+  _stackTrace.removeAll();
   _output->redraw();
   _state = kEditState;
 
