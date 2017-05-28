@@ -41,9 +41,9 @@ const actionDict = {
  2: "LEFT",
  3: "RIGHT"
 }
-const sz = min(xmax,ymax)/6
-const offs = 10
-const gap = 3
+const sz = min(xmax,ymax)/5
+const offs = 15
+const gap = 2
 const w = window()
 const bgc = rgb(15,40,15)
 
@@ -94,9 +94,7 @@ func GridClass()
     result.canInsert = @caninsert
     result.canMove = @canmove
     result.move = @move
-    result.insertTile = @inserttile
     result.merge = @merge
-    result.getAvailableMoves = @getavailablemoves
     result.getCellValue = @getCellValue
     result.setCellValue = @setCellValue
     return result
@@ -109,15 +107,11 @@ func GridClass()
     return result
   end
 
-  sub insertTile(cell, v)
-    local x,y
-    (y,x) = cell
-    self.map[y][x] = v
-  end
-
   sub setCellValue(cell, v)
     local x,y
     (y,x) = cell
+    if (v == 0) then throw "Set empty value"
+    if (self.map[y][x] != 0) then throw "Overwrite non empty cell"
     self.map[y][x] = v
   end
 
@@ -276,20 +270,6 @@ func GridClass()
     return False
   end
 
-  # Return All Available Moves
-  func getAvailableMoves(dirs)
-    local x, gridCopy, availableMoves
-    dirs=IFF(len(dirs) == 0, vecindex, dirs)
-    dim availableMoves
-    for x in dirs
-      gridCopy = clone()
-      if gridCopy.move(x) then
-        append availableMoves, x
-      endif
-    next x
-    return availableMoves
-  end
-
   func crossBound(x, y)
     return (x < 0 or x > self.size or y < 0 or y > self.size)
   end
@@ -323,12 +303,13 @@ func PlayerAI()
           result += state.map[y][x] * monotonicityPattern[y][x]
           if state.map[y][x] > highest then
             highest = state.map[y][x]
-          else
-            numEmpty += 1
           endif
+        else
+          numEmpty += 1
         endif
       next x
     next y
+
     if (state.map[0][3] != highest) then
       result += highest * 100
     endif
@@ -356,7 +337,9 @@ func PlayerAI()
   func maximise(state, a, b, move, depth)
     local availableMoves, child, maxMove, maxUtility, nextMove
 
-    if (isTerminal(move, depth)) then return [move, getUtility(state)]
+    if (isTerminal(move, depth)) then
+       return [move, getUtility(state)]
+    endif
 
     availableMoves = False
     [maxMove, maxUtility] = [Nil, ninf]
@@ -374,7 +357,9 @@ func PlayerAI()
           # we are larger than a sibling node so will be discounted
           exit for
         endif
-        if (maxUtility > a) then a = maxUtility
+        if (maxUtility > a) then
+           a = maxUtility
+        endif
       endif
     next nextmove
     if (availableMoves == False) then
@@ -385,9 +370,9 @@ func PlayerAI()
   end
 
   func minimise(state, a, b, move, depth)
-    local child,x,y,minMove,utility,emptyPos,nextMove
-
+    local child,x,y,minMove,utility,emptyPos,nextMove,minUtility
     local availableCells = state.getAvailableCells()
+
     if (isTerminal(move, depth) or len(availableCells) == 0) then
       return [move, getUtility(state)]
     endif
@@ -396,7 +381,7 @@ func PlayerAI()
     if len(availableCells) > 2 then
       # filter to cells in the top right area
       for emptyPos in availableCells:
-        [x,y] = emptyPos
+        [y,x] = emptyPos
         if (emptyCellPattern[y][x] == 0) then
           append minimisingMoves, emptyPos
         endif
@@ -405,16 +390,26 @@ func PlayerAI()
       # try the remaining 1 or 2 cells
       minimisingMoves = availableCells
     endif
-    if len(minimisingMoves) == 0 then return [move, getUtility(state)]
+    if len(minimisingMoves) == 0 then
+       return [move, getUtility(state)]
+    endif
 
     [minMove, minUtility] = [Nil, inf]
+
     for nextMove in minimisingMoves
       child = state.clone()
-      child.insertTile(nextMove, 2)
+      child.setcellvalue(nextMove, 2)
       [_, utility] = maximise(child, a, b, move, depth + 1)
-      if (utility < minUtility) then [minMove, minUtility] = [move, utility]
-      if (minUtility <= a) then exit for
-      if (minUtility < b) then b = minUtility
+
+      if (utility < minUtility) then
+         [minMove, minUtility] = [move, utility]
+      endif
+      if (minUtility <= a) then
+        exit for
+      endif
+      if (minUtility < b) then
+        b = minUtility
+      endif
     next nextmove
     return [minMove, minUtility]
   end
@@ -430,7 +425,6 @@ func PlayerAI()
         self.tuned = True
       else
         self.maxDepth += 1
-        logprint self.maxDepth
       endif
     endif
     return move
@@ -465,7 +459,6 @@ end
 func Game()
   sub updateAlarm(currTime)
     if currTime - self.prevTime > timeLimit then
-      logprint "timeout!"
       self.over = True
     else
       self.prevTime = ticks
@@ -515,11 +508,12 @@ func Game()
       # Copy to Ensure AI Cannot Change the Real Grid to Cheat
       gridCopy = self.grid.clone()
       move = Nil
-
+'      delay 100
       if playerTurn then
         move = playerAI.getMove(gridCopy)
+
         moveStr = actionDict[move]
-        displayer.println(moveStr)
+        displayer.println("AI move = " + moveStr)
         # Validate and set Move
         if move != Nil and move >= 0 and move < 4 then
           if self.grid.canMove([move]) then
@@ -543,7 +537,10 @@ func Game()
 
         # Validate Move
         if isarray(move) and self.grid.canInsert(move) then
-          self.grid.setCellValue(move, getNewTileValue())
+          local value = getNewtilevalue()
+          self.grid.setCellValue(move, value)
+          displayer.println("Played " + value + " at " + str(move))
+
         else
           logprint "Invalid Computer AI Move"
           self.over = True
@@ -574,8 +571,3 @@ end
 g = Game()
 g.start()
 pause
-
-'g=GridClass()
-'g.map = [[0,2,4,4],[0,2,0,4],[0,0,0,4],[0,0,0,2]]
-'g.move(kright)
-'logprint g.map
