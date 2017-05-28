@@ -16,9 +16,9 @@
  #define MIN(a,b) ((a>b) ? (b) : (a))
 #endif
 
-#define DEFAULT_FOREGROUND 0
-#define DEFAULT_BACKGROUND 0xecedef
-#define HANDLE_SCREEN_BUFFER HANDLE_SCREEN + 1
+#define DEFAULT_FOREGROUND 0xa1a1a1
+#define DEFAULT_BACKGROUND 0
+#define HANDLE_SCREEN_BUFFER HANDLE_SCREEN
 #define USER_MESSAGE_EXIT 1000
 
 #define OUTSIDE_RECT(px, py, x, y, w, h) \
