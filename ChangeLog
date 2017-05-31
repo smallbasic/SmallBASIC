@@ -1,4 +1,7 @@
 2017-05-27 (0.12.10)
+	COMMON: Implemented OPTION AUTOLOCAL runtime option
+
+2017-05-27 (0.12.10)
 	COMMON: Can now declare an empty array with: a=[]
 	COMMON: REPLACE str argument can now be a number type
 	SDL: Editor now shows navigable stack trace in error message

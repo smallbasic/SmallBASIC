@@ -54,6 +54,7 @@ void init() {
   opt_pref_width = 0;
   opt_quiet = 1;
   opt_verbose = 0;
+  opt_autolocal = 0;
   os_graf_mx = 1024;
   os_graf_my = 768;
 }

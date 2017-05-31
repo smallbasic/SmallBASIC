@@ -304,6 +304,7 @@ int main(int argc, char *argv[]) {
   opt_pref_width = opt_pref_height = opt_pref_bpp = 0;
   opt_verbose = 0;
   opt_file_permitted = 1;
+  opt_autolocal = 0;
 
   // init strings
   opt_command[0] = 0;

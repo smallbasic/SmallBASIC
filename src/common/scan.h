@@ -113,7 +113,10 @@ struct comp_var_s {
   byte dolar_sup; /**< used on system variables (so, COMMAND and COMMAND$ to be the same) @ingroup scan */
   int lib_id; /**< library id (if it is an external variable; otherwise -1) @ingroup scan */
   int symbol_index; /**< symbol index on symbol-table */
+  int local_id;
+  int local_proc_level;
 };
+
 typedef struct comp_var_s comp_var_t;
 
 /**

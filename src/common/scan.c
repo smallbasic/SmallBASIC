@@ -22,6 +22,7 @@
 char *comp_array_uds_field(char *p, bc_t *bc);
 void comp_text_line(char *text, int addLineNo);
 bcip_t comp_search_bc(bcip_t ip, code_t code);
+bcip_t comp_search_bc_stack(bcip_t start, code_t code, byte level, bid_t block_id);
 extern void expr_parser(bc_t *bc);
 extern void sc_raise2(const char *fmt, int line, const char *buff); // sberr
 
@@ -45,6 +46,7 @@ extern void sc_raise2(const char *fmt, int line, const char *buff); // sberr
 #define LEN_SHOWPAGE   STRLEN(LCN_SHOWPAGE)
 #define LEN_ANTIALIAS  STRLEN(LCN_ANTIALIAS)
 #define LEN_LDMODULES  STRLEN(LCN_LOAD_MODULES)
+#define LEN_AUTOLOCAL  STRLEN(LCN_AUTOLOCAL)
 
 #define SKIP_SPACES(p)                          \
   while (*p == ' ' || *p == '\t') {             \
@@ -635,6 +637,14 @@ int comp_create_var(const char *name) {
     strcpy(comp_vartable[comp_varcount].name, name);
     comp_vartable[comp_varcount].dolar_sup = 0;
     comp_vartable[comp_varcount].lib_id = -1;
+
+    if (comp_bc_proc[0]) {
+      comp_vartable[comp_varcount].local_id = comp_varcount;
+      comp_vartable[comp_varcount].local_proc_level = comp_proc_level;
+    } else {
+      comp_vartable[comp_varcount].local_id = -1;
+    }
+
     idx = comp_varcount;
     comp_varcount++;
   }
@@ -2104,8 +2114,7 @@ void comp_text_line_func(bid_t idx, int decl) {
         comp_udp_setip(pname, comp_prog.count);
       }
       // put JMP to the next command after the END
-      // (now we just keep the rq space, pass2 will
-      // update that)
+      // (now we just keep the rq space, pass2 will update that)
       bc_add_code(&comp_prog, kwGOTO);
       bc_add_addr(&comp_prog, 0);
       bc_add_code(&comp_prog, 0);
@@ -2178,10 +2187,11 @@ void comp_text_line_func(bid_t idx, int decl) {
           // pcount = 0
         }
 
-        bc_eoc(&comp_prog); // EOC
+        bc_eoc(&comp_prog);
         // scan for single-line function (DEF FN format)
         if (eq_ptr && idx == kwFUNC) {
-          eq_ptr++;         // *eq_ptr was '\0'
+          // *eq_ptr was '\0'
+          eq_ptr++;
           SKIP_SPACES(eq_ptr);
           if (strlen(eq_ptr)) {
             char *macro = malloc(SB_SOURCELINE_SIZE + 1);
@@ -2192,6 +2202,15 @@ void comp_text_line_func(bid_t idx, int decl) {
           } else {
             sc_raise(MSG_MISSING_UDP_BODY);
           }
+        }
+
+        if (opt_autolocal) {
+          // jump to local variable handler
+          comp_push(comp_prog.count);
+          bc_add_code(&comp_prog, kwGOTO);
+          bc_add_addr(&comp_prog, 0);
+          bc_add_code(&comp_prog, comp_block_level - 1);
+          bc_eoc(&comp_prog);
         }
       }
     }
@@ -2323,6 +2342,61 @@ void comp_text_line_for() {
   }
 }
 
+/**
+ * Insert the local variables detected during sub/func processing
+ */
+void comp_insert_locals() {
+  int i;
+  int count_local = 0;
+  for (i = 0; i < comp_varcount; i++) {
+    if (comp_vartable[i].local_id != -1 &&
+        comp_vartable[i].local_proc_level == comp_proc_level) {
+      count_local++;
+    }
+  }
+
+  if (count_local > 0) {
+    bcip_t pos_goto = comp_search_bc_stack(0, kwGOTO, comp_block_level, comp_block_id);
+    if (pos_goto == INVALID_ADDR) {
+      sc_raise(MSG_UDP_MISSING_END);
+    } else {
+      // skip over the kwTYPE_CRVAR block
+      comp_push(comp_prog.count);
+      bc_add_code(&comp_prog, kwGOTO);
+      bcip_t pos_end = comp_prog.count;
+      bc_add_addr(&comp_prog, 0);
+      bc_add_code(&comp_prog, comp_block_level - 1);
+      bc_eoc(&comp_prog);
+
+      // make the func GOTO arrive here at the kwTYPE_CRVAR block
+      bcip_t ip = -comp_prog.count;
+      memcpy(comp_prog.ptr + pos_goto + 1, &ip, ADDRSZ);
+      bc_add_code(&comp_prog, kwTYPE_CRVAR);
+      bc_add_code(&comp_prog, count_local);
+      for (i = 0; i < comp_varcount; i++) {
+        if (comp_vartable[i].local_id != -1 &&
+            comp_vartable[i].local_proc_level == comp_proc_level) {
+          bc_add_addr(&comp_prog, comp_vartable[i].local_id);
+        }
+      }
+      bc_eoc(&comp_prog);
+
+      // go back to the start of the func
+      bcip_t pos_func_start = pos_goto + 1 + ADDRSZ + 1 + 1;
+      comp_push(comp_prog.count);
+      bc_add_code(&comp_prog, kwGOTO);
+      bc_add_addr(&comp_prog, -pos_func_start);
+      bc_add_code(&comp_prog, comp_block_level - 1);
+      bc_eoc(&comp_prog);
+
+      // fill the above goto
+      bcip_t pos_func_end = -comp_prog.count;
+      memcpy(comp_prog.ptr + pos_end, &pos_func_end, ADDRSZ);
+    }
+  }
+}
+
+
 void comp_text_line_end(bid_t idx) {
   if (strncmp(comp_bc_parm, LCN_IF, 2) == 0 ||
       strncmp(comp_bc_parm, LCN_TRY, 3) == 0 ||
@@ -2346,6 +2420,9 @@ void comp_text_line_end(bid_t idx) {
       *dol = '\0';
     } else {
       *comp_bc_proc = '\0';
+    }
+    if (opt_autolocal) {
+      comp_insert_locals();
     }
     comp_push(comp_prog.count);
     bc_add_code(&comp_prog, kwTYPE_RET);
@@ -2597,7 +2674,8 @@ int comp_text_line_command(bid_t idx, int decl, int sharp, char *last_cmd) {
   case kwCOS:
   case kwSIN:
   case kwLEN:
-  case kwLOOP:               // functions...
+  case kwLOOP:
+    // functions...
     sc_raise(MSG_SPECIAL_KW_ERR, comp_bc_name);
     break;
 
@@ -3255,20 +3333,23 @@ void comp_pass2_scan() {
       }
       break;
 
-    case kwGOTO:               // LONG JUMPS
+    case kwGOTO:
       memcpy(&label_id, comp_prog.ptr + node->pos + 1, ADDRSZ);
-      label = comp_labtable.elem[label_id];
-      w = label->ip;
+      if ((int)label_id < 0) {
+        // specific internal jump value
+        w = -label_id;
+      } else {
+        // change LABEL-ID with IP
+        label = comp_labtable.elem[label_id];
+        w = label->ip;
+      }
       memcpy(comp_prog.ptr + node->pos + 1, &w, ADDRSZ);
-      // change LABEL-ID with IP
-      level = comp_prog.ptr[node->pos + (ADDRSZ + 1)];
-      comp_prog.ptr[node->pos + (ADDRSZ + 1)] = 0; // number of POPs
 
+      // number of POPs
+      level = comp_prog.ptr[node->pos + (ADDRSZ + 1)];
       if (level >= label->level) {
-        // number of POPs
         comp_prog.ptr[node->pos + (ADDRSZ + 1)] = level - label->level;
       } else {
-        // number of POPs
         comp_prog.ptr[node->pos + (ADDRSZ + 1)] = 0;
       }
       break;
@@ -4213,6 +4294,9 @@ char *comp_preproc_options(char *p) {
       p += LEN_ANTIALIAS;
       SKIP_SPACES(p);
       opt_antialias = (strncmp("OFF", p, 3) != 0);
+    } else if (strncmp(LCN_AUTOLOCAL, p, LEN_AUTOLOCAL) == 0) {
+      p += LEN_AUTOLOCAL;
+      opt_autolocal = 1;
     } else if (strncmp(LCN_COMMAND, p, LEN_COMMAND) == 0) {
       p += LEN_COMMAND;
       SKIP_SPACES(p);

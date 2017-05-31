@@ -123,6 +123,7 @@ EXTERN byte opt_file_permitted; /**< file system permission                  */
 EXTERN byte opt_show_page; /**< SHOWPAGE graphics flush mode                 */
 EXTERN byte opt_mute_audio; /**< whether to mute sounds                      */
 EXTERN byte opt_antialias; /**< OPTION ANTIALIAS OFF                         */
+EXTERN byte opt_autolocal; /**< OPTION AUTOLOCAL                             */
 EXTERN byte opt_trace_on; /**< initial value for the TRON command            */
 
 #define IDE_NONE        0
