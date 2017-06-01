@@ -2527,21 +2527,21 @@ int comp_text_line_command(bid_t idx, int decl, int sharp, char *last_cmd) {
 
   case kwLOCAL:
     // local variables
-    count = comp_getlist(comp_bc_parm, pars, ",", 256);
     if (!opt_autolocal) {
+      count = comp_getlist(comp_bc_parm, pars, ",", 256);
       bc_add_code(&comp_prog, kwTYPE_CRVAR);
       bc_add_code(&comp_prog, count);
-    }
-    for (i = 0; i < count; i++) {
-      comp_prepare_name(vname, pars[i], SB_KEYWORD_SIZE);
-      bc_add_addr(&comp_prog, comp_var_getID(vname));
-    }
-    // handle same line variable assignment, eg local blah = foo
-    for (i = 0; i < count; i++) {
-      comp_prepare_name(vname, pars[i], SB_KEYWORD_SIZE);
-      if (strlen(vname) != strlen(pars[i])) {
-        // kwTYPE_LINE is required for executor
-        comp_text_line(pars[i], 1);
+      for (i = 0; i < count; i++) {
+        comp_prepare_name(vname, pars[i], SB_KEYWORD_SIZE);
+        bc_add_addr(&comp_prog, comp_var_getID(vname));
+      }
+      // handle same line variable assignment, eg local blah = foo
+      for (i = 0; i < count; i++) {
+        comp_prepare_name(vname, pars[i], SB_KEYWORD_SIZE);
+        if (strlen(vname) != strlen(pars[i])) {
+          // kwTYPE_LINE is required for executor
+          comp_text_line(pars[i], 1);
+        }
       }
     }
     break;

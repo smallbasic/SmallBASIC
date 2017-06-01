@@ -9,6 +9,7 @@ sub sub1()
   sub viewFile()
     loc_y = 999
   end
+  glo_x=1
   inner1()
   loc_y = 10
   for loc_j = 0 to 10
@@ -19,6 +20,11 @@ sub sub1()
 end
 
 sub sub2()
+  local foo1=0
+  local foo2=[]
+  local foo3
+  local foo4,foo5
+  local glo_x
   if loc_y != 0 then throw "err2: " + loc_y
   loc_y = 20
   for loc_j = 0 to 20
