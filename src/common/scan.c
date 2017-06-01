@@ -22,9 +22,8 @@
 char *comp_array_uds_field(char *p, bc_t *bc);
 void comp_text_line(char *text, int addLineNo);
 bcip_t comp_search_bc(bcip_t ip, code_t code);
-bcip_t comp_search_bc_stack(bcip_t start, code_t code, byte level, bid_t block_id);
 extern void expr_parser(bc_t *bc);
-extern void sc_raise2(const char *fmt, int line, const char *buff); // sberr
+extern void sc_raise2(const char *fmt, int line, const char *buff);
 
 #define STRLEN(s) ((sizeof(s) / sizeof(s[0])) - 1)
 #define LEN_OPTION     STRLEN(LCN_OPTION)
@@ -637,14 +636,6 @@ int comp_create_var(const char *name) {
     strcpy(comp_vartable[comp_varcount].name, name);
     comp_vartable[comp_varcount].dolar_sup = 0;
     comp_vartable[comp_varcount].lib_id = -1;
-
-    if (comp_bc_proc[0]) {
-      comp_vartable[comp_varcount].local_id = comp_varcount;
-      comp_vartable[comp_varcount].local_proc_level = comp_proc_level;
-    } else {
-      comp_vartable[comp_varcount].local_id = -1;
-    }
-
     idx = comp_varcount;
     comp_varcount++;
   }
@@ -735,7 +726,22 @@ bid_t comp_var_getID(const char *var_name) {
     }
   }
 
-  if (idx == -1) {
+  if (opt_autolocal) {
+    if (idx == -1) {
+      idx = comp_create_var(tmp);
+      if (comp_bc_proc[0]) {
+        comp_vartable[idx].local_id = idx;
+        comp_vartable[idx].local_proc_level = comp_proc_level;
+      } else {
+        comp_vartable[idx].local_id = -1;
+      }
+    } else if (comp_bc_proc[0] &&
+               comp_vartable[idx].local_id != -1 &&
+               comp_vartable[idx].local_proc_level > comp_proc_level) {
+      // local at higher level now also local at this level
+      comp_vartable[idx].local_proc_level = comp_proc_level;
+    }
+  } else if (idx == -1) {
     // variable not found; create a new one
     idx = comp_create_var(tmp);
   }
@@ -2355,10 +2361,26 @@ void comp_insert_locals() {
     }
   }
 
-  if (count_local > 0) {
-    bcip_t pos_goto = comp_search_bc_stack(0, kwGOTO, comp_block_level, comp_block_id);
-    if (pos_goto == INVALID_ADDR) {
-      sc_raise(MSG_UDP_MISSING_END);
+  comp_pass_node_t *node;
+  bcip_t pos_goto = INVALID_ADDR;
+  for (i = comp_stack.count - 1; i >= 0; i--) {
+    node = comp_stack.elem[i];
+    if (comp_prog.ptr[node->pos] == kwGOTO &&
+        node->block_id != -1 &&
+        node->level == comp_block_level) {
+      pos_goto = node->pos;
+      node->block_id = -1;
+      break;
+    }
+  }
+
+  if (pos_goto == INVALID_ADDR) {
+    sc_raise(ERR_SYNTAX);
+  } else {
+    if (!count_local) {
+      // position the func GOTO to after the EOC
+      bcip_t ip = - (pos_goto + 1 + ADDRSZ + 1 + 1);
+      memcpy(comp_prog.ptr + pos_goto + 1, &ip, ADDRSZ);
     } else {
       // skip over the kwTYPE_CRVAR block
       comp_push(comp_prog.count);
@@ -2389,7 +2411,7 @@ void comp_insert_locals() {
       bc_add_code(&comp_prog, comp_block_level - 1);
       bc_eoc(&comp_prog);
 
-      // fill the above goto
+      // complete the goto that skips the kwTYPE_CRVAR block
       bcip_t pos_func_end = -comp_prog.count;
       memcpy(comp_prog.ptr + pos_end, &pos_func_end, ADDRSZ);
     }
@@ -2506,8 +2528,10 @@ int comp_text_line_command(bid_t idx, int decl, int sharp, char *last_cmd) {
   case kwLOCAL:
     // local variables
     count = comp_getlist(comp_bc_parm, pars, ",", 256);
-    bc_add_code(&comp_prog, kwTYPE_CRVAR);
-    bc_add_code(&comp_prog, count);
+    if (!opt_autolocal) {
+      bc_add_code(&comp_prog, kwTYPE_CRVAR);
+      bc_add_code(&comp_prog, count);
+    }
     for (i = 0; i < count; i++) {
       comp_prepare_name(vname, pars[i], SB_KEYWORD_SIZE);
       bc_add_addr(&comp_prog, comp_var_getID(vname));
@@ -3342,16 +3366,16 @@ void comp_pass2_scan() {
         // change LABEL-ID with IP
         label = comp_labtable.elem[label_id];
         w = label->ip;
+
+        // number of POPs
+        level = comp_prog.ptr[node->pos + (ADDRSZ + 1)];
+        if (level >= label->level) {
+          comp_prog.ptr[node->pos + (ADDRSZ + 1)] = level - label->level;
+        } else {
+          comp_prog.ptr[node->pos + (ADDRSZ + 1)] = 0;
+        }
       }
       memcpy(comp_prog.ptr + node->pos + 1, &w, ADDRSZ);
-
-      // number of POPs
-      level = comp_prog.ptr[node->pos + (ADDRSZ + 1)];
-      if (level >= label->level) {
-        comp_prog.ptr[node->pos + (ADDRSZ + 1)] = level - label->level;
-      } else {
-        comp_prog.ptr[node->pos + (ADDRSZ + 1)] = 0;
-      }
       break;
 
     case kwFOR:
