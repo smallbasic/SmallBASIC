@@ -2215,7 +2215,7 @@ void comp_text_line_func(bid_t idx, int decl) {
           comp_push(comp_prog.count);
           bc_add_code(&comp_prog, kwGOTO);
           bc_add_addr(&comp_prog, 0);
-          bc_add_code(&comp_prog, comp_block_level - 1);
+          bc_add_code(&comp_prog, 0);
           bc_eoc(&comp_prog);
         }
       }
@@ -2387,7 +2387,7 @@ void comp_insert_locals() {
       bc_add_code(&comp_prog, kwGOTO);
       bcip_t pos_end = comp_prog.count;
       bc_add_addr(&comp_prog, 0);
-      bc_add_code(&comp_prog, comp_block_level - 1);
+      bc_add_code(&comp_prog, 0);
       bc_eoc(&comp_prog);
 
       // make the func GOTO arrive here at the kwTYPE_CRVAR block
@@ -2408,7 +2408,7 @@ void comp_insert_locals() {
       comp_push(comp_prog.count);
       bc_add_code(&comp_prog, kwGOTO);
       bc_add_addr(&comp_prog, -pos_func_start);
-      bc_add_code(&comp_prog, comp_block_level - 1);
+      bc_add_code(&comp_prog, 0);
       bc_eoc(&comp_prog);
 
       // complete the goto that skips the kwTYPE_CRVAR block
