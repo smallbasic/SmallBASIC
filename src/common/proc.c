@@ -226,7 +226,7 @@ void pv_writevar(var_t *var, int method, int handle) {
   case V_REF:
     pv_writevar(var->v.ref, method, handle);
     break;
-  case V_NONE:
+  case V_NIL:
     pv_write(SB_KW_NONE_STR, method, handle);
     break;
   }

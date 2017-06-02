@@ -754,8 +754,8 @@ static inline void eval_var(var_t *r, var_t *var_p) {
   case V_FUNC:
     var_p->v.fn.cb(r);
     break;
-  case V_NONE:
-    r->type = V_NONE;
+  case V_NIL:
+    r->type = V_NIL;
     r->const_flag = 1;
     break;
   }

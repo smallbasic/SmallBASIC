@@ -494,7 +494,7 @@ struct proc_keyword_s proc_table[] = {
 #define LCN_SV_X                "X"
 #define LCN_SV_Y                "Y"
 #define LCN_SV_SELF             "SELF"
-#define LCN_SV_NONE             "NIL"
+#define LCN_SV_NIL              "NIL"
 #define LCN_SV_MAXINT           "MAXINT"
 
 // fast cut of comments (pp)

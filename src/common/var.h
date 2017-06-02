@@ -38,7 +38,7 @@
 #define V_MAP       5 /**< variable type, associative array            @ingroup var */
 #define V_REF       6 /**< variable type, reference another var        @ingroup var */
 #define V_FUNC      7 /**< variable type, object method                @ingroup var */
-#define V_NONE      8 /**< variable type, null value                   @ingroup var */
+#define V_NIL       8 /**< variable type, null value                   @ingroup var */
 
 /*
  *   predefined system variables - index

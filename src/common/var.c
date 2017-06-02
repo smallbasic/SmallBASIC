@@ -344,7 +344,7 @@ int v_compare(var_t *a, var_t *b) {
     return map_compare(a, b);
   }
 
-  if (a->type == V_NONE || b->type == V_NONE) {
+  if (a->type == V_NIL || b->type == V_NIL) {
     // return equal (0) when both NONE
     return (a->type != b->type);
   }
@@ -487,8 +487,8 @@ void v_set(var_t *dest, const var_t *src) {
     dest->v.fn.cb = src->v.fn.cb;
     dest->v.fn.self = src->v.fn.self;
     break;
-  case V_NONE:
-    dest->type = V_NONE;
+  case V_NIL:
+    dest->type = V_NIL;
     dest->const_flag = 1;
     break;
   }
@@ -570,7 +570,7 @@ char *v_str(var_t *arg) {
     buffer = malloc(5);
     strcpy(buffer, "func");
     break;
-  case V_NONE:
+  case V_NIL:
     buffer = malloc(5);
     strcpy(buffer, SB_KW_NONE_STR);
     break;
