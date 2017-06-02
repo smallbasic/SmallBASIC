@@ -232,3 +232,13 @@ aaa=[]
 if (!isarray(aaa) or len(aaa) != 0) then
   throw "invalid empty array"
 endif
+
+rem ------------------------------------
+rem define an array over multiple lines
+bbb=[10
+20,30,40
+50,60
+70
+80
+]
+

@@ -3875,6 +3875,7 @@ char *comp_format_text(const char *source) {
   int adj_line_num = 0;
   int multi_line_string = 0;
   int curley_brace = 0;
+  int square_brace = 0;
 
   sl = strlen(source);
   new_text = malloc(sl + 2);
@@ -3887,28 +3888,37 @@ char *comp_format_text(const char *source) {
     if (!quotes) {
       switch (*p) {
       case '\n':
-        if (*last_nonsp_ptr == '&') {
-          // join lines
-          p++;
-          *last_nonsp_ptr = ' ';
-          if (*(last_nonsp_ptr - 1) == ' ') {
-            ps = last_nonsp_ptr;
-          } else {
-            ps = last_nonsp_ptr + 1;
+        if (square_brace) {
+          // code array declared over multiple lines
+          if (*last_nonsp_ptr != ',') {
+            *ps++ = ',';
           }
-          adj_line_num++;
+          last_ch = *ps = ' ';
+          ps++;
+          p++;
         } else {
-          for (i = 0; i <= adj_line_num; i++) {
-            // at least one nl
-            *ps++ = '\n';
+          if (*last_nonsp_ptr == '&') {
+            // join lines
+            p++;
+            *last_nonsp_ptr = ' ';
+            if (*(last_nonsp_ptr - 1) == ' ') {
+              ps = last_nonsp_ptr;
+            } else {
+              ps = last_nonsp_ptr + 1;
+            }
+            adj_line_num++;
+          } else {
+            for (i = 0; i <= adj_line_num; i++) {
+              // at least one nl
+              *ps++ = '\n';
+            }
+            adj_line_num = 0;
+            p++;
           }
-          adj_line_num = 0;
-          p++;
+          last_ch = '\n';
+          last_nonsp_ptr = ps - 1;
         }
-
         SKIP_SPACES(p);
-        last_ch = '\n';
-        last_nonsp_ptr = ps - 1;
         break;
 
       case '\'':
@@ -3960,6 +3970,16 @@ char *comp_format_text(const char *source) {
         curley_brace++;
         quotes = 1;
         multi_line_string = 1;
+        *ps++ = *p++;
+        break;
+
+      case '[':
+        square_brace++;
+        *ps++ = *p++;
+        break;
+
+      case ']':
+        square_brace--;
         *ps++ = *p++;
         break;
 
