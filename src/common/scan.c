@@ -3890,9 +3890,6 @@ char *comp_format_text(const char *source) {
       case '\n':
         if (square_brace) {
           // code array declared over multiple lines
-          if (*last_nonsp_ptr != ',') {
-            *ps++ = ',';
-          }
           last_ch = *ps = ' ';
           ps++;
           p++;

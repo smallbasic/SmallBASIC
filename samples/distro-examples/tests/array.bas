@@ -235,10 +235,13 @@ endif
 
 rem ------------------------------------
 rem define an array over multiple lines
-bbb=[10
-20,30,40
-50,60
-70
+bbb=[10,
+20,30,40,
+50,60,
+70,
 80
 ]
+if (!isarray(bbb) or len(bbb) != 8) then
+  throw "invalid multiline array"
+endif
 
