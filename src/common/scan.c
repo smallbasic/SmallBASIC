@@ -56,6 +56,7 @@ extern void sc_raise2(const char *fmt, int line, const char *buff);
   (strncmp(p, (x), strlen((x))) == 0)
 
 #define GROWSIZE 128
+#define MAX_PARAMS 256
 
 typedef struct  {
   byte *code;
@@ -636,6 +637,8 @@ int comp_create_var(const char *name) {
     strcpy(comp_vartable[comp_varcount].name, name);
     comp_vartable[comp_varcount].dolar_sup = 0;
     comp_vartable[comp_varcount].lib_id = -1;
+    comp_vartable[comp_varcount].local_id = -1;
+    comp_vartable[comp_varcount].local_proc_level = 0;
     idx = comp_varcount;
     comp_varcount++;
   }
@@ -1523,43 +1526,66 @@ void comp_data_seg(char *source) {
 }
 
 /*
- * Scans the 'source' for "names" separated by 'delims' and returns
+ * Scans the 'source' for "names" separated by ',' and returns
  * the elements (pointer in source) into args array.
  *
  * Returns the number of items
  */
-int comp_getlist(char *source, char_p_t * args, char *delims, int maxarg) {
-  char *p, *ps;
+int comp_getlist(char *source, char_p_t *args, int maxarg) {
   int count = 0;
-
-  ps = p = source;
-  while (*p) {
-    if (strchr(delims, *p)) {
-      *p = '\0';
-      SKIP_SPACES(ps);
-      args[count] = ps;
-      count++;
-      if (count == maxarg) {
-        if (*ps) {
-          sc_raise(MSG_PARNUM_LIMIT, maxarg);
-        }
-        return count;
+  char *p = source;
+  char *ps = p;
+  int square = 0;
+  int round = 0;
+  int brace = 0;
+  
+  while (*p && count < maxarg) {
+    switch (*p) {
+    case '[':
+      square++;
+      break;
+    case ']':
+      square--;
+      break;
+    case '(':
+      round++;
+      break;
+    case ')':
+      round--;
+      break;
+    case '{':
+      brace++;
+      break;
+    case '}':
+      brace--;
+      break;
+    case ',':
+      if (!square && !round && !brace) {
+        *p = '\0';
+        SKIP_SPACES(ps);
+        args[count] = ps;
+        count++;
+        ps = p + 1;
       }
-      ps = p + 1;
+      break;
+    default:
+      break;
     }
-
     p++;
   }
 
   if (*ps) {
-    SKIP_SPACES(ps);
-    if (*ps) {
-      *p = '\0';
-      args[count] = ps;
-      count++;
+    if (count == maxarg) {
+      sc_raise(MSG_PARNUM_LIMIT, maxarg);
+    } else {
+      SKIP_SPACES(ps);
+      if (*ps) {
+        *p = '\0';
+        args[count] = ps;
+        count++;
+      }
     }
   }
-
   return count;
 }
 
@@ -1567,7 +1593,7 @@ int comp_getlist(char *source, char_p_t * args, char *delims, int maxarg) {
  * returns a list of names
  *
  * the list is included between sep[0] and sep[1] characters
- * each element is separated by 'delims' characters
+ * each element is separated by ',' characters
  *
  * the 'source' is the raw string (null chars will be placed at the end of each name)
  * the 'args' is the names (pointers on the 'source')
@@ -1576,7 +1602,7 @@ int comp_getlist(char *source, char_p_t * args, char *delims, int maxarg) {
  *
  * returns the next position in 'source' (after the sep[1])
  */
-char *comp_getlist_insep(char *source, char_p_t * args, char *sep, char *delims, int maxarg, int *count) {
+char *comp_getlist_insep(char *source, char_p_t *args, char *sep, int maxarg, int *count) {
   char *p;
   char *ps;
   int level = 1;
@@ -1605,7 +1631,7 @@ char *comp_getlist_insep(char *source, char_p_t * args, char *sep, char *delims,
       if (strlen(ps)) {
         SKIP_SPACES(ps);
         if (strlen(ps)) {
-          *count = comp_getlist(ps, args, delims, maxarg);
+          *count = comp_getlist(ps, args, maxarg);
         } else {
           sc_raise(MSG_NIL_PAR_ERR);
         }
@@ -1879,7 +1905,7 @@ int comp_error_if_keyword(const char *name) {
  * stores export symbols (in pass2 will be checked again)
  */
 void bc_store_exports(const char *slist) {
-  char_p_t pars[256];
+  char_p_t pars[MAX_PARAMS];
   int count = 0, i;
   char *newlist;
 
@@ -1888,7 +1914,7 @@ void bc_store_exports(const char *slist) {
   strcat(newlist, slist);
   strcat(newlist, ")");
 
-  comp_getlist_insep(newlist, pars, "()", ",", 256, &count);
+  comp_getlist_insep(newlist, pars, "()", MAX_PARAMS, &count);
 
   int offset;
   if (comp_exptable.count) {
@@ -2159,10 +2185,10 @@ void comp_text_line_func(bid_t idx, int decl) {
           int i;
           int vattr;
           char vname[SB_KEYWORD_SIZE + 1];
-          char_p_t pars[256];
+          char_p_t pars[MAX_PARAMS];
 
           *lpar_ptr = '(';
-          comp_getlist_insep(comp_bc_parm, pars, "()", ",", 256, &count);
+          comp_getlist_insep(comp_bc_parm, pars, "()", MAX_PARAMS, &count);
           bc_add_code(&comp_prog, kwTYPE_PARAM);
           bc_add_code(&comp_prog, count);
 
@@ -2226,7 +2252,7 @@ void comp_text_line_func(bid_t idx, int decl) {
 void comp_text_line_on() {
   char *p;
   int count, i, keep_ip;
-  char_p_t pars[256];
+  char_p_t pars[MAX_PARAMS];
 
   comp_push(comp_prog.count);
   bc_add_ctrl(&comp_prog, kwONJMP, 0, 0);
@@ -2238,7 +2264,7 @@ void comp_text_line_on() {
     p += 6;
     keep_ip = comp_prog.count;
     bc_add_code(&comp_prog, 0);
-    count = comp_getlist(p, pars, ",", 256);
+    count = comp_getlist(p, pars, MAX_PARAMS);
     for (i = 0; i < count; i++) {
       bc_add_addr(&comp_prog, comp_label_getID(pars[i])); // IDs
     }
@@ -2261,7 +2287,7 @@ void comp_text_line_on() {
     // the counter
 
     // count = bc_scan_label_list(p);
-    count = comp_getlist(p, pars, ",", 256);
+    count = comp_getlist(p, pars, MAX_PARAMS);
     for (i = 0; i < count; i++) {
       bc_add_addr(&comp_prog, comp_label_getID(pars[i]));
     }
@@ -2490,7 +2516,7 @@ void comp_text_line_ext_func() {
 }
 
 int comp_text_line_command(bid_t idx, int decl, int sharp, char *last_cmd) {
-  char_p_t pars[256];
+  char_p_t pars[MAX_PARAMS];
   int count, i, index;
   char vname[SB_KEYWORD_SIZE + 1];
   int result = 1;
@@ -2528,7 +2554,7 @@ int comp_text_line_command(bid_t idx, int decl, int sharp, char *last_cmd) {
   case kwLOCAL:
     // local variables
     if (!opt_autolocal) {
-      count = comp_getlist(comp_bc_parm, pars, ",", 256);
+      count = comp_getlist(comp_bc_parm, pars, MAX_PARAMS);
       bc_add_code(&comp_prog, kwTYPE_CRVAR);
       bc_add_code(&comp_prog, count);
       for (i = 0; i < count; i++) {

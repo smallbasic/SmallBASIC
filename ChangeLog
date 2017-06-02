@@ -1,3 +1,6 @@
+2017-06-02 (0.12.10)
+	COMMON: Fix inline local variable declaration for complex assignments
+
 2017-05-27 (0.12.10)
 	COMMON: Implemented OPTION AUTOLOCAL runtime option
 

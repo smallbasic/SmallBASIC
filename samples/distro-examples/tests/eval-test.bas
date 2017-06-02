@@ -309,3 +309,7 @@ endif
 if (maxint == 0)
   throw "maxint not defined"
 endif
+
+local a=[1,2,3,4]
+local b=IFF(a[0]==1,999,2)
+if (b != 999) then throw "inline local assignment error"
