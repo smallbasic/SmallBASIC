@@ -744,6 +744,7 @@ void bc_loop(int isf) {
     case kwREM:
     case kwTYPE_EOC:
     case kwTYPE_LINE:
+    case kwGOTO:
       break;
     default:
       now = dev_get_millisecond_count();

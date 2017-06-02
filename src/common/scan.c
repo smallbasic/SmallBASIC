@@ -3671,7 +3671,9 @@ void comp_optimise() {
 
         ip = comp_read_goto(ip + 1, &addr, &level);
         bcip_t goto_ip = addr;
-
+        if (comp_prog.ptr[goto_ip] == kwTYPE_EOC) {
+          new_addr = goto_ip + 1;
+        }
         while (goto_ip > 0 && comp_prog.ptr[goto_ip] == kwTYPE_LINE) {
           goto_ip += 1 + sizeof(bcip_t);
           if (comp_prog.ptr[goto_ip] == kwGOTO) {
@@ -3685,6 +3687,9 @@ void comp_optimise() {
           } else {
             break;
           }
+        }
+        if (new_addr != 0 && comp_prog.ptr[new_addr] == kwTYPE_EOC) {
+          new_addr++;
         }
         if (new_addr != 0) {
           // patch in replacement address
