@@ -1060,9 +1060,10 @@ int comp_is_parenthesized(char *name) {
  *
  * returns true for empty brackets []
  */
-int comp_is_code_array(char *p) {
+int comp_is_code_array(bc_t *bc, char *p) {
   int result = 0;
-  if (comp_prog.ptr[comp_prog.count - 1] == '=') {
+  if (comp_prog.ptr[comp_prog.count - 1] == '=' &&
+      (!bc->count || bc->ptr[0] != kwTYPE_VAR)) {
     // variable assignment is always for code array
     result = 1;
   } else {
@@ -1305,7 +1306,7 @@ void comp_expression(char *expr, byte no_parser) {
       // code-defined array
       ptr++;
       level++;
-      if (comp_is_code_array(ptr)) {
+      if (comp_is_code_array(&bc, ptr)) {
         // otherwise treat as array index
         bc_add_fcode(&bc, kwCODEARRAY);
       }

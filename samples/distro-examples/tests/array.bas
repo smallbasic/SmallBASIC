@@ -226,6 +226,14 @@ if (s.v[0][1] != 99) then
   throw "illegal access"
 endif
 
+grid.map = [[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0]]
+grid.size = 3
+for i = 0 to grid.size
+  for j = 0 to grid.size
+     v = grid.map[i][j]
+  next j
+next i
+
 rem ------------------------------------
 rem define an empty array with [] notation
 aaa=[]
