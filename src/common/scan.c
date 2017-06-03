@@ -22,6 +22,7 @@
 char *comp_array_uds_field(char *p, bc_t *bc);
 void comp_text_line(char *text, int addLineNo);
 bcip_t comp_search_bc(bcip_t ip, code_t code);
+bcip_t comp_next_bc_cmd(bc_t *bc, bcip_t ip);
 extern void expr_parser(bc_t *bc);
 extern void sc_raise2(const char *fmt, int line, const char *buff);
 
@@ -1062,9 +1063,16 @@ int comp_is_parenthesized(char *name) {
  */
 int comp_is_code_array(bc_t *bc, char *p) {
   int result = 0;
-  if (comp_prog.ptr[comp_prog.count - 1] == '=' &&
-      (!bc->count || bc->ptr[0] != kwTYPE_VAR)) {
-    // variable assignment is always for code array
+  int is_var = 0;
+
+  for (bcip_t ip = 0; ip < bc->count; ip = comp_next_bc_cmd(bc, ip)) {
+    if (bc->ptr[ip] == kwTYPE_VAR) {
+      is_var = 1;
+      break;
+    }
+  }
+  if (comp_prog.ptr[comp_prog.count - 1] == '=' && (!bc->count || !is_var)) {
+    // lvalue assignment is for code array, unless rvalue includes a variable
     result = 1;
   } else {
     int level = 1;
@@ -2970,11 +2978,9 @@ void comp_text_line(char *text, int addLineNo) {
 /*
  * skip command bytes
  */
-bcip_t comp_next_bc_cmd(bcip_t ip) {
-  code_t code;
+bcip_t comp_next_bc_cmd(bc_t *bc, bcip_t ip) {
   uint32_t len;
-
-  code = comp_prog.ptr[ip];
+  code_t code = bc->ptr[ip];
   ip++;
 
   switch (code) {
@@ -2985,7 +2991,7 @@ bcip_t comp_next_bc_cmd(bcip_t ip) {
     ip += OS_REALSZ;
     break;
   case kwTYPE_STR:             // string: [2/4B-len][data]
-    memcpy(&len, comp_prog.ptr + ip, OS_STRLEN);
+    memcpy(&len, bc->ptr + ip, OS_STRLEN);
     len += OS_STRLEN;
     ip += len;
     break;
@@ -3024,17 +3030,17 @@ bcip_t comp_next_bc_cmd(bcip_t ip) {
     ip += (ADDRSZ + 1);
     break;
   case kwTYPE_CRVAR:           // [1B count][addr1][addr2]...
-    len = comp_prog.ptr[ip];
+    len = bc->ptr[ip];
     ip += ((len * ADDRSZ) + 1);
     break;
   case kwTYPE_PARAM:           // [1B count] {[1B-pattr][addr1]} ...
-    len = comp_prog.ptr[ip];
+    len = bc->ptr[ip];
     ip += ((len * (ADDRSZ + 1)) + 1);
     break;
   case kwONJMP:                // [true-ip][false-ip] [GOTO|GOSUB]
     // [count] [addr1]...
     ip += (BC_CTRLSZ + 1);
-    ip += (comp_prog.ptr[ip] * ADDRSZ);
+    ip += (bc->ptr[ip] * ADDRSZ);
     break;
   case kwOPTION:               // [1B-optcode][addr-data]
     ip += (ADDRSZ + 1);
@@ -3077,7 +3083,7 @@ bcip_t comp_search_bc(bcip_t ip, code_t code) {
       result = i;
       break;
     }
-    i = comp_next_bc_cmd(i);
+    i = comp_next_bc_cmd(&comp_prog, i);
   } while (i < comp_prog.count);
   return result;
 }
@@ -3094,7 +3100,7 @@ bcip_t comp_search_bc_eoc(bcip_t ip) {
     if (code == kwTYPE_EOC || code == kwTYPE_LINE) {
       return i;
     }
-    i = comp_next_bc_cmd(i);
+    i = comp_next_bc_cmd(&comp_prog, i);
   } while (i < comp_prog.count);
   return comp_prog.count;
 }
@@ -3673,7 +3679,8 @@ int comp_read_goto(bcip_t ip, bcip_t *addr, code_t *level) {
 
 void comp_optimise() {
   // scan for repeated kwTYPE_LINE... kwGOTO blocks
-  for (bcip_t ip = 0; !comp_error && ip < comp_prog.count; ip = comp_next_bc_cmd(ip)) {
+  for (bcip_t ip = 0; !comp_error && ip < comp_prog.count;
+       ip = comp_next_bc_cmd(&comp_prog, ip)) {
     if (comp_prog.ptr[ip] == kwTYPE_LINE) {
       ip += 1 + sizeof(bcip_t);
       if (comp_prog.ptr[ip] == kwGOTO) {
