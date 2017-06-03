@@ -3768,7 +3768,6 @@ void comp_init() {
 
   // create system variables
   comp_var_getID(LCN_SV_SBVER);
-  comp_var_getID(LCN_SV_PI);
   comp_var_getID(LCN_SV_XMAX);
   comp_var_getID(LCN_SV_YMAX);
   comp_var_getID(LCN_SV_TRUE);

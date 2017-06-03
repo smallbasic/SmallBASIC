@@ -260,7 +260,6 @@ void exec_setup_predefined_variables() {
   // needed here (otherwise task will not updated)
   ctask->has_sysvars = 1;
   setsysvar_str(SYSVAR_SBVER, SB_STR_VER);
-  setsysvar_num(SYSVAR_PI, M_PI);
   setsysvar_int(SYSVAR_XMAX, os_graf_mx - 1);
   setsysvar_int(SYSVAR_YMAX, os_graf_my - 1);
   setsysvar_int(SYSVAR_TRUE, 1);

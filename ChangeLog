@@ -1,5 +1,6 @@
 2017-06-03 (0.12.10)
 	COMMON: Add support code arrays declared over multiple lines
+	COMMON: Removed PI system constant
 
 2017-06-02 (0.12.10)
 	COMMON: Fix inline local variable declaration for complex assignments

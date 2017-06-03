@@ -18,7 +18,7 @@ tau.build_ta
 
 rem check system-variables
 predef.prsys
-
+PI=3.14159265358979
 x=PI
 dim foyer
 foyer.name= "my name is PI"
