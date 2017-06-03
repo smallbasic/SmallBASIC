@@ -1062,27 +1062,35 @@ int comp_is_parenthesized(char *name) {
  */
 int comp_is_code_array(char *p) {
   int result = 0;
-  int level = 1;
-  int count = 0;
-  while (*p && level) {
-    switch(*p) {
-    case '[':
-      level++;
-      break;
-    case ']':
-      level--;
-      break;
-    case ',':
-    case ';':
-      result = 1;
-      break;
-    default:
-      count++;
-      break;
+  if (comp_prog.ptr[comp_prog.count - 1] == '=') {
+    // variable assignment is always for code array
+    result = 1;
+  } else {
+    int level = 1;
+    int count = 0;
+    while (*p && level) {
+      switch(*p) {
+      case '[':
+        level++;
+        break;
+      case ']':
+        level--;
+        break;
+      case ',':
+      case ';':
+        result = 1;
+        break;
+      default:
+        count++;
+        break;
+      }
+      p++;
     }
-    p++;
+    if (!count) {
+      result = 1;
+    }
   }
-  return !count || result;
+  return result;
 }
 
 char *comp_scan_json(char *json, bc_t *bc) {
