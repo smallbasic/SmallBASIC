@@ -15,6 +15,7 @@
 
 #define BC_ALLOC_INCR     1024
 #define BC_MAX_STORE_SIZE   0x7FFFFFFF
+#define V_QUOTE '\1'
 #define V_LINE '\2'
 
 /**

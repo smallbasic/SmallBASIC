@@ -1097,7 +1097,7 @@ char *comp_scan_json(char *json, bc_t *bc) {
     case '}':
       curley_brace--;
       break;
-    case '\1':
+    case V_QUOTE:
       // revert hidden quote
       *p = '\"';
       break;
@@ -4033,7 +4033,7 @@ char *comp_format_text(const char *source) {
           continue;
         } else if (p[0] == '\"') {
           // internal quote escape (see bc_store_string)
-          *ps++ = '\1';
+          *ps++ = V_QUOTE;
           p++;
           continue;
         } else if (p[0] == '\n') {
