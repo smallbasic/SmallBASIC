@@ -212,8 +212,9 @@ char *bc_store_string(bc_t *bc, char *src) {
     } else if (*p == '\1') {
       // revert hidden quote
       *p = '\"';
-    } else if (*p == '\2') {
+    } else if (*p == V_LINE) {
       // revert hidden newline
+      comp_line++;
       *p = '\n';
     } else if (*p == '\"') {
       // end of string detected

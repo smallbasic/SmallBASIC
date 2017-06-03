@@ -1101,8 +1101,9 @@ char *comp_scan_json(char *json, bc_t *bc) {
       // revert hidden quote
       *p = '\"';
       break;
-    case '\2':
+    case V_LINE:
       // revert hidden newline
+      comp_line++;
       *p = '\n';
       break;
     default:
@@ -1317,6 +1318,9 @@ void comp_expression(char *expr, byte no_parser) {
     } else if (*ptr == '{') {
       ptr = comp_scan_json(ptr, &bc);
       check_udf++;
+    } else if (*ptr == V_LINE) {
+      comp_line++;
+      ptr++;
     } else if (is_space(*ptr)) {
       // null characters
       ptr++;
@@ -1538,7 +1542,7 @@ int comp_getlist(char *source, char_p_t *args, int maxarg) {
   int square = 0;
   int round = 0;
   int brace = 0;
-  
+
   while (*p && count < maxarg) {
     switch (*p) {
     case '[':
@@ -3890,7 +3894,7 @@ char *comp_format_text(const char *source) {
       case '\n':
         if (square_brace) {
           // code array declared over multiple lines
-          last_ch = *ps = ' ';
+          last_ch = *ps = V_LINE;
           ps++;
           p++;
         } else {
@@ -4034,8 +4038,7 @@ char *comp_format_text(const char *source) {
           continue;
         } else if (p[0] == '\n') {
           // internal newline escape
-          comp_line++;
-          *ps++ = '\2';
+          *ps++ = V_LINE;
           p++;
           continue;
         } else if (curley_brace && p[0] == '}') {

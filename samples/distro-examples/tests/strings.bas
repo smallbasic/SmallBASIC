@@ -109,6 +109,12 @@ if (s1 <> s2 || s1 <> s3) then
   throw "not equal"
 endif
 
+s4="""
+this 
+is a 
+multiline 
+string"""
+
 rem ------------------------------------------------
 rem test case insensitive translate
 if "food" != translate("foo bar", " BAR", "d", true) then
