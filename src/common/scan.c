@@ -4406,6 +4406,12 @@ char *comp_preproc_options(char *p) {
                opt_modlist[0] != '\0' && !opt_loadmod) {
       sblmgr_init(1, opt_modlist);
     } else {
+      SKIP_SPACES(p);
+      char *pe = p;
+      while (*pe != '\0' && *pe != '\n') {
+        pe++;
+      }
+      *pe = '\0';
       sc_raise(MSG_OPT_PREDEF_ERR, p);
     }
   }
