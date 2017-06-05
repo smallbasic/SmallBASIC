@@ -1,3 +1,6 @@
+2017-06-05 (0.12.10)
+	ANDROID: Fix crash when exporting from IDE
+
 2017-06-03 (0.12.10)
 	COMMON: Add support code arrays declared over multiple lines
 	COMMON: Removed PI system constant

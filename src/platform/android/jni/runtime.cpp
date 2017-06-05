@@ -35,6 +35,7 @@
 #define MUTE_AUDIO_KEY "muteAudio"
 #define OPT_IDE_KEY "optIde"
 #define GBOARD_KEY_QUESTION 274
+#define EVENT_TYPE_EXIT 100
 
 Runtime *runtime;
 
@@ -584,7 +585,9 @@ void Runtime::saveConfig() {
 void Runtime::runPath(const char *path) {
   pthread_mutex_lock(&_mutex);
   setLoadPath(path);
-  setExit(false);
+  MAEvent *event = new MAEvent();
+  event->type = EVENT_TYPE_EXIT;
+  _eventQueue->push(event);
   ALooper_wake(_looper);
   pthread_mutex_unlock(&_mutex);
 }
@@ -782,6 +785,9 @@ void Runtime::processEvent(MAEvent &event) {
     break;
   case EVENT_TYPE_KEY_PRESSED:
     handleKeyEvent(event);
+    break;
+  case EVENT_TYPE_EXIT:
+    setExit(false);
     break;
   default:
     handleEvent(event);
