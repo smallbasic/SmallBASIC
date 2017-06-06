@@ -448,6 +448,17 @@ sub manageFiles()
   cls
 end
 
+func changeDir(s)
+  local wnd = window()
+  try
+    chdir s
+    return true
+  catch e
+    wnd.alert(e)
+    return false
+  end try
+end
+
 sub main
   local path, frm
   local is_welcome = (command == "welcome")
@@ -503,8 +514,9 @@ sub main
 
     if (isdir(frm.value)) then
       cls
-      path = frm.value
-      chdir path
+      if (changeDir(frm.value)) then
+        path = frm.value
+      endif
       frm = makeUI(path)
     elif frm.value == "_about" then
       do_about()
@@ -513,7 +525,7 @@ sub main
       do_setup()
       frm = makeUI(path)
     elif frm.value == "_files" then
-      chdir path
+      changeDir(path)
       managefiles()
       frm = makeUI(path)
     elif frm.value == "_back" then
