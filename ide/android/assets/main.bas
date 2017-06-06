@@ -449,11 +449,11 @@ sub manageFiles()
 end
 
 func changeDir(s)
-  local wnd = window()
   try
     chdir s
     return true
   catch e
+    local wnd = window()
     wnd.alert(e)
     return false
   end try
