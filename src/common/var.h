@@ -44,19 +44,20 @@
  *   predefined system variables - index
  */
 #define SYSVAR_SBVER        0  /**< system variable, SBVER     @ingroup var */
-#define SYSVAR_XMAX         1  /**< system variable, XMAX      @ingroup var */
-#define SYSVAR_YMAX         2  /**< system variable, YMAX      @ingroup var */
-#define SYSVAR_TRUE         3  /**< system variable, TRUE      @ingroup var */
-#define SYSVAR_FALSE        4  /**< system variable, FALSE     @ingroup var */
-#define SYSVAR_CWD          5  /**< system variable, CWD$      @ingroup var */
-#define SYSVAR_HOME         6  /**< system variable, HOME$     @ingroup var */
-#define SYSVAR_COMMAND      7  /**< system variable, COMMAND$  @ingroup var */
-#define SYSVAR_X            8  /**< system variable, X         @ingroup var */
-#define SYSVAR_Y            9  /**< system variable, Y         @ingroup var */
-#define SYSVAR_SELF         10 /**< system variable, SELF      @ingroup var */
-#define SYSVAR_NONE         11 /**< system variable, NONE      @ingroup var */
-#define SYSVAR_MAXINT       12 /**< system variable, INTMAX    @ingroup var */
-#define SYSVAR_COUNT        13
+#define SYSVAR_PI           1  /**< system variable, PI        @ingroup var */
+#define SYSVAR_XMAX         2  /**< system variable, XMAX      @ingroup var */
+#define SYSVAR_YMAX         3  /**< system variable, YMAX      @ingroup var */
+#define SYSVAR_TRUE         4  /**< system variable, TRUE      @ingroup var */
+#define SYSVAR_FALSE        5  /**< system variable, FALSE     @ingroup var */
+#define SYSVAR_CWD          6  /**< system variable, CWD$      @ingroup var */
+#define SYSVAR_HOME         7  /**< system variable, HOME$     @ingroup var */
+#define SYSVAR_COMMAND      8  /**< system variable, COMMAND$  @ingroup var */
+#define SYSVAR_X            9  /**< system variable, X         @ingroup var */
+#define SYSVAR_Y            10  /**< system variable, Y         @ingroup var */
+#define SYSVAR_SELF         11 /**< system variable, SELF      @ingroup var */
+#define SYSVAR_NONE         12 /**< system variable, NONE      @ingroup var */
+#define SYSVAR_MAXINT       13 /**< system variable, INTMAX    @ingroup var */
+#define SYSVAR_COUNT        14
 
 /**
  * @ingroup var

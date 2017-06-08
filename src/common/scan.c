@@ -3776,6 +3776,7 @@ void comp_init() {
 
   // create system variables
   comp_var_getID(LCN_SV_SBVER);
+  comp_var_getID(LCN_SV_PI);
   comp_var_getID(LCN_SV_XMAX);
   comp_var_getID(LCN_SV_YMAX);
   comp_var_getID(LCN_SV_TRUE);
@@ -4858,7 +4859,7 @@ byte_code comp_create_bin() {
   // print statistics
   if (!opt_quiet && !opt_interactive) {
     log_printf("\n");
-    log_printf(RES_NUMBER_OF_VARS, comp_varcount, comp_varcount - 18);
+    log_printf(RES_NUMBER_OF_VARS, comp_varcount, comp_varcount - SYSVAR_COUNT);
     log_printf(RES_NUMBER_OF_LABS, comp_labcount);
     log_printf(RES_NUMBER_OF_UDPS, comp_udpcount);
     log_printf(RES_CODE_SIZE, comp_prog.count);

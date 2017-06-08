@@ -483,6 +483,7 @@ struct proc_keyword_s proc_table[] = {
 
 /* system variables */
 #define LCN_SV_SBVER            "SBVER"
+#define LCN_SV_PI               "PI"
 #define LCN_SV_XMAX             "XMAX"
 #define LCN_SV_YMAX             "YMAX"
 #define LCN_SV_TRUE             "TRUE"
