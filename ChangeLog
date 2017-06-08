@@ -1,3 +1,6 @@
+2017-06-08 (0.12.10)
+	COMMON: Fix issue with INPUT command
+
 2017-06-05 (0.12.10)
 	ANDROID: Fix exit when navigating to non-permitted path
 

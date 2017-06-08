@@ -638,20 +638,13 @@ void cmd_print(int output) {
  * INPUT ...
  */
 void cmd_input(int input) {
-  byte code;
   byte print_crlf = 1;
-  byte next_is_const = 0;
-  byte input_is_finished = 0;
   var_t prompt;
   var_t *vuser_p = NULL;
   int handle = 0;
-  int cur_par_idx;
-  int unused_vars;
-  char *inps = NULL, *inp_p;
-  int pcount = 0, redo = 0;
-  par_t *ptable = NULL;
+  char *inps = NULL;
+  int redo = 0;
   par_t *par;
-  char *p, lc;
 
   v_init(&prompt);
   // prefix - # (file)
@@ -701,8 +694,8 @@ void cmd_input(int input) {
   // prefix: prompt
   if (input == PV_CONSOLE) {
     v_setstr(&prompt, "");
-
-    if (code_peek() != kwTYPE_STR) {
+    byte code = code_peek();
+    if (code != kwTYPE_STR && code != kwTYPE_VAR) {
       print_crlf = (code_peeksep() != ';');
       if (!print_crlf) {
         code_skipsep();
@@ -712,7 +705,7 @@ void cmd_input(int input) {
       v_free(&prompt);
       eval(&prompt);
 
-      code = code_getsep();
+      byte code = code_getsep();
       if (!prog_error) {
         if (code == ';') {
           v_strcat(&prompt, "? ");
@@ -727,7 +720,8 @@ void cmd_input(int input) {
   }
 
   // get list of parameters
-  pcount = par_getpartable(&ptable, ",;");
+  par_t *ptable = NULL;
+  int pcount = par_getpartable(&ptable, ",;");
   if (pcount == 0) {
     rt_raise(ERR_INPUT_NO_VARS);
   }
@@ -762,12 +756,10 @@ void cmd_input(int input) {
       case PV_FILE:
         // file (INPUT#)
       {
-        int index, size;
         byte ch, quotes;
-
-        size = STR_INIT_SIZE;
+        int size = STR_INIT_SIZE;
         inps = malloc(size);
-        index = 0;
+        int index = 0;
         quotes = 0;
 
         while (!dev_feof(handle)) {
@@ -796,13 +788,11 @@ void cmd_input(int input) {
         break;
       }
 
-      /*
-       *      for each variable
-       */
-      cur_par_idx = 0;
-      inp_p = inps;
-      input_is_finished = 0;
-      unused_vars = 0;
+      // for each variable
+      int cur_par_idx = 0;
+      char *inp_p = inps;
+      int input_is_finished = 0;
+      int unused_vars = 0;
 
       while (cur_par_idx < pcount && !prog_error) {
         par = &ptable[cur_par_idx];
@@ -821,7 +811,7 @@ void cmd_input(int input) {
           } else {
             // check if user had specify a delimiter (next parameter is NOT a
             // variable)
-            next_is_const = 0;
+            byte next_is_const = 0;
             if (cur_par_idx < (pcount - 1)) {
               if (ptable[cur_par_idx + 1].flags & PAR_BYVAL) {
                 cur_par_idx++;
@@ -837,13 +827,14 @@ void cmd_input(int input) {
             // NOT next_is_const = get the left string of the specified
             // character
             // (,)
+            char *p;
             if (pcount == 1) {
               p = (inp_p + strlen(inp_p));
             } else {
               p = q_strstr(inp_p, ((next_is_const) ? v_getstr(ptable[cur_par_idx].var) : ","), "\"\"");
             }
             if (p) {
-              lc = *p;
+              char lc = *p;
               *p = '\0';
               v_input2var(inp_p, par->var);
               *p = lc;
