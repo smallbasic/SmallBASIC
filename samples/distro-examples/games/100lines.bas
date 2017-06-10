@@ -35,7 +35,7 @@ func update(byref d, size, xo, yo)
   for i = 0 to size
     if (xo != 0) then d[i].x += (xo * d[i].atr)
     if (yo != 0) then d[i].y += (yo * d[i].atr)
-    x_chg = y_chg = true
+    x_chg = true: y_chg = true
     if d[i].x < 0 then
       d[i].x = 0
     elif d[i].x > xm then
@@ -66,7 +66,6 @@ sub show(byref d, size)
   next i
 end
 android.sensor_on(0)
-android.tts_pitch(1)
 randomize timer:cls
 dim d(pop)
 create(d, pop)
@@ -80,7 +79,7 @@ landscape=xmax>ymax
 while 1
   s=android.sensor
   xo = iff(s.x < -1 or s.x > 1, s.x, 0)
-  yo = iff(s.y < -1 or s.y > 1, -s.y, 0)
+  yo = iff(s.y < -1 or s.y > 1, s.y, 0)
   if (landscape) then swap xo,yo
   if (xo != 0 or yo != 0) then
     nspk = update(d, pop, xo, yo)
