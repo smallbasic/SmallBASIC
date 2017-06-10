@@ -13,7 +13,7 @@ def mkatr = 10 + int(rnd * 140)
 func mk_char()
   local r
   if (rnd < .2) then
-    r.ch = vowel[rnd*10%5]
+    r.ch = vowel[rnd*len(vowel)]
   else
     r.ch = chr(c1 + ((rnd*1000) % (c2-c1)))
   endif
@@ -87,7 +87,7 @@ while 1
       spk = nspk
       android.tts_pitch(.5 + 1 * rnd)
       if (rnd < .2) then
-        android.speak(words[rnd*100%len(words)])
+        android.speak(words[rnd*len(words)])
       else
         android.speak(spk)
       endif

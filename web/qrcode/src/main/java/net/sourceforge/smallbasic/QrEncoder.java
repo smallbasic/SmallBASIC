@@ -68,7 +68,11 @@ public class QrEncoder {
 
     // remove empty blank lines
     result = result.replaceAll("[\\r\\n]{2,}", "\n");
-    
+
+    // remove spaces between operators
+    result = result.replaceAll("(?m)\\s*([=!<>+-\\,])\\s*", "$1");
+    result = result.replaceAll("(?m)\\s*(\\*)\\s*", "$1");
+
     return result.trim();
   }
   
