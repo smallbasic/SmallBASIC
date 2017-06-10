@@ -1,8 +1,7 @@
 rem licence: https://opensource.org/licenses/GPL-3.0
 option predef load modules
 import android
-w = window()
-w.setFont(2,"em",true,false)
+w = window():w.setFont(2,"em",true,false)
 const pop=35
 const c1=97
 const c2=122
@@ -11,7 +10,7 @@ const ym = ymax - txth("z")*2
 const vowel=["a","e","i","o","u"]
 const words =["anyway", "well", "what", "hello", "hmmmm", "today"]
 def mkatr = 10 + int(rnd * 140)
-func mk()
+func mk_char()
   local r
   if (rnd < .2) then
     r.ch = vowel[rnd*10%5]
@@ -22,39 +21,41 @@ func mk()
   r.y = int(rnd * ymax)
   r.c = 1 + int(rnd * 14)
   r.atr = mkatr()
-  mk=r
+  mk_char=r
 end
 sub create(byref d, size)
   local i
   for i = 0 to size
-    d[i] = mk()
+    d[i] = mk_char()
   next i
 end
-func upd(byref d, size, xo, yo)
-  local i,cg
+func update(byref d, size, xo, yo)
+  local i,x_chg,y_chg
   local rtn=""
   for i = 0 to size
     if (xo != 0) then d[i].x += (xo * d[i].atr)
     if (yo != 0) then d[i].y += (yo * d[i].atr)
-    cg = true
+    x_chg = y_chg = true
     if d[i].x < 0 then
       d[i].x = 0
     elif d[i].x > xm then
       d[i].x = xm
     else
-      cg = false
+      x_chg = false
     endif
     if d[i].y < 0 then
       d[i].y = 0
     elif d[i].y > ym then
       d[i].y = ym
     else
-      cg = false
+      y_chg = false
     endif
-    if (cg) then d[i].atr = mkatr()
+    if (x_chg or y_chg) then
+      d[i].atr = mkatr()
+    endif
     if ((d[i].y == 0 or d[i].y == ym) and d[i].x > 5) then rtn += d[i].ch
   next i
-  upd = rtn
+  update = rtn
 end
 sub show(byref d, size)
   local i
@@ -76,14 +77,13 @@ android.speak("tilt the screen")
 android.tts_pitch(.1)
 android.speak("DO It !")
 landscape=xmax>ymax
-
 while 1
   s=android.sensor
   xo = iff(s.x < -1 or s.x > 1, s.x, 0)
   yo = iff(s.y < -1 or s.y > 1, -s.y, 0)
   if (landscape) then swap xo,yo
   if (xo != 0 or yo != 0) then
-    nspk = upd(d, pop, xo, yo)
+    nspk = update(d, pop, xo, yo)
     if (nspk != spk) then
       spk = nspk
       android.tts_pitch(.5 + 1 * rnd)
@@ -97,5 +97,3 @@ while 1
   cls:show(d, pop)
   showpage:delay 50
 wend
-
-
