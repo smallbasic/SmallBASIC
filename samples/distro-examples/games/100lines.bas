@@ -1,6 +1,8 @@
+rem licence: https://opensource.org/licenses/GPL-3.0
 option predef load modules
 import android
-
+w = window()
+w.setFont(2,"em",true,false)
 const pop=35
 const c1=97
 const c2=122
@@ -9,7 +11,6 @@ const ym = ymax - txth("z")*2
 const vowel=["a","e","i","o","u"]
 const words =["anyway", "well", "what", "hello", "hmmmm", "today"]
 def mkatr = 10 + int(rnd * 140)
-
 func mk()
   local r
   if (rnd < .2) then
@@ -51,7 +52,7 @@ func upd(byref d, size, xo, yo)
       cg = false
     endif
     if (cg) then d[i].atr = mkatr()
-    if (d[i].y == 0 or d[i].y == ym) then rtn += d[i].ch
+    if ((d[i].y == 0 or d[i].y == ym) and d[i].x > 5) then rtn += d[i].ch
   next i
   upd = rtn
 end
@@ -63,11 +64,9 @@ sub show(byref d, size)
     print d[i].ch
   next i
 end
-
 android.sensor_on(0)
 android.tts_pitch(1)
-randomize timer
-cls
+randomize timer:cls
 dim d(pop)
 create(d, pop)
 show(d, pop)
@@ -75,13 +74,14 @@ spk = ""
 android.tts_pitch(2)
 android.speak("tilt the screen")
 android.tts_pitch(.1)
-android.speak("do it !")
+android.speak("DO It !")
+landscape=xmax>ymax
 
 while 1
   s=android.sensor
-  cls
   xo = iff(s.x < -1 or s.x > 1, s.x, 0)
   yo = iff(s.y < -1 or s.y > 1, -s.y, 0)
+  if (landscape) then swap xo,yo
   if (xo != 0 or yo != 0) then
     nspk = upd(d, pop, xo, yo)
     if (nspk != spk) then
@@ -94,9 +94,8 @@ while 1
       endif
     endif
   endif
-  show(d, pop)
-  showpage
-  delay 50
+  cls:show(d, pop)
+  showpage:delay 50
 wend
 
 
