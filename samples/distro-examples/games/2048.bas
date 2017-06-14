@@ -6,17 +6,17 @@ const vecIndex = [kUP, kDOWN, kLEFT, kRIGHT]
 const directionVectors = [[-1, 0], [1, 0], [0, -1], [0, 1]]
 const inf = maxint
 const ninf = -maxint - 1
-const timeLimit = 5000
+const timeLimit = 140
 const emptyCellPattern =&
-[[0,0,0,0],&
- [1,1,0,0],&
- [1,1,1,0],&
- [1,1,1,0]]
+[[1,0,0,0],
+ [1,1,0,0],
+ [0,1,1,0],
+ [0,0,1,1]]
 const monotonicityPattern =&
- [[16,  8,  1,  0],&
-  [32, 16,  8,  1],&
-  [64, 32, 16,  8],&
-  [128,64, 32, 16]]
+ [[4,  2, 1, 0],
+  [8,  4, 2, 1],
+  [16, 8, 4, 2],
+  [32,16, 8, 4]]
 const colorMap = {
   0 	: 0,
   2  : 1,
@@ -41,7 +41,7 @@ const actionDict = {
  2: "LEFT",
  3: "RIGHT"
 }
-const sz = min(xmax,ymax)/5
+const sz = min(xmax,ymax)/6
 const offs = 15
 const gap = 2
 const w = window()
@@ -261,8 +261,8 @@ func GridClass()
               return True
             endif
           next i
-        # Else if Current Cell is Empty
         elif self.map[y][x] == 0 then
+          # Current Cell is Empty
           return True
         endif
       next x
@@ -323,7 +323,9 @@ func PlayerAI()
 
   # whether to stop evaluating lower depths
   func isTerminal(move, depth)
-    if move == Nil then return True
+    if move == Nil then
+      return True
+    endif
     if depth >= self.maxDepth then
       return True
     endif
@@ -385,7 +387,7 @@ func PlayerAI()
         if (emptyCellPattern[y][x] == 0) then
           append minimisingMoves, emptyPos
         endif
-      next emptypos
+      next emptyPos
     else
       # try the remaining 1 or 2 cells
       minimisingMoves = availableCells
@@ -400,7 +402,6 @@ func PlayerAI()
       child = state.clone()
       child.setcellvalue(nextMove, 2)
       [_, utility] = maximise(child, a, b, move, depth + 1)
-
       if (utility < minUtility) then
          [minMove, minUtility] = [move, utility]
       endif
@@ -448,7 +449,7 @@ func ComputerAI()
     if len(cells) = 0 then
       return -1
     endif
-    return cells[rnd * 1000 mod len(cells)]
+    return cells[rnd * len(cells)]
   end
 
   local result = {}
@@ -480,7 +481,7 @@ func Game()
   sub insertRandomTile()
     local tileValue = getNewTileValue()
     local cells = self.grid.getAvailableCells()
-    local cell = cells[rnd * 1000 mod len(cells)]
+    local cell = cells[rnd * len(cells)]
     self.grid.setCellValue(cell, tileValue)
   end
 
@@ -508,10 +509,8 @@ func Game()
       # Copy to Ensure AI Cannot Change the Real Grid to Cheat
       gridCopy = self.grid.clone()
       move = Nil
-'      delay 100
       if playerTurn then
         move = playerAI.getMove(gridCopy)
-
         moveStr = actionDict[move]
         displayer.println("AI move = " + moveStr)
         # Validate and set Move
@@ -540,7 +539,6 @@ func Game()
           local value = getNewtilevalue()
           self.grid.setCellValue(move, value)
           displayer.println("Played " + value + " at " + str(move))
-
         else
           logprint "Invalid Computer AI Move"
           self.over = True
@@ -557,12 +555,12 @@ func Game()
     displayer.show(self.grid)
   end
 
-  randomize
+  randomize timer
   local result = {}
   result.start = @start
   result.grid = GridClass()
   result.possibleNewTiles = [2, 4]
-  result.probability = 0.9
+  result.probability = 0.8
   result.initTiles = 2
   result.over = False
   return result
@@ -571,3 +569,4 @@ end
 g = Game()
 g.start()
 pause
+
