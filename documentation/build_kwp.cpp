@@ -95,7 +95,7 @@ bool isKeyword(const char *keyword) {
   }
 
   const char* constants[] = {
-    "SBVER", "PI", "XMAX", "YMAX", "TRUE", "FALSE", "CWD", "HOME", "COMMAND", "INCLUDE", "SELF", "NIL", ""
+    "SBVER", "PI", "XMAX", "YMAX", "TRUE", "FALSE", "CWD", "HOME", "COMMAND", "INCLUDE", "NIL", "MAXINT", ""
   };
   for (int i = 0; !result && constants[i][0] != '\0'; i++) {
     if (strcasecmp(constants[i], keyword) == 0) {
@@ -217,7 +217,7 @@ bool readHelpReference(strlib::List<HelpItem *> *helpItems) {
     }
     if (isKeyword(item->keyword)) {
       helpItems->add(item);
-    } else {
+    } else if (strcasecmp(item->keyword, "self") != 0) {
       fprintf(stderr,  "OBSOLETE %s\n", item->keyword);
     }
   }
