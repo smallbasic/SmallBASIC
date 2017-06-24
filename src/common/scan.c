@@ -803,13 +803,6 @@ void comp_add_variable(bc_t *bc, const char *var_name) {
         len = strlen(dot + 1);
       }
 
-      strncpy(name, dot + 1, len);
-      name[len] = 0;
-      strupper(name);
-      if (comp_error_if_keyword(name)) {
-        return;
-      }
-
       bc_add_code(bc, kwTYPE_UDS_EL);
       bc_add_strn(bc, dot + 1, len);
 
