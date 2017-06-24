@@ -1271,13 +1271,11 @@ uint32_t TextEditInput::getHash(const char *str, int offs, int &count) {
        && !IS_WHITE(str[offs]) && str[offs] != '\0') {
     for (count = 0; count < keyword_max_len; count++) {
       char ch = str[offs + count];
-      if (!isalpha(ch) && ch != '_') {
+      if (ch == '.') {
+        // could be SELF keyword
+        break;
+      } else if (!isalpha(ch) && ch != '_') {
         // non keyword character
-        while (isalnum(ch) || ch == '.' || ch == '_') {
-          // skip any program variable characters
-          count++;
-          ch = str[offs + count];
-        }
         break;
       }
       result += tolower(str[offs + count]);

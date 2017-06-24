@@ -752,6 +752,20 @@ bid_t comp_var_getID(const char *var_name) {
   return idx;
 }
 
+int comp_error_if_keyword(const char *name) {
+  // check if keyword
+  if (!comp_error) {
+    if ((comp_is_func(name) >= 0) ||
+        (comp_is_proc(name) >= 0) ||
+        (comp_is_special_operator(name) >= 0) ||
+        (comp_is_keyword(name) >= 0) ||
+        (comp_is_operator(name) >= 0)) {
+      sc_raise(MSG_IT_IS_KEYWORD, name);
+    }
+  }
+  return comp_error;
+}
+
 /*
  * add the named variable to the current position in the byte code stream
  *
@@ -767,11 +781,15 @@ void comp_add_variable(bc_t *bc, const char *var_name) {
     // record the uds-parent
 
     int len = dot - var_name;
-    comp_struct_t uds;
-    strncpy(uds.name, var_name, len);
-    uds.name[len] = 0;
+    char name[SB_KEYWORD_SIZE + 1];
+    strncpy(name, var_name, len);
+    name[len] = 0;
 
-    bid_t var_id = comp_var_getID(uds.name);
+    if (comp_error_if_keyword(name)) {
+      return;
+    }
+
+    bid_t var_id = comp_var_getID(name);
     bc_add_code(bc, kwTYPE_VAR);
     bc_add_addr(bc, var_id);
 
@@ -783,6 +801,13 @@ void comp_add_variable(bc_t *bc, const char *var_name) {
       } else {
         // final element
         len = strlen(dot + 1);
+      }
+
+      strncpy(name, dot + 1, len);
+      name[len] = 0;
+      strupper(name);
+      if (comp_error_if_keyword(name)) {
+        return;
       }
 
       bc_add_code(bc, kwTYPE_UDS_EL);
@@ -1909,17 +1934,6 @@ void comp_cmd_option(char *src) {
   } else {
     sc_raise(MSG_OPTION_ERR, src);
   }
-}
-
-int comp_error_if_keyword(const char *name) {
-  // check if keyword
-  if (!comp_error) {
-    if ((comp_is_func(name) >= 0) || (comp_is_proc(name) >= 0) || (comp_is_special_operator(name) >= 0)
-        || (comp_is_keyword(name) >= 0) || (comp_is_operator(name) >= 0)) {
-      sc_raise(MSG_IT_IS_KEYWORD, name);
-    }
-  }
-  return comp_error;
 }
 
 /**

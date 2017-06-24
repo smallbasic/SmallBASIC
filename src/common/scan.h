@@ -180,17 +180,6 @@ typedef struct {
   comp_pass_node_t **elem;
 } comp_pass_node_table_t;
 
-/**
- * compiler's struct node
- *
- */
-struct comp_struct_s {
-  char name[SB_KEYWORD_SIZE + 1];
-  bcip_t field_id;            // -1 == is_container
-};
-
-typedef struct comp_struct_s comp_struct_t;
-
 #if !defined(SCAN_MODULE)       // actually static data
 extern struct keyword_s keyword_table[]; /**< basic keywords             @ingroup scan */
 extern struct opr_keyword_s opr_table[]; /**< operators table            @ingroup scan */

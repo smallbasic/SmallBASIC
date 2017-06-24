@@ -1,4 +1,7 @@
 2017-06-08 (0.12.10)
+	COMMON: Now errors when using a keyword as part of a MAP variable
+
+2017-06-08 (0.12.10)
 	COMMON: Fix issue with INPUT command
 
 2017-06-05 (0.12.10)
