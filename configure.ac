@@ -312,6 +312,10 @@ AC_DEFINE_UNQUOTED([SB_DWORD_VER],[$SB_DWORD_VER],[SB_DWORD_VER])
 AC_SUBST(PACKAGE_CFLAGS)
 AC_SUBST(PACKAGE_LIBS)
 
+dnl change default aru setting to avoid warning
+ARFLAGS=cr
+AC_SUBST(ARFLAGS)
+
 AC_CONFIG_FILES([
 Makefile
 src/common/Makefile

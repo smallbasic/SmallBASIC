@@ -2320,8 +2320,7 @@ void cmd_genfunc(long funcCode, var_t *r) {
     //
   case kwBGETC:
     handle = par_getint();
-    IF_ERR_RETURN
-    ;
+    IF_ERR_RETURN;
 
     // file
     dev_fread(handle, &code, 1);
@@ -2387,12 +2386,11 @@ void cmd_genfunc(long funcCode, var_t *r) {
     int x = -1, y = -1;
     int y_set = 0;
     if (code_isvar()) {
-      var_t *v;
-      v = code_getvarptr();
+      var_t *v = code_getvarptr();
       if (v->type == V_ARRAY) {
-        if (v->v.a.size != 2)
+        if (v_asize(v) != 2) {
           err_argerr();
-        else {
+        } else {
           x = v_getint(v_elem(v, 0));
           y = v_getint(v_elem(v, 1));
           y_set = 1;
@@ -2577,21 +2575,21 @@ void cmd_genfunc(long funcCode, var_t *r) {
     do {
       code = code_peek();
       switch (code) {
-      case kwTYPE_SEP:         // separator
+      case kwTYPE_SEP:
         code_skipsep();
         break;
-      case kwTYPE_LEVEL_END:   // ) -- end of parameters
+      case kwTYPE_LEVEL_END:
+      case kwTYPE_EOC:
         ready = 1;
         break;
-      case kwTYPE_VAR:         // variable
+      case kwTYPE_VAR:
         ofs = prog_ip;
         if (code_isvar()) {
           basevar_p = code_getvarptr();
           if (basevar_p->type == V_ARRAY) {
-            count = basevar_p->v.a.size;  // the number of the elements
+            count = v_asize(basevar_p);
             for (i = 0; i < count; i++) {
               elem_p = v_getelemptr(basevar_p, i);
-
               if (!prog_error) {
                 if (first) {
                   dar_first(funcCode, r, elem_p);
@@ -2626,8 +2624,6 @@ void cmd_genfunc(long funcCode, var_t *r) {
         }
         v_free(&arg);
       }
-
-      //
     } while (!ready);
 
     // final
@@ -2649,18 +2645,19 @@ void cmd_genfunc(long funcCode, var_t *r) {
     do {
       code = code_peek();
       switch (code) {
-      case kwTYPE_SEP:         // separator
+      case kwTYPE_SEP:
         code_skipsep();
         break;
-      case kwTYPE_LEVEL_END:   // ) -- end of parameters
+      case kwTYPE_LEVEL_END:
+      case kwTYPE_EOC:
         ready = 1;
         break;
-      case kwTYPE_VAR:         // variable
+      case kwTYPE_VAR:
         ofs = prog_ip;
         if (code_isvar()) {
           basevar_p = code_getvarptr();
           if (basevar_p->type == V_ARRAY) {
-            count = basevar_p->v.a.size;  // the number of the elements
+            count = v_asize(basevar_p);
             for (i = 0; i < count; i++) {
               elem_p = v_getelemptr(basevar_p, i);
               if (!prog_error) {
@@ -2668,7 +2665,6 @@ void cmd_genfunc(long funcCode, var_t *r) {
                   len += BUF_LEN;
                   dar = (var_num_t*) realloc(dar, sizeof(var_num_t) * len);
                 }
-
                 dar[tcount] = v_getval(elem_p);
                 tcount++;
               } else {
@@ -2676,7 +2672,6 @@ void cmd_genfunc(long funcCode, var_t *r) {
                 return;
               }
             }
-
             break;
           }
         }
@@ -2700,8 +2695,6 @@ void cmd_genfunc(long funcCode, var_t *r) {
         }
         v_free(&arg);
       }
-
-      //
     } while (!ready);
 
     // final
@@ -2718,7 +2711,6 @@ void cmd_genfunc(long funcCode, var_t *r) {
         r->v.n = statspreadp(dar, tcount);
         break;
       }
-
       free(dar);
     }
 
