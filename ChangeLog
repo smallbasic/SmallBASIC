@@ -1,3 +1,7 @@
+2017-07-29 (0.12.10)
+	COMMON: VAL command now ignored any input trailing non digit chars
+	COMMON: MID command now returns blank for invalid index input
+
 2017-07-13 (0.12.10)
 	COMMON: Fix potential infinite loop using the MAX command
 

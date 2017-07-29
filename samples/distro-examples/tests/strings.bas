@@ -120,3 +120,12 @@ rem test case insensitive translate
 if "food" != translate("foo bar", " BAR", "d", true) then
   throw "bad translate"
 fi
+
+rem ------------------------------------------------
+rem fix issues reported by MGA July 2017
+if (99 != VAL("99 bottles of beer")) then
+  throw "VAL error"
+endif
+if ("" != MID("tooShort", 10, 1)) then
+  throw "MID error"
+endif  

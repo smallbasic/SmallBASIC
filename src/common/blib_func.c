@@ -1708,17 +1708,18 @@ void cmd_strN(long funcCode, var_t *r) {
     if (!prog_error) {
       lsrc = v_strlen(var_p1);
       if (start <= 0 || start > lsrc) {
-        err_stridx(start);
+        len = 0;
+        start = 0;
       } else {
         start--;
         if (len < 0 || len + start >= lsrc) {
           len = lsrc - start;
         }
-        r->v.p.ptr = malloc(len + 1);
-        memcpy(r->v.p.ptr, var_p1->v.p.ptr + start, len);
-        r->v.p.ptr[len] = '\0';
-        r->v.p.length = len + 1;
       }
+      r->v.p.ptr = malloc(len + 1);
+      memcpy(r->v.p.ptr, var_p1->v.p.ptr + start, len);
+      r->v.p.ptr[len] = '\0';
+      r->v.p.length = len + 1;
     }
     break;
 

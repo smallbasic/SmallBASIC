@@ -524,11 +524,11 @@ var_num_t numexpr_sb_strtof(char *source) {
   var_int_t lv;
   var_num_t dv;
 
-  char *np = get_numexpr(source, buf, &type, &lv, &dv);
+  get_numexpr(source, buf, &type, &lv, &dv);
 
-  if (type == 1 && *np == '\0') {
+  if (type == 1) {
     return (var_num_t) lv;
-  } else if (type == 2 && *np == '\0') {
+  } else if (type == 2) {
     return dv;
   }
   return 0.0;
