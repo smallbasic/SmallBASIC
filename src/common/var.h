@@ -115,7 +115,6 @@ struct var_s {
     struct {
       char *ptr; /**< data ptr (possibly, string pointer) */
       uint32_t length; /**< the string length */
-      uint32_t pos; /**< position in string (used by pv_* functions) */
     } p;
 
     // array

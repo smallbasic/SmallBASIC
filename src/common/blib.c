@@ -686,8 +686,6 @@ void cmd_input(int input) {
       err_argerr();
       return;
     }
-
-    vuser_p->v.p.pos = 0;
     handle = (intptr_t)vuser_p;
   }
 
