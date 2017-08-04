@@ -643,8 +643,6 @@ void cmd_input(int input) {
   var_t *vuser_p = NULL;
   int handle = 0;
   char *inps = NULL;
-  int redo = 0;
-  par_t *par;
 
   v_init(&prompt);
   // prefix - # (file)
@@ -725,6 +723,7 @@ void cmd_input(int input) {
   }
   // the INPUT itself
   if (!prog_error) {
+    int redo = 0;
     do {
       // "redo from start"
       if (input == PV_CONSOLE) {  // prompt
@@ -793,7 +792,7 @@ void cmd_input(int input) {
       int unused_vars = 0;
 
       while (cur_par_idx < pcount && !prog_error) {
-        par = &ptable[cur_par_idx];
+        par_t *par = &ptable[cur_par_idx];
 
         if (input_is_finished) {
           // setup all remaining variables to "null"

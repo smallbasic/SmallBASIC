@@ -1,4 +1,7 @@
 2017-07-29 (0.12.10)
+	COMMON: Use faster method to obtain tick count (windows)
+
+2017-07-29 (0.12.10)
 	COMMON: VAL command now ignored any input trailing non digit chars
 	COMMON: MID command now returns blank for invalid index input
 
