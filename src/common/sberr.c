@@ -274,10 +274,6 @@ void err_parm_byref(int n) {
   rt_raise(ERR_BYREF, n);
 }
 
-void err_stridx(int n) {
-  err_throw(ERR_STR_RANGE, n);
-}
-
 void err_fopen(void) {
   rt_raise(ERR_BAD_FILE_HANDLE);
 }

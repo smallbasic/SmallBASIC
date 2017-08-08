@@ -1,4 +1,7 @@
 2017-07-29 (0.12.10)
+	COMMON: LEFT, RIGHT, REPLACE, INSTR, RINSTR no longer error on invalid pos input
+
+2017-07-29 (0.12.10)
 	COMMON: Use faster method to obtain tick count (windows)
 
 2017-07-29 (0.12.10)

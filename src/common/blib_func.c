@@ -1491,15 +1491,12 @@ void cmd_strN(long funcCode, var_t *r) {
         count = len;
       }
       if (count < 0) {
-        err_stridx(count);
-      } else {
-        r->v.p.ptr = malloc(count + 1);
-        if (count) {
-          memcpy(r->v.p.ptr, s1, count);
-        }
-        r->v.p.ptr[count] = '\0';
-        r->v.p.length = count + 1;
+        count = 0;
       }
+      r->v.p.ptr = malloc(count + 1);
+      memcpy(r->v.p.ptr, s1, count);
+      r->v.p.ptr[count] = '\0';
+      r->v.p.length = count + 1;
     }
     break;
 
@@ -1538,15 +1535,12 @@ void cmd_strN(long funcCode, var_t *r) {
         count = len;
       }
       if (count < 0) {
-        err_stridx(count);
-      } else {
-        r->v.p.ptr = malloc(count + 1);
-        if (count) {
-          memcpy(r->v.p.ptr, s1 + (len - count), count + 1);
-        }
-        r->v.p.ptr[count] = '\0';
-        r->v.p.length = count + 1;
+        count = 0;
       }
+      r->v.p.ptr = malloc(count + 1);
+      memcpy(r->v.p.ptr, s1 + (len - count), count + 1);
+      r->v.p.ptr[count] = '\0';
+      r->v.p.length = count + 1;
     }
     break;
 
@@ -1637,14 +1631,11 @@ void cmd_strN(long funcCode, var_t *r) {
     // str <- REPLACE$(source, pos, str [, len])
     //
     v_init(&arg2);
-
     var_p1 = par_next_str(&arg1, 1);
     start = par_next_int(1);
     var_p2 = par_next_str(&arg2, 0);
     count = par_getval(-1);
-    if (count < -1) {
-      err_stridx(count);
-    } else if (!prog_error) {
+    if (!prog_error) {
       // write str into pos of source the return the new string
       int len_source = v_strlen(var_p1);
       int len_str;
@@ -1658,10 +1649,11 @@ void cmd_strN(long funcCode, var_t *r) {
       }
 
       start--;
-      if (start < 0 || start > len_source) {
-        err_stridx(start);
-        v_free(&arg2);
-        break;
+      if (start < 0) {
+        start = 0;
+      }
+      if (start > len_source) {
+        start = len_source;
       }
       if (count < 0) {
         // how much of "str" to retain
@@ -1675,10 +1667,8 @@ void cmd_strN(long funcCode, var_t *r) {
       }
       r->v.p.ptr = malloc(r->v.p.length);
 
-      if (start > 0) {
-        // copy the left side of "source"
-        memcpy(r->v.p.ptr, var_p1->v.p.ptr, start);
-      }
+      // copy the left side of "source"
+      memcpy(r->v.p.ptr, var_p1->v.p.ptr, start);
 
       // insert "str"
       r->v.p.ptr[start] = '\0';
@@ -1772,20 +1762,23 @@ void cmd_intN(long funcCode, var_t *r) {
     if (par_massget("iSS", &start, &s1, &s2) > 1 &&
         !prog_error && s1[0] != '\0' && s2[0] != '\0') {
       start--;
-      if (start >= strlen(s1) || start < 0) {
-        err_stridx(start);
-      } else {
-        p = s1 + start;
-        l = strlen(s2);
-        while (*p) {
-          if (strncmp(p, s2, l) == 0) {
-            r->v.i = (p - s1) + 1;
-            if (funcCode == kwINSTR) {
-              break;
-            }
+      int s1_len = strlen(s1);
+      if (start >= s1_len) {
+        start = s1_len;
+      }
+      if (start < 0) {
+        start = 0;
+      }
+      p = s1 + start;
+      l = strlen(s2);
+      while (*p) {
+        if (strncmp(p, s2, l) == 0) {
+          r->v.i = (p - s1) + 1;
+          if (funcCode == kwINSTR) {
+            break;
           }
-          p++;
         }
+        p++;
       }
     }
     break;

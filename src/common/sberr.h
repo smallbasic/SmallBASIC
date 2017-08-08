@@ -63,7 +63,6 @@ void err_unsup(void);
 void err_file(uint32_t code);
 void err_file_not_found();
 void err_matsig(void);
-void err_stridx(int n);
 void err_parfmt(const char *fmt);
 void err_fopen(void);
 void err_syntaxsep(const char *seps);
