@@ -147,3 +147,8 @@ endif
 if ("xlah" != REPLACE("blah", -5, "x")) then
   throw "REPLACE input error 2"
 endif
+
+rem --- test line numbers are correctly maintained when using multiline strings
+if (PROGLINE != 152) then
+  throw "invalid line no"
+endif

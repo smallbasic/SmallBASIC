@@ -1,4 +1,7 @@
-2017-07-29 (0.12.10)
+2017-08-08 (0.12.10)
+	COMMON: Fix PROGLINE when using multi-line strings
+
+2017-08-08 (0.12.10)
 	COMMON: LEFT, RIGHT, REPLACE, INSTR, RINSTR no longer error on invalid pos input
 
 2017-07-29 (0.12.10)

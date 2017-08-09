@@ -4049,6 +4049,8 @@ char *comp_format_text(const char *source) {
             p++;
           }
           p += 2;
+          // maintain line number
+          *ps++ = V_JOIN_LINE;
           continue;
         } else if (p[0] == '\r') {
           p++;
@@ -4074,10 +4076,18 @@ char *comp_format_text(const char *source) {
       } else if (*p == '\"' || *p == '\n') {
         // join to any adjacent quoted text
         const char *next = p + 1;
+        int lineBreak = 0;
         while (is_space(*next)) {
+          if (*next == '\n') {
+            lineBreak = 1;
+          }
           next++;
         }
         if (*next == '\"') {
+          if (lineBreak) {
+            // maintain line number
+            *ps++ = V_JOIN_LINE;
+          }
           p = ++next;
           continue;
         }

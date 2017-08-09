@@ -17,6 +17,7 @@
 #define BC_MAX_STORE_SIZE   0x7FFFFFFF
 #define V_QUOTE '\1'
 #define V_LINE '\2'
+#define V_JOIN_LINE '\3'
 
 /**
  * @ingroup scan

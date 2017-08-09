@@ -199,7 +199,8 @@ char *bc_store_string(bc_t *bc, char *src) {
   // skip past opening quotes
   p++;
   while (*p) {
-    if (*p == '\\' && ((*(p + 1) == '\"') || *(p + 1) == '\\')) {
+    if ((*p == '\\' && ((*(p + 1) == '\"') || *(p + 1) == '\\'))
+        || *p == V_JOIN_LINE) {
       // escaped quote " or escaped escape
       int seglen = p - base;
       np = np ? realloc(np, len + seglen + 1) : malloc(seglen + 1);
@@ -207,6 +208,16 @@ char *bc_store_string(bc_t *bc, char *src) {
       // add next segment
       len += seglen;
       np[len] = 0;
+
+      if (*p == V_JOIN_LINE) {
+        // skip null newline
+        comp_line++;
+        if (*(p+1) == '\"') {
+          base = ++p;
+          continue;
+        }
+      }
+
       // include " (or \ ) in next segment
       base = ++p;
     } else if (*p == V_QUOTE) {
