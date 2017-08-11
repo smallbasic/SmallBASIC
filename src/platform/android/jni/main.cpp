@@ -12,9 +12,6 @@
 void android_main(android_app *app) {
   logEntered();
 
-  // make sure glue isn't stripped.
-  app_dummy();
-
   Runtime *runtime = new Runtime(app);
 
   // pump events until startup has completed

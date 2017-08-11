@@ -36,7 +36,9 @@ extern "C" {
 #include <unistd.h>
 #include <utime.h>
 
+#if !defined DBL_EPSILON
 #define DBL_EPSILON 0.00000000000001
+#endif
 #define EPSILON DBL_EPSILON
 #define OS_PREC64
 
