@@ -144,29 +144,17 @@ int dev_run(const char *cmd, var_t *r, int wait) {
 int dev_run(const char *cmd, var_t *r, int wait) {
   int result = 1;
   if (r != NULL) {
-    r->type = V_STR;
-    r->v.p.length = BUFSIZE + 1;
-    r->v.p.ptr = malloc(r->v.p.length);
-    r->v.p.ptr[0] = '\0';
-
-    int bytes = 0;
-    int total = 0;
-    char buf[BUFSIZE + 1];
+    v_zerostr(r);
     FILE *fin = popen(cmd, "r");
     if (fin) {
       while (!feof(fin)) {
-        bytes = fread(buf, 1, BUFSIZE, fin);
+        char buf[BUFSIZE + 1];
+        int bytes = fread(buf, 1, BUFSIZE, fin);
         buf[bytes] = '\0';
-        total += bytes;
-        if (total >= r->v.p.length) {
-          r->v.p.length += BUFSIZE + 1;
-          r->v.p.ptr = realloc(r->v.p.ptr, r->v.p.length);
-        }
-        strcat(r->v.p.ptr, buf);
+        v_strcat(r, buf);
       }
       pclose(fin);
     } else {
-      v_zerostr(r);
       result = 0;
     }
   } else if (wait) {

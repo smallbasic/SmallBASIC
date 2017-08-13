@@ -1,6 +1,6 @@
 // This file is part of SmallBASIC
 //
-// Copyright(C) 2001-2014 Chris Warren-Smith.
+// Copyright(C) 2001-2017 Chris Warren-Smith.
 //
 // This program is distributed under the terms of the GPL v2.0 or later
 // Download the GNU Public License (GPL) from www.gnu.org
@@ -25,7 +25,7 @@ static const char *ENV_VARS[] = {
 };
 
 #if !defined(FILENAME_MAX)
-  #define FILENAME_MAX 256
+#define FILENAME_MAX 256
 #endif
 
 #define DEFAULT_WIDTH 640
@@ -42,6 +42,17 @@ static const char *ENV_VARS[] = {
 String recentPath[NUM_RECENT_ITEMS];
 int recentPosition[NUM_RECENT_ITEMS];
 
+void createConfigPath(const char *var, const char *home, char *path) {
+  strcpy(path, home);
+  if (strcmp(var, "HOME") == 0) {
+    // unix path
+    strcat(path, "/.config");
+    makedir(path);
+  }
+  strcat(path, "/SmallBASIC");
+  makedir(path);
+}
+
 FILE *openConfig(const char *flags, bool debug) {
   FILE *result = NULL;
   char path[FILENAME_MAX];
@@ -51,14 +62,7 @@ FILE *openConfig(const char *flags, bool debug) {
   for (int i = 0; i < vars_len && result == NULL; i++) {
     const char *home = getenv(ENV_VARS[i]);
     if (home && access(home, R_OK) == 0) {
-      strcpy(path, home);
-      if (i == 1) {
-        // unix path
-        strcat(path, "/.config");
-        makedir(path);
-      }
-      strcat(path, "/SmallBASIC");
-      makedir(path);
+      createConfigPath(ENV_VARS[i], home, path);
       if (debug) {
         strcat(path, "/settings_debug.txt");
       } else {
@@ -264,4 +268,41 @@ void setRecentFile(const char *filename) {
     recentPath[0].clear();
     recentPath[0].append(filename);
   }
+}
+
+String saveGist(const char *buffer, const char *fileName, const char *description) {
+  String result;
+  FILE *fp = NULL;
+  char path[FILENAME_MAX];
+  int vars_len = sizeof(ENV_VARS) / sizeof(ENV_VARS[0]);
+
+  path[0] = 0;
+  for (int i = 0; i < vars_len && fp == NULL; i++) {
+    const char *home = getenv(ENV_VARS[i]);
+    if (home && access(home, R_OK) == 0) {
+      createConfigPath(ENV_VARS[i], home, path);
+      strcat(path, "/gist.txt");
+      fp = fopen(path, "wb");
+    }
+  }
+
+  if (fp != NULL) {
+    result.append(path);
+    const char *format =
+      "{\"description\":\"%s\",\"public\":true,\"files\":{\"%s\":{\"content\":\"";
+    fprintf(fp, format, description, fileName);
+    for (const char *p = buffer; *p != '\0'; p++) {
+      if (*p == '\n') {
+        fputs("\\n", fp);
+      } else if (*p == '\"') {
+        fputs("\\\"", fp);
+      } else {
+        fputc(*p, fp);
+      }
+    }
+    fputs("\"}}}", fp);
+    fclose(fp);
+  }
+
+  return result;
 }

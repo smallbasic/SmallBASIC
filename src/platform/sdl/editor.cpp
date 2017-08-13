@@ -138,6 +138,43 @@ void exportBuffer(AnsiWidget *out, const char *text, String &dest, String &token
   out->setStatus(buffer);
 }
 
+void publish(System *system, const char *text, const char *fileName, const char *description) {
+  String gist = saveGist(text, fileName, description);
+  if (gist.empty()) {
+    system->alert("Publish", "Failed to save gist file.");
+  } else {
+    String command;
+    var_t result;
+
+    command.append("curl -X POST -d @")
+      .append(gist)
+      .append("  https://api.github.com/gists")
+      .append(" --header \"Content-Type:application/json\"");
+    v_init(&result);
+    if (!dev_run(command, &result, 1)) {
+      system->alert("Publish", "Failed to invoke curl.");
+    } else {
+      const char *str = v_str(&result);
+      const char *field = "html_url";
+      const char *url = strstr(str, field);
+      String html;
+
+      if (url != NULL) {
+        const char *q1 = strchr(url + strlen(field) + 2, '\"');
+        const char *q2 = q1 == NULL ? NULL : strchr(q1 + 1, '\"');
+        if (q1 != NULL && q2 != NULL) {
+          html.append(q1 + 1, q2 - q1 - 1);
+        }
+      }
+      if (html.empty()) {
+        system->alert("Publish", "Failed to publish gist.");
+      } else {
+        system->browseFile(html);
+      }
+    }
+  }
+}
+
 void System::editSource(String loadPath) {
   logEntered();
 
@@ -159,7 +196,7 @@ void System::editSource(String loadPath) {
   String recentFile;
   StatusMessage statusMessage(editWidget);
   enum InputMode {
-    kInit, kExportAddr, kExportToken, kCommand
+    kInit, kExportAddr, kExportToken, kCommand, kPublish
   } inputMode = kInit;
 
   _modifiedTime = getModifiedTime();
@@ -238,7 +275,6 @@ void System::editSource(String loadPath) {
             redraw |= widget->edit(g_macro[i], sw, charWidth);
           }
           break;
-        case SB_KEY_F(8):
         case SB_KEY_F(11):
         case SB_KEY_F(12):
         case SB_KEY_MENU:
@@ -267,11 +303,11 @@ void System::editSource(String loadPath) {
         case SB_KEY_CTRL('x'):
         case SB_KEY_CTRL(SB_KEY_INSERT):
           text = widget->copy(event.key == (int)SB_KEY_CTRL('x'));
-          if (text) {
-            setClipboardText(text);
-            free(text);
-          }
-          break;
+        if (text) {
+          setClipboardText(text);
+          free(text);
+        }
+        break;
         case SB_KEY_F(1):
         case SB_KEY_ALT('h'):
           _output->setStatus("Keyword Help. F2=online, Esc=Close");
@@ -314,6 +350,15 @@ void System::editSource(String loadPath) {
           break;
         case SB_KEY_F(7):
           debugStep(editWidget, helpWidget, true);
+          break;
+        case SB_KEY_F(8):
+          if (editWidget->getTextLength()) {
+            _output->setStatus("Enter description, Esc=Close");
+            widget = helpWidget;
+            helpWidget->createLineEdit("");
+            helpWidget->show();
+            inputMode = kPublish;
+          }
           break;
         case SB_KEY_CTRL('h'):
           _output->setStatus("Keystroke help. Esc=Close");
@@ -438,6 +483,15 @@ void System::editSource(String loadPath) {
               inputMode = kInit;
               widget = editWidget;
               helpWidget->hide();
+              break;
+            case kPublish:
+              _output->setStatus("Sending gist...");
+              _output->redraw();
+              publish(this, editWidget->getText(), statusMessage._fileName, helpWidget->getText());
+              inputMode = kInit;
+              widget = editWidget;
+              helpWidget->hide();
+              statusMessage._dirty = !widget->isDirty();
               break;
             default:
               break;
