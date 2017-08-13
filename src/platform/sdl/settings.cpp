@@ -289,13 +289,16 @@ String saveGist(const char *buffer, const char *fileName, const char *descriptio
   if (fp != NULL) {
     result.append(path);
     const char *format =
-      "{\"description\":\"%s\",\"public\":true,\"files\":{\"%s\":{\"content\":\"";
+      "{\"description\":\"SmallBASIC: %s\",\"public\":true,"
+      "\"files\":{\"%s\":{\"content\":\"";
     fprintf(fp, format, description, fileName);
     for (const char *p = buffer; *p != '\0'; p++) {
       if (*p == '\n') {
         fputs("\\n", fp);
       } else if (*p == '\"') {
         fputs("\\\"", fp);
+      } else if (*p == '\\') {
+        fputs("\\\\", fp);
       } else {
         fputc(*p, fp);
       }
