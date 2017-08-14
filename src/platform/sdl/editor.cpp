@@ -353,7 +353,7 @@ void System::editSource(String loadPath) {
           break;
         case SB_KEY_F(8):
           if (editWidget->getTextLength()) {
-            _output->setStatus("Enter description, Esc=Close");
+            _output->setStatus("Enter description, Esc=Close [Publish on GitHub]");
             widget = helpWidget;
             helpWidget->createLineEdit("");
             helpWidget->show();
@@ -497,6 +497,7 @@ void System::editSource(String loadPath) {
               break;
             }
           } else if (helpWidget->closeOnEnter() && helpWidget->isVisible()) {
+            statusMessage._dirty = !widget->isDirty();
             widget = editWidget;
             helpWidget->hide();
           }

@@ -299,6 +299,12 @@ String saveGist(const char *buffer, const char *fileName, const char *descriptio
         fputs("\\\"", fp);
       } else if (*p == '\\') {
         fputs("\\\\", fp);
+      } else if (*p == '\t') {
+        fputs("  ", fp);
+      } else if (*p == '\r') {
+        if (*(p+1) != '\n') {
+          fputs("\\n", fp);
+        }
       } else {
         fputc(*p, fp);
       }
