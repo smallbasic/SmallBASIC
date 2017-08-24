@@ -4,7 +4,7 @@
 //
 // This program is distributed under the terms of the GPL v2.0 or later
 // Download the GNU Public License (GPL) from www.gnu.org
-// 
+//
 
 #ifndef DISPLAY_H
 #define DISPLAY_H
@@ -28,7 +28,8 @@ private:
   bool loadFont(const char *filename, FT_Face &face);
 
   SDL_Window *_window;
-  SDL_Surface *_surface;
+  SDL_Renderer *_renderer;
+  SDL_Texture *_texture;
 };
 
 #endif

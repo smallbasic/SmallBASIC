@@ -1,4 +1,7 @@
 2017-08-13 (0.12.10)
+	SDL: Updated to use hardware rendering
+
+2017-08-13 (0.12.10)
 	SDL: Added F8 publish command
 
 2017-08-08 (0.12.10)

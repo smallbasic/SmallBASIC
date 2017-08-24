@@ -21,14 +21,13 @@ extern ui::Graphics *graphics;
 Canvas::Canvas() :
   _w(0),
   _h(0),
-  _ownerSurface(false),
   _pixels(NULL),
   _surface(NULL),
   _clip(NULL) {
 }
 
 Canvas::~Canvas() {
-  if (_surface != NULL && _ownerSurface) {
+  if (_surface != NULL) {
     SDL_FreeSurface(_surface);
   }
   delete _clip;
@@ -43,7 +42,6 @@ bool Canvas::create(int w, int h) {
   int bpp;
   Uint32 rmask, gmask, bmask, amask;
   SDL_PixelFormatEnumToMasks(PIXELFORMAT, &bpp, &rmask, &gmask, &bmask, &amask);
-  _ownerSurface = true;
   _surface = SDL_CreateRGBSurface(0, w, h, bpp, rmask, gmask, bmask, amask);
   _pixels = (pixel_t *)_surface->pixels;
   return _surface != NULL;
@@ -87,24 +85,22 @@ void Canvas::setClip(int x, int y, int w, int h) {
   }
 }
 
-void Canvas::setSurface(SDL_Surface *surface, int w, int h) {
-  _surface = surface;
-  _pixels = (pixel_t *)_surface->pixels;
-  _ownerSurface = false;
-  _w = w;
-  _h = h;
-}
-
 //
 // Graphics implementation
 //
-Graphics::Graphics(SDL_Window *window) : ui::Graphics(),
+Graphics::Graphics(SDL_Window *window) :
+  ui::Graphics(),
   _window(window),
-  _surface(NULL) {
+  _renderer(NULL),
+  _texture(NULL) {
 }
 
 Graphics::~Graphics() {
   logEntered();
+  SDL_DestroyTexture(_texture);
+  SDL_DestroyRenderer(_renderer);
+  _renderer = NULL;
+  _texture = NULL;
 }
 
 bool Graphics::construct(const char *font, const char *boldFont) {
@@ -113,27 +109,25 @@ bool Graphics::construct(const char *font, const char *boldFont) {
   int w, h;
   bool result = true;
   SDL_GetWindowSize(_window, &w, &h);
+  SDL_SetHintWithPriority(SDL_HINT_RENDER_VSYNC, "1", SDL_HINT_OVERRIDE);
 
-  SDL_Surface *surface = SDL_GetWindowSurface(_window);
-  if (surface == NULL) {
-    fprintf(stderr, "SDL surface is null\n");
+  _renderer = SDL_CreateRenderer(_window, -1, SDL_RENDERER_ACCELERATED |
+                                 SDL_RENDERER_PRESENTVSYNC);
+
+  if (_renderer == NULL) {
+    deviceLog("SDL renderer is null\n");
     result = false;
-  } else if (surface->format == NULL) {
-    fprintf(stderr, "SDL surface format is null\n");
-    result = false;
-  } else if (surface->format->format != PIXELFORMAT) {
-    deviceLog("Unexpected window surface format %d", surface->format->format);
-    _surface = surface;
+  } else {
+    _texture = SDL_CreateTexture(_renderer, PIXELFORMAT, SDL_TEXTUREACCESS_STREAMING, w, h);
+    if (_texture == NULL) {
+      deviceLog("SDL texture is null\n");
+      result = false;
+    }
   }
-
   if (result && loadFonts(font, boldFont)) {
     _screen = new Canvas();
     if (_screen != NULL) {
-      if (_surface == NULL) {
-        _screen->setSurface(SDL_GetWindowSurface(_window), w, h);
-      } else {
-        result = _screen->create(w, h);
-      }
+      result = _screen->create(w, h);
     }
     if (result) {
       _drawTarget = _screen;
@@ -146,26 +140,34 @@ bool Graphics::construct(const char *font, const char *boldFont) {
 }
 
 void Graphics::redraw() {
-  if (_surface != NULL) {
-    SDL_Surface *src = ((Canvas *)_screen)->_surface;
-    SDL_BlitSurface(src, NULL, _surface, NULL);
+  SDL_Rect rect;
+  rect.x = 0;
+  rect.y = 0;
+  rect.w = _screen->_w;
+  rect.h = _screen->_h;
+
+  void *pixels;
+  int pitch;
+  if (SDL_LockTexture(_texture, &rect, &pixels, &pitch) == -1) {
+    deviceLog("Unable to lock window buffer");
+  } else {
+    memcpy(pixels, _screen->_surface->pixels, _screen->_w * _screen->_h * 4);
+    SDL_UnlockTexture(_texture);
+    SDL_RenderCopy(_renderer, _texture, NULL, &rect);
+    SDL_RenderPresent(_renderer);
   }
-  SDL_UpdateWindowSurface(_window);
 }
 
 void Graphics::resize(int w, int h) {
   logEntered();
-  SDL_Surface *surface = SDL_GetWindowSurface(_window);
-  if (_surface == NULL) {
-    _screen->setSurface(surface, w, h);
-  } else {
-    bool drawScreen = (_drawTarget == _screen);
-    delete _screen;
-    _screen = new ::Canvas();
-    _screen->create(w, h);
-    _drawTarget = drawScreen ? _screen : NULL;
-    _surface = surface;
-  }
+  bool drawScreen = (_drawTarget == _screen);
+  delete _screen;
+  _screen = new ::Canvas();
+  _screen->create(w, h);
+
+  SDL_DestroyTexture(_texture);
+  _texture = SDL_CreateTexture(_renderer, PIXELFORMAT, SDL_TEXTUREACCESS_STREAMING, w, h);
+  _drawTarget = drawScreen ? _screen : NULL;
 }
 
 bool Graphics::loadFonts(const char *font, const char *boldFont) {

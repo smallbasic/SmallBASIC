@@ -31,6 +31,30 @@ On windows, install tools:
 ```
 Note: requires building SDL2 and freetype-2 into the prefix folder
 
+## Building on MacOSX
+
+Open the terminal window, then type the following commands at the prompt:
+
+$ brew install sdl2
+$ brew install freetype
+$ brew link --overwrite freetype
+$ brew install fontconfig
+$ brew install autotools
+$ brew install automake
+$ brew install autoconf
+
+Next download the SmallBasic source code from git and then build:
+$ git clone https://github.com/smallbasic/SmallBASIC.git
+$ cd SmallBASIC
+$ sh autogen.sh
+$ ./configure --enable-sdl
+$ make
+$ cd /src/platform/sdl
+
+Then type the following to run the executable:
+
+$ ./sbasicg
+
 ## Building the non-graphical console version (cygwin or linux)
 ```
  $ ./configure && make
