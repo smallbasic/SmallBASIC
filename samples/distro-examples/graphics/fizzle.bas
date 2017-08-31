@@ -9,8 +9,7 @@ sub fizzle(j)
     lsb = rndval band 1       ' Get the output bit.
     rndval = rndval rshift 1  ' Shift register
     if (lsb) then             ' If the output is 0, the xor can be skipped.
-'      rndval = rndval xor 0x00012000
-      rndval = rndval xor 0x0001201
+      rndval = rndval xor 0x00012000
     endif
     pset 10+x,10+y  color 6+rnd*3
     if rndval == 1 then
