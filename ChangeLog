@@ -1,4 +1,7 @@
 2017-08-13 (0.12.10)
+	COMMON: raise error when FUNC return value not assigned
+
+2017-08-13 (0.12.10)
 	SDL: Updated to use hardware rendering
 
 2017-08-13 (0.12.10)

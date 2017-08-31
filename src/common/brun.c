@@ -139,6 +139,9 @@ void code_pop(stknode_t *node, int expected_type) {
     }
     if (expected_type != 0 && node->type != expected_type) {
       free_node(node);
+      if (node->type == kwTYPE_RET) {
+        rt_raise(MSG_RETURN_NOT_ASSIGNED);
+      }
     }
 
 #if defined(_UnixOS) && defined(_CHECK_STACK)
