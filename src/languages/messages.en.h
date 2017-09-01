@@ -122,7 +122,7 @@
 #define MSG_MISSING_CATCH       "TRY without CATCH"
 #define MSG_MISSING_ENDTRY      "TRY without END TRY"
 #define MSG_FUNC_NOT_ASSIGNED   "The value returned from %s was not assigned"
-#define MSG_RETURN_NOT_ASSIGNED "FUNC result was not assigned"
+#define MSG_RETURN_NOT_ASSIGNED "FUNC (line %d) - result not assigned"
 
 // executor
 #define WORD_ERROR_AT           "ERROR AT"

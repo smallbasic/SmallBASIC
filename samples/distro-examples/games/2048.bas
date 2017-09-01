@@ -516,7 +516,7 @@ func Game()
         # Validate and set Move
         if move != Nil and move >= 0 and move < 4 then
           if self.grid.canMove([move]) then
-            self.grid.move(move)
+            unused = self.grid.move(move)
             # Update maxTile
             maxTile = self.grid.getMaxTile()
             if maxTile < prevMaxTile then

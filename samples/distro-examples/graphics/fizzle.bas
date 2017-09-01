@@ -1,5 +1,6 @@
 # https://news.ycombinator.com/item?id=15122540
 # linear feedback shift register
+# https://gist.github.com/anonymous/a42eedfdfc22c469141f8f7d0419fa90
 
 sub fizzle(j)
   rndval = 1
