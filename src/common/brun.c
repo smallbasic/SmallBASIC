@@ -56,25 +56,16 @@ void code_push(stknode_t *node) {
 
   prog_stack[prog_stack_count] = *node;
   prog_stack[prog_stack_count].line = prog_line;
-#if defined(_UnixOS) && defined(_CHECK_STACK)
-  int i;
-  for (i = 0; keyword_table[i].name[0] != '\0'; i++) {
-    if (node->type == keyword_table[i].code) {
-      printf("%3d: PUSH %s (%d)\n", prog_stack_count,
-          keyword_table[i].name, prog_line);
-      break;
-    }
-  }
-#endif
   prog_stack_count++;
 }
 
 void free_node(stknode_t *node) {
   switch (node->type) {
   case kwTYPE_CRVAR:
-    v_free(tvar[node->x.vdvar.vid]);  // free local variable data
+    // free local variable data and retore ptr
+    v_free(tvar[node->x.vdvar.vid]);
     v_detach(tvar[node->x.vdvar.vid]);
-    tvar[node->x.vdvar.vid] = node->x.vdvar.vptr; // restore ptr
+    tvar[node->x.vdvar.vid] = node->x.vdvar.vptr;
     break;
 
   case kwBYREF:
@@ -139,21 +130,20 @@ void code_pop(stknode_t *node, int expected_type) {
     }
     if (expected_type != 0 && node->type != expected_type) {
       free_node(node);
-      if (node->type == kwTYPE_RET) {
+      switch (node->type) {
+      case kwTYPE_RET:
+        // a FUNC result was not previously consumed
         rt_raise(MSG_RETURN_NOT_ASSIGNED, node->line);
-      }
-    }
-
-#if defined(_UnixOS) && defined(_CHECK_STACK)
-    int i;
-    for (i = 0; keyword_table[i].name[0] != '\0'; i++) {
-      if (prog_stack[prog_stack_count].type == keyword_table[i].code) {
-        printf("%3d: POP %s (%d)\n", prog_stack_count,
-               keyword_table[i].name, prog_line);
+        break;
+      case kwTYPE_CRVAR:
+        // pop local variable and continue
+        free_node(node);
+        code_pop(node, expected_type);
+        break;
+      default:
         break;
       }
     }
-#endif
   } else {
     if (node) {
       err_stackunderflow();

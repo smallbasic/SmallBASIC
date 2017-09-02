@@ -313,3 +313,16 @@ endif
 local a=[1,2,3,4]
 local b=IFF(a[0]==1,999,2)
 if (b != 999) then throw "inline local assignment error"
+
+rem ---- cleanup LOCALs from the STACK
+frame = 0
+while 1
+  if (frame == 65536) then
+    exit loop
+  endif
+  rem LOCAL here goes out of scope (poped from stack) in WEND
+  rem processing. More efficient to declare local at a higher
+  rem block level but need to at least avoid a stack overflow
+  local t1 = tick
+  frame++
+wend
