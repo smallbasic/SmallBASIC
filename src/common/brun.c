@@ -464,9 +464,6 @@ void cmd_options(void) {
   case OPTION_BASE:
     opt_base = data;
     break;
-  case OPTION_UICS:
-    opt_uipos = data;
-    break;
   case OPTION_MATCH:
     opt_usepcre = data;
     break;
@@ -686,18 +683,6 @@ static inline void bc_loop_call_extp() {
 }
 
 static inline void bc_loop_end() {
-  if ((prog_length - 1) > prog_ip) {
-    if (code_peek() != kwTYPE_EOC && code_peek() != kwTYPE_LINE) {
-      var_t ec;
-
-      v_init(&ec);
-      eval(&ec);
-      opt_retval = v_igetval(&ec);
-      v_free(&ec);
-    } else {
-      opt_retval = 0;
-    }
-  }
   // end of program
   prog_error = errEnd;
 }
@@ -1548,7 +1533,7 @@ int sbasic_recursive_exec(int tid) {
     exec_sync_variables(0);
 
     // run
-    if (!(opt_quiet || opt_interactive)) {
+    if (!opt_quiet) {
       dev_printf("Initializing #%d (%s) ...\n", ctask->tid, ctask->file);
     }
     success = sbasic_exec_task(ctask->tid);
@@ -1720,7 +1705,6 @@ int sbasic_exec(const char *file) {
   int exec_rq = 1;
 
   // init compile-time options
-  opt_pref_bpp = 0;
   opt_pref_width = 0;
   opt_pref_height = 0;
   opt_show_page = 0;
@@ -1735,10 +1719,7 @@ int sbasic_exec(const char *file) {
   sbasic_set_bas_dir(file);
   success = sbasic_compile(file);
 
-  if (opt_syntaxcheck) {         // this is a command-line flag to
-    // syntax-check only
-    exec_rq = 0;
-  } else if (ctask->bc_type == 2) {
+  if (ctask->bc_type == 2) {
     // cannot run a unit
     exec_rq = 0;
     gsb_last_error = 1;
@@ -1748,8 +1729,7 @@ int sbasic_exec(const char *file) {
     sbasic_dump_bytecode(exec_tid, stdout);
     exec_close(exec_tid);       // clean up executor's garbages
     exec_rq = 0;
-  }
-  else if (!success) {          // there was some errors; do not continue
+  } else if (!success) {        // there was some errors; do not continue
     exec_rq = 0;
     gsb_last_error = 1;
   }

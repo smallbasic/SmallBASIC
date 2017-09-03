@@ -56,7 +56,6 @@
 #define MSG_ARRAY_SE            "Array: syntax error"
 #define MSG_ARRAY_MIS_RP        "Array: Missing ')', (left side of expression)"
 #define MSG_ARRAY_MIS_LP        "Array: Missing '(', (left side of expression)"
-#define MSG_OPT_UICS_ERR        "Syntax error: OPTION UICS {CHARS|PIXELS}"
 #define MSG_OPTION_ERR          "OPTION: Unrecognized option '%s'"
 #define MSG_IT_IS_KEYWORD       "%s: is keyword (left side of expression)"
 #define MSG_USE_DECL            "Use DECLARE with SUB or FUNC keyword"

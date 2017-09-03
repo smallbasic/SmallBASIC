@@ -286,11 +286,8 @@ int Runtime::runShell(const char *startupBas, int fontScale, int debugPort) {
 
   os_graphics = 1;
   os_color_depth = 16;
-  opt_interactive = true;
-  opt_usevmt = 0;
   opt_file_permitted = 1;
   opt_graphics = true;
-  opt_pref_bpp = 0;
   opt_nosave = true;
 
   _output->setTextColor(DEFAULT_FOREGROUND, DEFAULT_BACKGROUND);

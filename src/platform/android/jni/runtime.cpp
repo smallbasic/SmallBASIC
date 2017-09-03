@@ -452,13 +452,10 @@ void Runtime::runShell() {
 
   opt_ide = IDE_NONE;
   opt_graphics = true;
-  opt_pref_bpp = 0;
   opt_nosave = true;
-  opt_interactive = true;
   opt_verbose = false;
   opt_quiet = true;
   opt_command[0] = 0;
-  opt_usevmt = 0;
   opt_file_permitted = 1;
   os_graphics = 1;
   os_color_depth = 16;

@@ -1891,22 +1891,7 @@ char *comp_array_params(char *src, char exitChar) {
 void comp_cmd_option(char *src) {
   char *p = src;
 
-  if (CHKOPT(LCN_UICS_WRS)) {
-    bc_add_code(&comp_prog, kwOPTION);
-    bc_add_code(&comp_prog, OPTION_UICS);
-
-    p += 5;
-    while (is_space(*p)) {
-      p++;
-    }
-    if (CHKOPT(LCN_CHARS)) {
-      bc_add_addr(&comp_prog, OPTION_UICS_CHARS);
-    } else if (CHKOPT(LCN_PIXELS)) {
-      bc_add_addr(&comp_prog, OPTION_UICS_PIXELS);
-    } else {
-      sc_raise(MSG_OPT_UICS_ERR);
-    }
-  } else if (CHKOPT(LCN_BASE_WRS)) {
+  if (CHKOPT(LCN_BASE_WRS)) {
     bc_add_code(&comp_prog, kwOPTION);
     bc_add_code(&comp_prog, OPTION_BASE);
     bc_add_addr(&comp_prog, xstrtol(src + 5));
@@ -3181,7 +3166,7 @@ void print_pass2_stack(bcip_t pos, code_t lcode, int level) {
   code_t end_code[] = { kwWEND, kwUNTIL, kwENDIF, kwNEXT, kwTYPE_RET, 0 };
   code_t code = lcode;
 
-  if (opt_quiet || opt_interactive) {
+  if (opt_quiet) {
     return;
   }
 
@@ -3310,13 +3295,13 @@ void comp_pass2_scan() {
   comp_pass_node_t *node;
   comp_label_t *label;
 
-  if (!opt_quiet && !opt_interactive) {
+  if (!opt_quiet) {
     log_printf(MSG_PASS2_COUNT, i, comp_sp);
   }
 
   // for each node in stack
   for (i = 0; i < comp_sp; i++) {
-    if (!opt_quiet && !opt_interactive) {
+    if (!opt_quiet) {
       if ((i % SB_KEYWORD_SIZE) == 0) {
         log_printf(MSG_PASS2_COUNT, i, comp_sp);
       }
@@ -3671,7 +3656,7 @@ void comp_pass2_scan() {
     };
   }
 
-  if (!opt_quiet && !opt_interactive) {
+  if (!opt_quiet) {
     log_printf(MSG_PASS2_COUNT, comp_sp, comp_sp);
     log_printf("\n");
   }
@@ -4108,7 +4093,7 @@ char *comp_format_text(const char *source) {
 /**
  * scans prefered graphics mode paramaters
  *
- * syntax: XXXXxYYYY[xBB]
+ * syntax: XXXXxYYYY
  */
 void err_grmode() {
   // log_printf() instead of sc_raise()... it is just a warning...
@@ -4116,25 +4101,19 @@ void err_grmode() {
 }
 
 void comp_preproc_grmode(const char *source) {
-  char *p, *v;
-  int x, y, b;
-  char buffer[32];
-
   // prepare the string (copy it to buffer)
   // we use second buffer because we want to place some '\0' characters
-  // into the buffer
-  // in a non-SB code, there must be a dynamic allocation
+  // into the buffer in a non-SB code, there must be a dynamic allocation
+  char buffer[32];
   strncpy(buffer, source, 32);
   buffer[31] = '\0';
-  p = buffer;
+  char *p = buffer;
 
   // searching the end of the string
   while (*p) {
     // while *p is not '\0'
     if (*p == '\n' || *p == ':') {
-      // yeap, we must close the string
-      // here (enter or
-      // command-seperator)
+      // yeap, we must close the string here (enter or // command-seperator)
       // it is supposed that remarks had already removed from source
       *p = '\0';
       break;
@@ -4142,86 +4121,22 @@ void comp_preproc_grmode(const char *source) {
     p++;
   }
 
-  // get parameters
   p = buffer;
   SKIP_SPACES(p);
-
-  // the width
-  v = p;                        // 'v' points to first letter of 'width',
-  // (1024x768)
-  // ........................................^ <- p, v
+  char *v = p;                  // 'v' points to first letter of 'width', (1024x768)
   p = strchr(v, 'X');           // search for the end of 'width' parameter
-  //
-  //
-  // (1024x768). Remeber that the string is
-  // in upper-case
-  // .............................................^ <- p
+                                // (1024x768). Remeber that the string is in upper-case
   if (!p) {                     // we don't accept one parameter, the
-    // width must followed by the height
-    // so, if 'X' delimiter is omitted, there is no height parameter
+                                // width must followed by the height
+                                // so, if 'X' delimiter is omitted, there is no height parameter
     err_grmode();
     return;
   }
   *p = '\0';                    // we close the string at X position
-  // (example: "1024x768" it will be
-  // "1024\0768")
-  x = xstrtol(v);               // now the v points to a string-of-digits,
-  //
-  //
-  // we can perform atoi()
-  // (xstrtol()=atoi())
-  p++;
-  v = p;                        // v points to first letter of 'height'
-  // (1024x768x24)
-  // ...........................................^ <- v
-
-  // the height
-  p = strchr(v, 'X');           // searching for the end of 'height'
-  // (1024x768x24)
-  // ...........................................^ <- p
-  if (p) {                      // if there is a 'X' delimiter, then the
-    // 'bpp' is followed, so, we need
-    // different path
-    *p = '\0';                  // we close the string at second's X
-    // position
-    y = xstrtol(v);             // now the v points to a string-of-digits,
-    //
-    //
-    // we can perform atoi()
-    // (xstrtol()=atoi())
-
-    p++;
-    v = p;                      // v points to first letter of 'bpp'
-    // (1024x768x24)
-    // ............................................^ <- v
-
-    // the bits-per-pixel
-    if (strlen(v))              // if *v != '\0', there is actually a
-      // string
-      b = xstrtol(v);           // integer value of (v). v points to a
-    // string-of-digits...
-    // btw, if the user pass some wrong characters (like a-z), the
-    // xstrtol will return a value of zero
-    else
-      b = 0;                    // undefined = 0, user deserves a
-    // compile-time error becase v is empty,
-    // but we forgive him :)
-    // remember that, the source, except of upper-case, is also
-    // trimmed
-  } else {                        // there was no 'X' delimiter after the
-    // 'height', so, bpp is undefined
-    y = xstrtol(v);             // now the v points to a string-of-digits,
-    //
-    //
-    // we can perform atoi()
-    // (xstrtol()=atoi())
-    b = 0;                      // bpp is undefined (value 0)
-  }
-
-  // setup the globals
-  opt_pref_width = x;
-  opt_pref_height = y;
-  opt_pref_bpp = b;
+                                // (example: "1024x768" it will be "1024\0768")
+  opt_pref_width = xstrtol(v);  // now the v points to a string-of-digits,
+  v = ++p;                      // v points to first letter of 'height'
+  opt_pref_height = xstrtol(v); // now the v points to a string-of-digits,
 }
 
 /**
@@ -4599,7 +4514,7 @@ void comp_preproc_pass1(char *p) {
   comp_proc_level = 0;
   *comp_bc_proc = '\0';
 
-  if (!opt_quiet && !opt_interactive) {
+  if (!opt_quiet) {
     log_printf("%s: \033[1m%s\033[0m\n", WORD_FILE, comp_file_name);
   }
 }
@@ -4627,7 +4542,7 @@ int comp_pass1(const char *section, const char *text) {
 
   comp_preproc_pass1(new_text);
   if (!comp_error) {
-    if (!opt_quiet && !opt_interactive) {
+    if (!opt_quiet) {
       log_printf(MSG_PASS1_COUNT, comp_line + 1);
     }
 
@@ -4638,7 +4553,7 @@ int comp_pass1(const char *section, const char *text) {
         // proceed
         *p = '\0';
         comp_line++;
-        if (!opt_quiet && !opt_interactive) {
+        if (!opt_quiet) {
           if ((comp_line % 256) == 0) {
             log_printf(MSG_PASS1_COUNT, comp_line);
           }
@@ -4685,7 +4600,7 @@ int comp_pass1(const char *section, const char *text) {
 
   bc_eoc(&comp_prog);
   bc_resize(&comp_prog, comp_prog.count);
-  if (!comp_error && !opt_quiet && !opt_interactive) {
+  if (!comp_error && !opt_quiet) {
     log_printf(MSG_PASS1_FIN, comp_line + 1);
     log_printf("\n");
   }
@@ -4740,7 +4655,7 @@ int comp_pass2_exports() {
  * PASS 2
  */
 int comp_pass2() {
-  if (!opt_quiet && !opt_interactive) {
+  if (!opt_quiet) {
     log_printf(MSG_PASS2);
   }
 
@@ -4776,7 +4691,7 @@ byte_code comp_create_bin() {
   uint32_t size;
   unit_file_t uft;
 
-  if (!opt_quiet && !opt_interactive) {
+  if (!opt_quiet) {
     if (comp_unit_flag) {
       log_printf(MSG_CREATING_UNIT, comp_unit_name);
     } else {
@@ -4874,7 +4789,7 @@ byte_code comp_create_bin() {
   size += comp_prog.count;
 
   // print statistics
-  if (!opt_quiet && !opt_interactive) {
+  if (!opt_quiet) {
     log_printf("\n");
     log_printf(RES_NUMBER_OF_VARS, comp_varcount, comp_varcount - SYSVAR_COUNT);
     log_printf(RES_NUMBER_OF_LABS, comp_labcount);
@@ -4904,7 +4819,7 @@ int comp_save_bin(byte_code bc) {
   char *p;
   int result = 1;
 
-  if ((opt_nosave && !comp_unit_flag) || opt_syntaxcheck) {
+  if (opt_nosave && !comp_unit_flag) {
     return 1;
   }
 
@@ -4919,7 +4834,7 @@ int comp_save_bin(byte_code bc) {
   if (h != -1) {
     write(h, (char *)bc.code, bc.size);
     close(h);
-    if (!opt_quiet && !opt_interactive) {
+    if (!opt_quiet) {
       log_printf(MSG_BC_FILE_CREATED, fname);
     }
   } else {

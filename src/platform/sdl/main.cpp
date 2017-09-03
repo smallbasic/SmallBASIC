@@ -251,7 +251,7 @@ void showHelp() {
             OPTIONS[i].val, OPTIONS[i].name);
     i++;
   }
-  fprintf(stdout, "\nhttp://smallbasic.sourceforge.net\n\n");
+  fprintf(stdout, "\nhttps://smallbasic.sourceforge.io\n\n");
 }
 
 int main(int argc, char* argv[]) {

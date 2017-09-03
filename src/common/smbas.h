@@ -101,13 +101,9 @@ typedef struct {
 
 EXTERN byte opt_graphics; /**< command-line option: start in graphics mode   */
 EXTERN byte opt_quiet; /**< command-line option: quiet                       */
-EXTERN int opt_retval; /**< return-value (ERRORLEVEL)                        */
 EXTERN byte opt_decomp; /**< decompile                                       */
-EXTERN byte opt_syntaxcheck; /**< syntax check only                          */
 EXTERN char opt_command[OPT_CMD_SZ]; /**< command-line parameters (COMMAND$) */
-EXTERN byte opt_usevmt; /**< using VMT on compilation by default             */
 EXTERN int opt_base; /**< OPTION BASE x                                      */
-EXTERN byte opt_uipos; /**< OPTION UICS {CHARS|PIXELS}                       */
 EXTERN byte opt_loadmod; /**< load all modules                               */
 EXTERN char opt_modlist[OPT_MOD_SZ]; /**< Modules list                       */
 EXTERN int opt_verbose; /**< print some additional infos                     */
@@ -115,9 +111,7 @@ EXTERN int opt_ide; /**< 0=no IDE, 1=IDE is linked, 2=IDE is external exe)   */
 EXTERN byte os_charset; /**< use charset encoding                            */
 EXTERN int opt_pref_width; /**< prefered graphics mode width (0 = undefined) */
 EXTERN int opt_pref_height; /**< prefered graphics mode height               */
-EXTERN byte opt_pref_bpp; /**< prefered graphics mode bits-per-pixel )       */
 EXTERN byte opt_nosave; /**< do not create .sbx files                        */
-EXTERN byte opt_interactive; /**< interactive mode                           */
 EXTERN byte opt_usepcre; /**< OPTION PREDEF PCRE                             */
 EXTERN byte opt_file_permitted; /**< file system permission                  */
 EXTERN byte opt_show_page; /**< SHOWPAGE graphics flush mode                 */

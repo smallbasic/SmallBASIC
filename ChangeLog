@@ -1,4 +1,7 @@
 2017-08-13 (0.12.10)
+	COMMON: code cleanup, remove obsolete global options
+
+2017-08-13 (0.12.10)
 	COMMON: fix issue when LOCAL used inside while loop
 
 2017-08-13 (0.12.10)

@@ -472,12 +472,8 @@ int kw_getprocname(bid_t code, char *dest);
 int kw_noarg_func(bid_t code);
 
 #define OPTION_BASE                     1
-#define OPTION_UICS                     2
 #define OPTION_GRMODE                   3
 #define OPTION_MATCH                    4
-
-#define OPTION_UICS_PIXELS              0
-#define OPTION_UICS_CHARS               1
 
 #if defined(__cplusplus)
 }

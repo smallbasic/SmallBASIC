@@ -122,7 +122,6 @@ bool System::execute(const char *bas) {
   opt_pref_width = _output->getWidth();
   opt_pref_height = _output->getHeight();
   opt_base = 0;
-  opt_uipos = 0;
   opt_usepcre = 0;
   opt_autolocal = 0;
 

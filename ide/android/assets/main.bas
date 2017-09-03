@@ -105,7 +105,7 @@ sub do_about()
   print
   print "Copyright (c) 2002-2017 Chris Warren-Smith"
   print "Copyright (c) 1999-2006 Nic Christopoulos" + chr(10)
-  print "http://smallbasic.sourceforge.net" + chr(10)
+  print "https://smallbasic.sourceforge.io" + chr(10)
   print "SmallBASIC comes with ABSOLUTELY NO WARRANTY. ";
   print "This program is free software; you can use it ";
   print "redistribute it and/or modify it under the terms of the ";
