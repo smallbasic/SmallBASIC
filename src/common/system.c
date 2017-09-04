@@ -237,14 +237,7 @@ uint32_t dev_get_millisecond_count(void) {
   gettimeofday(&t, NULL);
   return (uint32_t) (1000L * t.tv_sec + (t.tv_usec / 1000.0));
 #elif defined(_Win32)
-  FILETIME ft;
-  LARGE_INTEGER li;
-  // obtain 100 nano seconds intervals elapsed since January 1, 1601 (UTC)
-  // then convert 100 nano seconds (10^-7) to 1 millisecond (10^-3) intervals
-  GetSystemTimeAsFileTime(&ft);
-  li.LowPart = ft.dwLowDateTime;
-  li.HighPart = ft.dwHighDateTime;
-  return li.QuadPart / 10000;
+  return GetTickCount();
 #else
   struct timespec t;
   t.tv_sec = t.tv_nsec = 0;

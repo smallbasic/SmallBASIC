@@ -8,9 +8,6 @@
 	COMMON: raise error when FUNC return value not assigned
 
 2017-08-13 (0.12.10)
-	SDL: Updated to use hardware rendering
-
-2017-08-13 (0.12.10)
 	SDL: Added F8 publish command
 
 2017-08-08 (0.12.10)
@@ -18,9 +15,6 @@
 
 2017-08-08 (0.12.10)
 	COMMON: LEFT, RIGHT, REPLACE, INSTR, RINSTR no longer error on invalid pos input
-
-2017-07-29 (0.12.10)
-	COMMON: Use faster method to obtain tick count (windows)
 
 2017-07-29 (0.12.10)
 	COMMON: VAL command now ignored any input trailing non digit chars
