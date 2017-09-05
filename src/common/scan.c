@@ -1082,8 +1082,10 @@ int comp_is_parenthesized(char *name) {
 int comp_is_code_array(bc_t *bc, char *p) {
   int result = 0;
   int is_var = 0;
+  int last_kw = 0;
 
   for (bcip_t ip = 0; ip < bc->count; ip = comp_next_bc_cmd(bc, ip)) {
+    last_kw = bc->ptr[ip];
     if (bc->ptr[ip] == kwTYPE_VAR) {
       is_var = 1;
       break;
@@ -1091,6 +1093,9 @@ int comp_is_code_array(bc_t *bc, char *p) {
   }
   if (comp_prog.ptr[comp_prog.count - 1] == '=' && (!bc->count || !is_var)) {
     // lvalue assignment is for code array, unless rvalue includes a variable
+    result = 1;
+  } else if (last_kw == kwTYPE_LEVEL_BEGIN || last_kw == kwTYPE_SEP) {
+    // patterns '([' OR ',[' create a code array
     result = 1;
   } else {
     int level = 1;

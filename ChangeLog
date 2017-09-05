@@ -1,10 +1,13 @@
-2017-08-13 (0.12.10)
+2017-09-06 (0.12.10)
+	COMMON: fix handling for code array passed as function argument
+
+2017-09-03 (0.12.10)
 	COMMON: code cleanup, remove obsolete global options
 
-2017-08-13 (0.12.10)
+2017-08-31 (0.12.10)
 	COMMON: fix issue when LOCAL used inside while loop
 
-2017-08-13 (0.12.10)
+2017-08-25 (0.12.10)
 	COMMON: raise error when FUNC return value not assigned
 
 2017-08-13 (0.12.10)

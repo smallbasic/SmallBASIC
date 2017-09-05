@@ -265,3 +265,11 @@ const ccc =&
 ddd=[]
 ddd << [1,2, &
         3,4]
+
+rem ------ '([' OR ',[' make code arrays
+func fn(a,b)
+ return a + b
+end
+if ([3] != fn([1],[2])) then
+  throw "err"
+endif
