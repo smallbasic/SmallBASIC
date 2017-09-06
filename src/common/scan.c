@@ -1088,7 +1088,6 @@ int comp_is_code_array(bc_t *bc, char *p) {
     last_kw = bc->ptr[ip];
     if (bc->ptr[ip] == kwTYPE_VAR) {
       is_var = 1;
-      break;
     }
   }
   if (comp_prog.ptr[comp_prog.count - 1] == '=' && (!bc->count || !is_var)) {
