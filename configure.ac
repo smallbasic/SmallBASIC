@@ -76,6 +76,32 @@ function checkDebugMode() {
    AC_SUBST(CFLAGS)
 }
 
+function checkProfiling() {
+   AC_MSG_CHECKING([if profile generate is enabled])
+   AC_ARG_WITH(profile-generate,
+   [  --with-profile-generate          Build the profile generate default=no],
+       [with_prof_gen=$withval],
+       [with_prof_gen=no])
+   AC_MSG_RESULT([$with_prof_gen])
+   if test "$with_prof_gen" = "yes"
+   then
+     CFLAGS="${CFLAGS} -fprofile-generate"
+     CXXFLAGS="${CXXFLAGS} -fprofile-generate"
+   else
+     AC_MSG_CHECKING([if profile use is enabled])
+     AC_ARG_WITH(profile-use,
+     [  --with-profile-use          Build the profile use default=no],
+         [with_prof_use=$withval],
+         [with_prof_use=no])
+     AC_MSG_RESULT([$with_prof_use])
+     if test "$with_prof_use" = "yes"
+     then
+       CFLAGS="${CFLAGS} -fprofile-use"
+       CXXFLAGS="${CXXFLAGS} -fprofile-use"
+     fi
+   fi
+}
+
 function checkPCRE() {
    AC_CHECK_PROG(have_pcre, pcre-config, [yes], [no])
 
@@ -300,6 +326,7 @@ fi
 checkPCRE
 checkTermios
 checkDebugMode
+checkProfiling
 checkForWindows
 
 PACKAGE_CFLAGS="${PACKAGE_CFLAGS} -Wall -Wno-unused-result"
