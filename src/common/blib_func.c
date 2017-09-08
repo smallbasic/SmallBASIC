@@ -679,7 +679,7 @@ var_int_t cmd_fre(var_int_t arg) {
     r = 0x120000;
     break;
   }
-#elif defined(_UnixOS)
+#elif defined(_UnixOS) && !defined(__MACH__)
   // assumes first two items are total + free
   #define I_MEM_TOTAL 0
   #define I_MEM_FREE  1
