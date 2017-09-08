@@ -21,7 +21,7 @@
 using namespace strlib;
 
 static const char *ENV_VARS[] = {
-  "APPDATA", "HOME", "TMP", "TEMP", "TMPDIR"
+  "APPDATA", "HOME", "TMP", "TEMP", "TMPDIR", ""
 };
 
 #if !defined(FILENAME_MAX)
@@ -56,10 +56,9 @@ void createConfigPath(const char *var, const char *home, char *path) {
 FILE *openConfig(const char *flags, bool debug) {
   FILE *result = NULL;
   char path[FILENAME_MAX];
-  int vars_len = sizeof(ENV_VARS) / sizeof(ENV_VARS[0]);
 
   path[0] = 0;
-  for (int i = 0; i < vars_len && result == NULL; i++) {
+  for (int i = 0; ENV_VARS[i][0] != '\0' && result == NULL; i++) {
     const char *home = getenv(ENV_VARS[i]);
     if (home && access(home, R_OK) == 0) {
       createConfigPath(ENV_VARS[i], home, path);
@@ -274,10 +273,9 @@ String saveGist(const char *buffer, const char *fileName, const char *descriptio
   String result;
   FILE *fp = NULL;
   char path[FILENAME_MAX];
-  int vars_len = sizeof(ENV_VARS) / sizeof(ENV_VARS[0]);
 
   path[0] = 0;
-  for (int i = 0; i < vars_len && fp == NULL; i++) {
+  for (int i = 0; ENV_VARS[i][0] != '\0' && fp == NULL; i++) {
     const char *home = getenv(ENV_VARS[i]);
     if (home && access(home, R_OK) == 0) {
       createConfigPath(ENV_VARS[i], home, path);
@@ -314,4 +312,14 @@ String saveGist(const char *buffer, const char *fileName, const char *descriptio
   }
 
   return result;
+}
+
+void getScratchFile(char *path) {
+  for (int i = 0; ENV_VARS[i][0] != '\0'; i++) {
+    const char *home = getenv(ENV_VARS[i]);
+    if (home && access(home, R_OK) == 0) {
+      strcpy(path, home);
+      strcat(path, "/scratch.bas");
+    }
+  }
 }

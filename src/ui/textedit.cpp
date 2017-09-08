@@ -122,9 +122,10 @@ const char *helpText =
   "F2 online help\n"
   "F3,F4 export\n"
   "F5 debug\n"
-  "F8 publish\n"
+  "F8 live run\n"
   "F9, C-r run\n"
-  "F10, set command$\n";
+  "F10 set command$\n"
+  "F11 publish\n";
 
 inline bool match(const char *str, const char *pattern , int len) {
   int i, j;

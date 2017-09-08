@@ -17,6 +17,7 @@ String saveGist(const char *buffer, const char *fileName, const char *descriptio
 void setRecentFile(const char *path);
 bool getRecentFile(strlib::String &path, unsigned position);
 void getRecentFileList(strlib::String &fileList, strlib::String &current);
+void getScratchFile(char *path);
 
 #endif
 

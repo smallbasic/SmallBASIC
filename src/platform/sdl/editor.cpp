@@ -175,6 +175,21 @@ void publish(System *system, const char *text, const char *fileName, const char 
   }
 }
 
+void exportRun(Runtime *runtime, TextEditInput *editor) {
+  char path[PATH_MAX];
+  getScratchFile(path);
+  char *buffer = editor->getTextSelection();
+  FILE *fp = fopen(path, "wb");
+  if (fp) {
+    fwrite(buffer, sizeof(char), strlen(buffer), fp);
+    fclose(fp);
+    runtime->exportRun(path);
+  } else {
+    runtime->alert("Run", "Failed to save scratch file.");
+  }
+  free(buffer);
+}
+
 void System::editSource(String loadPath) {
   logEntered();
 
@@ -275,7 +290,6 @@ void System::editSource(String loadPath) {
             redraw |= widget->edit(g_macro[i], sw, charWidth);
           }
           break;
-        case SB_KEY_F(11):
         case SB_KEY_F(12):
         case SB_KEY_MENU:
           redraw = false;
@@ -352,6 +366,9 @@ void System::editSource(String loadPath) {
           debugStep(editWidget, helpWidget, true);
           break;
         case SB_KEY_F(8):
+          exportRun((Runtime *)this, editWidget);
+          break;
+        case SB_KEY_F(11):
           if (editWidget->getTextLength()) {
             _output->setStatus("Enter description, Esc=Close [Publish on GitHub]");
             widget = helpWidget;

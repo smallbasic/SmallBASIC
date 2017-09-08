@@ -330,12 +330,7 @@ void System::handleMenu(MAEvent &event) {
     }
     break;
   case MENU_EDITMODE:
-#if defined(_SDL)
-    opt_ide = (opt_ide == IDE_NONE ? IDE_INTERNAL :
-               opt_ide == IDE_INTERNAL ? IDE_EXTERNAL : IDE_NONE);
-#else
     opt_ide = (opt_ide == IDE_NONE ? IDE_INTERNAL : IDE_NONE);
-#endif
     break;
   case MENU_AUDIO:
     opt_mute_audio = !opt_mute_audio;
@@ -907,8 +902,7 @@ void System::showMenu() {
         items->add(new String(buffer));
         _systemMenu[index++] = MENU_ZOOM_UP;
         _systemMenu[index++] = MENU_ZOOM_DN;
-        sprintf(buffer, "Editor [%s]", (opt_ide == IDE_NONE ? "OFF" :
-                                        opt_ide == IDE_INTERNAL ? "ON" : "Live Mode"));
+        sprintf(buffer, "Editor [%s]", opt_ide == IDE_NONE ? "OFF" : "ON");
         items->add(new String(buffer));
         _systemMenu[index++] = MENU_EDITMODE;
       }

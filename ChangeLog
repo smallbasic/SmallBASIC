@@ -1,3 +1,6 @@
+2017-09-09 (0.12.10)
+	SDL: Moved "Live edit" mode to editor via F8 key
+
 2017-09-06 (0.12.10)
 	COMMON: fix handling for code array passed as function argument
 
