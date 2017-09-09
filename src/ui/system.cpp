@@ -937,6 +937,7 @@ void System::showSystemScreen(bool showSrc) {
 
 void System::waitForBack() {
   while (!isBack() && !isClosing() && !isRestart()) {
+    fprintf(stderr, "wait for back!\n");
     MAEvent event = getNextEvent();
     if (event.type == EVENT_TYPE_KEY_PRESSED &&
         event.key == SB_KEY_BACKSPACE) {

@@ -38,6 +38,7 @@ struct System {
   bool isModal() { return _state == kModalState; }
   bool isRestart() { return _state == kRestartState; }
   bool isRunning() { return _state == kRunState || _state == kModalState; }
+  bool isThreadActive() { return _state == kActiveState; }
   bool isSystemScreen() { return _userScreenId != -1; }
   void logStack(const char *keyword, int type, int line);
   char *readSource(const char *fileName);
