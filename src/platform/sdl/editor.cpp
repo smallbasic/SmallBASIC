@@ -181,7 +181,8 @@ void exportRun(Runtime *runtime, TextEditInput *editor) {
   char *buffer = editor->getTextSelection();
   FILE *fp = fopen(path, "wb");
   if (fp) {
-    fwrite(buffer, sizeof(char), strlen(buffer), fp);
+    fputs(buffer, fp);
+    fputs("\npause\n", fp);
     fclose(fp);
     runtime->exportRun(path);
   } else {
