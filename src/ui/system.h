@@ -72,7 +72,6 @@ struct System {
   virtual char *getClipboardText() = 0;
 
 protected:
-  void checkModifiedTime();
   void editSource(strlib::String loadPath);
   bool execute(const char *bas);
   bool fileExists(strlib::String &path);

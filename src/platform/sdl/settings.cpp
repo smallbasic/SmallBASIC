@@ -155,7 +155,7 @@ void restoreSettings(SDL_Rect &rect, int &fontScale, bool debug, bool restoreDir
     rect.h = nextInteger(fp, DEFAULT_HEIGHT);
     fontScale = nextInteger(fp, DEFAULT_SCALE);
     opt_mute_audio = nextInteger(fp, 0);
-    opt_ide = nextInteger(fp, 0);
+    opt_ide = nextInteger(fp, 0) ? IDE_INTERNAL : IDE_NONE;
     g_themeId = nextInteger(fp, 0);
     for (int i = 0; i < THEME_COLOURS; i++) {
       g_user_theme[i] = nextHex(fp, g_user_theme[i]);

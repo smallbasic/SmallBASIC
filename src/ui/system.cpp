@@ -103,13 +103,6 @@ System::~System() {
   _editor = NULL;
 }
 
-void System::checkModifiedTime() {
-  if (opt_ide == IDE_EXTERNAL && !_activeFile.empty() &&
-      _modifiedTime != getModifiedTime()) {
-    setRestart();
-  }
-}
-
 bool System::execute(const char *bas) {
   _stackTrace.removeAll();
   _output->reset();
@@ -452,9 +445,6 @@ void System::handleEvent(MAEvent &event) {
     // no event
     _output->flush(false);
     break;
-  }
-  if (opt_ide == IDE_EXTERNAL) {
-    checkModifiedTime();
   }
 }
 
