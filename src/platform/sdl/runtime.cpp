@@ -1056,6 +1056,9 @@ void restart() {
   g_debugBreak = SDL_FALSE;
   g_debugTrace = SDL_FALSE;
 
+  MAEvent *event = new MAEvent();
+  event->type = EVENT_TYPE_RESTART;
+  runtime->pushEvent(event);
   if (runtime->isThreadActive()) {
     // break out of waitForBack()
     SDL_Event event;
@@ -1063,10 +1066,7 @@ void restart() {
     event.key.keysym.sym = SDLK_BACKSPACE;
     SDL_PushEvent(&event);
   }
-
-  MAEvent *event = new MAEvent();
-  event->type = EVENT_TYPE_RESTART;
-  runtime->pushEvent(event);
+  
   SDL_CondSignal(g_cond);
   SDL_UnlockMutex(g_lock);
 }
