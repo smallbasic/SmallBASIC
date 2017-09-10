@@ -121,7 +121,7 @@ const char *helpText =
   "F1,A-h keyword help\n"
   "F2 online help\n"
   "F3,F4 export\n"
-  "F5 debug\n"
+  "F5,F6,F7 debug\n"
   "F8 repl run\n"
   "F9, C-r run\n"
   "F10 set command$\n"
