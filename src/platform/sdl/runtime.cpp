@@ -1055,6 +1055,7 @@ void restart() {
   g_debugPause = SDL_FALSE;
   g_debugBreak = SDL_FALSE;
   g_debugTrace = SDL_FALSE;
+  g_breakPoints.removeAll();
 
   MAEvent *event = new MAEvent();
   event->type = EVENT_TYPE_RESTART;
@@ -1066,7 +1067,7 @@ void restart() {
     event.key.keysym.sym = SDLK_BACKSPACE;
     SDL_PushEvent(&event);
   }
-  
+
   SDL_CondSignal(g_cond);
   SDL_UnlockMutex(g_lock);
 }
