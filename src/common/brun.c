@@ -63,9 +63,11 @@ void free_node(stknode_t *node) {
   switch (node->type) {
   case kwTYPE_CRVAR:
     // free local variable data and retore ptr
-    v_free(tvar[node->x.vdvar.vid]);
-    v_detach(tvar[node->x.vdvar.vid]);
-    tvar[node->x.vdvar.vid] = node->x.vdvar.vptr;
+    if (node->x.vdvar.vptr != tvar[node->x.vdvar.vid]) {
+      v_free(tvar[node->x.vdvar.vid]);
+      v_detach(tvar[node->x.vdvar.vid]);
+      tvar[node->x.vdvar.vid] = node->x.vdvar.vptr;
+    }
     break;
 
   case kwBYREF:
