@@ -70,18 +70,21 @@ func Stack(initial)
 end
 
 func Set
-  # TODO use hash key
   sub add(item)
-    local v = str(item.to_str())
-    self.items[v] = item
+    local v = item.to_str()
+    self.items[v] = 1
   end
   func contains(item)
-    local v = str(item.to_str())
-    return ismap(self.items[v])
+    local v = item.to_str()
+    return self.items[v] == 1
+  end
+  func size()
+    return len(self.items)
   end
   local result = {}
   result.items = {}
   result.add = @add
+  result.size = @size
   result.contains= @contains
   return result
 end
@@ -92,10 +95,8 @@ func KlotskiState()
   func init(depth)
     local state = {}
     state.grid = []
-    state.e1x = 0
-    state.e1y = 0
-    state.e2x = 0
-    state.e2y = 0
+    state.e1 = [0, 0]
+    state.e2 = [0, 0]
     state.depth = 0
     state.parent = 0
     state.children = []
@@ -106,37 +107,35 @@ func KlotskiState()
   end
 
   # create a child state from the parent
-  func getChild(x1, y1, x2, y2, i)
+  func child(e1, e2, i)
     local state = init(self.depth + 1)
     self.children << state
     state.grid = self.grid
     state.parent = self
-    state.e1x = self.e1x - x1
-    state.e1y = self.e1y - y1
-    state.e2x = self.e2x - x2
-    state.e2y = self.e2y - y2
-    state.grid[i][1] += (x1+x2)
-    state.grid[i][2] += (y1+y2)
-
-    # normalise the empty cells
-    local x1 = min(self.e1x, self.e2x)
-    local y1 = min(self.e1y, self.e2y)
-    local x2 = max(self.e1x, self.e2x)
-    local y2 = max(self.e1y, self.e2y)
-    state.e1y = x1
-    state.e1y = y1
-    state.e2y = x2
-    state.e2y = y2
+    if (isarray(e1)) then
+      state.e1 = state.grid[i][1]
+      state.grid[i][1] += e1
+      state.e2 = self.e2
+    else
+      state.e2 = state.grid[i][1]
+      state.grid[i][1] += e2
+      state.e1 = self.e1
+    endif
+    local j
+    for j = 0 to 9
+      if (state.e1 == state.grid[j][1]) then throw "e1"
+      if (state.e2 == state.grid[j][1]) then throw "e2"
+    next j
     return state
   end
-  
+
   # returns the hash value of the grid
   func hash
     local result = len(self.grid)
     local i
     for i = 0 to 9
-      local p = self.grid[i]
-      result += int(p[1]) + int(p[2])
+      local p = self.grid[i][1]
+      result += p[0] + p[1]
       result = result lshift 4
       result = result xor (result rshift 2)
     next i
@@ -145,14 +144,14 @@ func KlotskiState()
 
   # returns the current state as a string
   func to_str()
-    local result = "_"
+    local result = ""
     local i
     for i = 0 to 9
-      local p = self.grid[i]
-      result += p[1] + p[2]
+      local p = self.grid[i][1]
+      result += str(p[0]) + str(p[1])
     next i
     return result
-  end  
+  end
 
   # returns the successor states
   func moves()
@@ -160,57 +159,61 @@ func KlotskiState()
     local i
     for i = 0 to 9
       local p = self.grid[i]
-      call p[0], result, p[1], p[2], i
+      call p[0], result, p[1][0], p[1][1], i
     next p
     return result
   end
-  sub m_lr(byref r, x, y, i)
-    if (self.e1x + 1 = x && self.e1y = y) then
-      r << getChild(-1, 0, 0, 0, i)
-    elseif (self.e2x + 1 = x && self.e2y = y) then
-      r << getChild(0, 0, -1, 0, i)
-    elseif (self.e1x - 1 = x && self.e1y = y) then
-      r << getChild(1, 0, 0, 0, i)
-    elseif (self.e2x - 1 = x && self.e2y = y) then
-      r << getChild(0, 0, 1, 0, i)
+
+  sub m_lr(byref r, x, y, w, i)
+    if (x - 1 == self.e1[0] && y == self.e1[1]) then
+      r << child([-1, 0], 0, i)
+      elseif (x + w == self.e1[0] && y == self.e1[1]) then
+      r << child([1, 0], 0, i)
+    elseif (x - 1 == self.e2[0] && y == self.e2[1]) then
+      r << child(0, [-1, 0], i)
+    elseif (x + w == self.e2[0] && y == self.e2[1]) then
+      r << child(0, [1, 0], i)
     endif
   end
-  sub m_ud(byref r, x, y, i)
-    if (self.e1y + 1 = y && self.e1x = x) then
-      r << getChild(0, -1, 0, 0, i)
-    elseif (self.e2y + 1 = y && self.e2x = x) then
-      r << getChild(0, 0, 0, -1, i)
-    elseif (self.e1y - 1 = y && self.e1x = x) then
-      r << getChild(0, 1, 0, 0, i)
-    elseif (self.e2y - 1 = y && self.e2x = x) then
-      r << getChild(0, 0, 0, 1, i)
+  sub m_ud(byref r, x, y, h, i)
+    if (y - 1 == self.e1[1] && x == self.e1[0]) then
+      r << child([0, -1], 0, i)
+    elseif (y + h == self.e1[1] && x == self.e1[0]) then
+      r << child([0, 1], 0, i)
+    elseif (y - 1 == self.e2[1] && x == self.e2[0]) then
+      r << child(0, [0, -1], i)
+    elseif (y + h == self.e2[1] && x == self.e2[0]) then
+      r << child(0, [0, 1], i)
     endif
   end
   ' 1
   ' 1
   sub m1(byref r, x, y, i)
-    if (self.e1x == self.e2x && self.e1y + 1 == self.e2y) then
-      m_lr(r, x, y, i)
+    if (self.e1[0] == self.e2[0] && 1 == abs(self.e1[1] - self.e2[1])) then
+      m_lr(r, x, y, 1, i)
     endif
-    m_ud(r, x, y, i)
+    m_ud(r, x, y, 2, i)
   end
   ' 2,2
   ' 2,2
   sub m2(byref r, x, y, i)
-    m1(r, x, y, i)
-    m3(r, x, y, i)
+    if (self.e1[1] == self.e2[1] && 1 == abs(self.e1[0] - self.e2[0])) then
+      m_ud(r, x, y, 2, i)
+    elif (self.e1[0] == self.e2[1] && 1 == abs(self.e1[1] - self.e2[1])) then
+      m_lr(r, x, y, 2, i)
+    endif
   end
   ' 3,3
   sub m3(byref r, x, y, i)
-    if (self.e1y == self.e2y && self.e1x + 1 == self.e2x) then
-      m_ud(r, x, y, i)
+    if (self.e1[1] == self.e2[1] && 1 == abs(self.e1[0] - self.e2[0])) then
+      m_ud(r, x, y, 1, i)
     endif
-    m_lr(r, x, y, i)
+    m_lr(r, x, y, 2, i)
   end
   ' 4
   sub m4(byref r, x, y, i)
-    m_lr(r, x, y, i)
-    m_ud(r, x, y, i)
+    m_lr(r, x, y, 1, i)
+    m_ud(r, x, y, 1, i)
   end
 
   # [1, 2, 2, 3]
@@ -219,20 +222,18 @@ func KlotskiState()
   # [4, 7, 8, 6]
   # [9, 0, 0, 10]
   local state = init(0)
-  state.e1x = 1
-  state.e1y = 4
-  state.e2x = 2
-  state.e2y = 4
-  state.grid << [@m1, 0, 0]
-  state.grid << [@m2, 1, 0]
-  state.grid << [@m1, 3, 0]
-  state.grid << [@m1, 0, 2]
-  state.grid << [@m3, 1, 2]
-  state.grid << [@m1, 3, 2]
-  state.grid << [@m4, 1, 3]
-  state.grid << [@m4, 2, 3]
-  state.grid << [@m4, 0, 4]
-  state.grid << [@m4, 3, 4]
+  state.e1 = [1,4]
+  state.e2 = [2,4]
+  state.grid << [@m1, [0, 0]]
+  state.grid << [@m2, [1, 0]]
+  state.grid << [@m1, [3, 0]]
+  state.grid << [@m1, [0, 2]]
+  state.grid << [@m3, [1, 2]]
+  state.grid << [@m1, [3, 2]]
+  state.grid << [@m4, [1, 3]]
+  state.grid << [@m4, [2, 3]]
+  state.grid << [@m4, [0, 4]]
+  state.grid << [@m4, [3, 4]]
   return state
 end
 
@@ -241,8 +242,11 @@ func getInitialState()
 end
 
 func isGoal(state)
-  local goal = [0,1,2,3,4,5,6,7,8]
-  return goal == state.grid
+  'local goal = [0,1,2,3,4,5,6,7,8]
+  'return goal == state.grid
+  show_grid(state)
+  showpage
+  return false
 end
 
 func getPath(state)
@@ -265,7 +269,7 @@ end
 # uses BreadthFirstSearch
 sub process()
   local initialState = getInitialState()
-  local fringe = Stack(initialState)'Queue(initialState)
+  local fringe = Queue(initialState)
   local explored = Set()
   local state, nextState
 
@@ -276,10 +280,10 @@ sub process()
       local p = getPath(state)
       return
     endif
-    for nextState in moves(state)
+    for nextState in state.moves()
       if (nextState != Nil and not explored.contains(nextState)) then
         fringe.push(nextState)
-        explored.add(state)
+        explored.add(nextState)
       endif
     next nextState
   wend
@@ -287,16 +291,15 @@ sub process()
 end
 
 sub show_grid(s)
-  local i
-  local bs = 50
+  local i,p,x,y,w,h
+  local bs = min(xmax,ymax)/10
   local offs = 10
   cls
   for i = 0 to 9
-    local p = s.grid[i]
-    local x = p[1]
-    local y = p[2]
-    local w = 1
-    local h = 1
+    p = s.grid[i]
+    [x,y] = p[1]
+    w = 1
+    h = 1
     select case i
     case 0,2,3,5
       h = 2
@@ -314,17 +317,23 @@ sub show_grid(s)
   next i
 end
 
-s = getInitialState()
-show_grid(s)
-pause
+'s = getInitialState()
 'print s.to_str()
 'print s.hash()
-moves = s.moves()
-for m in moves
-  show_grid(m)
-  pause
-next m
-'process()
+'show_grid(s)
+'pause
+'moves = s.moves()
+'for m in moves
+'  show_grid(m)
+'  pause
+'  moves2 = m.moves()
+'  for m2 in moves2
+'    show_grid(m2)
+'    pause
+'  next m2
+'next m
+
+process()
 
 rem -------- TESTS --------
 sub testSet
