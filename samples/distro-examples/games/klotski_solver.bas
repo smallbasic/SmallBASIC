@@ -107,25 +107,34 @@ func KlotskiState()
   end
 
   # create a child state from the parent
-  func child(e1, e2, i)
+  func child(i, e1, e2, t)
     local state = init(self.depth + 1)
     self.children << state
     state.grid = self.grid
-    state.parent = self
+    state.parent = self.grid
     if (isarray(e1)) then
-      state.e1 = state.grid[i][1]
-      state.grid[i][1] += e1
+      state.e1 = state.grid[i]
+      state.grid[i] += e1
       state.e2 = self.e2
     else
-      state.e2 = state.grid[i][1]
-      state.grid[i][1] += e2
+      state.e2 = state.grid[i]
+      state.grid[i] += e2
       state.e1 = self.e1
     endif
-    local j
-    for j = 0 to 9
-      if (state.e1 == state.grid[j][1]) then throw "e1"
-      if (state.e2 == state.grid[j][1]) then throw "e2"
-    next j
+    if (t == 1) then
+      rem double left-right
+      state.e2 = [state.e1[0], state.e1[1] + 1]
+    elseif (t == 2) then
+      rem double up-down
+      state.e2 = [state.e1[0] + 1, state.e1[1]]
+    endif
+    if (state.e1[0] == state.e2[0] and state.e1[1] > state.e2[1]) then
+      'vertical pair - ensure e1 < e2
+      swap state.e1, state.e2
+    elseif (state.e1[1] == state.e2[1] and state.e1[0] > state.e2[0]) then
+      'horizonal pair - ensure e1 < e2
+      swap state.e1, state.e2
+    endif
     return state
   end
 
@@ -134,7 +143,7 @@ func KlotskiState()
     local result = len(self.grid)
     local i
     for i = 0 to 9
-      local p = self.grid[i][1]
+      local p = self.grid[i]
       result += p[0] + p[1]
       result = result lshift 4
       result = result xor (result rshift 2)
@@ -147,8 +156,8 @@ func KlotskiState()
     local result = ""
     local i
     for i = 0 to 9
-      local p = self.grid[i][1]
-      result += str(p[0]) + str(p[1])
+      local p = self.grid[i]
+      result += str(10*p[0] + p[1])
     next i
     return result
   end
@@ -156,64 +165,72 @@ func KlotskiState()
   # returns the successor states
   func moves()
     local result = []
-    local i
+    local i,x,y
     for i = 0 to 9
-      local p = self.grid[i]
-      call p[0], result, p[1][0], p[1][1], i
-    next p
+      [x,y] = self.grid[i]
+      select case i
+      case 0,2,3,5
+        m1(result, i, x, y)
+      case 1
+        m2(result, i, x, y)
+      case 4
+        m3(result, i, x, y)
+      case else
+        m_lr(result, i, x, y, 1, 0)
+        m_ud(result, i, x, y, 1, 0)
+      end select
+    next i
     return result
   end
 
-  sub m_lr(byref r, x, y, w, i)
+  sub m_lr(byref r, i, x, y, w, t)
     if (x - 1 == self.e1[0] && y == self.e1[1]) then
-      r << child([-1, 0], 0, i)
-      elseif (x + w == self.e1[0] && y == self.e1[1]) then
-      r << child([1, 0], 0, i)
-    elseif (x - 1 == self.e2[0] && y == self.e2[1]) then
-      r << child(0, [-1, 0], i)
+      r << child(i, [-1, 0], 0, t)
+    elseif (x + w == self.e1[0] && y == self.e1[1]) then
+      r << child(i, [1, 0], 0, t)
+    endif
+    if (x - 1 == self.e2[0] && y == self.e2[1]) then
+      r << child(i, 0, [-1, 0], t)
     elseif (x + w == self.e2[0] && y == self.e2[1]) then
-      r << child(0, [1, 0], i)
+      r << child(i, 0, [1, 0], t)
     endif
   end
-  sub m_ud(byref r, x, y, h, i)
+  sub m_ud(byref r, i, x, y, h, t)
     if (y - 1 == self.e1[1] && x == self.e1[0]) then
-      r << child([0, -1], 0, i)
+      r << child(i, [0, -1], 0, t)
     elseif (y + h == self.e1[1] && x == self.e1[0]) then
-      r << child([0, 1], 0, i)
-    elseif (y - 1 == self.e2[1] && x == self.e2[0]) then
-      r << child(0, [0, -1], i)
+      r << child(i, [0, 1], 0, t)
+    endif
+    if (y - 1 == self.e2[1] && x == self.e2[0]) then
+      r << child(i, 0, [0, -1], t)
     elseif (y + h == self.e2[1] && x == self.e2[0]) then
-      r << child(0, [0, 1], i)
+      r << child(i, 0, [0, 1], t)
     endif
   end
   ' 1
   ' 1
-  sub m1(byref r, x, y, i)
+  sub m1(byref r, i, x, y)
     if (self.e1[0] == self.e2[0] && 1 == abs(self.e1[1] - self.e2[1])) then
-      m_lr(r, x, y, 1, i)
+      m_lr(r, i, x, y, 1, 1)
     endif
-    m_ud(r, x, y, 2, i)
+    m_ud(r, i, x, y, 2, 0)
   end
   ' 2,2
   ' 2,2
-  sub m2(byref r, x, y, i)
+  sub m2(byref r, i, x, y)
     if (self.e1[1] == self.e2[1] && 1 == abs(self.e1[0] - self.e2[0])) then
-      m_ud(r, x, y, 2, i)
-    elif (self.e1[0] == self.e2[1] && 1 == abs(self.e1[1] - self.e2[1])) then
-      m_lr(r, x, y, 2, i)
+      m_ud(r, i, x, y, 2, 2)
+    endif
+    if (self.e1[0] == self.e2[0] && 1 == abs(self.e1[1] - self.e2[1])) then
+      m_lr(r, i, x, y, 2, 1)
     endif
   end
   ' 3,3
-  sub m3(byref r, x, y, i)
+  sub m3(byref r, i, x, y)
     if (self.e1[1] == self.e2[1] && 1 == abs(self.e1[0] - self.e2[0])) then
-      m_ud(r, x, y, 1, i)
+      m_ud(r, i, x, y, 1, 2)
     endif
-    m_lr(r, x, y, 2, i)
-  end
-  ' 4
-  sub m4(byref r, x, y, i)
-    m_lr(r, x, y, 1, i)
-    m_ud(r, x, y, 1, i)
+    m_lr(r, i, x, y, 2, 0)
   end
 
   # [1, 2, 2, 3]
@@ -224,16 +241,16 @@ func KlotskiState()
   local state = init(0)
   state.e1 = [1,4]
   state.e2 = [2,4]
-  state.grid << [@m1, [0, 0]]
-  state.grid << [@m2, [1, 0]]
-  state.grid << [@m1, [3, 0]]
-  state.grid << [@m1, [0, 2]]
-  state.grid << [@m3, [1, 2]]
-  state.grid << [@m1, [3, 2]]
-  state.grid << [@m4, [1, 3]]
-  state.grid << [@m4, [2, 3]]
-  state.grid << [@m4, [0, 4]]
-  state.grid << [@m4, [3, 4]]
+  state.grid << [0,0]
+  state.grid << [1,0]
+  state.grid << [3,0]
+  state.grid << [0,2]
+  state.grid << [1,2]
+  state.grid << [3,2]
+  state.grid << [1,3]
+  state.grid << [2,3]
+  state.grid << [0,4]
+  state.grid << [3,4]
   return state
 end
 
@@ -246,6 +263,7 @@ func isGoal(state)
   'return goal == state.grid
   show_grid(state)
   showpage
+'  pause
   return false
 end
 
@@ -291,13 +309,13 @@ sub process()
 end
 
 sub show_grid(s)
-  local i,p,x,y,w,h
-  local bs = min(xmax,ymax)/10
-  local offs = 10
+  local i,x,y,w,h
+  local bs = min(xmax,ymax)/8
+  local xoffs = 60
+  local yoffs = 5
   cls
   for i = 0 to 9
-    p = s.grid[i]
-    [x,y] = p[1]
+    [x,y] = s.grid[i]
     w = 1
     h = 1
     select case i
@@ -309,11 +327,12 @@ sub show_grid(s)
     case 4
       w = 2
     end select
-    rx = offs + (x * bs)
-    ry = offs + (y * bs)
+    rx = xoffs + (x * bs)
+    ry = yoffs + (y * bs)
     rw = rx + (w * bs)
     rh = ry + (h * bs)
     rect rx, ry, rw, rh, i + 1 filled
+    at rx,ry: print s.grid[i]
   next i
 end
 
