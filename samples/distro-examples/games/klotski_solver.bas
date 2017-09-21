@@ -121,21 +121,19 @@ func KlotskiState(grid, e1, e2)
       state.e1 = state.grid[i]
       state.grid[i] += e1
       state.e2 = self.e2
-      # handle double block moving up or left
-      if (e1[1] < 0 and i in[0,1,2,3,5]) then
-        state.e1[1]++
-      elif (e1[0] < 0 and i in [1,4]) then
-        state.e1[0]++
+      if (e1[1] < 0 and i in [0,2,3,4,5]) then
+        state.e1[1]++ # double height moving up
+      elif (e1[0] < 0 and i in [0,1]) then
+        state.e1[0]++ # double width moving left
       endif
     else
       state.e2 = state.grid[i]
       state.grid[i] += e2
       state.e1 = self.e1
-      # handle double block moving up or left
-      if (e2[1] < 0 and i in[0,1,2,3,5]) then
-        state.e2[1]++  # moving up
-      elif (e2[0] < 0 and i in [1,4]) then
-        state.e2[0]++  # moving left
+      if (e2[1] < 0 and i in [0,2,3,4,5]) then
+        state.e2[1]++  # double height moving up
+      elif (e2[0] < 0 and i in [0,1]) then
+        state.e2[0]++  # double width moving left
       endif
     endif
     if (t == t_lr) then
@@ -153,6 +151,7 @@ func KlotskiState(grid, e1, e2)
       swap state.e1, state.e2
     endif
 
+    # validate moves
     local j
     for j = 0 to 9
       if (state.grid[j]==state.e1) then
@@ -171,7 +170,7 @@ func KlotskiState(grid, e1, e2)
       endif
     next j
 
-    if (i== 1) then
+    if (i== 0) then
       'logprint self.to_str()
       'logprint "self : " + str(self.e1) + " " + str(self.e2)
       'logprint "empty: " + str(state.e1) + " " + str(state.e2)
@@ -218,12 +217,12 @@ func KlotskiState(grid, e1, e2)
     for i = 0 to 9
       [x,y] = self.grid[i]
       select case i
-      case 0,2,3,5
-        m1(result, i, x, y)
+      case 0
+        m0(result, i, x, y)
       case 1
+        m1(result, i, x, y)
+      case 2,3,4,5
         m2(result, i, x, y)
-      case 4
-        m3(result, i, x, y)
       case else
         m_lr(result, i, x, y, 1, 0)
         m_ud(result, i, x, y, 1, 0)
@@ -255,17 +254,9 @@ func KlotskiState(grid, e1, e2)
       r << child(i, 0, [0, 1], t)
     endif
   end
-  ' 1
-  ' 1
-  sub m1(byref r, i, x, y)
-    if (self.e1[0] == self.e2[0] && y == self.e1[1] && y + 1 == self.e2[1]) then
-      m_lr(r, i, x, y, 1, t_lr)
-    endif
-    m_ud(r, i, x, y, 2, 0)
-  end
   ' 2,2
   ' 2,2
-  sub m2(byref r, i, x, y)
+  sub m0(byref r, i, x, y)
     if (self.e1[1] == self.e2[1] && x == self.e1[0] && x + 1 == self.e2[0]) then
       m_ud(r, i, x, y, 2, t_ud)
     endif
@@ -274,11 +265,19 @@ func KlotskiState(grid, e1, e2)
     endif
   end
   ' 3,3
-  sub m3(byref r, i, x, y)
+  sub m1(byref r, i, x, y)
     if (self.e1[1] == self.e2[1] && x == self.e1[0] && x + 1 == self.e2[0]) then
       m_ud(r, i, x, y, 1, t_ud)
     endif
     m_lr(r, i, x, y, 2, 0)
+  end
+  ' 1
+  ' 1
+  sub m2(byref r, i, x, y)
+    if (self.e1[0] == self.e2[0] && y == self.e1[1] && y + 1 == self.e2[1]) then
+      m_lr(r, i, x, y, 1, t_lr)
+    endif
+    m_ud(r, i, x, y, 2, 0)
   end
 
   local state = init(0)
@@ -297,16 +296,16 @@ func getInitialState()
   local e1 = [1,4]
   local e2 = [2,4]
   local grid = []
-  grid << [0,0]
-  grid << [1,0]
-  grid << [3,0]
-  grid << [0,2]
-  grid << [1,2]
-  grid << [3,2]
-  grid << [1,3]
-  grid << [2,3]
-  grid << [0,4]
-  grid << [3,4]
+  grid << [1,0] '2x2
+  grid << [1,2] '2x1
+  grid << [0,0] '1x2
+  grid << [3,0] '1x2
+  grid << [0,2] '1x2
+  grid << [3,2] '1x2
+  grid << [1,3] '1x1
+  grid << [2,3] '1x1
+  grid << [0,4] '1x1
+  grid << [3,4] '1x1
   return KlotskiState(grid, e1, e2)
 end
 
@@ -315,7 +314,9 @@ func isGoal(state)
   'return goal == state.grid
   show_grid(state)
 '  pause
-  return false
+  local x,y
+  [x,y] = state.grid[0]
+  return y == 2
 end
 
 func getPath(state)
@@ -386,13 +387,13 @@ sub show_grid(s)
     w = 1
     h = 1
     select case i
-    case 0,2,3,5
+    case 0
+      w = 2
       h = 2
     case 1
       w = 2
+    case 2,3,4,5
       h = 2
-    case 4
-      w = 2
     end select
     show_cell(x,y,w,h,i)
   next i
