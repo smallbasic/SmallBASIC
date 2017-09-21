@@ -95,7 +95,6 @@ end
 # Represents the state of the game at a given turn, including
 # parent and child nodes.
 func KlotskiState(grid, e1, e2)
-
   func init(depth)
     local state = {}
     state.grid = []
@@ -125,7 +124,7 @@ func KlotskiState(grid, e1, e2)
       # handle double block moving up or left
       if (e1[1] < 0 and i in[0,1,2,3,5]) then
         state.e1[1]++
-      elif (e1[0] < 0 and i == 4) then
+      elif (e1[0] < 0 and i in [1,4]) then
         state.e1[0]++
       endif
     else
@@ -135,7 +134,7 @@ func KlotskiState(grid, e1, e2)
       # handle double block moving up or left
       if (e2[1] < 0 and i in[0,1,2,3,5]) then
         state.e2[1]++  # moving up
-      elif (e2[0] < 0 and i == 4) then
+      elif (e2[0] < 0 and i in [1,4]) then
         state.e2[0]++  # moving left
       endif
     endif
@@ -168,33 +167,33 @@ func KlotskiState(grid, e1, e2)
         pause
         show_grid(state)
         pause
-
         throw "e2"
       endif
     next j
 
-    'if (i== 1 or i ==4) then
-    '  logprint "self : " + str(self.e1) + " " + str(self.e2)
-    '  logprint "empty: " + str(state.e1) + " " + str(state.e2)
-    '  logprint "e1="+str(e1)
-    '  logprint "e2="+str(e2)
-    '  logprint "mv_up="+mv_up
-    '  logprint state.grid[i]
-    '  logprint ""
-    '  show_grid(state)
-    '  pause
-    '  throw "e"
-    ' endif
+    if (i== 1) then
+      'logprint self.to_str()
+      'logprint "self : " + str(self.e1) + " " + str(self.e2)
+      'logprint "empty: " + str(state.e1) + " " + str(state.e2)
+      'logprint "e1="+str(e1)
+      'logprint "e2="+str(e2)
+      'logprint state.grid[i]
+      'logprint ""
+      'show_grid(self)
+      'pause
+      'show_grid(state)
+      'pause
+    endif
     return state
   end
 
   # returns the hash value of the grid
   func hash
     local result = len(self.grid)
-    local i
+    local i,x,y
     for i = 0 to 9
-      local p = self.grid[i]
-      result += p[0] + p[1]
+      [x,y] = self.grid[i]
+      result += x+y
       result = result lshift 4
       result = result xor (result rshift 2)
     next i
@@ -204,10 +203,10 @@ func KlotskiState(grid, e1, e2)
   # returns the current state as a string
   func to_str()
     local result = ""
-    local i
+    local i,x,y
     for i = 0 to 9
-      local p = self.grid[i]
-      result += str(10*p[0] + p[1])
+      [x,y] = self.grid[i]
+      result += str(x) + str(y)
     next i
     return result
   end
@@ -232,7 +231,6 @@ func KlotskiState(grid, e1, e2)
     next i
     return result
   end
-
   sub m_lr(byref r, i, x, y, w, t)
     if (x - 1 == self.e1[0] && y == self.e1[1]) then
       r << child(i, [-1, 0], 0, t)
@@ -260,7 +258,7 @@ func KlotskiState(grid, e1, e2)
   ' 1
   ' 1
   sub m1(byref r, i, x, y)
-    if (self.e1[0] == self.e2[0] && y == self.e1[1] && self.e1[1] + 1 == self.e2[1]) then
+    if (self.e1[0] == self.e2[0] && y == self.e1[1] && y + 1 == self.e2[1]) then
       m_lr(r, i, x, y, 1, t_lr)
     endif
     m_ud(r, i, x, y, 2, 0)
@@ -268,16 +266,16 @@ func KlotskiState(grid, e1, e2)
   ' 2,2
   ' 2,2
   sub m2(byref r, i, x, y)
-    if (self.e1[1] == self.e2[1] && x == self.e1[0] && self.e1[0] + 1 == self.e2[0]) then
+    if (self.e1[1] == self.e2[1] && x == self.e1[0] && x + 1 == self.e2[0]) then
       m_ud(r, i, x, y, 2, t_ud)
     endif
-    if (self.e1[0] == self.e2[0] && y == self.e1[1] && self.e1[1] + 1 == self.e2[1]) then
+    if (self.e1[0] == self.e2[0] && y == self.e1[1] && y + 1 == self.e2[1]) then
       m_lr(r, i, x, y, 2, t_lr)
     endif
   end
   ' 3,3
   sub m3(byref r, i, x, y)
-    if (self.e1[1] == self.e2[1] && x == self.e1[0] && self.e1[0] + 1 == self.e2[0]) then
+    if (self.e1[1] == self.e2[1] && x == self.e1[0] && x + 1 == self.e2[0]) then
       m_ud(r, i, x, y, 1, t_ud)
     endif
     m_lr(r, i, x, y, 2, 0)
@@ -337,22 +335,23 @@ func getPath(state)
   return path
 end
 
-# uses BreadthFirstSearch
+# Queue => Breadth first search
+# Stack => Depth first search
 sub process()
   local initialState = getInitialState()
-  local fringe = Queue(initialState)
+  local fringe = Stack(initialState)
   local explored = Set()
-  local state, nextState
+  local state, nextState,p
 
   explored.add(initialState)
   while (not fringe.is_empty())
     state = fringe.pop()
     if isGoal(state) then
-      local p = getPath(state)
+      p = getPath(state)
       return
     endif
     for nextState in state.moves()
-      if (nextState != Nil and not explored.contains(nextState)) then
+      if (not explored.contains(nextState)) then
         fringe.push(nextState)
         explored.add(nextState)
       endif
@@ -403,22 +402,6 @@ sub show_grid(s)
   show_cell(x,y,1,1,-1)
   showpage
 end
-
-'s = getInitialState()
-'print s.to_str()
-'print s.hash()
-'show_grid(s)
-'pause
-'moves = s.moves()
-'for m in moves
-'  show_grid(m)
-'  pause
-'  moves2 = m.moves()
-'  for m2 in moves2
-'    show_grid(m2)
-'    pause
-'  next m2
-'next m
 
 process()
 
