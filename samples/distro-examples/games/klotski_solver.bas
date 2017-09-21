@@ -1,3 +1,6 @@
+const t_lr = 1
+const t_ud = 2
+
 # A container with a first-in-first-out (FIFO) queuing policy.
 # push(3,2,1) -> pop(3)
 # 1
@@ -91,7 +94,8 @@ end
 
 # Represents the state of the game at a given turn, including
 # parent and child nodes.
-func KlotskiState()
+func KlotskiState(grid, e1, e2)
+
   func init(depth)
     local state = {}
     state.grid = []
@@ -111,30 +115,76 @@ func KlotskiState()
     local state = init(self.depth + 1)
     self.children << state
     state.grid = self.grid
-    state.parent = self.grid
+    state.parent.grid = self.grid
+    state.parent.e1 = self.e1
+    state.parent.e2 = self.e2
     if (isarray(e1)) then
       state.e1 = state.grid[i]
       state.grid[i] += e1
       state.e2 = self.e2
+      # handle double block moving up or left
+      if (e1[1] < 0 and i in[0,1,2,3,5]) then
+        state.e1[1]++
+      elif (e1[0] < 0 and i == 4) then
+        state.e1[0]++
+      endif
     else
       state.e2 = state.grid[i]
       state.grid[i] += e2
       state.e1 = self.e1
+      # handle double block moving up or left
+      if (e2[1] < 0 and i in[0,1,2,3,5]) then
+        state.e2[1]++  # moving up
+      elif (e2[0] < 0 and i == 4) then
+        state.e2[0]++  # moving left
+      endif
     endif
-    if (t == 1) then
-      rem double left-right
+    if (t == t_lr) then
+      # vertical double left-right
       state.e2 = [state.e1[0], state.e1[1] + 1]
-    elseif (t == 2) then
-      rem double up-down
+    elseif (t == t_ud) then
+      # horizontal double up-down
       state.e2 = [state.e1[0] + 1, state.e1[1]]
     endif
     if (state.e1[0] == state.e2[0] and state.e1[1] > state.e2[1]) then
-      'vertical pair - ensure e1 < e2
+      # vertical pair - ensure e1 < e2
       swap state.e1, state.e2
     elseif (state.e1[1] == state.e2[1] and state.e1[0] > state.e2[0]) then
-      'horizonal pair - ensure e1 < e2
+      # horizonal pair - ensure e1 < e2
       swap state.e1, state.e2
     endif
+
+    local j
+    for j = 0 to 9
+      if (state.grid[j]==state.e1) then
+        show_grid(self)
+        pause
+        show_grid(state)
+        pause
+        throw "e1"
+      endif
+      if (state.grid[j]==state.e2) then
+        show_grid(self)
+        pause
+        show_grid(state)
+        pause
+
+        throw "e2"
+      endif
+    next j
+
+    'if (i== 1 or i ==4) then
+    '  logprint "self : " + str(self.e1) + " " + str(self.e2)
+    '  logprint "empty: " + str(state.e1) + " " + str(state.e2)
+    '  logprint "e1="+str(e1)
+    '  logprint "e2="+str(e2)
+    '  logprint "mv_up="+mv_up
+    '  logprint state.grid[i]
+    '  logprint ""
+    '  show_grid(state)
+    '  pause
+    '  throw "e"
+    ' endif
     return state
   end
 
@@ -210,59 +260,62 @@ func KlotskiState()
   ' 1
   ' 1
   sub m1(byref r, i, x, y)
-    if (self.e1[0] == self.e2[0] && 1 == abs(self.e1[1] - self.e2[1])) then
-      m_lr(r, i, x, y, 1, 1)
+    if (self.e1[0] == self.e2[0] && y == self.e1[1] && self.e1[1] + 1 == self.e2[1]) then
+      m_lr(r, i, x, y, 1, t_lr)
     endif
     m_ud(r, i, x, y, 2, 0)
   end
   ' 2,2
   ' 2,2
   sub m2(byref r, i, x, y)
-    if (self.e1[1] == self.e2[1] && 1 == abs(self.e1[0] - self.e2[0])) then
-      m_ud(r, i, x, y, 2, 2)
+    if (self.e1[1] == self.e2[1] && x == self.e1[0] && self.e1[0] + 1 == self.e2[0]) then
+      m_ud(r, i, x, y, 2, t_ud)
     endif
-    if (self.e1[0] == self.e2[0] && 1 == abs(self.e1[1] - self.e2[1])) then
-      m_lr(r, i, x, y, 2, 1)
+    if (self.e1[0] == self.e2[0] && y == self.e1[1] && self.e1[1] + 1 == self.e2[1]) then
+      m_lr(r, i, x, y, 2, t_lr)
     endif
   end
   ' 3,3
   sub m3(byref r, i, x, y)
-    if (self.e1[1] == self.e2[1] && 1 == abs(self.e1[0] - self.e2[0])) then
-      m_ud(r, i, x, y, 1, 2)
+    if (self.e1[1] == self.e2[1] && x == self.e1[0] && self.e1[0] + 1 == self.e2[0]) then
+      m_ud(r, i, x, y, 1, t_ud)
     endif
     m_lr(r, i, x, y, 2, 0)
   end
 
+  local state = init(0)
+  state.e1 = e1
+  state.e2 = e2
+  state.grid = grid
+  return state
+end
+
+func getInitialState()
   # [1, 2, 2, 3]
   # [1, 2, 2, 3]
   # [4, 5, 5, 6]
   # [4, 7, 8, 6]
   # [9, 0, 0, 10]
-  local state = init(0)
-  state.e1 = [1,4]
-  state.e2 = [2,4]
-  state.grid << [0,0]
-  state.grid << [1,0]
-  state.grid << [3,0]
-  state.grid << [0,2]
-  state.grid << [1,2]
-  state.grid << [3,2]
-  state.grid << [1,3]
-  state.grid << [2,3]
-  state.grid << [0,4]
-  state.grid << [3,4]
-  return state
-end
-
-func getInitialState()
-  return KlotskiState()
+  local e1 = [1,4]
+  local e2 = [2,4]
+  local grid = []
+  grid << [0,0]
+  grid << [1,0]
+  grid << [3,0]
+  grid << [0,2]
+  grid << [1,2]
+  grid << [3,2]
+  grid << [1,3]
+  grid << [2,3]
+  grid << [0,4]
+  grid << [3,4]
+  return KlotskiState(grid, e1, e2)
 end
 
 func isGoal(state)
   'local goal = [0,1,2,3,4,5,6,7,8]
   'return goal == state.grid
   show_grid(state)
-  showpage
 '  pause
   return false
 end
@@ -310,9 +363,24 @@ end
 
 sub show_grid(s)
   local i,x,y,w,h
-  local bs = min(xmax,ymax)/8
+  local bs = min(xmax,ymax)/7
   local xoffs = 60
   local yoffs = 5
+
+  sub show_cell(x,y,w,h,i)
+    local rx = xoffs + (x * bs)
+    local ry = yoffs + (y * bs)
+    local rw = rx + (w * bs)
+    local rh = ry + (h * bs)
+    if (i==-1) then
+      rect rx+1, ry+1, rw-2, rh-2,1
+      at rx+bs/3,ry+bs/3: print [x,y]
+    else
+      rect rx, ry, rw, rh, i + 1 filled
+      at rx,ry: print [x,y]
+    endif
+  end
+
   cls
   for i = 0 to 9
     [x,y] = s.grid[i]
@@ -327,13 +395,13 @@ sub show_grid(s)
     case 4
       w = 2
     end select
-    rx = xoffs + (x * bs)
-    ry = yoffs + (y * bs)
-    rw = rx + (w * bs)
-    rh = ry + (h * bs)
-    rect rx, ry, rw, rh, i + 1 filled
-    at rx,ry: print s.grid[i]
+    show_cell(x,y,w,h,i)
   next i
+  [x,y] = s.e1
+  show_cell(x,y,1,1,-1)
+  [x,y] = s.e2
+  show_cell(x,y,1,1,-1)
+  showpage
 end
 
 's = getInitialState()
