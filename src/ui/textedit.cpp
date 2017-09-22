@@ -773,6 +773,26 @@ bool TextEditInput::find(const char *word, bool next) {
   return result;
 }
 
+int TextEditInput::getSelectionRow() {
+  int result;
+  if (_state.select_start != _state.select_end) {
+    int pos = MIN(_state.select_start, _state.select_end);
+    int len = _buf._len;
+    result = 0;
+    StbTexteditRow r;
+    for (int i = 0; i < len; i += r.num_chars) {
+      layout(&r, i);
+      if (pos >= i && pos < i + r.num_chars) {
+        break;
+      }
+      result++;
+    }
+  } else {
+    result = 0;
+  }
+  return result;
+}
+
 char *TextEditInput::getTextSelection() {
   char *result;
   if (_state.select_start != _state.select_end) {
