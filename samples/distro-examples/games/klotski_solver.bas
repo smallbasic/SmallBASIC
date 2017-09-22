@@ -1,5 +1,5 @@
-const t_lr = 1
-const t_ud = 2
+const gw = 4
+const gh = 5
 
 # A container with a first-in-first-out (FIFO) queuing policy.
 # push(3,2,1) -> pop(3)
@@ -94,94 +94,30 @@ end
 
 # Represents the state of the game at a given turn, including
 # parent and child nodes.
-func KlotskiState(grid, e1, e2)
+func KlotskiState(grid)
   func init(depth)
     local state = {}
     state.grid = []
-    state.e1 = [0, 0]
-    state.e2 = [0, 0]
     state.depth = 0
     state.parent = 0
     state.children = []
     state.moves = @moves
     state.hash = @hash
     state.to_str = @to_str
+    state.get_empty = @get_empty
     return state
   end
 
   # create a child state from the parent
-  func child(i, e1, e2, t)
+  func child(i, mv_offs)
     local state = init(self.depth + 1)
-    self.children << state
     state.grid = self.grid
+    state.grid[i] += mv_offs
     state.parent.grid = self.grid
-    state.parent.e1 = self.e1
-    state.parent.e2 = self.e2
-    if (isarray(e1)) then
-      state.e1 = state.grid[i]
-      state.grid[i] += e1
-      state.e2 = self.e2
-      if (e1[1] < 0 and i in [0,2,3,4,5]) then
-        state.e1[1]++ # double height moving up
-      elif (e1[0] < 0 and i in [0,1]) then
-        state.e1[0]++ # double width moving left
-      endif
-    else
-      state.e2 = state.grid[i]
-      state.grid[i] += e2
-      state.e1 = self.e1
-      if (e2[1] < 0 and i in [0,2,3,4,5]) then
-        state.e2[1]++  # double height moving up
-      elif (e2[0] < 0 and i in [0,1]) then
-        state.e2[0]++  # double width moving left
-      endif
-    endif
-    if (t == t_lr) then
-      # vertical double left-right
-      state.e2 = [state.e1[0], state.e1[1] + 1]
-    elseif (t == t_ud) then
-      # horizontal double up-down
-      state.e2 = [state.e1[0] + 1, state.e1[1]]
-    endif
-    if (state.e1[0] == state.e2[0] and state.e1[1] > state.e2[1]) then
-      # vertical pair - ensure e1 < e2
-      swap state.e1, state.e2
-    elseif (state.e1[1] == state.e2[1] and state.e1[0] > state.e2[0]) then
-      # horizonal pair - ensure e1 < e2
-      swap state.e1, state.e2
-    endif
-
-    # validate moves
-    local j
-    for j = 0 to 9
-      if (state.grid[j]==state.e1) then
-        show_grid(self)
-        pause
-        show_grid(state)
-        pause
-        throw "e1"
-      endif
-      if (state.grid[j]==state.e2) then
-        show_grid(self)
-        pause
-        show_grid(state)
-        pause
-        throw "e2"
-      endif
-    next j
-
-    if (i== 0) then
-      'logprint self.to_str()
-      'logprint "self : " + str(self.e1) + " " + str(self.e2)
-      'logprint "empty: " + str(state.e1) + " " + str(state.e2)
-      'logprint "e1="+str(e1)
-      'logprint "e2="+str(e2)
-      'logprint state.grid[i]
-      'logprint ""
-      'show_grid(self)
-      'pause
-      'show_grid(state)
-      'pause
+    self.children << state.grid
+    if (i==0) then
+      show_grid(state)
+      pause
     endif
     return state
   end
@@ -210,74 +146,110 @@ func KlotskiState(grid, e1, e2)
     return result
   end
 
-  # returns the successor states
-  func moves()
-    local result = []
+  func get_used()
     local i,x,y
+    dim used(3,4)
     for i = 0 to 9
       [x,y] = self.grid[i]
       select case i
       case 0
-        m0(result, i, x, y)
+        used[x,  y] = 1
+        used[x+1,y] = 1
+        used[x,  y+1] = 1
+        used[x+1,y+1] = 1
       case 1
-        m1(result, i, x, y)
+        used[x,  y] = 1
+        used[x+1,y] = 1
       case 2,3,4,5
-        m2(result, i, x, y)
+        used[x,  y] = 1
+        used[x,  y+1] = 1
       case else
-        m_lr(result, i, x, y, 1, 0)
-        m_ud(result, i, x, y, 1, 0)
+        used[x,  y] = 1
+      end select
+    next i
+    return used
+  end
+
+  func get_empty()
+    local used = get_used()
+    local w = gw - 1
+    local h = gh - 1
+    local e1 = 0
+    local e2 = 0
+    for x = 0 to w
+      for y = 0 to h
+        if (used[x,y] == 0) then
+          if (isarray(e1) == 0) then
+            e1 = [x,y]
+          elif (isarray(e2) == 0) then
+            e2 = [x,y]
+          else
+            throw "e"
+          endif
+        endif
+      next y
+    next x
+    return [e1,e2]
+  end
+
+  # returns the successor states
+  func moves()
+    local result = []
+    local u = get_used()
+    local i,x,y
+
+    for i = 0 to 9
+      [x,y] = self.grid[i]
+      select case i
+      case 0
+        ' 2,2
+        ' 2,2
+        m_ud2(result, u, i, x, y)
+        m_lr2(result, u, i, x, y)
+      case 1
+        ' 3,3
+        m_ud2(result, u, i, x, y)
+        m_lr(result, u, i, x, y, 2)
+      case 2,3,4,5
+        ' 4
+        ' 4
+        m_lr2(result, u, i, x, y)
+        m_ud(result, u, i, x, y, 2)
+      case else
+        m_lr(result, u, i, x, y, 1)
+        m_ud(result, u, i, x, y, 1)
       end select
     next i
     return result
   end
-  sub m_lr(byref r, i, x, y, w, t)
-    if (x - 1 == self.e1[0] && y == self.e1[1]) then
-      r << child(i, [-1, 0], 0, t)
-    elseif (x + w == self.e1[0] && y == self.e1[1]) then
-      r << child(i, [1, 0], 0, t)
-    endif
-    if (x - 1 == self.e2[0] && y == self.e2[1]) then
-      r << child(i, 0, [-1, 0], t)
-    elseif (x + w == self.e2[0] && y == self.e2[1]) then
-      r << child(i, 0, [1, 0], t)
+
+  sub m_lr(byref r, byref u, i, x, y, w)
+    if (x > 0 && u[x-1,y] == 0) then
+      r << child(i, [-1, 0])
+    else if (x + w < gw && u[x+w,y] == 0) then
+      r << child(i, [1, 0])
     endif
   end
-  sub m_ud(byref r, i, x, y, h, t)
-    if (y - 1 == self.e1[1] && x == self.e1[0]) then
-      r << child(i, [0, -1], 0, t)
-    elseif (y + h == self.e1[1] && x == self.e1[0]) then
-      r << child(i, [0, 1], 0, t)
-    endif
-    if (y - 1 == self.e2[1] && x == self.e2[0]) then
-      r << child(i, 0, [0, -1], t)
-    elseif (y + h == self.e2[1] && x == self.e2[0]) then
-      r << child(i, 0, [0, 1], t)
+  sub m_ud(byref r, byref u, i, x, y, h)
+    if (y > 0 && u[x,y-1] == 0) then
+      r << child(i, [0, -1])
+    else if (y + h < gh && u[x,y+h] == 0) then
+      r << child(i, [0, 1])
     endif
   end
-  ' 2,2
-  ' 2,2
-  sub m0(byref r, i, x, y)
-    if (self.e1[1] == self.e2[1] && x == self.e1[0] && x + 1 == self.e2[0]) then
-      m_ud(r, i, x, y, 2, t_ud)
-    endif
-    if (self.e1[0] == self.e2[0] && y == self.e1[1] && y + 1 == self.e2[1]) then
-      m_lr(r, i, x, y, 2, t_lr)
+  sub m_lr2(byref r, byref u, i, x, y)
+    if (x > 0 && u[x-1,y] == 0 && u[x-1,y+1] == 0) then
+      r << child(i, [-1, 0])
+    else if (x + 1 < gw && u[x+1,y] == 0 && u[x+1,y+1] == 0) then
+      r << child(i, [1, 0])
     endif
   end
-  ' 3,3
-  sub m1(byref r, i, x, y)
-    if (self.e1[1] == self.e2[1] && x == self.e1[0] && x + 1 == self.e2[0]) then
-      m_ud(r, i, x, y, 1, t_ud)
+  sub m_ud2(byref r, byref u, i, x, y)
+    if (y > 0 && u[x,y-1] == 0 && u[x+1,y-1] == 0) then
+      r << child(i, [0, -1])
+    else if (y + 1 < gh && u[x,y+1] == 0 && u[x+1,y+1] == 0) then
+      r << child(i, [0, 1])
     endif
-    m_lr(r, i, x, y, 2, 0)
-  end
-  ' 1
-  ' 1
-  sub m2(byref r, i, x, y)
-    if (self.e1[0] == self.e2[0] && y == self.e1[1] && y + 1 == self.e2[1]) then
-      m_lr(r, i, x, y, 1, t_lr)
-    endif
-    m_ud(r, i, x, y, 2, 0)
   end
 
   local state = init(0)
@@ -293,8 +265,6 @@ func getInitialState()
   # [4, 5, 5, 6]
   # [4, 7, 8, 6]
   # [9, 0, 0, 10]
-  local e1 = [1,4]
-  local e2 = [2,4]
   local grid = []
   grid << [1,0] '2x2
   grid << [1,2] '2x1
@@ -306,34 +276,14 @@ func getInitialState()
   grid << [2,3] '1x1
   grid << [0,4] '1x1
   grid << [3,4] '1x1
-  return KlotskiState(grid, e1, e2)
+  return KlotskiState(grid)
 end
 
 func isGoal(state)
-  'local goal = [0,1,2,3,4,5,6,7,8]
-  'return goal == state.grid
   show_grid(state)
-'  pause
   local x,y
   [x,y] = state.grid[0]
   return y == 2
-end
-
-func getPath(state)
-  local path = []
-  'show(state.grid)
-  print state.path
-  path << state.path
-  local parent = state.parent
-  while parent != nil and parent.path != 0
-    'show(parent.grid)
-    '    print parent.path
-    path << parent.path
-    parent = parent.parent
-  wend
-  'show(parent.grid)
-  'print parent.path
-  return path
 end
 
 # Queue => Breadth first search
@@ -361,8 +311,19 @@ sub process()
   return
 end
 
+func getPath(state)
+  local path = []
+  path << state.path
+  local parent = state.parent
+  while parent != nil and parent.path != 0
+    path << parent.path
+    parent = parent.parent
+  wend
+  return path
+end
+
 sub show_grid(s)
-  local i,x,y,w,h
+  local i,x,y,w,h,e1,e2
   local bs = min(xmax,ymax)/7
   local xoffs = 60
   local yoffs = 5
@@ -397,9 +358,10 @@ sub show_grid(s)
     end select
     show_cell(x,y,w,h,i)
   next i
-  [x,y] = s.e1
+  [e1,e2] = s.get_empty()
+  [x,y] = e1
   show_cell(x,y,1,1,-1)
-  [x,y] = s.e2
+  [x,y] = e2
   show_cell(x,y,1,1,-1)
   showpage
 end
