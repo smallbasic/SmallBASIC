@@ -1,12 +1,9 @@
 const gw = 4
 const gh = 5
 
-# A container with a first-in-first-out (FIFO) queuing policy.
-# push(3,2,1) -> pop(3)
-# 1
-# 2           1
-# 3           2
-func Queue(initial)
+# A Queue where each inserted item has a priority associated with it
+# [(prio, count, item), (prio, count, item) ...]
+func PriorityQueue(initial)
   func contains(item)
     return item in self.items > 0
   end
@@ -22,42 +19,6 @@ func Queue(initial)
     return result
   end
   func size()
-    return len(self.items)
-  end
-
-  local result = {}
-  result.items = []
-  result.contains=@contains
-  result.is_empty=@is_empty
-  result.push=@push
-  result.pop=@pop
-  result.size=@size
-  result.push(initial)
-  return result
-end
-
-# A container with a last-in-first-out (LIFO) queuing policy.
-# push(3,2,1) -> pop(1)
-# 1
-# 2           2
-# 3           3
-func Stack(initial)
-  func contains(item)
-    return item in self.items > 0
-  end
-  func is_empty()
-    return len(self.items) == 0
-  end
-  sub push(item)
-    self.items << item
-  end
-  func pop()
-    local idx = len(self.items) - 1
-    local result = self.items[idx]
-    delete self.items, idx, 1
-    return result
-  end
-  func size(self)
     return len(self.items)
   end
 
@@ -113,12 +74,8 @@ func KlotskiState(grid)
     local state = init(self.depth + 1)
     state.grid = self.grid
     state.grid[i] += mv_offs
-    state.parent.grid = self.grid
+    state.parent = self.grid
     self.children << state.grid
-    if (i==0) then
-      show_grid(state)
-      pause
-    endif
     return state
   end
 
@@ -179,16 +136,17 @@ func KlotskiState(grid)
     for x = 0 to w
       for y = 0 to h
         if (used[x,y] == 0) then
-          if (isarray(e1) == 0) then
+          if (!isarray(e1)) then
             e1 = [x,y]
-          elif (isarray(e2) == 0) then
+          elif (!isarray(e2)) then
             e2 = [x,y]
           else
-            throw "e"
+            throw "e1"
           endif
         endif
       next y
     next x
+    if (!isarray(e1) || !isarray(e2)) then throw "e2"
     return [e1,e2]
   end
 
@@ -283,14 +241,14 @@ func isGoal(state)
   show_grid(state)
   local x,y
   [x,y] = state.grid[0]
-  return y == 2
+  return y == 1
 end
 
 # Queue => Breadth first search
 # Stack => Depth first search
 sub process()
   local initialState = getInitialState()
-  local fringe = Stack(initialState)
+  local fringe = PriorityQueue(initialState)
   local explored = Set()
   local state, nextState,p
 
@@ -358,6 +316,7 @@ sub show_grid(s)
     end select
     show_cell(x,y,w,h,i)
   next i
+
   [e1,e2] = s.get_empty()
   [x,y] = e1
   show_cell(x,y,1,1,-1)

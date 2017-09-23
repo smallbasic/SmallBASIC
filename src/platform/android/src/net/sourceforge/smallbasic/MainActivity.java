@@ -94,7 +94,8 @@ public class MainActivity extends NativeActivity {
   public static native boolean optionSelected(int index);
   public static native void runFile(String fileName);
 
-  public void addShortcut(final String path) {
+  public void addShortcut(final byte[] pathBytes) {
+    final String path = getString(pathBytes);
     Intent shortcut = new Intent(getApplicationContext(), MainActivity.class);
     shortcut.setAction(Intent.ACTION_MAIN);
     shortcut.setData(Uri.parse("smallbasic://" + path));
@@ -111,7 +112,9 @@ public class MainActivity extends NativeActivity {
     getApplicationContext().sendBroadcast(intent);
   }
 
-  public int ask(final String title, final String prompt, final boolean cancel) {
+  public int ask(final byte[] titleBytes, final byte[] promptBytes, final boolean cancel) {
+    final String title = getString(titleBytes);
+    final String prompt = getString(promptBytes);
     final AskResult result = new AskResult();
     final Activity activity = this;
     final Semaphore mutex = new Semaphore(0);
@@ -160,9 +163,9 @@ public class MainActivity extends NativeActivity {
     return result.value;
   }
 
-  public void browseFile(final String path) {
+  public void browseFile(final byte[] pathBytes) {
     try {
-      String url = path;
+      String url = new String(pathBytes, CP1252);
       if (!url.startsWith("http://") && !url.startsWith("https://")) {
         url = "http://" + url;
       }
@@ -354,11 +357,11 @@ public class MainActivity extends NativeActivity {
     });
   }
 
-  public void playAudio(final String path) {
+  public void playAudio(final byte[] pathBytes) {
     new Thread(new Runnable() {
       public void run() {
         try {
-          Uri uri = Uri.parse("file://" + path);
+          Uri uri = Uri.parse("file://" + new String(pathBytes, CP1252));
           if (_mediaPlayer == null) {
             _mediaPlayer = new MediaPlayer();
           } else {
@@ -481,8 +484,8 @@ public class MainActivity extends NativeActivity {
     }
   }
 
-  public void share(final String path) {
-    File file = new File(path);
+  public void share(final byte[] pathBytes) {
+    File file = new File(getString(pathBytes));
     String buffer = readBuffer(file);
     if (!buffer.isEmpty()) {
       Intent sendIntent = new Intent();
@@ -495,8 +498,10 @@ public class MainActivity extends NativeActivity {
     }
   }
 
-  public void showAlert(final String title, final String message) {
+  public void showAlert(final byte[] titleBytes, final byte[] messageBytes) {
     final Activity activity = this;
+    final String title = getString(titleBytes);
+    final String message = getString(messageBytes);
     runOnUiThread(new Runnable() {
       public void run() {
         new AlertDialog.Builder(activity)
@@ -525,18 +530,18 @@ public class MainActivity extends NativeActivity {
     });
   }
 
-  public void showToast(final String message, final boolean longDurarion) {
-    Log.i(TAG, "toast longDuration: " + longDurarion);
+  public void showToast(final byte[] messageBytes) {
     final Activity activity = this;
+    final String message = getString(messageBytes);
     runOnUiThread(new Runnable() {
       public void run() {
-        int duration = longDurarion ? Toast.LENGTH_LONG : Toast.LENGTH_SHORT;
-        Toast.makeText(activity, message.trim(), duration).show();
+        Toast.makeText(activity, message.trim(), Toast.LENGTH_LONG).show();
       }
     });
   }
 
-  public void speak(final String text) {
+  public void speak(final byte[] textBytes) {
+    final String text = getString(textBytes);
     if (_tts == null) {
       _tts = new TextToSpeechAdapter(this, text);
     } else {
@@ -660,6 +665,16 @@ public class MainActivity extends NativeActivity {
     output.close();
     Log.i(TAG, "invoke runFile: " + outputFile.getAbsolutePath());
     runFile(outputFile.getAbsolutePath());
+  }
+
+  private String getString(final byte[] promptBytes) {
+    try {
+      return new String(promptBytes, CP1252);
+    } catch (UnsupportedEncodingException e) {
+      Log.i(TAG, "getString failed: ", e);
+      e.printStackTrace();
+      return "";
+    }
   }
 
   private Map<String, String> getPostData(DataInputStream inputStream, String line)

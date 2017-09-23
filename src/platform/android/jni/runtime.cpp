@@ -166,6 +166,13 @@ void onContentRectChanged(ANativeActivity *activity, const ARect *rect) {
   runtime->onResize(rect->right, rect->bottom);
 }
 
+jbyteArray newByteArray(JNIEnv *env, const char *str) {
+  int size = strlen(str);
+  jbyteArray result = env->NewByteArray(size);
+  env->SetByteArrayRegion(result, 0, size, (const jbyte *)str);
+  return result;
+}
+
 Runtime::Runtime(android_app *app) :
   System(),
   _keypadActive(false),
@@ -203,29 +210,14 @@ void Runtime::alert(const char *title, const char *message) {
 
   JNIEnv *env;
   _app->activity->vm->AttachCurrentThread(&env, NULL);
-  jstring titleString = env->NewStringUTF(title);
-  jstring messageString = env->NewStringUTF(message);
+  jbyteArray titleByteArray = newByteArray(env, title);
+  jbyteArray messageByteArray = newByteArray(env, message);
   jclass clazz = env->GetObjectClass(_app->activity->clazz);
-  jmethodID method = env->GetMethodID(clazz, "showAlert",
-                                      "(Ljava/lang/String;Ljava/lang/String;)V");
-  env->CallVoidMethod(_app->activity->clazz, method, titleString, messageString);
+  jmethodID methodId = env->GetMethodID(clazz, "showAlert", "([B[B)V");
+  env->CallVoidMethod(_app->activity->clazz, methodId, titleByteArray, messageByteArray);
   env->DeleteLocalRef(clazz);
-  env->DeleteLocalRef(messageString);
-  env->DeleteLocalRef(titleString);
-  _app->activity->vm->DetachCurrentThread();
-}
-
-void Runtime::alert(const char *title, bool longDuration) {
-  logEntered();
-
-  JNIEnv *env;
-  _app->activity->vm->AttachCurrentThread(&env, NULL);
-  jstring titleString = env->NewStringUTF(title);
-  jclass clazz = env->GetObjectClass(_app->activity->clazz);
-  jmethodID method = env->GetMethodID(clazz, "showToast", "(Ljava/lang/String;Z)V");
-  env->CallVoidMethod(_app->activity->clazz, method, titleString, longDuration);
-  env->DeleteLocalRef(clazz);
-  env->DeleteLocalRef(titleString);
+  env->DeleteLocalRef(messageByteArray);
+  env->DeleteLocalRef(titleByteArray);
   _app->activity->vm->DetachCurrentThread();
 }
 
@@ -233,15 +225,14 @@ int Runtime::ask(const char *title, const char *prompt, bool cancel) {
   JNIEnv *env;
   _app->activity->vm->AttachCurrentThread(&env, NULL);
   jclass clazz = env->GetObjectClass(_app->activity->clazz);
-  jstring titleString = env->NewStringUTF(title);
-  jstring promptString = env->NewStringUTF(prompt);
-  jmethodID methodId = env->GetMethodID(clazz, "ask",
-                                        "(Ljava/lang/String;Ljava/lang/String;Z)I");
+  jbyteArray titleByteArray = newByteArray(env, title);
+  jbyteArray promptByteArray = newByteArray(env, prompt);
+  jmethodID methodId = env->GetMethodID(clazz, "ask", "([B[BZ)I");
   jint result = (jint) env->CallIntMethod(_app->activity->clazz, methodId,
-                                          titleString, promptString, cancel);
+                                          titleByteArray, promptByteArray, cancel);
   env->DeleteLocalRef(clazz);
-  env->DeleteLocalRef(titleString);
-  env->DeleteLocalRef(promptString);
+  env->DeleteLocalRef(titleByteArray);
+  env->DeleteLocalRef(promptByteArray);
   _app->activity->vm->DetachCurrentThread();
   return result;
 }
@@ -796,21 +787,7 @@ void Runtime::setString(const char *methodName, const char *value) {
   JNIEnv *env;
   _app->activity->vm->AttachCurrentThread(&env, NULL);
   jclass clazz = env->GetObjectClass(_app->activity->clazz);
-  jstring valueString = env->NewStringUTF(value);
-  jmethodID methodId = env->GetMethodID(clazz, methodName, "(Ljava/lang/String;)V");
-  env->CallVoidMethod(_app->activity->clazz, methodId, valueString);
-  env->DeleteLocalRef(valueString);
-  env->DeleteLocalRef(clazz);
-  _app->activity->vm->DetachCurrentThread();
-}
-
-void Runtime::setStringBytes(const char *methodName, const char *value) {
-  JNIEnv *env;
-  _app->activity->vm->AttachCurrentThread(&env, NULL);
-  jclass clazz = env->GetObjectClass(_app->activity->clazz);
-  int size = strlen(value);
-  jbyteArray valueByteArray = env->NewByteArray(size);
-  env->SetByteArrayRegion(valueByteArray, 0, size, (const jbyte *)value);
+  jbyteArray valueByteArray = newByteArray(env, value);
   jmethodID methodId = env->GetMethodID(clazz, methodName, "([B)V");
   env->CallVoidMethod(_app->activity->clazz, methodId, valueByteArray);
   env->DeleteLocalRef(valueByteArray);
