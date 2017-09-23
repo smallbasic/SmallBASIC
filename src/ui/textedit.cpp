@@ -359,6 +359,7 @@ TextEditInput::TextEditInput(const char *text, int chW, int chH,
   _matchingBrace(-1),
   _ptY(-1),
   _pressTick(0),
+  _bottom(false),
   _dirty(false) {
   stb_textedit_initialize_state(&_state, false);
 }
@@ -539,6 +540,7 @@ void TextEditInput::draw(int x, int y, int w, int h, int chw) {
     i += r.num_chars;
   }
 
+  _bottom = i >= _buf._len;
   drawLineNumber(x, y + baseY, line + 1, false);
 
   // draw cursor
@@ -1451,30 +1453,18 @@ void TextEditInput::gotoNextMarker() {
 
 void TextEditInput::lineNavigate(bool arrowDown) {
   if (arrowDown) {
-    // starting from the cursor position (relative to the screen),
-    // count the number of rows to the bottom of the document.
-    int rowCount = _cursorLine - _scroll;
-    for (int i = _state.cursor; i < _buf._len; i++) {
-      if (_buf._buffer[i] == '\n') {
-        rowCount++;
-      }
-    }
-    int pageRows = (_height / _charHeight) - 1;
-    if (rowCount >= pageRows) {
-      // rows exist below end of page to pull up
-      for (int i = _state.cursor; i < _buf._len; i++) {
-        if (_buf._buffer[i] == '\n' && i + 1 < _buf._len) {
-          _state.cursor = i + 1;
-          _scroll += 1;
-          break;
-        }
-      }
+    if (!_bottom) {
+      StbTexteditRow r;
+      layout(&r, _state.cursor);
+      _state.cursor += r.num_chars;
+      _scroll += 1;
     }
   } else if (_scroll > 0) {
     int newLines = 0;
     int i = _state.cursor - 1;
     while (i > 0) {
       if (_buf._buffer[i] == '\n' && ++newLines == 2) {
+        // scan to before the previous line, then add 1
         break;
       }
       i--;

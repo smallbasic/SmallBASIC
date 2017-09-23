@@ -1,5 +1,6 @@
 2017-09-23 (0.12.10)
 	ANDROID: Fix crash when displaying an alert with extended ascii chars
+	ANDROID: Fix forward scolling issue
 
 2017-09-22 (0.12.10)
 	SDL: Fix cursor error position when running from selected text

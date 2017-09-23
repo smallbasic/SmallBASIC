@@ -973,11 +973,11 @@ void System::editSource(strlib::String loadPath) {
         case SB_KEY_CTRL('c'):
         case SB_KEY_CTRL('x'):
           text = widget->copy(event.key == (int)SB_KEY_CTRL('x'));
-        if (text) {
-          setClipboardText(text);
-          free(text);
-        }
-        break;
+          if (text) {
+            setClipboardText(text);
+            free(text);
+          }
+          break;
         case SB_KEY_CTRL('v'):
           text = getClipboardText();
           widget->paste(text);

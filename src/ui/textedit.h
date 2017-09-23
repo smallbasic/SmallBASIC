@@ -190,6 +190,7 @@ protected:
   int _matchingBrace;
   int _ptY;
   int _pressTick;
+  bool _bottom;
   bool _dirty;
 };
 
