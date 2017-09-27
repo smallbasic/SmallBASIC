@@ -1,7 +1,9 @@
 const gw = 4
 const gh = 5
 
-func Heap
+# A Queue where each inserted item has a priority associated with it
+# [(prio, count, item), (prio, count, item) ...]
+func PriorityQueue()
   #https://en.wikipedia.org/wiki/Heap_%28data_structure%29
   #http://www.comp.dit.ie/rlawlor/Alg_DS/heaps/PQs%20and%20Heaps.pdf
   #https://www.cprogramming.com/tutorial/computersciencetheory/heap.html
@@ -30,6 +32,10 @@ func Heap
       downHeap(1)
     endif
     return key.v
+  end
+
+  func is_empty()
+    return len(self.heap) == 1
   end
 
   # upHeap from position k. The key or node value at position k
@@ -70,39 +76,8 @@ func Heap
   h.heap = [0]
   h.push = @push
   h.pop = @pop
+  h.is_empty=@is_empty
   return h
-end
-
-# A Queue where each inserted item has a priority associated with it
-# [(prio, count, item), (prio, count, item) ...]
-func PriorityQueue(initial)
-  func contains(item)
-    return item in self.items > 0
-  end
-  func is_empty()
-    return len(self.items) == 0
-  end
-  sub push(item)
-    self.items << item
-  end
-  func pop()
-    local result = self.items[0]
-    delete self.items, 0, 1
-    return result
-  end
-  func size()
-    return len(self.items)
-  end
-
-  local result = {}
-  result.items = []
-  result.contains=@contains
-  result.is_empty=@is_empty
-  result.push=@push
-  result.pop=@pop
-  result.size=@size
-  result.push(initial)
-  return result
 end
 
 func Set
@@ -131,7 +106,7 @@ func KlotskiState(grid)
   func init(depth)
     local state = {}
     state.grid = []
-    state.depth = 0
+    state.depth = depth
     state.parent = 0
     state.children = []
     state.moves = @moves
@@ -148,6 +123,17 @@ func KlotskiState(grid)
     state.grid[i] += mv_offs
     state.parent = self.grid
     self.children << state.grid
+    select case i
+    case 0
+      state.prio = 1
+    case 1
+      state.prio = 2
+    case 2,3,4,5
+      state.prio = 3
+    case else
+      state.prio = 4
+    end select
+    state.prio += log(state.depth)
     return state
   end
 
@@ -234,16 +220,16 @@ func KlotskiState(grid)
       case 0
         ' 2,2
         ' 2,2
-        m_ud2(result, u, i, x, y)
-        m_lr2(result, u, i, x, y)
+        m_ud2(result, u, i, x, y, 2)
+        m_lr2(result, u, i, x, y, 2)
       case 1
         ' 3,3
-        m_ud2(result, u, i, x, y)
+        m_ud2(result, u, i, x, y, 1)
         m_lr(result, u, i, x, y, 2)
       case 2,3,4,5
         ' 4
         ' 4
-        m_lr2(result, u, i, x, y)
+        m_lr2(result, u, i, x, y, 1)
         m_ud(result, u, i, x, y, 2)
       case else
         m_lr(result, u, i, x, y, 1)
@@ -260,6 +246,13 @@ func KlotskiState(grid)
       r << child(i, [1, 0])
     endif
   end
+  sub m_lr2(byref r, byref u, i, x, y, w)
+    if (x > 0 && u[x-1,y] == 0 && u[x-1,y+1] == 0) then
+      r << child(i, [-1, 0])
+    else if (x + 1 < gw && u[x+w,y] == 0 && u[x+w,y+1] == 0) then
+      r << child(i, [1, 0])
+    endif
+  end
   sub m_ud(byref r, byref u, i, x, y, h)
     if (y > 0 && u[x,y-1] == 0) then
       r << child(i, [0, -1])
@@ -267,17 +260,10 @@ func KlotskiState(grid)
       r << child(i, [0, 1])
     endif
   end
-  sub m_lr2(byref r, byref u, i, x, y)
-    if (x > 0 && u[x-1,y] == 0 && u[x-1,y+1] == 0) then
-      r << child(i, [-1, 0])
-    else if (x + 1 < gw && u[x+1,y] == 0 && u[x+1,y+1] == 0) then
-      r << child(i, [1, 0])
-    endif
-  end
-  sub m_ud2(byref r, byref u, i, x, y)
+  sub m_ud2(byref r, byref u, i, x, y, h)
     if (y > 0 && u[x,y-1] == 0 && u[x+1,y-1] == 0) then
       r << child(i, [0, -1])
-    else if (y + 1 < gh && u[x,y+1] == 0 && u[x+1,y+1] == 0) then
+    else if (y + 1 < gh && u[x,y+h] == 0 && u[x+1,y+h] == 0) then
       r << child(i, [0, 1])
     endif
   end
@@ -286,6 +272,7 @@ func KlotskiState(grid)
   state.e1 = e1
   state.e2 = e2
   state.grid = grid
+  state.prio = 1
   return state
 end
 
@@ -313,27 +300,29 @@ func isGoal(state)
   show_grid(state)
   local x,y
   [x,y] = state.grid[0]
-  return y == 1
+  return y == 2
 end
 
 # Queue => Breadth first search
 # Stack => Depth first search
 sub process()
   local initialState = getInitialState()
-  local fringe = PriorityQueue(initialState)
+  local fringe = PriorityQueue()
   local explored = Set()
-  local state, nextState,p
+  local state, nextState,p,h
 
+  fringe.push(initialState, 0)
   explored.add(initialState)
+
   while (not fringe.is_empty())
     state = fringe.pop()
     if isGoal(state) then
-      p = getPath(state)
+      'p = getPath(state)
       return
     endif
     for nextState in state.moves()
       if (not explored.contains(nextState)) then
-        fringe.push(nextState)
+        fringe.push(nextState, nextState.prio)
         explored.add(nextState)
       endif
     next nextState
