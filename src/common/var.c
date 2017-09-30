@@ -26,7 +26,7 @@ void v_init_pool() {
     v_init(&var_pool[i]);
     var_pool[i].pooled = 1;
     if (i + 1 < VAR_POOL_SIZE) {
-      var_pool[i].v.pool_next = var_pool[i + 1].v.pool_next;
+      var_pool[i].v.pool_next = &var_pool[i + 1];
     } else {
       var_pool[i].v.pool_next = NULL;
     }
