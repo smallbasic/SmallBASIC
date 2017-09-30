@@ -188,7 +188,7 @@ static inline void v_init(var_t *v) {
  */
 static inline void v_detach(var_t *v) {
   if (v->pooled) {
-    v->attached = 0;
+    v_pool_free(v);
   } else {
     free(v);
   }

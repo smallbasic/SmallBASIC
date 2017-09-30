@@ -1,3 +1,6 @@
+2017-09-30 (0.12.10)
+	COMMON: Update var cache handling to use free-list
+
 2017-09-23 (0.12.10)
 	ANDROID: Fix crash when displaying an alert with extended ascii chars
 	ANDROID: Fix forward scolling issue

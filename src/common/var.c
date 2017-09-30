@@ -15,41 +15,46 @@
 #include "common/var_map.h"
 
 #define INT_STR_LEN 64
-#define VAR_POOL_SIZE 2048
+#define VAR_POOL_SIZE 4096
 
 var_t var_pool[VAR_POOL_SIZE];
-int next_pool_free = 0;
+var_t *var_pool_head;
 
 void v_init_pool() {
   int i;
-  next_pool_free = 0;
   for (i = 0; i < VAR_POOL_SIZE; i++) {
     v_init(&var_pool[i]);
     var_pool[i].pooled = 1;
-    var_pool[i].attached = 0;
+    if (i + 1 < VAR_POOL_SIZE) {
+      var_pool[i].v.pool_next = var_pool[i + 1].v.pool_next;
+    } else {
+      var_pool[i].v.pool_next = NULL;
+    }
   }
+  var_pool_head = &var_pool[0];
 }
 
 /*
  * creates and returns a new variable
  */
 var_t *v_new() {
-  var_t *result = NULL;
-  int i;
-  for (i = 0; i < VAR_POOL_SIZE; i++) {
-    if (!var_pool[next_pool_free].attached) {
-      result = &var_pool[next_pool_free];
-      result->attached = 1;
-      break;
-    }
-    next_pool_free = (next_pool_free + 1) % VAR_POOL_SIZE;
-  }
-  if (!result) {
+  var_t *result = var_pool_head;
+  if (result != NULL) {
+    // remove an item from the free-list
+    var_pool_head = result->v.pool_next;
+  } else {
+    // pool exhausted
     result = (var_t *)malloc(sizeof(var_t));
     result->pooled = 0;
   }
   v_init(result);
   return result;
+}
+
+void v_pool_free(var_t *var) {
+  // insert back into the free list
+  var->v.pool_next = var_pool_head;
+  var_pool_head = var;
 }
 
 void v_new_array(var_t *var, unsigned size) {

@@ -79,11 +79,6 @@ typedef void (*method) (struct var_s *self);
  * VARIANT DATA TYPE
  */
 struct var_s {
-  byte type; /**< variable's type */
-  byte const_flag; /**< non-zero if constants */
-  byte pooled; /** whether held in pooled memory */
-  byte attached; /** whether attached in pooled memory */
-
   // value
   union {
     var_num_t n; /**< numeric value */
@@ -125,7 +120,14 @@ struct var_s {
       int32_t ubound[MAXDIM]; /**< upper bound */
       byte maxdim; /**< number of dimensions */
     } a;
+
+    // next item in the free-list
+    struct var_s *pool_next;
   } v;
+
+  byte type; /**< variable's type */
+  byte const_flag; /**< non-zero if constants */
+  byte pooled; /** whether held in pooled memory */
 };
 
 typedef struct var_s var_t;
@@ -146,10 +148,6 @@ typedef struct lab_s lab_t;
  * EXECUTOR's STACK NODE
  */
 struct stknode_s {
-  code_t type; /**< type of node (keyword id, i.e. kwGOSUB, kwFOR, etc) */
-  bcip_t exit_ip; /**< EXIT command IP to go */
-  int line; /** line number of current execution **/
-
   union {
     /**
      *  FOR-TO-NEXT
@@ -226,6 +224,10 @@ struct stknode_s {
       var_t *catch_var;
     } vcatch;
   } x;
+
+  bcip_t exit_ip; /**< EXIT command IP to go */
+  int line; /** line number of current execution **/
+  code_t type; /**< type of node (keyword id, i.e. kwGOSUB, kwFOR, etc) */
 };
 typedef struct stknode_s stknode_t;
 
@@ -239,6 +241,13 @@ typedef struct stknode_s stknode_t;
  * intialises the var pool
  */
 void v_init_pool(void);
+
+/**
+ * @ingroup var
+ *
+ * free pooled var
+ */
+void v_pool_free(var_t *var);
 
 /**
  * @ingroup var
