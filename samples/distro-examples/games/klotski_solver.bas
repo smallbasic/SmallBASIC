@@ -3,64 +3,6 @@
 const gw = 4
 const gh = 5
 
-# A container with a first-in-first-out (FIFO) queuing policy.
-# push(3,2,1) -> pop(3)
-# 1
-# 2           1
-# 3           2
-func Queue()
-  func is_empty()
-    return len(self.items) == 0
-  end
-  sub push(item)
-    self.items << item
-  end
-  func pop()
-    local result = self.items[0]
-    delete self.items, 0, 1
-    return result
-  end
-  local result = {}
-  result.items = []
-  result.push=@push
-  result.pop=@pop
-  result.is_empty=@is_empty
-  return result
-end
-
-# A container with a last-in-first-out (LIFO) queuing policy.
-# push(3,2,1) -> pop(1)
-# 1
-# 2           2
-# 3           3
-func Stack()
-  func contains(item)
-    return item in self.items > 0
-  end
-  func is_empty()
-    return len(self.items) == 0
-  end
-  sub push(item)
-    self.items << item
-  end
-  func pop()
-    local idx = len(self.items) - 1
-    local result = self.items[idx]
-    delete self.items, idx, 1
-    return result
-  end
-  func size(self)
-    return len(self.items)
-  end
-
-  local result = {}
-  result.items = []
-  result.push=@push
-  result.pop=@pop
-  result.is_empty=@is_empty
-  return result
-end
-
 # A Queue where each inserted item has a priority associated with it
 # [(prio, count, item), (prio, count, item) ...]
 func PriorityQueue()
@@ -149,13 +91,9 @@ func Set
     local v = item.to_str()
     return self.items[v] == 1
   end
-  func size()
-    return len(self.items)
-  end
   local result = {}
   result.items = {}
   result.add = @add
-  result.size = @size
   result.contains= @contains
   return result
 end
@@ -224,6 +162,7 @@ func KlotskiState(grid)
 
   func get_empty(byref state)
     local used = get_used(state)
+    local x,y
     local w = gw - 1
     local h = gh - 1
     local e1 = 0
@@ -286,22 +225,40 @@ func KlotskiState(grid)
   sub m_lr(byref r, byref u, i, x, y, w)
     if (x > 0 && u[x-1,y] == 0) then
       r << child(i, [-1, 0])
+      if (x > 1 && u[x-2,y] == 0) then
+        r << child(i, [-2, 0])
+      endif
     else if (x + w < gw && u[x+w,y] == 0) then
       r << child(i, [1, 0])
+      if (x + w + 1 < gw && u[x+w+1,y] == 0) then
+        r << child(i, [2, 0])
+      endif
     endif
   end
   sub m_lr2(byref r, byref u, i, x, y, w)
     if (x > 0 && u[x-1,y] == 0 && u[x-1,y+1] == 0) then
       r << child(i, [-1, 0])
+      if (x > 1 && u[x-2,y] == 0 && u[x-2,y+1] == 0) then
+        r << child(i, [-2, 0])
+      endif
     else if (x + 1 < gw && u[x+w,y] == 0 && u[x+w,y+1] == 0) then
       r << child(i, [1, 0])
+      if (x + 1 + 1 < gw && u[x+w+1,y] == 0 && u[x+w+1,y+1] == 0) then
+        r << child(i, [2, 0])
+      endif
     endif
   end
   sub m_ud(byref r, byref u, i, x, y, h)
     if (y > 0 && u[x,y-1] == 0) then
       r << child(i, [0, -1])
+      if (y > 1 && u[x,y-2] == 0) then
+        r << child(i, [0, -2])
+      endif
     else if (y + h < gh && u[x,y+h] == 0) then
       r << child(i, [0, 1])
+      if (y + h + 1 < gh && u[x,y+h+1] == 0) then
+        r << child(i, [0, 2])
+      endif
     endif
   end
   sub m_ud2(byref r, byref u, i, x, y, h)
@@ -338,10 +295,10 @@ func getInitialState()
   return KlotskiState(grid)
 end
 
-func isGoal(state)
+func is_goal(state)
   local x,y
   [x,y] = state.grid[0]
-  return y != 0
+  return y == 2
 end
 
 func get_cell_prio(byref state)
@@ -351,8 +308,8 @@ func get_cell_prio(byref state)
     [x,y] = state.grid[i]
     select case i
     case 0
-      if (x != 1 or y != 0) then
-        p += 20
+      if (x != 1 && y != 0) then
+        p += 100
       endif
     case 2,3
       if (y > 1) then
@@ -382,8 +339,6 @@ end
 # Stack => Depth first search
 func process(initialState)
   local fringe = PriorityQueue()
-'  local fringe = Queue()
-'  local fringe = Stack()
   local explored = Set()
   local state,nextState,p
 
@@ -391,21 +346,11 @@ func process(initialState)
 
   while (not fringe.is_empty())
     state = fringe.pop()
-    select case state.grid[0][1]
-    case 1,2
-      for nextState in state.moves()
-        if (not explored.contains(nextState)) then
-          logprint "nesting..."
-          ' start fresh from current state
-          process(KlotskiState(nextState.grid))
-        endif
-      next nextState
-    case 3
+    if (is_goal(state)) then
       ' success !
       show_grid(state)
-      pause
       return true
-    end select
+    endif
 
     if (not explored.contains(state)) then
       explored.add(state)
@@ -421,7 +366,7 @@ func process(initialState)
   return false
 end
 
-func getPath(state)
+func get_path(state)
   local path = []
   path << state.path
   local parent = state.parent
@@ -531,4 +476,62 @@ end
 'testQueue
 'testStack
 'testSet
+
+# A container with a first-in-first-out (FIFO) queuing policy.
+# push(3,2,1) -> pop(3)
+# 1
+# 2           1
+# 3           2
+func Queue()
+  func is_empty()
+    return len(self.items) == 0
+  end
+  sub push(item)
+    self.items << item
+  end
+  func pop()
+    local result = self.items[0]
+    delete self.items, 0, 1
+    return result
+  end
+  local result = {}
+  result.items = []
+  result.push=@push
+  result.pop=@pop
+  result.is_empty=@is_empty
+  return result
+end
+
+# A container with a last-in-first-out (LIFO) queuing policy.
+# push(3,2,1) -> pop(1)
+# 1
+# 2           2
+# 3           3
+func Stack()
+  func contains(item)
+    return item in self.items > 0
+  end
+  func is_empty()
+    return len(self.items) == 0
+  end
+  sub push(item)
+    self.items << item
+  end
+  func pop()
+    local idx = len(self.items) - 1
+    local result = self.items[idx]
+    delete self.items, idx, 1
+    return result
+  end
+  func size(self)
+    return len(self.items)
+  end
+
+  local result = {}
+  result.items = []
+  result.push=@push
+  result.pop=@pop
+  result.is_empty=@is_empty
+  return result
+end
 
