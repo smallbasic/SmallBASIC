@@ -1,5 +1,65 @@
+#http://www.pvv.ntnu.no/~spaans/spec-cs.pdf
+
 const gw = 4
 const gh = 5
+
+# A container with a first-in-first-out (FIFO) queuing policy.
+# push(3,2,1) -> pop(3)
+# 1
+# 2           1
+# 3           2
+func Queue()
+  func is_empty()
+    return len(self.items) == 0
+  end
+  sub push(item)
+    self.items << item
+  end
+  func pop()
+    local result = self.items[0]
+    delete self.items, 0, 1
+    return result
+  end
+  local result = {}
+  result.items = []
+  result.push=@push
+  result.pop=@pop
+  result.is_empty=@is_empty
+  return result
+end
+
+# A container with a last-in-first-out (LIFO) queuing policy.
+# push(3,2,1) -> pop(1)
+# 1
+# 2           2
+# 3           3
+func Stack()
+  func contains(item)
+    return item in self.items > 0
+  end
+  func is_empty()
+    return len(self.items) == 0
+  end
+  sub push(item)
+    self.items << item
+  end
+  func pop()
+    local idx = len(self.items) - 1
+    local result = self.items[idx]
+    delete self.items, idx, 1
+    return result
+  end
+  func size(self)
+    return len(self.items)
+  end
+
+  local result = {}
+  result.items = []
+  result.push=@push
+  result.pop=@pop
+  result.is_empty=@is_empty
+  return result
+end
 
 # A Queue where each inserted item has a priority associated with it
 # [(prio, count, item), (prio, count, item) ...]
@@ -18,7 +78,7 @@ func PriorityQueue()
     key.p = p
     self.heap << key
     upHeap(len(self.heap) - 1)
-  end 
+  end
 
   # Key of node at position k may be less than that of its
   # children and may need to be moved down some levels
@@ -54,13 +114,13 @@ func PriorityQueue()
 
   # Key of node at position k may be greater than that of its
   # children and may need to be moved down some levels
-  # k is a position in the heap array h 
+  # k is a position in the heap array h
   sub downHeap(k)
     local key = self.heap[k]
     local N = len(self.heap) - 1
     local levels = int(N / 2)
     local j
-    while (k <= levels) 
+    while (k <= levels)
       # node at pos k has a left child node
       j = k * 2
       # select the highest node from left/right
@@ -68,7 +128,7 @@ func PriorityQueue()
       if (key.p < self.heap[j].p) then exit loop
       self.heap[k] = self.heap[j]
       k = j
-    wend      
+    wend
     self.heap[k] = key
   end
 
@@ -110,9 +170,7 @@ func KlotskiState(grid)
     state.parent = 0
     state.children = []
     state.moves = @moves
-    state.hash = @hash
     state.to_str = @to_str
-    state.get_empty = @get_empty
     return state
   end
 
@@ -120,34 +178,13 @@ func KlotskiState(grid)
   func child(i, mv_offs)
     local state = init(self.depth + 1)
     state.grid = self.grid
+    local y = state.grid[i][1]
     state.grid[i] += mv_offs
     state.parent = self.grid
     self.children << state.grid
-    select case i
-    case 0
-      state.prio = 1
-    case 1
-      state.prio = 2
-    case 2,3,4,5
-      state.prio = 3
-    case else
-      state.prio = 4
-    end select
-    state.prio += log(state.depth)
+    [state.e1,state.e2] = get_empty(state)
+    state.dist = get_dist(state)
     return state
-  end
-
-  # returns the hash value of the grid
-  func hash
-    local result = len(self.grid)
-    local i,x,y
-    for i = 0 to 9
-      [x,y] = self.grid[i]
-      result += x+y
-      result = result lshift 4
-      result = result xor (result rshift 2)
-    next i
-    return result
   end
 
   # returns the current state as a string
@@ -156,16 +193,16 @@ func KlotskiState(grid)
     local i,x,y
     for i = 0 to 9
       [x,y] = self.grid[i]
-      result += str(x) + str(y)
+      result += chr(65+(y*4)+x)
     next i
     return result
   end
 
-  func get_used()
+  func get_used(byref state)
     local i,x,y
     dim used(3,4)
     for i = 0 to 9
-      [x,y] = self.grid[i]
+      [x,y] = state.grid[i]
       select case i
       case 0
         used[x,  y] = 1
@@ -185,8 +222,8 @@ func KlotskiState(grid)
     return used
   end
 
-  func get_empty()
-    local used = get_used()
+  func get_empty(byref state)
+    local used = get_used(state)
     local w = gw - 1
     local h = gh - 1
     local e1 = 0
@@ -208,10 +245,15 @@ func KlotskiState(grid)
     return [e1,e2]
   end
 
+  func get_dist(state)
+    # manhatten distance between the empty cells
+    return abs(state.e2[0] - state.e1[0]) + abs(state.e2[1] - state.e1[1])
+  end
+
   # returns the successor states
   func moves()
     local result = []
-    local u = get_used()
+    local u = get_used(self)
     local i,x,y
 
     for i = 0 to 9
@@ -220,7 +262,9 @@ func KlotskiState(grid)
       case 0
         ' 2,2
         ' 2,2
-        m_ud2(result, u, i, x, y, 2)
+        if (y + 1 < gh && u[x,y+2] == 0 && u[x+1,y+2] == 0) then
+          result << child(i, [0, 1])
+        endif
         m_lr2(result, u, i, x, y, 2)
       case 1
         ' 3,3
@@ -269,10 +313,8 @@ func KlotskiState(grid)
   end
 
   local state = init(0)
-  state.e1 = e1
-  state.e2 = e2
   state.grid = grid
-  state.prio = 1
+  [state.e1,state.e2] = get_empty(state)
   return state
 end
 
@@ -297,37 +339,86 @@ func getInitialState()
 end
 
 func isGoal(state)
-  show_grid(state)
   local x,y
   [x,y] = state.grid[0]
-  return y == 2
+  return y != 0
+end
+
+func get_cell_prio(byref state)
+  local p, i, x, y
+  p = log(state.depth)
+  for i = 0 to 9
+    [x,y] = state.grid[i]
+    select case i
+    case 0
+      if (x != 1 or y != 0) then
+        p += 20
+      endif
+    case 2,3
+      if (y > 1) then
+        p += 100
+      endif
+    case 6,7,8,9
+      p += (5 - y)
+      if (x == 0 or x == 3) then
+        p += 5
+      endif
+    end select
+  next i
+  return 1/p
+end
+
+func get_prio(byref state)
+  local r
+  if (state.dist > 3) then
+    r = 0
+  else
+    r = state.dist + get_cell_prio(state)
+  endif
+  return r
 end
 
 # Queue => Breadth first search
 # Stack => Depth first search
-sub process()
-  local initialState = getInitialState()
+func process(initialState)
   local fringe = PriorityQueue()
+'  local fringe = Queue()
+'  local fringe = Stack()
   local explored = Set()
-  local state, nextState,p,h
+  local state,nextState,p
 
-  fringe.push(initialState, 0)
-  explored.add(initialState)
+  fringe.push(initialState,0)
 
   while (not fringe.is_empty())
     state = fringe.pop()
-    if isGoal(state) then
-      'p = getPath(state)
-      return
+    select case state.grid[0][1]
+    case 1,2
+      for nextState in state.moves()
+        if (not explored.contains(nextState)) then
+          logprint "nesting..."
+          ' start fresh from current state
+          process(KlotskiState(nextState.grid))
+        endif
+      next nextState
+    case 3
+      ' success !
+      show_grid(state)
+      pause
+      return true
+    end select
+
+    if (not explored.contains(state)) then
+      explored.add(state)
+      show_grid(state)
+      for nextState in state.moves()
+        if (not explored.contains(nextState)) then
+          p = get_prio(nextState)
+          if (p != 0) then fringe.push(nextState, p)
+        endif
+      next nextState
     endif
-    for nextState in state.moves()
-      if (not explored.contains(nextState)) then
-        fringe.push(nextState, nextState.prio)
-        explored.add(nextState)
-      endif
-    next nextState
   wend
-  return
+  return false
 end
 
 func getPath(state)
@@ -342,7 +433,7 @@ func getPath(state)
 end
 
 sub show_grid(s)
-  local i,x,y,w,h,e1,e2
+  local i,x,y,w,h
   local bs = min(xmax,ymax)/7
   local xoffs = 60
   local yoffs = 5
@@ -378,15 +469,14 @@ sub show_grid(s)
     show_cell(x,y,w,h,i)
   next i
 
-  [e1,e2] = s.get_empty()
-  [x,y] = e1
+  [x,y] = s.e1
   show_cell(x,y,1,1,-1)
-  [x,y] = e2
+  [x,y] = s.e2
   show_cell(x,y,1,1,-1)
   showpage
 end
 
-process()
+process(getInitialState())
 
 rem -------- TESTS --------
 sub testSet
