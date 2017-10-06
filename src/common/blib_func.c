@@ -1160,16 +1160,13 @@ void cmd_str1(long funcCode, var_t *arg, var_t *r) {
       }
     } else {
       // return all
-      int count, i;
-      var_t *elem_p;
-
-      count = dev_env_count();
+      int count = dev_env_count();
       r->type = V_INT;
       if (count) {
         v_toarray1(r, count);
-        for (i = 0; i < count; i++) {
+        for (int i = 0; i < count; i++) {
           const char *value = dev_getenv_n(i);
-          elem_p = v_elem(r, i);
+          var_t *elem_p = v_elem(r, i);
           elem_p->type = V_STR;
           elem_p->v.p.ptr = strdup(value != NULL ? value : "");
           elem_p->v.p.length = strlen(elem_p->v.p.ptr) + 1;
@@ -1196,8 +1193,6 @@ void cmd_str1(long funcCode, var_t *arg, var_t *r) {
 // str <- FUNC (void)
 //
 void cmd_str0(long funcCode, var_t *r) {
-  uint32_t ch;
-  char tmp[3];
   struct tm tms;
   time_t now;
 
@@ -1211,7 +1206,8 @@ void cmd_str0(long funcCode, var_t *r) {
       dev_events(par_getval(2));
     }
     if (dev_kbhit()) {
-      ch = dev_getch();
+      char tmp[3];
+      uint32_t ch = dev_getch();
       if ((ch & 0xFF00) == 0xFF00) {
         // keypad or mouse keys
         tmp[0] = '\033';
@@ -1323,7 +1319,7 @@ void cmd_strN(long funcCode, var_t *r) {
   var_t *var_p1 = NULL;
   var_t *var_p2 = NULL;
   var_int_t i, count, lsrc, len, start, pc;
-  char tmp[2], *tmp_p;
+  char tmp[2];
   char *s1 = NULL, *s2 = NULL, *s3 = NULL;
 
   v_init(&arg1);
@@ -1368,6 +1364,7 @@ void cmd_strN(long funcCode, var_t *r) {
     start = -1;                 // ascii code
     pc = par_massget("Iis", &count, &start, &s1);
     if (!prog_error) {
+      char *tmp_p;
       if (s1) {
         len = strlen(s1);
         tmp_p = s1;
@@ -1506,13 +1503,11 @@ void cmd_strN(long funcCode, var_t *r) {
     //
     par_massget("SS", &s1, &s2);
     if (!prog_error) {
-      char *p, lc;
-      int l;
-
-      if ((p = strstr(s1, s2)) != NULL) {
-        lc = *p;
+      char *p = strstr(s1, s2);
+      if (p != NULL) {
+        char lc = *p;
         *p = '\0';
-        l = strlen(s1) + 1;
+        int l = strlen(s1) + 1;
         r->v.p.ptr = malloc(l);
         strcpy(r->v.p.ptr, s1);
         r->v.p.length = l;
@@ -1550,12 +1545,10 @@ void cmd_strN(long funcCode, var_t *r) {
     //
     par_massget("SS", &s1, &s2);
     if (!prog_error) {
-      int l;
-      char *p;
-
-      if ((p = strstr(s1, s2)) != NULL) {
+      char *p = strstr(s1, s2);
+      if (p != NULL) {
         p += strlen(s2);
-        l = strlen(p) + 1;
+        int l = strlen(p) + 1;
         r->v.p.ptr = malloc(l);
         memcpy(r->v.p.ptr, p, l);
         r->v.p.length = l;
@@ -1571,22 +1564,18 @@ void cmd_strN(long funcCode, var_t *r) {
     //
     par_massget("SS", &s1, &s2);
     if (!prog_error) {
-      char *p, *lp;
-      char lc;
-      int l, l2;
-
-      lp = s1;
-      l2 = strlen(s2);
-      p = NULL;
+      char *lp = s1;
+      int l2 = strlen(s2);
+      char *p = NULL;
       while ((lp = strstr(lp, s2)) != NULL) {
         p = lp;
         lp += l2;
       };
 
       if (p) {
-        lc = *p;
+        char lc = *p;
         *p = '\0';
-        l = strlen(s1) + 1;
+        int l = strlen(s1) + 1;
         r->v.p.ptr = malloc(l);
         memcpy(r->v.p.ptr, s1, l);
         r->v.p.length = l;
@@ -1603,12 +1592,9 @@ void cmd_strN(long funcCode, var_t *r) {
     //
     par_massget("SS", &s1, &s2);
     if (!prog_error) {
-      char *p, *lp;
-      int l, l2;
-
-      lp = s1;
-      l2 = strlen(s2);
-      p = NULL;
+      char *lp = s1;
+      int l2 = strlen(s2);
+      char *p = NULL;
       while ((lp = strstr(lp, s2)) != NULL) {
         p = lp;
         lp += l2;
@@ -1616,7 +1602,7 @@ void cmd_strN(long funcCode, var_t *r) {
 
       if (p) {
         p += l2;
-        l = strlen(p) + 1;
+        int l = strlen(p) + 1;
         r->v.p.ptr = malloc(l);
         memcpy(r->v.p.ptr, p, l);
         r->v.p.length = l;
@@ -1743,7 +1729,6 @@ void cmd_intN(long funcCode, var_t *r) {
 
   var_t arg1;
   int l;
-  char *p;
   var_t *var_p = NULL;
 
   r->type = V_INT;
@@ -1769,7 +1754,7 @@ void cmd_intN(long funcCode, var_t *r) {
       if (start < 0) {
         start = 0;
       }
-      p = s1 + start;
+      char *p = s1 + start;
       l = strlen(s2);
       while (*p) {
         if (strncmp(p, s2, l) == 0) {
@@ -1988,7 +1973,6 @@ void cmd_intN(long funcCode, var_t *r) {
  */
 void cmd_numN(long funcCode, var_t *r) {
   var_num_t x, y, m;
-  int pw = 0;
 
   r->type = V_NUM;
 
@@ -2022,6 +2006,7 @@ void cmd_numN(long funcCode, var_t *r) {
     // fp <- ROUND(x [,decs])
     x = par_getnum();
     if (!prog_error) {
+      int pw;
       if (code_peek() == kwTYPE_SEP) {
         par_getcomma();
         if (!prog_error) {
@@ -2055,7 +2040,6 @@ void cmd_genfunc(long funcCode, var_t *r) {
   bcip_t ofs;
   var_t *basevar_p, *elem_p;
   var_t arg, arg2;
-  char tmp[3];
   var_num_t *dar;
 
   IF_ERR_RETURN;
@@ -2069,7 +2053,6 @@ void cmd_genfunc(long funcCode, var_t *r) {
     v_init(&arg);
     eval(&arg);                 // condition
     if (!prog_error) {
-
       par_getcomma();
       IF_ERR_RETURN;
       ch = v_is_nonzero(&arg);
@@ -2271,13 +2254,14 @@ void cmd_genfunc(long funcCode, var_t *r) {
       r->v.p.ptr = malloc((count << 1) + 1);
       r->v.p.ptr[0] = '\0';
       len = 0;
+      char tmp[3];
       for (i = 0; i < count; i++) {
         ch = dev_getch();       // MultiByte - dev_getchr() must return the
         // extended
         // code (2 bytes char)
-        if (ch == 0xFFFF || prog_error
-          )
+        if (ch == 0xFFFF || prog_error) {
           break;
+        }
         if ((ch & 0xFF00) == 0xFF00) {  // extra code - hardware keys
           tmp[0] = '\033';
           tmp[1] = ch & 0xFF;
@@ -2716,12 +2700,10 @@ void cmd_genfunc(long funcCode, var_t *r) {
   case kwGAUSSJORDAN: {
     var_num_t toler = 0.0;
     var_num_t *m1;
-    var_num_t *m2 = NULL;
-    int32_t n, rows, cols;
-    var_t *a, *b;
+    int32_t rows, cols;
 
     v_init(r);
-    a = par_getvarray();
+    var_t *a = par_getvarray();
     IF_ERR_RETURN;
     m1 = mat_toc(a, &rows, &cols);
     if (rows != cols || cols < 2) {
@@ -2730,7 +2712,7 @@ void cmd_genfunc(long funcCode, var_t *r) {
       }
       rt_raise(ERR_LINEEQN_ADIM, rows, cols);
     } else {
-      n = rows;
+      int32_t n = rows;
       par_getcomma();
       if (prog_error) {
         if (m1) {
@@ -2739,15 +2721,14 @@ void cmd_genfunc(long funcCode, var_t *r) {
         return;
       }
 
-      b = par_getvarray();
+      var_t *b = par_getvarray();
       if (prog_error) {
         if (m1) {
           free(m1);
         }
         return;
       }
-      m2 = mat_toc(b, &rows, &cols);
-
+      var_num_t *m2 = mat_toc(b, &rows, &cols);
       if (rows != n || cols != 1) {
         if (m1) {
           free(m1);
@@ -2782,22 +2763,20 @@ void cmd_genfunc(long funcCode, var_t *r) {
     // array <- INVERSE(A)
     //
   case kwINVERSE: {
-    var_num_t *m1;
-    int32_t n, rows, cols;
-    var_t *a;
+    int32_t rows, cols;
 
     v_init(r);
-    a = par_getvarray();
+    var_t *a = par_getvarray();
     IF_ERR_RETURN;
 
-    m1 = mat_toc(a, &rows, &cols);
+    var_num_t *m1 = mat_toc(a, &rows, &cols);
     if (rows != cols || cols < 2) {
       if (m1) {
         free(m1);
       }
       rt_raise(ERR_WRONG_MAT, rows, cols);
     } else {
-      n = rows;
+      int32_t n = rows;
       mat_inverse(m1, n);
       mat_tov(r, m1, n, n, 1);
       free(m1);
@@ -2809,11 +2788,10 @@ void cmd_genfunc(long funcCode, var_t *r) {
     //
   case kwDETERM: {
     var_num_t *m1 = NULL, toler = 0;
-    int32_t n, rows, cols;
-    var_t *a;
+    int32_t rows, cols;
 
     v_init(r);
-    a = par_getvarray();
+    var_t *a = par_getvarray();
     IF_ERR_RETURN;
 
     if (code_peek() == kwTYPE_SEP) {
@@ -2828,7 +2806,7 @@ void cmd_genfunc(long funcCode, var_t *r) {
       }
       rt_raise(ERR_WRONG_MAT, rows, cols);
     } else {
-      n = rows;
+      int32_t n = rows;
       r->type = V_NUM;
       r->v.n = mat_determ(m1, n, toler);
       free(m1);
@@ -2844,9 +2822,8 @@ void cmd_genfunc(long funcCode, var_t *r) {
     // array <- FILES([wildcards])
     //
   case kwFILES: {
-    int count, i;
-    char_p_t *list;
-    var_t arg, *elem_p;
+    int count;
+    var_t arg;
     char *wc = NULL;
 
     v_init(&arg);
@@ -2857,15 +2834,15 @@ void cmd_genfunc(long funcCode, var_t *r) {
 
     if (!prog_error) {
       // get the files
-      list = dev_create_file_list(wc, &count);
+      char_p_t *list = dev_create_file_list(wc, &count);
 
       // create the array
       if (count) {
         v_toarray1(r, count);
 
         // add the entries
-        for (i = 0; i < count; i++) {
-          elem_p = v_elem(r, i);
+        for (int i = 0; i < count; i++) {
+          var_t *elem_p = v_elem(r, i);
           elem_p->type = V_STR;
           elem_p->v.p.length = strlen(list[i]) + 1;
           elem_p->v.p.ptr = malloc(elem_p->v.p.length);
@@ -2887,7 +2864,6 @@ void cmd_genfunc(long funcCode, var_t *r) {
     // array <- SEQ(min, max, count)
     //
   case kwSEQ: {
-    var_t *elem_p;
     var_int_t count;
     var_num_t xmin, xmax, x, dx;
 
@@ -2901,7 +2877,7 @@ void cmd_genfunc(long funcCode, var_t *r) {
 
         // add the entries
         for (i = 0, x = xmin; i < count; i++, x += dx) {
-          elem_p = v_elem(r, i);
+          var_t *elem_p = v_elem(r, i);
           elem_p->type = V_NUM;
           elem_p->v.n = x;
         }

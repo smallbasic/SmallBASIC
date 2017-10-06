@@ -2196,7 +2196,7 @@ void cmd_wsplit() {
     char *ps = p = new_text;
     char *z;
     var_t *elem_p;
-    
+
     while (*p) {
       if (wait_q == *p) {
         wait_q = 0;
