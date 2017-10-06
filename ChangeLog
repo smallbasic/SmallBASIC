@@ -1,4 +1,7 @@
 2017-09-30 (0.12.10)
+	COMMON: Fix var scope errors reported by cppcheck
+
+2017-09-30 (0.12.10)
 	COMMON: Update var cache handling to use free-list
 
 2017-09-23 (0.12.10)
