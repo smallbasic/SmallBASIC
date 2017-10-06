@@ -1657,7 +1657,7 @@ void cmd_for() {
     //
     // FOR [EACH] v1 IN v2
     //
-    code = code_getnext();      // kwIN
+    code_skipnext();      // kwIN
     node.x.vfor.subtype = kwIN;
     node.x.vfor.to_expr_ip = prog_ip;
     node.x.vfor.flags = 0;
@@ -1666,9 +1666,7 @@ void cmd_for() {
       node.x.vfor.arr_ptr = array_p = code_getvarptr();
     } else {
       // expression
-      var_t *new_var;
-
-      new_var = v_new();
+      var_t *new_var = v_new();
       eval(new_var);
       if (prog_error) {
         v_detach(new_var);
@@ -1799,9 +1797,7 @@ void cmd_until() {
  */
 void cmd_next() {
   bcip_t next_ip, jump_ip;
-  var_t var_to, var_step, *var_p, *array_p;
-  var_t *var_elem_ptr;
-  int check = 0;
+  var_t var_to, var_step, *var_p;
   stknode_t node;
 
   next_ip = code_getaddr();
@@ -1833,6 +1829,7 @@ void cmd_next() {
     //
     // FOR v=exp1 TO exp2 [STEP exp3]
     //
+    int check = 0;
 
     prog_ip = node.x.vfor.to_expr_ip;
     v_init(&var_to);
@@ -1879,8 +1876,8 @@ void cmd_next() {
     //
     // FOR [EACH] v1 IN v2
     //
-    array_p = node.x.vfor.arr_ptr;
-    var_elem_ptr = 0;
+    var_t *array_p = node.x.vfor.arr_ptr;
+    var_t *var_elem_ptr = 0;
 
     switch (array_p->type) {
     case V_MAP:
@@ -2170,9 +2167,8 @@ void cmd_split() {
  * SPLIT string, delimiters, array() [, pairs] [USE ...]
  */
 void cmd_wsplit() {
-  int count, i, wait_q;
-  char *p, *ps, *new_text, *z;
-  var_t *var_p, *elem_p;
+  char *p, *new_text;
+  var_t *var_p;
   bcip_t use_ip, exit_ip = INVALID_ADDR;
   char *str = NULL, *del = NULL, *pairs = NULL;
 
@@ -2195,9 +2191,12 @@ void cmd_wsplit() {
 
     // reformat
     new_text = strdup(str);
-    count = 0;
-    wait_q = 0;
-    ps = p = new_text;
+    int count = 0;
+    int wait_q = 0;
+    char *ps = p = new_text;
+    char *z;
+    var_t *elem_p;
+    
     while (*p) {
       if (wait_q == *p) {
         wait_q = 0;
@@ -2248,7 +2247,7 @@ void cmd_wsplit() {
 
     // execute user's expression for each element
     if (use_ip != INVALID_ADDR) {
-      for (i = 0; i < v_asize(var_p) && !prog_error; i++) {
+      for (int i = 0; i < v_asize(var_p) && !prog_error; i++) {
         elem_p = v_elem(var_p, i);
         exec_usefunc(elem_p, use_ip);
       }
@@ -2549,8 +2548,7 @@ void cmd_sort() {
  */
 void cmd_search() {
   bcip_t use_ip, exit_ip;
-  int i, bcmp;
-  var_t *var_p, *elem_p, *rv_p;
+  var_t *var_p, *rv_p;
   var_t vkey;
   int errf = 0;
 
@@ -2601,9 +2599,9 @@ void cmd_search() {
   // search
   if (!errf) {
     rv_p->v.i = var_p->v.a.lbound[0] - 1;
-    for (i = 0; i < var_p->v.a.size; i++) {
-      elem_p = v_elem(var_p, i);
-      bcmp = sb_qcmp(elem_p, &vkey, use_ip);
+    for (int i = 0; i < var_p->v.a.size; i++) {
+      var_t *elem_p = v_elem(var_p, i);
+      int bcmp = sb_qcmp(elem_p, &vkey, use_ip);
       if (bcmp == 0) {
         rv_p->v.i = i + var_p->v.a.lbound[0];
         break;
@@ -2659,10 +2657,10 @@ void cmd_swap(void) {
  * EXPRSEQ @array, xmin, xmax, count USE f(x)
  */
 void cmd_exprseq(void) {
-  var_t *var_p, *elem_p;
+  var_t *var_p;
   bcip_t use_ip, exit_ip = INVALID_ADDR;
-  var_num_t xmin, xmax, dx, x;
-  var_int_t count, i;
+  var_num_t xmin, xmax, dx;
+  var_int_t count;
 
   par_massget("PFFI", &var_p, &xmin, &xmax, &count);
 
@@ -2682,8 +2680,8 @@ void cmd_exprseq(void) {
       dx = (xmax - xmin) / (count - 1);
 
       // add the entries
-      for (i = 0, x = xmin; i < count; i++, x += dx) {
-        elem_p = v_elem(var_p, i);
+      for (int i = 0, x = xmin; i < count; i++, x += dx) {
+        var_t *elem_p = v_elem(var_p, i);
         v_setreal(elem_p, x);
         exec_usefunc(elem_p, use_ip);
 
