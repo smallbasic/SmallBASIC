@@ -1088,11 +1088,11 @@ void TextEditInput::editDeleteLine() {
 
 void TextEditInput::editEnter() {
   stb_textedit_key(&_buf, &_state, STB_TEXTEDIT_NEWLINE);
-  char spaces[LINE_BUFFER_SIZE];
   int start = lineStart(_state.cursor);
   int prevLineStart = lineStart(start - 1);
 
   if (prevLineStart || _cursorLine == 1) {
+    char spaces[LINE_BUFFER_SIZE];
     int indent = getIndent(spaces, sizeof(spaces), prevLineStart);
     if (indent) {
       _buf.insertChars(_state.cursor, spaces, indent);

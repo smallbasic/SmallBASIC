@@ -26,7 +26,7 @@ bool g_macro_record;
 bool g_returnToLine;
 
 struct StatusMessage {
-  StatusMessage(TextEditInput *editor) :
+  explicit StatusMessage(TextEditInput *editor) :
     _dirty(editor->isDirty()),
     _row(editor->getRow()),
     _col(editor->getCol()) {

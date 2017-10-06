@@ -627,7 +627,6 @@ var_num_t sb_strtof(const char *str) {
   var_num_t r = 0.0;
   int negate = 0;
   int places = 0;
-  int dot = 0;
 
   if (p != NULL) {
     if (*p == '-') {
@@ -636,6 +635,7 @@ var_num_t sb_strtof(const char *str) {
     } else if (*p == '+') {
       p++;
     }
+    int dot = 0;
     while (*p) {
       if (is_digit(*p)) {
         r = r * 10.0f + (*p - '0');

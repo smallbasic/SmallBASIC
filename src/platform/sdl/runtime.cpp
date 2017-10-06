@@ -199,10 +199,10 @@ void Runtime::construct(const char *font, const char *boldFont) {
 }
 
 bool Runtime::debugOpen(const char *file) {
-  char buf[OS_PATHNAME_SIZE + 1];
   bool open;
 
   if (g_debugee != -1) {
+    char buf[OS_PATHNAME_SIZE + 1];
     net_print(g_debugee, "l\n");
     open = net_input(g_debugee, buf, sizeof(buf), "\n") > 0;
   } else {
@@ -220,10 +220,10 @@ bool Runtime::debugOpen(const char *file) {
 void Runtime::debugStart(TextEditInput *editWidget, const char *file) {
   bool open = debugOpen(file);
   if (!open) {
-    char buf[OS_PATHNAME_SIZE + 1];
     g_debugee = net_connect("localhost", g_debugPort);
     if (g_debugee != -1) {
       net_print(g_debugee, "l\n");
+      char buf[OS_PATHNAME_SIZE + 1];
       int size = net_input(g_debugee, buf, sizeof(buf), "\n");
       if (size > 0) {
         int *marker = editWidget->getMarkers();

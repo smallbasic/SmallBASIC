@@ -333,11 +333,11 @@ int v_compare(var_t *a, var_t *b) {
       return 1;
     }
     // check every element
-    int i, ci;
-    for (i = 0; i < a->v.a.size; i++) {
+    for (int i = 0; i < a->v.a.size; i++) {
       var_t *ea = v_elem(a, i);
       var_t *eb = v_elem(b, i);
-      if ((ci = v_compare(ea, eb)) != 0) {
+      int ci = v_compare(ea, eb);
+      if (ci != 0) {
         return ci;
       }
     }

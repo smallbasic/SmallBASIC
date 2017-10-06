@@ -1113,7 +1113,7 @@ int brun_create_task(const char *filename, byte *preloaded_bc, int libf) {
   unit_file_t uft;
   bc_head_t hdr;
   byte *cp;
-  int tid, i, h;
+  int tid;
   byte *source;
   char fname[OS_PATHNAME_SIZE + 1];
 
@@ -1142,7 +1142,7 @@ int brun_create_task(const char *filename, byte *preloaded_bc, int libf) {
       return search_task(fname);
     }
     // open & load
-    h = open(fname, O_RDWR | O_BINARY, 0660);
+    int h = open(fname, O_RDWR | O_BINARY, 0660);
     if (h == -1) {
       panic("File '%s' not found", fname);
     }
@@ -1175,7 +1175,7 @@ int brun_create_task(const char *filename, byte *preloaded_bc, int libf) {
     // copy export-symbols from BC
     if (prog_expcount) {
       prog_exptable = (unit_sym_t *)malloc(prog_expcount * sizeof(unit_sym_t));
-      for (i = 0; i < prog_expcount; i++) {
+      for (int i = 0; i < prog_expcount; i++) {
         memcpy(&prog_exptable[i], cp, sizeof(unit_sym_t));
         cp += sizeof(unit_sym_t);
       }
@@ -1201,13 +1201,13 @@ int brun_create_task(const char *filename, byte *preloaded_bc, int libf) {
     prog_varcount++;
   }
   tvar = malloc(sizeof(var_t *) * prog_varcount);
-  for (i = 0; i < prog_varcount; i++) {
+  for (int i = 0; i < prog_varcount; i++) {
     tvar[i] = v_new();
   }
   // create label-table
   if (prog_labcount) {
     tlab = malloc(sizeof(lab_t) * prog_labcount);
-    for (i = 0; i < prog_labcount; i++) {
+    for (int i = 0; i < prog_labcount; i++) {
       // copy labels from BC
       memcpy(&tlab[i].ip, cp, ADDRSZ);
       cp += ADDRSZ;
@@ -1216,7 +1216,7 @@ int brun_create_task(const char *filename, byte *preloaded_bc, int libf) {
   // build import-lib table
   if (prog_libcount) {
     prog_libtable = (bc_lib_rec_t *)malloc(prog_libcount * sizeof(bc_lib_rec_t));
-    for (i = 0; i < prog_libcount; i++) {
+    for (int i = 0; i < prog_libcount; i++) {
       memcpy(&prog_libtable[i], cp, sizeof(bc_lib_rec_t));
       cp += sizeof(bc_lib_rec_t);
     }
@@ -1225,7 +1225,7 @@ int brun_create_task(const char *filename, byte *preloaded_bc, int libf) {
   // build import-symbol table
   if (prog_symcount) {
     prog_symtable = (bc_symbol_rec_t *)malloc(prog_symcount * sizeof(bc_symbol_rec_t));
-    for (i = 0; i < prog_symcount; i++) {
+    for (int i = 0; i < prog_symcount; i++) {
       memcpy(&prog_symtable[i], cp, sizeof(bc_symbol_rec_t));
       cp += sizeof(bc_symbol_rec_t);
     }
@@ -1261,14 +1261,14 @@ int brun_create_task(const char *filename, byte *preloaded_bc, int libf) {
    *      each library is loaded on new task
    */
   if (prog_libcount) {
-    int lib_tid, j, k;
+    int lib_tid;
 
     // reset symbol mapping
-    for (i = 0; i < prog_symcount; i++) {
+    for (int i = 0; i < prog_symcount; i++) {
       prog_symtable[i].task_id = prog_symtable[i].exp_idx = -1;
     }
     // for each library
-    for (i = 0; i < prog_libcount; i++) {
+    for (int i = 0; i < prog_libcount; i++) {
       if (prog_libtable[i].type == 1) {
         // === SB Unit ===
 
@@ -1282,7 +1282,7 @@ int brun_create_task(const char *filename, byte *preloaded_bc, int libf) {
 
         // update lib-symbols's task-id field (in this code; not
         // in lib's code)
-        for (j = 0; j < prog_symcount; j++) {
+        for (int j = 0; j < prog_symcount; j++) {
           char *pname;
 
           pname = strrchr(prog_symtable[j].symbol, '.') + 1;
@@ -1292,7 +1292,7 @@ int brun_create_task(const char *filename, byte *preloaded_bc, int libf) {
             // find symbol by name (for sure) and update it
             // this is required because lib may be newer than
             // parent
-            for (k = 0; k < taskinfo(lib_tid)->sbe.exec.expcount; k++) {
+            for (int k = 0; k < taskinfo(lib_tid)->sbe.exec.expcount; k++) {
               if (strcmp(pname, taskinfo(lib_tid)->sbe.exec.exptable[k].symbol) == 0) {
                 prog_symtable[j].exp_idx = k;
                 // adjust sid (sid is <-> exp_idx in lib)
@@ -1312,30 +1312,17 @@ int brun_create_task(const char *filename, byte *preloaded_bc, int libf) {
 
         // update lib-symbols's task-id field (in this code; not
         // in lib's code)
-        for (j = 0; j < prog_symcount; j++) {
+        for (int j = 0; j < prog_symcount; j++) {
           prog_symtable[j].exp_idx = slib_get_kid(prog_symtable[j].symbol);
           // adjust sid (sid is <-> exp_idx in lib)
           prog_symtable[j].task_id = -1;  // connect the library
-        }                       // j
+        }
       }
 
       // return
       activate_task(tid);
-    }                           // i
-
-    // check symbol mapping
-    // if ( !opt_decomp ) {
-    // for ( i = 0; i < prog_symcount; i ++ ) {
-    // if ( prog_symtable[i].task_id == -1 && prog_libtable[i].type == 1 )
-    // panic("Symbol (unit) '%s' missing\n", prog_symtable[i].symbol);
-    // if ( prog_symtable[i].task_id == -1 && prog_libtable[i].type == 0 ) {
-    // if ( prog_symtable[j].exp_idx == -1 )
-    // panic("Symbol (module) '%s' missing\n", prog_symtable[i].symbol);
-    // }
-    // }
-    // }
+    }
   }
-  //
   return tid;
 }
 
@@ -1343,7 +1330,6 @@ int brun_create_task(const char *filename, byte *preloaded_bc, int libf) {
  * clean up the current task's (executor's) data
  */
 int exec_close_task() {
-  uint16_t i;
   if (ctask->bytecode) {
     // clean up - format list
     free_format();
@@ -1359,11 +1345,10 @@ int exec_close_task() {
     }
     free(prog_stack);
     // clean up - variables
-    for (i = 0; i < (int) prog_varcount; i++) {
+    for (int i = 0; i < (int) prog_varcount; i++) {
       // do not free imported variables
       int shared = -1;
-      int j;
-      for (j = 0; j < prog_symcount; j++) {
+      for (int j = 0; j < prog_symcount; j++) {
         if (prog_symtable[j].type == stt_variable &&
             prog_symtable[j].var_id == i) {
           shared = j;

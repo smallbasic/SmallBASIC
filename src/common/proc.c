@@ -878,10 +878,9 @@ int par_getipoly(ipt_t **poly_pp) {
  * destroy a parameter-table which was created by par_getparlist
  */
 void par_freepartable(par_t **ptable_pp, int pcount) {
-  int i;
   par_t *ptable = *ptable_pp;
   if (ptable) {
-    for (i = 0; i < pcount; i++) {
+    for (int i = 0; i < pcount; i++) {
       if (ptable[i].flags & PAR_BYVAL) {
         v_free(ptable[i].var);
         v_detach(ptable[i].var);
@@ -1044,29 +1043,18 @@ int par_massget_type_check(char fmt, par_t *par) {
  * pfree2(s1, v);
  */
 int par_massget(const char *fmt, ...) {
-  char *fmt_p = NULL;
-  int pcount, rqcount, optcount, curpar;
-  int opt = 0, ignore = 0;
-  va_list ap;
-  par_t *ptable;
-
-  char **s;
-  var_int_t *i;
-  var_num_t *f;
-  var_t **vt;
-
   // get ptable
-  pcount = par_getpartable(&ptable, NULL);
+  par_t *ptable;
+  int pcount = par_getpartable(&ptable, NULL);
   if (pcount == -1) {
     free(ptable);
     return -1;
   }
 
-  /*
-   *      count pars
-   */
-  fmt_p = (char *)fmt;
-  rqcount = optcount = 0;
+  // count pars
+  char *fmt_p = (char *)fmt;
+  int optcount = 0;
+  int rqcount = 0;
   while (*fmt_p) {
     if (*fmt_p >= 'a') {
       optcount++;
@@ -1080,11 +1068,13 @@ int par_massget(const char *fmt, ...) {
     err_parfmt(fmt);
   }
   else {
-    /*
-     *      parse
-     */
+    // parse
+    int curpar = 0;
+    int opt = 0;
+    int ignore = 0;
+    va_list ap;
+
     va_start(ap, fmt);
-    curpar = 0;
     fmt_p = (char *)fmt;
     while (*fmt_p) {
       if (*fmt_p >= 'a' && optcount &&
@@ -1104,9 +1094,13 @@ int par_massget(const char *fmt, ...) {
 
       if (pcount <= curpar && ignore == 0) {
         err_parfmt(fmt);
-        // rt_raise("%s\nb: pc=%d, oc=%d, rc=%d", fmt, pcount, optcount, rqcount);
         break;
       }
+
+      char **s;
+      var_int_t *i;
+      var_num_t *f;
+      var_t **vt;
 
       switch (*fmt_p) {
       case 's':

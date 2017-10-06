@@ -361,19 +361,19 @@ void comp_prepare_udp_name(char *dest, const char *basename) {
  */
 bid_t comp_udp_id(const char *proc_name, int scan_tree) {
   bid_t i;
-  char *name = comp_bc_temp, *p;
-  char base[SB_KEYWORD_SIZE + 1];
-  char *root;
-  int len;
+  char *name = comp_bc_temp;
 
   if (scan_tree) {
+    char base[SB_KEYWORD_SIZE + 1];
     comp_prepare_name(base, baseof(proc_name, '/'), SB_KEYWORD_SIZE);
-    root = strdup(comp_bc_proc);
+    char *root = strdup(comp_bc_proc);
+    int len;
     do {
       // (nested procs) move root down
-      if ((len = strlen(root)) != 0) {
+      len = strlen(root);
+      if (len != 0) {
         sprintf(name, "%s/%s", root, base);
-        p = strrchr(root, '/');
+        char *p = strrchr(root, '/');
         if (p) {
           *p = '\0';
         } else {
@@ -596,14 +596,13 @@ int comp_check_labels() {
  * returns true if 'name' is a unit or c-module
  */
 int comp_check_lib(const char *name) {
-  char tmp[SB_KEYWORD_SIZE + 1];char *p;
-  int i;
+  char tmp[SB_KEYWORD_SIZE + 1];
 
   strcpy(tmp, name);
-  p = strchr(tmp, '.');
+  char *p = strchr(tmp, '.');
   if (p) {
     *p = '\0';
-    for (i = 0; i < comp_libcount; i++) {
+    for (int i = 0; i < comp_libcount; i++) {
       bc_lib_rec_t *lib = comp_libtable.elem[i];
 
       // remove any file path component from the name
@@ -1646,15 +1645,12 @@ int comp_getlist(char *source, char_p_t *args, int maxarg) {
  * returns the next position in 'source' (after the sep[1])
  */
 char *comp_getlist_insep(char *source, char_p_t *args, char *sep, int maxarg, int *count) {
-  char *p;
-  char *ps;
-  int level = 1;
-
   *count = 0;
-  p = strchr(source, sep[0]);
+  char *p = strchr(source, sep[0]);
 
   if (p) {
-    ps = p + 1;
+    int level = 1;
+    char *ps = p + 1;
     p++;
 
     while (*p) {
@@ -1972,9 +1968,9 @@ void comp_text_line_let(bid_t idx, int ladd, int linc, int ldec, int leqop) {
   char *array_index = NULL;
   int array_index_len = 0;
   int v_func = 0;
-  char closeBracket = '\0';
 
   if (parms[0] == '(' || parms[0] == '[') {
+    char closeBracket = '\0';
     int level = 0;
     p = parms;
     while (*p) {
@@ -2534,8 +2530,7 @@ void comp_text_line_ext_func() {
 
 int comp_text_line_command(bid_t idx, int decl, int sharp, char *last_cmd) {
   char_p_t pars[MAX_PARAMS];
-  int count, i, index;
-  char vname[SB_KEYWORD_SIZE + 1];
+  int index;
   int result = 1;
 
   switch (idx) {
@@ -2571,15 +2566,16 @@ int comp_text_line_command(bid_t idx, int decl, int sharp, char *last_cmd) {
   case kwLOCAL:
     // local variables
     if (!opt_autolocal) {
-      count = comp_getlist(comp_bc_parm, pars, MAX_PARAMS);
+      char vname[SB_KEYWORD_SIZE + 1];
+      int count = comp_getlist(comp_bc_parm, pars, MAX_PARAMS);
       bc_add_code(&comp_prog, kwTYPE_CRVAR);
       bc_add_code(&comp_prog, count);
-      for (i = 0; i < count; i++) {
+      for (int i = 0; i < count; i++) {
         comp_prepare_name(vname, pars[i], SB_KEYWORD_SIZE);
         bc_add_addr(&comp_prog, comp_var_getID(vname));
       }
       // handle same line variable assignment, eg local blah = foo
-      for (i = 0; i < count; i++) {
+      for (int i = 0; i < count; i++) {
         comp_prepare_name(vname, pars[i], SB_KEYWORD_SIZE);
         if (strlen(vname) != strlen(pars[i])) {
           // kwTYPE_LINE is required for executor
@@ -3105,11 +3101,8 @@ bcip_t comp_search_bc_eoc(bcip_t ip) {
  * search stack
  */
 bcip_t comp_search_bc_stack(bcip_t start, code_t code, byte level, bid_t block_id) {
-  bcip_t i;
-  comp_pass_node_t *node;
-
-  for (i = start; i < comp_sp; i++) {
-    node = comp_stack.elem[i];
+  for (bcip_t i = start; i < comp_sp; i++) {
+    comp_pass_node_t *node = comp_stack.elem[i];
     if (comp_prog.ptr[node->pos] == code) {
       if (node->level == level && (block_id == -1 || block_id == node->block_id)) {
         return node->pos;
@@ -3123,13 +3116,10 @@ bcip_t comp_search_bc_stack(bcip_t start, code_t code, byte level, bid_t block_i
  * search stack backward
  */
 bcip_t comp_search_bc_stack_backward(bcip_t start, code_t code, byte level, bid_t block_id) {
-  bcip_t i = start;
-  comp_pass_node_t *node;
-
-  for (; i < comp_sp; i--) {
+  for (bcip_t i = start; i < comp_sp; i--) {
     // WARNING: ITS UNSIGNED, SO WE'LL SEARCH
     // IN RANGE [0..STK_COUNT]
-    node = comp_stack.elem[i];
+    comp_pass_node_t *node = comp_stack.elem[i];
     if (comp_prog.ptr[node->pos] == code) {
       if (node->level == level && (block_id == -1 || block_id == node->block_id)) {
         return node->pos;
@@ -3160,7 +3150,7 @@ bcip_t comp_next_bc_peek(bcip_t start) {
 void print_pass2_stack(bcip_t pos, code_t lcode, int level) {
   bcip_t ip;
   bcip_t i;
-  int j, cs_idx;
+  int j;
   char cmd[16], cmd2[16];
   comp_pass_node_t *node;
   code_t ccode[256];
@@ -3218,7 +3208,7 @@ void print_pass2_stack(bcip_t pos, code_t lcode, int level) {
       strcpy(cmd, "---");
     }
     // sum
-    cs_idx = -1;
+    int cs_idx = -1;
     for (j = 0; j < cs_count; j++) {
       if (ccode[j] == code) {
         cs_idx = j;
@@ -4166,7 +4156,6 @@ const char *get_unit_name(const char *p, char *buf_p) {
 void comp_preproc_import(const char *slist) {
   const char *p;
   char buf[OS_PATHNAME_SIZE + 1];
-  int uid;
 
   p = slist;
 
@@ -4178,7 +4167,8 @@ void comp_preproc_import(const char *slist) {
 
     // import name
     strlower(buf);
-    if ((uid = slib_get_module_id(buf)) != -1) {  // C module
+    int uid = slib_get_module_id(buf);
+    if (uid != -1) {  // C module
       // store C module lib-record
       slib_setup_comp(uid);
       add_libtable_rec(buf, uid, 0);

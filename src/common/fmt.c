@@ -371,9 +371,8 @@ int fmt_cdig(char *fmt) {
 char *format_num(const char *fmt_cnst, var_num_t x) {
   char *p, *fmt;
   char left[64], right[64];
-  char lbuf[64], rbuf[64];
-  int dp = 0, lc = 0, sign = 0;
-  int rsz, lsz;
+  char lbuf[64] ;
+  int lc = 0, sign = 0;
 
   char *dest = malloc(128);
 
@@ -410,8 +409,8 @@ char *format_num(const char *fmt_cnst, var_num_t x) {
       *p = '\0';
       strcpy(left, dest);
       strcpy(right, p + 1);
-      lsz = strlen(left);
-      rsz = strlen(right) + 1;
+      int lsz = strlen(left);
+      int rsz = strlen(right) + 1;
 
       if (lc < rsz + 1) {
         fmt_omap(dest, fmt);
@@ -461,6 +460,8 @@ char *format_num(const char *fmt_cnst, var_num_t x) {
     strcpy(left, dest);
 
     // map format
+    char rbuf[64];
+    int dp = 0;
     rbuf[0] = lbuf[0] = '\0';
     p = strchr(fmt, '.');
     if (p) {
@@ -676,9 +677,7 @@ char *fmt_getstrfmt(char *dest, char *source) {
  * add format node
  */
 void fmt_addfmt(const char *fmt, int type) {
-  fmt_node_t *node;
-
-  node = &fmt_stack[fmt_count];
+  fmt_node_t *node = &fmt_stack[fmt_count];
   fmt_count++;
   if (fmt_count >= MAX_FMT_N) {
     panic("Maximum format-node reached");
@@ -692,11 +691,8 @@ void fmt_addfmt(const char *fmt, int type) {
  * cleanup format-list
  */
 void free_format() {
-  int i;
-  fmt_node_t *node;
-
-  for (i = 0; i < fmt_count; i++) {
-    node = &fmt_stack[i];
+  for (int i = 0; i < fmt_count; i++) {
+    fmt_node_t *node = &fmt_stack[i];
     free(node->fmt);
   }
 
@@ -710,20 +706,17 @@ void free_format() {
  * '_' the next character is not belongs to format (simple string)
  */
 void build_format(const char *fmt_cnst) {
-  char *fmt;
-  char *p;
-  int nc;
-  char buf[1024], *b;
+  char buf[1024];
 
   free_format();
 
   // backup of format
-  fmt = malloc(strlen(fmt_cnst) + 1);
+  char *fmt = malloc(strlen(fmt_cnst) + 1);
   strcpy(fmt, fmt_cnst);
 
-  p = fmt;
-  b = buf;
-  nc = 0;
+  char *p = fmt;
+  char *b = buf;
+  int nc = 0;
   while (*p) {
     switch (*p) {
     case '_':
@@ -795,11 +788,10 @@ void build_format(const char *fmt_cnst) {
  * print simple strings (parts of format)
  */
 void fmt_printL(int output, int handle) {
-  fmt_node_t *node;
-
   if (fmt_count == 0) {
     return;
   } else {
+    fmt_node_t *node;
     do {
       node = &fmt_stack[fmt_cur];
       if (node->type == 0) {
@@ -817,12 +809,11 @@ void fmt_printL(int output, int handle) {
  * print formated number
  */
 void fmt_printN(var_num_t x, int output, int handle) {
-  fmt_node_t *node;
   if (fmt_count == 0) {
     rt_raise(ERR_FORMAT_INVALID_FORMAT);
   } else {
     fmt_printL(output, handle);
-    node = &fmt_stack[fmt_cur];
+    fmt_node_t *node = &fmt_stack[fmt_cur];
     fmt_cur++;
     if (fmt_cur >= fmt_count)
       fmt_cur = 0;
@@ -843,13 +834,11 @@ void fmt_printN(var_num_t x, int output, int handle) {
  * print formated string
  */
 void fmt_printS(const char *str, int output, int handle) {
-  fmt_node_t *node;
-
   if (fmt_count == 0) {
     rt_raise(ERR_FORMAT_INVALID_FORMAT);
   } else {
     fmt_printL(output, handle);
-    node = &fmt_stack[fmt_cur];
+    fmt_node_t *node = &fmt_stack[fmt_cur];
     fmt_cur++;
     if (fmt_cur >= fmt_count) {
       fmt_cur = 0;

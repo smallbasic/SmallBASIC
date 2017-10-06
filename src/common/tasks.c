@@ -42,13 +42,11 @@ task_t *taskinfo(int n) {
  *	initialize tasks manager
  */
 int init_tasks() {
-  int tid;
-
   tasks = NULL;
   task_count = 0;
   task_index = 0;
   ctask = NULL;
-  tid = create_task("main");
+  int tid = create_task("main");
   activate_task(tid);
   return tid;
 }
@@ -59,11 +57,9 @@ int init_tasks() {
  *	destroys tasks and closes task manager
  */
 void destroy_tasks() {
-  int i;
-
-  for (i = 0; i < task_count; i++)
+  for (int i = 0; i < task_count; i++) {
     close_task(i);
-
+  }
   task_count = 0;
   task_index = 0;
   ctask = NULL;
@@ -81,7 +77,6 @@ void destroy_tasks() {
  */
 int create_task(const char *name) {
   int tid = -1;
-  int i;
 
   if (task_count == 0) {
     // this is the first task
@@ -90,7 +85,7 @@ int create_task(const char *name) {
     tasks = (task_t *) malloc(sizeof(task_t) * task_count);
   } else {
     // search for an available free entry
-    for (i = 0; i < task_count; i++) {
+    for (int i = 0; i < task_count; i++) {
       if (tasks[i].status == tsk_free) {
         tid = i;
         break;
@@ -121,18 +116,18 @@ int create_task(const char *name) {
  *	closes a task and activate the next
  */
 void close_task(int tid) {
-//      memset(&tasks[tid], 0, sizeof(task_t));
   tasks[tid].status = tsk_free;
-  if (task_index == tid)
+  if (task_index == tid) {
     ctask = NULL;
-
+  }
   // select next task
   if (task_count) {
     if (task_index == tid) {
-      if (task_count > task_index + 1)
+      if (task_count > task_index + 1) {
         task_index++;
-      else
+      } else {
         task_index = 0;
+      }
       ctask = &tasks[task_index];
     }
   }
@@ -147,9 +142,7 @@ void close_task(int tid) {
  *	@return the previous task-id
  */
 int activate_task(int tid) {
-  int prev_tid;
-
-  prev_tid = task_index;
+  int prev_tid = task_index;
   task_index = tid;
   ctask = &tasks[tid];
   return prev_tid;
@@ -164,11 +157,10 @@ int activate_task(int tid) {
  *	@return the task-id; or -1 on error
  */
 int search_task(const char *task_name) {
-  int i;
-
-  for (i = 0; i < task_count; i++) {
-    if (strcmp(tasks[i].file, task_name) == 0)
+  for (int i = 0; i < task_count; i++) {
+    if (strcmp(tasks[i].file, task_name) == 0) {
       return i;
+    }
   }
   return -1;
 }

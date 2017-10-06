@@ -36,11 +36,7 @@
  * matrix: convert var_t to double[r][c]
  */
 var_num_t *mat_toc(var_t *v, int32_t *rows, int32_t *cols) {
-  int i, j, pos;
-  var_t *e;
-  var_num_t *m;
-
-  m = NULL;
+  var_num_t *m = NULL;
   *rows = *cols = 0;
 
   if (!v) {
@@ -63,10 +59,10 @@ var_num_t *mat_toc(var_t *v, int32_t *rows, int32_t *cols) {
   }
 
   m = (var_num_t *)malloc(((*rows) * (*cols)) * sizeof(var_num_t));
-  for (i = 0; i < *rows; i++) {
-    for (j = 0; j < *cols; j++) {
-      pos = i * (*cols) + j;
-      e = v_elem(v, pos);
+  for (int i = 0; i < *rows; i++) {
+    for (int j = 0; j < *cols; j++) {
+      int pos = i * (*cols) + j;
+      var_t *e = v_elem(v, pos);
       m[pos] = v_getval(e);
     }
   }
@@ -78,19 +74,15 @@ var_num_t *mat_toc(var_t *v, int32_t *rows, int32_t *cols) {
  * matrix: conv. double[nr][nc] to var_t
  */
 void mat_tov(var_t *v, var_num_t *m, int rows, int cols, int protect_col1) {
-  var_t *e;
-  int i, j, pos;
-
   if (cols > 1 || protect_col1) {
     v_tomatrix(v, rows, cols);
   } else {
     v_toarray1(v, rows);
   }
-
-  for (i = 0; i < rows; i++) {
-    for (j = 0; j < cols; j++) {
-      pos = i * cols + j;
-      e = v_elem(v, pos);
+  for (int i = 0; i < rows; i++) {
+    for (int j = 0; j < cols; j++) {
+      int pos = i * cols + j;
+      var_t *e = v_elem(v, pos);
       e->type = V_NUM;
       e->v.n = m[pos];
     }
@@ -101,16 +93,14 @@ void mat_tov(var_t *v, var_num_t *m, int rows, int cols, int protect_col1) {
  * matrix: 1op
  */
 void mat_op1(var_t *l, int op, var_num_t n) {
-  var_num_t *m1, *m;
-  int lr, lc, pos;
-  int i, j;
+  int lr, lc;
 
-  m1 = mat_toc(l, &lr, &lc);
+  var_num_t *m1 = mat_toc(l, &lr, &lc);
   if (m1) {
-    m = (var_num_t *)malloc(sizeof(var_num_t) * lr * lc);
-    for (i = 0; i < lr; i++) {
-      for (j = 0; j < lc; j++) {
-        pos = i * lc + j;
+    var_num_t *m = (var_num_t *)malloc(sizeof(var_num_t) * lr * lc);
+    for (int i = 0; i < lr; i++) {
+      for (int j = 0; j < lc; j++) {
+        int pos = i * lc + j;
         switch (op) {
         case '*':
           m[pos] = m1[pos] * n;
@@ -145,21 +135,20 @@ void mat_mulN(var_t *v, var_num_t N) {
  * matrix - add/sub
  */
 void mat_op2(var_t *l, var_t *r, int op) {
-  var_num_t *m1, *m2, *m = NULL;
-  int lr, lc, rr, rc, pos;
-  int i, j;
+  int lr, lc, rr, rc;
 
-  m1 = mat_toc(l, &lr, &lc);
+  var_num_t *m1 = mat_toc(l, &lr, &lc);
   if (m1) {
-    m2 = mat_toc(r, &rr, &rc);
+    var_num_t *m2 = mat_toc(r, &rr, &rc);
     if (m2) {
+      var_num_t *m = NULL;
       if (rc != lc || lr != rr) {
         err_matdim();
       } else {
         m = (var_num_t *)malloc(sizeof(var_num_t) * lr * lc);
-        for (i = 0; i < lr; i++) {
-          for (j = 0; j < lc; j++) {
-            pos = i * lc + j;
+        for (int i = 0; i < lr; i++) {
+          for (int j = 0; j < lc; j++) {
+            int pos = i * lc + j;
             if (op == '+') {
               m[pos] = m1[pos] + m2[pos];
             } else {
@@ -199,26 +188,26 @@ void mat_sub(var_t *l, var_t *r) {
  * matrix: multiply
  */
 void mat_mul(var_t *l, var_t *r) {
-  var_num_t *m1, *m2, *m = NULL;
-  int lr, lc, rr, rc, pos;
-  int mr = 0, mc = 0;
-  int i, j, k;
+  int lr, lc, rr, rc;
 
-  m1 = mat_toc(l, &lr, &lc);
+  var_num_t *m1 = mat_toc(l, &lr, &lc);
   if (m1) {
-    m2 = mat_toc(r, &rr, &rc);
+    var_num_t *m2 = mat_toc(r, &rr, &rc);
     if (m2) {
+      var_num_t *m = NULL;
+      int mr = 0;
+      int mc = 0;
       if (lc != rr) {
         err_matdim();
       } else {
         mr = lr;
         mc = rc;
         m = (var_num_t *)malloc(sizeof(var_num_t) * mr * mc);
-        for (i = 0; i < mr; i++) {
-          for (j = 0; j < mc; j++) {
-            pos = i * mc + j;
+        for (int i = 0; i < mr; i++) {
+          for (int j = 0; j < mc; j++) {
+            int pos = i * mc + j;
             m[pos] = 0.0;
-            for (k = 0; k < lc; k++) {
+            for (int k = 0; k < lc; k++) {
               m[pos] = m[pos] + (m1[i * lc + k] * m2[k * rc + j]);
             }
           }
