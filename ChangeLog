@@ -1,6 +1,7 @@
 2017-10-07 (0.12.10)
 	COMMON: Fix var scope errors reported by cppcheck
 	COMMON: dirwalk callback now provides properties path,name,depth,mtime,size,dir
+	UI: shell now displays size and date columns
 
 2017-09-30 (0.12.10)
 	COMMON: Update var cache handling to use free-list

@@ -2,6 +2,7 @@ const app = "main.bas?"
 const boldOn = chr(27) + "[1m"
 const boldOff = chr(27) + "[21m"
 const char_h = txth("Q")
+const char_w = txtw(".")
 const lineSpacing = 2 + char_h
 const onlineUrl = "http://smallbasic.github.io/samples/index.bas"
 const idxEdit = 6
@@ -12,7 +13,7 @@ const deleteId = "__bn_delete__"
 const newId = "__bn_new__"
 const viewId = "__bn_view__"
 const closeId = "__bn_close__"
-const menu_gap = -(txtw(" ") / 2)
+const menu_gap = -(char_w / 2)
 const is_sdl = instr(sbver, "SDL") != 0
 
 func spaced(s)
@@ -182,17 +183,62 @@ sub server_info()
   fi
 end
 
-func fileCmpFunc(l, r)
-  local f1 = lower(l)
-  local f2 = lower(r)
-  fileCmpFunc = IFF(f1 == f2, 0, IFF(f1 > f2, 1, -1))
+func fileCmpFunc0(l, r)
+  local f1 = lower(l.name)
+  local f2 = lower(r.name)
+  return IFF(f1 == f2, 0, IFF(f1 > f2, 1, -1))
 end
 
-sub listFiles(byref frm, path, byref basList, byref dirList)
-  local fileList, ent, name, lastItem, bn, bn_back
+func fileCmpFunc1(l, r)
+  local f1 = lower(l.name)
+  local f2 = lower(r.name)
+  return IFF(f1 == f2, 0, IFF(f1 > f2, -1, 1))
+end
 
+func fileCmpFunc2(l, r)
+  local f1 = l.size
+  local f2 = r.size
+  return IFF(f1 == f2, 0, IFF(f1 > f2, 1, -1))
+end
+
+func fileCmpFunc3(l, r)
+  local f1 = l.size
+  local f2 = r.size
+  return IFF(f1 == f2, 0, IFF(f1 > f2, -1, 1))
+end
+
+func fileCmpFunc4(l, r)
+  local f1 = l.mtime
+  local f2 = r.mtime
+  return IFF(f1 == f2, 0, IFF(f1 > f2, 1, -1))
+end
+
+func fileCmpFunc5(l, r)
+  local f1 = l.mtime
+  local f2 = r.mtime
+  return IFF(f1 == f2, 0, IFF(f1 > f2, -1, 1))
+end
+
+sub loadFileList(path, byref basList, byref dirList)
   erase basList
   erase dirList
+
+  func walker(node)
+    if (node.depth==0) then
+      if (node.dir && left(node.name, 1) != ".") then
+        dirList << node
+      else if (lower(right(node.name, 4)) == ".bas") then
+        basList << node
+      endif
+    endif
+    return node.depth == 0
+  end
+  dirwalk path, "", use walker(x)
+end
+
+sub listFiles(byref frm, path, sortDir, byref basList, byref dirList)
+  local fileList, name, lastItem, bn, bn_back, i, lab, gap, n, node
+  local bn_name, bn_size, bn_date
 
   if (right(path, 1) != "/") then
     path += "/"
@@ -207,62 +253,97 @@ sub listFiles(byref frm, path, byref basList, byref dirList)
   bn_back = mk_bn("_back", "[Go up]", 3)
   bn_back.type = "link"
   bn_back.x = 0
-  bn_back.y = -lineSpacing
+  bn_back.y = -linespacing
   frm.inputs << bn_back
 
-  fileList = files(path)
+  bn_name = mk_bn("_sort_name", "[Name]", 3)
+  bn_name.type = "link"
+  bn_name.x = -(char_w * 3)
+  bn_name.y = -1
+  frm.inputs << bn_name
 
-  for ent in fileList
-    name = ent
-    if (isdir(path + name) && left(name, 1) != ".") then
-      dirList << name
-    else if (lower(right(ent, 4)) == ".bas") then
-      basList << name
-    endif
-  next ent
+  bn_size = mk_bn("_sort_size", "[Size]", 3)
+  bn_size.type = "link"
+  bn_size.x = -(char_w * 6)
+  bn_size.y = -1
+  frm.inputs << bn_size
 
-  sort dirList use fileCmpFunc(x,y)
-  sort basList use filecmpfunc(x,y)
+  bn_date = mk_bn("_sort_date", "[Date]", 3)
+  bn_date.type = "link"
+  bn_date.x = -(char_w * 6)
+  bn_date.y = -1
+  frm.inputs << bn_date
+
+  loadFileList(path, basList, dirList)
+  select case sortDir
+  case 0
+    sort dirList use fileCmpFunc0(x,y)
+    sort basList use filecmpfunc0(x,y)
+  case 1
+    sort dirList use fileCmpFunc1(x,y)
+    sort basList use filecmpfunc1(x,y)
+  case 2
+    sort dirList use fileCmpFunc2(x,y)
+    sort basList use filecmpfunc2(x,y)
+  case 3
+    sort dirList use fileCmpFunc3(x,y)
+    sort basList use filecmpfunc3(x,y)
+  case 4
+    sort dirList use fileCmpFunc4(x,y)
+    sort basList use filecmpfunc4(x,y)
+  case 5
+    sort dirList use fileCmpFunc5(x,y)
+    sort basList use filecmpfunc5(x,y)
+  end select
 
   lastItem = len(dirList) - 1
-
   for i = 0 to lastItem
-    bn = mk_bn(path + dirList(i), "[" + dirList(i) + "]", 3)
+    name = dirList(i).name
+    bn = mk_bn(path + name, "[" + name + "]", 3)
     bn.type = "link"
     frm.inputs << bn
-  next ent
+  next i
 
   lastItem = len(basList) - 1
   for i = 0 to lastItem
-    bn = mk_bn(path + basList(i), basList(i), 2)
+    node = basList(i)
+    name = node.name
+    gap = 22 - len(name)
+    n = iff(gap > 1, gap, 1)
+    lab = name + space(n)
+    gap = 12 - len(str(node.size))
+    n = iff(gap > 1, gap, 1)
+    lab += node.size + space(n) + timestamp(node.path+name)
+
+    bn = mk_bn(path + name, lab, 2)
     bn.type = "link"
     bn.isExit = true
     frm.inputs << bn
-  next ent
-end
-
-func getFiles()
-  local list = files("*.*")
-  local entry
-
-  dim result
-  for entry in list
-    if (lower(right(entry, 4)) == ".bas") then
-      result << entry
-    endIf
-  next entry
-
-  sort result use fileCmpFunc(x,y)
-  getFiles = result
+  next i
 end
 
 sub manageFiles()
   local f, wnd, bn_edit, bn_files, selectedFile
 
+  func getFiles()
+    local list = files("*.*")
+    local entry
+
+    dim result
+    for entry in list
+      if (lower(right(entry, 4)) == ".bas") then
+        result << entry
+      endIf
+    next entry
+
+    sort result use fileCmpFunc(x,y)
+    return result
+  end
+
   sub createUI()
     cls
     local num_chars = 42
-    local abbr = TXTW(".") * num_chars > xmax
+    local abbr = char_w * num_chars > xmax
     f.inputs << mk_menu(closeId, "<<", 0)
     f.inputs << mk_menu(viewId, "View", menu_gap)
     f.inputs << mk_menu(renameId, IFF(abbr, "Ren", "Rename"), menu_gap)
@@ -462,8 +543,9 @@ end
 sub main
   local path, frm
   local is_welcome = (command == "welcome")
+  local sortDir = 0
 
-  func makeUI(path)
+  func makeUI(path, sortDir)
     local frm, bn_files, bn_online, bn_setup, bn_about, bn_new
     local basList, dirList
     dim basList
@@ -483,9 +565,9 @@ sub main
       frm.inputs << bn_setup
     endif
     frm.inputs << bn_about
-    listFiles frm, path, basList, dirList
+    listFiles frm, path, sortDir, basList, dirList
     frm.color = 10
-    makeUI = form(frm)
+    return form(frm)
   end
 
   sub go_back
@@ -507,7 +589,7 @@ sub main
   end
 
   path = cwd
-  frm = makeUI(path)
+  frm = makeUI(path, sortDir)
 
   while 1
     frm.doEvents()
@@ -517,21 +599,34 @@ sub main
       if (changeDir(frm.value)) then
         path = frm.value
       endif
-      frm = makeUI(path)
+      frm = makeUI(path, sortDir)
     elif frm.value == "_about" then
       do_about()
-      frm = makeUI(path)
+      frm = makeUI(path, sortDir)
     elif frm.value == "_setup" then
       do_setup()
-      frm = makeUI(path)
+      frm = makeUI(path, sortDir)
     elif frm.value == "_files" then
-      changeDir(path)
-      managefiles()
-      frm = makeUI(path)
+      if (changeDir(path)) then
+        managefiles()
+      endif
+      frm = makeUI(path, sortDir)
     elif frm.value == "_back" then
       cls
       go_back()
-      frm = makeUI(path)
+      frm = makeUI(path, sortDir)
+    elif (frm.value == "_sort_name") then
+      cls
+      sortDir = iff(sortDir==0,1,0)
+      frm = makeUI(path, sortDir)
+    elif (frm.value == "_sort_size") then
+      cls
+      sortDir = iff(sortDir==2,3,2)
+      frm = makeUI(path, sortDir)
+    elif (frm.value == "_sort_date") then
+      cls
+      sortDir = iff(sortDir==4,5,4)
+      frm = makeUI(path, sortDir)
     fi
   wend
 end
