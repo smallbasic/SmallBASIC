@@ -239,7 +239,7 @@ end
 
 sub listFiles(byref frm, path, sortDir, byref basList, byref dirList)
   local fileList, name, lastItem, bn, bn_back, i, gap, n, node
-  local bn_name, bn_size, bn_date, abbr
+  local bn_name, bn_size, bn_date, abbr, lab
   local name_col = 3
   local size_col = 3
   local date_col = 3
@@ -289,7 +289,7 @@ sub listFiles(byref frm, path, sortDir, byref basList, byref dirList)
 
   bn_name = mk_bn("_sort_name", "[Name]", name_col)
   bn_name.type = "link"
-  bn_name.x = -(char_w * 5)
+  bn_name.x = -(char_w * 8)
   bn_name.y = -1
   frm.inputs << bn_name
 
@@ -297,7 +297,7 @@ sub listFiles(byref frm, path, sortDir, byref basList, byref dirList)
   if (not abbr) then
     bn_size = mk_bn("_sort_size", "[Size]", size_col)
     bn_size.type = "link"
-    bn_size.x = -(char_w * 6)
+    bn_size.x = -(char_w * 8)
     bn_size.y = -1
     frm.inputs << bn_size
 
@@ -326,8 +326,12 @@ sub listFiles(byref frm, path, sortDir, byref basList, byref dirList)
       bn.isExit = true
       frm.inputs << bn
     else
-      if (len(name) > 23) then name = left(name, 22) + "~"
-      bn = mk_bn(path + name, name, 2)
+      if (len(name) > 27) then 
+        lab = left(name, 27) + "~"
+      else
+        lab = name
+      endif
+      bn = mk_bn(path + name, lab, 2)
       bn.type = "link"
       bn.isExit = true
       frm.inputs << bn
@@ -337,7 +341,7 @@ sub listFiles(byref frm, path, sortDir, byref basList, byref dirList)
       bn = mk_bn(0, node.size + space(n) + timestamp(node.mtime), 1)
       bn.type = "label"
       bn.y = -1
-      gap = 24 - len(name)
+      gap = 29 - len(name)
       bn.x = -(iff(gap > 1, gap, 1)*char_w)
       frm.inputs << bn
     endif
@@ -565,7 +569,8 @@ end
 sub main
   local path, frm
   local is_welcome = (command == "welcome")
-  local sortDir = 0
+  local sortDir = env("sortDir")
+  if (len(sortDir) == 0) then sortDir = 0
 
   func makeUI(path, sortDir)
     local frm, bn_files, bn_online, bn_setup, bn_about, bn_new
@@ -640,14 +645,17 @@ sub main
     elif (frm.value == "_sort_name") then
       cls
       sortDir = iff(sortDir==0,1,0)
+      env("sortDir="+sortDir)
       frm = makeUI(path, sortDir)
     elif (frm.value == "_sort_size") then
       cls
       sortDir = iff(sortDir==3,2,3)
+      env("sortDir="+sortDir)
       frm = makeUI(path, sortDir)
     elif (frm.value == "_sort_date") then
       cls
       sortDir = iff(sortDir==5,4,5)
+      env("sortDir="+sortDir)
       frm = makeUI(path, sortDir)
     fi
   wend
