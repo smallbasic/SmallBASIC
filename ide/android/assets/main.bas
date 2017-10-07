@@ -326,7 +326,7 @@ sub listFiles(byref frm, path, sortDir, byref basList, byref dirList)
       bn.isExit = true
       frm.inputs << bn
     else
-      if (len(name) > 27) then 
+      if (len(name) > 27) then
         lab = left(name, 27) + "~"
       else
         lab = name
@@ -350,6 +350,12 @@ end
 
 sub manageFiles()
   local f, wnd, bn_edit, bn_files, selectedFile
+
+  func fileCmpFunc(l, r)
+    local f1 = lower(l)
+    local f2 = lower(r)
+    return IFF(f1 == f2, 0, IFF(f1 > f2, 1, -1))
+  end
 
   func getFiles()
     local list = files("*.*")
