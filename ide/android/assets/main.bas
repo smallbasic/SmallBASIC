@@ -238,7 +238,7 @@ sub loadFileList(path, byref basList, byref dirList)
 end
 
 sub listFiles(byref frm, path, sortDir, byref basList, byref dirList)
-  local fileList, name, lastItem, bn, bn_back, i, lab, gap, n, node
+  local fileList, name, lastItem, bn, bn_back, i, gap, n, node
   local bn_name, bn_size, bn_date, abbr
   local name_col = 3
   local size_col = 3
@@ -321,20 +321,26 @@ sub listFiles(byref frm, path, sortDir, byref basList, byref dirList)
     node = basList(i)
     name = node.name
     if (abbr) then
-      lab = name
+      bn = mk_bn(path + name, name, 2)
+      bn.type = "link"
+      bn.isExit = true
+      frm.inputs << bn
     else
       if (len(name) > 23) then name = left(name, 22) + "~"
-      gap = 24 - len(name)
-      n = iff(gap > 1, gap, 1)
-      lab = name + space(n)
+      bn = mk_bn(path + name, name, 2)
+      bn.type = "link"
+      bn.isExit = true
+      frm.inputs << bn
+
       gap = 12 - len(str(node.size))
       n = iff(gap > 1, gap, 1)
-      lab += node.size + space(n) + timestamp(node.mtime)
+      bn = mk_bn(0, node.size + space(n) + timestamp(node.mtime), 1)
+      bn.type = "label"
+      bn.y = -1
+      gap = 24 - len(name)
+      bn.x = -(iff(gap > 1, gap, 1)*char_w)
+      frm.inputs << bn
     endif
-    bn = mk_bn(path + name, lab, 2)
-    bn.type = "link"
-    bn.isExit = true
-    frm.inputs << bn
   next i
 end
 
@@ -637,11 +643,11 @@ sub main
       frm = makeUI(path, sortDir)
     elif (frm.value == "_sort_size") then
       cls
-      sortDir = iff(sortDir==2,3,2)
+      sortDir = iff(sortDir==3,2,3)
       frm = makeUI(path, sortDir)
     elif (frm.value == "_sort_date") then
       cls
-      sortDir = iff(sortDir==4,5,4)
+      sortDir = iff(sortDir==5,4,5)
       frm = makeUI(path, sortDir)
     fi
   wend
