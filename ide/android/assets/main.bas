@@ -225,6 +225,7 @@ sub loadFileList(path, byref basList, byref dirList)
 
   func walker(node)
     if (node.depth==0) then
+      node.path=0
       if (node.dir && left(node.name, 1) != ".") then
         dirList << node
       else if (lower(right(node.name, 4)) == ".bas") then
@@ -328,7 +329,7 @@ sub listFiles(byref frm, path, sortDir, byref basList, byref dirList)
       lab = name + space(n)
       gap = 12 - len(str(node.size))
       n = iff(gap > 1, gap, 1)
-      lab += node.size + space(n) + timestamp(node.path+node.name)
+      lab += node.size + space(n) + timestamp(node.mtime)
     endif
     bn = mk_bn(path + name, lab, 2)
     bn.type = "link"

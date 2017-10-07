@@ -1181,7 +1181,7 @@ void cmd_str1(long funcCode, var_t *arg, var_t *r) {
     //
     // str <- TIMESTAMP(file)
     //
-    r->v.p.length = dev_filemtime(arg->v.p.ptr, &r->v.p.ptr);
+    r->v.p.length = dev_filemtime(arg, &r->v.p.ptr);
     break;
 
   default:

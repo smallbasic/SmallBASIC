@@ -767,7 +767,7 @@ int dev_fattr(const char *file);
  * @param buffer the result text
  * @return number of characters returned in buffer
  */
-int dev_filemtime(const char *file, char **buffer);
+int dev_filemtime(var_t *v, char **buffer);
 
 /*
  *

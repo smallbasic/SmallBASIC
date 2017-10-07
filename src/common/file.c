@@ -716,22 +716,34 @@ int dev_faccess(const char *file) {
 /**
  * returns the last-modified time for a file as a string
  */
-int dev_filemtime(const char *file, char **buffer) {
+int dev_filemtime(var_t *v, char **buffer) {
+  time_t time = 0;
   int size = 0;
-  struct stat st;
 
-  if (!opt_file_permitted) {
-    rt_raise(ERR_FILE_PERM);
-  } else if (stat(file, &st) == 0) {
-    // 2016-02-20 05:23 PM
-    size = 20;
-    *buffer = malloc(size);
-    const time_t t = st.st_mtime;
-    size = strftime(*buffer, size, "%Y-%m-%d %I:%M %p", localtime(&t));
+  if (v_is_type(v, V_INT)) {
+    time = v->v.i;
+  } else if (v_is_type(v, V_STR)) {
+    const char *file = v_str(v);
+    struct stat st;
+    if (!opt_file_permitted) {
+      rt_raise(ERR_FILE_PERM);
+    } else if (stat(file, &st) == 0) {
+      time = st.st_mtime;
+    } else {
+      err_file_not_found();
+    }
   } else {
+    err_argerr();
+  }
+
+  if (prog_error) {
     *buffer = malloc(1);
     *buffer[0] = '\0';
-    err_file_not_found();
+  } else {
+    // size for '2016-02-20 05:23 PM'
+    size = 20;
+    *buffer = malloc(size);
+    size = strftime(*buffer, size, "%Y-%m-%d %I:%M %p", localtime(&time));
   }
   return size;
 }
