@@ -258,7 +258,7 @@ sub listFiles(byref frm, path, sortDir, byref basList, byref dirList)
 
   bn_name = mk_bn("_sort_name", "[Name]", 3)
   bn_name.type = "link"
-  bn_name.x = -(char_w * 3)
+  bn_name.x = -(char_w * 5)
   bn_name.y = -1
   frm.inputs << bn_name
 
@@ -308,12 +308,15 @@ sub listFiles(byref frm, path, sortDir, byref basList, byref dirList)
   for i = 0 to lastItem
     node = basList(i)
     name = node.name
-    gap = 22 - len(name)
+    if (len(name) > 23) then
+      name = left(name, 23)
+    endif
+    gap = 24 - len(name)
     n = iff(gap > 1, gap, 1)
     lab = name + space(n)
     gap = 12 - len(str(node.size))
     n = iff(gap > 1, gap, 1)
-    lab += node.size + space(n) + timestamp(node.path+name)
+    lab += node.size + space(n) + timestamp(node.path+node.name)
 
     bn = mk_bn(path + name, lab, 2)
     bn.type = "link"
