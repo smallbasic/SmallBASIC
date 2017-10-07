@@ -238,11 +238,41 @@ end
 
 sub listFiles(byref frm, path, sortDir, byref basList, byref dirList)
   local fileList, name, lastItem, bn, bn_back, i, lab, gap, n, node
-  local bn_name, bn_size, bn_date
+  local bn_name, bn_size, bn_date, abbr
+  local name_col = 3
+  local size_col = 3
+  local date_col = 3
 
   if (right(path, 1) != "/") then
     path += "/"
   endif
+
+  loadFileList(path, basList, dirList)
+  select case sortDir
+  case 0
+    sort dirList use fileCmpFunc0(x,y)
+    sort basList use filecmpfunc0(x,y)
+  case 1
+    sort dirList use fileCmpFunc1(x,y)
+    sort basList use filecmpfunc1(x,y)
+    name_col = 6
+  case 2
+    sort dirList use fileCmpFunc2(x,y)
+    sort basList use filecmpfunc2(x,y)
+    size_col = 5
+  case 3
+    sort dirList use fileCmpFunc3(x,y)
+    sort basList use filecmpfunc3(x,y)
+    size_col = 6
+  case 4
+    sort dirList use fileCmpFunc4(x,y)
+    sort basList use filecmpfunc4(x,y)
+    date_col = 5
+  case 5
+    sort dirList use fileCmpFunc5(x,y)
+    sort basList use filecmpfunc5(x,y)
+    date_col = 6
+  end select
 
   bn = mk_bn(0, "Files in " + path, 7)
   bn.type = "label"
@@ -256,45 +286,26 @@ sub listFiles(byref frm, path, sortDir, byref basList, byref dirList)
   bn_back.y = -linespacing
   frm.inputs << bn_back
 
-  bn_name = mk_bn("_sort_name", "[Name]", 3)
+  bn_name = mk_bn("_sort_name", "[Name]", name_col)
   bn_name.type = "link"
   bn_name.x = -(char_w * 5)
   bn_name.y = -1
   frm.inputs << bn_name
 
-  bn_size = mk_bn("_sort_size", "[Size]", 3)
-  bn_size.type = "link"
-  bn_size.x = -(char_w * 6)
-  bn_size.y = -1
-  frm.inputs << bn_size
+  abbr = iff(char_w * 70 > xmax, true, false)
+  if (not abbr) then
+    bn_size = mk_bn("_sort_size", "[Size]", size_col)
+    bn_size.type = "link"
+    bn_size.x = -(char_w * 6)
+    bn_size.y = -1
+    frm.inputs << bn_size
 
-  bn_date = mk_bn("_sort_date", "[Date]", 3)
-  bn_date.type = "link"
-  bn_date.x = -(char_w * 6)
-  bn_date.y = -1
-  frm.inputs << bn_date
-
-  loadFileList(path, basList, dirList)
-  select case sortDir
-  case 0
-    sort dirList use fileCmpFunc0(x,y)
-    sort basList use filecmpfunc0(x,y)
-  case 1
-    sort dirList use fileCmpFunc1(x,y)
-    sort basList use filecmpfunc1(x,y)
-  case 2
-    sort dirList use fileCmpFunc2(x,y)
-    sort basList use filecmpfunc2(x,y)
-  case 3
-    sort dirList use fileCmpFunc3(x,y)
-    sort basList use filecmpfunc3(x,y)
-  case 4
-    sort dirList use fileCmpFunc4(x,y)
-    sort basList use filecmpfunc4(x,y)
-  case 5
-    sort dirList use fileCmpFunc5(x,y)
-    sort basList use filecmpfunc5(x,y)
-  end select
+    bn_date = mk_bn("_sort_date", "[Date]", date_col)
+    bn_date.type = "link"
+    bn_date.x = -(char_w * 6)
+    bn_date.y = -1
+    frm.inputs << bn_date
+  endif
 
   lastItem = len(dirList) - 1
   for i = 0 to lastItem
@@ -308,16 +319,17 @@ sub listFiles(byref frm, path, sortDir, byref basList, byref dirList)
   for i = 0 to lastItem
     node = basList(i)
     name = node.name
-    if (len(name) > 23) then
-      name = left(name, 23)
+    if (abbr) then
+      lab = name
+    else
+      if (len(name) > 23) then name = left(name, 22) + "~"
+      gap = 24 - len(name)
+      n = iff(gap > 1, gap, 1)
+      lab = name + space(n)
+      gap = 12 - len(str(node.size))
+      n = iff(gap > 1, gap, 1)
+      lab += node.size + space(n) + timestamp(node.path+node.name)
     endif
-    gap = 24 - len(name)
-    n = iff(gap > 1, gap, 1)
-    lab = name + space(n)
-    gap = 12 - len(str(node.size))
-    n = iff(gap > 1, gap, 1)
-    lab += node.size + space(n) + timestamp(node.path+node.name)
-
     bn = mk_bn(path + name, lab, 2)
     bn.type = "link"
     bn.isExit = true
