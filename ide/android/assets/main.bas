@@ -4,17 +4,25 @@ const boldOff = chr(27) + "[21m"
 const char_h = txth("Q")
 const char_w = txtw(".")
 const lineSpacing = 2 + char_h
-const onlineUrl = "http://smallbasic.github.io/samples/index.bas"
 const idxEdit = 6
 const idxFiles = 7
+const sizeDateCol = rgb(100,100,100)
+const menu_gap = -(char_w / 2)
+const is_sdl = instr(sbver, "SDL") != 0
+const onlineUrl = "http://smallbasic.github.io/samples/index.bas"
 const saveasId = "__bn_saveas__"
 const renameId = "__bn_rename__"
 const deleteId = "__bn_delete__"
 const newId = "__bn_new__"
 const viewId = "__bn_view__"
 const closeId = "__bn_close__"
-const menu_gap = -(char_w / 2)
-const is_sdl = instr(sbver, "SDL") != 0
+const sortNameId = "_sort_name"
+const sortSizeId = "_sort_size"
+const sortDateId = "_sort_date"
+const filesId = "_files"
+const setupId = "_setup"
+const aboutId = "_about"
+const backId = "_back"
 
 func spaced(s)
   local ch, len_s
@@ -238,8 +246,8 @@ sub loadFileList(path, byref basList, byref dirList)
 end
 
 sub listFiles(byref frm, path, sortDir, byref basList, byref dirList)
-  local fileList, name, lastItem, bn, bn_back, i, gap, n, node
-  local bn_name, bn_size, bn_date, abbr, lab
+  local fileList, name, lastItem, bn, bn_back, i
+  local bn_name, bn_size, bn_date, abbr
   local name_col = 3
   local size_col = 3
   local date_col = 3
@@ -281,13 +289,13 @@ sub listFiles(byref frm, path, sortDir, byref basList, byref dirList)
   bn.y = -lineSpacing
   frm.inputs << bn
 
-  bn_back = mk_bn("_back", "[Go up]", 3)
+  bn_back = mk_bn(backId, "[Go up]", 3)
   bn_back.type = "link"
   bn_back.x = 0
   bn_back.y = -linespacing
   frm.inputs << bn_back
 
-  bn_name = mk_bn("_sort_name", "[Name]", name_col)
+  bn_name = mk_bn(sortNameId, "[Name]", name_col)
   bn_name.type = "link"
   bn_name.x = -(char_w * 8)
   bn_name.y = -1
@@ -295,18 +303,40 @@ sub listFiles(byref frm, path, sortDir, byref basList, byref dirList)
 
   abbr = iff(char_w * 70 > xmax, true, false)
   if (not abbr) then
-    bn_size = mk_bn("_sort_size", "[Size]", size_col)
+    bn_size = mk_bn(sortSizeId, "[Size]", size_col)
     bn_size.type = "link"
     bn_size.x = -(char_w * 8)
     bn_size.y = -1
     frm.inputs << bn_size
 
-    bn_date = mk_bn("_sort_date", "[Date]", date_col)
+    bn_date = mk_bn(sortDateId, "[Date]", date_col)
     bn_date.type = "link"
     bn_date.x = -(char_w * 6)
     bn_date.y = -1
     frm.inputs << bn_date
   endif
+
+  sub mkItemRow(node, name)
+    local gap, n, lab
+    if (len(name) > 27) then
+      lab = left(name, 27) + "~"
+    else
+      lab = name
+    endif
+    bn = mk_bn(path + name, lab, 2)
+    bn.type = "link"
+    bn.isExit = true
+    frm.inputs << bn
+
+    gap = 12 - len(str(node.size))
+    n = iff(gap > 1, gap, 1)
+    bn = mk_bn(0, node.size + space(n) + timestamp(node.mtime), sizeDateCol)
+    bn.type = "label"
+    bn.y = -1
+    gap = 29 - len(name)
+    bn.x = -(iff(gap > 1, gap, 1) * char_w)
+    frm.inputs << bn
+  end
 
   lastItem = len(dirList) - 1
   for i = 0 to lastItem
@@ -326,24 +356,7 @@ sub listFiles(byref frm, path, sortDir, byref basList, byref dirList)
       bn.isExit = true
       frm.inputs << bn
     else
-      if (len(name) > 27) then
-        lab = left(name, 27) + "~"
-      else
-        lab = name
-      endif
-      bn = mk_bn(path + name, lab, 2)
-      bn.type = "link"
-      bn.isExit = true
-      frm.inputs << bn
-
-      gap = 12 - len(str(node.size))
-      n = iff(gap > 1, gap, 1)
-      bn = mk_bn(0, node.size + space(n) + timestamp(node.mtime), 1)
-      bn.type = "label"
-      bn.y = -1
-      gap = 29 - len(name)
-      bn.x = -(iff(gap > 1, gap, 1)*char_w)
-      frm.inputs << bn
+      mkItemRow(node, name)
     endif
   next i
 end
@@ -586,10 +599,10 @@ sub main
 
     info_header(is_welcome)
     is_welcome = false
-    bn_files = mk_menu("_files", "File", 0)
+    bn_files = mk_menu(filesId, "File", 0)
     bn_online = mk_menu(onlineUrl, "Online", menu_gap)
-    bn_setup = mk_menu("_setup", "Setup", menu_gap)
-    bn_about = mk_menu("_about", "About", menu_gap)
+    bn_setup = mk_menu(setupId, "Setup", menu_gap)
+    bn_about = mk_menu(aboutId, "About", menu_gap)
     bn_online.isExit = true
 
     frm.inputs << bn_files
@@ -633,32 +646,32 @@ sub main
         path = frm.value
       endif
       frm = makeUI(path, sortDir)
-    elif frm.value == "_about" then
+    elif frm.value == aboutId then
       do_about()
       frm = makeUI(path, sortDir)
-    elif frm.value == "_setup" then
+    elif frm.value == setupId then
       do_setup()
       frm = makeUI(path, sortDir)
-    elif frm.value == "_files" then
+    elif frm.value == filesId then
       if (changeDir(path)) then
         managefiles()
       endif
       frm = makeUI(path, sortDir)
-    elif frm.value == "_back" then
+    elif frm.value == backId then
       cls
       go_back()
       frm = makeUI(path, sortDir)
-    elif (frm.value == "_sort_name") then
+    elif (frm.value == sortNameId) then
       cls
       sortDir = iff(sortDir==0,1,0)
       env("sortDir="+sortDir)
       frm = makeUI(path, sortDir)
-    elif (frm.value == "_sort_size") then
+    elif (frm.value == sortSizeId) then
       cls
       sortDir = iff(sortDir==3,2,3)
       env("sortDir="+sortDir)
       frm = makeUI(path, sortDir)
-    elif (frm.value == "_sort_date") then
+    elif (frm.value == sortDateId) then
       cls
       sortDir = iff(sortDir==5,4,5)
       env("sortDir="+sortDir)
