@@ -321,7 +321,6 @@ sub listFiles(byref frm, path, sortDir, byref basList)
     if (abbr) then
       bn = mk_bn(path + name, name, txtcol)
       bn.type = "link"
-      bn.isExit = true
     else
       if (len(name) > 27) then
         lab = left(name, 27) + "~"
@@ -330,7 +329,6 @@ sub listFiles(byref frm, path, sortDir, byref basList)
       endif
       bn = mk_bn(path + name, lab, txtcol)
       bn.type = "link"
-      bn.isExit = true
       frm.inputs << bn
 
       gap = 12 - len(str(node.size))
@@ -341,6 +339,7 @@ sub listFiles(byref frm, path, sortDir, byref basList)
       gap = 29 - len(name)
       bn.x = -(iff(gap > 1, gap, 1) * char_w)
     endif
+    if (!node.dir) then bn.isExit = true
     frm.inputs << bn
   next i
 end
