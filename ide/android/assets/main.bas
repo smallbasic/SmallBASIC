@@ -36,7 +36,7 @@ end
 
 func mk_bn(value, lab, fg)
   local bn
-  bn.x = 0
+  bn.x = 2
   bn.y = -lineSpacing
   bn.value = value
   bn.label = lab
@@ -194,48 +194,52 @@ end
 func fileCmpFunc0(l, r)
   local f1 = lower(l.name)
   local f2 = lower(r.name)
-  return IFF(f1 == f2, 0, IFF(f1 > f2, 1, -1))
+  local n = iff(f1 == f2, 0, iff(f1 > f2, 1, -1))
+  return iff(l.dir == r.dir, n, iff(l.dir, 1, -1))
 end
 
 func fileCmpFunc1(l, r)
   local f1 = lower(l.name)
   local f2 = lower(r.name)
-  return IFF(f1 == f2, 0, IFF(f1 > f2, -1, 1))
+  local n = iff(f1 == f2, 0, iff(f1 > f2, -1, 1))
+  return iff(l.dir == r.dir, n, iff(l.dir, 1, -1))
 end
 
 func fileCmpFunc2(l, r)
   local f1 = l.size
   local f2 = r.size
-  return IFF(f1 == f2, 0, IFF(f1 > f2, 1, -1))
+  local n = iff(f1 == f2, 0, iff(f1 > f2, 1, -1))
+  return iff(l.dir == r.dir, n, iff(l.dir, 1, -1))
 end
 
 func fileCmpFunc3(l, r)
   local f1 = l.size
   local f2 = r.size
-  return IFF(f1 == f2, 0, IFF(f1 > f2, -1, 1))
+  local n = iff(f1 == f2, 0, iff(f1 > f2, -1, 1))
+  return iff(l.dir == r.dir, n, iff(l.dir, 1, -1))
 end
 
 func fileCmpFunc4(l, r)
   local f1 = l.mtime
   local f2 = r.mtime
-  return IFF(f1 == f2, 0, IFF(f1 > f2, 1, -1))
+  return iff(f1 == f2, 0, iff(f1 > f2, 1, -1))
 end
 
 func fileCmpFunc5(l, r)
   local f1 = l.mtime
   local f2 = r.mtime
-  return IFF(f1 == f2, 0, IFF(f1 > f2, -1, 1))
+  return iff(f1 == f2, 0, iff(f1 > f2, -1, 1))
 end
 
-sub loadFileList(path, byref basList, byref dirList)
+sub loadFileList(path, byref basList)
   erase basList
-  erase dirList
 
   func walker(node)
     if (node.depth==0) then
-      node.path=0
+      node.path = 0
       if (node.dir && left(node.name, 1) != ".") then
-        dirList << node
+        node.size = ""
+        basList << node
       else if (lower(right(node.name, 4)) == ".bas") then
         basList << node
       endif
@@ -245,9 +249,8 @@ sub loadFileList(path, byref basList, byref dirList)
   dirwalk path, "", use walker(x)
 end
 
-sub listFiles(byref frm, path, sortDir, byref basList, byref dirList)
-  local fileList, name, lastItem, bn, bn_back, i
-  local bn_name, bn_size, bn_date, abbr
+sub listFiles(byref frm, path, sortDir, byref basList)
+  local lastItem, bn, abbr, gap, n, lab, name, txtcol, i
   local name_col = 3
   local size_col = 3
   local date_col = 3
@@ -256,29 +259,23 @@ sub listFiles(byref frm, path, sortDir, byref basList, byref dirList)
     path += "/"
   endif
 
-  loadFileList(path, basList, dirList)
+  loadFileList(path, basList)
   select case sortDir
   case 0
-    sort dirList use fileCmpFunc0(x,y)
     sort basList use filecmpfunc0(x,y)
   case 1
-    sort dirList use fileCmpFunc1(x,y)
     sort basList use filecmpfunc1(x,y)
     name_col = 6
   case 2
-    sort dirList use fileCmpFunc2(x,y)
     sort basList use filecmpfunc2(x,y)
     size_col = 5
   case 3
-    sort dirList use fileCmpFunc3(x,y)
     sort basList use filecmpfunc3(x,y)
     size_col = 6
   case 4
-    sort dirList use fileCmpFunc4(x,y)
     sort basList use filecmpfunc4(x,y)
     date_col = 5
   case 5
-    sort dirList use fileCmpFunc5(x,y)
     sort basList use filecmpfunc5(x,y)
     date_col = 6
   end select
@@ -289,75 +286,62 @@ sub listFiles(byref frm, path, sortDir, byref basList, byref dirList)
   bn.y = -lineSpacing
   frm.inputs << bn
 
-  bn_back = mk_bn(backId, "[Go up]", 3)
-  bn_back.type = "link"
-  bn_back.x = 0
-  bn_back.y = -linespacing
-  frm.inputs << bn_back
+  bn = mk_bn(backId, "[Go up]", 3)
+  bn.type = "link"
+  bn.x = 0
+  bn.y = -linespacing
+  frm.inputs << bn
 
-  bn_name = mk_bn(sortNameId, "[Name]", name_col)
-  bn_name.type = "link"
-  bn_name.x = -(char_w * 8)
-  bn_name.y = -1
-  frm.inputs << bn_name
+  bn = mk_bn(sortNameId, "[Name]", name_col)
+  bn.type = "link"
+  bn.x = -(char_w * 8)
+  bn.y = -1
+  frm.inputs << bn
 
   abbr = iff(char_w * 70 > xmax, true, false)
   if (not abbr) then
-    bn_size = mk_bn(sortSizeId, "[Size]", size_col)
-    bn_size.type = "link"
-    bn_size.x = -(char_w * 8)
-    bn_size.y = -1
-    frm.inputs << bn_size
-
-    bn_date = mk_bn(sortDateId, "[Date]", date_col)
-    bn_date.type = "link"
-    bn_date.x = -(char_w * 6)
-    bn_date.y = -1
-    frm.inputs << bn_date
-  endif
-
-  sub mkItemRow(node, name)
-    local gap, n, lab
-    if (len(name) > 27) then
-      lab = left(name, 27) + "~"
-    else
-      lab = name
-    endif
-    bn = mk_bn(path + name, lab, 2)
+    bn = mk_bn(sortSizeId, "[Size]", size_col)
     bn.type = "link"
-    bn.isExit = true
-    frm.inputs << bn
-
-    gap = 12 - len(str(node.size))
-    n = iff(gap > 1, gap, 1)
-    bn = mk_bn(0, node.size + space(n) + timestamp(node.mtime), sizeDateCol)
-    bn.type = "label"
+    bn.x = -(char_w * 8)
     bn.y = -1
-    gap = 29 - len(name)
-    bn.x = -(iff(gap > 1, gap, 1) * char_w)
     frm.inputs << bn
-  end
 
-  lastItem = len(dirList) - 1
-  for i = 0 to lastItem
-    name = dirList(i).name
-    bn = mk_bn(path + name, "[" + name + "]", 3)
+    bn = mk_bn(sortDateId, "[Date]", date_col)
     bn.type = "link"
+    bn.x = -(char_w * 6)
+    bn.y = -1
     frm.inputs << bn
-  next i
+  endif
 
   lastItem = len(basList) - 1
   for i = 0 to lastItem
     node = basList(i)
+    txtcol = iff(node.dir, 3, 2)
     name = node.name
     if (abbr) then
-      bn = mk_bn(path + name, name, 2)
+      bn = mk_bn(path + name, name, txtcol)
+      bn.type = "link"
+      bn.isExit = true
+    else
+      if (len(name) > 27) then
+        lab = left(name, 27) + "~"
+      else
+        lab = name
+      endif
+      bn = mk_bn(path + name, lab, txtcol)
       bn.type = "link"
       bn.isExit = true
       frm.inputs << bn
-    else
-      mkItemRow(node, name)
+
+      gap = 12 - len(str(node.size))
+      n = iff(gap > 1, gap, 1)
+      bn = mk_bn(0, node.size + space(n) + timestamp(node.mtime), sizeDateCol)
+      bn.type = "label"
+      bn.y = -1
+      gap = 29 - len(name)
+      bn.x = -(iff(gap > 1, gap, 1) * char_w)
     endif
+    frm.inputs << bn
   next i
 end
 
@@ -593,9 +577,8 @@ sub main
 
   func makeUI(path, sortDir)
     local frm, bn_files, bn_online, bn_setup, bn_about, bn_new
-    local basList, dirList
+    local basList
     dim basList
-    dim dirList
 
     info_header(is_welcome)
     is_welcome = false
@@ -611,8 +594,7 @@ sub main
       frm.inputs << bn_setup
     endif
     frm.inputs << bn_about
-    listFiles frm, path, sortDir, basList, dirList
-    frm.color = 10
+    listFiles frm, path, sortDir, basList
     return form(frm)
   end
 
