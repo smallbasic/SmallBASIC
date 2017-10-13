@@ -231,6 +231,18 @@ var_t *code_resolve_map(var_t *var_p, int until_parens) {
   return var_p;
 }
 
+var_t *resolve_var_ref(var_t *var_p) {
+  switch (code_peek()) {
+  case kwTYPE_LEVEL_BEGIN:
+    var_p = resolve_var_ref(code_getvarptr_arridx(var_p));
+    break;
+  case kwTYPE_UDS_EL:
+    var_p = resolve_var_ref(map_resolve_fields(var_p));
+    break;
+  }
+  return var_p;
+}
+
 /**
  * returns true if the next code is a variable. if the following code is an
  * expression (no matter if the first item is a variable), returns false
@@ -251,6 +263,9 @@ int code_isvar() {
       break;
     case V_ARRAY:
       var_p = code_resolve_varptr(var_p, 0);
+      break;
+    case V_REF:
+      var_p = resolve_var_ref(var_p);
       break;
     default:
       if (code_peek() == kwTYPE_LEVEL_BEGIN) {
@@ -289,18 +304,6 @@ var_t *eval_ref_var(var_t *var_p) {
     }
   }
   return result;
-}
-
-var_t *resolve_var_ref(var_t *var_p) {
-  switch (code_peek()) {
-  case kwTYPE_LEVEL_BEGIN:
-    var_p = resolve_var_ref(code_getvarptr_arridx(var_p));
-    break;
-  case kwTYPE_UDS_EL:
-    var_p = resolve_var_ref(map_resolve_fields(var_p));
-    break;
-  }
-  return var_p;
 }
 
 void v_eval_ref(var_t *v_left) {

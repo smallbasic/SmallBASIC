@@ -21,8 +21,7 @@ var_t var_pool[VAR_POOL_SIZE];
 var_t *var_pool_head;
 
 void v_init_pool() {
-  int i;
-  for (i = 0; i < VAR_POOL_SIZE; i++) {
+  for (int i = 0; i < VAR_POOL_SIZE; i++) {
     v_init(&var_pool[i]);
     var_pool[i].pooled = 1;
     if (i + 1 < VAR_POOL_SIZE) {
@@ -61,8 +60,7 @@ void v_new_array(var_t *var, unsigned size) {
   var->type = V_ARRAY;
   var->v.a.size = size;
   var->v.a.data = (var_t *)malloc(sizeof(var_t) * size);
-  int i = 0;
-  for (i = 0; i < size; i++) {
+  for (int i = 0; i < size; i++) {
     var_t *e = v_elem(var, i);
     v_init(e);
   }
@@ -159,7 +157,6 @@ void v_resize_array(var_t *v, uint32_t size) {
       err_evargerr();
       return;
     }
-    int i;
     if (size == 0) {
       v_free(v);
       v->type = V_ARRAY;
@@ -171,7 +168,8 @@ void v_resize_array(var_t *v, uint32_t size) {
       // resize down
 
       // free vars
-      for (i = size; i < v->v.a.size; i++) {
+      int v_size = v_asize(v);
+      for (int i = size; i < v_size; i++) {
         var_t *elem = v_elem(v, i);
         v_free(elem);
       }
@@ -192,7 +190,7 @@ void v_resize_array(var_t *v, uint32_t size) {
       }
 
       // init vars
-      for (i = prev_size; i < size; i++) {
+      for (int i = prev_size; i < size; i++) {
         var_t *elem = v_elem(v, i);
         v_init(elem);
       }
@@ -462,10 +460,9 @@ void v_set(var_t *dest, const var_t *src) {
     if (src->v.a.size) {
       memcpy(&dest->v.a, &src->v.a, sizeof(src->v.a));
       v_new_array(dest, src->v.a.size);
-
       // copy each element
-      int i;
-      for (i = 0; i < src->v.a.size; i++) {
+      int v_size = v_asize(src);
+      for (int i = 0; i < v_size; i++) {
         var_t *src_vp = v_elem(src, i);
         var_t *dest_vp = v_elem(dest, i);
         v_init(dest_vp);

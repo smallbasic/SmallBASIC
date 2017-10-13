@@ -273,11 +273,10 @@ var_p_t map_get_parent(var_p_t base, var_p_t field) {
 void map_get_value(var_p_t base, var_p_t var_key, var_p_t *result) {
   if (base->type == V_ARRAY && base->v.a.size) {
     // convert the non-empty array to a map
-    int i;
     var_t *clone = v_clone(base);
 
     hashmap_create(base, 0);
-    for (i = 0; i < clone->v.a.size; i++) {
+    for (int i = 0; i < clone->v.a.size; i++) {
       const var_t *element = v_elem(clone, i);
       var_p_t key = v_new();
       v_setint(key, i);
@@ -394,10 +393,9 @@ void array_to_str(hashmap_cb *cb, var_t *var) {
     // NxN
     int rows = ABS(var->v.a.ubound[0] - var->v.a.lbound[0]) + 1;
     int cols = ABS(var->v.a.ubound[1] - var->v.a.lbound[1]) + 1;
-    int i, j;
 
-    for (i = 0; i < rows; i++) {
-      for (j = 0; j < cols; j++) {
+    for (int i = 0; i < rows; i++) {
+      for (int j = 0; j < cols; j++) {
         int pos = i * cols + j;
         var_t *elem = v_elem(var, pos);
         array_append_elem(cb, elem);
@@ -410,8 +408,7 @@ void array_to_str(hashmap_cb *cb, var_t *var) {
       }
     }
   } else {
-    int i;
-    for (i = 0; i < var->v.a.size; i++) {
+    for (int i = 0; i < var->v.a.size; i++) {
       var_t *elem = v_elem(var, i);
       array_append_elem(cb, elem);
       if (i != var->v.a.size - 1) {
@@ -460,8 +457,7 @@ void map_set_primative(var_p_t dest, const char *s, int len) {
   int fract = 0;
   int text = 0;
   int sign = 1;
-  int i;
-  for (i = 0; i < len && !text; i++) {
+  for (int i = 0; i < len && !text; i++) {
     int n = s[i] - '0';
     if (n >= 0 && n <= 9) {
       value = value * 10 + n;

@@ -184,7 +184,7 @@ func KlotskiState(grid)
     return [e1,e2]
   end
 
-  func get_dist(state)
+  func get_dist(byref state)
     # manhatten distance between the empty cells
     return abs(state.e2[0] - state.e1[0]) + abs(state.e2[1] - state.e1[1])
   end
@@ -241,9 +241,9 @@ func KlotskiState(grid)
       if (x > 1 && u[x-2,y] == 0 && u[x-2,y+1] == 0) then
         r << child(i, [-2, 0])
       endif
-    else if (x + 1 < gw && u[x+w,y] == 0 && u[x+w,y+1] == 0) then
+    else if (x + w < gw && u[x+w,y] == 0 && u[x+w,y+1] == 0) then
       r << child(i, [1, 0])
-      if (x + 1 + 1 < gw && u[x+w+1,y] == 0 && u[x+w+1,y+1] == 0) then
+      if (x + w + 1 < gw && u[x+w+1,y] == 0 && u[x+w+1,y+1] == 0) then
         r << child(i, [2, 0])
       endif
     endif
@@ -256,8 +256,10 @@ func KlotskiState(grid)
       endif
     else if (y + h < gh && u[x,y+h] == 0) then
       r << child(i, [0, 1])
+      'if (h==2) then logprint "move down 2 > " + i
       if (y + h + 1 < gh && u[x,y+h+1] == 0) then
         r << child(i, [0, 2])
+        'if (h==2) then logprint "move double down 2"
       endif
     endif
   end
@@ -276,11 +278,11 @@ func KlotskiState(grid)
 end
 
 func getInitialState()
-  # [1, 2, 2, 3]
-  # [1, 2, 2, 3]
-  # [4, 5, 5, 6]
-  # [4, 7, 8, 6]
-  # [9, 0, 0, 10]
+  # [2, 0, 0, 3]
+  # [2, 0, 0, 3]
+  # [4, 1, 1, 5]
+  # [4, 6, 7, 5]
+  # [8, -, -, 9]
   local grid = []
   grid << [1,0] '2x2
   grid << [1,2] '2x1
@@ -295,64 +297,57 @@ func getInitialState()
   return KlotskiState(grid)
 end
 
-func is_goal(state)
+func is_goal(byref state)
   local x,y
   [x,y] = state.grid[0]
   return y == 2
 end
 
-func get_cell_prio(byref state)
-  local p, i, x, y
-  p = log(state.depth)
-  for i = 0 to 9
-    [x,y] = state.grid[i]
-    select case i
-    case 0
-      if (x != 1 && y != 0) then
-        p += 100
-      endif
-    case 2,3
-      if (y > 1) then
-        p += 100
-      endif
-    case 6,7,8,9
-      p += (5 - y)
-      if (x == 0 or x == 3) then
-        p += 5
-      endif
-    end select
-  next i
-  return 1/p
-end
-
 func get_prio(byref state)
-  local r
-  if (state.dist > 3) then
+  local r, p, i, x, y, x0, y0
+  if (state.dist > 4) then
+    ' gap too far, filter out
     r = 0
   else
-    r = state.dist + get_cell_prio(state)
+    r = log(state.depth)
+    for i = 0 to 9
+      [x,y] = state.grid[i]
+      select case i
+      case 0
+        x0 = x
+        y0 = y
+        r += (3-y) * 1.5
+      case 2,3,4,5
+        ' when solved these are at the top
+        r += y * .5
+      case 6,7,8,9
+        ' singles should be close to target
+        r += (abs(x-x0) + abs(y-y0)) * .8
+      end select
+    next i
+    'show_grid(state)
+    'pause
   endif
   return r
 end
 
 # Queue => Breadth first search
 # Stack => Depth first search
-func process(initialState)
+func process(initialState, maxDepth)
   local fringe = PriorityQueue()
   local explored = Set()
-  local state,nextState,p
-
-  fringe.push(initialState,0)
+  local state,nextState,p,x,y
+  fringe.push(initialState, 0)
 
   while (not fringe.is_empty())
     state = fringe.pop()
+    [x,y] = state.grid[0]
     if (is_goal(state)) then
-      ' success !
-      show_grid(state)
+      logprint "found !"
       return true
     endif
 
-    if (not explored.contains(state)) then
+    if (not explored.contains(state) && state.depth < maxDepth) then
       explored.add(state)
       show_grid(state)
       for nextState in state.moves()
@@ -366,7 +361,7 @@ func process(initialState)
   return false
 end
 
-func get_path(state)
+func get_path(byref state)
   local path = []
   path << state.path
   local parent = state.parent
@@ -377,7 +372,7 @@ func get_path(state)
   return path
 end
 
-sub show_grid(s)
+sub show_grid(byref s)
   local i,x,y,w,h
   local bs = min(xmax,ymax)/7
   local xoffs = 60
@@ -421,7 +416,7 @@ sub show_grid(s)
   showpage
 end
 
-process(getInitialState())
+n = process(getInitialState(), 65)
 
 rem -------- TESTS --------
 sub testSet
@@ -484,7 +479,7 @@ end
 # 3           2
 func Queue()
   func is_empty()
-    return len(self.items) == 0
+    return len(self.items) < 1
   end
   sub push(item)
     self.items << item

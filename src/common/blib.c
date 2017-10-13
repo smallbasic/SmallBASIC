@@ -84,19 +84,26 @@ void cmd_packed_let() {
     // skip end separator
     code_skipnext();
 
-    var_t v_right;
-    v_init(&v_right);
-    eval(&v_right);
+    var_t v_right_eval;
+    var_t *v_right;
+    v_init(&v_right_eval);
+    if (code_isvar()) {
+      // avoid memory allocation
+      v_right = code_getvarptr();
+    } else {
+      eval(&v_right_eval);
+      v_right = &v_right_eval;
+    }
 
     if (!prog_error) {
-      int arrayCount = v_right.type == V_ARRAY ? v_asize(&v_right) : 1;
+      int arrayCount = v_right->type == V_ARRAY ? v_asize(v_right) : 1;
       if (arrayCount == count) {
         if (count == 1) {
           // right can be another data type
-          v_set(vars[0], &v_right);
+          v_set(vars[0], v_right);
         } else {
           for (int i = 0; i < count; i++) {
-            v_set(vars[i], v_elem(&v_right, i));
+            v_set(vars[i], v_elem(v_right, i));
           }
         }
       } else if (arrayCount > count) {
@@ -105,7 +112,7 @@ void cmd_packed_let() {
         rt_raise(ERR_PACK_TOO_FEW, arrayCount);
       }
     }
-    v_free(&v_right);
+    v_free(&v_right_eval);
     free(vars);
   }
 }

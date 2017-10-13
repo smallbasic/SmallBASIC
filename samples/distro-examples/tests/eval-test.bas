@@ -297,6 +297,13 @@ if a1 != 10 or b1 != 20 or c1 != 30 then
   throw "packing error"
 endif
 
+rem --- test var_eval inside packed let
+aaa=[1,2,3]
+[_a1,_a2,_a3]=aaa
+if _a1 != 1 or _a2 != 2 or _a3 != 3 then
+  throw "packing error"
+endif
+
 a = nil
 b = 0
 if a != nil then
