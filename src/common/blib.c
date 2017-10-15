@@ -1410,7 +1410,37 @@ void cmd_return() {
   if (code_peek() == kwFUNC_RETURN) {
     // FUNC return statement
     code_skipnext();
-    code_jump(code_getaddr());
+    bcip_t return_addr = code_getaddr();
+
+    // avoid duplicate copying of arrays
+    if (code_peek() == kwLET) {
+      code_skipnext();
+
+      var_t *v_left = code_getvarptr();
+      var_t *v_right = NULL;
+      if (code_peek() == kwTYPE_VAR) {
+        bcip_t cur_ip = prog_ip;
+        code_skipnext();
+        var_t *var_p = tvar[code_getaddr()];
+        if (code_peek() == kwTYPE_EOC) {
+          v_right = var_p;
+        } else {
+          prog_ip = cur_ip;
+        }
+      }
+      if (v_right != NULL) {
+        v_set(v_left, v_right);
+      } else {
+        var_t var;
+        v_init(&var);
+        eval(&var);
+        v_set(v_left, &var);
+        v_free(&var);
+      }
+      v_left->const_flag = 0;
+    }
+
+    code_jump(return_addr);
     stknode_t *node = code_stackpeek();
     while (node != NULL && node->type != kwPROC && node->type != kwFUNC) {
       code_pop_and_free();

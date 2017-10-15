@@ -2783,18 +2783,16 @@ int comp_text_line_command(bid_t idx, int decl, int sharp, char *last_cmd) {
 
   case kwRETURN:
     if (comp_bc_proc[0]) {
-      // synonym for FUNC=result
-      if (comp_bc_parm[0]) {
-        bc_add_code(&comp_prog, kwLET);
-        comp_add_variable(&comp_prog, comp_bc_proc);
-        bc_add_code(&comp_prog, kwTYPE_CMPOPR);
-        bc_add_code(&comp_prog, '=');
-        comp_expression(comp_bc_parm, 0);
-      }
       bc_add_code(&comp_prog, kwRETURN);
       comp_push(comp_prog.count);
       bc_add_code(&comp_prog, kwFUNC_RETURN);
       bc_add_addr(&comp_prog, comp_proc_level);
+      // synonym for FUNC=result
+      if (comp_bc_parm[0]) {
+        bc_add_code(&comp_prog, kwLET);
+        comp_add_variable(&comp_prog, comp_bc_proc);
+        comp_expression(comp_bc_parm, 0);
+      }
     } else {
       // return from GOSUB
       bc_add_code(&comp_prog, idx);

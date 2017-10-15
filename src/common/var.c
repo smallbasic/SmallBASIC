@@ -463,10 +463,9 @@ void v_set(var_t *dest, const var_t *src) {
       // copy each element
       int v_size = v_asize(src);
       for (int i = 0; i < v_size; i++) {
-        var_t *src_vp = v_elem(src, i);
         var_t *dest_vp = v_elem(dest, i);
         v_init(dest_vp);
-        v_set(dest_vp, src_vp);
+        v_set(dest_vp, v_elem(src, i));
       }
     } else {
       dest->v.a.size = 0;

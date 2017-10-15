@@ -313,7 +313,7 @@ int date_weekday(long d, long m, long y) {
  * format date
  */
 char *date_fmt(char *fmt, long d, long m, long y) {
-  int dc, mc, yc, wd, l, i;
+  int dc, mc, yc, wd, l;
   char *p, tmp[32];
   cstr str;
 
@@ -403,7 +403,7 @@ char *date_fmt(char *fmt, long d, long m, long y) {
         ltostr(y, tmp);
         l = strlen(tmp);
         if (l < yc) {
-          for (i = l; i < yc; i++) {
+          for (int i = l; i < yc; i++) {
             cstr_append(&str, "0");
           }
         } else {
@@ -908,7 +908,7 @@ void cmd_str1(long funcCode, var_t *arg, var_t *r) {
   char *tb;
   char *wp;
   char *p;
-  var_int_t l, i;
+  var_int_t l;
 
   switch (funcCode) {
   case kwCHR:
@@ -964,7 +964,7 @@ void cmd_str1(long funcCode, var_t *arg, var_t *r) {
     IF_ERR_RETURN;
     tb = malloc(33);
     memset(tb, 0, 33);
-    for (i = 0; i < 32; i++) {
+    for (int i = 0; i < 32; i++) {
       if (l & (1 << i)) {
         tb[31 - i] = '1';
       } else {
@@ -1133,7 +1133,7 @@ void cmd_str1(long funcCode, var_t *arg, var_t *r) {
     //
     l = v_getint(arg);
     wp = r->v.p.ptr = (char *)malloc(l + 1);
-    for (i = 0; i < l; i++) {
+    for (int i = 0; i < l; i++) {
       wp[i] = ' ';
     }
     wp[l] = '\0';
@@ -1385,7 +1385,7 @@ void cmd_strN(long funcCode, var_t *r) {
       } else {
         r->v.p.ptr = malloc(count * len + 1);
         *((r->v.p.ptr)) = '\0';
-        for (i = 0; i < count; i++) {
+        for (int i = 0; i < count; i++) {
           strcat(r->v.p.ptr, tmp_p);
         }
         r->v.p.length = strlen(r->v.p.ptr) + 1;
@@ -2036,9 +2036,8 @@ void cmd_numN(long funcCode, var_t *r) {
  */
 void cmd_genfunc(long funcCode, var_t *r) {
   byte code, ready, first;
-  int count, tcount, handle, i, len, ch;
+  int count, tcount, handle, len;
   bcip_t ofs;
-  var_t *basevar_p, *elem_p;
   var_t arg, arg2;
   var_num_t *dar;
 
@@ -2055,7 +2054,7 @@ void cmd_genfunc(long funcCode, var_t *r) {
     if (!prog_error) {
       par_getcomma();
       IF_ERR_RETURN;
-      ch = v_is_nonzero(&arg);
+      int ch = v_is_nonzero(&arg);
       v_free(&arg);
 
       if (ch) {
@@ -2255,9 +2254,9 @@ void cmd_genfunc(long funcCode, var_t *r) {
       r->v.p.ptr[0] = '\0';
       len = 0;
       char tmp[3];
-      for (i = 0; i < count; i++) {
-        ch = dev_getch();       // MultiByte - dev_getchr() must return the
-        // extended
+      for (int i = 0; i < count; i++) {
+        int ch = dev_getch();
+        // MultiByte - dev_getchr() must return the extended
         // code (2 bytes char)
         if (ch == 0xFFFF || prog_error) {
           break;
@@ -2309,7 +2308,7 @@ void cmd_genfunc(long funcCode, var_t *r) {
     // n<-POLYAREA(poly)
     //
   case kwPOLYAREA: {
-    int i, count;
+    int count;
     pt_t *poly = NULL;
 
     r->type = V_NUM;
@@ -2318,7 +2317,7 @@ void cmd_genfunc(long funcCode, var_t *r) {
     IF_ERR_RETURN;
 
     r->v.n = 0.0;
-    for (i = 0; i < count - 1; i++) {
+    for (int i = 0; i < count - 1; i++) {
       r->v.n = r->v.n + (poly[i].x - poly[i + 1].x) * (poly[i].y + poly[i + 1].y);
     }
 
@@ -2563,11 +2562,11 @@ void cmd_genfunc(long funcCode, var_t *r) {
       case kwTYPE_VAR:
         ofs = prog_ip;
         if (code_isvar()) {
-          basevar_p = code_getvarptr();
+          var_t *basevar_p = code_getvarptr();
           if (basevar_p->type == V_ARRAY) {
             count = v_asize(basevar_p);
-            for (i = 0; i < count; i++) {
-              elem_p = v_getelemptr(basevar_p, i);
+            for (int i = 0; i < count; i++) {
+              var_t *elem_p = v_getelemptr(basevar_p, i);
               if (!prog_error) {
                 if (first) {
                   dar_first(funcCode, r, elem_p);
@@ -2633,11 +2632,11 @@ void cmd_genfunc(long funcCode, var_t *r) {
       case kwTYPE_VAR:
         ofs = prog_ip;
         if (code_isvar()) {
-          basevar_p = code_getvarptr();
+          var_t *basevar_p = code_getvarptr();
           if (basevar_p->type == V_ARRAY) {
             count = v_asize(basevar_p);
-            for (i = 0; i < count; i++) {
-              elem_p = v_getelemptr(basevar_p, i);
+            for (int i = 0; i < count; i++) {
+              var_t *elem_p = v_getelemptr(basevar_p, i);
               if (!prog_error) {
                 if (tcount >= len) {
                   len += BUF_LEN;
@@ -2865,7 +2864,7 @@ void cmd_genfunc(long funcCode, var_t *r) {
     //
   case kwSEQ: {
     var_int_t count;
-    var_num_t xmin, xmax, x, dx;
+    var_num_t xmin, xmax, dx;
 
     par_massget("FFI", &xmin, &xmax, &count);
 
@@ -2876,7 +2875,7 @@ void cmd_genfunc(long funcCode, var_t *r) {
         dx = (xmax - xmin) / (count - 1);
 
         // add the entries
-        for (i = 0, x = xmin; i < count; i++, x += dx) {
+        for (int i = 0, x = xmin; i < count; i++, x += dx) {
           var_t *elem_p = v_elem(r, i);
           elem_p->type = V_NUM;
           elem_p->v.n = x;
