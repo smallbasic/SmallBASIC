@@ -1412,12 +1412,17 @@ void cmd_return() {
     code_skipnext();
     bcip_t return_addr = code_getaddr();
 
-    // avoid duplicate copying of arrays
+    // avoid potential duplicate copying of arrays
     if (code_peek() == kwLET) {
       code_skipnext();
 
       var_t *v_left = code_getvarptr();
       var_t *v_right = NULL;
+
+      if (prog_source[prog_ip] == kwTYPE_CMPOPR &&
+          prog_source[prog_ip + 1] == '=') {
+        code_skipopr();
+      }
       if (code_peek() == kwTYPE_VAR) {
         bcip_t cur_ip = prog_ip;
         code_skipnext();

@@ -304,27 +304,18 @@ func is_goal(byref state)
 end
 
 func get_prio(byref state)
-  local r, p, i, x, y, x0, y0
+  local r, x, y
   if (state.dist > 4) then
     ' gap too far, filter out
     r = 0
   else
-    r = log(state.depth)
-    for i = 0 to 9
-      [x,y] = state.grid[i]
-      select case i
-      case 0
-        x0 = x
-        y0 = y
-        r += (3-y) * 1.5
-      case 2,3,4,5
-        ' when solved these are at the top
-        r += y * .5
-      case 6,7,8,9
-        ' singles should be close to target
-        r += (abs(x-x0) + abs(y-y0)) * .8
-      end select
-    next i
+    r = log(state.depth) + state.dist
+    [x,y] = state.grid[0]
+    r += (abs(1-x) + abs(3-y))
+    if (x == 1 and y = 0) then
+      r += 2
+    endif
+    'logprint r + " " + state.depth
     'show_grid(state)
     'pause
   endif
