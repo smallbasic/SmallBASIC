@@ -309,11 +309,11 @@ func get_prio(byref state)
     ' gap too far, filter out
     r = 0
   else
-    r = log(state.depth) + state.dist
+    r = log(state.depth) + state.dist * 4
     [x,y] = state.grid[0]
     r += (abs(1-x) + abs(3-y))
     if (x == 1 and y = 0) then
-      r += 2
+      r += 4
     endif
     'logprint r + " " + state.depth
     'show_grid(state)

@@ -62,7 +62,19 @@ void v_new_array(var_t *var, unsigned size) {
   var->v.a.data = (var_t *)malloc(sizeof(var_t) * size);
   for (int i = 0; i < size; i++) {
     var_t *e = v_elem(var, i);
+    e->pooled = 0;
     v_init(e);
+  }
+}
+
+void v_array_free(var_t *var) {
+  int v_size = v_asize(var);
+  if (v_size && var->v.a.data) {
+    for (int i = 0; i < v_size; i++) {
+      var_t *elem = v_elem(var, i);
+      v_free(elem);
+    }
+    free(var->v.a.data);
   }
 }
 
@@ -186,6 +198,11 @@ void v_resize_array(var_t *v, uint32_t size) {
       } else if (prev_size < size) {
         // resize & copy
         v->v.a.data = (var_t *)realloc(v->v.a.data, sizeof(var_t) * size);
+        for (int i = prev_size; i < size; i++) {
+          var_t *e = v_elem(v, i);
+          e->pooled = 0;
+          v_init(e);
+        }
         v->v.a.size = size;
       }
 
@@ -244,8 +261,6 @@ int v_is_nonzero(var_t *v) {
   case V_INT:
     return (v->v.i != 0);
   case V_NUM:
-    // return (v->v.n != 0.0 && v->v.n != -0.0);
-    // TODO: fixme
     return (ABS(v->v.n) > 1E-308);
   case V_STR:
     return (v->v.p.length != 0);

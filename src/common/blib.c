@@ -44,14 +44,27 @@ void cmd_let(int is_const) {
       code_skipnext();
       v_eval_ref(v_left);
     } else {
-      var_t v_right;
-      v_init(&v_right);
-      eval(&v_right);
-      if (!prog_error) {
-        v_set(v_left, &v_right);
-        v_left->const_flag = is_const;
+      var_t *v_right = NULL;
+      if (code_peek() == kwTYPE_VAR) {
+        bcip_t cur_ip = prog_ip;
+        code_skipnext();
+        var_t *var_p = tvar[code_getaddr()];
+        if (code_peek() == kwTYPE_EOC) {
+          v_right = var_p;
+        } else {
+          prog_ip = cur_ip;
+        }
       }
-      v_free(&v_right);
+      if (v_right != NULL) {
+        v_set(v_left, v_right);
+      } else {
+        var_t var;
+        v_init(&var);
+        eval(&var);
+        v_set(v_left, &var);
+        v_free(&var);
+      }
+      v_left->const_flag = is_const;
     }
   }
 }
@@ -1411,40 +1424,10 @@ void cmd_return() {
     // FUNC return statement
     code_skipnext();
     bcip_t return_addr = code_getaddr();
-
-    // avoid potential duplicate copying of arrays
     if (code_peek() == kwLET) {
       code_skipnext();
-
-      var_t *v_left = code_getvarptr();
-      var_t *v_right = NULL;
-
-      if (prog_source[prog_ip] == kwTYPE_CMPOPR &&
-          prog_source[prog_ip + 1] == '=') {
-        code_skipopr();
-      }
-      if (code_peek() == kwTYPE_VAR) {
-        bcip_t cur_ip = prog_ip;
-        code_skipnext();
-        var_t *var_p = tvar[code_getaddr()];
-        if (code_peek() == kwTYPE_EOC) {
-          v_right = var_p;
-        } else {
-          prog_ip = cur_ip;
-        }
-      }
-      if (v_right != NULL) {
-        v_set(v_left, v_right);
-      } else {
-        var_t var;
-        v_init(&var);
-        eval(&var);
-        v_set(v_left, &var);
-        v_free(&var);
-      }
-      v_left->const_flag = 0;
+      cmd_let(0);
     }
-
     code_jump(return_addr);
     stknode_t *node = code_stackpeek();
     while (node != NULL && node->type != kwPROC && node->type != kwFUNC) {

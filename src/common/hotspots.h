@@ -207,20 +207,9 @@ static inline void v_free(var_t *v) {
   switch (v->type) {
   case V_STR:
     free(v->v.p.ptr);
-    v->v.p.ptr = NULL;
-    v->v.p.length = 0;
     break;
   case V_ARRAY:
-    if (v->v.a.size && v->v.a.data) {
-      unsigned i;
-      for (i = 0; i < v->v.a.size; i++) {
-        var_t *elem = v_elem(v, i);
-        v_free(elem);
-      }
-      free(v->v.a.data);
-      v->v.a.data = NULL;
-      v->v.a.size = 0;
-    }
+    v_array_free(v);
     break;
   case V_MAP:
     map_free(v);

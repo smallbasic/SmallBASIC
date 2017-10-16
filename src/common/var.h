@@ -270,6 +270,13 @@ void v_new_array(var_t *var, unsigned size);
 /**
  * @ingroup var
  *
+ * frees memory associated with the given array
+ */
+void v_array_free(var_t *var);
+
+/**
+ * @ingroup var
+ *
  * returns true if the value is not 0/NULL
  *
  * @param v the variable
