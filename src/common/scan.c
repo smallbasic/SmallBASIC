@@ -2783,10 +2783,6 @@ int comp_text_line_command(bid_t idx, int decl, int sharp, char *last_cmd) {
 
   case kwRETURN:
     if (comp_bc_proc[0]) {
-      bc_add_code(&comp_prog, kwRETURN);
-      comp_push(comp_prog.count);
-      bc_add_code(&comp_prog, kwFUNC_RETURN);
-      bc_add_addr(&comp_prog, comp_proc_level);
       // synonym for FUNC=result
       if (comp_bc_parm[0]) {
         bc_add_code(&comp_prog, kwLET);
@@ -2795,6 +2791,10 @@ int comp_text_line_command(bid_t idx, int decl, int sharp, char *last_cmd) {
         bc_add_code(&comp_prog, '=');
         comp_expression(comp_bc_parm, 0);
       }
+      bc_add_code(&comp_prog, kwRETURN);
+      comp_push(comp_prog.count);
+      bc_add_code(&comp_prog, kwFUNC_RETURN);
+      bc_add_addr(&comp_prog, comp_proc_level);
     } else {
       // return from GOSUB
       bc_add_code(&comp_prog, idx);
@@ -3663,45 +3663,79 @@ int comp_read_goto(bcip_t ip, bcip_t *addr, code_t *level) {
   return ip + 1;
 }
 
+// scan for repeated kwTYPE_LINE... kwGOTO blocks
+bcip_t comp_optimise_line_goto(bcip_t ip) {
+  bcip_t addr;
+  bcip_t new_addr = 0;
+  bcip_t new_addr_ip = ip + 1;
+  code_t level;
+
+  ip = comp_read_goto(ip + 1, &addr, &level);
+  bcip_t goto_ip = addr;
+  if (comp_prog.ptr[goto_ip] == kwTYPE_EOC) {
+    new_addr = goto_ip + 1;
+  }
+  while (goto_ip > 0 && comp_prog.ptr[goto_ip] == kwTYPE_LINE) {
+    goto_ip += 1 + sizeof(bcip_t);
+    if (comp_prog.ptr[goto_ip] == kwGOTO) {
+      code_t next_level;
+      comp_read_goto(goto_ip + 1, &addr, &next_level);
+      goto_ip = addr;
+      if (next_level == level) {
+        // found replacement GOTO address
+        new_addr = addr;
+      }
+    } else {
+      break;
+    }
+  }
+  if (new_addr != 0 && comp_prog.ptr[new_addr] == kwTYPE_EOC) {
+    new_addr++;
+  }
+  if (new_addr != 0) {
+    // patch in replacement address
+    memcpy(comp_prog.ptr + new_addr_ip, &new_addr, sizeof(bcip_t));
+  }
+  return ip;
+}
+
+// use simpler LET where possible to avoid eval on the right term
+bcip_t comp_optimise_let(bcip_t ip) {
+  bcip_t ip_next = ip + 1;
+  if (comp_prog.ptr[ip_next] == kwTYPE_VAR) {
+    ip_next += 1 + sizeof(bcip_t);
+    while (ip_next < comp_prog.count) {
+      if (comp_prog.ptr[ip_next] == kwTYPE_CMPOPR &&
+          comp_prog.ptr[ip_next + 1] == '=') {
+        ip_next += 2;
+        break;
+      }
+      ip_next = comp_next_bc_cmd(&comp_prog, ip_next);
+    }
+    if (ip_next < comp_prog.count &&
+        comp_prog.ptr[ip_next] == kwTYPE_VAR &&
+        comp_prog.ptr[ip_next + 1 + sizeof(bcip_t)] == kwTYPE_EOC) {
+      comp_prog.ptr[ip] = kwLET_OPT;
+      ip = ip_next;
+    }
+  }
+  return ip;
+}
+
 void comp_optimise() {
-  // scan for repeated kwTYPE_LINE... kwGOTO blocks
   for (bcip_t ip = 0; !comp_error && ip < comp_prog.count;
        ip = comp_next_bc_cmd(&comp_prog, ip)) {
-    if (comp_prog.ptr[ip] == kwTYPE_LINE) {
-      ip += 1 + sizeof(bcip_t);
-      if (comp_prog.ptr[ip] == kwGOTO) {
-        bcip_t addr;
-        bcip_t new_addr = 0;
-        bcip_t new_addr_ip = ip + 1;
-        code_t level;
-
-        ip = comp_read_goto(ip + 1, &addr, &level);
-        bcip_t goto_ip = addr;
-        if (comp_prog.ptr[goto_ip] == kwTYPE_EOC) {
-          new_addr = goto_ip + 1;
-        }
-        while (goto_ip > 0 && comp_prog.ptr[goto_ip] == kwTYPE_LINE) {
-          goto_ip += 1 + sizeof(bcip_t);
-          if (comp_prog.ptr[goto_ip] == kwGOTO) {
-            code_t next_level;
-            comp_read_goto(goto_ip + 1, &addr, &next_level);
-            goto_ip = addr;
-            if (next_level == level) {
-              // found replacement GOTO address
-              new_addr = addr;
-            }
-          } else {
-            break;
-          }
-        }
-        if (new_addr != 0 && comp_prog.ptr[new_addr] == kwTYPE_EOC) {
-          new_addr++;
-        }
-        if (new_addr != 0) {
-          // patch in replacement address
-          memcpy(comp_prog.ptr + new_addr_ip, &new_addr, sizeof(bcip_t));
-        }
+    switch (comp_prog.ptr[ip]) {
+    case kwTYPE_LINE:
+      if (comp_prog.ptr[ip + 1 + sizeof(bcip_t)] == kwGOTO) {
+        ip = comp_optimise_line_goto(ip + 1 + sizeof(bcip_t));
       }
+      break;
+    case kwLET:
+      ip = comp_optimise_let(ip);
+      break;
+    default:
+      break;
     }
   }
 }

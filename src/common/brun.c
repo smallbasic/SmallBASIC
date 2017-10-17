@@ -777,6 +777,9 @@ void bc_loop(int isf) {
       case kwLET:
         cmd_let(0);
         break;
+      case kwLET_OPT:
+        cmd_let_opt();
+        break;
       case kwCONST:
         cmd_let(1);
         break;
