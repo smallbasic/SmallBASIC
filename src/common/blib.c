@@ -52,13 +52,13 @@ void cmd_let(int is_const) {
 
 void cmd_let_opt() {
   var_t *v_left = code_getvarptr();
-  if (prog_source[prog_ip] == kwTYPE_CMPOPR &&
-      prog_source[prog_ip + 1] == '=') {
-    code_skipopr();
-  }
+
+  // skip kwTYPE_CMPOPR + "="
+  code_skipopr();
 
   // skip kwTYPE_VAR
   code_skipnext();
+
   var_t *v_right = tvar[code_getaddr()];
   v_set(v_left, v_right);
   v_left->const_flag = 0;

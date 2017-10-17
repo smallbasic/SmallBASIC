@@ -3708,15 +3708,15 @@ bcip_t comp_optimise_let(bcip_t ip) {
       if (comp_prog.ptr[ip_next] == kwTYPE_CMPOPR &&
           comp_prog.ptr[ip_next + 1] == '=') {
         ip_next += 2;
+        if (ip_next < comp_prog.count &&
+            comp_prog.ptr[ip_next] == kwTYPE_VAR &&
+            comp_prog.ptr[ip_next + 1 + sizeof(bcip_t)] == kwTYPE_EOC) {
+          comp_prog.ptr[ip] = kwLET_OPT;
+          ip = ip_next;
+        }
         break;
       }
       ip_next = comp_next_bc_cmd(&comp_prog, ip_next);
-    }
-    if (ip_next < comp_prog.count &&
-        comp_prog.ptr[ip_next] == kwTYPE_VAR &&
-        comp_prog.ptr[ip_next + 1 + sizeof(bcip_t)] == kwTYPE_EOC) {
-      comp_prog.ptr[ip] = kwLET_OPT;
-      ip = ip_next;
     }
   }
   return ip;
