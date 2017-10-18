@@ -1191,14 +1191,14 @@ static inline void eval_callf(var_t *r) {
  * executes the expression (Code[IP]) and returns the result (r)
  */
 void eval(var_t *r) {
+  byte code;
   var_t *left = NULL;
   byte level = 0;
   task_executor *exec = &ctask->sbe.exec;
   bcip_t eval_pos = exec->eval_esp;
 
   while (!prog_error) {
-    byte code = exec->bytecode[exec->ip];
-    switch (code) {
+    switch (exec->bytecode[exec->ip]) {
     case kwTYPE_INT:
       // integer - constant
       exec->ip++;
@@ -1310,6 +1310,7 @@ void eval(var_t *r) {
 
     default:
       // less used codes
+      code = exec->bytecode[exec->ip];      
       switch (code) {
       case kwTYPE_CALLEXTF:
         // [lib][index] external functions
