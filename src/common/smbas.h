@@ -153,7 +153,7 @@ EXTERN char gsb_last_errmsg[SB_ERRMSG_SIZE + 1]; /**< last error message     */
 #define prog_sp             ctask->sbe.exec.sp
 #define eval_stk            ctask->sbe.exec.eval_stk
 #define eval_stk_size       ctask->sbe.exec.eval_stk_size
-#define eval_sp             ctask->sbe.exec.eval_sp
+#define eval_sp             ctask->sbe.exec.eval_esp
 #define prog_varcount       ctask->sbe.exec.varcount
 #define prog_labcount       ctask->sbe.exec.labcount
 #define prog_libcount       ctask->sbe.exec.libcount

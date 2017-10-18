@@ -251,12 +251,12 @@ int v_wc_match(var_t *vwc, var_t *v) {
       }
     }
   } else if (v->type == V_STR) {
-    ri = wc_match((char *) vwc->v.p.ptr, (char *) v->v.p.ptr);
+    ri = wc_match((char *)vwc->v.p.ptr, (char *)v->v.p.ptr);
   } else if (v->type == V_NUM || v->type == V_INT) {
     var_t *vt = v_clone(v);
     v_tostr(vt);
     if (!prog_error) {
-      ri = wc_match((char *) vwc->v.p.ptr, (char *) vt->v.p.ptr);
+      ri = wc_match((char *)vwc->v.p.ptr, (char *)vt->v.p.ptr);
     }
     V_FREE(vt);
     v_detach(vt);
@@ -1192,15 +1192,16 @@ static inline void eval_callf(var_t *r) {
  */
 void eval(var_t *r) {
   var_t *left = NULL;
-  bcip_t eval_pos = eval_sp;
   byte level = 0;
+  task_executor *exec = &ctask->sbe.exec;
+  bcip_t eval_pos = exec->eval_esp;
 
   while (!prog_error) {
-    byte code = prog_source[prog_ip];
+    byte code = exec->bytecode[exec->ip];
     switch (code) {
     case kwTYPE_INT:
       // integer - constant
-      IP++;
+      exec->ip++;
       V_FREE(r);
       r->type = V_INT;
       r->v.i = code_getint();
@@ -1208,7 +1209,7 @@ void eval(var_t *r) {
 
     case kwTYPE_NUM:
       // double - constant
-      IP++;
+      exec->ip++;
       V_FREE(r);
       r->type = V_NUM;
       r->v.n = code_getreal();
@@ -1216,39 +1217,39 @@ void eval(var_t *r) {
 
     case kwTYPE_STR:
       // string - constant
-      IP++;
+      exec->ip++;
       V_FREE(r);
       v_eval_str(r);
       break;
 
     case kwTYPE_LOGOPR:
-      IP++;
+      exec->ip++;
       oper_log(r, left);
       break;
 
     case kwTYPE_CMPOPR:
-      IP++;
+      exec->ip++;
       oper_cmp(r, left);
       break;
 
     case kwTYPE_ADDOPR:
-      IP++;
+      exec->ip++;
       oper_add(r, left);
       break;
 
     case kwTYPE_MULOPR:
-      IP++;
+      exec->ip++;
       oper_mul(r, left);
       break;
 
     case kwTYPE_POWOPR:
-      IP++;
+      exec->ip++;
       oper_powr(r, left);
       break;
 
     case kwTYPE_UNROPR:
       // unary
-      IP++;
+      exec->ip++;
       oper_unary(r);
       break;
 
@@ -1260,46 +1261,46 @@ void eval(var_t *r) {
 
     case kwTYPE_LEVEL_BEGIN:
       // left parenthesis
-      IP++;
+      exec->ip++;
       level++;
       break;
 
     case kwTYPE_LEVEL_END:
       // right parenthesis
       if (level == 0) {
-        eval_sp = eval_pos;
+        exec->eval_esp = eval_pos;
         // warning: normal exit
         return;
       }
       level--;
-      IP++;
+      exec->ip++;
       break;
 
     case kwTYPE_EVPUSH:
       // stack = push result
-      IP++;
+      exec->ip++;
       eval_push(r);
       break;
 
     case kwTYPE_EVPOP:
       // pop left
-      IP++;
-      if (!eval_sp) {
+      exec->ip++;
+      if (!exec->eval_esp) {
         err_syntax_unknown();
       } else {
-        eval_sp--;
-        left = &eval_stk[eval_sp];
+        exec->eval_esp--;
+        left = &eval_stk[exec->eval_esp];
       }
       break;
 
     case kwTYPE_EVAL_SC:
-      IP++;
+      exec->ip++;
       eval_shortc(r);
       break;
 
     case kwTYPE_CALLF:
       // built-in functions
-      IP++;
+      exec->ip++;
       eval_callf(r);
       break;
 
@@ -1312,13 +1313,13 @@ void eval(var_t *r) {
       switch (code) {
       case kwTYPE_CALLEXTF:
         // [lib][index] external functions
-        IP++;
+        exec->ip++;
         eval_extf(r);
         break;
 
       case kwTYPE_PTR:
         // UDF pointer - constant
-        IP++;
+        exec->ip++;
         eval_ptr(r);
         break;
 
@@ -1333,7 +1334,7 @@ void eval(var_t *r) {
             code == kwTO ||
             kw_check_evexit(code)) {
           // restore stack pointer
-          eval_sp = eval_pos;
+          exec->eval_esp = eval_pos;
 
           // normal exit
           return;
@@ -1346,5 +1347,5 @@ void eval(var_t *r) {
     }
   }
   // restore stack pointer
-  eval_sp = eval_pos;
+  exec->eval_esp = eval_pos;
 }
