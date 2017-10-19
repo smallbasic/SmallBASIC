@@ -52,15 +52,13 @@ void cmd_let(int is_const) {
 
 void cmd_let_opt() {
   var_t *v_left = code_getvarptr();
-
   // skip kwTYPE_CMPOPR + "="
   code_skipopr();
 
   // skip kwTYPE_VAR
   code_skipnext();
 
-  var_t *v_right = tvar[code_getaddr()];
-  v_set(v_left, v_right);
+  v_set(v_left, tvar[code_getaddr()]);
   v_left->const_flag = 0;
 }
 
@@ -309,8 +307,8 @@ void cmd_append() {
 void cmd_append_opt() {
   var_t *v_left = code_getvarptr();
 
-  // skip kwTYPE_CMPOPR + "="
-  code_skipopr();
+  // skip kwTYPE_SEP + ","
+  code_skipsep();
 
   // skip kwTYPE_VAR
   code_skipnext();
