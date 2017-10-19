@@ -37,63 +37,66 @@ extern char **environ;
  * warning: if the cmd is a GUI process, the shell will hang
  */
 int shell(const char *cmd, var_t *r) {
-  SECURITY_ATTRIBUTES sa;
-  PROCESS_INFORMATION pi;
-  HANDLE h_inppip, h_outpip, h_errpip;
-  int result = 0;
+  HANDLE hPipeRead, hPipeWrite;
 
-  memset(&sa, 0, sizeof(sa));
-  sa.nLength = sizeof(sa);
-  sa.bInheritHandle = TRUE;
+  SECURITY_ATTRIBUTES saAttr = { sizeof(SECURITY_ATTRIBUTES) };
+  // Pipe handles are inherited by child process.
+  saAttr.bInheritHandle = TRUE;
+  saAttr.lpSecurityDescriptor = NULL;
 
-  if (!CreatePipe(&h_inppip, &h_outpip, &sa, BUFSIZE)) {
+  // Create a pipe to get results from child's stdout.
+  if (!CreatePipe(&hPipeRead, &hPipeWrite, &saAttr, 0)) {
     return 0;
   }
 
-  HANDLE h_pid = GetCurrentProcess();
-  DuplicateHandle(h_pid, h_inppip, h_pid, &h_inppip, 0, FALSE,
-                  DUPLICATE_SAME_ACCESS | DUPLICATE_CLOSE_SOURCE);
-  DuplicateHandle(h_pid, h_outpip, h_pid, &h_errpip, 0, TRUE, DUPLICATE_SAME_ACCESS);
-
-  STARTUPINFO si;
-  memset(&si, 0, sizeof(si));
-  si.cb = sizeof(si);
-  si.dwFlags = STARTF_USESHOWWINDOW | STARTF_USESTDHANDLES;
+  STARTUPINFO si = { sizeof(STARTUPINFO) };
+  si.dwFlags     = STARTF_USESHOWWINDOW | STARTF_USESTDHANDLES;
+  si.hStdOutput  = hPipeWrite;
+  si.hStdError   = hPipeWrite;
+  // Prevents cmd window from flashing. Requires STARTF_USESHOWWINDOW in dwFlags.
   si.wShowWindow = SW_HIDE;
-  si.hStdOutput = h_outpip;
-  si.hStdError = h_errpip;
 
-  if (CreateProcess(NULL, (LPSTR)cmd, NULL, NULL, TRUE, 0, NULL, NULL, &si, &pi)) {
-    // close streams
-    CloseHandle(pi.hThread);
-    CloseHandle(h_outpip);
-    CloseHandle(h_errpip);
-    h_errpip = h_outpip = NULL;
+  PROCESS_INFORMATION pi  = { 0 };
+  if (!CreateProcess(NULL, (LPSTR)cmd, NULL, NULL, TRUE, CREATE_NEW_CONSOLE, NULL, NULL, &si, &pi)) {
+    CloseHandle(hPipeWrite);
+    CloseHandle(hPipeRead);
+    return 0;
+  }
 
-    DWORD bytes;
-    char buf[BUFSIZE + 1];
-    char cv_buf[BUFSIZE + 1];
+  int processEnded = 0;
+  while (!processEnded) {
+    // Give some timeslice (50ms), so we won't waste 100% cpu.
+    processEnded = WaitForSingleObject(pi.hProcess, 50) == WAIT_OBJECT_0;
 
-    // read stdout/err
-    while (ReadFile(h_inppip, buf, BUFSIZE - 1, &bytes, NULL)) {
-      buf[bytes] = '\0';
-      memset(cv_buf, 0, BUFSIZE + 1);
-      OemToCharBuff(buf, cv_buf, bytes);
-      v_strcat(r, cv_buf);
-      result = 1;
+    // Even if process exited - we continue reading, if there is some data available over pipe.
+    while (1) {
+      char buf[1024];
+      DWORD numRead = 0;
+      DWORD numAvail = 0;
+
+      if (!PeekNamedPipe(hPipeRead, NULL, 0, NULL, &numAvail, NULL)) {
+        break;
+      }
+
+      if (!numAvail) {
+        // no data available
+        break;
+      }
+
+      if (!ReadFile(hPipeRead, buf, min(sizeof(buf) - 1, numAvail), &numRead, NULL) ||
+          !numRead) {
+        // child process may have ended
+        break;
+      }
+      buf[numRead] = 0;
+      v_strcat(r, buf);
     }
-    CloseHandle(pi.hProcess);
   }
-
-  // clean up
-  CloseHandle(h_inppip);
-  if (h_outpip) {
-    CloseHandle(h_outpip);
-  }
-  if (h_errpip) {
-    CloseHandle(h_errpip);
-  }
-  return result;
+  CloseHandle(hPipeWrite);
+  CloseHandle(hPipeRead);
+  CloseHandle(pi.hProcess);
+  CloseHandle(pi.hThread);
+  return 1;
 }
 
 int dev_run(const char *cmd, var_t *r, int wait) {
