@@ -15,7 +15,7 @@
 #include "common/var_map.h"
 
 #define INT_STR_LEN 64
-#define VAR_POOL_SIZE 4096
+#define VAR_POOL_SIZE 8192
 
 var_t var_pool[VAR_POOL_SIZE];
 var_t *var_pool_head;

@@ -70,7 +70,7 @@ int shell(const char *cmd, var_t *r) {
 
     // Even if process exited - we continue reading, if there is some data available over pipe.
     while (1) {
-      char buf[1024];
+      char buf[BUFSIZE];
       DWORD numRead = 0;
       DWORD numAvail = 0;
 

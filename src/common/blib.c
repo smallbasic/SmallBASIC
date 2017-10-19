@@ -239,7 +239,7 @@ void cmd_redim() {
  * or
  * A << x1 [, x2, ...]
  */
-void cmd_ladd() {
+void cmd_append() {
   var_t *var_p = code_getvarptr();
   if (prog_error) {
     return;
@@ -279,8 +279,8 @@ void cmd_ladd() {
       v_toarray1(var_p, 1);
       elem_p = v_elem(var_p, 0);
     } else {
-      v_resize_array(var_p, var_p->v.a.size + 1);
-      elem_p = v_elem(var_p, var_p->v.a.size - 1);
+      v_resize_array(var_p, v_asize(var_p) + 1);
+      elem_p = v_elem(var_p, v_asize(var_p) - 1);
     }
 
     // set the value onto the element
@@ -304,6 +304,27 @@ void cmd_ladd() {
   // cleanup
   v_free(arg_p);
   v_detach(arg_p);
+}
+
+void cmd_append_opt() {
+  var_t *v_left = code_getvarptr();
+
+  // skip kwTYPE_CMPOPR + "="
+  code_skipopr();
+
+  // skip kwTYPE_VAR
+  code_skipnext();
+
+  var_t *elem_p;
+  if (v_left->type != V_ARRAY) {
+    v_toarray1(v_left, 1);
+    elem_p = v_elem(v_left, 0);
+  } else {
+    v_resize_array(v_left, v_asize(v_left) + 1);
+    elem_p = v_elem(v_left, v_asize(v_left) - 1);
+  }
+
+  v_set(elem_p, tvar[code_getaddr()]);
 }
 
 /**
@@ -337,10 +358,10 @@ void cmd_lins() {
   }
 
   int ladd = 0;
-  if (idx >= var_p->v.a.size) {
+  if (idx >= v_asize(var_p)) {
     // append
     ladd = 1;
-    idx = var_p->v.a.size;
+    idx = v_asize(var_p);
   } else if (idx <= 0) {
     // insert at top
     idx = 0;
@@ -364,17 +385,16 @@ void cmd_lins() {
     }
 
     // resize +1
-    v_resize_array(var_p, var_p->v.a.size + 1);
+    v_resize_array(var_p, v_asize(var_p) + 1);
 
     // find the array element
     var_t *elem_p;
     if (ladd) {
       // append
-      elem_p = v_elem(var_p, var_p->v.a.size - 1);
+      elem_p = v_elem(var_p, v_asize(var_p) - 1);
     } else {
       // move all form idx one down
-      int i;
-      for (i = var_p->v.a.size - 1; i > idx; i--) {
+      for (int i = v_asize(var_p) - 1; i > idx; i--) {
         // A(i) = A(i-1)
         v_set(v_elem(var_p, i), v_elem(var_p, i - 1));
       }
@@ -431,7 +451,7 @@ void cmd_ldel() {
     return;
   }
   idx -= var_p->v.a.lbound[0];
-  if ((idx >= var_p->v.a.size) || (idx < 0)) {
+  if ((idx >= v_asize(var_p)) || (idx < 0)) {
     err_out_of_range();
     return;
   }
@@ -445,7 +465,7 @@ void cmd_ldel() {
     if (prog_error) {
       return;
     }
-    if (((count + idx) - 1 > var_p->v.a.size)) {
+    if (((count + idx) - 1 > v_asize(var_p))) {
       err_out_of_range();
       return;
     } else if (count <= 0) {
@@ -454,7 +474,7 @@ void cmd_ldel() {
   }
   // data
   arg_p = v_clone(var_p);
-  v_resize_array(var_p, var_p->v.a.size - count);
+  v_resize_array(var_p, v_asize(var_p) - count);
 
   // first part
   for (i = 0; i < idx; i++) {
@@ -462,7 +482,7 @@ void cmd_ldel() {
     v_set(v_elem(var_p, i), v_elem(arg_p, i));
   }
   // second part
-  for (i = idx + count, j = idx; i < arg_p->v.a.size; i++, j++) {
+  for (i = idx + count, j = idx; i < v_asize(arg_p); i++, j++) {
     // A(j) = OLD(i)
     v_set(v_elem(var_p, j), v_elem(arg_p, i));
   }
@@ -1709,7 +1729,7 @@ void cmd_for() {
         break;
 
       case V_ARRAY:
-        if (array_p->v.a.size > 0) {
+        if (v_asize(array_p) > 0) {
           var_elem_ptr = v_elem(array_p, 0);
         }
         break;
@@ -1903,7 +1923,7 @@ void cmd_next() {
     case V_ARRAY:
       node.x.vfor.step_expr_ip++; // element-index
 
-      if (array_p->v.a.size > (int) node.x.vfor.step_expr_ip) {
+      if (v_asize(array_p) > (int) node.x.vfor.step_expr_ip) {
         var_elem_ptr = v_elem(array_p, node.x.vfor.step_expr_ip);
       } else {
         if (node.x.vfor.flags & 1) {  // allocated in for
@@ -2228,7 +2248,7 @@ void cmd_wsplit() {
         *p = '\0';
 
         // add element (ps)
-        if (var_p->v.a.size <= count) {
+        if (v_asize(var_p) <= count) {
           // resize array
           v_resize_array(var_p, count + 16);
         }
@@ -2321,7 +2341,7 @@ void cmd_wjoin() {
   str->v.p.ptr = malloc(size);
   str->v.p.ptr[0] = '\0';
 
-  for (i = 0; i < var_p->v.a.size; i++) {
+  for (i = 0; i < v_asize(var_p); i++) {
     var_t *elem_p = v_elem(var_p, i);
     var_t e_str;
 
@@ -2546,9 +2566,9 @@ void cmd_sort() {
   }
   // sort
   if (!errf) {
-    if (var_p->v.a.size > 1) {
+    if (v_asize(var_p) > 1) {
       static_qsort_last_use_ip = use_ip;
-      qsort(var_p->v.a.data, var_p->v.a.size, sizeof(var_t), qs_cmp);
+      qsort(var_p->v.a.data, v_asize(var_p), sizeof(var_t), qs_cmp);
     }
   }
   // NO RTE anymore... there is no meaning on this because of empty
@@ -2614,7 +2634,7 @@ void cmd_search() {
   // search
   if (!errf) {
     rv_p->v.i = var_p->v.a.lbound[0] - 1;
-    for (int i = 0; i < var_p->v.a.size; i++) {
+    for (int i = 0; i < v_asize(var_p); i++) {
       var_t *elem_p = v_elem(var_p, i);
       int bcmp = sb_qcmp(elem_p, &vkey, use_ip);
       if (bcmp == 0) {

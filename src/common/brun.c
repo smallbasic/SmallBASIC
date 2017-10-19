@@ -880,7 +880,10 @@ void bc_loop(int isf) {
         cmd_redim();
         break;
       case kwAPPEND:
-        cmd_ladd();
+        cmd_append();
+        break;
+      case kwAPPEND_OPT:
+        cmd_append_opt();
         break;
       case kwINSERT:
         cmd_lins();

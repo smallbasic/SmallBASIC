@@ -1,3 +1,6 @@
+2017-10-19 (0.12.10)
+	COMMON: fix win32 run regression
+
 2017-10-17 (0.12.10)
 	COMMON: performance optimisations
 

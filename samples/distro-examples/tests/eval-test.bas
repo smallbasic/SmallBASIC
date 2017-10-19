@@ -333,3 +333,11 @@ while 1
   local t1 = tick
   frame++
 wend
+
+rem ---- optimised array handling
+key.x=12
+key.y=22
+dim aa
+aa << key
+kk = aa[0]
+if (kk.x != 12 or kk.y != 22) then throw "ERR"

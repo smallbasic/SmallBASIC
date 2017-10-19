@@ -2116,7 +2116,11 @@ void comp_text_line_let(bid_t idx, int ladd, int linc, int ldec, int leqop) {
       }
       bc_add_code(&comp_prog, kwTYPE_CMPOPR);
       bc_add_code(&comp_prog, '=');
-      comp_expression(parms + 1, 0);
+      if (parms[0] != '=' && parms[0] != ' ') {
+        comp_expression(parms, 0);
+      } else {
+        comp_expression(parms + 1, 0);
+      }
     }
   }
   if (array_index != NULL) {
@@ -3700,7 +3704,7 @@ bcip_t comp_optimise_line_goto(bcip_t ip) {
 }
 
 // use simpler LET where possible to avoid eval on the right term
-bcip_t comp_optimise_let(bcip_t ip) {
+bcip_t comp_optimise_let(bcip_t ip, byte opt_kw) {
   bcip_t ip_next = ip + 1;
   if (comp_prog.ptr[ip_next] == kwTYPE_VAR) {
     ip_next += 1 + sizeof(bcip_t);
@@ -3711,7 +3715,7 @@ bcip_t comp_optimise_let(bcip_t ip) {
         if (ip_next < comp_prog.count &&
             comp_prog.ptr[ip_next] == kwTYPE_VAR &&
             comp_prog.ptr[ip_next + 1 + sizeof(bcip_t)] == kwTYPE_EOC) {
-          comp_prog.ptr[ip] = kwLET_OPT;
+          comp_prog.ptr[ip] = opt_kw;
           ip = ip_next;
         }
         break;
@@ -3732,7 +3736,10 @@ void comp_optimise() {
       }
       break;
     case kwLET:
-      ip = comp_optimise_let(ip);
+      ip = comp_optimise_let(ip, kwLET_OPT);
+      break;
+    case kwAPPEND:
+      ip = comp_optimise_let(ip, kwAPPEND_OPT);
       break;
     default:
       break;

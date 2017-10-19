@@ -151,6 +151,7 @@ enum keyword {                // line 50
   kwFORSEP,
   kwOUTPUTSEP,
   kwAPPEND,
+  kwAPPEND_OPT,
   kwINSERT,
   kwDELETE,
   kwAPPENDSEP,

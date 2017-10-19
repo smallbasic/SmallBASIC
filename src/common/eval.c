@@ -1310,7 +1310,7 @@ void eval(var_t *r) {
 
     default:
       // less used codes
-      code = exec->bytecode[exec->ip];      
+      code = exec->bytecode[exec->ip];
       switch (code) {
       case kwTYPE_CALLEXTF:
         // [lib][index] external functions
