@@ -36,32 +36,26 @@ extern char **environ;
  *
  * warning: if the cmd is a GUI process, the shell will hang
  */
-char *shell(const char *cmd) {
-  HANDLE h_inppip, h_outpip, h_errpip, h_pid;
-  char buf[BUFSIZE + 1], cv_buf[BUFSIZE + 1];
-  char *result = NULL;
-  int block_count = 0;
-  DWORD bytes;
-
+int shell(const char *cmd, var_t *r) {
   SECURITY_ATTRIBUTES sa;
-  STARTUPINFO si;
   PROCESS_INFORMATION pi;
+  HANDLE h_inppip, h_outpip, h_errpip;
+  int result = 0;
 
   memset(&sa, 0, sizeof(sa));
   sa.nLength = sizeof(sa);
   sa.bInheritHandle = TRUE;
 
   if (!CreatePipe(&h_inppip, &h_outpip, &sa, BUFSIZE)) {
-    log_printf("CreatePipe failed");
-    return NULL;
+    return 0;
   }
 
-  h_pid = GetCurrentProcess();
-
+  HANDLE h_pid = GetCurrentProcess();
   DuplicateHandle(h_pid, h_inppip, h_pid, &h_inppip, 0, FALSE,
                   DUPLICATE_SAME_ACCESS | DUPLICATE_CLOSE_SOURCE);
   DuplicateHandle(h_pid, h_outpip, h_pid, &h_errpip, 0, TRUE, DUPLICATE_SAME_ACCESS);
 
+  STARTUPINFO si;
   memset(&si, 0, sizeof(si));
   si.cb = sizeof(si);
   si.dwFlags = STARTF_USESHOWWINDOW | STARTF_USESTDHANDLES;
@@ -76,25 +70,19 @@ char *shell(const char *cmd) {
     CloseHandle(h_errpip);
     h_errpip = h_outpip = NULL;
 
+    DWORD bytes;
+    char buf[BUFSIZE + 1];
+    char cv_buf[BUFSIZE + 1];
+
     // read stdout/err
-    while (ReadFile(h_inppip, buf, BUFSIZE, &bytes, NULL)) {
+    while (ReadFile(h_inppip, buf, BUFSIZE - 1, &bytes, NULL)) {
       buf[bytes] = '\0';
       memset(cv_buf, 0, BUFSIZE + 1);
       OemToCharBuff(buf, cv_buf, bytes);
-      block_count++;
-      if (result) {
-        result = (char *)realloc(result, block_count * BUFSIZE + 1);
-      } else {
-        result = (char *)malloc(BUFSIZE + 1);
-        *result = '\0';
-      }
-      strcat(result, cv_buf);
+      v_strcat(r, cv_buf);
+      result = 1;
     }
     CloseHandle(pi.hProcess);
-  }
-  else {
-    log_printf("Failed to launch %s\n", cmd);
-    result = NULL;
   }
 
   // clean up
@@ -111,14 +99,8 @@ char *shell(const char *cmd) {
 int dev_run(const char *cmd, var_t *r, int wait) {
   int result = 1;
   if (r != NULL) {
-    char *buf = shell(cmd);
-    if (buf != NULL) {
-      r->type = V_STR;
-      r->v.p.ptr = buf;
-      r->v.p.length = strlen(buf) + 1;
-    } else {
-      result = 0;
-    }
+    v_zerostr(r);
+    result = shell(cmd, r);
   } else if (wait) {
     STARTUPINFO si;
     PROCESS_INFORMATION pi;
