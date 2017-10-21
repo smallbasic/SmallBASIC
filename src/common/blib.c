@@ -426,11 +426,7 @@ void cmd_lins() {
  * DELETE A, index[, count]
  */
 void cmd_ldel() {
-  var_t *var_p, *arg_p;
-  int idx, count = 1;
-  int i, j;
-
-  var_p = code_getvarptr();
+  var_t *var_p = code_getvarptr();
   if (prog_error) {
     return;
   }
@@ -443,17 +439,21 @@ void cmd_ldel() {
     err_argerr();
     return;
   }
+
   // get 'index'
-  idx = par_getint();
+  uint32_t size = v_asize(var_p);
+  int idx = par_getint();
   if (prog_error) {
     return;
   }
   idx -= var_p->v.a.lbound[0];
-  if ((idx >= v_asize(var_p)) || (idx < 0)) {
+  if ((idx >= size) || (idx < 0)) {
     err_out_of_range();
     return;
   }
+
   // get 'count'
+  int count = 1;
   if (code_peek() == kwTYPE_SEP) {
     par_getcomma();
     if (prog_error) {
@@ -463,44 +463,57 @@ void cmd_ldel() {
     if (prog_error) {
       return;
     }
-    if (((count + idx) - 1 > v_asize(var_p))) {
+    if (((count + idx) - 1 > size)) {
       err_out_of_range();
-      return;
     } else if (count <= 0) {
       err_argerr();
     }
   }
-  // data
-  arg_p = v_clone(var_p);
-  v_resize_array(var_p, v_asize(var_p) - count);
+  if (prog_error) {
+    return;
+  }
 
-  // first part
-  for (i = 0; i < idx; i++) {
-    // A(i) = OLD(i)
-    v_set(v_elem(var_p, i), v_elem(arg_p, i));
+  if (idx + count == size) {
+    // pop elements from a stack
+    v_resize_array(var_p, size - count);
+  } else if (idx == 0 && count == 1) {
+    // pop element from a queue
+    for (int i = 0; i < size - 1; i++) {
+      v_set(v_elem(var_p, i), v_elem(var_p, i + 1));
+    }
+    v_resize_array(var_p, size - 1);
+  } else {
+    var_t *arg_p = v_clone(var_p);
+    v_resize_array(var_p, size - count);
+
+    // first part
+    for (int i = 0; i < idx; i++) {
+      // A(i) = OLD(i)
+      v_set(v_elem(var_p, i), v_elem(arg_p, i));
+    }
+    // second part
+    for (int i = idx + count, j = idx; i < size; i++, j++) {
+      // A(j) = OLD(i)
+      v_set(v_elem(var_p, j), v_elem(arg_p, i));
+    }
+
+    // cleanup
+    v_free(arg_p);
+    v_detach(arg_p);
   }
-  // second part
-  for (i = idx + count, j = idx; i < v_asize(arg_p); i++, j++) {
-    // A(j) = OLD(i)
-    v_set(v_elem(var_p, j), v_elem(arg_p, i));
-  }
-  // cleanup
-  v_free(arg_p);
-  v_detach(arg_p);
 }
 
 /**
  * ERASE var1 [, var2[, ...]]
  */
 void cmd_erase() {
-  byte code;
   var_t *var_p;
 
   do {
     if (prog_error) {
       break;
     }
-    code = code_peek();
+    byte code = code_peek();
 
     if (code_isvar()) {
       var_p = code_getvarptr();
@@ -523,7 +536,6 @@ void cmd_erase() {
     } else {
       break;
     }
-
   } while (1);
 }
 

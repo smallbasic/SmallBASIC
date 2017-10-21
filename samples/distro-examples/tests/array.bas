@@ -273,3 +273,11 @@ end
 if ([3] != fn([1],[2])) then
   throw "err"
 endif
+
+rem ---- array optimisations for queues and stacks
+stack=[1,2,3,4]
+delete stack, len(stack)-1, 1
+if (stack != [1,2,3]) then throw "stack err"
+queue=[11,12,13,14]
+delete queue, 0, 1
+if (queue != [12,13,14]) then throw "queue err"
