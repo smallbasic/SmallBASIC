@@ -53,7 +53,7 @@
 #define SYSVAR_HOME         7  /**< system variable, HOME$     @ingroup var */
 #define SYSVAR_COMMAND      8  /**< system variable, COMMAND$  @ingroup var */
 #define SYSVAR_X            9  /**< system variable, X         @ingroup var */
-#define SYSVAR_Y            10  /**< system variable, Y         @ingroup var */
+#define SYSVAR_Y            10 /**< system variable, Y         @ingroup var */
 #define SYSVAR_SELF         11 /**< system variable, SELF      @ingroup var */
 #define SYSVAR_NONE         12 /**< system variable, NONE      @ingroup var */
 #define SYSVAR_MAXINT       13 /**< system variable, INTMAX    @ingroup var */
@@ -116,6 +116,7 @@ struct var_s {
     struct {
       struct var_s *data; /**< array data pointer */
       uint32_t size; /**< the number of elements */
+      uint32_t capacity; /**< the number of slots */
       int32_t lbound[MAXDIM]; /**< lower bound */
       int32_t ubound[MAXDIM]; /**< upper bound */
       byte maxdim; /**< number of dimensions */

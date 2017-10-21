@@ -2117,6 +2117,7 @@ void comp_text_line_let(bid_t idx, int ladd, int linc, int ldec, int leqop) {
       bc_add_code(&comp_prog, kwTYPE_CMPOPR);
       bc_add_code(&comp_prog, '=');
       if (parms[0] != '=' && parms[0] != ' ') {
+        // A<<B
         comp_expression(parms, 0);
       } else {
         comp_expression(parms + 1, 0);
