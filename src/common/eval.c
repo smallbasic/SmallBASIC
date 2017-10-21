@@ -1191,17 +1191,16 @@ static inline void eval_callf(var_t *r) {
  * executes the expression (Code[IP]) and returns the result (r)
  */
 void eval(var_t *r) {
-  byte code;
   var_t *left = NULL;
+  bcip_t eval_pos = eval_sp;
   byte level = 0;
-  task_executor *exec = &ctask->sbe.exec;
-  bcip_t eval_pos = exec->eval_esp;
 
   while (!prog_error) {
-    switch (exec->bytecode[exec->ip]) {
+    byte code = prog_source[prog_ip];
+    switch (code) {
     case kwTYPE_INT:
       // integer - constant
-      exec->ip++;
+      IP++;
       V_FREE(r);
       r->type = V_INT;
       r->v.i = code_getint();
@@ -1209,7 +1208,7 @@ void eval(var_t *r) {
 
     case kwTYPE_NUM:
       // double - constant
-      exec->ip++;
+      IP++;
       V_FREE(r);
       r->type = V_NUM;
       r->v.n = code_getreal();
@@ -1217,39 +1216,39 @@ void eval(var_t *r) {
 
     case kwTYPE_STR:
       // string - constant
-      exec->ip++;
+      IP++;
       V_FREE(r);
       v_eval_str(r);
       break;
 
     case kwTYPE_LOGOPR:
-      exec->ip++;
+      IP++;
       oper_log(r, left);
       break;
 
     case kwTYPE_CMPOPR:
-      exec->ip++;
+      IP++;
       oper_cmp(r, left);
       break;
 
     case kwTYPE_ADDOPR:
-      exec->ip++;
+      IP++;
       oper_add(r, left);
       break;
 
     case kwTYPE_MULOPR:
-      exec->ip++;
+      IP++;
       oper_mul(r, left);
       break;
 
     case kwTYPE_POWOPR:
-      exec->ip++;
+      IP++;
       oper_powr(r, left);
       break;
 
     case kwTYPE_UNROPR:
       // unary
-      exec->ip++;
+      IP++;
       oper_unary(r);
       break;
 
@@ -1261,46 +1260,46 @@ void eval(var_t *r) {
 
     case kwTYPE_LEVEL_BEGIN:
       // left parenthesis
-      exec->ip++;
+      IP++;
       level++;
       break;
 
     case kwTYPE_LEVEL_END:
       // right parenthesis
       if (level == 0) {
-        exec->eval_esp = eval_pos;
+        eval_sp = eval_pos;
         // warning: normal exit
         return;
       }
       level--;
-      exec->ip++;
+      IP++;
       break;
 
     case kwTYPE_EVPUSH:
       // stack = push result
-      exec->ip++;
+      IP++;
       eval_push(r);
       break;
 
     case kwTYPE_EVPOP:
       // pop left
-      exec->ip++;
-      if (!exec->eval_esp) {
+      IP++;
+      if (!eval_sp) {
         err_syntax_unknown();
       } else {
-        exec->eval_esp--;
-        left = &eval_stk[exec->eval_esp];
+        eval_sp--;
+        left = &eval_stk[eval_sp];
       }
       break;
 
     case kwTYPE_EVAL_SC:
-      exec->ip++;
+      IP++;
       eval_shortc(r);
       break;
 
     case kwTYPE_CALLF:
       // built-in functions
-      exec->ip++;
+      IP++;
       eval_callf(r);
       break;
 
@@ -1310,17 +1309,16 @@ void eval(var_t *r) {
 
     default:
       // less used codes
-      code = exec->bytecode[exec->ip];
       switch (code) {
       case kwTYPE_CALLEXTF:
         // [lib][index] external functions
-        exec->ip++;
+        IP++;
         eval_extf(r);
         break;
 
       case kwTYPE_PTR:
         // UDF pointer - constant
-        exec->ip++;
+        IP++;
         eval_ptr(r);
         break;
 
@@ -1335,7 +1333,7 @@ void eval(var_t *r) {
             code == kwTO ||
             kw_check_evexit(code)) {
           // restore stack pointer
-          exec->eval_esp = eval_pos;
+          eval_sp = eval_pos;
 
           // normal exit
           return;
@@ -1348,5 +1346,5 @@ void eval(var_t *r) {
     }
   }
   // restore stack pointer
-  exec->eval_esp = eval_pos;
+  eval_sp = eval_pos;
 }
