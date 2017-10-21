@@ -278,6 +278,9 @@ rem ---- array optimisations for queues and stacks
 stack=[1,2,3,4]
 delete stack, len(stack)-1, 1
 if (stack != [1,2,3]) then throw "stack err"
-queue=[11,12,13,14]
-delete queue, 0, 1
-if (queue != [12,13,14]) then throw "queue err"
+stack=[1,2,3,4,5,6]
+delete stack, len(stack)-4, 4
+if (stack != [1,2]) then throw "stack err"
+queue=[11,12,13,14,15,16]
+delete queue, 0, 3
+if (queue != [14,15,16]) then throw "queue err"

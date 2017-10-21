@@ -476,12 +476,13 @@ void cmd_ldel() {
   if (idx + count == size) {
     // pop elements from a stack
     v_resize_array(var_p, size - count);
-  } else if (idx == 0 && count == 1) {
+  } else if (idx == 0) {
     // pop element from a queue
-    for (int i = 0; i < size - 1; i++) {
-      v_set(v_elem(var_p, i), v_elem(var_p, i + 1));
+    // for better performance create a queue in the language
+    for (int i = 0; i < size - count; i++) {
+      v_set(v_elem(var_p, i), v_elem(var_p, i + count));
     }
-    v_resize_array(var_p, size - 1);
+    v_resize_array(var_p, size - count);
   } else {
     var_t *arg_p = v_clone(var_p);
     v_resize_array(var_p, size - count);
