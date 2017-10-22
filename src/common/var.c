@@ -193,6 +193,7 @@ void v_resize_array(var_t *v, uint32_t size) {
   } else if (size == 0) {
     v_free(v);
     v_init_array(v);
+    v->type = V_ARRAY;
   } else if (size < v->v.a.size) {
     // resize down. free discarded elements
     uint32_t v_size = v_asize(v);
