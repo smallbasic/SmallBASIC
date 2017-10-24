@@ -3718,6 +3718,9 @@ bcip_t comp_optimise_let(bcip_t ip, byte kw_opr, char sep, byte opt_kw) {
             comp_prog.ptr[ip_next + 1 + sizeof(bcip_t)] == kwTYPE_EOC) {
           comp_prog.ptr[ip] = opt_kw;
           ip = ip_next;
+        } else if (comp_prog.ptr[ip_next] == kwBYREF) {
+          comp_prog.ptr[ip] = kwLET_REF;
+          ip = ip_next;
         }
         break;
       }

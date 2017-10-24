@@ -97,6 +97,7 @@ enum keyword {                // line 50
   kwUNIT,
   kwLET,
   kwLET_OPT,
+  kwLET_REF,
   kwCONST,
   kwPACKED_LET,
   kwEND,

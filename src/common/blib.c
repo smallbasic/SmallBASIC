@@ -36,17 +36,12 @@ void cmd_let(int is_const) {
       code_skipopr();
     }
 
-    if (code_peek() == kwBYREF) {
-      code_skipnext();
-      v_eval_ref(v_left);
-    } else {
-      var_t v_right;
-      v_init(&v_right);
-      eval(&v_right);
-      v_set(v_left, &v_right);
-      v_left->const_flag = is_const;
-      v_free(&v_right);
-    }
+    var_t v_right;
+    v_init(&v_right);
+    eval(&v_right);
+    v_set(v_left, &v_right);
+    v_left->const_flag = is_const;
+    v_free(&v_right);
   }
 }
 
@@ -60,6 +55,17 @@ void cmd_let_opt() {
 
   v_set(v_left, tvar[code_getaddr()]);
   v_left->const_flag = 0;
+}
+
+void cmd_let_ref() {
+  var_t *v_left = code_getvarptr();
+  // skip kwTYPE_CMPOPR + "="
+  code_skipopr();
+
+  // skip kwBYREF
+  code_skipnext();
+
+  v_eval_ref(v_left);
 }
 
 void cmd_packed_let() {

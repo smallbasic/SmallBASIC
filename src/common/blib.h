@@ -33,6 +33,7 @@ void cmd_param(void);
 int cmd_exit(void);
 void cmd_let(int);
 void cmd_let_opt();
+void cmd_let_ref();
 void cmd_packed_let();
 void cmd_dim(int);
 void cmd_redim(void);
