@@ -14,7 +14,7 @@ func PriorityQueue()
   # int N - number of elements in array or heap
   # Key h[ ] - heap array of size N containing items of type Key.
   # The heap array h[] and N will be encapsulated inside the heap object.
-  sub push(v, p)
+  sub push(byref v, p)
     local key = {}
     key.v = v
     key.p = p
@@ -38,6 +38,10 @@ func PriorityQueue()
 
   func is_empty()
     return len(self.heap) == 1
+  end
+
+  func size
+    return len(self.heap)
   end
 
   # upHeap from position k. The key or node value at position k
@@ -78,16 +82,17 @@ func PriorityQueue()
   h.heap = [0]
   h.push = @push
   h.pop = @pop
+  h.size= @size
   h.is_empty=@is_empty
   return h
 end
 
 func Set
-  sub add(item)
+  sub add(byref item)
     local v = item.to_str()
     self.items[v] = 1
   end
-  func contains(item)
+  func contains(byref item)
     local v = item.to_str()
     return self.items[v] == 1
   end
@@ -105,8 +110,8 @@ func KlotskiState(grid)
     local state = {}
     state.grid = []
     state.depth = depth
-    state.parent = 0
-    state.children = []
+    'state.parent = 0
+    'state.children = []
     state.moves = @moves
     state.to_str = @to_str
     return state
@@ -118,8 +123,8 @@ func KlotskiState(grid)
     state.grid = self.grid
     local y = state.grid[i][1]
     state.grid[i] += mv_offs
-    state.parent = self.grid
-    self.children << state.grid
+    'state.parent = self.grid
+    'self.children << state.grid
     [state.e1,state.e2] = get_empty(state)
     state.dist = get_dist(state)
     return state
@@ -137,7 +142,7 @@ func KlotskiState(grid)
   end
 
   func get_used(byref state)
-    local i,x,y
+    local i,x,y,used
     dim used(3,4)
     for i = 0 to 9
       [x,y] = state.grid[i]
@@ -194,14 +199,13 @@ func KlotskiState(grid)
     local result = []
     local u = get_used(self)
     local i,x,y
-
     for i = 0 to 9
       [x,y] = self.grid[i]
       select case i
       case 0
         ' 2,2
         ' 2,2
-        if (y + 1 < gh && u[x,y+2] == 0 && u[x+1,y+2] == 0) then
+        if (y + 2 < gh && u[x,y+2] == 0 && u[x+1,y+2] == 0) then
           result << child(i, [0, 1])
         endif
         m_lr2(result, u, i, x, y, 2)
@@ -219,6 +223,7 @@ func KlotskiState(grid)
         m_ud(result, u, i, x, y, 1)
       end select
     next i
+    
     return result
   end
 
@@ -256,10 +261,8 @@ func KlotskiState(grid)
       endif
     else if (y + h < gh && u[x,y+h] == 0) then
       r << child(i, [0, 1])
-      'if (h==2) then logprint "move down 2 > " + i
       if (y + h + 1 < gh && u[x,y+h+1] == 0) then
         r << child(i, [0, 2])
-        'if (h==2) then logprint "move double down 2"
       endif
     endif
   end
@@ -298,26 +301,16 @@ func getInitialState()
 end
 
 func is_goal(byref state)
-  local x,y
-  [x,y] = state.grid[0]
-  return y == 2
+  return state.grid[0] = [1,3]
 end
 
 func get_prio(byref state)
-  local r, x, y
+  local r
   if (state.dist > 4) then
     ' gap too far, filter out
     r = 0
   else
-    r = log(state.depth) + state.dist * 4
-    [x,y] = state.grid[0]
-    r += (abs(1-x) + abs(3-y))
-    if (x == 1 and y = 0) then
-      r += 4
-    endif
-    'logprint r + " " + state.depth
-    'show_grid(state)
-    'pause
+    r = log(state.depth) + (3 - state.grid[0][1])
   endif
   return r
 end
@@ -327,20 +320,26 @@ end
 func process(initialState, maxDepth)
   local fringe = PriorityQueue()
   local explored = Set()
-  local state,nextState,p,x,y
+  local state,nextState,p,x,y,s
+ 
   fringe.push(initialState, 0)
 
   while (not fringe.is_empty())
     state = fringe.pop()
+    moves++
+    if (moves % 1000 = 0) then
+      s = "depth:" + state.depth + " moves:" + moves + " fringe:" + fringe.size()
+      at 0,0: print s + chr(27) + "[K"
+    endif
     [x,y] = state.grid[0]
     if (is_goal(state)) then
-      logprint "found !"
+      show_grid(state)
+      pause
       return true
     endif
 
     if (not explored.contains(state) && state.depth < maxDepth) then
       explored.add(state)
-      show_grid(state)
       for nextState in state.moves()
         if (not explored.contains(nextState)) then
           p = get_prio(nextState)
@@ -349,6 +348,7 @@ func process(initialState, maxDepth)
       next nextState
     endif
   wend
+  print "search failed"
   return false
 end
 
@@ -367,7 +367,7 @@ sub show_grid(byref s)
   local i,x,y,w,h
   local bs = min(xmax,ymax)/7
   local xoffs = 60
-  local yoffs = 5
+  local yoffs = 30
 
   sub show_cell(x,y,w,h,i)
     local rx = xoffs + (x * bs)
@@ -404,10 +404,7 @@ sub show_grid(byref s)
   show_cell(x,y,1,1,-1)
   [x,y] = s.e2
   show_cell(x,y,1,1,-1)
-  showpage
 end
-
-n = process(getInitialState(), 65)
 
 rem -------- TESTS --------
 sub testSet
@@ -422,7 +419,7 @@ sub testSet
   pause
 end
 sub testStack()
-  s = Stack("blah")
+  s = Stack()
   s.push("1")
   s.push("2")
   s.push("3")
@@ -432,11 +429,13 @@ sub testStack()
   print s.pop()
 end
 func testQueue()
-  q = Queue("blah")
-  q.push("1")
-  q.push("2")
-  q.push("3")
-  print q.pop()
+  local q = Queue()
+  local obj1 = {"a":"1"}
+  local obj2 = {"a":"2"}
+  local obj3 = {"a":"3"}
+  q.push(obj1)
+  q.push(obj2)
+  q.push(obj3)
   print q.pop()
   print q.pop()
   print q.pop()
@@ -459,31 +458,62 @@ sub TestHeap
   if (h.pop() <> "blah3") then throw "e6"
 end
 
-'testQueue
-'testStack
-'testSet
-
 # A container with a first-in-first-out (FIFO) queuing policy.
 # push(3,2,1) -> pop(3)
 # 1
 # 2           1
 # 3           2
+# https://introcs.cs.princeton.edu/java/43stack/ResizingArrayQueue.java.html
 func Queue()
   func is_empty()
-    return len(self.items) < 1
+    return self.n == 0
   end
-  sub push(item)
-    self.items << item
+
+  func size()
+    return self.n
   end
+
+  sub push(byref item)
+    local q_len = len(self.q)
+    if (self.n = q_len) then resize(2 * q_len)
+    self.q[self.last] = item
+    self.last = (self.last + 1) % len(self.q)
+    self.n++
+  end
+
   func pop()
-    local result = self.items[0]
-    delete self.items, 0, 1
+    local q_len = len(self.q)
+    local result = self.q[self.first]
+    self.q[self.first] = 0
+    self.n--
+    self.first = (self.first + 1) % q_len
     return result
   end
+
+  ' resize the underlying array
+  sub resize(capacity)
+    if (capacity < n) then throw "err"
+    local temp, i, n
+
+    dim temp(capacity)
+    n = self.n
+    for i = 1 to n
+      temp[i-1] = self.q[i-1]
+    next i
+
+    self.q = temp
+    self.first = 0
+    self.last = n
+  end
+  
   local result = {}
-  result.items = []
+  result.q = []
+  result.n = 0
+  result.first = 0
+  result.last = 0
   result.push=@push
   result.pop=@pop
+  result.size=@size
   result.is_empty=@is_empty
   return result
 end
@@ -521,3 +551,5 @@ func Stack()
   return result
 end
 
+n = process(getInitialState(), 200)
+'testQueue()
