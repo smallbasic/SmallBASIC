@@ -244,6 +244,34 @@ var_t *resolve_var_ref(var_t *var_p) {
 }
 
 /**
+ * resolve the map without invoking any V_PTRs
+ */
+var_t *code_isvar_resolve_map(var_t *var_p, int *is_ptr) {
+  int deref = 1;
+  var_t *v_parent = var_p;
+  var_p = eval_ref_var(var_p);
+  while (deref && var_p != NULL) {
+    switch (code_peek()) {
+    case kwTYPE_LEVEL_BEGIN:
+      if (var_p->type == V_PTR) {
+        *is_ptr = 1;
+        deref = 0;
+      } else {
+        var_p = code_get_map_element(v_parent, var_p);
+      }
+      break;
+    case kwTYPE_UDS_EL:
+      var_p = map_resolve_fields(var_p);
+      break;
+    default:
+      deref = 0;
+    }
+    var_p = eval_ref_var(var_p);
+  }
+  return var_p;
+}
+
+/**
  * returns true if the next code is a variable. if the following code is an
  * expression (no matter if the first item is a variable), returns false
  */
@@ -257,9 +285,16 @@ int code_isvar() {
   if (code_peek() == kwTYPE_VAR) {
     code_skipnext();
     var_p = basevar_p = tvar[code_getaddr()];
+    int is_ptr;
     switch (basevar_p->type) {
     case V_MAP:
-      var_p = code_resolve_map(var_p, 0);
+      is_ptr = 0;
+      var_p = code_isvar_resolve_map(var_p, &is_ptr);
+      if (is_ptr) {
+        // restore IP
+        prog_ip = cur_ip;
+        return 1;
+      }
       break;
     case V_ARRAY:
       var_p = code_resolve_varptr(var_p, 0);

@@ -341,3 +341,24 @@ dim aa
 aa << key
 kk = aa[0]
 if (kk.x != 12 or kk.y != 22) then throw "ERR"
+
+rem ensure calling: for i in s.moves()
+rem does not cause moves() to be called twice
+func KlotskiState()
+  func moves()
+    if (moves_called) then throw "var_eval error"
+    moves_called = true
+    return [1,2,3]
+  end
+  moves_called = false
+  for i in moves()
+  next i  
+  local state = {}
+  state.moves = @moves
+  return state
+end  
+s = KlotskiState()
+moves_called = false
+for i in s.moves()
+next i  
+
