@@ -279,12 +279,10 @@ int code_isvar() {
   if (code_peek() == kwTYPE_VAR) {
     int is_ptr;
     var_t *basevar_p;
-    var_t *var_p = NULL;
-
-    // store IP
     bcip_t cur_ip = prog_ip;
+
     code_skipnext();
-    var_p = basevar_p = tvar[code_getaddr()];
+    var_t *var_p = basevar_p = tvar[code_getaddr()];
     switch (basevar_p->type) {
     case V_MAP:
       is_ptr = 0;
