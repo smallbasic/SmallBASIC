@@ -276,16 +276,15 @@ var_t *code_isvar_resolve_map(var_t *var_p, int *is_ptr) {
  * expression (no matter if the first item is a variable), returns false
  */
 int code_isvar() {
-  var_t *basevar_p;
-  var_t *var_p = NULL;
-
-  // store IP
-  bcip_t cur_ip = prog_ip;
-
   if (code_peek() == kwTYPE_VAR) {
+    int is_ptr;
+    var_t *basevar_p;
+    var_t *var_p = NULL;
+
+    // store IP
+    bcip_t cur_ip = prog_ip;
     code_skipnext();
     var_p = basevar_p = tvar[code_getaddr()];
-    int is_ptr;
     switch (basevar_p->type) {
     case V_MAP:
       is_ptr = 0;
@@ -307,22 +306,21 @@ int code_isvar() {
         var_p = NULL;
       }
     }
-  }
-
-  if (var_p) {
-    byte code = code_peek();
-    if (code == kwTYPE_EOC ||
-        code == kwTYPE_SEP ||
-        code == kwTYPE_LEVEL_END ||
-        kw_check_evexit(code)) {
-      // restore IP
-      prog_ip = cur_ip;
-      return 1;
+    if (var_p) {
+      byte code = code_peek();
+      if (code == kwTYPE_EOC ||
+          code == kwTYPE_SEP ||
+          code == kwTYPE_LEVEL_END ||
+          kw_check_evexit(code)) {
+        // restore IP
+        prog_ip = cur_ip;
+        return 1;
+      }
     }
-  }
 
-  // restore IP
-  prog_ip = cur_ip;
+    // restore IP
+    prog_ip = cur_ip;
+  }
   return 0;
 }
 
