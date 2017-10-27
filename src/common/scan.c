@@ -1300,9 +1300,6 @@ void comp_expression(char *expr, byte no_parser) {
                   ptr = trim_empty_parentheses(ptr);
                 } else {
                   // variable
-                  if (addr_opr != 0) {
-                    bc_add_code(&bc, kwBYREF);
-                  }
                   SKIP_SPACES(ptr);
                   comp_add_variable(&bc, comp_bc_name);
                   if (ptr[0] == '(' && ptr[1] == ')'
@@ -3717,9 +3714,6 @@ bcip_t comp_optimise_let(bcip_t ip, byte kw_opr, char sep, byte opt_kw) {
             comp_prog.ptr[ip_next] == kwTYPE_VAR &&
             comp_prog.ptr[ip_next + 1 + sizeof(bcip_t)] == kwTYPE_EOC) {
           comp_prog.ptr[ip] = opt_kw;
-          ip = ip_next;
-        } else if (comp_prog.ptr[ip_next] == kwBYREF) {
-          comp_prog.ptr[ip] = kwLET_REF;
           ip = ip_next;
         }
         break;

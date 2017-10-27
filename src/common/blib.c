@@ -57,17 +57,6 @@ void cmd_let_opt() {
   v_left->const_flag = 0;
 }
 
-void cmd_let_ref() {
-  var_t *v_left = code_getvarptr();
-  // skip kwTYPE_CMPOPR + "="
-  code_skipopr();
-
-  // skip kwBYREF
-  code_skipnext();
-
-  v_eval_ref(v_left);
-}
-
 void cmd_packed_let() {
   if (code_peek() != kwTYPE_LEVEL_BEGIN) {
     err_missing_comma();
@@ -265,17 +254,7 @@ void cmd_append() {
   do {
     // get the value to append
     v_free(arg_p);
-
-    int byref = 0;
-    if (code_peek() == kwBYREF) {
-      code_skipnext();
-      byref = 1;
-    } else {
-      eval(arg_p);
-    }
-    if (prog_error) {
-      break;
-    }
+    eval(arg_p);
 
     // find the array element
     var_t *elem_p;
@@ -288,11 +267,7 @@ void cmd_append() {
     }
 
     // set the value onto the element
-    if (byref) {
-      v_eval_ref(elem_p);
-    } else {
-      v_set(elem_p, arg_p);
-    }
+    v_set(elem_p, arg_p);
 
     // next parameter
     if (code_peek() != kwTYPE_SEP) {
@@ -376,17 +351,7 @@ void cmd_lins() {
   do {
     // get the value to append
     v_free(arg_p);
-
-    int byref = 0;
-    if (code_peek() == kwBYREF) {
-      code_skipnext();
-      byref = 1;
-    } else {
-      eval(arg_p);
-    }
-    if (prog_error) {
-      break;
-    }
+    eval(arg_p);
 
     // resize +1
     v_resize_array(var_p, v_asize(var_p) + 1);
@@ -406,11 +371,7 @@ void cmd_lins() {
     }
 
     // set the value onto the element
-    if (byref) {
-      v_eval_ref(elem_p);
-    } else {
-      v_set(elem_p, arg_p);
-    }
+    v_set(elem_p, arg_p);
 
     // next parameter
     if (code_peek() != kwTYPE_SEP) {

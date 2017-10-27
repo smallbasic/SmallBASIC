@@ -1069,7 +1069,6 @@ static inline void eval_callf(var_t *r) {
   case kwEMPTY:
   case kwISARRAY:
   case kwISMAP:
-  case kwISREF:
   case kwISNUMBER:
   case kwISSTRING:
   case kwRGB:

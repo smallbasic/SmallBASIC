@@ -51,10 +51,7 @@ if (ismap(m3) == false) then
   throw "m3 is not an map"
 end if
 
-m4 = byref m3
-if (isref(m4) == false) then
-  throw "m3 is not an ref"
-end if
+m4 =  m3
 
 if m4.cat.name <> "lots" then
   ? m3

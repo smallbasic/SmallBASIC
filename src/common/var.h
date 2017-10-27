@@ -63,7 +63,7 @@
  * @ingroup var
  * @def MAXDIM Maxium number of array-dimensions
  */
-#define MAXDIM 6     // think before increase this, (possible stack overflow)
+#define MAXDIM 2
 
 #if defined(__cplusplus)
 extern "C" {

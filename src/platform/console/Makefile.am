@@ -24,7 +24,7 @@ sbasic_DEPENDENCIES = $(top_srcdir)/src/common/libsb_common.a
 TEST_DIR=../../../samples/distro-examples/tests
 UNIT_TESTS=array break byref eval-test iifs matrices metaa ongoto \
 	         uds hash pass1 call_tau short-circuit strings stack-test \
-           replace-test read-data proc optchk letbug ref ptr \
+           replace-test read-data proc optchk letbug ptr \
            trycatch chain stream-files split-join sprint all scope
 
 test: ${bin_PROGRAMS}

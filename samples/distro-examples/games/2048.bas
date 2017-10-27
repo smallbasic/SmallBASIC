@@ -107,7 +107,7 @@ func GridClass()
     return result
   end
 
-  sub setCellValue(cell, v)
+  sub setCellValue(byref cell, v)
     local x,y
     (y,x) = cell
     if (v == 0) then throw "Set empty value"
@@ -141,7 +141,7 @@ func GridClass()
   end
 
   # Check If Able to Insert a Tile in Position
-  func canInsert(cell)
+  func canInsert(byref cell)
     local x,y
     (y,x)=cell
     return getCellValue(x, y) == 0
@@ -336,7 +336,7 @@ func PlayerAI()
     return False
   end
 
-  func maximise(state, a, b, move, depth)
+  func maximise(byref state, a, b, move, depth)
     local availableMoves, child, maxMove, maxUtility, nextMove
 
     if (isTerminal(move, depth)) then
@@ -371,7 +371,7 @@ func PlayerAI()
     return [maxMove, maxUtility]
   end
 
-  func minimise(state, a, b, move, depth)
+  func minimise(byref state, a, b, move, depth)
     local child,x,y,minMove,utility,emptyPos,nextMove,minUtility
     local availableCells = state.getAvailableCells()
 

@@ -234,7 +234,6 @@ struct func_keyword_s func_table[] = {
 { "ISNUMBER",                   kwISNUMBER },
 { "ISSTRING",                   kwISSTRING },
 { "ISMAP",                      kwISMAP },
-{ "ISREF",                      kwISREF },
 { "ATAN2",                      kwATAN2 },
 { "POW",                        kwPOW },
 { "ROUND",                      kwROUND },

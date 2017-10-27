@@ -1773,9 +1773,6 @@ void cmd_intN(long funcCode, var_t *r) {
   case kwISMAP:
     cmd_is_var_type(V_MAP, &arg1, r);
     break;
-  case kwISREF:
-    cmd_is_var_type(V_REF, &arg1, r);
-    break;
   case kwISSTRING:
     //
     // bool <- ISSTRING(v)

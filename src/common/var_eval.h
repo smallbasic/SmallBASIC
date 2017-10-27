@@ -50,13 +50,6 @@ var_t *code_resolve_varptr(var_t *var_p, int until_parens);
 var_t *eval_ref_var(var_t *var_p);
 
 /**
- * @ingroup var
- *
- * evaluate variable reference assignment
- */
-void v_eval_ref(var_t *l_value);
-
-/**
  * @ingroup exec
  *
  * returns true if the next code is a single variable
