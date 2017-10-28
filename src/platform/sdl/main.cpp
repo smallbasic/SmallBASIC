@@ -57,29 +57,25 @@ char g_appPath[OS_PATHNAME_SIZE + 1];
 int g_debugPort = 4000;
 
 void appLog(const char *format, ...) {
-  char buf[4096], *p = buf;
   va_list args;
-
   va_start(args, format);
-  p += vsnprintf(p, sizeof buf - 1, format, args);
+  unsigned size = vsnprintf(NULL, 0, format, args);
   va_end(args);
 
-  while (p > buf && isspace(p[-1])) {
-    *--p = '\0';
-  }
-
-  *p++ = '\r';
-  *p++ = '\n';
-  *p = '\0';
-
+  if (size) {
+    char *buf = (char *)malloc(size + 1);
+    buf[0] = '\0';
+    va_start(args, format);
+    vsnprintf(buf, size + 1, format, args);
+    va_end(args);
+    buf[size] = '\0';
 #if defined(WIN32)
-  if (opt_verbose) {
-    fprintf(stderr, buf, 0);
-  }
-  OutputDebugString(buf);
+    OutputDebugString(buf);
 #else
-  fprintf(stderr, buf, 0);
+    fputs(buf, stderr);
 #endif
+    free(buf);
+  }
 }
 
 #if defined(_Win32)
