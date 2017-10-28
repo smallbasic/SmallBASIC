@@ -63,12 +63,19 @@ void appLog(const char *format, ...) {
   va_end(args);
 
   if (size) {
-    char *buf = (char *)malloc(size + 1);
+    char *buf = (char *)malloc(size + 3);
     buf[0] = '\0';
     va_start(args, format);
     vsnprintf(buf, size + 1, format, args);
     va_end(args);
     buf[size] = '\0';
+
+    int i = size - 1;
+    while (i >= 0 && isspace(buf[i])) {
+      buf[i--] = '\0';
+    }
+    strcat(buf, "\r\n");
+    
 #if defined(WIN32)
     OutputDebugString(buf);
 #else
