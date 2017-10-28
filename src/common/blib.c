@@ -28,33 +28,36 @@
  */
 void cmd_let(int is_const) {
   var_t *v_left = code_getvarptr();
-  if (v_left->const_flag) {
-    err_const();
-  } else {
-    if (prog_source[prog_ip] == kwTYPE_CMPOPR &&
-        prog_source[prog_ip + 1] == '=') {
-      code_skipopr();
+  if (!prog_error) {
+    if (v_left->const_flag) {
+      err_const();
+    } else {
+      if (prog_source[prog_ip] == kwTYPE_CMPOPR &&
+          prog_source[prog_ip + 1] == '=') {
+        code_skipopr();
+      }
+      var_t v_right;
+      v_init(&v_right);
+      eval(&v_right);
+      v_set(v_left, &v_right);
+      v_left->const_flag = is_const;
+      v_free(&v_right);
     }
-
-    var_t v_right;
-    v_init(&v_right);
-    eval(&v_right);
-    v_set(v_left, &v_right);
-    v_left->const_flag = is_const;
-    v_free(&v_right);
   }
 }
 
 void cmd_let_opt() {
   var_t *v_left = code_getvarptr();
-  // skip kwTYPE_CMPOPR + "="
-  code_skipopr();
+  if (!prog_error) {
+    // skip kwTYPE_CMPOPR + "="
+    code_skipopr();
 
-  // skip kwTYPE_VAR
-  code_skipnext();
+    // skip kwTYPE_VAR
+    code_skipnext();
 
-  v_set(v_left, tvar[code_getaddr()]);
-  v_left->const_flag = 0;
+    v_set(v_left, tvar[code_getaddr()]);
+    v_left->const_flag = 0;
+  }
 }
 
 void cmd_packed_let() {
