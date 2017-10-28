@@ -1,3 +1,6 @@
+2017-10-28 (0.12.10)
+	COMMON: optimise method call access
+
 2017-10-27 (0.12.10)
 	COMMON: removed experimental reference variable concept
 

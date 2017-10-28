@@ -709,7 +709,6 @@ static inline void eval_var_ptr(var_t *r, var_t *var_p) {
 }
 
 static inline void eval_var(var_t *r, var_t *var_p) {
-  var_t *var_deref;
   if (prog_error) {
     return;
   }
@@ -733,12 +732,6 @@ static inline void eval_var(var_t *r, var_t *var_p) {
     break;
   case V_MAP:
     v_set(r, var_p);
-    break;
-  case V_REF:
-    var_deref = eval_ref_var(var_p);
-    if (var_deref != NULL) {
-      eval_var(r, var_deref);
-    }
     break;
   case V_FUNC:
     var_p->v.fn.cb(r);

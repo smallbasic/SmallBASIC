@@ -181,7 +181,7 @@ void map_free(var_p_t var_p) {
  * Scan byte code for node kwTYPE_UDS_EL and attach as field elements
  * if they don't already exist.
  */
-var_p_t map_resolve_fields(var_p_t base) {
+var_p_t map_resolve_fields(var_p_t base, var_p_t *parent) {
   var_p_t field = NULL;
   if (code_peek() == kwTYPE_UDS_EL) {
     code_skipnext();
@@ -209,9 +209,12 @@ var_p_t map_resolve_fields(var_p_t base) {
     const char *key = (const char *)&prog_source[prog_ip];
     prog_ip += len;
     field = hashmap_put(base, key, len);
+    if (parent != NULL) {
+      *parent = base;
+    }
 
     // evaluate the next sub-element
-    field = map_resolve_fields(field);
+    field = map_resolve_fields(field, parent);
   } else {
     field = base;
   }
@@ -227,43 +230,6 @@ var_p_t map_add_var(var_p_t base, const char *name, int value) {
   var_p_t var = hashmap_putv(base, key);
   v_setint(var, value);
   return var;
-}
-
-/**
- * Helper for map_get_parent
- */
-int map_get_parent_cb(hashmap_cb *cb, var_p_t var_key, var_p_t value) {
-  int result;
-  if (value == cb->var) {
-    cb->count++;
-    result = 1;
-  } else if (value->type == V_MAP && cb->count == 0) {
-    hashmap_foreach(value, map_get_parent_cb, cb);
-    if (cb->count == 1) {
-      cb->parent = value;
-      cb->count++;
-      result = 1;
-    } else {
-      result = 0;
-    }
-  } else {
-    result = 0;
-  }
-  return result;
-}
-
-/**
- * Returns the immediate parent of the given field
- */
-var_p_t map_get_parent(var_p_t base, var_p_t field) {
-  hashmap_cb cb;
-
-  cb.var = field;
-  cb.parent = base;
-  cb.count = 0;
-  hashmap_foreach(base, map_get_parent_cb, &cb);
-
-  return cb.parent;
 }
 
 /**

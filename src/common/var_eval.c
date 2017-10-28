@@ -67,7 +67,7 @@ bcip_t get_array_idx(var_t *array) {
 }
 
 /**
- * Returns the map field along with the parent map
+ * Returns the map field along with the immediate parent map
  */
 var_t *code_getvarptr_map(var_t **var_map) {
   var_t *var_p = NULL;
@@ -75,7 +75,7 @@ var_t *code_getvarptr_map(var_t **var_map) {
     code_skipnext();
     *var_map = tvar[code_getaddr()];
     if (code_peek() == kwTYPE_UDS_EL) {
-      var_p = code_resolve_map(*var_map, 1);
+      var_p = map_resolve_fields(*var_map, var_map);
     }
   }
   return var_p;
@@ -138,7 +138,6 @@ var_t *code_get_map_element(var_t *map, var_t *field) {
     err_arrmis_lp();
   } else if (field->type == V_PTR) {
     prog_ip = cmd_push_args(kwFUNC, field->v.ap.p, field->v.ap.v);
-    map = map_get_parent(eval_ref_var(map), field);
     var_t *self = v_set_self(map);
     bc_loop(2);
     v_set_self(self);
@@ -195,7 +194,7 @@ var_t *code_resolve_varptr(var_t *var_p, int until_parens) {
       }
       break;
     case kwTYPE_UDS_EL:
-      var_p = map_resolve_fields(var_p);
+      var_p = map_resolve_fields(var_p, NULL);
       break;
     default:
       deref = 0;
@@ -210,7 +209,6 @@ var_t *code_resolve_varptr(var_t *var_p, int until_parens) {
 var_t *code_resolve_map(var_t *var_p, int until_parens) {
   int deref = 1;
   var_t *v_parent = var_p;
-  var_p = eval_ref_var(var_p);
   while (deref && var_p != NULL) {
     switch (code_peek()) {
     case kwTYPE_LEVEL_BEGIN:
@@ -221,7 +219,7 @@ var_t *code_resolve_map(var_t *var_p, int until_parens) {
       }
       break;
     case kwTYPE_UDS_EL:
-      var_p = map_resolve_fields(var_p);
+      var_p = map_resolve_fields(var_p, &v_parent);
       break;
     default:
       deref = 0;
@@ -237,7 +235,7 @@ var_t *resolve_var_ref(var_t *var_p) {
     var_p = resolve_var_ref(code_getvarptr_arridx(var_p));
     break;
   case kwTYPE_UDS_EL:
-    var_p = resolve_var_ref(map_resolve_fields(var_p));
+    var_p = resolve_var_ref(map_resolve_fields(var_p, NULL));
     break;
   }
   return var_p;
@@ -249,7 +247,6 @@ var_t *resolve_var_ref(var_t *var_p) {
 var_t *code_isvar_resolve_map(var_t *var_p, int *is_ptr) {
   int deref = 1;
   var_t *v_parent = var_p;
-  var_p = eval_ref_var(var_p);
   while (deref && var_p != NULL) {
     switch (code_peek()) {
     case kwTYPE_LEVEL_BEGIN:
@@ -261,7 +258,7 @@ var_t *code_isvar_resolve_map(var_t *var_p, int *is_ptr) {
       }
       break;
     case kwTYPE_UDS_EL:
-      var_p = map_resolve_fields(var_p);
+      var_p = map_resolve_fields(var_p, NULL);
       break;
     default:
       deref = 0;
