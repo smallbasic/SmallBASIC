@@ -394,10 +394,6 @@ func getInitialState()
   return KlotskiState(grid)
 end
 
-func is_goal(byref state)
-  return state.grid[0] = [1,3]
-end
-
 func get_prio(byref state)
   local r
   if (state.dist > 4) then
@@ -421,6 +417,7 @@ func process(initialState, maxDepth)
   local explored = Set()
   local t = timer
   local state,nextState,p,s,moves
+  local goal = [1,3]
 
   fringe.push(initialState, 0)
   explored.add(initialState)
@@ -433,7 +430,7 @@ func process(initialState, maxDepth)
       at 0,0: print s + chr(27) + "[K"
     endif
 
-    if (is_goal(state)) then
+    if (state.grid[0] == goal) then
       show_result(explored, state)
       return true
     endif
