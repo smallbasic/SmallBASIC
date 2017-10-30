@@ -276,9 +276,6 @@ int map_set_cb(hashmap_cb *cb, var_p_t var_key, var_p_t value) {
     v_set(key, var_key);
     var_p_t var = hashmap_putv(cb->var, key);
     v_set(var, value);
-    if (var->type == V_FUNC) {
-      var->v.fn.self = cb->var;
-    }
   }
   return 0;
 }

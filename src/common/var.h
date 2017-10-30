@@ -103,7 +103,6 @@ struct var_s {
     // object method
     struct {
       method cb;
-      struct var_s *self;
     } fn;
 
     // generic ptr (string)
@@ -327,6 +326,16 @@ void v_add(var_t *result, var_t *a, var_t *b);
  * @param src the source-var
  */
 void v_set(var_t *dest, const var_t *src);
+
+/**
+ * @ingroup var
+ *
+ * assigning: dest = src
+ *
+ * @param dest the destination-var
+ * @param src the source-var
+ */
+void v_move(var_t *dest, const var_t *src);
 
 /**
  * @ingroup var

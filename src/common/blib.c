@@ -39,9 +39,9 @@ void cmd_let(int is_const) {
       var_t v_right;
       v_init(&v_right);
       eval(&v_right);
-      v_set(v_left, &v_right);
+      v_move(v_left, &v_right);
       v_left->const_flag = is_const;
-      v_free(&v_right);
+      // no free after v_move
     }
   }
 }
@@ -1915,7 +1915,6 @@ void cmd_next() {
       break;
 
     default:
-      // if ( !prog_error ) rt_raise("FOR-IN: IN var IS NOT ARRAY");
       if (node.x.vfor.flags & 1) {  // allocated in for
         v_free(node.x.vfor.arr_ptr);
         v_detach(node.x.vfor.arr_ptr);
@@ -2887,7 +2886,7 @@ void cmd_call_vfunc() {
     if (code_peek() == kwTYPE_LEVEL_BEGIN) {
       code_skipnext();
     }
-    v_func->v.fn.cb(v_func->v.fn.self);
+    v_func->v.fn.cb(map);
     if (code_peek() == kwTYPE_LEVEL_END) {
       code_skipnext();
     }

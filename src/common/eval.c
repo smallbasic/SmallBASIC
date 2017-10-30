@@ -694,9 +694,8 @@ static inline void eval_call_udf(var_t *r) {
     if (udf_rv.type != kwTYPE_RET) {
       err_stackmess();
     } else {
-      v_set(r, udf_rv.x.vdvar.vptr);
-      // free ret-var
-      V_FREE(udf_rv.x.vdvar.vptr);
+      v_move(r, udf_rv.x.vdvar.vptr);
+      // no free after v_move
       v_detach(udf_rv.x.vdvar.vptr);
     }
   }

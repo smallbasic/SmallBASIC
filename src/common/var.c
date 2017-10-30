@@ -503,7 +503,50 @@ void v_set(var_t *dest, const var_t *src) {
     break;
   case V_FUNC:
     dest->v.fn.cb = src->v.fn.cb;
-    dest->v.fn.self = src->v.fn.self;
+    break;
+  case V_NIL:
+    dest->type = V_NIL;
+    dest->const_flag = 1;
+    break;
+  }
+}
+
+/*
+ * assign (dest = src)
+ */
+void v_move(var_t *dest, const var_t *src) {
+  v_free(dest);
+  dest->const_flag = 0;
+  dest->type = src->type;
+
+  switch (src->type) {
+  case V_INT:
+    dest->v.i = src->v.i;
+    break;
+  case V_NUM:
+    dest->v.n = src->v.n;
+    break;
+  case V_STR:
+    dest->v.p.ptr = src->v.p.ptr;
+    dest->v.p.length = src->v.p.length;
+    break;
+  case V_ARRAY:
+    memcpy(&dest->v.a, &src->v.a, sizeof(src->v.a));
+    break;
+  case V_PTR:
+    dest->v.ap.p = src->v.ap.p;
+    dest->v.ap.v = src->v.ap.v;
+    break;
+  case V_MAP:
+    dest->v.m.map = src->v.m.map;
+    dest->v.m.count = src->v.m.count;
+    dest->v.m.size = src->v.m.size;
+    break;
+  case V_REF:
+    dest->v.ref = src->v.ref;
+    break;
+  case V_FUNC:
+    dest->v.fn.cb = src->v.fn.cb;
     break;
   case V_NIL:
     dest->type = V_NIL;

@@ -258,7 +258,6 @@ extern "C" void v_create_form(var_p_t var) {
   bool hasInputs = false;
   var_p_t arg;
   AnsiWidget *out = g_system->getOutput();
-
   if (code_isvar()) {
     arg = code_getvarptr();
     if (arg->type == V_MAP) {
