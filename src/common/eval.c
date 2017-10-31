@@ -323,8 +323,7 @@ static inline void oper_add(var_t *r, var_t *left) {
         }
         break;
       }
-      v_set(r, &vtmp);
-      V_FREE2(&vtmp);
+      v_move(r, &vtmp);
     }
     V_FREE(left);
   }

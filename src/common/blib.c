@@ -1185,11 +1185,9 @@ void cmd_call_unit_udp(int cmd, int udp_tid, bcip_t goto_addr, bcip_t rvid) {
  * Create dynamic-variables (actually local-variables)
  */
 void cmd_crvar() {
-  int i;
-
   // number of variables to create
   int count = code_getnext();
-  for (i = 0; i < count; i++) {
+  for (int i = 0; i < count; i++) {
     // an ID on global-variable-table is used
     bcip_t vid = code_getaddr();
     stknode_t node;
@@ -1233,8 +1231,7 @@ void cmd_param() {
   }
 
   if (pcount) {
-    int i;
-    for (i = 0; i < pcount; i++) {
+    for (int i = 0; i < pcount; i++) {
       // check parameters one-by-one
       byte vattr = code_getnext();
       bid_t vid = code_getaddr();
@@ -1475,12 +1472,10 @@ void cmd_if() {
  * ELSE
  */
 void cmd_else() {
-  bcip_t true_ip, false_ip;
+  bcip_t true_ip = code_getaddr();
+  bcip_t false_ip = code_getaddr();
+
   stknode_t node;
-
-  true_ip = code_getaddr();
-  false_ip = code_getaddr();
-
   code_pop(&node, kwIF);
 
   // 'GOTO'
@@ -1505,14 +1500,11 @@ void cmd_else() {
  * ELIF
  */
 void cmd_elif() {
-  bcip_t true_ip, false_ip;
-  var_t var;
-  stknode_t node;
-
-  true_ip = code_getaddr();
-  false_ip = code_getaddr();
+  bcip_t true_ip = code_getaddr();
+  bcip_t false_ip = code_getaddr();
 
   // else cond
+  stknode_t node;
   code_pop(&node, kwIF);
 
   // 'GOTO'
@@ -1531,6 +1523,7 @@ void cmd_elif() {
 
   if (!node.x.vif.lcond) {
     // previous IF failed
+    var_t var;
 
     // expression
     v_init(&var);
@@ -1564,17 +1557,11 @@ void cmd_endif() {
  * FOR var = expr TO expr [STEP expr]
  */
 void cmd_for() {
-  byte code;
-  bcip_t true_ip, false_ip;
+  bcip_t true_ip = code_getaddr();
+  bcip_t false_ip = code_getaddr();
+  byte code = code_peek();
+
   stknode_t node;
-  var_t var, varstep;
-  var_p_t array_p, var_p;
-
-  true_ip = code_getaddr();
-  false_ip = code_getaddr();
-
-  code = code_peek();
-
   node.type = kwFOR;
   node.x.vfor.subtype = kwTO;
   node.exit_ip = false_ip + ADDRSZ + ADDRSZ + 1;
@@ -1583,21 +1570,21 @@ void cmd_for() {
   //
   // get FOR-variable
   //
-  var_p = code_getvarptr();
+  var_p_t var_p = code_getvarptr();
   if (prog_error) {
     return;
   }
   node.x.vfor.var_ptr = var_p;
   v_free(var_p);
 
-  v_init(&var);
-  v_init(&varstep);
-
   // FOR-EACH or FOR-TO
   if (code_peek() != kwIN) {
     //
     // FOR v1=exp1 TO exp2 [STEP exp3]
     //
+    var_t varstep, var;
+    v_init(&varstep);
+    v_init(&var);
 
     // get the first expression
     eval(&var);
@@ -1669,10 +1656,13 @@ void cmd_for() {
         rt_raise(ERR_SYNTAX);
       }
     }
+    v_free(&varstep);
+    v_free(&var);
   } else {
     //
     // FOR [EACH] v1 IN v2
     //
+    var_p_t array_p;
     code_skipnext();      // kwIN
     node.x.vfor.subtype = kwIN;
     node.x.vfor.to_expr_ip = prog_ip;
@@ -1729,10 +1719,6 @@ void cmd_for() {
       code_push(&node);
     }
   }
-
-  // clean up
-  v_free(&var);
-  v_free(&varstep);
 }
 
 /**
@@ -1812,13 +1798,10 @@ void cmd_until() {
  * NEXT
  */
 void cmd_next() {
-  bcip_t next_ip, jump_ip;
-  var_t var_to, var_step, *var_p;
+  bcip_t next_ip = code_getaddr();
+  code_skipaddr();
+
   stknode_t node;
-
-  next_ip = code_getaddr();
-  jump_ip = code_getaddr();
-
   code_pop(&node, kwFOR);
 
   // 'GOTO'
@@ -1834,18 +1817,16 @@ void cmd_next() {
     dump_stack();
     return;
   }
-  jump_ip = node.x.vfor.jump_ip;
 
-  var_p = node.x.vfor.var_ptr;
-  var_step.const_flag = 0;
-  var_step.type = V_INT;
-  var_step.v.i = 1;
+  bcip_t jump_ip = node.x.vfor.jump_ip;
+  var_t *var_p = node.x.vfor.var_ptr;
 
   if (node.x.vfor.subtype == kwTO) {
     //
     // FOR v=exp1 TO exp2 [STEP exp3]
     //
     int check = 0;
+    var_t var_to;
 
     prog_ip = node.x.vfor.to_expr_ip;
     v_init(&var_to);
@@ -1853,6 +1834,11 @@ void cmd_next() {
 
     if (!prog_error && (var_to.type == V_INT || var_to.type == V_NUM)) {
       // get step val
+      var_t var_step;
+      var_step.const_flag = 0;
+      var_step.type = V_INT;
+      var_step.v.i = 1;
+
       if (node.x.vfor.step_expr_ip != INVALID_ADDR) {
         prog_ip = node.x.vfor.step_expr_ip;
         eval(&var_step);
@@ -1870,6 +1856,7 @@ void cmd_next() {
           err_typemismatch();
         }
       }
+      v_free(&var_step);
     } else {
       if (!prog_error) {
         rt_raise("FOR-TO: TO v IS NOT A NUMBER");
@@ -1930,9 +1917,6 @@ void cmd_next() {
       code_jump(next_ip);
     }
   }
-
-  // clean up
-  v_free(&var_step);
 }
 
 /**

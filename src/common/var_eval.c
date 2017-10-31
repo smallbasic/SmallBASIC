@@ -153,8 +153,7 @@ var_t *code_get_map_element(var_t *map, var_t *field) {
         if (var == NULL) {
           var = map_add_var(map, MAP_TMP_FIELD, 0);
         }
-        v_set(var, udf_rv.x.vdvar.vptr);
-        v_free(udf_rv.x.vdvar.vptr);
+        v_move(var, udf_rv.x.vdvar.vptr);
         v_detach(udf_rv.x.vdvar.vptr);
         result = var;
       }
