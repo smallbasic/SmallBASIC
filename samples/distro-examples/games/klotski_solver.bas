@@ -3,6 +3,8 @@
 const gw = 4
 const gh = 5
 
+zobrist_table=0
+
 # A Queue where each inserted item has a priority associated with it
 # [(prio, count, item), (prio, count, item) ...]
 func PriorityQueue()
@@ -176,13 +178,16 @@ end
 
 func Set
   sub add(byref item)
-    self.items[item.id] = item.parent
+    local el 
+    el.key = item.parent_key
+    el.map = item.map
+    self.items[item.key] = el
   end
   func contains(byref item)
-    return self.items[item.id] != 0
+    return self.items[item.key].key != 0
   end
-  func get(byref id)
-    return self.items[id]
+  func get(byref key)
+    return self.items[key]
   end
   local result = {}
   result.items = {}
@@ -191,6 +196,27 @@ func Set
   result.get = @get
   return result
 end
+
+#https://en.wikipedia.org/wiki/Zobrist_hashing
+sub init
+  func create_table
+    local x,y,r,ya
+    for x = 0 to 3
+      erase ya
+      for y = 0 to 4
+        ya << int(rnd * (maxint / 4))
+      next y
+      r << ya
+    next x
+    return r
+  end
+
+  randomize timer
+  local i
+  for i = 0 to 3
+    zobrist_table << create_table()
+  next i
+end 
 
 # Represents the state of the game at a given turn
 func KlotskiState(grid)
@@ -207,7 +233,8 @@ func KlotskiState(grid)
     local state = init(self.depth + 1)
     state.grid = self.grid
     state.grid[i] += mv_offs
-    state.id = to_str(state)
+    state.map = to_str(state)
+    state.key = hash(state)
     return state
   end
 
@@ -225,6 +252,25 @@ func KlotskiState(grid)
     for i = 0 to 9
       [x,y] = state.grid[i]
       result += chr(49 + (y lshift 3) + x)
+    next i
+    return result
+  end
+
+  func hash(byref state)
+    local result = 0
+    local i,x,y
+    for i = 0 to 9
+      [x,y] = state.grid[i]
+      select case i
+      case 0
+        result = result xor zobrist_table[0][x][y]
+      case 1
+        result = result xor zobrist_table[1][x][y]
+      case 2,3,4,5
+        result = result xor zobrist_table[2][x][y]
+      case else
+        result = result xor zobrist_table[3][x][y]
+      end select
     next i
     return result
   end
@@ -370,7 +416,8 @@ func KlotskiState(grid)
     state.grid = from_str(grid)
   endif
   state.id = to_str(state)
-  state.parent = "-1"
+  state.key = hash(state)
+  state.parent_key = -1
   return state
 end
 
@@ -441,7 +488,7 @@ func process(initialState, maxDepth)
           nextState.update()
           p = get_prio(nextState)
           if (p != 0) then
-            nextState.parent = state.id
+            nextState.parent_key = state.key
             fringe.push(nextState, p)
             explored.add(nextState)
           endif
@@ -455,23 +502,24 @@ end
 
 sub show_result(byref explored, byref state)
   local path = []
-  local parent = explored.get(state.id)
+  local el = explored.get(state.key)
   local stack = Stack()
   local k
-
+logprint el.key
+logprint explored.get(el.key)
   print "solution found, press a key ..."
   pause
 
-  stack.push(state.id)
-  while parent != "-1"
-    stack.push(parent)
-    parent = explored.get(parent)
+  stack.push(state.map)
+  while el.key != -1
+    stack.push(el.map)
+    el = explored.get(el.key)
   wend
   while !stack.is_empty()
     k = Klotskistate(stack.pop())
     k.update()
     show_grid(k)
-    delay 750
+    delay 100
   wend
 end
 
@@ -570,9 +618,8 @@ sub TestHeap
   if (h.pop() <> "blah3") then throw "e6"
 end
 
+init()
 n = process(getInitialState(), 90)
 
-'k = getInitialState()
 'k = Klotskistate(k.id)
 'k.update()
-'show_grid(k)
