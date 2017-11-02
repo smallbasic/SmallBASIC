@@ -198,7 +198,7 @@ func Set
 end
 
 #https://en.wikipedia.org/wiki/Zobrist_hashing
-sub init
+sub setInit
   func create_table
     local x,y,r,ya
     for x = 0 to 3
@@ -459,7 +459,7 @@ end
 
 # Queue => Breadth first search
 # Stack => Depth first search
-func process(initialState, maxDepth)
+sub process(initialState, maxDepth)
   local fringe = PriorityQueue()
   local explored = Set()
   local t = timer
@@ -479,7 +479,7 @@ func process(initialState, maxDepth)
 
     if (state.grid[0] == goal) then
       show_result(explored, state)
-      return true
+      return
     endif
 
     if (state.depth < maxDepth) then
@@ -497,7 +497,6 @@ func process(initialState, maxDepth)
     endif
   wend
   print "search failed"
-  return false
 end
 
 sub show_result(byref explored, byref state)
@@ -505,8 +504,6 @@ sub show_result(byref explored, byref state)
   local el = explored.get(state.key)
   local stack = Stack()
   local k
-logprint el.key
-logprint explored.get(el.key)
   print "solution found, press a key ..."
   pause
 
@@ -618,8 +615,6 @@ sub TestHeap
   if (h.pop() <> "blah3") then throw "e6"
 end
 
-init()
-n = process(getInitialState(), 90)
+setInit()
+process(getInitialState(), 90)
 
-'k = Klotskistate(k.id)
-'k.update()
