@@ -1645,7 +1645,7 @@ int TextEditInput::wordStart() {
   int cursor = _state.cursor == 0 ? 0 : _state.cursor - 1;
   return (_buf._buffer[cursor] == '\n' ? _state.cursor :
           is_word_boundary(&_buf, _state.cursor) ? _state.cursor :
-          stb_textedit_move_to_word_previous(&_buf, &_state));
+          stb_textedit_move_to_word_previous(&_buf, _state.cursor));
 }
 
 //
