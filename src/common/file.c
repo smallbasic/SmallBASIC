@@ -53,9 +53,7 @@ int wc_match(const char *mask, char *name) {
  * initialize file system
  */
 int dev_initfs() {
-  int i;
-
-  for (i = 0; i < OS_FILEHANDLES; i++) {
+  for (int i = 0; i < OS_FILEHANDLES; i++) {
     file_table[i].handle = -1;
   }
 
@@ -66,9 +64,7 @@ int dev_initfs() {
  * cleanup file system
  */
 void dev_closefs() {
-  int i;
-
-  for (i = 0; i < OS_FILEHANDLES; i++) {
+  for (int i = 0; i < OS_FILEHANDLES; i++) {
     if (file_table[i].handle != -1) {
       dev_fclose(i + 1);
     }
@@ -79,11 +75,10 @@ void dev_closefs() {
  * returns a free file handle for user's commands
  */
 int dev_freefilehandle() {
-  int i;
-
-  for (i = 0; i < OS_FILEHANDLES; i++) {
+  for (int i = 0; i < OS_FILEHANDLES; i++) {
     if (file_table[i].handle == -1) {
-      return i + 1;             // Warning: BASIC's handles starting from 1
+      // Note: BASIC's handles starting from 1
+      return i + 1;
     }
   }
 
@@ -581,6 +576,11 @@ char_p_t *dev_create_file_list(const char *wc, int *count) {
   int l, size;
   char_p_t *list;
 
+  if (!opt_file_permitted) {
+    rt_raise(ERR_FILE_PERM);
+    return NULL;
+  }
+
   if (wc) {
     strcpy(path, wc);
     char *p = strrchr(path, OS_DIRSEP);
@@ -647,9 +647,7 @@ char_p_t *dev_create_file_list(const char *wc, int *count) {
  * destroy the file-list
  */
 void dev_destroy_file_list(char_p_t *list, int count) {
-  int i;
-
-  for (i = 0; i < count; i++) {
+  for (int i = 0; i < count; i++) {
     free(list[i]);
   }
   free(list);
@@ -668,8 +666,7 @@ char *dev_getcwd() {
     retbuf[l + 1] = '\0';
   }
 #if defined(_Win32)
-  int i;
-  for (i = 0; i < l; i++) {
+  for (int i = 0; i < l; i++) {
     if (retbuf[i] == '\\') {
       retbuf[i] = OS_DIRSEP;
     }

@@ -183,7 +183,7 @@ sub server_info()
   local serverSocket = env("serverSocket")
   local ipAddr = env("IP_ADDR")
 
-  if (len(serverSocket) > 0 && len(ipAddr)) then
+  if (len(serverSocket) > 0 && int(serverSocket) > 0 && len(ipAddr)) then
     serverSocket = ipAddr + ":" + serverSocket
     print boldOff + "Web Service: " + boldOn + serverSocket
     print boldOff + "Access token: " + boldOn + env("serverToken")

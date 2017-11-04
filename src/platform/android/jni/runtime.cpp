@@ -603,6 +603,9 @@ void Runtime::handleKeyEvent(MAEvent &event) {
   case AKEYCODE_HOME:
     event.key = SB_KEY_KP_HOME;
     break;
+  case AKEYCODE_MOVE_HOME:
+    event.key = SB_KEY_HOME;
+    break;
   case AKEYCODE_MOVE_END:
     event.key = SB_KEY_END;
     break;
@@ -639,6 +642,9 @@ void Runtime::handleKeyEvent(MAEvent &event) {
   case AKEYCODE_CLEAR:
     event.key = SB_KEY_DELETE;
     break;
+  case AKEYCODE_FORWARD_DEL:
+    event.key = SB_KEY_DELETE;
+    break;
   case AKEYCODE_DEL:
     event.key = SB_KEY_BACKSPACE;
     break;
@@ -647,6 +653,12 @@ void Runtime::handleKeyEvent(MAEvent &event) {
     break;
   case GBOARD_KEY_QUESTION:
     event.key = '?';
+    break;
+  case AKEYCODE_ESCAPE:
+    event.key = SB_KEY_ESCAPE;
+    break;
+  case AKEYCODE_BREAK:
+    event.key = SB_KEY_BREAK;
     break;
   default:
     if (event.nativeKey < 127 && event.nativeKey != event.key) {

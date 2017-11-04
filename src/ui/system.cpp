@@ -31,20 +31,21 @@
 #define MENU_CUT        7
 #define MENU_COPY       8
 #define MENU_PASTE      9
-#define MENU_CTRL_MODE  10
-#define MENU_EDITMODE   11
-#define MENU_AUDIO      12
-#define MENU_SCREENSHOT 13
-#define MENU_UNDO       14
-#define MENU_REDO       15
-#define MENU_SAVE       16
-#define MENU_RUN        17
-#define MENU_DEBUG      18
-#define MENU_OUTPUT     19
-#define MENU_HELP       20
-#define MENU_SHORTCUT   21
-#define MENU_SHARE      22
-#define MENU_SIZE       23
+#define MENU_SELECT_ALL 10
+#define MENU_CTRL_MODE  11
+#define MENU_EDITMODE   12
+#define MENU_AUDIO      13
+#define MENU_SCREENSHOT 14
+#define MENU_UNDO       15
+#define MENU_REDO       16
+#define MENU_SAVE       17
+#define MENU_RUN        18
+#define MENU_DEBUG      19
+#define MENU_OUTPUT     20
+#define MENU_HELP       21
+#define MENU_SHORTCUT   22
+#define MENU_SHARE      23
+#define MENU_SIZE       24
 #define MENU_COMPETION_0  (MENU_SIZE + 1)
 #define MENU_COMPETION_1  (MENU_SIZE + 2)
 #define MENU_COMPETION_2  (MENU_SIZE + 3)
@@ -314,6 +315,12 @@ void System::handleMenu(MAEvent &event) {
       get_focus_edit()->paste(text);
       _output->redraw();
       free(text);
+    }
+    break;
+  case MENU_SELECT_ALL:
+    if (get_focus_edit() != NULL) {
+      get_focus_edit()->selectAll();
+      _output->redraw();
     }
     break;
   case MENU_CTRL_MODE:
@@ -827,6 +834,7 @@ void System::showMenu() {
         items->add(new String("Cut"));
         items->add(new String("Copy"));
         items->add(new String("Paste"));
+        items->add(new String("Select All"));
         items->add(new String("Save"));
         items->add(new String("Run"));
 #if defined(_SDL)
@@ -842,6 +850,7 @@ void System::showMenu() {
         _systemMenu[index++] = MENU_CUT;
         _systemMenu[index++] = MENU_COPY;
         _systemMenu[index++] = MENU_PASTE;
+        _systemMenu[index++] = MENU_SELECT_ALL;
         _systemMenu[index++] = MENU_SAVE;
         _systemMenu[index++] = MENU_RUN;
 #if defined(_SDL)
@@ -853,9 +862,11 @@ void System::showMenu() {
         items->add(new String("Cut"));
         items->add(new String("Copy"));
         items->add(new String("Paste"));
+        items->add(new String("Select All"));
         _systemMenu[index++] = MENU_CUT;
         _systemMenu[index++] = MENU_COPY;
         _systemMenu[index++] = MENU_PASTE;
+        _systemMenu[index++] = MENU_SELECT_ALL;
       }
 #if defined(_SDL)
       items->add(new String("Back"));

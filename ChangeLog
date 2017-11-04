@@ -1,6 +1,8 @@
 2017-11-04 (0.12.10)
 	COMMON: update png and editor libs
 	UI: save and restore export settings
+	UI: add missing 'Select All' menu option
+	ANDROID: add missing key maps for DEL,ESC,HOME,BRK
 
 2017-10-28 (0.12.10)
 	COMMON: optimise method call access
