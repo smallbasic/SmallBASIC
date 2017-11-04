@@ -2,7 +2,7 @@
 	COMMON: update png and editor libs
 	UI: save and restore export settings
 	UI: add missing 'Select All' menu option
-	ANDROID: add missing key maps for DEL,ESC,HOME,BRK
+	ANDROID: add missing key mappings for DEL,ESC,HOME,BRK,FN(1-12)
 	ANDROID: handle screen rotation
 
 2017-10-28 (0.12.10)

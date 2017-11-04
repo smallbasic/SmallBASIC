@@ -661,7 +661,14 @@ void Runtime::handleKeyEvent(MAEvent &event) {
     event.key = SB_KEY_BREAK;
     break;
   default:
-    if (event.nativeKey < 127 && event.nativeKey != event.key) {
+    if (event.nativeKey >= AKEYCODE_F1 && event.nativeKey <= AKEYCODE_F12) {
+      for (int fn = 0; fn < 12; fn++) {
+        if (event.nativeKey == AKEYCODE_F1 + fn) {
+          event.key = SB_KEY_F(fn);
+          break;
+        }
+      }
+    } else if (event.nativeKey < 127 && event.nativeKey != event.key) {
       // avoid translating keys send from onUnicodeChar
       event.key = getUnicodeChar(event.nativeKey, event.key);
     }
