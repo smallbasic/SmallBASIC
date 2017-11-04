@@ -752,17 +752,7 @@ void bc_loop(int isf) {
 
     // proceed to the next command
     if (!prog_error) {
-      code = prog_source[prog_ip];
-      prog_ip++;
-
-      // debug
-      /*
-       * fprintf(stderr, "\t%d: %d = ", prog_ip, code); for ( i = 0;
-       * keyword_table[i].name[0] != '\0'; i ++) { if ( code ==
-       * keyword_table[i].code ) { fprintf(stderr,"%s ",
-       * keyword_table[i].name); break; } } fprintf(stderr,"\n");
-       */
-
+      code = prog_source[prog_ip++];
       switch (code) {
       case kwLABEL:
       case kwREM:
@@ -1039,23 +1029,21 @@ void bc_loop(int isf) {
       }
     }
     if (prog_ip < prog_length) {
-      code = prog_source[prog_ip];
-      if (code != kwTYPE_EOC && code != kwTYPE_LINE && !prog_error) {
+      code = prog_source[prog_ip++];
+      if (code == kwTYPE_LINE) {
+        prog_line = code_getaddr();
+        if (opt_trace_on) {
+          dev_trace_line(prog_line);
+        }
+      } else if (code != kwTYPE_EOC) {
         if (!opt_quiet) {
           hex_dump(prog_source, prog_length);
         }
+        prog_ip--;
         if (code == kwTYPE_SEP) {
-          rt_raise("COMMAND SEPARATOR '%c' FOUND!", prog_source[prog_ip + 1]);
+          rt_raise("COMMAND SEPARATOR '%c' FOUND", prog_source[prog_ip + 1]);
         } else {
           rt_raise("PARAM COUNT ERROR @%d=%X %d", prog_ip, prog_source[prog_ip], code);
-        }
-      } else {
-        prog_ip++;
-        if (code == kwTYPE_LINE) {
-          prog_line = code_getaddr();
-          if (opt_trace_on) {
-            dev_trace_line(prog_line);
-          }
         }
       }
     }
