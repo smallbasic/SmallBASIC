@@ -23,9 +23,9 @@ typedef enum {
 typedef struct timer_s timer_s;
 struct timer_s {
   timer_s *next; // next timer
-  bcip_t ip;     // handler location
   long value;    // time for next event
   long interval; // interval ms
+  bcip_t ip;     // handler location
   int active;    // whether IP is being invoked
 };
 

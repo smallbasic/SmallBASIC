@@ -1,6 +1,6 @@
 // This file is part of SmallBASIC
 //
-// SmallBasic Code & Variable Manager.
+// SmallBASIC Code & Variable Manager.
 //
 // This program is distributed under the terms of the GPL v2.0 or later
 // Download the GNU Public License (GPL) from www.gnu.org
@@ -8,10 +8,10 @@
 // Copyright(C) 2000 Nicholas Christopoulos
 
 /**
- *   @defgroup var Variables
+ * @defgroup var Variables
  */
 /**
- *   @defgroup exec Executor
+ * @defgroup exec Executor
  */
 
 #if !defined(_sb_cvm_h)
@@ -78,7 +78,7 @@ typedef void (*method) (struct var_s *self);
  *
  * VARIANT DATA TYPE
  */
-struct var_s {
+typedef struct var_s {
   // value
   union {
     var_num_t n; /**< numeric value */
@@ -128,18 +128,16 @@ struct var_s {
   byte type; /**< variable's type */
   byte const_flag; /**< non-zero if constants */
   byte pooled; /** whether held in pooled memory */
-};
+} var_t;
 
-typedef struct var_s var_t;
 typedef var_t *var_p_t;
 
 /*
  * label
  */
-struct lab_s {
+typedef struct lab_s {
   bcip_t ip;
-};
-typedef struct lab_s lab_t;
+} lab_t;
 
 /**
  * @ingroup exec
@@ -147,18 +145,18 @@ typedef struct lab_s lab_t;
  *
  * EXECUTOR's STACK NODE
  */
-struct stknode_s {
+typedef struct stknode_s {
   union {
     /**
      *  FOR-TO-NEXT
      */
     struct {
-      code_t subtype; /**< kwTO | kwIN */
       var_t *var_ptr; /**< 'FOR' variable */
       var_t *arr_ptr; /**< FOR-IN array-variable */
       bcip_t to_expr_ip; /**< IP of 'TO' expression */
       bcip_t step_expr_ip; /**< IP of 'STEP' expression (FOR-IN = current element) */
       bcip_t jump_ip; /**< code block IP */
+      code_t subtype; /**< kwTO | kwIN */
       byte flags; /**< ... */
     } vfor;
 
@@ -188,29 +186,27 @@ struct stknode_s {
      *  CALL UDP/F
      */
     struct {
-      bcip_t ret_ip;   /**< return ip */
-      uint16_t pcount; /**< number of parameters */
-      bid_t rvid;      /**< return-variable ID */
       var_t *retvar;   /**< return-variable data */
-
-      // unit - version
+      bcip_t ret_ip;   /**< return ip */
+      bid_t rvid;      /**< return-variable ID */
       int task_id; /**< task_id or -1 (this task) */
+      uint16_t pcount; /**< number of parameters */
     } vcall;
 
     /**
      *  Create dynamic variable (LOCAL or PARAMETER)
      */
     struct {
-      bid_t vid; /**< variable index in tvar */
       var_t *vptr; /**< previous variable */
+      bid_t vid; /**< variable index in tvar */
     } vdvar;
 
     /**
      *  parameter (CALL UDP/F)
      */
     struct {
-      uint16_t vcheck; /**< checks (1=BYVAL ONLY, 3=BYVAL|BYREF, 2=BYREF ONLY) */
       var_t *res; /**< variable pointer (for BYVAL this is a clone) */
+      uint16_t vcheck; /**< checks (1=BYVAL ONLY, 3=BYVAL|BYREF, 2=BYREF ONLY) */
     } param;
 
     /**
@@ -228,8 +224,7 @@ struct stknode_s {
   bcip_t exit_ip; /**< EXIT command IP to go */
   int line; /** line number of current execution **/
   code_t type; /**< type of node (keyword id, i.e. kwGOSUB, kwFOR, etc) */
-};
-typedef struct stknode_s stknode_t;
+} stknode_t;
 
 /*
  * Basic variable's API
@@ -484,55 +479,45 @@ int v_length(var_t *v);
  * @ingroup var
  * @page var_12_2001 Var API (Dec 2001)
  *
- @code
- Use these routines
-
- Memory free/alloc is contolled inside these functions
- The only thing that you must care of, is when you declare local var_t elements
-
- Auto-type-convertion is controlled inside these functions,
- So if you want a string value of an integer you just do strcpy(buf,v_getstr(&myvar));
- or a numeric value of a string R = v_getnum(&myvar);
-
- Using variables on code:
-
- void    myfunc()    // using them in stack
- {
- var_t    myvar;
- v_init(&myvar);  // DO NOT FORGET THIS! local variables are had random data
- ...
- v_setstr(&myvar, "Hello, world");
- ...
- v_set(&myvar, &another_var); // copy variables (LET myvar = another_var)
- ...
- v_setint(&myvar, 0x100);     // Variable will be cleared automatically
- ...
- v_free(&myvar);
- }
-
- void    myfunc()                    // using dynamic memory
- {
- var_t    *myvar_p;
-
- myvar_p = v_new();               //  create a new variable
- ...
- v_setstr(myvar_p, "Hello, world");
- ...
- v_setint(myvar_p, 0x100);        // Variable will be cleared automatically
- ...
- v_free(myvar_p);             // clear variable's data
- free(myvar_p);               // free the variable
- }
-
- Old API routines that is good to use them:
-
- v_init(), v_free()                  --- basic
- v_new(), v_clone()                  --- create vars in heap, dont forget the free()
-
- v_resize_array()                    --- resize an 1-dim array
- v_tomatrix(), v_toarray1()          --- convertion to matrix (RxC) or 1D array
-
- @endcode
+ * @code
+ * Use these routines
+ *
+ * Memory free/alloc is contolled inside these functions
+ * The only thing that you must care of, is when you declare local var_t elements
+ *
+ * Auto-type-convertion is controlled inside these functions,
+ * So if you want a string value of an integer you just do strcpy(buf,v_getstr(&myvar));
+ * or a numeric value of a string R = v_getnum(&myvar);
+ *
+ * Using variables on code:
+ *
+ * void myfunc() {    // using them in stack
+ *  var_t    myvar;
+ *  v_init(&myvar);  // DO NOT FORGET THIS! local variables are had random data
+ *  ...
+ *  v_setstr(&myvar, "Hello, world");
+ *  ...
+ *  v_set(&myvar, &another_var); // copy variables (LET myvar = another_var)
+ *  ...
+ *  v_setint(&myvar, 0x100);     // Variable will be cleared automatically
+ *  ...
+ *  v_free(&myvar);
+ * }
+ *
+ * void myfunc() {                   // using dynamic memory
+ *  var_t *myvar_p;
+ *
+ *  myvar_p = v_new();               //  create a new variable
+ *  ...
+ *  v_setstr(myvar_p, "Hello, world");
+ *  ...
+ *  v_setint(myvar_p, 0x100);        // Variable will be cleared automatically
+ *  ...
+ *  v_free(myvar_p);             // clear variable's data
+ *  v_detach(myvar_p);               // free the variable
+ * }
+ *
+ * @endcode
  */
 
 /**
