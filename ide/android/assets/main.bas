@@ -1,6 +1,7 @@
 const app = "main.bas?"
 const boldOn = chr(27) + "[1m"
 const boldOff = chr(27) + "[21m"
+const scrollHome = chr(27) + "m"
 const char_h = txth("Q")
 const char_w = txtw(".")
 const lineSpacing = 2 + char_h
@@ -595,7 +596,9 @@ sub main
     endif
     frm.inputs << bn_about
     listFiles frm, path, sortDir, basList
-    return form(frm)
+    frm = form(frm)
+    print scrollHome;
+    return frm
   end
 
   sub go_back
