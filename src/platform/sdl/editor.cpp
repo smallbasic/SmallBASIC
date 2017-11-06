@@ -554,9 +554,10 @@ void System::editSource(String loadPath) {
     _editor = NULL;
   }
 
+  // deletes editWidget unless it has been removed
   _output->removeInputs();
   if (!isClosing()) {
-    _output->selectScreen(prevScreenId);
+    _output->selectScreen(prevScreenId, false);
   }
   logLeaving();
 }

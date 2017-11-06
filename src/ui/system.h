@@ -80,6 +80,9 @@ protected:
   uint32_t getModifiedTime();
   void handleEvent(MAEvent &event);
   void handleMenu(MAEvent &event);
+  bool isEditEnabled() const {return opt_ide == IDE_INTERNAL || isScratchLoad();}
+  bool isNetworkLoad() const {return _loadPath.indexOf("://", 1) != -1;}
+  bool isScratchLoad() const {return _loadPath.indexOf("scratch", 0) != -1;}
   bool loadSource(const char *fileName);
   void resize();
   void runEdit(const char *startupBas);

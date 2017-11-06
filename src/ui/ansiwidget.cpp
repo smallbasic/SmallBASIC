@@ -703,11 +703,11 @@ void AnsiWidget::selectFrontScreen(int screenId) {
   flush(true);
 }
 
-int AnsiWidget::selectScreen(int screenId) {
+int AnsiWidget::selectScreen(int screenId, bool forceFlush) {
   int result = getScreenId(true);
   selectBackScreen(screenId);
   _front = _back;
   _front->_dirty = true;
-  flush(true);
+  flush(forceFlush);
   return result;
 }

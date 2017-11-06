@@ -25,16 +25,6 @@ const setupId = "_setup"
 const aboutId = "_about"
 const backId = "_back"
 
-func spaced(s)
-  local ch, len_s
-  len_s = len(s)
-  local out = ""
-  for ch = 1 to len_s
-    out += mid(s, ch, 1) + " "
-  next ch
-  spaced = out
-end
-
 func mk_bn(value, lab, fg)
   local bn
   bn.x = 2
@@ -57,37 +47,23 @@ func mk_menu(value, lab, x)
   mk_menu = bn
 end
 
-sub info_header(is_welcome)
-  if (is_welcome) then
-    color 7,0
-    print boldOn + spaced("Welcome to SmallBASIC") + boldOff
-    print
-    color 6,0
-    if (is_sdl) then
-      print "Popup menus are accessed by a right mouse click. ";
-    else
-      print "Popup menus are accessed by the menu key (3 vertical dots). ";
-    endif
-    print "From here, you can do things like toggle the ";
-    print "Editor, Run, Adjust Font size..."
-    if (is_sdl) then
-      randomize
-      select case (rnd * 100 % 10)
-      case 0: tip = "Press and hold Ctrl then press 'm' to access the menu."
-      case 1: tip = "Press and hold Ctrl then press 'p' to take a screenshot."
-      case 2: tip = "In the editor, press and hold Ctrl then press 'h' to access help."
-      case 3: tip = "Toggle the editor menu option for different run modes."
-      case 4: tip = "Editor Live Mode makes your program restart whenever the program changes."
-      case 5: tip = "Select the Online option to run a featured program."
-      case 6: tip = "Select View source from the menu to display program code."
-      case 7: tip = "Select the File option to manage .bas files in the current folder."
-      case 8: tip = "You can drop .bas files from the system file manager to load a program."
-      end select
-      print "Tip: " + tip
-    endif
-    print
+sub mk_scratch()
+  local text
+  local file = "scratch.bas"
+
+  if (not exist(file)) then
+    dim text
+    text << "rem Welcome to SmallBASIC"
+    text << "rem"
+    text << "rem Press F1 for keyword help."
+    text << "rem Press and hold Ctrl then press 'h' for editor help."
+    text << "rem Press and hold Ctrl then press 'r' to RUN this program."
+    try
+      tsave file, text
+    catch e
+      logprint "Failed to create scratch file: " + e
+    end try
   endif
-  color 2,0
 end
 
 sub do_okay_button()
@@ -572,17 +548,18 @@ end
 
 sub main
   local path, frm
-  local is_welcome = (command == "welcome")
   local sortDir = env("sortDir")
   if (len(sortDir) == 0) then sortDir = 0
+
+  if (command == "welcome") then
+    mk_scratch()
+  endif
 
   func makeUI(path, sortDir)
     local frm, bn_files, bn_online, bn_setup, bn_about, bn_new
     local basList
     dim basList
 
-    info_header(is_welcome)
-    is_welcome = false
     bn_files = mk_menu(filesId, "File", 0)
     bn_online = mk_menu(onlineUrl, "Online", menu_gap)
     bn_setup = mk_menu(setupId, "Setup", menu_gap)

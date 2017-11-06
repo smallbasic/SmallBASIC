@@ -516,7 +516,7 @@ void System::logStack(const char *keyword, int type, int line) {
 char *System::readSource(const char *fileName) {
   _activeFile.clear();
   char *buffer;
-  if (_editor != NULL && _loadPath.equals(fileName)) {
+  if (!_mainBas && _editor != NULL && _loadPath.equals(fileName)) {
     buffer = _editor->getTextSelection();
   } else {
     buffer = loadResource(fileName);
@@ -616,8 +616,8 @@ void System::runMain(const char *mainBasPath) {
       }
     }
 
-    if (!_mainBas && opt_ide == IDE_INTERNAL && !isRestart() &&
-        _loadPath.indexOf("://", 1) == -1 && loadSource(_loadPath)) {
+    if (!_mainBas && !isRestart() && isEditEnabled() &&
+        !isNetworkLoad() && loadSource(_loadPath)) {
       editSource(_loadPath);
       if (isBack()) {
         _loadPath.clear();
@@ -629,9 +629,9 @@ void System::runMain(const char *mainBasPath) {
     }
 
     bool success = execute(_loadPath);
-    bool networkFile = (_loadPath.indexOf("://", 1) != -1);
+    bool networkFile = isNetworkLoad();
     if (!isBack() && !isClosing() &&
-        (opt_ide != IDE_INTERNAL || success || networkFile)) {
+        (success || networkFile || !isEditEnabled())) {
       // when editing, only pause here when successful, otherwise the editor shows
       // the error. load the next network file without displaying the previous result
       if (!_mainBas && !networkFile) {
@@ -782,8 +782,7 @@ void System::setRunning(bool running) {
     setDimensions();
     dev_clrkb();
     _output->setAutoflush(!opt_show_page);
-    if (_mainBas || opt_ide != IDE_INTERNAL ||
-        _loadPath.indexOf("://", 1) != -1) {
+    if (_mainBas || isNetworkLoad() || !isEditEnabled()) {
       _loadPath.clear();
     }
     _userScreenId = -1;
