@@ -82,11 +82,13 @@ end
 
 sub do_about()
   cls
+  color 2,0
+  print "   ____          _______  ___   _____________"
+  print "  / ____ _ ___ _/ / / _ )/ _ | / __/  _/ ___/"
+  print " _\ \/  ' / _ `/ / / _  / __ |_\ \_/ // /__  "
+  print "/___/_/_/_\_,_/_/_/____/_/ |_/___/___/\___/  "
+  print 
   color 7,0
-  print " __           _      ___ _"
-  print "(_ ._ _  _.|||_) /\ (_ |/ "
-  print "__)| | |(_||||_)/--\__)|\_"
-  print
   print "Version "; sbver
   print
   print "Copyright (c) 2002-2017 Chris Warren-Smith"
@@ -551,7 +553,7 @@ sub main
   local sortDir = env("sortDir")
   if (len(sortDir) == 0) then sortDir = 0
 
-  if (command == "welcome") then
+  if (command == "welcome" && len(files("*.bas")) == 0) then
     mk_scratch()
   endif
 
