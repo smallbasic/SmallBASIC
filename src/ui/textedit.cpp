@@ -116,6 +116,7 @@ const char *helpText =
   "A-t select theme\n"
   "A-. break mode\n"
   "A-<n> recent file\n"
+  "A-= count chars\n"
   "SHIFT-<arrow> select\n"
   "TAB indent line\n"
   "F1,A-h keyword help\n"
@@ -773,6 +774,28 @@ bool TextEditInput::find(const char *word, bool next) {
     }
   }
   return result;
+}
+
+void TextEditInput::getSelectionCounts(int *lines, int *chars) {
+  *lines = 1;
+  *chars = 0;
+  if (_state.select_start != _state.select_end) {
+    int start = MIN(_state.select_start, _state.select_end);
+    int end = MAX(_state.select_start, _state.select_end);
+    int len = _buf._len;
+    StbTexteditRow r;
+
+    *chars = (end - start);
+    for (int i = start; i < end && i < len; i += r.num_chars) {
+      layout(&r, i);
+      if (i + r.num_chars < end) {
+        *lines += 1;
+      }
+      if (i + r.num_chars <= end) {
+        *chars -= 1;
+      }
+    }
+  }
 }
 
 int TextEditInput::getSelectionRow() {

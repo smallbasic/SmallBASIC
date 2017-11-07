@@ -83,10 +83,16 @@ end
 sub do_about()
   cls
   color 2,0
-  print "   ____          _______  ___   _____________"
-  print "  / ____ _ ___ _/ / / _ )/ _ | / __/  _/ ___/"
-  print " _\ \/  ' / _ `/ / / _  / __ |_\ \_/ // /__  "
-  print "/___/_/_/_\_,_/_/_/____/_/ |_/___/___/\___/  "
+  if (char_w * 45 < xmax) then
+    print "   ____          _______  ___   _____________"
+    print "  / ____ _ ___ _/ / / _ )/ _ | / __/  _/ ___/"
+    print " _\ \/  ' / _ `/ / / _  / __ |_\ \_/ // /__  "
+    print "/___/_/_/_\_,_/_/_/____/_/ |_/___/___/\___/  "
+  else
+    print " __           _      ___ _"
+    print "(_ ._ _  _.|||_) /\ (_ |/ "
+    print "__)| | |(_||||_)/--\__)|\_"
+  endif
   print 
   color 7,0
   print "Version "; sbver
@@ -94,12 +100,14 @@ sub do_about()
   print "Copyright (c) 2002-2017 Chris Warren-Smith"
   print "Copyright (c) 1999-2006 Nic Christopoulos" + chr(10)
   print "https://smallbasic.sourceforge.io" + chr(10)
+  color sizeDateCol,0
   print "SmallBASIC comes with ABSOLUTELY NO WARRANTY. ";
   print "This program is free software; you can use it ";
   print "redistribute it and/or modify it under the terms of the ";
   print "GNU General Public License version 2 as published by ";
   print "the Free Software Foundation." + chr(10)
   print
+  color 7,0
   server_info()
   do_okay_button()
   cls

@@ -117,6 +117,25 @@ void showRecentFiles(TextEditHelpWidget *helpWidget, String &loadPath) {
   helpWidget->setText(fileList);
 }
 
+void showSelectionCount(AnsiWidget *out, TextEditInput *widget) {
+  int lines, chars;
+  widget->getSelectionCounts(&lines, &chars);
+  String label = "Region has ";
+  label.append(lines).append(" line");
+  if (lines > 1) {
+    label.append("s, ");
+  } else {
+    label.append(", ");
+  }
+  label.append(chars).append(" character");
+  if (chars > 1) {
+    label.append("s.");
+  } else {
+    label.append(".");
+  }
+  out->setStatus(label);
+}
+
 void exportBuffer(AnsiWidget *out, const char *text, String &dest, String &token) {
   char buffer[PATH_MAX];
   dev_file_t f;
@@ -439,6 +458,9 @@ void System::editSource(String loadPath) {
           _output->setStatus(g_returnToLine ?
                              "Position the cursor to the last program line after BREAK" :
                              "BREAK restores current cursor position");
+          break;
+        case SB_KEY_ALT('='):
+          showSelectionCount(_output, editWidget);
           break;
         case SB_KEY_ALT('1'):
         case SB_KEY_ALT('2'):
