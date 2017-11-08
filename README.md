@@ -46,7 +46,7 @@ $ brew install automake
 $ brew install autoconf
 ```
 
-Next download the SmallBasic source code from git and then build:
+Next download the SmallBASIC source code from git and then build:
 
 ```
 $ git clone https://github.com/smallbasic/SmallBASIC.git
