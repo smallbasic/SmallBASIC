@@ -15,6 +15,7 @@ Build in linux
  $ make
 ```
 Build the debian package
+```
  $ sudo apt-get install dpkg-dev build-essential debhelper
  $ make deb
 ```
@@ -30,7 +31,6 @@ On windows, install tools:
  $ ./configure --host=i686-w64-mingw32 --prefix=/devsw/mingw --enable-sdl
 ```
 Note: requires building SDL2 and freetype-2 into the prefix folder
-```
 
 ## Building on MacOSX
 
