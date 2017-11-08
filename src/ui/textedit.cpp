@@ -789,9 +789,11 @@ void TextEditInput::getSelectionCounts(int *lines, int *chars) {
     for (int i = start; i < end && i < len; i += r.num_chars) {
       layout(&r, i);
       if (i + r.num_chars < end) {
+        // found another row before selection end
         *lines += 1;
-      }
-      if (i + r.num_chars <= end) {
+        *chars -= 1;
+      } else if (i + r.num_chars == end) {
+        // cursor at start of next line
         *chars -= 1;
       }
     }
