@@ -21,9 +21,9 @@ using namespace strlib;
 String g_exportAddr;
 String g_exportToken;
 int g_macro[MAX_MACRO];
-int g_macro_size;
-bool g_macro_record;
-bool g_returnToLine;
+int g_macro_size = 0;
+bool g_macro_record = false;
+bool g_returnToLine = true;
 
 struct StatusMessage {
   explicit StatusMessage(TextEditInput *editor) :
@@ -240,28 +240,34 @@ void System::editSource(String loadPath) {
   editWidget->setFocus(true);
   statusMessage.setFilename(loadPath);
 
-  if (isBreak() && g_returnToLine) {
-    editWidget->setCursorRow(gsb_last_line);
-  }
-
-  if (gsb_last_error && !isBack()) {
-    editWidget->setCursorRow(gsb_last_line + editWidget->getSelectionRow() - 1);
-    helpWidget->setText(gsb_last_errmsg);
-    helpWidget->createStackTrace(gsb_last_errmsg, gsb_last_line, _stackTrace);
-    widget = helpWidget;
-    helpWidget->show();
-  }
-  _srcRendered = false;
   _output->clearScreen();
   _output->addInput(editWidget);
   _output->addInput(helpWidget);
-  if (gsb_last_error && !isBack()) {
-    _output->setStatus(_stackTrace.size() ?
-                       "Error. Esc=Close, Up/Down=Caller" :
-                       "Error. Esc=Close");
+
+  if (isBreak() && g_returnToLine) {
+    // break running program - position to last program line
+    editWidget->setCursorRow(gsb_last_line);
+  } else if (gsb_last_error && !isBack()) {
+    // program stopped with an error
+    String status = !gsb_last_errmsg[0] ? "Error" : gsb_last_errmsg;
+    if (g_returnToLine) {
+      editWidget->setCursorRow(gsb_last_line + editWidget->getSelectionRow() - 1);
+      if (_stackTrace.size()) {
+        helpWidget->setText(gsb_last_errmsg);
+        helpWidget->createStackTrace(gsb_last_errmsg, gsb_last_line, _stackTrace);
+        widget = helpWidget;
+        helpWidget->show();
+        status = "Error. Esc=Close, Up/Down=Caller";
+      }
+    } else {
+      status.append(" at line:").append(gsb_last_line);
+    }
+    _output->setStatus(status);
   } else {
     statusMessage.update(editWidget, _output, true);
   }
+
+  _srcRendered = false;
   _stackTrace.removeAll();
   _output->redraw();
   _state = kEditState;
@@ -456,8 +462,8 @@ void System::editSource(String loadPath) {
         case SB_KEY_ALT('.'):
           g_returnToLine = !g_returnToLine;
           _output->setStatus(g_returnToLine ?
-                             "Position the cursor to the last program line after BREAK" :
-                             "BREAK restores current cursor position");
+                             "Position the cursor to the last program line." :
+                             "Restore current cursor position.");
           break;
         case SB_KEY_ALT('='):
           showSelectionCount(_output, editWidget);

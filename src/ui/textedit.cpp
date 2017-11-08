@@ -114,7 +114,7 @@ const char *helpText =
   "A-g goto line\n"
   "A-n trim line-endings\n"
   "A-t select theme\n"
-  "A-. break mode\n"
+  "A-. return mode\n"
   "A-<n> recent file\n"
   "A-= count chars\n"
   "SHIFT-<arrow> select\n"
