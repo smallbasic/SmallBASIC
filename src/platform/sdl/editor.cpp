@@ -247,6 +247,7 @@ void System::editSource(String loadPath) {
   if (isBreak() && g_returnToLine) {
     // break running program - position to last program line
     editWidget->setCursorRow(gsb_last_line);
+    statusMessage.update(editWidget, _output, true);
   } else if (gsb_last_error && !isBack()) {
     // program stopped with an error
     editWidget->setCursorRow(gsb_last_line + editWidget->getSelectionRow() - 1);
@@ -458,8 +459,8 @@ void System::editSource(String loadPath) {
         case SB_KEY_ALT('.'):
           g_returnToLine = !g_returnToLine;
           _output->setStatus(g_returnToLine ?
-                             "Position the cursor to the last program line after BREAK." :
-                             "BREAK restores current cursor position.");
+                             "Position the cursor to the last program line after BREAK" :
+                             "BREAK restores current cursor position");
           break;
         case SB_KEY_ALT('='):
           showSelectionCount(_output, editWidget);
