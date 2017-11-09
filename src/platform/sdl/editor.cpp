@@ -21,9 +21,9 @@ using namespace strlib;
 String g_exportAddr;
 String g_exportToken;
 int g_macro[MAX_MACRO];
-int g_macro_size = 0;
-bool g_macro_record = false;
-bool g_returnToLine = true;
+int g_macro_size;
+bool g_macro_record;
+bool g_returnToLine;
 
 struct StatusMessage {
   explicit StatusMessage(TextEditInput *editor) :
@@ -249,20 +249,16 @@ void System::editSource(String loadPath) {
     editWidget->setCursorRow(gsb_last_line);
   } else if (gsb_last_error && !isBack()) {
     // program stopped with an error
-    String status = !gsb_last_errmsg[0] ? "Error" : gsb_last_errmsg;
-    if (g_returnToLine) {
-      editWidget->setCursorRow(gsb_last_line + editWidget->getSelectionRow() - 1);
-      if (_stackTrace.size()) {
-        helpWidget->setText(gsb_last_errmsg);
-        helpWidget->createStackTrace(gsb_last_errmsg, gsb_last_line, _stackTrace);
-        widget = helpWidget;
-        helpWidget->show();
-        status = "Error. Esc=Close, Up/Down=Caller";
-      }
+    editWidget->setCursorRow(gsb_last_line + editWidget->getSelectionRow() - 1);
+    if (_stackTrace.size()) {
+      helpWidget->setText(gsb_last_errmsg);
+      helpWidget->createStackTrace(gsb_last_errmsg, gsb_last_line, _stackTrace);
+      widget = helpWidget;
+      helpWidget->show();
+      _output->setStatus("Error. Esc=Close, Up/Down=Caller");
     } else {
-      status.append(" at line:").append(gsb_last_line);
+      _output->setStatus(!gsb_last_errmsg[0] ? "Error" : gsb_last_errmsg);
     }
-    _output->setStatus(status);
   } else {
     statusMessage.update(editWidget, _output, true);
   }
@@ -462,8 +458,8 @@ void System::editSource(String loadPath) {
         case SB_KEY_ALT('.'):
           g_returnToLine = !g_returnToLine;
           _output->setStatus(g_returnToLine ?
-                             "Position the cursor to the last program line." :
-                             "Restore current cursor position.");
+                             "Position the cursor to the last program line after BREAK." :
+                             "BREAK restores current cursor position.");
           break;
         case SB_KEY_ALT('='):
           showSelectionCount(_output, editWidget);
