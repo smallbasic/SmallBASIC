@@ -21,6 +21,7 @@ typedef struct hashmap_cb {
   int start;
   char *buffer;
   var_p_t var;
+  var_p_t parent;
 } hashmap_cb;
 
 typedef int (*hashmap_foreach_func)(hashmap_cb *cb, var_p_t k, var_p_t v);

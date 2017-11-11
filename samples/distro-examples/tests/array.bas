@@ -51,10 +51,7 @@ if (ismap(m3) == false) then
   throw "m3 is not an map"
 end if
 
-m4 = byref m3
-if (isref(m4) == false) then
-  throw "m3 is not an ref"
-end if
+m4 =  m3
 
 if m4.cat.name <> "lots" then
   ? m3
@@ -204,7 +201,7 @@ if (len(l.arr) != 0) then
   throw "new array field should be empty"
 endif
 
-rem ------------------------------------------------
+rem ------------------------------------
 rem test for MAP IN regression
 m = {}
 m["blah"] << "this"
@@ -219,3 +216,68 @@ next i
 if found != 3 then
   throw "elements not found"
 fi
+
+rem  --- 0.12.10
+s.v=[[1,99,3],[4,5,6]]
+if (s.v[0][1] != 99) then
+  throw "illegal access"
+endif
+
+grid.map = [[0,0,0,0],[0,0,0,0],[110,0,0,0],[0,0,0,0]]
+grid.size = 3
+local maxTile = 0
+for i = 0 to grid.size
+  for j = 0 to grid.size
+     v = grid.map[i][j]
+     maxTile = max(maxTile, grid.map[i][j])
+  next j
+next i
+if maxTile != 110 then throw "error :" + maxTile
+
+rem ------------------------------------
+rem define an empty array with [] notation
+aaa=[]
+if (!isarray(aaa) or len(aaa) != 0) then
+  throw "invalid empty array"
+endif
+
+rem ------------------------------------
+rem define an array over multiple lines
+bbb=[10,
+20,30,40,
+50,60,
+70,
+80
+]
+if (!isarray(bbb) or len(bbb) != 8) then
+  throw "invalid multiline array"
+endif
+
+const ccc =&
+[[0,0,0,0],&
+ [1,1,0,0],&
+ [1,1,1,0],
+ [1,1,1,0]]
+
+ddd=[]
+ddd << [1,2, &
+        3,4]
+
+rem ------ '([' OR ',[' make code arrays
+func fn(a,b)
+ return a + b
+end
+if ([3] != fn([1],[2])) then
+  throw "err"
+endif
+
+rem ---- array optimisations for queues and stacks
+stack=[1,2,3,4]
+delete stack, len(stack)-1, 1
+if (stack != [1,2,3]) then throw "stack err"
+stack=[1,2,3,4,5,6]
+delete stack, len(stack)-4, 4
+if (stack != [1,2]) then throw "stack err"
+queue=[11,12,13,14,15,16]
+delete queue, 0, 3
+if (queue != [14,15,16]) then throw "queue err"

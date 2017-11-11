@@ -1,6 +1,6 @@
 // This file is part of SmallBASIC
 //
-// Copyright(C) 2001-2014 Chris Warren-Smith.
+// Copyright(C) 2001-2017 Chris Warren-Smith.
 //
 // This program is distributed under the terms of the GPL v2.0 or later
 // Download the GNU Public License (GPL) from www.gnu.org
@@ -13,10 +13,6 @@
 #include "ui/strlib.h"
 #include "ui/ansiwidget.h"
 #include "ui/textedit.h"
-
-#if defined(_FLTK)
-  #include "platform/fltk/system.h"
-#else
 
 void create_func(var_p_t form, const char *name, method cb);
 void reset_image_cache();
@@ -42,7 +38,9 @@ struct System {
   bool isModal() { return _state == kModalState; }
   bool isRestart() { return _state == kRestartState; }
   bool isRunning() { return _state == kRunState || _state == kModalState; }
+  bool isThreadActive() { return _state == kActiveState; }
   bool isSystemScreen() { return _userScreenId != -1; }
+  void logStack(const char *keyword, int type, int line);
   char *readSource(const char *fileName);
   void setBack();
   void setExit(bool quit);
@@ -57,6 +55,7 @@ struct System {
     kHand, kArrow, kIBeam
   };
 
+  virtual void enableCursor(bool enabled) = 0;
   virtual void addShortcut(const char *path) = 0;
   virtual void alert(const char *title, const char *message) = 0;
   virtual int ask(const char *title, const char *prompt, bool cancel=true) = 0;
@@ -74,7 +73,6 @@ struct System {
   virtual char *getClipboardText() = 0;
 
 protected:
-  void checkModifiedTime();
   void editSource(strlib::String loadPath);
   bool execute(const char *bas);
   bool fileExists(strlib::String &path);
@@ -82,6 +80,9 @@ protected:
   uint32_t getModifiedTime();
   void handleEvent(MAEvent &event);
   void handleMenu(MAEvent &event);
+  bool isEditEnabled() const {return opt_ide == IDE_INTERNAL || isScratchLoad();}
+  bool isNetworkLoad() const {return _loadPath.indexOf("://", 1) != -1;}
+  bool isScratchLoad() const {return _loadPath.indexOf("scratch", 0) != -1;}
   bool loadSource(const char *fileName);
   void resize();
   void runEdit(const char *startupBas);
@@ -122,6 +123,7 @@ protected:
   strlib::Stack<String *> _history;
   strlib::String _loadPath;
   strlib::String _activeFile;
+  StackTrace _stackTrace;
   TextEditInput *_editor;
   Cache _cache;
   int _touchX;
@@ -141,4 +143,4 @@ protected:
 };
 
 #endif
-#endif
+

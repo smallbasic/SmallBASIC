@@ -22,6 +22,15 @@ public class TestQrEncoder {
   }
 
   @Test
+  public void testEqualsCleanup() {
+    QrEncoder inst = new QrEncoder();
+    String fileText = "a = b if a == b then blah if a < b a + b a != b a += b";
+    String expectedText = "a=b if a==b then blah if a<b a+b a!=b a+=b";
+    String result = inst.cleanupCode(fileText);
+    Assert.assertEquals(expectedText, result);
+  }
+
+  @Test
   public void testZipBase64() throws IOException {
     QrEncoder inst = new QrEncoder();
     String fileText = "? 'hello'\n? 10";

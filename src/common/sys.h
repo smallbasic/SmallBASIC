@@ -22,35 +22,29 @@
 extern "C" {
 #endif
 
-#if defined(__CYGWIN__)
-typedef unsigned int bcip_t;
-#endif
-
+#include <ctype.h>
+#include <fcntl.h>
+#include <limits.h>
+#include <math.h>
+#include <stdarg.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <stdarg.h>
 #include <string.h>
-#include <stdint.h>
-#include <math.h>
-#include <time.h>
-#include <utime.h>
-#include <unistd.h>
 #include <sys/stat.h>
-#include <fcntl.h>
-#include <ctype.h>
-#include <assert.h>
-#include <stdlib.h>
+#include <time.h>
+#include <unistd.h>
+#include <utime.h>
 
-#if defined(NONSTANDARD_PORT)
-#include <portdefs.h>
-#endif
-
+#if !defined DBL_EPSILON
 #define DBL_EPSILON 0.00000000000001
+#endif
 #define EPSILON DBL_EPSILON
 #define OS_PREC64
 
 typedef double var_num_t;
 typedef long int var_int_t;
+#define VAR_MAX_INT     LONG_MAX
 #define VAR_NUM_FMT     "%f"
 #define VAR_INT_FMT     "%ld"
 #define VAR_INT_NUM_FMT "%.0f"
@@ -88,6 +82,7 @@ typedef long int var_int_t;
 #define SB_TEXTLINE_SIZE    8192  // RTL
 #define SB_EXEC_STACK_SIZE  256   // executor's stack size
 #define SB_EVAL_STACK_SIZE  16    // evaluation stack size
+#define SB_KW_NONE_STR "Nil"
 
 // STD MACROS
 #define ABS(x)    ( ((x) < 0) ? -(x) : (x) )            // absolute value
@@ -112,8 +107,6 @@ typedef long int var_int_t;
 typedef char *char_p_t;
 typedef uint8_t byte;
 typedef uint8_t code_t;
-typedef int32_t fcode_t;
-typedef int32_t pcode_t;
 typedef int32_t bid_t;
 typedef uint32_t bcip_t;
 

@@ -10,8 +10,7 @@
 #include "../src/ui/strlib.h"
 
 #define code_t int
-#define fcode_t int
-#define pcode_t int
+#define bid_t int
 
 struct keyword_s {
   char name[16];
@@ -26,12 +25,12 @@ struct opr_keyword_s {
 
 struct func_keyword_s {
   char name[16];
-  fcode_t fcode;
+  bid_t fcode;
 };
 
 struct proc_keyword_s {
   char name[16];
-  pcode_t pcode;
+  bid_t pcode;
 };
 
 struct spopr_keyword_s {
@@ -96,7 +95,8 @@ bool isKeyword(const char *keyword) {
   }
 
   const char* constants[] = {
-    "SBVER", "PI", "XMAX", "YMAX", "TRUE", "FALSE", "CWD", "HOME", "COMMAND", "INCLUDE", "SELF", ""
+    "SBVER", "PI", "XMAX", "YMAX", "TRUE", "FALSE", "CWD",
+    "HOME", "COMMAND", "INCLUDE", "NIL", "MAXINT", "SELF", ""
   };
   for (int i = 0; !result && constants[i][0] != '\0'; i++) {
     if (strcasecmp(constants[i], keyword) == 0) {
@@ -218,7 +218,7 @@ bool readHelpReference(strlib::List<HelpItem *> *helpItems) {
     }
     if (isKeyword(item->keyword)) {
       helpItems->add(item);
-    } else {
+    } else if (strcasecmp(item->keyword, "self") != 0) {
       fprintf(stderr,  "OBSOLETE %s\n", item->keyword);
     }
   }

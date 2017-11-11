@@ -36,89 +36,74 @@ extern char **environ;
  *
  * warning: if the cmd is a GUI process, the shell will hang
  */
-char *shell(const char *cmd) {
-  HANDLE h_inppip, h_outpip, h_errpip, h_pid;
-  char buf[BUFSIZE + 1], cv_buf[BUFSIZE + 1];
-  char *result = NULL;
-  int block_count = 0;
-  DWORD bytes;
+int shell(const char *cmd, var_t *r) {
+  HANDLE hPipeRead, hPipeWrite;
 
-  SECURITY_ATTRIBUTES sa;
-  STARTUPINFO si;
-  PROCESS_INFORMATION pi;
+  SECURITY_ATTRIBUTES saAttr = { sizeof(SECURITY_ATTRIBUTES) };
+  // Pipe handles are inherited by child process.
+  saAttr.bInheritHandle = TRUE;
+  saAttr.lpSecurityDescriptor = NULL;
 
-  memset(&sa, 0, sizeof(sa));
-  sa.nLength = sizeof(sa);
-  sa.bInheritHandle = TRUE;
-
-  if (!CreatePipe(&h_inppip, &h_outpip, &sa, BUFSIZE)) {
-    log_printf("CreatePipe failed");
-    return NULL;
+  // Create a pipe to get results from child's stdout.
+  if (!CreatePipe(&hPipeRead, &hPipeWrite, &saAttr, 0)) {
+    return 0;
   }
 
-  h_pid = GetCurrentProcess();
-
-  DuplicateHandle(h_pid, h_inppip, h_pid, &h_inppip, 0, FALSE,
-                  DUPLICATE_SAME_ACCESS | DUPLICATE_CLOSE_SOURCE);
-  DuplicateHandle(h_pid, h_outpip, h_pid, &h_errpip, 0, TRUE, DUPLICATE_SAME_ACCESS);
-
-  memset(&si, 0, sizeof(si));
-  si.cb = sizeof(si);
-  si.dwFlags = STARTF_USESHOWWINDOW | STARTF_USESTDHANDLES;
+  STARTUPINFO si = { sizeof(STARTUPINFO) };
+  si.dwFlags     = STARTF_USESHOWWINDOW | STARTF_USESTDHANDLES;
+  si.hStdOutput  = hPipeWrite;
+  si.hStdError   = hPipeWrite;
+  // Prevents cmd window from flashing. Requires STARTF_USESHOWWINDOW in dwFlags.
   si.wShowWindow = SW_HIDE;
-  si.hStdOutput = h_outpip;
-  si.hStdError = h_errpip;
 
-  if (CreateProcess(NULL, (LPSTR)cmd, NULL, NULL, TRUE, 0, NULL, NULL, &si, &pi)) {
-    // close streams
-    CloseHandle(pi.hThread);
-    CloseHandle(h_outpip);
-    CloseHandle(h_errpip);
-    h_errpip = h_outpip = NULL;
+  PROCESS_INFORMATION pi  = { 0 };
+  if (!CreateProcess(NULL, (LPSTR)cmd, NULL, NULL, TRUE, CREATE_NEW_CONSOLE, NULL, NULL, &si, &pi)) {
+    CloseHandle(hPipeWrite);
+    CloseHandle(hPipeRead);
+    return 0;
+  }
 
-    // read stdout/err
-    while (ReadFile(h_inppip, buf, BUFSIZE, &bytes, NULL)) {
-      buf[bytes] = '\0';
-      memset(cv_buf, 0, BUFSIZE + 1);
-      OemToCharBuff(buf, cv_buf, bytes);
-      block_count++;
-      if (result) {
-        result = (char *)realloc(result, block_count * BUFSIZE + 1);
-      } else {
-        result = (char *)malloc(BUFSIZE + 1);
-        *result = '\0';
+  int processEnded = 0;
+  while (!processEnded) {
+    // Give some timeslice (50ms), so we won't waste 100% cpu.
+    processEnded = WaitForSingleObject(pi.hProcess, 50) == WAIT_OBJECT_0;
+
+    // Even if process exited - we continue reading, if there is some data available over pipe.
+    while (1) {
+      char buf[BUFSIZE];
+      DWORD numRead = 0;
+      DWORD numAvail = 0;
+
+      if (!PeekNamedPipe(hPipeRead, NULL, 0, NULL, &numAvail, NULL)) {
+        break;
       }
-      strcat(result, cv_buf);
-    }
-    CloseHandle(pi.hProcess);
-  }
-  else {
-    log_printf("Failed to launch %s\n", cmd);
-    result = NULL;
-  }
 
-  // clean up
-  CloseHandle(h_inppip);
-  if (h_outpip) {
-    CloseHandle(h_outpip);
+      if (!numAvail) {
+        // no data available
+        break;
+      }
+
+      if (!ReadFile(hPipeRead, buf, min(sizeof(buf) - 1, numAvail), &numRead, NULL) ||
+          !numRead) {
+        // child process may have ended
+        break;
+      }
+      buf[numRead] = 0;
+      v_strcat(r, buf);
+    }
   }
-  if (h_errpip) {
-    CloseHandle(h_errpip);
-  }
-  return result;
+  CloseHandle(hPipeWrite);
+  CloseHandle(hPipeRead);
+  CloseHandle(pi.hProcess);
+  CloseHandle(pi.hThread);
+  return 1;
 }
 
 int dev_run(const char *cmd, var_t *r, int wait) {
   int result = 1;
   if (r != NULL) {
-    char *buf = shell(cmd);
-    if (buf != NULL) {
-      r->type = V_STR;
-      r->v.p.ptr = buf;
-      r->v.p.length = strlen(buf) + 1;
-    } else {
-      result = 0;
-    }
+    v_zerostr(r);
+    result = shell(cmd, r);
   } else if (wait) {
     STARTUPINFO si;
     PROCESS_INFORMATION pi;
@@ -144,29 +129,17 @@ int dev_run(const char *cmd, var_t *r, int wait) {
 int dev_run(const char *cmd, var_t *r, int wait) {
   int result = 1;
   if (r != NULL) {
-    r->type = V_STR;
-    r->v.p.length = BUFSIZE + 1;
-    r->v.p.ptr = malloc(r->v.p.length);
-    r->v.p.ptr[0] = '\0';
-
-    int bytes = 0;
-    int total = 0;
-    char buf[BUFSIZE + 1];
+    v_zerostr(r);
     FILE *fin = popen(cmd, "r");
     if (fin) {
       while (!feof(fin)) {
-        bytes = fread(buf, 1, BUFSIZE, fin);
+        char buf[BUFSIZE + 1];
+        int bytes = fread(buf, 1, BUFSIZE, fin);
         buf[bytes] = '\0';
-        total += bytes;
-        if (total >= r->v.p.length) {
-          r->v.p.length += BUFSIZE + 1;
-          r->v.p.ptr = realloc(r->v.p.ptr, r->v.p.length);
-        }
-        strcat(r->v.p.ptr, buf);
+        v_strcat(r, buf);
       }
       pclose(fin);
     } else {
-      v_zerostr(r);
       result = 0;
     }
   } else if (wait) {

@@ -344,6 +344,13 @@ void log_printf(const char *fmt, ...);
 /**
  * @ingroup dev_g
  *
+ * stack trace logger
+ */
+void dev_log_stack(const char *keyword, int type, int line);
+
+/**
+ * @ingroup dev_g
+ *
  * clear screen
  */
 void dev_cls(void);
@@ -760,7 +767,7 @@ int dev_fattr(const char *file);
  * @param buffer the result text
  * @return number of characters returned in buffer
  */
-int dev_filemtime(const char *file, char **buffer);
+int dev_filemtime(var_t *v, char **buffer);
 
 /*
  *

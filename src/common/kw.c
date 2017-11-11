@@ -13,20 +13,20 @@
 /*
  * valid exit codes from eval
  */
-code_t kw_eval_validexit[] = { 
-  kwTYPE_EOC, 
-  kwTYPE_LINE, 
-  kwTYPE_SEP, 
-  kwFILLED, 
-  kwCOLOR, 
-  kwUSE, 
-  kwTO, 
+code_t kw_eval_validexit[] = {
+  kwTYPE_EOC,
+  kwTYPE_LINE,
+  kwTYPE_SEP,
+  kwFILLED,
+  kwCOLOR,
+  kwUSE,
+  kwTO,
   kwIN,
   kwSTEP,
   kwFORSEP,
   kwINPUTSEP,
-  kwINPUT, 
-  kwOUTPUTSEP, 
+  kwINPUT,
+  kwOUTPUTSEP,
   kwAPPENDSEP,
   kwAS,
   kwUSING,
@@ -39,8 +39,8 @@ code_t kw_eval_validexit[] = {
 /*
  * functions without parameters
  */
-fcode_t kw_noarg_func_table[] = { 
-  kwINKEY, 
+bid_t kw_noarg_func_table[] = {
+  kwINKEY,
   kwTIME,
   kwDATE,
   kwTICKS,
@@ -92,7 +92,7 @@ int kw_getcmdname(code_t code, char *dest) {
 
 /*
  */
-int kw_getfuncname(fcode_t code, char *dest) {
+int kw_getfuncname(bid_t code, char *dest) {
   int i;
   int found = 0;
 
@@ -112,7 +112,7 @@ int kw_getfuncname(fcode_t code, char *dest) {
 
 /*
  */
-int kw_getprocname(pcode_t code, char *dest) {
+int kw_getprocname(bid_t code, char *dest) {
   int i;
   int found = 0;
 
@@ -132,7 +132,7 @@ int kw_getprocname(pcode_t code, char *dest) {
 
 /*
  */
-int kw_noarg_func(fcode_t code) {
+int kw_noarg_func(bid_t code) {
   int i;
 
   for (i = 0; kw_noarg_func_table[i] != 0; i++) {

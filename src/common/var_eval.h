@@ -19,7 +19,7 @@ extern "C" {
  *
  * prepares the self variable
  */
-void v_set_self(var_t *self);
+var_t *v_set_self(var_t *self);
 
 /**
  * @ingroup var
@@ -48,13 +48,6 @@ var_t *code_resolve_varptr(var_t *var_p, int until_parens);
  * evaluate variable reference assignment
  */
 var_t *eval_ref_var(var_t *var_p);
-
-/**
- * @ingroup var
- *
- * evaluate variable reference assignment
- */
-void v_eval_ref(var_t *l_value);
 
 /**
  * @ingroup exec

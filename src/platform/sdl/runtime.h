@@ -26,9 +26,12 @@ struct Runtime : public System {
   int ask(const char *title, const char *prompt, bool cancel);
   void browseFile(const char *url);
   void construct(const char *font, const char *boldFont);
+  bool debugOpen(const char *file);
   void debugStart(TextEditInput *edit, const char *file);
   void debugStep(TextEditInput *edit, TextEditHelpWidget *help, bool cont);
   void debugStop();
+  void enableCursor(bool enabled);
+  void exportRun(const char *path);
   void redraw() { _graphics->redraw(); }
   void handleKeyEvent(MAEvent &event);
   bool hasEvent() { return _eventQueue && _eventQueue->size() > 0; }
@@ -43,6 +46,7 @@ struct Runtime : public System {
   void showCursor(CursorType cursorType);
   int runShell(const char *startupBas, int fontScale, int debugPort);
   char *loadResource(const char *fileName);
+  void logStack(int line, bool subOrFunc);
   void optionsBox(StringList *items);
   void onResize(int w, int h);
   void setClipboardText(const char *text);

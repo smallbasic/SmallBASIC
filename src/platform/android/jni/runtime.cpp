@@ -35,6 +35,7 @@
 #define MUTE_AUDIO_KEY "muteAudio"
 #define OPT_IDE_KEY "optIde"
 #define GBOARD_KEY_QUESTION 274
+#define EVENT_TYPE_EXIT 100
 
 Runtime *runtime;
 
@@ -165,6 +166,13 @@ void onContentRectChanged(ANativeActivity *activity, const ARect *rect) {
   runtime->onResize(rect->right, rect->bottom);
 }
 
+jbyteArray newByteArray(JNIEnv *env, const char *str) {
+  int size = strlen(str);
+  jbyteArray result = env->NewByteArray(size);
+  env->SetByteArrayRegion(result, 0, size, (const jbyte *)str);
+  return result;
+}
+
 Runtime::Runtime(android_app *app) :
   System(),
   _keypadActive(false),
@@ -202,29 +210,14 @@ void Runtime::alert(const char *title, const char *message) {
 
   JNIEnv *env;
   _app->activity->vm->AttachCurrentThread(&env, NULL);
-  jstring titleString = env->NewStringUTF(title);
-  jstring messageString = env->NewStringUTF(message);
+  jbyteArray titleByteArray = newByteArray(env, title);
+  jbyteArray messageByteArray = newByteArray(env, message);
   jclass clazz = env->GetObjectClass(_app->activity->clazz);
-  jmethodID method = env->GetMethodID(clazz, "showAlert",
-                                      "(Ljava/lang/String;Ljava/lang/String;)V");
-  env->CallVoidMethod(_app->activity->clazz, method, titleString, messageString);
+  jmethodID methodId = env->GetMethodID(clazz, "showAlert", "([B[B)V");
+  env->CallVoidMethod(_app->activity->clazz, methodId, titleByteArray, messageByteArray);
   env->DeleteLocalRef(clazz);
-  env->DeleteLocalRef(messageString);
-  env->DeleteLocalRef(titleString);
-  _app->activity->vm->DetachCurrentThread();
-}
-
-void Runtime::alert(const char *title, bool longDuration) {
-  logEntered();
-
-  JNIEnv *env;
-  _app->activity->vm->AttachCurrentThread(&env, NULL);
-  jstring titleString = env->NewStringUTF(title);
-  jclass clazz = env->GetObjectClass(_app->activity->clazz);
-  jmethodID method = env->GetMethodID(clazz, "showToast", "(Ljava/lang/String;Z)V");
-  env->CallVoidMethod(_app->activity->clazz, method, titleString, longDuration);
-  env->DeleteLocalRef(clazz);
-  env->DeleteLocalRef(titleString);
+  env->DeleteLocalRef(messageByteArray);
+  env->DeleteLocalRef(titleByteArray);
   _app->activity->vm->DetachCurrentThread();
 }
 
@@ -232,15 +225,14 @@ int Runtime::ask(const char *title, const char *prompt, bool cancel) {
   JNIEnv *env;
   _app->activity->vm->AttachCurrentThread(&env, NULL);
   jclass clazz = env->GetObjectClass(_app->activity->clazz);
-  jstring titleString = env->NewStringUTF(title);
-  jstring promptString = env->NewStringUTF(prompt);
-  jmethodID methodId = env->GetMethodID(clazz, "ask",
-                                        "(Ljava/lang/String;Ljava/lang/String;Z)I");
+  jbyteArray titleByteArray = newByteArray(env, title);
+  jbyteArray promptByteArray = newByteArray(env, prompt);
+  jmethodID methodId = env->GetMethodID(clazz, "ask", "([B[BZ)I");
   jint result = (jint) env->CallIntMethod(_app->activity->clazz, methodId,
-                                          titleString, promptString, cancel);
+                                          titleByteArray, promptByteArray, cancel);
   env->DeleteLocalRef(clazz);
-  env->DeleteLocalRef(titleString);
-  env->DeleteLocalRef(promptString);
+  env->DeleteLocalRef(titleByteArray);
+  env->DeleteLocalRef(promptByteArray);
   _app->activity->vm->DetachCurrentThread();
   return result;
 }
@@ -451,13 +443,10 @@ void Runtime::runShell() {
 
   opt_ide = IDE_NONE;
   opt_graphics = true;
-  opt_pref_bpp = 0;
   opt_nosave = true;
-  opt_interactive = true;
   opt_verbose = false;
   opt_quiet = true;
   opt_command[0] = 0;
-  opt_usevmt = 0;
   opt_file_permitted = 1;
   os_graphics = 1;
   os_color_depth = 16;
@@ -584,7 +573,9 @@ void Runtime::saveConfig() {
 void Runtime::runPath(const char *path) {
   pthread_mutex_lock(&_mutex);
   setLoadPath(path);
-  setExit(false);
+  MAEvent *event = new MAEvent();
+  event->type = EVENT_TYPE_EXIT;
+  _eventQueue->push(event);
   ALooper_wake(_looper);
   pthread_mutex_unlock(&_mutex);
 }
@@ -611,6 +602,9 @@ void Runtime::handleKeyEvent(MAEvent &event) {
     break;
   case AKEYCODE_HOME:
     event.key = SB_KEY_KP_HOME;
+    break;
+  case AKEYCODE_MOVE_HOME:
+    event.key = SB_KEY_HOME;
     break;
   case AKEYCODE_MOVE_END:
     event.key = SB_KEY_END;
@@ -648,6 +642,9 @@ void Runtime::handleKeyEvent(MAEvent &event) {
   case AKEYCODE_CLEAR:
     event.key = SB_KEY_DELETE;
     break;
+  case AKEYCODE_FORWARD_DEL:
+    event.key = SB_KEY_DELETE;
+    break;
   case AKEYCODE_DEL:
     event.key = SB_KEY_BACKSPACE;
     break;
@@ -657,8 +654,21 @@ void Runtime::handleKeyEvent(MAEvent &event) {
   case GBOARD_KEY_QUESTION:
     event.key = '?';
     break;
+  case AKEYCODE_ESCAPE:
+    event.key = SB_KEY_ESCAPE;
+    break;
+  case AKEYCODE_BREAK:
+    event.key = SB_KEY_BREAK;
+    break;
   default:
-    if (event.nativeKey < 127 && event.nativeKey != event.key) {
+    if (event.nativeKey >= AKEYCODE_F1 && event.nativeKey <= AKEYCODE_F12) {
+      for (int fn = 0; fn < 12; fn++) {
+        if (event.nativeKey == AKEYCODE_F1 + fn) {
+          event.key = SB_KEY_F(fn);
+          break;
+        }
+      }
+    } else if (event.nativeKey < 127 && event.nativeKey != event.key) {
       // avoid translating keys send from onUnicodeChar
       event.key = getUnicodeChar(event.nativeKey, event.key);
     }
@@ -783,6 +793,9 @@ void Runtime::processEvent(MAEvent &event) {
   case EVENT_TYPE_KEY_PRESSED:
     handleKeyEvent(event);
     break;
+  case EVENT_TYPE_EXIT:
+    setExit(false);
+    break;
   default:
     handleEvent(event);
     break;
@@ -793,21 +806,7 @@ void Runtime::setString(const char *methodName, const char *value) {
   JNIEnv *env;
   _app->activity->vm->AttachCurrentThread(&env, NULL);
   jclass clazz = env->GetObjectClass(_app->activity->clazz);
-  jstring valueString = env->NewStringUTF(value);
-  jmethodID methodId = env->GetMethodID(clazz, methodName, "(Ljava/lang/String;)V");
-  env->CallVoidMethod(_app->activity->clazz, methodId, valueString);
-  env->DeleteLocalRef(valueString);
-  env->DeleteLocalRef(clazz);
-  _app->activity->vm->DetachCurrentThread();
-}
-
-void Runtime::setStringBytes(const char *methodName, const char *value) {
-  JNIEnv *env;
-  _app->activity->vm->AttachCurrentThread(&env, NULL);
-  jclass clazz = env->GetObjectClass(_app->activity->clazz);
-  int size = strlen(value);
-  jbyteArray valueByteArray = env->NewByteArray(size);
-  env->SetByteArrayRegion(valueByteArray, 0, size, (const jbyte *)value);
+  jbyteArray valueByteArray = newByteArray(env, value);
   jmethodID methodId = env->GetMethodID(clazz, methodName, "([B)V");
   env->CallVoidMethod(_app->activity->clazz, methodId, valueByteArray);
   env->DeleteLocalRef(valueByteArray);
@@ -993,11 +992,11 @@ void System::editSource(strlib::String loadPath) {
         case SB_KEY_CTRL('c'):
         case SB_KEY_CTRL('x'):
           text = widget->copy(event.key == (int)SB_KEY_CTRL('x'));
-        if (text) {
-          setClipboardText(text);
-          free(text);
-        }
-        break;
+          if (text) {
+            setClipboardText(text);
+            free(text);
+          }
+          break;
         case SB_KEY_CTRL('v'):
           text = getClipboardText();
           widget->paste(text);

@@ -201,7 +201,7 @@ func createForm
   createForm = f
 end
 
-func showResult(result)
+sub showResult(result)
   local bgnd = 3
   local w = 362
   local h = 30

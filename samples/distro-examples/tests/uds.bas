@@ -136,3 +136,9 @@ fi
 bar.x(1).barx=bar.x(0).barx+976
 bar.x(1).barx/=1000
 if bar.x(1).barx <> 2 then throw "Yuck, I can't read red print on black background."
+
+rem fill the var cache for testing in valgrind
+cache = {}
+for i = 0 to 8096
+  cache[i] = "."
+next i

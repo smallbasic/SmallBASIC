@@ -109,8 +109,46 @@ if (s1 <> s2 || s1 <> s3) then
   throw "not equal"
 endif
 
+s4="""
+this
+is a
+multiline
+string"""
+
 rem ------------------------------------------------
 rem test case insensitive translate
 if "food" != translate("foo bar", " BAR", "d", true) then
   throw "bad translate"
 fi
+
+rem ------------------------------------------------
+rem fix issues reported by MGA July 2017
+if (99 != VAL("99 bottles of beer")) then
+  throw "VAL input error"
+endif
+if ("" != MID("tooShort", 10, 1)) then
+  throw "MID input error"
+endif
+if ("" != LEFT("blah", -20)) then
+  throw "LEFT input error"
+fi
+if ("" != RIGHT("blah", -20)) then
+  throw "RIGHT input error"
+endif
+if (0 != INSTR(10, "test", "t")) then
+  throw "INSTR input error"
+endif
+if (1 != INSTR(-5, "test", "t")) then
+  throw "INSTR input error"
+endif
+if ("blahx" != REPLACE("blah", 55, "x")) then
+  throw "REPLACE input error 1"
+endif
+if ("xlah" != REPLACE("blah", -5, "x")) then
+  throw "REPLACE input error 2"
+endif
+
+rem --- test line numbers are correctly maintained when using multiline strings
+if (PROGLINE != 152) then
+  throw "invalid line no"
+endif

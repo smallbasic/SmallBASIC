@@ -181,7 +181,7 @@ void map_free(var_p_t var_p) {
  * Scan byte code for node kwTYPE_UDS_EL and attach as field elements
  * if they don't already exist.
  */
-var_p_t map_resolve_fields(var_p_t base) {
+var_p_t map_resolve_fields(var_p_t base, var_p_t *parent) {
   var_p_t field = NULL;
   if (code_peek() == kwTYPE_UDS_EL) {
     code_skipnext();
@@ -209,9 +209,12 @@ var_p_t map_resolve_fields(var_p_t base) {
     const char *key = (const char *)&prog_source[prog_ip];
     prog_ip += len;
     field = hashmap_put(base, key, len);
+    if (parent != NULL) {
+      *parent = base;
+    }
 
     // evaluate the next sub-element
-    field = map_resolve_fields(field);
+    field = map_resolve_fields(field, parent);
   } else {
     field = base;
   }
@@ -236,11 +239,10 @@ var_p_t map_add_var(var_p_t base, const char *name, int value) {
 void map_get_value(var_p_t base, var_p_t var_key, var_p_t *result) {
   if (base->type == V_ARRAY && base->v.a.size) {
     // convert the non-empty array to a map
-    int i;
     var_t *clone = v_clone(base);
 
     hashmap_create(base, 0);
-    for (i = 0; i < clone->v.a.size; i++) {
+    for (int i = 0; i < clone->v.a.size; i++) {
       const var_t *element = v_elem(clone, i);
       var_p_t key = v_new();
       v_setint(key, i);
@@ -253,7 +255,8 @@ void map_get_value(var_p_t base, var_p_t var_key, var_p_t *result) {
     v_detach(clone);
   } else if (base->type != V_MAP) {
     if (v_is_nonzero(base)) {
-      err_typemismatch();
+      *result = v_new();
+      v_set(*result, base);
       return;
     } else {
       hashmap_create(base, 0);
@@ -268,12 +271,11 @@ void map_get_value(var_p_t base, var_p_t var_key, var_p_t *result) {
  * Traverse the root to copy into dest
  */
 int map_set_cb(hashmap_cb *cb, var_p_t var_key, var_p_t value) {
-  var_p_t key = v_new();
-  v_set(key, var_key);
-  var_p_t var = hashmap_putv(cb->var, key);
-  v_set(var, value);
-  if (var->type == V_FUNC) {
-    var->v.fn.self = cb->var;
+  if (var_key->type != V_STR || var_key->v.p.ptr[0] != MAP_TMP_FIELD[0]) {
+    var_p_t key = v_new();
+    v_set(key, var_key);
+    var_p_t var = hashmap_putv(cb->var, key);
+    v_set(var, value);
   }
   return 0;
 }
@@ -354,10 +356,9 @@ void array_to_str(hashmap_cb *cb, var_t *var) {
     // NxN
     int rows = ABS(var->v.a.ubound[0] - var->v.a.lbound[0]) + 1;
     int cols = ABS(var->v.a.ubound[1] - var->v.a.lbound[1]) + 1;
-    int i, j;
 
-    for (i = 0; i < rows; i++) {
-      for (j = 0; j < cols; j++) {
+    for (int i = 0; i < rows; i++) {
+      for (int j = 0; j < cols; j++) {
         int pos = i * cols + j;
         var_t *elem = v_elem(var, pos);
         array_append_elem(cb, elem);
@@ -370,8 +371,7 @@ void array_to_str(hashmap_cb *cb, var_t *var) {
       }
     }
   } else {
-    int i;
-    for (i = 0; i < var->v.a.size; i++) {
+    for (int i = 0; i < var->v.a.size; i++) {
       var_t *elem = v_elem(var, i);
       array_append_elem(cb, elem);
       if (i != var->v.a.size - 1) {
@@ -420,8 +420,7 @@ void map_set_primative(var_p_t dest, const char *s, int len) {
   int fract = 0;
   int text = 0;
   int sign = 1;
-  int i;
-  for (i = 0; i < len && !text; i++) {
+  for (int i = 0; i < len && !text; i++) {
     int n = s[i] - '0';
     if (n >= 0 && n <= 9) {
       value = value * 10 + n;
@@ -644,6 +643,7 @@ void map_from_codearray(var_p_t dest) {
   int cols = 0;
   int curcol = 0;
   int ready = 0;
+  int seps = 0;
   ArrayList list;
 
   list.head = NULL;
@@ -652,6 +652,7 @@ void map_from_codearray(var_p_t dest) {
   do {
     switch (code_peek()) {
     case kwTYPE_SEP:
+      seps++;
       code_skipnext();
       if (code_peek() == ';') {
         // next row
@@ -671,5 +672,9 @@ void map_from_codearray(var_p_t dest) {
     }
   } while (!ready && !prog_error);
 
-  map_build_array(dest, list.head, rows+1, cols+1);
+  if (!seps && list.head == NULL) {
+    v_toarray1(dest, 0);
+  } else {
+    map_build_array(dest, list.head, rows+1, cols+1);
+  }
 }

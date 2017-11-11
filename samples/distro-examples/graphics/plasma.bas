@@ -7,7 +7,7 @@
 'http:/relo.betterwebber.com
 
 cls
-const PI= 3.141593
+'const PI= 3.141593
 
 dim cols(2,255)
 

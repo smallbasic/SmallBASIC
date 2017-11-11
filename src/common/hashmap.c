@@ -233,7 +233,9 @@ void hashmap_foreach(var_p_t map, hashmap_foreach_func func, hashmap_cb *data) {
     for (i = 0; i < map->v.m.size; i++) {
       Node **table = (Node **)map->v.m.map;
       if (table[i] != NULL) {
-        tree_foreach(table[i], func, data);
+        if (!tree_foreach(table[i], func, data)) {
+          break;
+        }
       }
     }
   }

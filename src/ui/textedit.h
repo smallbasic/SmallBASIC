@@ -10,7 +10,7 @@
 #define TEXTEDIT_H
 
 #define STB_TEXTEDIT_CHARTYPE char
-#define STB_TEXTEDIT_UNDOCHARCOUNT 2000
+#define STB_TEXTEDIT_UNDOCHARCOUNT 5000
 #define MARGIN_CHARS 4
 #define MAX_MARKERS 10
 
@@ -53,6 +53,17 @@ struct EditTheme {
   int _row_marker;
 };
 
+struct StackTraceNode {
+  StackTraceNode(const char *keyword, int type, int line)
+    : _keyword(keyword), _type(type), _line(line) {}
+  virtual ~StackTraceNode() {}
+  const char *_keyword;
+  int _type;
+  int _line;
+};
+
+typedef strlib::List<StackTraceNode *> StackTrace;
+
 struct EditBuffer {
   char *_buffer;
   int _len;
@@ -68,6 +79,7 @@ struct EditBuffer {
   void clear();
   int  countNewlines(const char *text, int num);
   int  deleteChars(int pos, int num);
+  char getChar(int pos);
   int  insertChars(int pos, const char *text, int num);
   int  lineCount();
   void removeTrailingSpaces(STB_TexteditState *state);
@@ -89,6 +101,8 @@ struct TextEditInput : public FormEditInput {
   int  getRow() const { return _cursorRow + 1; }
   int  getPageRows() const { return _height / _charHeight; }
   int  getLines() { return _buf.lineCount(); }
+  void getSelectionCounts(int *lines, int *chars);
+  int  getSelectionRow();
   int  getScroll() const { return _scroll; }
   const char *getText() const { return _buf._buffer; }
   char *getTextSelection();
@@ -177,6 +191,7 @@ protected:
   int _matchingBrace;
   int _ptY;
   int _pressTick;
+  bool _bottom;
   bool _dirty;
 };
 
@@ -196,7 +211,8 @@ struct TextEditHelpWidget : public TextEditInput {
     kReplaceDone,
     kGotoLine,
     kMessage,
-    kLineEdit
+    kLineEdit,
+    kStacktrace
   };
 
   void clicked(int x, int y, bool pressed);
@@ -208,6 +224,7 @@ struct TextEditHelpWidget : public TextEditInput {
   void createMessage() { reset(kMessage); }
   void createOutline();
   void createSearch(bool replace);
+  void createStackTrace(const char *error, int line, StackTrace &trace);
   bool edit(int key, int screenWidth, int charWidth);
   void paste(const char *text);
   bool isDrawTop() { return true; }
@@ -257,7 +274,7 @@ private:
 #define STB_TEXTEDIT_GETWIDTH_NEWLINE 0.0f
 #define STB_TEXTEDIT_KEYTOTEXT(k) k
 #define STB_TEXTEDIT_STRINGLEN(o) o->_len
-#define STB_TEXTEDIT_GETCHAR(o,i) o->_buffer[i]
+#define STB_TEXTEDIT_GETCHAR(o,i) o->getChar(i)
 #define STB_TEXTEDIT_GETWIDTH(o,n,i)      o->_in->charWidth(n, i)
 #define STB_TEXTEDIT_LAYOUTROW(r,o,n)     o->_in->layout(r, n)
 #define STB_TEXTEDIT_DELETECHARS(o,i,n)   o->deleteChars(i, n)

@@ -25,7 +25,7 @@ struct Runtime : public System {
 
   void addShortcut(const char *path) { setString("addShortcut", path); }
   void alert(const char *title, const char *message);
-  void alert(const char *title, bool longDuration=true);
+  void alert(const char *title) { setString("showToast", title); }
   int ask(const char *title, const char *prompt, bool cancel);
   void browseFile(const char *url) { setString("browseFile", url); }
   void clearSoundQueue();
@@ -34,6 +34,7 @@ struct Runtime : public System {
   void debugStep(TextEditInput *edit, TextEditHelpWidget *help, bool cont) {}
   void debugStop() {}
   void disableSensor();
+  void enableCursor(bool enabled) {}
   bool enableSensor(int sensorType);
   bool getBoolean(const char *methodName);
   String getString(const char *methodName);
@@ -56,7 +57,6 @@ struct Runtime : public System {
   void setLocationData(var_t *retval);
   void setSensorData(var_t *retval);
   void setString(const char *methodName, const char *value);
-  void setStringBytes(const char *methodName, const char *value);
   void speak(const char *text) { setString("speak", text); }
   void runShell();
   char *loadResource(const char *fileName);
@@ -72,7 +72,7 @@ struct Runtime : public System {
   bool loadSettings(Properties<String *> &settings);
   void saveConfig();
   void runPath(const char *path);
-  void setClipboardText(const char *s) { setStringBytes("setClipboardText", s); }
+  void setClipboardText(const char *s) { setString("setClipboardText", s); }
   char *getClipboardText();
   void setFocus(bool focus) { _hasFocus = focus; }
   int  getFontId();

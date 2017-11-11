@@ -6,6 +6,7 @@
 ' 11/06/2005
 ' Ported by Jorge Hernandez
 
+WINDOW 1, 290, 290, 1
 PEN ON
 DIM C(20)
 dim a(10,10)

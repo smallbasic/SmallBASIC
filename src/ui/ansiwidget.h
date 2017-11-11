@@ -86,7 +86,7 @@ struct AnsiWidget {
   bool scroll(bool up, bool page);
   void selectBackScreen(int screenId);
   void selectFrontScreen(int screenId);
-  int  selectScreen(int screenId);
+  int  selectScreen(int screenId, bool forceFlush=true);
   void setColor(long color);
   void setDirty() { _back->setDirty(); }
   void setAutoflush(bool autoflush) { _autoflush = autoflush; }

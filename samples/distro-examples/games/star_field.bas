@@ -14,11 +14,8 @@
 'oy    5
 const MAXSTARS = 200               'number of stars
 const LENS = 256               
-const XMAX = 640
-const YMAX = 480
 const XMID = XMAX/2
 const YMID = YMAX/2
-const PI = 3.141593
 
 dim stars(5,MAXSTARS)
 dim colors(2, 255)

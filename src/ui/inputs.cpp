@@ -1079,7 +1079,6 @@ void FormDropList::draw(int x, int y, int w, int h, int chw) {
 
 void FormDropList::drawList(int dx, int dy, int sh) {
   int availHeight = sh - (dy + _y + _height + _height);
-  int textWidth = 0;
   int textHeight = 0;
   int textY = dy + _height;
 
@@ -1088,7 +1087,7 @@ void FormDropList::drawList(int dx, int dy, int sh) {
   _visibleRows = 0;
   for (int i = _topIndex; i < _model->rows(); i++) {
     MAExtent textSize = maGetTextSize(_model->getTextAt(i));
-    textWidth = EXTENT_X(textSize);
+    int textWidth = EXTENT_X(textSize);
     textHeight = EXTENT_Y(textSize) + 1;
     if (textWidth > _listWidth) {
       _listWidth = textWidth;

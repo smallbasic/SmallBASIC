@@ -1,6 +1,6 @@
 // This file is part of SmallBASIC
 //
-// Copyright(C) 2001-2015 Chris Warren-Smith.
+// Copyright(C) 2001-2017 Chris Warren-Smith.
 //
 // This program is distributed under the terms of the GPL v2.0 or later
 // Download the GNU Public License (GPL) from www.gnu.org
@@ -114,16 +114,19 @@ const char *helpText =
   "A-g goto line\n"
   "A-n trim line-endings\n"
   "A-t select theme\n"
-  "A-. break mode\n"
+  "A-. return mode\n"
   "A-<n> recent file\n"
+  "A-= count chars\n"
   "SHIFT-<arrow> select\n"
   "TAB indent line\n"
   "F1,A-h keyword help\n"
   "F2 online help\n"
   "F3,F4 export\n"
-  "F5 debug\n"
+  "F5,F6,F7 debug\n"
+  "F8 repl run\n"
   "F9, C-r run\n"
-  "F10, set command$\n";
+  "F10 set command$\n"
+  "F11 publish\n";
 
 inline bool match(const char *str, const char *pattern , int len) {
   int i, j;
@@ -252,6 +255,16 @@ int EditBuffer::deleteChars(int pos, int num) {
   return 1;
 }
 
+char EditBuffer::getChar(int pos) {
+  char result;
+  if (_buffer != NULL && pos >= 0 && pos < _len) {
+    result = _buffer[pos];
+  } else {
+    result = '\0';
+  }
+  return result;
+}
+
 int EditBuffer::insertChars(int pos, const char *text, int num) {
   int required = _len + num + 1;
   if (required >= _size) {
@@ -347,6 +360,7 @@ TextEditInput::TextEditInput(const char *text, int chW, int chH,
   _matchingBrace(-1),
   _ptY(-1),
   _pressTick(0),
+  _bottom(false),
   _dirty(false) {
   stb_textedit_initialize_state(&_state, false);
 }
@@ -527,6 +541,7 @@ void TextEditInput::draw(int x, int y, int w, int h, int chw) {
     i += r.num_chars;
   }
 
+  _bottom = i >= _buf._len;
   drawLineNumber(x, y + baseY, line + 1, false);
 
   // draw cursor
@@ -757,6 +772,50 @@ bool TextEditInput::find(const char *word, bool next) {
       _cursorRow = getCursorRow();
       updateScroll();
     }
+  }
+  return result;
+}
+
+void TextEditInput::getSelectionCounts(int *lines, int *chars) {
+  *lines = 1;
+  *chars = 0;
+  if (_state.select_start != _state.select_end) {
+    int start = MIN(_state.select_start, _state.select_end);
+    int end = MAX(_state.select_start, _state.select_end);
+    int len = _buf._len;
+    StbTexteditRow r;
+
+    *chars = (end - start);
+    for (int i = start; i < end && i < len; i += r.num_chars) {
+      layout(&r, i);
+      if (i + r.num_chars < end) {
+        // found another row before selection end
+        *lines += 1;
+        *chars -= 1;
+      } else if (i + r.num_chars == end) {
+        // cursor at start of next line
+        *chars -= 1;
+      }
+    }
+  }
+}
+
+int TextEditInput::getSelectionRow() {
+  int result;
+  if (_state.select_start != _state.select_end) {
+    int pos = MIN(_state.select_start, _state.select_end);
+    int len = _buf._len;
+    result = 0;
+    StbTexteditRow r;
+    for (int i = 0; i < len; i += r.num_chars) {
+      layout(&r, i);
+      if (pos >= i && pos < i + r.num_chars) {
+        break;
+      }
+      result++;
+    }
+  } else {
+    result = 0;
   }
   return result;
 }
@@ -1054,11 +1113,11 @@ void TextEditInput::editDeleteLine() {
 
 void TextEditInput::editEnter() {
   stb_textedit_key(&_buf, &_state, STB_TEXTEDIT_NEWLINE);
-  char spaces[LINE_BUFFER_SIZE];
   int start = lineStart(_state.cursor);
   int prevLineStart = lineStart(start - 1);
 
   if (prevLineStart || _cursorLine == 1) {
+    char spaces[LINE_BUFFER_SIZE];
     int indent = getIndent(spaces, sizeof(spaces), prevLineStart);
     if (indent) {
       _buf.insertChars(_state.cursor, spaces, indent);
@@ -1261,13 +1320,11 @@ uint32_t TextEditInput::getHash(const char *str, int offs, int &count) {
        && !IS_WHITE(str[offs]) && str[offs] != '\0') {
     for (count = 0; count < keyword_max_len; count++) {
       char ch = str[offs + count];
-      if (!isalpha(ch) && ch != '_') {
+      if (ch == '.') {
+        // could be SELF keyword
+        break;
+      } else if (!isalpha(ch) && ch != '_') {
         // non keyword character
-        while (isalnum(ch) || ch == '.' || ch == '_') {
-          // skip any program variable characters
-          count++;
-          ch = str[offs + count];
-        }
         break;
       }
       result += tolower(str[offs + count]);
@@ -1421,30 +1478,18 @@ void TextEditInput::gotoNextMarker() {
 
 void TextEditInput::lineNavigate(bool arrowDown) {
   if (arrowDown) {
-    // starting from the cursor position (relative to the screen),
-    // count the number of rows to the bottom of the document.
-    int rowCount = _cursorLine - _scroll;
-    for (int i = _state.cursor; i < _buf._len; i++) {
-      if (_buf._buffer[i] == '\n') {
-        rowCount++;
-      }
-    }
-    int pageRows = (_height / _charHeight) - 1;
-    if (rowCount >= pageRows) {
-      // rows exist below end of page to pull up
-      for (int i = _state.cursor; i < _buf._len; i++) {
-        if (_buf._buffer[i] == '\n' && i + 1 < _buf._len) {
-          _state.cursor = i + 1;
-          _scroll += 1;
-          break;
-        }
-      }
+    if (!_bottom) {
+      StbTexteditRow r;
+      layout(&r, _state.cursor);
+      _state.cursor += r.num_chars;
+      _scroll += 1;
     }
   } else if (_scroll > 0) {
     int newLines = 0;
     int i = _state.cursor - 1;
     while (i > 0) {
       if (_buf._buffer[i] == '\n' && ++newLines == 2) {
+        // scan to before the previous line, then add 1
         break;
       }
       i--;
@@ -1625,7 +1670,7 @@ int TextEditInput::wordStart() {
   int cursor = _state.cursor == 0 ? 0 : _state.cursor - 1;
   return (_buf._buffer[cursor] == '\n' ? _state.cursor :
           is_word_boundary(&_buf, _state.cursor) ? _state.cursor :
-          stb_textedit_move_to_word_previous(&_buf, &_state));
+          stb_textedit_move_to_word_previous(&_buf, _state.cursor));
 }
 
 //
@@ -1689,6 +1734,9 @@ bool TextEditHelpWidget::edit(int key, int screenWidth, int charWidth) {
       result = TextEditInput::edit(key, screenWidth, charWidth);
     }
     break;
+  case kMessage:
+    //  readonly mode
+    break;
   default:
     switch (key) {
     case STB_TEXTEDIT_K_LEFT:
@@ -1704,9 +1752,12 @@ bool TextEditHelpWidget::edit(int key, int screenWidth, int charWidth) {
     case STB_TEXTEDIT_K_WORDLEFT:
     case STB_TEXTEDIT_K_WORDRIGHT:
       result = TextEditInput::edit(key, screenWidth, charWidth);
-      if (_mode == kOutline && _outline.size()) {
-        int cursor = (intptr_t)_outline[_cursorRow - 1];
+      if (_mode == kOutline && _cursorRow < _outline.size()) {
+        int cursor = (intptr_t)_outline[_cursorRow];
         _editor->setCursor(cursor);
+      } else if (_mode == kStacktrace && _cursorRow < _outline.size()) {
+        int cursorRow = (intptr_t)_outline[_cursorRow];
+        _editor->setCursorRow(cursorRow - 1);
       }
       break;
     case SB_KEY_ENTER:
@@ -1941,6 +1992,27 @@ void TextEditHelpWidget::createSearch(bool replace) {
   } else {
     reset(replace ? kSearchReplace : kSearch);
   }
+}
+
+void TextEditHelpWidget::createStackTrace(const char *error, int line, StackTrace &trace) {
+  reset(kStacktrace);
+
+  _outline.add((int *)(intptr_t)line);
+  _buf.append("Error:\n");
+
+  List_each(StackTraceNode *, it, trace) {
+    StackTraceNode *node = (*it);
+    _outline.add((int *)(intptr_t)node->_line);
+    _buf.append(" ", 1);
+    _buf.append(node->_keyword);
+    _buf.append("\n", 1);
+  }
+
+  _buf.append("\n", 1);
+  _buf.append(error);
+  _buf.append("\n", 1);
+  _outline.add((int *)(intptr_t)line);
+  _outline.add((int *)(intptr_t)line);
 }
 
 void TextEditHelpWidget::paste(const char *text) {

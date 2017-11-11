@@ -64,9 +64,8 @@ int has_wspace(const char *s) {
  * removes spaces
  */
 void str_alltrim(char *str) {
-  char *buf;
   if (str && has_wspace(str)) {
-    buf = trimdup(str);
+    char *buf = trimdup(str);
     strcpy(str, buf);
     free(buf);
   }
@@ -97,7 +96,7 @@ int strcaselessn(const char *s1, int s1n, const char *s2, int s2n) {
 }
 
 /**
- *
+ * transdup
  */
 char *transdup(const char *src, const char *what, const char *with, int ignore_case) {
   int lwhat = strlen(what);
@@ -144,15 +143,15 @@ char *transdup(const char *src, const char *what, const char *with, int ignore_c
   return dest;
 }
 
-/*
- *  strstr with support for quotes
+/**
+ * strstr with support for quotes
  */
 char *q_strstr(const char *s1, const char *s2, const char *pairs) {
-  char *p, *z;
+  char *z;
   int l2;
   int wait_q, open_q, level_q;
 
-  p = (char *) s1;
+  char *p = (char *) s1;
   l2 = strlen(s2);
   wait_q = open_q = level_q = 0;
 
@@ -170,12 +169,16 @@ char *q_strstr(const char *s1, const char *s2, const char *pairs) {
       // delimiter
 
       if (wait_q && open_q) {
-        if (*(z + 1) == wait_q) // open_q of our pair?
-          level_q++;            // increase level
-      } else if (wait_q)
-        ;         // do nothing, I am waitting something
+        // open_q of our pair?
+        if (*(z + 1) == wait_q) {
+          // increase level
+          level_q++;
+        }
+      } else if (wait_q) {
+        // do nothing, I am waitting something
       // else
-      else {                    // its a new section
+      } else {
+        // its a new section
         if (open_q) {
           level_q++;            // level = 1
           wait_q = *(z + 1);    // what to wait for
@@ -194,7 +197,7 @@ char *q_strstr(const char *s1, const char *s2, const char *pairs) {
 }
 
 /**
- *
+ * is_alpha
  */
 int is_alpha(int ch) {
   if (ch == 0) {
@@ -286,11 +289,11 @@ char *strlower(char *str) {
  * Warning: octals are different from C (QB compatibility: 009 = 9)
  */
 char *get_numexpr(char *text, char *dest, int *type, var_int_t *lv, var_num_t *dv) {
-  char *p = (char *) text;
+  char *p = (char *)text;
   char *d = dest;
   char *epos = NULL;
   byte base = 10;
-  byte dpc = 0, stupid_e_fmt = 0, eop = '+';
+  byte dpc = 0, e_fmt = 0, eop = '+';
   int sign = 1;
   var_num_t power = 1.0;
   var_num_t num;
@@ -312,7 +315,8 @@ char *get_numexpr(char *text, char *dest, int *type, var_int_t *lv, var_num_t *d
       *(p + 1) != '\0'){if (*p == '-') {
       sign = -1;
     }
-    p++;                        // don't copy it
+    // don't copy it
+    p++;
   }
 
   //
@@ -336,8 +340,9 @@ char *get_numexpr(char *text, char *dest, int *type, var_int_t *lv, var_num_t *d
       base = 2;
       break;
     default:
+      // Unknown base
       *type = -1;
-      return p;                 // Unknown base
+      return p;
     }
 
     p++;
@@ -363,7 +368,8 @@ char *get_numexpr(char *text, char *dest, int *type, var_int_t *lv, var_num_t *d
       if (*p == '.') {
         dpc++;
         if (dpc > 1) {
-          *type = -2;           // DP ERROR
+          // DP ERROR
+          *type = -2;
           break;
         }
       }
@@ -373,7 +379,8 @@ char *get_numexpr(char *text, char *dest, int *type, var_int_t *lv, var_num_t *d
     // check second part
     if ((*p == 'E' || *p == 'e') && (*type == 0)) {
       epos = d;
-      *d++ = *p++;              // E
+      // E
+      *d++ = *p++;
 
       if (*p == '+' || *p == '-' || is_digit(*p) || *p == '.') {
         dpc = 0;
@@ -381,10 +388,10 @@ char *get_numexpr(char *text, char *dest, int *type, var_int_t *lv, var_num_t *d
         // copy second part (power)
         if (*p == '+' || *p == '-') {
           *d++ = *p++;
-          if (strchr("+-*/\\^", *p) != 0) { // stupid E format
-            // (1E--9 ||
-            // 1E++9)
-            stupid_e_fmt = 1;
+          if (strchr("+-*/\\^", *p) != 0) {
+            // stupid E format
+            // (1E--9 || 1E++9)
+            e_fmt = 1;
             eop = *p;
             *d++ = *p++;
             if (*p == '+' || *p == '-') {
@@ -397,19 +404,23 @@ char *get_numexpr(char *text, char *dest, int *type, var_int_t *lv, var_num_t *d
           if (*p == '.') {
             dpc++;
             if (dpc > 1) {
-              *type = -4;       // DP ERROR (second part)
+              // DP ERROR (second part)
+              *type = -4;
               break;
             }
           }
           *d++ = *p++;
-        }                       // after E
-      }                         //
+          // after E
+        }
+      }
       else {
-        *type = -3;             // E+- ERROR
+        // E+- ERROR
+        *type = -3;
       }
     }
   } else {
-    *type = -9;                 // NOT A NUMBER
+    // NOT A NUMBER
+    *type = -9;
   }
   *d = '\0';
 
@@ -420,23 +431,17 @@ char *get_numexpr(char *text, char *dest, int *type, var_int_t *lv, var_num_t *d
     switch (base) {
     case 10:
       if (dpc || (epos != NULL) || (strlen(dest) > 8)) {
-        *type = 2;              // double
+        // double
+        *type = 2;
         if (epos) {
-          if (stupid_e_fmt) {
+          if (e_fmt) {
             int r_type = 1;
 
             *epos = '\0';
             num = sb_strtof(dest) * ((double) sign);
-            *epos = 'E';        // restore E
+            // restore E
+            *epos = 'E';
 
-            /*
-             * if ( *p == 'E' || *p == 'e' ) { long r_lv; double r_dv;
-             *
-             * p = get_numexpr(epos_on_text+3, dest, &r_type, &r_lv, &r_dv);
-             *
-             * switch ( r_type ) { case 1: power = r_lv; break; case 2: power =
-             * r_dv; break; default: // error *type = r_type; } } else
-             */
             power = sb_strtof(epos + 3);
 
             if (r_type > 0) {
@@ -456,7 +461,6 @@ char *get_numexpr(char *text, char *dest, int *type, var_int_t *lv, var_num_t *d
                 } else {
                   *dv = 0;
                 }
-                // else if(comp) sc_raise() else rt_raise
                 break;
               case '\\':
                 if ((long) power != 0) {
@@ -466,7 +470,6 @@ char *get_numexpr(char *text, char *dest, int *type, var_int_t *lv, var_num_t *d
                   *type = 1;
                   *lv = 0;
                 }
-                // else if(comp) sc_raise() else rt_raise
                 break;
               case '^':
                 *dv = pow(num, power);
@@ -484,27 +487,27 @@ char *get_numexpr(char *text, char *dest, int *type, var_int_t *lv, var_num_t *d
         }
       } else {
         // dpc = 0 && epos = 0
-        *type = 1;              // int32_t
+        *type = 1;
         *lv = xstrtol(dest) * sign;
       }
       break;
     case 16:
-      *type = 1;                // int32_t
+      *type = 1;
       *lv = hextol(dest);
       break;
     case 8:
-      *type = 1;                // int32_t
+      *type = 1;
       *lv = octtol(dest);
       break;
     case 2:
-      *type = 1;                // int32_t
+      *type = 1;
       *lv = bintol(dest);
       break;
     }
   }
-  //
   if (is_alpha(*p)) {
-    *type = -9;                 // ITS NOT A NUMBER
+    // its not a number
+    *type = -9;
   }
   while (is_space(*p)) {
     p++;
@@ -513,26 +516,26 @@ char *get_numexpr(char *text, char *dest, int *type, var_int_t *lv, var_num_t *d
 }
 
 /**
- *
+ * numexpr_sb_strtof
  */
 var_num_t numexpr_sb_strtof(char *source) {
-  char buf[BUF_SIZE], *np;
+  char buf[BUF_SIZE];
   int type;
   var_int_t lv;
   var_num_t dv;
 
-  np = get_numexpr(source, buf, &type, &lv, &dv);
+  get_numexpr(source, buf, &type, &lv, &dv);
 
-  if (type == 1 && *np == '\0') {
+  if (type == 1) {
     return (var_num_t) lv;
-  } else if (type == 2 && *np == '\0') {
+  } else if (type == 2) {
     return dv;
   }
   return 0.0;
 }
 
 /**
- *
+ * numexpr_strtol
  */
 var_int_t numexpr_strtol(char *source) {
   char buf[BUF_SIZE], *np;
@@ -624,7 +627,6 @@ var_num_t sb_strtof(const char *str) {
   var_num_t r = 0.0;
   int negate = 0;
   int places = 0;
-  int dot = 0;
 
   if (p != NULL) {
     if (*p == '-') {
@@ -633,6 +635,7 @@ var_num_t sb_strtof(const char *str) {
     } else if (*p == '+') {
       p++;
     }
+    int dot = 0;
     while (*p) {
       if (is_digit(*p)) {
         r = r * 10.0f + (*p - '0');
@@ -657,7 +660,7 @@ var_num_t sb_strtof(const char *str) {
 }
 
 /**
- *
+ * xstrtol
  */
 long xstrtol(const char *str) {
   if (str == NULL) {
@@ -708,7 +711,7 @@ char *ftostr(var_num_t num, char *dest) {
 }
 
 /**
- *
+ * ltostr
  */
 char *ltostr(var_int_t num, char *dest) {
   sprintf(dest, VAR_INT_FMT, num);
@@ -751,7 +754,7 @@ char *sqzdup(const char *source) {
             while (*nc != '\0' && is_wspace(*nc))
               nc++;
             if (is_alpha(*nc) || is_digit(*nc)
-              )
+                )
               *d++ = ' ';
           }
         }
@@ -776,19 +779,17 @@ char *sqzdup(const char *source) {
  * enclose, returns a newly created string
  */
 char *encldup(const char *source, const char *pairs) {
-  char *rp;
-  int l;
+  int l = strlen(source);
+  char *rp = malloc(l + 3);
 
-  l = strlen(source);
-  rp = malloc(l + 3);
   memcpy(rp + 1, source, l);
   *(rp) = pairs[0];
-  if (pairs[1])
+  if (pairs[1]) {
     *(rp + l + 1) = pairs[1];
-  else
+  } else {
     *(rp + l + 1) = pairs[0];
+  }
   *(rp + l + 2) = '\0';
-
   return rp;
 }
 
@@ -796,34 +797,36 @@ char *encldup(const char *source, const char *pairs) {
  * disclose, returns a newly created string
  */
 char *discldup(const char *source, const char *pairs, const char *ignpairs) {
-  char *rp, *np, *r, *p, *z;
-  int wait_p = 0, open_p = 0, level_p = 0;
-  int wait_q = 0, open_q = 0, level_q = 0;
+  char *np, *z;
+  int wait_p = 0, level_p = 0;
+  int wait_q = 0, level_q = 0;
   int record = 0;
 
-  rp = strdup(source);
-  r = rp;
+  char *rp = strdup(source);
+  char *r = rp;
+  char *p = (char *) source;
 
-  p = (char *) source;
   while (*p) {
-
     // ignore pairs
-    if (*p == wait_q) {         // ignore pair - level down
+    if (*p == wait_q) {
+      // ignore pair - level down
       level_q--;
       if (level_q <= 0) {
         level_q = 0;
         wait_q = 0;
       }
     } else if ((z = strchr(ignpairs, *p)) != NULL) {
-      open_q = ((z - ignpairs) + 1) % 2;
+      int open_q = ((z - ignpairs) + 1) % 2;
 
       if (wait_q && open_q) {
-        if (*(z + 1) == wait_q) // open_q of our pair?
+        if (*(z + 1) == wait_q) {
+          // open_q of our pair?
           level_q++;
-      } else if (wait_q)
-        ;         // do nothing, I am waitting something
-      // else
-      else {                    // new pair
+        }
+      } else if (wait_q) {
+        // do nothing, I am waitting something
+      } else {
+        // new pair
         if (open_q) {
           level_q++;
           wait_q = *(z + 1);
@@ -840,15 +843,17 @@ char *discldup(const char *source, const char *pairs, const char *ignpairs) {
         break;
       }
     } else if ((z = strchr(pairs, *p)) != NULL && wait_q == 0) {
-      open_p = ((z - pairs) + 1) % 2;
+      int open_p = ((z - pairs) + 1) % 2;
 
       if (wait_p && open_p) {
-        if (*(z + 1) == wait_p) // open_q of our pair?
+        if (*(z + 1) == wait_p) {
+          // open_q of our pair?
           level_p++;
-      } else if (wait_p)
-        ;         // do nothing, I am waitting something
-      // else
-      else {                    // new pair
+        }
+      } else if (wait_p) {
+        // do nothing, I am waitting something
+      } else {
+        // new pair
         if (open_p) {
           level_p++;
           wait_p = *(z + 1);
@@ -857,16 +862,18 @@ char *discldup(const char *source, const char *pairs, const char *ignpairs) {
       }
     }
     // next
-    if (record == 1)            // ignore the first
+    if (record == 1) {
+      // ignore the first
       record++;
-    else if (record == 2)
+    } else if (record == 2) {
       *r++ = *p;
-
+    }
     p++;
   }
 
   *r = '\0';
-  np = strdup(rp);          // actually, resize down
+  // actually, resize down
+  np = strdup(rp);
   free(rp);
 
   return np;
@@ -1045,7 +1052,7 @@ char *bstrdup(const char *source) {
 }
 
 /**
- *
+ * baseof
  */
 const char *baseof(const char *source, int delim) {
   const char *p;
@@ -1100,4 +1107,3 @@ void cstr_append(cstr *cs, const char *str) {
   strcat(cs->buf, str);
   cs->length += len;
 }
-

@@ -213,3 +213,152 @@ for i=10 to 9 step 2:next
 assertEq i, 10, PROGLINE
 for i=1 to 2 step -1: next
 assertEq i, 1, PROGLINE
+
+' 0.12.10
+func x
+  return 101
+end
+func f(x)
+  if (x==1) then return "x"
+  if (x==2) then return "y"
+  return x()-1
+end
+if f(99) != 100 then throw "func return error"
+
+sub my_sub(arg1)
+  sub test_sub(arg2)
+     if (arg2==111) then return
+     print "failed 1"
+  end
+  test_sub(arg1)
+  if (true) then
+     if (arg1==111) then return
+  endif
+  print "failed 2"
+  return
+end
+my_sub(111)
+
+rem --- FUNC method uses SELF for temporary storage
+func Grid()
+  func get_x
+     return self.x
+  end
+  sub incr_x
+     self.x++
+  end
+  result = {}
+  result.x = 0
+  result.get_x = @get_x
+  result.incr_x = @incr_x
+  return result
+end
+
+g=Grid()
+gx = 0
+for i = 0 to 2
+  g.incr_x()
+  gx = g.get_x()
+next i
+
+if (gx != 3) then
+  throw "method error"
+endif
+
+func GridBox(og)
+  func gridWrapper()
+    self.my_g.incr_x()
+    return self.my_g.x
+  end
+  result = {}
+  result.my_g = og
+  result.nested = @gridWrapper
+  result.my_x = 3
+  return result
+end
+
+gb = GridBox(g)
+bx = gb.nested()
+if (bx != 4) then
+  throw "nested method error1: " + bx
+endif
+bx = gb.my_x
+if (bx  != 3) then
+  throw "nested method error2: " + bx
+endif
+
+rem -------
+func tuple()
+  return [10,20,30]
+end
+
+(a1,b1,c1) = tuple()
+if a1 != 10 or b1 != 20 or c1 != 30 then
+  throw "packing error"
+endif
+
+rem --- test var_eval inside packed let
+aaa=[1,2,3]
+[_a1,_a2,_a3]=aaa
+if _a1 != 1 or _a2 != 2 or _a3 != 3 then
+  throw "packing error"
+endif
+
+a = nil
+b = 0
+if a != nil then
+  throw "nil error1"
+endif
+if a == b then
+  throw "nil error2"
+endif
+
+if (maxint == 0)
+  throw "maxint not defined"
+endif
+
+local a=[1,2,3,4]
+local b=IFF(a[0]==1,999,2)
+if (b != 999) then throw "inline local assignment error"
+
+rem ---- cleanup LOCALs from the STACK
+frame = 0
+while 1
+  if (frame == 65536) then
+    exit loop
+  endif
+  rem LOCAL here goes out of scope (poped from stack) in WEND
+  rem processing. More efficient to declare local at a higher
+  rem block level but need to at least avoid a stack overflow
+  local t1 = tick
+  frame++
+wend
+
+rem ---- optimised array handling
+key.x=12
+key.y=22
+dim aa
+aa << key
+kk = aa[0]
+if (kk.x != 12 or kk.y != 22) then throw "ERR"
+
+rem ensure calling: for i in s.moves()
+rem does not cause moves() to be called twice
+func KlotskiState()
+  func moves()
+    if (moves_called) then throw "var_eval error"
+    moves_called = true
+    return [1,2,3]
+  end
+  moves_called = false
+  for i in moves()
+  next i  
+  local state = {}
+  state.moves = @moves
+  return state
+end  
+s = KlotskiState()
+moves_called = false
+for i in s.moves()
+next i  
+

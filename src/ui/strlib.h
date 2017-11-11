@@ -1,6 +1,6 @@
 // This file is part of SmallBASIC
 //
-// Copyright(C) 2001-2014 Chris Warren-Smith.
+// Copyright(C) 2001-2017 Chris Warren-Smith.
 //
 // This program is distributed under the terms of the GPL v2.0 or later
 // Download the GNU Public License (GPL) from www.gnu.org
@@ -14,13 +14,6 @@
 #include <stdlib.h>
 #include <time.h>
 #include <ctype.h>
-
-#ifndef MAX
-#define MAX(a,b) ((a<b) ? (b) : (a))
-#endif
-#ifndef MIN
-#define MIN(a,b) ((a>b) ? (b) : (a))
-#endif
 
 #ifndef IS_WHITE
 #define IS_WHITE(c) (c == ' '|| c == '\n' || c == '\r' || c == '\t')

@@ -16,7 +16,7 @@
 #include "common/var_eval.h"
 
 /**
- * Convertion multi-dim index to one-dim index
+ * Convert multi-dim index to one-dim index
  */
 bcip_t get_array_idx(var_t *array) {
   bcip_t idx = 0;
@@ -67,7 +67,7 @@ bcip_t get_array_idx(var_t *array) {
 }
 
 /**
- * Returns the map field along with the parent map
+ * Returns the map field along with the immediate parent map
  */
 var_t *code_getvarptr_map(var_t **var_map) {
   var_t *var_p = NULL;
@@ -75,25 +75,25 @@ var_t *code_getvarptr_map(var_t **var_map) {
     code_skipnext();
     *var_map = tvar[code_getaddr()];
     if (code_peek() == kwTYPE_UDS_EL) {
-      var_p = code_resolve_map(*var_map, 1);
+      var_p = map_resolve_fields(*var_map, var_map);
     }
   }
   return var_p;
 }
 
-void v_set_self(var_t *var) {
-  if (ctask->has_sysvars) {
-    var_t *self = tvar[SYSVAR_SELF];
-    if (var != NULL) {
-      self->const_flag = 0;
-      self->type = V_REF;
-      self->v.ref = var;
-    } else if (self->type != V_INT) {
-      self->const_flag = 1;
-      self->type = V_INT;
-      self->v.i = 0;
-    }
+var_t *v_set_self(var_t *map) {
+  var_t *self = tvar[SYSVAR_SELF];
+  var_t *result = (self->type == V_REF) ? self->v.ref : NULL;
+  if (map != NULL) {
+    self->const_flag = 0;
+    self->type = V_REF;
+    self->v.ref = map;
+  } else {
+    self->const_flag = 1;
+    self->type = V_INT;
+    self->v.i = 0;
   }
+  return result;
 }
 
 /**
@@ -138,9 +138,9 @@ var_t *code_get_map_element(var_t *map, var_t *field) {
     err_arrmis_lp();
   } else if (field->type == V_PTR) {
     prog_ip = cmd_push_args(kwFUNC, field->v.ap.p, field->v.ap.v);
-    v_set_self(map);
+    var_t *self = v_set_self(map);
     bc_loop(2);
-    v_set_self(NULL);
+    v_set_self(self);
 
     if (!prog_error) {
       stknode_t udf_rv;
@@ -148,10 +148,14 @@ var_t *code_get_map_element(var_t *map, var_t *field) {
       if (udf_rv.type != kwTYPE_RET) {
         err_stackmess();
       } else {
-        v_set(map, udf_rv.x.vdvar.vptr);
-        v_free(udf_rv.x.vdvar.vptr);
+        // result must exist until processed in eval()
+        var_p_t var = map_get(map, MAP_TMP_FIELD);
+        if (var == NULL) {
+          var = map_add_var(map, MAP_TMP_FIELD, 0);
+        }
+        v_move(var, udf_rv.x.vdvar.vptr);
         v_detach(udf_rv.x.vdvar.vptr);
-        result = map;
+        result = var;
       }
     }
   } else if (field->type == V_ARRAY) {
@@ -189,7 +193,7 @@ var_t *code_resolve_varptr(var_t *var_p, int until_parens) {
       }
       break;
     case kwTYPE_UDS_EL:
-      var_p = map_resolve_fields(var_p);
+      var_p = map_resolve_fields(var_p, NULL);
       break;
     default:
       deref = 0;
@@ -204,7 +208,6 @@ var_t *code_resolve_varptr(var_t *var_p, int until_parens) {
 var_t *code_resolve_map(var_t *var_p, int until_parens) {
   int deref = 1;
   var_t *v_parent = var_p;
-  var_p = eval_ref_var(var_p);
   while (deref && var_p != NULL) {
     switch (code_peek()) {
     case kwTYPE_LEVEL_BEGIN:
@@ -215,7 +218,46 @@ var_t *code_resolve_map(var_t *var_p, int until_parens) {
       }
       break;
     case kwTYPE_UDS_EL:
-      var_p = map_resolve_fields(var_p);
+      var_p = map_resolve_fields(var_p, &v_parent);
+      break;
+    default:
+      deref = 0;
+    }
+    var_p = eval_ref_var(var_p);
+  }
+  return var_p;
+}
+
+var_t *resolve_var_ref(var_t *var_p) {
+  switch (code_peek()) {
+  case kwTYPE_LEVEL_BEGIN:
+    var_p = resolve_var_ref(code_getvarptr_arridx(var_p));
+    break;
+  case kwTYPE_UDS_EL:
+    var_p = resolve_var_ref(map_resolve_fields(var_p, NULL));
+    break;
+  }
+  return var_p;
+}
+
+/**
+ * resolve the map without invoking any V_PTRs
+ */
+var_t *code_isvar_resolve_map(var_t *var_p, int *is_ptr) {
+  int deref = 1;
+  var_t *v_parent = var_p;
+  while (deref && var_p != NULL) {
+    switch (code_peek()) {
+    case kwTYPE_LEVEL_BEGIN:
+      if (var_p->type == V_PTR) {
+        *is_ptr = 1;
+        deref = 0;
+      } else {
+        var_p = code_get_map_element(v_parent, var_p);
+      }
+      break;
+    case kwTYPE_UDS_EL:
+      var_p = map_resolve_fields(var_p, NULL);
       break;
     default:
       deref = 0;
@@ -230,43 +272,49 @@ var_t *code_resolve_map(var_t *var_p, int until_parens) {
  * expression (no matter if the first item is a variable), returns false
  */
 int code_isvar() {
-  var_t *basevar_p;
-  var_t *var_p = NULL;
-
-  // store IP
-  bcip_t cur_ip = prog_ip;
-
   if (code_peek() == kwTYPE_VAR) {
+    int is_ptr;
+    var_t *basevar_p;
+    bcip_t cur_ip = prog_ip;
+
     code_skipnext();
-    var_p = basevar_p = tvar[code_getaddr()];
+    var_t *var_p = basevar_p = tvar[code_getaddr()];
     switch (basevar_p->type) {
     case V_MAP:
-      var_p = code_resolve_map(var_p, 0);
+      is_ptr = 0;
+      var_p = code_isvar_resolve_map(var_p, &is_ptr);
+      if (is_ptr) {
+        // restore IP
+        prog_ip = cur_ip;
+        return 1;
+      }
       break;
     case V_ARRAY:
       var_p = code_resolve_varptr(var_p, 0);
+      break;
+    case V_REF:
+      var_p = resolve_var_ref(var_p);
       break;
     default:
       if (code_peek() == kwTYPE_LEVEL_BEGIN) {
         var_p = NULL;
       }
     }
-  }
-
-  if (var_p) {
-    byte code = code_peek();
-    if (code == kwTYPE_EOC ||
-        code == kwTYPE_SEP ||
-        code == kwTYPE_LEVEL_END ||
-        kw_check_evexit(code)) {
-      // restore IP
-      prog_ip = cur_ip;
-      return 1;
+    if (var_p) {
+      byte code = code_peek();
+      if (code == kwTYPE_EOC ||
+          code == kwTYPE_SEP ||
+          code == kwTYPE_LEVEL_END ||
+          kw_check_evexit(code)) {
+        // restore IP
+        prog_ip = cur_ip;
+        return 1;
+      }
     }
-  }
 
-  // restore IP
-  prog_ip = cur_ip;
+    // restore IP
+    prog_ip = cur_ip;
+  }
   return 0;
 }
 
@@ -283,89 +331,6 @@ var_t *eval_ref_var(var_t *var_p) {
     }
   }
   return result;
-}
-
-var_t *resolve_var_ref(var_t *var_p) {
-  switch (code_peek()) {
-  case kwTYPE_LEVEL_BEGIN:
-    var_p = resolve_var_ref(code_getvarptr_arridx(var_p));
-    break;
-  case kwTYPE_UDS_EL:
-    var_p = resolve_var_ref(map_resolve_fields(var_p));
-    break;
-  }
-  return var_p;
-}
-
-void v_eval_ref(var_t *v_left) {
-  var_t *v_right = NULL;
-  // can only reference regular non-dynamic variable
-  if (code_peek() == kwTYPE_VAR) {
-    code_skipnext();
-    v_right = tvar[code_getaddr()];
-    switch (v_right->type) {
-    case V_ARRAY:
-    case V_MAP:
-      switch (code_peek()) {
-      case kwTYPE_LEVEL_BEGIN:
-      case kwTYPE_UDS_EL:
-        // base variable or element reference only supported
-        v_right = resolve_var_ref(v_right);
-        if (v_right != NULL && v_right->type != V_REF) {
-          v_right = NULL;
-        }
-        break;
-      }
-      break;
-    default:
-      break;
-    }
-    if (v_right != NULL) {
-      int i;
-      int level = 0;
-      int left_level = -1;
-      int right_level = -1;
-      for (i = 0; i < prog_stack_count; i++) {
-        stknode_t *cur_node = &prog_stack[i];
-        var_t *v_stack = NULL;
-        switch (cur_node->type) {
-        case kwTYPE_CRVAR:
-        case kwBYREF:
-          v_stack = tvar[cur_node->x.vdvar.vid];
-          break;
-        case kwTYPE_VAR:
-          v_stack = cur_node->x.param.res;
-          break;
-        case kwPROC:
-        case kwFUNC:
-        case kwFOR:
-        case kwSELECT:
-          level++;
-          break;
-        }
-        if (v_stack != NULL) {
-          int next_level = (cur_node->type == kwBYREF) ? level -1 : level;
-          if (left_level == -1 && v_left == v_stack) {
-            left_level = next_level;
-          }
-          if (right_level == -1 && v_right == v_stack) {
-            right_level = next_level;
-          }
-        }
-      }
-      if (left_level < right_level && right_level > 0) {
-        // cannot assign left to higher scope right variable
-        v_right = NULL;
-      }
-    }
-  }
-  if (v_right == NULL) {
-    err_ref_var();
-  } else {
-    v_free(v_left);
-    v_left->type = V_REF;
-    v_left->v.ref = v_right;
-  }
 }
 
 /*

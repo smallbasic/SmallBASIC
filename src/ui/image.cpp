@@ -459,7 +459,11 @@ ImageDisplay *create_display_image(var_p_t var, const char *name) {
       if (result->_opacity == -1) {
         result->_opacity = 0;
       }
+    } else {
+      err_throw(ERR_IMAGE_LOAD, name);
     }
+  } else {
+    err_throw(ERR_IMAGE_LOAD, "name field empty");
   }
   return result;
 }

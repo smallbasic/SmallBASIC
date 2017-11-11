@@ -272,14 +272,8 @@ void Graphics::drawLine(int startX, int startY, int endX, int endY) {
 }
 
 void Graphics::drawPixel(int posX, int posY) {
-  if (_drawTarget
-      && posX >= _drawTarget->x()
-      && posY >= _drawTarget->y()
-      && posX < _drawTarget->w()
-      && posY < _drawTarget->h()) {
-    pixel_t *line = _drawTarget->getLine(posY);
-    line[posX] = _drawColor;
-  }
+  pixel_t *line = _drawTarget->getLine(posY);
+  line[posX] = _drawColor;
 }
 
 void Graphics::drawRGB(const MAPoint2d *dstPoint, const void *src,

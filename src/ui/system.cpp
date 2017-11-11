@@ -1,6 +1,6 @@
 // This file is part of SmallBASIC
 //
-// Copyright(C) 2001-2015 Chris Warren-Smith.
+// Copyright(C) 2001-2017 Chris Warren-Smith.
 //
 // This program is distributed under the terms of the GPL v2.0 or later
 // Download the GNU Public License (GPL) from www.gnu.org
@@ -31,20 +31,21 @@
 #define MENU_CUT        7
 #define MENU_COPY       8
 #define MENU_PASTE      9
-#define MENU_CTRL_MODE  10
-#define MENU_EDITMODE   11
-#define MENU_AUDIO      12
-#define MENU_SCREENSHOT 13
-#define MENU_UNDO       14
-#define MENU_REDO       15
-#define MENU_SAVE       16
-#define MENU_RUN        17
-#define MENU_DEBUG      18
-#define MENU_OUTPUT     19
-#define MENU_HELP       20
-#define MENU_SHORTCUT   21
-#define MENU_SHARE      22
-#define MENU_SIZE       23
+#define MENU_SELECT_ALL 10
+#define MENU_CTRL_MODE  11
+#define MENU_EDITMODE   12
+#define MENU_AUDIO      13
+#define MENU_SCREENSHOT 14
+#define MENU_UNDO       15
+#define MENU_REDO       16
+#define MENU_SAVE       17
+#define MENU_RUN        18
+#define MENU_DEBUG      19
+#define MENU_OUTPUT     20
+#define MENU_HELP       21
+#define MENU_SHORTCUT   22
+#define MENU_SHARE      23
+#define MENU_SIZE       24
 #define MENU_COMPETION_0  (MENU_SIZE + 1)
 #define MENU_COMPETION_1  (MENU_SIZE + 2)
 #define MENU_COMPETION_2  (MENU_SIZE + 3)
@@ -103,14 +104,8 @@ System::~System() {
   _editor = NULL;
 }
 
-void System::checkModifiedTime() {
-  if (opt_ide == IDE_EXTERNAL && !_activeFile.empty() &&
-      _modifiedTime != getModifiedTime()) {
-    setRestart();
-  }
-}
-
 bool System::execute(const char *bas) {
+  _stackTrace.removeAll();
   _output->reset();
   reset_image_cache();
 
@@ -121,8 +116,8 @@ bool System::execute(const char *bas) {
   opt_pref_width = _output->getWidth();
   opt_pref_height = _output->getHeight();
   opt_base = 0;
-  opt_uipos = 0;
   opt_usepcre = 0;
+  opt_autolocal = 0;
 
   _state = kRunState;
   setWindowTitle(bas);
@@ -135,6 +130,7 @@ bool System::execute(const char *bas) {
   if (_editor == NULL) {
     opt_command[0] = '\0';
   }
+  enableCursor(true);
   opt_file_permitted = 1;
   _output->selectScreen(USER_SCREEN1);
   _output->resetFont();
@@ -321,6 +317,12 @@ void System::handleMenu(MAEvent &event) {
       free(text);
     }
     break;
+  case MENU_SELECT_ALL:
+    if (get_focus_edit() != NULL) {
+      get_focus_edit()->selectAll();
+      _output->redraw();
+    }
+    break;
   case MENU_CTRL_MODE:
     if (get_focus_edit() != NULL) {
       bool controlMode = get_focus_edit()->getControlMode();
@@ -328,12 +330,7 @@ void System::handleMenu(MAEvent &event) {
     }
     break;
   case MENU_EDITMODE:
-#if defined(_SDL)
-    opt_ide = (opt_ide == IDE_NONE ? IDE_INTERNAL :
-               opt_ide == IDE_INTERNAL ? IDE_EXTERNAL : IDE_NONE);
-#else
     opt_ide = (opt_ide == IDE_NONE ? IDE_INTERNAL : IDE_NONE);
-#endif
     break;
   case MENU_AUDIO:
     opt_mute_audio = !opt_mute_audio;
@@ -456,9 +453,6 @@ void System::handleEvent(MAEvent &event) {
     _output->flush(false);
     break;
   }
-  if (opt_ide == IDE_EXTERNAL) {
-    checkModifiedTime();
-  }
 }
 
 char *System::loadResource(const char *fileName) {
@@ -509,10 +503,20 @@ bool System::loadSource(const char *fileName) {
   return false;
 }
 
+void System::logStack(const char *keyword, int type, int line) {
+#if defined(_SDL)
+  if (_editor != NULL) {
+    if (type == kwPROC || type == kwFUNC) {
+      _stackTrace.add(new StackTraceNode(keyword, type, line));
+    }
+  }
+#endif
+}
+
 char *System::readSource(const char *fileName) {
   _activeFile.clear();
   char *buffer;
-  if (_editor != NULL && _loadPath.equals(fileName)) {
+  if (!_mainBas && _editor != NULL && _loadPath.equals(fileName)) {
     buffer = _editor->getTextSelection();
   } else {
     buffer = loadResource(fileName);
@@ -612,8 +616,8 @@ void System::runMain(const char *mainBasPath) {
       }
     }
 
-    if (!_mainBas && opt_ide == IDE_INTERNAL && !isRestart() &&
-        _loadPath.indexOf("://", 1) == -1 && loadSource(_loadPath)) {
+    if (!_mainBas && !isRestart() && isEditEnabled() &&
+        !isNetworkLoad() && loadSource(_loadPath)) {
       editSource(_loadPath);
       if (isBack()) {
         _loadPath.clear();
@@ -625,9 +629,9 @@ void System::runMain(const char *mainBasPath) {
     }
 
     bool success = execute(_loadPath);
-    bool networkFile = (_loadPath.indexOf("://", 1) != -1);
+    bool networkFile = isNetworkLoad();
     if (!isBack() && !isClosing() &&
-        (opt_ide != IDE_INTERNAL || success || networkFile)) {
+        (success || networkFile || !isEditEnabled())) {
       // when editing, only pause here when successful, otherwise the editor shows
       // the error. load the next network file without displaying the previous result
       if (!_mainBas && !networkFile) {
@@ -778,8 +782,7 @@ void System::setRunning(bool running) {
     setDimensions();
     dev_clrkb();
     _output->setAutoflush(!opt_show_page);
-    if (_mainBas || opt_ide != IDE_INTERNAL ||
-        _loadPath.indexOf("://", 1) != -1) {
+    if (_mainBas || isNetworkLoad() || !isEditEnabled()) {
       _loadPath.clear();
     }
     _userScreenId = -1;
@@ -830,6 +833,7 @@ void System::showMenu() {
         items->add(new String("Cut"));
         items->add(new String("Copy"));
         items->add(new String("Paste"));
+        items->add(new String("Select All"));
         items->add(new String("Save"));
         items->add(new String("Run"));
 #if defined(_SDL)
@@ -845,6 +849,7 @@ void System::showMenu() {
         _systemMenu[index++] = MENU_CUT;
         _systemMenu[index++] = MENU_COPY;
         _systemMenu[index++] = MENU_PASTE;
+        _systemMenu[index++] = MENU_SELECT_ALL;
         _systemMenu[index++] = MENU_SAVE;
         _systemMenu[index++] = MENU_RUN;
 #if defined(_SDL)
@@ -856,9 +861,11 @@ void System::showMenu() {
         items->add(new String("Cut"));
         items->add(new String("Copy"));
         items->add(new String("Paste"));
+        items->add(new String("Select All"));
         _systemMenu[index++] = MENU_CUT;
         _systemMenu[index++] = MENU_COPY;
         _systemMenu[index++] = MENU_PASTE;
+        _systemMenu[index++] = MENU_SELECT_ALL;
       }
 #if defined(_SDL)
       items->add(new String("Back"));
@@ -895,8 +902,7 @@ void System::showMenu() {
         items->add(new String(buffer));
         _systemMenu[index++] = MENU_ZOOM_UP;
         _systemMenu[index++] = MENU_ZOOM_DN;
-        sprintf(buffer, "Editor [%s]", (opt_ide == IDE_NONE ? "OFF" :
-                                        opt_ide == IDE_INTERNAL ? "ON" : "Live Mode"));
+        sprintf(buffer, "Editor [%s]", opt_ide == IDE_NONE ? "OFF" : "ON");
         items->add(new String(buffer));
         _systemMenu[index++] = MENU_EDITMODE;
       }
@@ -1175,7 +1181,7 @@ void osd_setcolor(long color) {
 }
 
 void osd_setpenmode(int enable) {
-  // touch mode is always active
+  g_system->enableCursor(enable);
 }
 
 void osd_setpixel(int x, int y) {
@@ -1231,6 +1237,9 @@ int maGetMilliSecondCount(void) {
 void create_func(var_p_t map, const char *name, method cb) {
   var_p_t v_func = map_add_var(map, name, 0);
   v_func->type = V_FUNC;
-  v_func->v.fn.self = map;
   v_func->v.fn.cb = cb;
+}
+
+void dev_log_stack(const char *keyword, int type, int line) {
+  return g_system->logStack(keyword, type, line);
 }

@@ -66,16 +66,16 @@ static inline var_int_t code_getint() {
  */
 static inline var_num_t v_getval(var_t *v) {
   switch (v ? v->type : -1) {
-  case V_MAP:
-    return map_to_int(v);
-  case V_PTR:
-    return v->v.ap.p;
   case V_INT:
     return v->v.i;
   case V_NUM:
     return v->v.n;
   case V_STR:
     return numexpr_sb_strtof((char *) v->v.p.ptr);
+  case V_PTR:
+    return v->v.ap.p;
+  case V_MAP:
+    return map_to_int(v);
   default:
     if (v == NULL) {
       err_evsyntax();
@@ -99,16 +99,16 @@ static inline var_num_t v_getval(var_t *v) {
  */
 static inline var_int_t v_igetval(var_t *v) {
   switch (v ? v->type : -1) {
-  case V_MAP:
-    return map_to_int(v);
-  case V_PTR:
-    return v->v.ap.p;
   case V_INT:
     return v->v.i;
   case V_NUM:
     return v->v.n;
   case V_STR:
     return numexpr_strtol((char *) v->v.p.ptr);
+  case V_PTR:
+    return v->v.ap.p;
+  case V_MAP:
+    return map_to_int(v);
   default:
     if (v == NULL) {
       err_evsyntax();
@@ -188,7 +188,7 @@ static inline void v_init(var_t *v) {
  */
 static inline void v_detach(var_t *v) {
   if (v->pooled) {
-    v->attached = 0;
+    v_pool_free(v);
   } else {
     free(v);
   }
@@ -207,20 +207,9 @@ static inline void v_free(var_t *v) {
   switch (v->type) {
   case V_STR:
     free(v->v.p.ptr);
-    v->v.p.ptr = NULL;
-    v->v.p.length = 0;
     break;
   case V_ARRAY:
-    if (v->v.a.size && v->v.a.data) {
-      unsigned i;
-      for (i = 0; i < v->v.a.size; i++) {
-        var_t *elem = v_elem(v, i);
-        v_free(elem);
-      }
-      free(v->v.a.data);
-      v->v.a.data = NULL;
-      v->v.a.size = 0;
-    }
+    v_array_free(v);
     break;
   case V_MAP:
     map_free(v);

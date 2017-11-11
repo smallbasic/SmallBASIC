@@ -49,11 +49,11 @@ void init() {
   opt_ide = 0;
   opt_modlist[0] = '\0';
   opt_nosave = 1;
-  opt_pref_bpp = 0;
   opt_pref_height = 0;
   opt_pref_width = 0;
   opt_quiet = 1;
   opt_verbose = 0;
+  opt_autolocal = 0;
   os_graf_mx = 1024;
   os_graf_my = 768;
 }
@@ -72,7 +72,7 @@ void show_help() {
             OPTIONS[i].val, OPTIONS[i].name);
     i++;
   }
-  fprintf(stdout, "\nhttp://smallbasic.sourceforge.net\n\n");
+  fprintf(stdout, "\nhttps://smallbasic.sourceforge.io\n\n");
 }
 
 void log(const char *format, ...) {
@@ -476,3 +476,4 @@ void v_create_form(var_p_t var) {}
 void v_create_window(var_p_t var) {}
 void dev_show_page() {}
 void dev_delay(uint32_t ms) {}
+void dev_log_stack(const char *keyword, int type, int line) {}

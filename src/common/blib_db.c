@@ -31,7 +31,6 @@ struct file_encoded_var {
 void cmd_fopen() {
   var_t file_name;
   int flags = 0;
-  int handle;
 
   // filename
   par_getstr(&file_name);
@@ -68,7 +67,7 @@ void cmd_fopen() {
 
     par_getsharp();
     if (!prog_error) {
-      handle = par_getint();
+      int handle = par_getint();
       if (!prog_error) {
         if (dev_fstatus(handle) == 0)
           dev_fopen(handle, (char *)file_name.v.p.ptr, flags);
@@ -86,12 +85,10 @@ void cmd_fopen() {
  * CLOSE #fileN
  */
 void cmd_fclose() {
-  int handle;
-
   // file handle
   par_getsharp();
   if (!prog_error) {
-    handle = par_getint();
+    int handle = par_getint();
     if (!prog_error) {
       if (dev_fstatus(handle)) {
         dev_fclose(handle);
@@ -106,18 +103,15 @@ void cmd_fclose() {
  * SEEK #fileN, pos
  */
 void cmd_fseek() {
-  int handle;
-  uint32_t pos;
-
   // file handle
   par_getsharp();
   if (!prog_error) {
-    handle = par_getint();
+    int handle = par_getint();
     if (!prog_error) {
       if (dev_fstatus(handle)) {
         par_getsep();
         if (!prog_error) {
-          pos = par_getint();
+          uint32_t pos = par_getint();
           if (!prog_error) {
             dev_fseek(handle, pos);
           }
@@ -134,8 +128,6 @@ void cmd_fseek() {
  */
 void write_encoded_var(int handle, var_t *var) {
   struct file_encoded_var fv;
-  var_t *elem;
-  int i;
 
   fv.sign = '$';
   fv.version = 1;
@@ -162,14 +154,14 @@ void write_encoded_var(int handle, var_t *var) {
 
     // write additional data about array
     dev_fwrite(handle, &var->v.a.maxdim, 1);
-    for (i = 0; i < var->v.a.maxdim; i++) {
+    for (int i = 0; i < var->v.a.maxdim; i++) {
       dev_fwrite(handle, (byte *)&var->v.a.lbound[i], sizeof(int));
       dev_fwrite(handle, (byte *)&var->v.a.ubound[i], sizeof(int));
     }
 
     // write elements
-    for (i = 0; i < var->v.a.size; i++) {
-      elem = v_elem(var, i);
+    for (int i = 0; i < var->v.a.size; i++) {
+      var_t *elem = v_elem(var, i);
       write_encoded_var(handle, elem);
     }
     break;
@@ -181,7 +173,6 @@ void write_encoded_var(int handle, var_t *var) {
  */
 int read_encoded_var(int handle, var_t *var) {
   struct file_encoded_var fv;
-  int i;
 
   dev_fread(handle, (byte *)&fv, sizeof(struct file_encoded_var));
   if (fv.sign != '$') {
@@ -210,13 +201,13 @@ int read_encoded_var(int handle, var_t *var) {
 
     // read additional data about array
     dev_fread(handle, (byte *)&var->v.a.maxdim, 1);
-    for (i = 0; i < var->v.a.maxdim; i++) {
+    for (int i = 0; i < var->v.a.maxdim; i++) {
       dev_fread(handle, (byte *)&var->v.a.lbound[i], sizeof(int));
       dev_fread(handle, (byte *)&var->v.a.ubound[i], sizeof(int));
     }
 
     // write elements
-    for (i = 0; i < var->v.a.size; i++) {
+    for (int i = 0; i < var->v.a.size; i++) {
       var_t *elem = v_elem(var, i);
       v_init(elem);
       read_encoded_var(handle, elem);
@@ -233,19 +224,15 @@ int read_encoded_var(int handle, var_t *var) {
  * WRITE #fileN; var1 [, varN]
  */
 void cmd_fwrite() {
-  int handle;
-
   // file handle
   par_getsharp();
   if (!prog_error) {
-    handle = par_getint();
+    int handle = par_getint();
     if (!prog_error) {
-
-      if (code_peek() == kwTYPE_EOC || code_peek() == kwTYPE_LINE) {  
+      if (code_peek() == kwTYPE_EOC || code_peek() == kwTYPE_LINE) {
         // There are no parameters
         if (!dev_fstatus(handle)) {
           // dev_fwrite(handle, "\n", 1);
-          ;
         } else {
           rt_raise("FIO: FILE IS NOT OPENED");
         }
@@ -294,14 +281,10 @@ void cmd_fwrite() {
  * READ #fileN; var1 [, var2 [, ...]]
  */
 void cmd_fread() {
-  int handle;
-  var_t *var_p;
-  byte code;
-
   // file handle
   par_getsharp();
   if (!prog_error) {
-    handle = par_getint();
+    int handle = par_getint();
     if (prog_error) {
       return;
     }
@@ -314,11 +297,11 @@ void cmd_fread() {
     if (dev_fstatus(handle)) {
       // get the variables
       do {
-        if (prog_error)
+        if (prog_error) {
           return;
-
+        }
         // get variable's ptr
-        var_p = par_getvar_ptr();
+        var_t *var_p = par_getvar_ptr();
         if (prog_error) {
           return;
         }
@@ -327,11 +310,12 @@ void cmd_fread() {
           return;
         }
         // next
-        code = code_peek();
-        if (code == kwTYPE_SEP)
+        byte code = code_peek();
+        if (code == kwTYPE_SEP) {
           par_getsep();         // allow commas
-        else
+        } else {
           break;
+        }
       } while (1);
     } else {
       rt_raise("FIO: FILE IS NOT OPENED");
@@ -343,10 +327,6 @@ void cmd_fread() {
  * LINE INPUT [#fileN;] var$
  */
 void cmd_flineinput() {
-  int handle, size, index;
-  var_t *var_p;
-  byte code, ch;
-
   if (code_peek() == kwTYPE_SEP) {
     //
     // FILE OR DEVICE
@@ -355,23 +335,25 @@ void cmd_flineinput() {
     // file handle
     par_getsharp();
     if (!prog_error) {
-      handle = par_getint();
+      int handle = par_getint();
       if (!prog_error) {
         // par_getsemicolon();
         par_getsep();           // allow commas
         if (!prog_error) {
           if (dev_fstatus(handle)) {
             // get the variable
-            code = code_peek();
+            byte code = code_peek();
             if (code != kwTYPE_VAR) {
               err_syntax(kwLINEINPUT, "%P");
               return;
             }
-            var_p = code_getvarptr();
+            var_t *var_p = code_getvarptr();
             if (!prog_error) {
               v_free(var_p);
-              size = 256;
-              index = 0;
+              int size = 256;
+              int index = 0;
+              byte ch;
+
               var_p->type = V_STR;
               var_p->v.p.ptr = malloc(size);
 
@@ -410,7 +392,7 @@ void cmd_flineinput() {
     //
     // CONSOLE
     //
-    var_p = par_getvar_ptr();
+    var_t *var_p = par_getvar_ptr();
     if (!prog_error) {
       v_free(var_p);
       var_p->type = V_STR;
@@ -431,12 +413,12 @@ void cmd_fkill() {
   // filename
   v_init(&file_name);
   par_getstr(&file_name);
-  if (prog_error)
+  if (prog_error) {
     return;
-  if (dev_fexists((char *)file_name.v.p.ptr))
+  }
+  if (dev_fexists((char *)file_name.v.p.ptr)) {
     dev_fremove((char *)file_name.v.p.ptr);
-  // else
-  // rt_raise("KILL: FILE DOES NOT EXIST");
+  }
   v_free(&file_name);
 }
 
@@ -450,8 +432,9 @@ void cmd_filecp(int mv) {
   v_init(&src);
   v_init(&dst);
   par_getstr(&src);
-  if (prog_error)
+  if (prog_error) {
     return;
+  }
   par_getcomma();
   if (prog_error) {
     v_free(&src);
@@ -485,8 +468,9 @@ void cmd_chdir() {
   // filename
   v_init(&dir);
   par_getstr(&dir);
-  if (prog_error)
+  if (prog_error) {
     return;
+  }
   dev_chdir((char *)dir.v.p.ptr);
   v_free(&dir);
 }
@@ -500,8 +484,9 @@ void cmd_rmdir() {
   // filename
   v_init(&dir);
   par_getstr(&dir);
-  if (prog_error)
+  if (prog_error) {
     return;
+  }
   dev_rmdir((char *)dir.v.p.ptr);
   v_free(&dir);
 }
@@ -515,8 +500,9 @@ void cmd_mkdir() {
   // filename
   v_init(&dir);
   par_getstr(&dir);
-  if (prog_error)
+  if (prog_error) {
     return;
+  }
   dev_mkdir((char *)dir.v.p.ptr);
   v_free(&dir);
 }
@@ -536,11 +522,9 @@ void cmd_mkdir() {
 void cmd_floadln() {
   var_t file_name, *array_p = NULL, *var_p = NULL;
   int flags = DEV_FILE_INPUT;
-  int handle, index, bcount, size, array_size;
+  int handle;
   byte ch, type = 0;
   char buf[BUFMAX];
-  int eof, eol, bufLen, bufIndex;
-  uint32_t unreadBytes;
 
   if (code_peek() == kwTYPE_SEP) {
     // "filename" is an already open file number
@@ -593,25 +577,25 @@ void cmd_floadln() {
 
   if (type == 0) {
     // build array
-    array_size = LDLN_INC;
+    int array_size = LDLN_INC;
+    int index = 0;
+    int bufIndex = 0;
+    int bufLen = 0;
+    int eof = dev_feof(handle);
+    uint32_t unreadBytes = eof ? 0 : dev_flength(handle);
     v_toarray1(array_p, array_size);  // v_free() is here
-    index = 0;
-
-    eof = dev_feof(handle);
-    unreadBytes = eof ? 0 : dev_flength(handle);
-    bufIndex = bufLen = 0;
 
     while (!eof) {
       // build var for line
       var_p = v_elem(array_p, index);
-      size = GROW_SIZE;
+      int size = GROW_SIZE;
       var_p->type = V_STR;
       var_p->v.p.ptr = malloc(size);
       index++;
 
       // process the next line
-      bcount = 0;
-      eol = 0;
+      int bcount = 0;
+      int eol = 0;
       while (!eof && !eol) {
         if (bufIndex == bufLen) { // read into empty buffer
           if (dev_feof(handle) || unreadBytes == 0) {
@@ -691,7 +675,7 @@ void cmd_floadln() {
 void cmd_fsaveln() {
   var_t file_name, *array_p = NULL, *var_p = NULL;
   int flags = DEV_FILE_OUTPUT;
-  int handle, i;
+  int handle;
 
   if (code_peek() == kwTYPE_SEP) {
     // "filename" is an already open file number
@@ -730,7 +714,7 @@ void cmd_fsaveln() {
 
   if (var_p->type == V_ARRAY) {
     // parameter is an array
-    for (i = 0; i < array_p->v.a.size; i++) {
+    for (int i = 0; i < array_p->v.a.size; i++) {
       var_p = v_elem(array_p, i);
       fprint_var(handle, var_p);
       dev_fwrite(handle, (byte *)"\n", 1);
@@ -754,8 +738,9 @@ void cmd_flock() {
   var_t str;
 
   par_getstr(&str);
-  if (prog_error)
+  if (prog_error) {
     return;
+  }
   v_free(&str);
 }
 
@@ -764,17 +749,17 @@ void cmd_flock() {
  */
 void cmd_chmod() {
   var_t str;
-  uint32_t mode;
 
   par_getstr(&str);
-  if (prog_error)
+  if (prog_error) {
     return;
+  }
   par_getcomma();
   if (prog_error) {
     v_free(&str);
     return;
   }
-  mode = par_getint();
+  uint32_t mode = par_getint();
   if (prog_error) {
     v_free(&str);
     return;
@@ -784,48 +769,87 @@ void cmd_chmod() {
   v_free(&str);
 }
 
+void join_path(char *path, char *ext) {
+  int len = strlen(path);
+  if (path[len - 1] != OS_DIRSEP) {
+    if (ext[0] != OS_DIRSEP) {
+      strcat(path, "/");
+      strcat(path, ext);
+    } else {
+      strcat(path, ext);
+    }
+  } else {
+    if (ext[0] != OS_DIRSEP) {
+      strcat(path, ext);
+    } else {
+      strcat(path, ext + 1);
+    }
+  }
+}
+
 /*
  * walk on dirs
  */
-void dirwalk(char *dir, char *wc, bcip_t use_ip) {
-  char name[OS_PATHNAME_SIZE];
-  struct dirent *dp;
-  DIR *dfd;
-  struct stat st;
-  int callusr, contf = 1;
+void dirwalk(char *dir, char *wc, bcip_t use_ip, int depth) {
+  char path[OS_PATHNAME_SIZE];
+  path[0] = '\0';
+  if (dir[0] == '.') {
+    getcwd(path, OS_PATHNAME_SIZE - 1);
+    join_path(path, ++dir);
+    dir = path;
+  } else if (dir[0] == '~') {
+    strcpy(path, getenv("HOME"));
+    join_path(path, ++dir);
+    dir = path;
+  }
 
-  if ((dfd = opendir(dir)) == NULL) {
+  DIR *dfd = opendir(dir);
+  if (dfd == NULL) {
     log_printf("DIRWALK: can't open %s", dir);
     return;
   }
 
+  struct dirent *dp;
   while ((dp = readdir(dfd)) != NULL) {
-    if (strcmp(dp->d_name, ".") == 0 || strcmp(dp->d_name, "..") == 0) {
-      continue; /* skip self and parent */
+    if (dev_events(0) != 0) {
+      break;
     }
-    if (strlen(dir) + strlen(dp->d_name) + 2 > sizeof(name)) {
+    if (strcmp(dp->d_name, ".") == 0 || strcmp(dp->d_name, "..") == 0) {
+      // skip self and parent
+      continue;
+    }
+    if (strlen(dir) + strlen(dp->d_name) + 2 > OS_PATHNAME_SIZE) {
       rt_raise("DIRWALK: name %s/%s too long", dir, dp->d_name);
     }
     else {
-      sprintf(name, "%s%c%s", dir, OS_DIRSEP, dp->d_name);
+      // check filename
+      int callusr;
+      int contf = 1;
+      struct stat st;
 
-      /*
-       *   check filename
-       */
       if (!wc) {
         callusr = 1;
       }
       else {
         callusr = wc_match(wc, dp->d_name);
       }
-      if (callusr) {
-        /*
-         *   call user's function
-         */
-        var_t *var;
 
-        var = v_new();
-        v_createstr(var, name);
+      char name[OS_PATHNAME_SIZE];
+      strcpy(name, dir);
+      join_path(name, dp->d_name);
+
+      if (callusr) {
+        // call user's function
+        var_t *var = v_new();
+        map_init(var);
+        v_setstr(map_add_var(var, "path", 0), dir);
+        v_setstr(map_add_var(var, "name", 0), dp->d_name);
+        map_add_var(var, "depth", depth);
+        if (stat(name, &st) != -1) {
+          map_add_var(var, "mtime", st.st_mtime);
+          map_add_var(var, "size", st.st_size);
+          map_add_var(var, "dir", (st.st_mode & S_IFDIR) ? 1 : 0);
+        }
         exec_usefunc(var, use_ip);
         contf = v_getint(var);
         v_free(var);
@@ -834,13 +858,13 @@ void dirwalk(char *dir, char *wc, bcip_t use_ip) {
       if (!contf) {
         break;
       }
-      /*
-       *   proceed to the next
-       */
-      if (access(name, R_OK) == 0) {  // user-func, possible it is deleted
+
+      // proceed to the next
+      if (access(name, R_OK) == 0) {
+        // user-func, possible it is deleted
         stat(name, &st);
         if (st.st_mode & S_IFDIR) {
-          dirwalk(name, wc, use_ip);
+          dirwalk(name, wc, use_ip, depth + 1);
         }
       }
     }
@@ -854,11 +878,11 @@ void dirwalk(char *dir, char *wc, bcip_t use_ip) {
  * DIRWALK "/home" [, "*"] USE MYPRN(x)
  */
 void cmd_dirwalk() {
-  bcip_t use_ip, exit_ip;
   char *dir = NULL, *wc = NULL;
 
   par_massget("Ss", &dir, &wc);
   if (!prog_error) {
+    bcip_t use_ip, exit_ip;
 
     // USE
     if (code_peek() == kwUSE) {
@@ -868,7 +892,7 @@ void cmd_dirwalk() {
     } else {
       use_ip = exit_ip = INVALID_ADDR;
     }
-    dirwalk(dir, wc, use_ip);
+    dirwalk(dir, wc, use_ip, 0);
 
     if (exit_ip != INVALID_ADDR) {
       code_jump(exit_ip);
@@ -884,31 +908,28 @@ void cmd_dirwalk() {
  * BPUTC #file, byte
  */
 void cmd_bputc() {
-  int handle;
-  var_t *var_p;
-  byte code;
-
   // file handle
   par_getsharp();
   if (!prog_error) {
-    handle = par_getint();
-    if (prog_error)
+    int handle = par_getint();
+    if (prog_error) {
       return;
-
+    }
     par_getsep();               // allow commas
-    if (prog_error)
+    if (prog_error) {
       return;
-
+    }
     if (dev_fstatus(handle)) {
       // get variable's ptr
-      var_p = par_getvar_ptr();
-      if (prog_error)
+      var_t *var_p = par_getvar_ptr();
+      if (prog_error) {
         return;
-
-      code = v_getint(var_p);
+      }
+      byte code = v_getint(var_p);
       dev_fwrite(handle, &code, 1);
-      if (prog_error)
+      if (prog_error) {
         return;
+      }
     }
   }
 }
@@ -919,7 +940,7 @@ void cmd_bputc() {
  * BLOAD file[, offset]
  */
 void cmd_bload() {
-  var_int_t ofs = -1, idata;
+  var_int_t ofs = -1;
   char *fname = NULL;
 
   par_massget("Si", &fname, &ofs);
@@ -933,6 +954,7 @@ void cmd_bload() {
         dev_fopen(handle, fname, flags);
         if (!prog_error) {
           var_int_t *data;
+          var_int_t idata;
 
           dev_fread(handle, (byte *)&idata, sizeof(idata));
           if (ofs == -1) {
@@ -967,11 +989,9 @@ void cmd_bsave() {
       if (dev_fstatus(handle) == 0) {
         dev_fopen(handle, fname, flags);
         if (!prog_error) {
-          var_int_t *data;
-
           dev_fwrite(handle, (byte *)&ofs, sizeof(ofs));
           dev_fwrite(handle, (byte *)&len, sizeof(len));
-          data = &ofs;
+          var_int_t *data = &ofs;
           dev_fwrite(handle, (byte *)data, len);
           dev_fclose(handle);
         }

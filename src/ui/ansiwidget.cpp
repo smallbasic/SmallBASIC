@@ -218,6 +218,9 @@ void AnsiWidget::print(const char *str) {
       case '\r':   // return
         _back->_curX = INITXY;     // erasing the line will clear any previous text
         break;
+      case 'm':    // scroll to the top (M = scroll up one line)
+        _back->_scrollY = 0;
+        break;
       default:
         p += _back->print(p, lineHeight) - 1; // allow for p++
         break;
@@ -700,11 +703,11 @@ void AnsiWidget::selectFrontScreen(int screenId) {
   flush(true);
 }
 
-int AnsiWidget::selectScreen(int screenId) {
+int AnsiWidget::selectScreen(int screenId, bool forceFlush) {
   int result = getScreenId(true);
   selectBackScreen(screenId);
   _front = _back;
   _front->_dirty = true;
-  flush(true);
+  flush(forceFlush);
   return result;
 }

@@ -50,7 +50,9 @@ void err_stack_msg() {
     default:
       for (i_kw = 0; keyword_table[i_kw].name[0] != '\0'; i_kw++) {
         if (node.type == keyword_table[i_kw].code) {
+          dev_log_stack(keyword_table[i_kw].name, node.type, node.line);
           log_printf(" %s: %d", keyword_table[i_kw].name, node.line);
+          break;
         }
       }
     }
@@ -270,10 +272,6 @@ void err_parfmt(const char *fmt) {
 // UDP/F: parameter is 'by reference' so const not allowed
 void err_parm_byref(int n) {
   rt_raise(ERR_BYREF, n);
-}
-
-void err_stridx(int n) {
-  err_throw(ERR_STR_RANGE, n);
 }
 
 void err_fopen(void) {

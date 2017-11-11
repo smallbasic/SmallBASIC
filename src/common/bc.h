@@ -15,6 +15,9 @@
 
 #define BC_ALLOC_INCR     1024
 #define BC_MAX_STORE_SIZE   0x7FFFFFFF
+#define V_QUOTE '\1'
+#define V_LINE '\2'
+#define V_JOIN_LINE '\3'
 
 /**
  * @ingroup scan
@@ -159,7 +162,7 @@ void bc_add_n(bc_t *dest, byte *src, uint32_t n);
  * @param dest the bc segment
  * @param idx the index of the function
  */
-void bc_add_fcode(bc_t *dest, long idx);
+void bc_add_fcode(bc_t *dest, bid_t idx);
 
 /**
  * @ingroup scan
@@ -169,7 +172,7 @@ void bc_add_fcode(bc_t *dest, long idx);
  * @param dest the bc segment
  * @param idx the index of the procedure
  */
-void bc_add_pcode(bc_t *dest, long idx);
+void bc_add_pcode(bc_t *dest, bid_t idx);
 
 /**
  * @ingroup scan
@@ -180,7 +183,7 @@ void bc_add_pcode(bc_t *dest, long idx);
  * @param lib the index of the library
  * @param idx the index of the function
  */
-void bc_add_extfcode(bc_t *dest, int lib, long idx);
+void bc_add_extfcode(bc_t *dest, uint32_t lib, uint32_t idx);
 
 /**
  * @ingroup scan
@@ -191,7 +194,7 @@ void bc_add_extfcode(bc_t *dest, int lib, long idx);
  * @param lib the index of the library
  * @param idx the index of the procedure
  */
-void bc_add_extpcode(bc_t *dest, int lib, long idx);
+void bc_add_extpcode(bc_t *dest, uint32_t lib, uint32_t idx);
 
 /**
  * @ingroup scan

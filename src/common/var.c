@@ -15,36 +15,34 @@
 #include "common/var_map.h"
 
 #define INT_STR_LEN 64
-#define VAR_POOL_SIZE 2048
+#define VAR_POOL_SIZE 8192
 
 var_t var_pool[VAR_POOL_SIZE];
-int next_pool_free = 0;
+var_t *var_pool_head;
 
 void v_init_pool() {
-  int i;
-  next_pool_free = 0;
-  for (i = 0; i < VAR_POOL_SIZE; i++) {
+  for (uint32_t i = 0; i < VAR_POOL_SIZE; i++) {
     v_init(&var_pool[i]);
     var_pool[i].pooled = 1;
-    var_pool[i].attached = 0;
+    if (i + 1 < VAR_POOL_SIZE) {
+      var_pool[i].v.pool_next = &var_pool[i + 1];
+    } else {
+      var_pool[i].v.pool_next = NULL;
+    }
   }
+  var_pool_head = &var_pool[0];
 }
 
 /*
  * creates and returns a new variable
  */
 var_t *v_new() {
-  var_t *result = NULL;
-  int i;
-  for (i = 0; i < VAR_POOL_SIZE; i++) {
-    if (!var_pool[next_pool_free].attached) {
-      result = &var_pool[next_pool_free];
-      result->attached = 1;
-      break;
-    }
-    next_pool_free = (next_pool_free + 1) % VAR_POOL_SIZE;
-  }
-  if (!result) {
+  var_t *result = var_pool_head;
+  if (result != NULL) {
+    // remove an item from the free-list
+    var_pool_head = result->v.pool_next;
+  } else {
+    // pool exhausted
     result = (var_t *)malloc(sizeof(var_t));
     result->pooled = 0;
   }
@@ -52,14 +50,36 @@ var_t *v_new() {
   return result;
 }
 
-void v_new_array(var_t *var, unsigned size) {
+void v_pool_free(var_t *var) {
+  // insert back into the free list
+  var->v.pool_next = var_pool_head;
+  var_pool_head = var;
+}
+
+uint32_t v_get_capacity(uint32_t size) {
+  return size + (size / 2) + 1;
+}
+
+void v_new_array(var_t *var, uint32_t size) {
+  uint32_t capacity = v_get_capacity(size);
   var->type = V_ARRAY;
   var->v.a.size = size;
-  var->v.a.data = (var_t *)malloc(sizeof(var_t) * size);
-  int i = 0;
-  for (i = 0; i < size; i++) {
+  var->v.a.capacity = capacity;
+  var->v.a.data = (var_t *)malloc(sizeof(var_t) * capacity);
+  for (uint32_t i = 0; i < capacity; i++) {
     var_t *e = v_elem(var, i);
+    e->pooled = 0;
     v_init(e);
+  }
+}
+
+void v_array_free(var_t *var) {
+  uint32_t v_size = var->v.a.capacity;
+  if (v_size && var->v.a.data) {
+    for (uint32_t i = 0; i < v_size; i++) {
+      v_free(v_elem(var, i));
+    }
+    free(var->v.a.data);
   }
 }
 
@@ -69,18 +89,18 @@ void v_new_array(var_t *var, unsigned size) {
  */
 int v_isempty(var_t *var) {
   switch (var->type) {
-  case V_STR:
-    return (v_strlen(var) == 0);
   case V_INT:
     return (var->v.i == 0);
-  case V_MAP:
-    return map_is_empty(var);
-  case V_PTR:
-    return (var->v.ap.p == 0);
   case V_NUM:
     return (var->v.n == 0.0);
+  case V_STR:
+    return (v_strlen(var) == 0);
   case V_ARRAY:
     return (var->v.a.size == 0);
+  case V_PTR:
+    return (var->v.ap.p == 0);
+  case V_MAP:
+    return map_is_empty(var);
   case V_REF:
     return v_isempty(var->v.ref);
   }
@@ -108,26 +128,25 @@ int v_length(var_t *var) {
   char tmpsb[INT_STR_LEN];
 
   switch (var->type) {
-  case V_STR:
-    return v_strlen(var);
-  case V_MAP:
-    return map_length(var);
-  case V_PTR:
-    ltostr(var->v.ap.p, tmpsb);
-    return strlen(tmpsb);
   case V_INT:
     ltostr(var->v.i, tmpsb);
     return strlen(tmpsb);
   case V_NUM:
     ftostr(var->v.n, tmpsb);
     return strlen(tmpsb);
+  case V_STR:
+    return v_strlen(var);
   case V_ARRAY:
     return var->v.a.size;
+  case V_PTR:
+    ltostr(var->v.ap.p, tmpsb);
+    return strlen(tmpsb);
+  case V_MAP:
+    return map_length(var);
   case V_REF:
     return v_length(var->v.ref);
   }
-
-  return 1;
+  return 0;
 }
 
 /*
@@ -146,60 +165,68 @@ var_t *v_getelemptr(var_t *v, uint32_t index) {
   return NULL;
 }
 
+void v_set_array1_size(var_t *var, uint32_t size) {
+  var->v.a.size = size;
+  var->v.a.maxdim = 1;
+  var->v.a.ubound[0] = var->v.a.lbound[0] + (size - 1);
+}
+
+void v_init_array(var_t *var) {
+  var->v.a.size = 0;
+  var->v.a.capacity = 0;
+  var->v.a.data = NULL;
+  var->v.a.ubound[0] = opt_base;
+  var->v.a.lbound[0] = opt_base;
+  var->v.a.maxdim = 1;
+}
+
 /*
  * resize an existing array
  */
 void v_resize_array(var_t *v, uint32_t size) {
-  if (v->type == V_ARRAY) {
-    if ((int)size < 0) {
-      err_evargerr();
-      return;
-    }
-    int i;
-    if (size == 0) {
-      v_free(v);
-      v->type = V_ARRAY;
-      v->v.a.size = 0;
-      v->v.a.data = NULL;
-      v->v.a.ubound[0] = v->v.a.lbound[0] = opt_base;
-      v->v.a.maxdim = 1;
-    } else if (v->v.a.size > size) {
-      // resize down
-
-      // free vars
-      for (i = size; i < v->v.a.size; i++) {
-        var_t *elem = v_elem(v, i);
-        v_free(elem);
-      }
-
-      // array data
-      v->v.a.size = size;
-      v->v.a.ubound[0] = v->v.a.lbound[0] + (size - 1);
-      v->v.a.maxdim = 1;
-    } else if (v->v.a.size < size) {
-      // resize up, if there is space do not resize
-      int prev_size = v->v.a.size;
-      if (prev_size == 0) {
-        v_new_array(v, size);
-      } else if (prev_size < size) {
-        // resize & copy
-        v->v.a.data = (var_t *)realloc(v->v.a.data, sizeof(var_t) * size);
-        v->v.a.size = size;
-      }
-
-      // init vars
-      for (i = prev_size; i < size; i++) {
-        var_t *elem = v_elem(v, i);
-        v_init(elem);
-      }
-
-      // array data
-      v->v.a.size = size;
-      v->v.a.ubound[0] = v->v.a.lbound[0] + (size - 1);
-      v->v.a.maxdim = 1;
-    }
-  } else {
+  if (v->type != V_ARRAY) {
     err_varisnotarray();
+  } else if ((int)size < 0) {
+    err_evargerr();
+  } else if (size == v->v.a.size) {
+    // already at target size
+  } else if (size == 0) {
+    v_free(v);
+    v_init_array(v);
+    v->type = V_ARRAY;
+  } else if (size < v->v.a.size) {
+    // resize down. free discarded elements
+    uint32_t v_size = v_asize(v);
+    for (uint32_t i = size; i < v_size; i++) {
+      v_free(v_elem(v, i));
+    }
+    v_set_array1_size(v, size);
+  } else if (size <= v->v.a.capacity) {
+    // use existing capacity
+    v_set_array1_size(v, size);
+  } else {
+    // insufficient capacity
+    uint32_t prev_size = v->v.a.size;
+    if (prev_size == 0) {
+      v_new_array(v, size);
+    } else if (prev_size < size) {
+      // resize & copy
+      uint32_t capacity = v_get_capacity(size);
+      v->v.a.data = (var_t *)realloc(v->v.a.data, sizeof(var_t) * capacity);
+      v->v.a.capacity = capacity;
+      for (uint32_t i = prev_size; i < capacity; i++) {
+        var_t *e = v_elem(v, i);
+        e->pooled = 0;
+        v_init(e);
+      }
+    }
+
+    // init vars
+    for (uint32_t i = prev_size; i < size; i++) {
+      v_init(v_elem(v, i));
+    }
+
+    v_set_array1_size(v, size);
   }
 }
 
@@ -227,10 +254,7 @@ void v_toarray1(var_t *v, uint32_t r) {
     v->v.a.lbound[0] = opt_base;
     v->v.a.ubound[0] = opt_base + (r - 1);
   } else {
-    v->v.a.size = 0;
-    v->v.a.data = NULL;
-    v->v.a.lbound[0] = v->v.a.ubound[0] = opt_base;
-    v->v.a.maxdim = 1;
+    v_init_array(v);
   }
 }
 
@@ -242,16 +266,15 @@ int v_is_nonzero(var_t *v) {
   case V_INT:
     return (v->v.i != 0);
   case V_NUM:
-    // return (v->v.n != 0.0 && v->v.n != -0.0);
     return (ABS(v->v.n) > 1E-308);
   case V_STR:
     return (v->v.p.length != 0);
-  case V_MAP:
-    return !map_is_empty(v);
-  case V_PTR:
-    return (v->v.ap.p != 0);
   case V_ARRAY:
     return (v->v.a.size != 0);
+  case V_PTR:
+    return (v->v.ap.p != 0);
+  case V_MAP:
+    return !map_is_empty(v);
   };
   return 0;
 }
@@ -328,11 +351,11 @@ int v_compare(var_t *a, var_t *b) {
       return 1;
     }
     // check every element
-    int i, ci;
-    for (i = 0; i < a->v.a.size; i++) {
+    for (uint32_t i = 0; i < a->v.a.size; i++) {
       var_t *ea = v_elem(a, i);
       var_t *eb = v_elem(b, i);
-      if ((ci = v_compare(ea, eb)) != 0) {
+      int ci = v_compare(ea, eb);
+      if (ci != 0) {
         return ci;
       }
     }
@@ -342,6 +365,11 @@ int v_compare(var_t *a, var_t *b) {
 
   if (a->type == V_MAP && b->type == V_MAP) {
     return map_compare(a, b);
+  }
+
+  if (a->type == V_NIL || b->type == V_NIL) {
+    // return equal (0) when both NONE
+    return (a->type != b->type);
   }
 
   err_evtype();
@@ -440,47 +468,89 @@ void v_set(var_t *dest, const var_t *src) {
   case V_INT:
     dest->v.i = src->v.i;
     break;
+  case V_NUM:
+    dest->v.n = src->v.n;
+    break;
   case V_STR:
     dest->v.p.length = v_strlen(src) + 1;
     dest->v.p.ptr = (char *)malloc(dest->v.p.length);
     strcpy(dest->v.p.ptr, src->v.p.ptr);
     break;
-  case V_NUM:
-    dest->v.n = src->v.n;
-    break;
-  case V_MAP:
-    map_set(dest, (const var_p_t)src);
+  case V_ARRAY:
+    if (src->v.a.size) {
+      memcpy(&dest->v.a, &src->v.a, sizeof(src->v.a));
+      v_new_array(dest, src->v.a.size);
+      // copy each element
+      uint32_t v_size = v_asize(src);
+      for (uint32_t i = 0; i < v_size; i++) {
+        var_t *dest_vp = v_elem(dest, i);
+        v_init(dest_vp);
+        v_set(dest_vp, v_elem(src, i));
+      }
+    } else {
+      v_init_array(dest);      
+    }
     break;
   case V_PTR:
     dest->v.ap.p = src->v.ap.p;
     dest->v.ap.v = src->v.ap.v;
+    break;
+  case V_MAP:
+    map_set(dest, (const var_p_t)src);
     break;
   case V_REF:
     dest->v.ref = src->v.ref;
     break;
   case V_FUNC:
     dest->v.fn.cb = src->v.fn.cb;
-    dest->v.fn.self = src->v.fn.self;
+    break;
+  case V_NIL:
+    dest->type = V_NIL;
+    dest->const_flag = 1;
+    break;
+  }
+}
+
+/*
+ * assign (dest = src)
+ */
+void v_move(var_t *dest, const var_t *src) {
+  v_free(dest);
+  dest->const_flag = 0;
+  dest->type = src->type;
+
+  switch (src->type) {
+  case V_INT:
+    dest->v.i = src->v.i;
+    break;
+  case V_NUM:
+    dest->v.n = src->v.n;
+    break;
+  case V_STR:
+    dest->v.p.ptr = src->v.p.ptr;
+    dest->v.p.length = src->v.p.length;
     break;
   case V_ARRAY:
-    if (src->v.a.size) {
-      memcpy(&dest->v.a, &src->v.a, sizeof(src->v.a));
-      v_new_array(dest, src->v.a.size);
-
-      // copy each element
-      int i;
-      for (i = 0; i < src->v.a.size; i++) {
-        var_t *src_vp = v_elem(src, i);
-        var_t *dest_vp = v_elem(dest, i);
-        v_init(dest_vp);
-        v_set(dest_vp, src_vp);
-      }
-    } else {
-      dest->v.a.size = 0;
-      dest->v.a.data = NULL;
-      dest->v.a.ubound[0] = dest->v.a.lbound[0] = opt_base;
-      dest->v.a.maxdim = 1;
-    }
+    memcpy(&dest->v.a, &src->v.a, sizeof(src->v.a));
+    break;
+  case V_PTR:
+    dest->v.ap.p = src->v.ap.p;
+    dest->v.ap.v = src->v.ap.v;
+    break;
+  case V_MAP:
+    dest->v.m.map = src->v.m.map;
+    dest->v.m.count = src->v.m.count;
+    dest->v.m.size = src->v.m.size;
+    break;
+  case V_REF:
+    dest->v.ref = src->v.ref;
+    break;
+  case V_FUNC:
+    dest->v.fn.cb = src->v.fn.cb;
+    break;
+  case V_NIL:
+    dest->type = V_NIL;
+    dest->const_flag = 1;
     break;
   }
 }
@@ -560,6 +630,10 @@ char *v_str(var_t *arg) {
   case V_PTR:
     buffer = malloc(5);
     strcpy(buffer, "func");
+    break;
+  case V_NIL:
+    buffer = malloc(5);
+    strcpy(buffer, SB_KW_NONE_STR);
     break;
   default:
     buffer = malloc(1);

@@ -148,3 +148,7 @@ int osd_textheight(const char *str) {
   // TODO: count \n
   return 1;
 }
+
+void dev_log_stack(const char *keyword, int type, int line) {
+  // empty
+}

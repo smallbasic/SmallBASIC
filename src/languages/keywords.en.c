@@ -234,7 +234,6 @@ struct func_keyword_s func_table[] = {
 { "ISNUMBER",                   kwISNUMBER },
 { "ISSTRING",                   kwISSTRING },
 { "ISMAP",                      kwISMAP },
-{ "ISREF",                      kwISREF },
 { "ATAN2",                      kwATAN2 },
 { "POW",                        kwPOW },
 { "ROUND",                      kwROUND },
@@ -437,9 +436,6 @@ struct proc_keyword_s proc_table[] = {
 #define LCN_GOTO_WRS            "GOTO "
 #define LCN_GOTO_WS             " GOTO "
 #define LCN_ELSE                "ELSE"
-#define LCN_UICS_WRS            "UICS "
-#define LCN_CHARS               "CHARS"
-#define LCN_PIXELS              "PIXELS"
 #define LCN_BASE_WRS            "BASE "
 #define LCN_PCRE_CASELESS       "MATCH PCRE CASELESS"
 #define LCN_PCRE                "MATCH PCRE"
@@ -479,6 +475,7 @@ struct proc_keyword_s proc_table[] = {
 #define LCN_END_TRY             "END TRY"
 #define LCN_ANTIALIAS           "ANTIALIAS"
 #define LCN_LOAD_MODULES        "LOAD MODULES"
+#define LCN_AUTOLOCAL           "AUTOLOCAL"
 
 /* system variables */
 #define LCN_SV_SBVER            "SBVER"
@@ -493,6 +490,8 @@ struct proc_keyword_s proc_table[] = {
 #define LCN_SV_X                "X"
 #define LCN_SV_Y                "Y"
 #define LCN_SV_SELF             "SELF"
+#define LCN_SV_NIL              "NIL"
+#define LCN_SV_MAXINT           "MAXINT"
 
 // fast cut of comments (pp)
 #define LCN_REM_1               ":rem "

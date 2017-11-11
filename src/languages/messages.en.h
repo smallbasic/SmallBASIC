@@ -56,7 +56,6 @@
 #define MSG_ARRAY_SE            "Array: syntax error"
 #define MSG_ARRAY_MIS_RP        "Array: Missing ')', (left side of expression)"
 #define MSG_ARRAY_MIS_LP        "Array: Missing '(', (left side of expression)"
-#define MSG_OPT_UICS_ERR        "Syntax error: OPTION UICS {CHARS|PIXELS}"
 #define MSG_OPTION_ERR          "OPTION: Unrecognized option '%s'"
 #define MSG_IT_IS_KEYWORD       "%s: is keyword (left side of expression)"
 #define MSG_USE_DECL            "Use DECLARE with SUB or FUNC keyword"
@@ -122,6 +121,7 @@
 #define MSG_MISSING_CATCH       "TRY without CATCH"
 #define MSG_MISSING_ENDTRY      "TRY without END TRY"
 #define MSG_FUNC_NOT_ASSIGNED   "The value returned from %s was not assigned"
+#define MSG_RETURN_NOT_ASSIGNED "FUNC (line %d) - result not assigned"
 
 // executor
 #define WORD_ERROR_AT           "ERROR AT"
@@ -173,7 +173,6 @@
 #define ERR_MISSING_LP          "Missing '('"
 #define ERR_PARFMT              "Parameters count/format error (%s)"
 #define ERR_BYREF               "Parameter %d cannot BYREF"
-#define ERR_STR_RANGE           "String: Index out of range (%d)"
 #define ERR_BAD_FILE_HANDLE     "VFS: Bad file number (Use OPEN)"
 #define ERR_SEP_FMT             "No separator found (missing %s)"
 #define ERR_POLY                "Parsing polyline: type mismatch (element: %d, info: %d)"
@@ -218,5 +217,5 @@
 #define ERR_IMAGE_SAVE          "Failed to save image"
 #define ERR_FORM_INPUT          "Form has no inputs"
 #define ERR_PARAM_NUM           "Incorrect number of parameters: %d. Expected %d."
-
-
+#define ERR_PACK_TOO_MANY       "Too many values to unpack"
+#define ERR_PACK_TOO_FEW        "Need more than %d values to unpack"

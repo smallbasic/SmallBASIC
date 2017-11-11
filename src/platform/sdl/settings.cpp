@@ -1,6 +1,6 @@
 // This file is part of SmallBASIC
 //
-// Copyright(C) 2001-2014 Chris Warren-Smith.
+// Copyright(C) 2001-2017 Chris Warren-Smith.
 //
 // This program is distributed under the terms of the GPL v2.0 or later
 // Download the GNU Public License (GPL) from www.gnu.org
@@ -21,11 +21,11 @@
 using namespace strlib;
 
 static const char *ENV_VARS[] = {
-  "APPDATA", "HOME", "TMP", "TEMP", "TMPDIR"
+  "APPDATA", "HOME", "TMP", "TEMP", "TMPDIR", ""
 };
 
 #if !defined(FILENAME_MAX)
-  #define FILENAME_MAX 256
+#define FILENAME_MAX 256
 #endif
 
 #define DEFAULT_WIDTH 640
@@ -41,28 +41,41 @@ static const char *ENV_VARS[] = {
 
 String recentPath[NUM_RECENT_ITEMS];
 int recentPosition[NUM_RECENT_ITEMS];
+extern String g_exportAddr;
+extern String g_exportToken;
+enum Settings {k_window, k_debug, k_export};
 
-FILE *openConfig(const char *flags, bool debug) {
+void createConfigPath(const char *var, const char *home, char *path) {
+  strcpy(path, home);
+  if (strcmp(var, "HOME") == 0) {
+    // unix path
+    strcat(path, "/.config");
+    makedir(path);
+  }
+  strcat(path, "/SmallBASIC");
+  makedir(path);
+}
+
+FILE *openConfig(bool readMode, Settings settings) {
   FILE *result = NULL;
   char path[FILENAME_MAX];
-  int vars_len = sizeof(ENV_VARS) / sizeof(ENV_VARS[0]);
+  const char *flags = readMode ? "rb" : "wb";
 
   path[0] = 0;
-  for (int i = 0; i < vars_len && result == NULL; i++) {
+  for (int i = 0; ENV_VARS[i][0] != '\0' && result == NULL; i++) {
     const char *home = getenv(ENV_VARS[i]);
     if (home && access(home, R_OK) == 0) {
-      strcpy(path, home);
-      if (i == 1) {
-        // unix path
-        strcat(path, "/.config");
-        makedir(path);
-      }
-      strcat(path, "/SmallBASIC");
-      makedir(path);
-      if (debug) {
-        strcat(path, "/settings_debug.txt");
-      } else {
+      createConfigPath(ENV_VARS[i], home, path);
+      switch (settings) {
+      case k_debug:
+        strcat(path, "/debug.txt");
+        break;
+      case k_window:
         strcat(path, "/settings.txt");
+        break;
+      case k_export:
+        strcat(path, "/export.txt");
+        break;
       }
       result = fopen(path, flags);
     }
@@ -144,7 +157,7 @@ void restorePath(FILE *fp, bool restoreDir) {
 // restore window position
 //
 void restoreSettings(SDL_Rect &rect, int &fontScale, bool debug, bool restoreDir) {
-  FILE *fp = openConfig("rb", debug);
+  FILE *fp = openConfig(true, debug ? k_debug : k_window);
   if (fp) {
     rect.x = nextInteger(fp, SDL_WINDOWPOS_UNDEFINED);
     rect.y = nextInteger(fp, SDL_WINDOWPOS_UNDEFINED);
@@ -152,7 +165,7 @@ void restoreSettings(SDL_Rect &rect, int &fontScale, bool debug, bool restoreDir
     rect.h = nextInteger(fp, DEFAULT_HEIGHT);
     fontScale = nextInteger(fp, DEFAULT_SCALE);
     opt_mute_audio = nextInteger(fp, 0);
-    opt_ide = nextInteger(fp, 0);
+    opt_ide = nextInteger(fp, 0) ? IDE_INTERNAL : IDE_NONE;
     g_themeId = nextInteger(fp, 0);
     for (int i = 0; i < THEME_COLOURS; i++) {
       g_user_theme[i] = nextHex(fp, g_user_theme[i]);
@@ -180,13 +193,31 @@ void restoreSettings(SDL_Rect &rect, int &fontScale, bool debug, bool restoreDir
     opt_ide = IDE_INTERNAL;
     g_themeId = 0;
   }
+
+  // restore export settings
+  if (!debug) {
+    fp = openConfig(true, k_export);
+    if (fp) {
+      int len = nextString(fp);
+      if (len > 1) {
+        g_exportAddr.clear();
+        g_exportAddr.append(fp, len);
+      }
+      len = nextString(fp);
+      if (len > 1) {
+        g_exportToken.clear();
+        g_exportToken.append(fp, len);
+      }
+      fclose(fp);
+    }
+  }
 }
 
 //
 // save the window position
 //
 void saveSettings(SDL_Window *window, int fontScale, bool debug) {
-  FILE *fp = openConfig("wb", debug);
+  FILE *fp = openConfig(false, debug ? k_debug : k_window);
   if (fp) {
     int x, y, w, h;
     SDL_GetWindowPosition(window, &x, &y);
@@ -217,8 +248,21 @@ void saveSettings(SDL_Window *window, int fontScale, bool debug) {
         fprintf(fp, "%s\n", recentPath[i].c_str());
       }
     }
-
     fclose(fp);
+  }
+
+  // save export settings
+  if (!debug) {
+    fp = openConfig(false, k_export);
+    if (fp) {
+      if (!g_exportAddr.empty()) {
+        fprintf(fp, "%s\n", g_exportAddr.c_str());
+      }
+      if (!g_exportToken.empty()) {
+        fprintf(fp, "%s\n", g_exportToken.c_str());
+      }
+      fclose(fp);
+    }
   }
 }
 
@@ -263,5 +307,60 @@ void setRecentFile(const char *filename) {
     // create new item in first position
     recentPath[0].clear();
     recentPath[0].append(filename);
+  }
+}
+
+String saveGist(const char *buffer, const char *fileName, const char *description) {
+  String result;
+  FILE *fp = NULL;
+  char path[FILENAME_MAX];
+
+  path[0] = 0;
+  for (int i = 0; ENV_VARS[i][0] != '\0' && fp == NULL; i++) {
+    const char *home = getenv(ENV_VARS[i]);
+    if (home && access(home, R_OK) == 0) {
+      createConfigPath(ENV_VARS[i], home, path);
+      strcat(path, "/gist.txt");
+      fp = fopen(path, "wb");
+    }
+  }
+
+  if (fp != NULL) {
+    result.append(path);
+    const char *format =
+      "{\"description\":\"SmallBASIC: %s\",\"public\":true,"
+      "\"files\":{\"%s\":{\"content\":\"";
+    fprintf(fp, format, description, fileName);
+    for (const char *p = buffer; *p != '\0'; p++) {
+      if (*p == '\n') {
+        fputs("\\n", fp);
+      } else if (*p == '\"') {
+        fputs("\\\"", fp);
+      } else if (*p == '\\') {
+        fputs("\\\\", fp);
+      } else if (*p == '\t') {
+        fputs("  ", fp);
+      } else if (*p == '\r') {
+        if (*(p+1) != '\n') {
+          fputs("\\n", fp);
+        }
+      } else {
+        fputc(*p, fp);
+      }
+    }
+    fputs("\"}}}", fp);
+    fclose(fp);
+  }
+
+  return result;
+}
+
+void getScratchFile(char *path) {
+  for (int i = 0; ENV_VARS[i][0] != '\0'; i++) {
+    const char *home = getenv(ENV_VARS[i]);
+    if (home && access(home, R_OK) == 0) {
+      strcpy(path, home);
+      strcat(path, "/scratch.bas");
+    }
   }
 }

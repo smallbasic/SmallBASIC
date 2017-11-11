@@ -1,3 +1,134 @@
+2017-11-08 (0.12.10)
+	UI: Added ALT+= command
+	UI: Update ALT+. to work with error handling
+
+2017-11-04 (0.12.10)
+	COMMON: update png and editor libs
+	UI: save and restore export settings
+	UI: add missing 'Select All' menu option
+	ANDROID: add missing key mappings for DEL,ESC,HOME,BRK,FN(1-12)
+	ANDROID: handle screen rotation
+
+2017-10-28 (0.12.10)
+	COMMON: optimise method call access
+
+2017-10-27 (0.12.10)
+	COMMON: removed experimental reference variable concept
+
+2017-10-25 (0.12.10)
+	COMMON: optimise byref let
+
+2017-10-21 (0.12.10)
+	COMMON: optimise array handling
+
+2017-10-19 (0.12.10)
+	COMMON: fix win32 run regression
+
+2017-10-17 (0.12.10)
+	COMMON: performance optimisations
+
+2017-10-07 (0.12.10)
+	COMMON: Fix var scope errors reported by cppcheck
+	COMMON: dirwalk callback now provides properties path,name,depth,mtime,size,dir
+	UI: shell now displays size and date columns
+
+2017-09-30 (0.12.10)
+	COMMON: Update var cache handling to use free-list
+
+2017-09-23 (0.12.10)
+	ANDROID: Fix crash when displaying an alert with extended ascii chars
+	ANDROID: Fix forward scolling issue
+
+2017-09-22 (0.12.10)
+	SDL: Fix cursor error position when running from selected text
+
+2017-09-09 (0.12.10)
+	SDL: Moved "Live edit" mode to editor via F8 key
+
+2017-09-06 (0.12.10)
+	COMMON: fix handling for code array passed as function argument
+
+2017-09-03 (0.12.10)
+	COMMON: code cleanup, remove obsolete global options
+
+2017-08-31 (0.12.10)
+	COMMON: fix issue when LOCAL used inside while loop
+
+2017-08-25 (0.12.10)
+	COMMON: raise error when FUNC return value not assigned
+
+2017-08-13 (0.12.10)
+	SDL: Added F8 publish command
+
+2017-08-08 (0.12.10)
+	COMMON: Fix PROGLINE when using multi-line strings
+
+2017-08-08 (0.12.10)
+	COMMON: LEFT, RIGHT, REPLACE, INSTR, RINSTR no longer error on invalid pos input
+
+2017-07-29 (0.12.10)
+	COMMON: VAL command now ignored any input trailing non digit chars
+	COMMON: MID command now returns blank for invalid index input
+
+2017-07-13 (0.12.10)
+	COMMON: Fix potential infinite loop using the MAX command
+
+2017-06-08 (0.12.10)
+	COMMON: Now errors when using a keyword as part of a MAP variable
+
+2017-06-08 (0.12.10)
+	COMMON: Fix issue with INPUT command
+
+2017-06-05 (0.12.10)
+	ANDROID: Fix exit when navigating to non-permitted path
+
+2017-06-05 (0.12.10)
+	ANDROID: Fix crash when exporting from IDE
+
+2017-06-03 (0.12.10)
+	COMMON: Add support code arrays declared over multiple lines
+
+2017-06-02 (0.12.10)
+	COMMON: Fix inline local variable declaration for complex assignments
+
+2017-05-27 (0.12.10)
+	COMMON: Implemented OPTION AUTOLOCAL runtime option
+
+2017-05-27 (0.12.10)
+	COMMON: Can now declare an empty array with: a=[]
+	COMMON: REPLACE str argument can now be a number type
+	SDL: Editor now shows navigable stack trace in error message
+
+2017-05-20 (0.12.10)
+	COMMON: Implemented Nil system constant
+	COMMON: Implemented Maxint system constant
+
+2017-05-14 (0.12.10)
+	COMMON: Assign multiple variables from an ARRAY
+
+2017-05-14 (0.12.10)
+	COMMON: Optimise execution between repeated kwLINE,kwGOTO segments
+	COMMON: Cleanup redundant typedefs
+	SDL: Debugger only show local variables when in SUB or FUNC
+	SDL: Fix crash using debugger when pressing arrow key
+
+2017-05-08 (0.12.10)
+	COMMON: Fix FUNC call as pseudo class method
+
+2017-05-06 (0.12.10)
+	COMMON: SUB can now use RETURN statement
+	COMMON: Fix line number count when using multi-line strings
+
+2017-05-04 (0.12.10)
+	UI: The FORM command now reports an error when IMAGE input fails to load
+
+2017-04-30 (0.12.10)
+	COMMON: FUNC can now use RETURN statement as synonym for FUNCNAME=result
+
+2017-04-30 (0.12.10)
+	COMMON: Fix square bracket access to 2D arrays
+	SDL: PEN OFF command now hides the cursor
+
 2017-04-01 (0.12.9)
 	COMMON: TRANSLATE now takes optional ignore-case argument
 

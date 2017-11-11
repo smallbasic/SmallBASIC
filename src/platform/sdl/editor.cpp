@@ -26,7 +26,7 @@ bool g_macro_record;
 bool g_returnToLine;
 
 struct StatusMessage {
-  StatusMessage(TextEditInput *editor) :
+  explicit StatusMessage(TextEditInput *editor) :
     _dirty(editor->isDirty()),
     _row(editor->getRow()),
     _col(editor->getCol()) {
@@ -117,6 +117,25 @@ void showRecentFiles(TextEditHelpWidget *helpWidget, String &loadPath) {
   helpWidget->setText(fileList);
 }
 
+void showSelectionCount(AnsiWidget *out, TextEditInput *widget) {
+  int lines, chars;
+  widget->getSelectionCounts(&lines, &chars);
+  String label = "Region has ";
+  label.append(lines).append(" line");
+  if (lines > 1) {
+    label.append("s, ");
+  } else {
+    label.append(", ");
+  }
+  label.append(chars).append(" character");
+  if (chars > 1) {
+    label.append("s.");
+  } else {
+    label.append(".");
+  }
+  out->setStatus(label);
+}
+
 void exportBuffer(AnsiWidget *out, const char *text, String &dest, String &token) {
   char buffer[PATH_MAX];
   dev_file_t f;
@@ -136,6 +155,59 @@ void exportBuffer(AnsiWidget *out, const char *text, String &dest, String &token
     sprintf(buffer, "Failed to open: %s", dest.c_str());
   }
   out->setStatus(buffer);
+}
+
+void publish(System *system, const char *text, const char *fileName, const char *description) {
+  String gist = saveGist(text, fileName, description);
+  if (gist.empty()) {
+    system->alert("Publish", "Failed to save gist file.");
+  } else {
+    String command;
+    var_t result;
+
+    command.append("curl -X POST -d @")
+      .append(gist)
+      .append("  https://api.github.com/gists")
+      .append(" --header \"Content-Type:application/json\"");
+    v_init(&result);
+    if (!dev_run(command, &result, 1)) {
+      system->alert("Publish", "Failed to invoke curl.");
+    } else {
+      const char *str = v_str(&result);
+      const char *field = "html_url";
+      const char *url = strstr(str, field);
+      String html;
+
+      if (url != NULL) {
+        const char *q1 = strchr(url + strlen(field) + 2, '\"');
+        const char *q2 = q1 == NULL ? NULL : strchr(q1 + 1, '\"');
+        if (q1 != NULL && q2 != NULL) {
+          html.append(q1 + 1, q2 - q1 - 1);
+        }
+      }
+      if (html.empty()) {
+        system->alert("Publish", "Failed to publish gist.");
+      } else {
+        system->browseFile(html);
+      }
+    }
+  }
+}
+
+void exportRun(Runtime *runtime, TextEditInput *editor) {
+  char path[PATH_MAX];
+  getScratchFile(path);
+  char *buffer = editor->getTextSelection();
+  FILE *fp = fopen(path, "wb");
+  if (fp) {
+    fputs(buffer, fp);
+    fputs("\npause\n", fp);
+    fclose(fp);
+    runtime->exportRun(path);
+  } else {
+    runtime->alert("Run", "Failed to save scratch file.");
+  }
+  free(buffer);
 }
 
 void System::editSource(String loadPath) {
@@ -159,7 +231,7 @@ void System::editSource(String loadPath) {
   String recentFile;
   StatusMessage statusMessage(editWidget);
   enum InputMode {
-    kInit, kExportAddr, kExportToken, kCommand
+    kInit, kExportAddr, kExportToken, kCommand, kPublish
   } inputMode = kInit;
 
   _modifiedTime = getModifiedTime();
@@ -168,25 +240,32 @@ void System::editSource(String loadPath) {
   editWidget->setFocus(true);
   statusMessage.setFilename(loadPath);
 
-  if (isBreak() && g_returnToLine) {
-    editWidget->setCursorRow(gsb_last_line);
-  }
-
-  if (gsb_last_error && !isBack()) {
-    editWidget->setCursorRow(gsb_last_line - 1);
-    helpWidget->setText(gsb_last_errmsg);
-    widget = helpWidget;
-    helpWidget->show();
-  }
-  _srcRendered = false;
   _output->clearScreen();
   _output->addInput(editWidget);
   _output->addInput(helpWidget);
-  if (gsb_last_error && !isBack()) {
-    _output->setStatus("Error. Esc=Close");
+
+  if (isBreak() && g_returnToLine) {
+    // break running program - position to last program line
+    editWidget->setCursorRow(gsb_last_line);
+    statusMessage.update(editWidget, _output, true);
+  } else if (gsb_last_error && !isBack()) {
+    // program stopped with an error
+    editWidget->setCursorRow(gsb_last_line + editWidget->getSelectionRow() - 1);
+    if (_stackTrace.size()) {
+      helpWidget->setText(gsb_last_errmsg);
+      helpWidget->createStackTrace(gsb_last_errmsg, gsb_last_line, _stackTrace);
+      widget = helpWidget;
+      helpWidget->show();
+      _output->setStatus("Error. Esc=Close, Up/Down=Caller");
+    } else {
+      _output->setStatus(!gsb_last_errmsg[0] ? "Error" : gsb_last_errmsg);
+    }
   } else {
     statusMessage.update(editWidget, _output, true);
   }
+
+  _srcRendered = false;
+  _stackTrace.removeAll();
   _output->redraw();
   _state = kEditState;
 
@@ -234,8 +313,6 @@ void System::editSource(String loadPath) {
             redraw |= widget->edit(g_macro[i], sw, charWidth);
           }
           break;
-        case SB_KEY_F(8):
-        case SB_KEY_F(11):
         case SB_KEY_F(12):
         case SB_KEY_MENU:
           redraw = false;
@@ -271,10 +348,10 @@ void System::editSource(String loadPath) {
         case SB_KEY_F(1):
         case SB_KEY_ALT('h'):
           _output->setStatus("Keyword Help. F2=online, Esc=Close");
-        widget = helpWidget;
-        helpWidget->createKeywordIndex();
-        helpWidget->show();
-        break;
+          widget = helpWidget;
+          helpWidget->createKeywordIndex();
+          helpWidget->show();
+          break;
         case SB_KEY_F(2):
           redraw = false;
           onlineHelp((Runtime *)this, editWidget);
@@ -302,12 +379,26 @@ void System::editSource(String loadPath) {
           helpWidget->createMessage();
           helpWidget->show();
           debugStart(editWidget, loadPath.c_str());
+          statusMessage._row = editWidget->getRow();
+          statusMessage._col = editWidget->getCol();
           break;
         case SB_KEY_F(6):
           debugStep(editWidget, helpWidget, false);
           break;
         case SB_KEY_F(7):
           debugStep(editWidget, helpWidget, true);
+          break;
+        case SB_KEY_F(8):
+          exportRun((Runtime *)this, editWidget);
+          break;
+        case SB_KEY_F(11):
+          if (editWidget->getTextLength()) {
+            _output->setStatus("Enter description, Esc=Close [Publish on GitHub]");
+            widget = helpWidget;
+            helpWidget->createLineEdit("");
+            helpWidget->show();
+            inputMode = kPublish;
+          }
           break;
         case SB_KEY_CTRL('h'):
           _output->setStatus("Keystroke help. Esc=Close");
@@ -348,9 +439,9 @@ void System::editSource(String loadPath) {
         case SB_KEY_CTRL('v'):
         case SB_KEY_SHIFT(SB_KEY_INSERT):
           text = getClipboardText();
-        widget->paste(text);
-        free(text);
-        break;
+          widget->paste(text);
+          free(text);
+          break;
         case SB_KEY_CTRL('o'):
           _output->selectScreen(USER_SCREEN1);
           showCompletion(true);
@@ -371,6 +462,9 @@ void System::editSource(String loadPath) {
                              "Position the cursor to the last program line after BREAK" :
                              "BREAK restores current cursor position");
           break;
+        case SB_KEY_ALT('='):
+          showSelectionCount(_output, editWidget);
+          break;
         case SB_KEY_ALT('1'):
         case SB_KEY_ALT('2'):
         case SB_KEY_ALT('3'):
@@ -383,24 +477,24 @@ void System::editSource(String loadPath) {
           if (editWidget->isDirty()) {
             saveFile(editWidget, loadPath);
           }
-        if (getRecentFile(recentFile, event.key - SB_KEY_ALT('1'))) {
-          if (loadSource(recentFile.c_str())) {
-            editWidget->reload(_programSrc);
-            statusMessage.setFilename(loadPath);
-            setLoadPath(recentFile);
-            setWindowTitle(statusMessage._fileName);
-            loadPath = recentFile;
-            if (helpWidget->messageMode() && helpWidget->isVisible()) {
-              showRecentFiles(helpWidget, loadPath);
+          if (getRecentFile(recentFile, event.key - SB_KEY_ALT('1'))) {
+            if (loadSource(recentFile.c_str())) {
+              editWidget->reload(_programSrc);
+              statusMessage.setFilename(loadPath);
+              setLoadPath(recentFile);
+              setWindowTitle(statusMessage._fileName);
+              loadPath = recentFile;
+              if (helpWidget->messageMode() && helpWidget->isVisible()) {
+                showRecentFiles(helpWidget, loadPath);
+              }
+            } else {
+              String message("Failed to load recent file: ");
+              message.append(recentFile);
+              _output->setStatus(message);
             }
-          } else {
-            String message("Failed to load recent file: ");
-            message.append(recentFile);
-            _output->setStatus(message);
           }
-        }
-        _modifiedTime = getModifiedTime();
-        break;
+          _modifiedTime = getModifiedTime();
+          break;
         default:
           redraw = widget->edit(event.key, sw, charWidth);
           break;
@@ -433,10 +527,20 @@ void System::editSource(String loadPath) {
               widget = editWidget;
               helpWidget->hide();
               break;
+            case kPublish:
+              _output->setStatus("Sending gist...");
+              _output->redraw();
+              publish(this, editWidget->getText(), statusMessage._fileName, helpWidget->getText());
+              inputMode = kInit;
+              widget = editWidget;
+              helpWidget->hide();
+              statusMessage._dirty = !widget->isDirty();
+              break;
             default:
               break;
             }
           } else if (helpWidget->closeOnEnter() && helpWidget->isVisible()) {
+            statusMessage._dirty = !widget->isDirty();
             widget = editWidget;
             helpWidget->hide();
           }
@@ -475,9 +579,10 @@ void System::editSource(String loadPath) {
     _editor = NULL;
   }
 
+  // deletes editWidget unless it has been removed
   _output->removeInputs();
   if (!isClosing()) {
-    _output->selectScreen(prevScreenId);
+    _output->selectScreen(prevScreenId, false);
   }
   logLeaving();
 }

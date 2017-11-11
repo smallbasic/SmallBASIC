@@ -20,6 +20,7 @@
 #include "common/messages.h"
 
 #define STR_INIT_SIZE 256
+#define PKG_INIT_SIZE 5
 
 /**
  * LET v[(x)] = any
@@ -27,31 +28,96 @@
  */
 void cmd_let(int is_const) {
   var_t *v_left = code_getvarptr();
-
   if (!prog_error) {
     if (v_left->const_flag) {
       err_const();
-      return;
-    }
-
-    if (prog_source[prog_ip] == kwTYPE_CMPOPR &&
-        prog_source[prog_ip + 1] == '=') {
-      code_skipopr();
-    }
-
-    if (code_peek() == kwBYREF) {
-      code_skipnext();
-      v_eval_ref(v_left);
     } else {
+      if (prog_source[prog_ip] == kwTYPE_CMPOPR &&
+          prog_source[prog_ip + 1] == '=') {
+        code_skipopr();
+      }
       var_t v_right;
       v_init(&v_right);
       eval(&v_right);
-      if (!prog_error) {
-        v_set(v_left, &v_right);
-        v_left->const_flag = is_const;
-      }
-      v_free(&v_right);
+      v_move(v_left, &v_right);
+      v_left->const_flag = is_const;
+      // no free after v_move
     }
+  }
+}
+
+void cmd_let_opt() {
+  var_t *v_left = code_getvarptr();
+  if (!prog_error) {
+    // skip kwTYPE_CMPOPR + "="
+    code_skipopr();
+
+    // skip kwTYPE_VAR
+    code_skipnext();
+
+    v_set(v_left, tvar[code_getaddr()]);
+    v_left->const_flag = 0;
+  }
+}
+
+void cmd_packed_let() {
+  if (code_peek() != kwTYPE_LEVEL_BEGIN) {
+    err_missing_comma();
+  } else {
+    code_skipnext();
+
+    int size = PKG_INIT_SIZE;
+    int count = 0;
+    var_t **vars = (var_t **)malloc(sizeof(var_t **) * size);
+
+    while (code_peek() != kwTYPE_LEVEL_END && !prog_error) {
+      if (count + 1 > size) {
+        size += PKG_INIT_SIZE;
+        vars = (var_t **)realloc(vars, sizeof(var_t **) * size);
+      }
+      vars[count++] = code_getvarptr();
+
+      // skip separator
+      if (code_peek() == kwTYPE_SEP) {
+        code_skipnext();
+        if (code_getnext() != ',') {
+          err_missing_comma();
+        }
+      }
+    }
+    // skip end separator
+    code_skipnext();
+
+    var_t v_right_eval;
+    var_t *v_right;
+    v_init(&v_right_eval);
+    if (code_isvar()) {
+      // avoid memory allocation
+      v_right = code_getvarptr();
+    } else {
+      eval(&v_right_eval);
+      v_right = &v_right_eval;
+    }
+
+    if (!prog_error) {
+      int arrayCount = v_right->type == V_ARRAY ? v_asize(v_right) : 1;
+      if (arrayCount == count) {
+        if (count == 1) {
+          // right can be another data type
+          v_set(vars[0], v_right);
+        } else {
+          for (int i = 0; i < count; i++) {
+            v_set(vars[i], v_elem(v_right, i));
+          }
+        }
+      } else if (arrayCount > count) {
+        rt_raise(ERR_PACK_TOO_MANY);
+      } else {
+        rt_raise(ERR_PACK_TOO_FEW, arrayCount);
+      }
+    }
+    v_free(&v_right_eval);
+    free(vars);
   }
 }
 
@@ -169,7 +235,7 @@ void cmd_redim() {
  * or
  * A << x1 [, x2, ...]
  */
-void cmd_ladd() {
+void cmd_append() {
   var_t *var_p = code_getvarptr();
   if (prog_error) {
     return;
@@ -187,21 +253,11 @@ void cmd_ladd() {
   }
 
   // for each argument to append
-  var_t *arg_p = v_new();
   do {
     // get the value to append
-    v_free(arg_p);
-
-    int byref = 0;
-    if (code_peek() == kwBYREF) {
-      code_skipnext();
-      byref = 1;
-    } else {
-      eval(arg_p);
-    }
-    if (prog_error) {
-      break;
-    }
+    var_t arg_p;
+    v_init(&arg_p);
+    eval(&arg_p);
 
     // find the array element
     var_t *elem_p;
@@ -209,16 +265,12 @@ void cmd_ladd() {
       v_toarray1(var_p, 1);
       elem_p = v_elem(var_p, 0);
     } else {
-      v_resize_array(var_p, var_p->v.a.size + 1);
-      elem_p = v_elem(var_p, var_p->v.a.size - 1);
+      v_resize_array(var_p, v_asize(var_p) + 1);
+      elem_p = v_elem(var_p, v_asize(var_p) - 1);
     }
 
     // set the value onto the element
-    if (byref) {
-      v_eval_ref(elem_p);
-    } else {
-      v_set(elem_p, arg_p);
-    }
+    v_move(elem_p, &arg_p);
 
     // next parameter
     if (code_peek() != kwTYPE_SEP) {
@@ -230,10 +282,27 @@ void cmd_ladd() {
       }
     }
   } while (1);
+}
 
-  // cleanup
-  v_free(arg_p);
-  v_detach(arg_p);
+void cmd_append_opt() {
+  var_t *v_left = code_getvarptr();
+
+  // skip kwTYPE_SEP + ","
+  code_skipsep();
+
+  // skip kwTYPE_VAR
+  code_skipnext();
+
+  var_t *elem_p;
+  if (v_left->type != V_ARRAY) {
+    v_toarray1(v_left, 1);
+    elem_p = v_elem(v_left, 0);
+  } else {
+    v_resize_array(v_left, v_asize(v_left) + 1);
+    elem_p = v_elem(v_left, v_asize(v_left) - 1);
+  }
+
+  v_set(elem_p, tvar[code_getaddr()]);
 }
 
 /**
@@ -267,10 +336,10 @@ void cmd_lins() {
   }
 
   int ladd = 0;
-  if (idx >= var_p->v.a.size) {
+  if (idx >= v_asize(var_p)) {
     // append
     ladd = 1;
-    idx = var_p->v.a.size;
+    idx = v_asize(var_p);
   } else if (idx <= 0) {
     // insert at top
     idx = 0;
@@ -281,30 +350,19 @@ void cmd_lins() {
   do {
     // get the value to append
     v_free(arg_p);
-
-    int byref = 0;
-    if (code_peek() == kwBYREF) {
-      code_skipnext();
-      byref = 1;
-    } else {
-      eval(arg_p);
-    }
-    if (prog_error) {
-      break;
-    }
+    eval(arg_p);
 
     // resize +1
-    v_resize_array(var_p, var_p->v.a.size + 1);
+    v_resize_array(var_p, v_asize(var_p) + 1);
 
     // find the array element
     var_t *elem_p;
     if (ladd) {
       // append
-      elem_p = v_elem(var_p, var_p->v.a.size - 1);
+      elem_p = v_elem(var_p, v_asize(var_p) - 1);
     } else {
       // move all form idx one down
-      int i;
-      for (i = var_p->v.a.size - 1; i > idx; i--) {
+      for (int i = v_asize(var_p) - 1; i > idx; i--) {
         // A(i) = A(i-1)
         v_set(v_elem(var_p, i), v_elem(var_p, i - 1));
       }
@@ -312,11 +370,7 @@ void cmd_lins() {
     }
 
     // set the value onto the element
-    if (byref) {
-      v_eval_ref(elem_p);
-    } else {
-      v_set(elem_p, arg_p);
-    }
+    v_set(elem_p, arg_p);
 
     // next parameter
     if (code_peek() != kwTYPE_SEP) {
@@ -338,11 +392,7 @@ void cmd_lins() {
  * DELETE A, index[, count]
  */
 void cmd_ldel() {
-  var_t *var_p, *arg_p;
-  int idx, count = 1;
-  int i, j;
-
-  var_p = code_getvarptr();
+  var_t *var_p = code_getvarptr();
   if (prog_error) {
     return;
   }
@@ -355,17 +405,21 @@ void cmd_ldel() {
     err_argerr();
     return;
   }
+
   // get 'index'
-  idx = par_getint();
+  uint32_t size = v_asize(var_p);
+  int idx = par_getint();
   if (prog_error) {
     return;
   }
   idx -= var_p->v.a.lbound[0];
-  if ((idx >= var_p->v.a.size) || (idx < 0)) {
+  if ((idx >= size) || (idx < 0)) {
     err_out_of_range();
     return;
   }
+
   // get 'count'
+  int count = 1;
   if (code_peek() == kwTYPE_SEP) {
     par_getcomma();
     if (prog_error) {
@@ -375,44 +429,58 @@ void cmd_ldel() {
     if (prog_error) {
       return;
     }
-    if (((count + idx) - 1 > var_p->v.a.size)) {
+    if (((count + idx) - 1 > size)) {
       err_out_of_range();
-      return;
     } else if (count <= 0) {
       err_argerr();
     }
   }
-  // data
-  arg_p = v_clone(var_p);
-  v_resize_array(var_p, var_p->v.a.size - count);
+  if (prog_error) {
+    return;
+  }
 
-  // first part
-  for (i = 0; i < idx; i++) {
-    // A(i) = OLD(i)
-    v_set(v_elem(var_p, i), v_elem(arg_p, i));
+  if (idx + count == size) {
+    // pop elements from a stack
+    v_resize_array(var_p, size - count);
+  } else if (idx == 0) {
+    // pop element from a queue
+    // for better performance create a queue in the language
+    for (int i = 0; i < size - count; i++) {
+      v_set(v_elem(var_p, i), v_elem(var_p, i + count));
+    }
+    v_resize_array(var_p, size - count);
+  } else {
+    var_t *arg_p = v_clone(var_p);
+    v_resize_array(var_p, size - count);
+
+    // first part
+    for (int i = 0; i < idx; i++) {
+      // A(i) = OLD(i)
+      v_set(v_elem(var_p, i), v_elem(arg_p, i));
+    }
+    // second part
+    for (int i = idx + count, j = idx; i < size; i++, j++) {
+      // A(j) = OLD(i)
+      v_set(v_elem(var_p, j), v_elem(arg_p, i));
+    }
+
+    // cleanup
+    v_free(arg_p);
+    v_detach(arg_p);
   }
-  // second part
-  for (i = idx + count, j = idx; i < arg_p->v.a.size; i++, j++) {
-    // A(j) = OLD(i)
-    v_set(v_elem(var_p, j), v_elem(arg_p, i));
-  }
-  // cleanup
-  v_free(arg_p);
-  v_detach(arg_p);
 }
 
 /**
  * ERASE var1 [, var2[, ...]]
  */
 void cmd_erase() {
-  byte code;
   var_t *var_p;
 
   do {
     if (prog_error) {
       break;
     }
-    code = code_peek();
+    byte code = code_peek();
 
     if (code_isvar()) {
       var_p = code_getvarptr();
@@ -435,7 +503,6 @@ void cmd_erase() {
     } else {
       break;
     }
-
   } while (1);
 }
 
@@ -583,20 +650,11 @@ void cmd_print(int output) {
  * INPUT ...
  */
 void cmd_input(int input) {
-  byte code;
   byte print_crlf = 1;
-  byte next_is_const = 0;
-  byte input_is_finished = 0;
   var_t prompt;
   var_t *vuser_p = NULL;
   int handle = 0;
-  int cur_par_idx;
-  int unused_vars;
-  char *inps = NULL, *inp_p;
-  int pcount = 0, redo = 0;
-  par_t *ptable = NULL;
-  par_t *par;
-  char *p, lc;
+  char *inps = NULL;
 
   v_init(&prompt);
   // prefix - # (file)
@@ -638,16 +696,14 @@ void cmd_input(int input) {
       err_argerr();
       return;
     }
-
-    vuser_p->v.p.pos = 0;
     handle = (intptr_t)vuser_p;
   }
 
   // prefix: prompt
   if (input == PV_CONSOLE) {
     v_setstr(&prompt, "");
-
-    if (code_peek() != kwTYPE_STR) {
+    byte code = code_peek();
+    if (code != kwTYPE_STR && code != kwTYPE_VAR) {
       print_crlf = (code_peeksep() != ';');
       if (!print_crlf) {
         code_skipsep();
@@ -657,7 +713,7 @@ void cmd_input(int input) {
       v_free(&prompt);
       eval(&prompt);
 
-      code = code_getsep();
+      byte code = code_getsep();
       if (!prog_error) {
         if (code == ';') {
           v_strcat(&prompt, "? ");
@@ -672,12 +728,14 @@ void cmd_input(int input) {
   }
 
   // get list of parameters
-  pcount = par_getpartable(&ptable, ",;");
+  par_t *ptable = NULL;
+  int pcount = par_getpartable(&ptable, ",;");
   if (pcount == 0) {
     rt_raise(ERR_INPUT_NO_VARS);
   }
   // the INPUT itself
   if (!prog_error) {
+    int redo = 0;
     do {
       // "redo from start"
       if (input == PV_CONSOLE) {  // prompt
@@ -707,12 +765,10 @@ void cmd_input(int input) {
       case PV_FILE:
         // file (INPUT#)
       {
-        int index, size;
         byte ch, quotes;
-
-        size = STR_INIT_SIZE;
+        int size = STR_INIT_SIZE;
         inps = malloc(size);
-        index = 0;
+        int index = 0;
         quotes = 0;
 
         while (!dev_feof(handle)) {
@@ -741,16 +797,14 @@ void cmd_input(int input) {
         break;
       }
 
-      /*
-       *      for each variable
-       */
-      cur_par_idx = 0;
-      inp_p = inps;
-      input_is_finished = 0;
-      unused_vars = 0;
+      // for each variable
+      int cur_par_idx = 0;
+      char *inp_p = inps;
+      int input_is_finished = 0;
+      int unused_vars = 0;
 
       while (cur_par_idx < pcount && !prog_error) {
-        par = &ptable[cur_par_idx];
+        par_t *par = &ptable[cur_par_idx];
 
         if (input_is_finished) {
           // setup all remaining variables to "null"
@@ -766,7 +820,7 @@ void cmd_input(int input) {
           } else {
             // check if user had specify a delimiter (next parameter is NOT a
             // variable)
-            next_is_const = 0;
+            byte next_is_const = 0;
             if (cur_par_idx < (pcount - 1)) {
               if (ptable[cur_par_idx + 1].flags & PAR_BYVAL) {
                 cur_par_idx++;
@@ -782,13 +836,14 @@ void cmd_input(int input) {
             // NOT next_is_const = get the left string of the specified
             // character
             // (,)
+            char *p;
             if (pcount == 1) {
               p = (inp_p + strlen(inp_p));
             } else {
               p = q_strstr(inp_p, ((next_is_const) ? v_getstr(ptable[cur_par_idx].var) : ","), "\"\"");
             }
             if (p) {
-              lc = *p;
+              char lc = *p;
               *p = '\0';
               v_input2var(inp_p, par->var);
               *p = lc;
@@ -1126,11 +1181,9 @@ void cmd_call_unit_udp(int cmd, int udp_tid, bcip_t goto_addr, bcip_t rvid) {
  * Create dynamic-variables (actually local-variables)
  */
 void cmd_crvar() {
-  int i;
-
   // number of variables to create
   int count = code_getnext();
-  for (i = 0; i < count; i++) {
+  for (int i = 0; i < count; i++) {
     // an ID on global-variable-table is used
     bcip_t vid = code_getaddr();
     stknode_t node;
@@ -1174,8 +1227,7 @@ void cmd_param() {
   }
 
   if (pcount) {
-    int i;
-    for (i = 0; i < pcount; i++) {
+    for (int i = 0; i < pcount; i++) {
       // check parameters one-by-one
       byte vattr = code_getnext();
       bid_t vid = code_getaddr();
@@ -1357,25 +1409,36 @@ int cmd_exit() {
  * RETURN
  */
 void cmd_return() {
-  stknode_t node;
-
-  // get return-address and remove any other item (sub items) from stack
-  code_pop(&node, kwGOSUB);
-
-  // 'GOTO'
-  while (node.type != kwGOSUB) {
-    code_pop(&node, kwGOSUB);
-    if (prog_error) {
-      return;
+  if (code_peek() == kwFUNC_RETURN) {
+    // FUNC return statement
+    code_skipnext();
+    code_jump(code_getaddr());
+    stknode_t *node = code_stackpeek();
+    while (node != NULL && node->type != kwPROC && node->type != kwFUNC) {
+      code_pop_and_free();
+      node = code_stackpeek();
     }
-  }
+  } else {
+    // GOSUB/ RETURN
+    stknode_t node;
+    // get return-address and remove any other item (sub items) from stack
+    code_pop(&node, kwGOSUB);
 
-  if (node.type != kwGOSUB) {
-    rt_raise(ERR_SYNTAX);
-    dump_stack();
-  }
+    // 'GOTO'
+    while (node.type != kwGOSUB) {
+      code_pop(&node, kwGOSUB);
+      if (prog_error) {
+        return;
+      }
+    }
 
-  code_jump(node.x.vgosub.ret_ip);
+    if (node.type != kwGOSUB) {
+      rt_raise(ERR_SYNTAX);
+      dump_stack();
+    }
+
+    code_jump(node.x.vgosub.ret_ip);
+  }
 }
 
 /**
@@ -1405,12 +1468,10 @@ void cmd_if() {
  * ELSE
  */
 void cmd_else() {
-  bcip_t true_ip, false_ip;
+  bcip_t true_ip = code_getaddr();
+  bcip_t false_ip = code_getaddr();
+
   stknode_t node;
-
-  true_ip = code_getaddr();
-  false_ip = code_getaddr();
-
   code_pop(&node, kwIF);
 
   // 'GOTO'
@@ -1435,14 +1496,11 @@ void cmd_else() {
  * ELIF
  */
 void cmd_elif() {
-  bcip_t true_ip, false_ip;
-  var_t var;
-  stknode_t node;
-
-  true_ip = code_getaddr();
-  false_ip = code_getaddr();
+  bcip_t true_ip = code_getaddr();
+  bcip_t false_ip = code_getaddr();
 
   // else cond
+  stknode_t node;
   code_pop(&node, kwIF);
 
   // 'GOTO'
@@ -1461,6 +1519,7 @@ void cmd_elif() {
 
   if (!node.x.vif.lcond) {
     // previous IF failed
+    var_t var;
 
     // expression
     v_init(&var);
@@ -1494,17 +1553,11 @@ void cmd_endif() {
  * FOR var = expr TO expr [STEP expr]
  */
 void cmd_for() {
-  byte code;
-  bcip_t true_ip, false_ip;
+  bcip_t true_ip = code_getaddr();
+  bcip_t false_ip = code_getaddr();
+  byte code = code_peek();
+
   stknode_t node;
-  var_t var, varstep;
-  var_p_t array_p, var_p;
-
-  true_ip = code_getaddr();
-  false_ip = code_getaddr();
-
-  code = code_peek();
-
   node.type = kwFOR;
   node.x.vfor.subtype = kwTO;
   node.exit_ip = false_ip + ADDRSZ + ADDRSZ + 1;
@@ -1513,21 +1566,21 @@ void cmd_for() {
   //
   // get FOR-variable
   //
-  var_p = code_getvarptr();
+  var_p_t var_p = code_getvarptr();
   if (prog_error) {
     return;
   }
   node.x.vfor.var_ptr = var_p;
   v_free(var_p);
 
-  v_init(&var);
-  v_init(&varstep);
-
   // FOR-EACH or FOR-TO
   if (code_peek() != kwIN) {
     //
     // FOR v1=exp1 TO exp2 [STEP exp3]
     //
+    var_t varstep, var;
+    v_init(&varstep);
+    v_init(&var);
 
     // get the first expression
     eval(&var);
@@ -1599,11 +1652,14 @@ void cmd_for() {
         rt_raise(ERR_SYNTAX);
       }
     }
+    v_free(&varstep);
+    v_free(&var);
   } else {
     //
     // FOR [EACH] v1 IN v2
     //
-    code = code_getnext();      // kwIN
+    var_p_t array_p;
+    code_skipnext();      // kwIN
     node.x.vfor.subtype = kwIN;
     node.x.vfor.to_expr_ip = prog_ip;
     node.x.vfor.flags = 0;
@@ -1612,9 +1668,7 @@ void cmd_for() {
       node.x.vfor.arr_ptr = array_p = code_getvarptr();
     } else {
       // expression
-      var_t *new_var;
-
-      new_var = v_new();
+      var_t *new_var = v_new();
       eval(new_var);
       if (prog_error) {
         v_detach(new_var);
@@ -1642,7 +1696,7 @@ void cmd_for() {
         break;
 
       case V_ARRAY:
-        if (array_p->v.a.size > 0) {
+        if (v_asize(array_p) > 0) {
           var_elem_ptr = v_elem(array_p, 0);
         }
         break;
@@ -1661,10 +1715,6 @@ void cmd_for() {
       code_push(&node);
     }
   }
-
-  // clean up
-  v_free(&var);
-  v_free(&varstep);
 }
 
 /**
@@ -1744,15 +1794,10 @@ void cmd_until() {
  * NEXT
  */
 void cmd_next() {
-  bcip_t next_ip, jump_ip;
-  var_t var_to, var_step, *var_p, *array_p;
-  var_t *var_elem_ptr;
-  int check = 0;
+  bcip_t next_ip = code_getaddr();
+  code_skipaddr();
+
   stknode_t node;
-
-  next_ip = code_getaddr();
-  jump_ip = code_getaddr();
-
   code_pop(&node, kwFOR);
 
   // 'GOTO'
@@ -1768,17 +1813,16 @@ void cmd_next() {
     dump_stack();
     return;
   }
-  jump_ip = node.x.vfor.jump_ip;
 
-  var_p = node.x.vfor.var_ptr;
-  var_step.const_flag = 0;
-  var_step.type = V_INT;
-  var_step.v.i = 1;
+  bcip_t jump_ip = node.x.vfor.jump_ip;
+  var_t *var_p = node.x.vfor.var_ptr;
 
   if (node.x.vfor.subtype == kwTO) {
     //
     // FOR v=exp1 TO exp2 [STEP exp3]
     //
+    int check = 0;
+    var_t var_to;
 
     prog_ip = node.x.vfor.to_expr_ip;
     v_init(&var_to);
@@ -1786,6 +1830,11 @@ void cmd_next() {
 
     if (!prog_error && (var_to.type == V_INT || var_to.type == V_NUM)) {
       // get step val
+      var_t var_step;
+      var_step.const_flag = 0;
+      var_step.type = V_INT;
+      var_step.v.i = 1;
+
       if (node.x.vfor.step_expr_ip != INVALID_ADDR) {
         prog_ip = node.x.vfor.step_expr_ip;
         eval(&var_step);
@@ -1803,6 +1852,7 @@ void cmd_next() {
           err_typemismatch();
         }
       }
+      v_free(&var_step);
     } else {
       if (!prog_error) {
         rt_raise("FOR-TO: TO v IS NOT A NUMBER");
@@ -1825,8 +1875,8 @@ void cmd_next() {
     //
     // FOR [EACH] v1 IN v2
     //
-    array_p = node.x.vfor.arr_ptr;
-    var_elem_ptr = 0;
+    var_t *array_p = node.x.vfor.arr_ptr;
+    var_t *var_elem_ptr = 0;
 
     switch (array_p->type) {
     case V_MAP:
@@ -1837,7 +1887,7 @@ void cmd_next() {
     case V_ARRAY:
       node.x.vfor.step_expr_ip++; // element-index
 
-      if (array_p->v.a.size > (int) node.x.vfor.step_expr_ip) {
+      if (v_asize(array_p) > (int) node.x.vfor.step_expr_ip) {
         var_elem_ptr = v_elem(array_p, node.x.vfor.step_expr_ip);
       } else {
         if (node.x.vfor.flags & 1) {  // allocated in for
@@ -1848,7 +1898,6 @@ void cmd_next() {
       break;
 
     default:
-      // if ( !prog_error ) rt_raise("FOR-IN: IN var IS NOT ARRAY");
       if (node.x.vfor.flags & 1) {  // allocated in for
         v_free(node.x.vfor.arr_ptr);
         v_detach(node.x.vfor.arr_ptr);
@@ -1864,9 +1913,6 @@ void cmd_next() {
       code_jump(next_ip);
     }
   }
-
-  // clean up
-  v_free(&var_step);
 }
 
 /**
@@ -2116,9 +2162,8 @@ void cmd_split() {
  * SPLIT string, delimiters, array() [, pairs] [USE ...]
  */
 void cmd_wsplit() {
-  int count, i, wait_q;
-  char *p, *ps, *new_text, *z;
-  var_t *var_p, *elem_p;
+  char *p, *new_text;
+  var_t *var_p;
   bcip_t use_ip, exit_ip = INVALID_ADDR;
   char *str = NULL, *del = NULL, *pairs = NULL;
 
@@ -2141,9 +2186,12 @@ void cmd_wsplit() {
 
     // reformat
     new_text = strdup(str);
-    count = 0;
-    wait_q = 0;
-    ps = p = new_text;
+    int count = 0;
+    int wait_q = 0;
+    char *ps = p = new_text;
+    char *z;
+    var_t *elem_p;
+
     while (*p) {
       if (wait_q == *p) {
         wait_q = 0;
@@ -2160,7 +2208,7 @@ void cmd_wsplit() {
         *p = '\0';
 
         // add element (ps)
-        if (var_p->v.a.size <= count) {
+        if (v_asize(var_p) <= count) {
           // resize array
           v_resize_array(var_p, count + 16);
         }
@@ -2194,7 +2242,7 @@ void cmd_wsplit() {
 
     // execute user's expression for each element
     if (use_ip != INVALID_ADDR) {
-      for (i = 0; i < v_asize(var_p) && !prog_error; i++) {
+      for (int i = 0; i < v_asize(var_p) && !prog_error; i++) {
         elem_p = v_elem(var_p, i);
         exec_usefunc(elem_p, use_ip);
       }
@@ -2253,7 +2301,7 @@ void cmd_wjoin() {
   str->v.p.ptr = malloc(size);
   str->v.p.ptr[0] = '\0';
 
-  for (i = 0; i < var_p->v.a.size; i++) {
+  for (i = 0; i < v_asize(var_p); i++) {
     var_t *elem_p = v_elem(var_p, i);
     var_t e_str;
 
@@ -2478,9 +2526,9 @@ void cmd_sort() {
   }
   // sort
   if (!errf) {
-    if (var_p->v.a.size > 1) {
+    if (v_asize(var_p) > 1) {
       static_qsort_last_use_ip = use_ip;
-      qsort(var_p->v.a.data, var_p->v.a.size, sizeof(var_t), qs_cmp);
+      qsort(var_p->v.a.data, v_asize(var_p), sizeof(var_t), qs_cmp);
     }
   }
   // NO RTE anymore... there is no meaning on this because of empty
@@ -2495,8 +2543,7 @@ void cmd_sort() {
  */
 void cmd_search() {
   bcip_t use_ip, exit_ip;
-  int i, bcmp;
-  var_t *var_p, *elem_p, *rv_p;
+  var_t *var_p, *rv_p;
   var_t vkey;
   int errf = 0;
 
@@ -2547,9 +2594,9 @@ void cmd_search() {
   // search
   if (!errf) {
     rv_p->v.i = var_p->v.a.lbound[0] - 1;
-    for (i = 0; i < var_p->v.a.size; i++) {
-      elem_p = v_elem(var_p, i);
-      bcmp = sb_qcmp(elem_p, &vkey, use_ip);
+    for (int i = 0; i < v_asize(var_p); i++) {
+      var_t *elem_p = v_elem(var_p, i);
+      int bcmp = sb_qcmp(elem_p, &vkey, use_ip);
       if (bcmp == 0) {
         rv_p->v.i = i + var_p->v.a.lbound[0];
         break;
@@ -2605,10 +2652,10 @@ void cmd_swap(void) {
  * EXPRSEQ @array, xmin, xmax, count USE f(x)
  */
 void cmd_exprseq(void) {
-  var_t *var_p, *elem_p;
+  var_t *var_p;
   bcip_t use_ip, exit_ip = INVALID_ADDR;
-  var_num_t xmin, xmax, dx, x;
-  var_int_t count, i;
+  var_num_t xmin, xmax, dx;
+  var_int_t count;
 
   par_massget("PFFI", &var_p, &xmin, &xmax, &count);
 
@@ -2628,8 +2675,8 @@ void cmd_exprseq(void) {
       dx = (xmax - xmin) / (count - 1);
 
       // add the entries
-      for (i = 0, x = xmin; i < count; i++, x += dx) {
-        elem_p = v_elem(var_p, i);
+      for (int i = 0, x = xmin; i < count; i++, x += dx) {
+        var_t *elem_p = v_elem(var_p, i);
         v_setreal(elem_p, x);
         exec_usefunc(elem_p, use_ip);
 
@@ -2809,9 +2856,9 @@ void cmd_call_vfunc() {
     if (code_peek() == kwTYPE_PARAM) {
       code_skipnext();
       cmd_param();
-      v_set_self(map);
+      var_t *self = v_set_self(map);
       bc_loop(2);
-      v_set_self(NULL);
+      v_set_self(self);
     } else {
       rt_raise(ERR_NO_FUNC);
     }
@@ -2819,7 +2866,7 @@ void cmd_call_vfunc() {
     if (code_peek() == kwTYPE_LEVEL_BEGIN) {
       code_skipnext();
     }
-    v_func->v.fn.cb(v_func->v.fn.self);
+    v_func->v.fn.cb(map);
     if (code_peek() == kwTYPE_LEVEL_END) {
       code_skipnext();
     }

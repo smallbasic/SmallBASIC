@@ -57,29 +57,32 @@ char g_appPath[OS_PATHNAME_SIZE + 1];
 int g_debugPort = 4000;
 
 void appLog(const char *format, ...) {
-  char buf[4096], *p = buf;
   va_list args;
-
   va_start(args, format);
-  p += vsnprintf(p, sizeof buf - 1, format, args);
+  unsigned size = vsnprintf(NULL, 0, format, args);
   va_end(args);
 
-  while (p > buf && isspace(p[-1])) {
-    *--p = '\0';
-  }
+  if (size) {
+    char *buf = (char *)malloc(size + 3);
+    buf[0] = '\0';
+    va_start(args, format);
+    vsnprintf(buf, size + 1, format, args);
+    va_end(args);
+    buf[size] = '\0';
 
-  *p++ = '\r';
-  *p++ = '\n';
-  *p = '\0';
-
+    int i = size - 1;
+    while (i >= 0 && isspace(buf[i])) {
+      buf[i--] = '\0';
+    }
+    strcat(buf, "\r\n");
+    
 #if defined(WIN32)
-  if (opt_verbose) {
-    fprintf(stderr, buf, 0);
-  }
-  OutputDebugString(buf);
+    OutputDebugString(buf);
 #else
-  fprintf(stderr, buf, 0);
+    fputs(buf, stderr);
 #endif
+    free(buf);
+  }
 }
 
 #if defined(_Win32)
@@ -251,7 +254,7 @@ void showHelp() {
             OPTIONS[i].val, OPTIONS[i].name);
     i++;
   }
-  fprintf(stdout, "\nhttp://smallbasic.sourceforge.net\n\n");
+  fprintf(stdout, "\nhttps://smallbasic.sourceforge.io\n\n");
 }
 
 int main(int argc, char* argv[]) {

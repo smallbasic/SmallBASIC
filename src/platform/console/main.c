@@ -24,11 +24,11 @@ void remove_temp_file(void) {
 }
 
 /*
- *   Generic help-page
+ * Generic help-page
  */
 void show_help() {
   printf("usage: sbasic [options] source [--] [program parameters]\n");
-  printf("-c      syntax check (compile only)\n");
+  printf("-c      program passed in as a string\n");
   printf("-m      [mod1,mod2,...]\n");
   printf("        load all or the specified modules\n");
   printf("-pkw    print all keywords \n");
@@ -37,16 +37,12 @@ void show_help() {
   printf("-u      set unit path\n");
   printf("-v      verbose\n");
   printf("-x      output compiled SBX file\n");
-  // -i for ide
-  /*
-   * fprintf(stderr, "\ncharset (default: utf8)\n");
-   * fprintf(stderr, "-j enable sjis\n");
-   * fprintf(stderr, "-b enable big5\n");
-   * fprintf(stderr, "-m enable generic
-   * multibyte\n"); fprintf(stderr, "-u enable
-   * unicode!\n");
-   */
   printf("\nExamples:\n\tsbasic -h | less\n\tsbasic -h-input\n");
+}
+
+void show_brief_help() {
+  fprintf(stdout, "SmallBASIC version %s - use -h for help\n",  SB_STR_VER);
+  fprintf(stdout, "https://smallbasic.sourceforge.io\n\n");
 }
 
 /*
@@ -96,20 +92,47 @@ void print_keywords() {
     printf("%s\n", proc_table[j].name);
   }
 
-  // external procedures
-  // ....
   exit(1);
+}
+
+/*
+ * setup to run a program passed from the command line
+ */
+int setup_file(const char *program) {
+  static const char *ENV_VARS[] = {
+    "TMP", "TEMP", "TMPDIR", "HOME", "APPDATA", ""
+  };
+
+  for (int i = 0; ENV_VARS[i][0] != '\0'; i++) {
+    const char *tmp = getenv(ENV_VARS[i]);
+    if (tmp && access(tmp, R_OK) == 0) {
+      strcpy(g_file, tmp);
+      strcat(g_file, "/sbasic.tmp");
+      break;
+    }
+  }
+
+  FILE *fp = fopen(g_file, "wb");
+  if (fp) {
+    //atexit(remove_temp_file);
+    fputs(program, fp);
+    fputc('\n', fp);
+    fclose(fp);
+    return 1;
+  } else {
+    fprintf(stderr, "file not writeable - %s\n", g_file);
+    return 0;
+  }
 }
 
 /*
  * process command-line parameters
  */
 int process_options(int argc, char *argv[]) {
-  int i;
   int opt_ihavename = 0;
   int opt_nomore = 0;
 
-  for (i = 1; i < argc; i++) {
+  for (int i = 1; i < argc; i++) {
     if (argv[i][0] == '-') {
       if (opt_nomore) {
         if (strlen(opt_command) + strlen(argv[i]) + 2 < OPT_CMD_SZ) {
@@ -117,14 +140,13 @@ int process_options(int argc, char *argv[]) {
           strcat(opt_command, " ");
           strcat(opt_command, argv[i]);
         } else {
-          fprintf(stderr, "Too long command line! (%s)\n", argv[i]);
-          return 1;
+          fprintf(stderr, "command too long (%s)\n", argv[i]);
+          return 0;
         }
       } else {
         switch (argv[i][1]) {
         case '-':
-          // the following parameters are going to script
-          // (COMMAND$)
+          // the following parameters are going to script (COMMAND$)
           opt_nomore = 1;
           break;
 
@@ -134,8 +156,17 @@ int process_options(int argc, char *argv[]) {
           break;
 
         case 'c':
-          // syntax check
-          opt_syntaxcheck++;
+          if (i + 1 < argc) {
+            opt_ihavename = 1;
+            if (!setup_file(argv[i + 1])) {
+              // failed to setup file
+              return 0;
+            }
+          } else {
+            fprintf(stderr, "argument expected for -c option\n");
+            show_brief_help();
+            return 0;
+          }
           break;
 
         case 'u':
@@ -174,57 +205,36 @@ int process_options(int argc, char *argv[]) {
           break;
 
         case 'q':
-          // shutup
           opt_quiet = 1;
           break;
 
         case 'h':
           // print command-line parameters
-          fprintf(stdout,
-                  "SmallBASIC version %s - kw:%d, pc:%d, fc:%d, ae:%d\n",
-                  SB_STR_VER, kwNULL, (kwNULLPROC - kwCLS) + 1,
-                  (kwNULLFUNC - kwASC) + 1, (int)(65536 / sizeof(var_t)));
-          fprintf(stdout, "http://smallbasic.sourceforge.net\n\n");
-
-          if (argv[i][2] == '-' || argv[i][2] == 'x') {
-            /*
-             *   search for command, or print all doc
-             */
-            if (argv[i][2] == '-') {
-#ifdef HELP_SUBSYS
-              char *command = argv[i] + 3;
-              help_printinfo(command);
-#endif
-            } else if (argv[i][2] == 'x') {
-              // print all
-              // printf("%s\n", help_text);
-              ;
-            }
-          } else {
-            show_help();
-          }
-          return 1;
+          show_brief_help();
+          show_help();
+          return 0;
 
         default:
           fprintf(stderr, "unknown option: %s\n", argv[i]);
-          return 1;
+          show_brief_help();
+          return 0;
         };
       }
     } else {
       // no - switch
-      // this is the filename or script-parameters
+      /// this is the filename or script-parameters
       if (opt_ihavename == 0) {
         strcpy(g_file, argv[i]);
         if (access(g_file, F_OK)) {
           strcat(g_file, ".bas");
           if (access(g_file, F_OK)) {
             fprintf(stderr, "file not accessible - %s\n", g_file);
-            return 1;
+            return 0;
           }
         }
         if (access(g_file, R_OK)) {
           fprintf(stderr, "file not readable - %s\n", g_file);
-          return 1;
+          return 0;
         }
         opt_ihavename = 1;
       } else {
@@ -233,99 +243,42 @@ int process_options(int argc, char *argv[]) {
           strcat(opt_command, " ");
           strcat(opt_command, argv[i]);
         } else {
-          fprintf(stderr, "Too long command line! (%s)\n", argv[i]);
-          return 1;
+          fprintf(stderr, "command too long (%s)\n", argv[i]);
+          return 0;
         }
       }
     }
   }
-
-  // initialization
-  if (strlen(g_file) == 0) {
-    // stdin
-    if (isatty(STDIN_FILENO)) {
-      // check if it is a terminal.
-      opt_interactive = 1;
-    }
-#if defined(_Win32) || defined(_DOS)
-    char *slash = strchr(argv[0], OS_DIRSEP);
-    if (slash) {
-      strcpy(g_file, argv[0]);
-      slash = strrchr(g_file, OS_DIRSEP);
-      *slash = OS_DIRSEP;
-      *(slash + 1) = '\0';
-      strcat(g_file, "sbasic.tmp");
-    } else {
-      sprintf(g_file, "sbasic.tmp");
-    }
-#elif defined(_UnixOS)
-    sprintf(g_file, "%ctmp%csb%d.bas", OS_DIRSEP, OS_DIRSEP, getpid());
-#else
-    sprintf(g_file, "sb%d.bas", getpid());      // for minimal GNU systems like
-    // MINGW
-#endif
-
-    // its a temporary and it must be deleted
-    atexit(remove_temp_file);
-
-    if (opt_interactive) {
-      // get it from console
-#ifdef INTERACTIVE_CONSOLE
-      interactive_mode(g_file);
-#endif
-    } else {
-      // get it from stdin
-      FILE *fp = fopen(g_file, "wb");
-      int c;
-      if (fp) {
-        while ((c = fgetc(stdin)) != EOF) {
-          fputc(c, fp);
-        }
-        fclose(fp);
-      } else {
-        fprintf(stderr, "file not writeable - %s\n", g_file);
-        return 1;
-      }
-    }
-  }
-  return 0;
+  // success
+  return 1;
 }
 
 /*
  * program entry point
  */
 int main(int argc, char *argv[]) {
-  char prev_cwd[OS_PATHNAME_SIZE + 1];
-
   opt_graphics = 0;
   opt_quiet = 1;
   opt_ide = 0;
   opt_nosave = 1;
-  opt_pref_width = opt_pref_height = opt_pref_bpp = 0;
+  opt_pref_width = opt_pref_height = 0;
   opt_verbose = 0;
   opt_file_permitted = 1;
-
-  // init strings
+  opt_autolocal = 0;
   opt_command[0] = 0;
   opt_modlist[0] = 0;
-  prev_cwd[0] = 0;
-  g_file[0] = 0;
+  g_file[0] = '\0';
 
-  getcwd(prev_cwd, sizeof(prev_cwd) - 1);
-
-  opt_retval = process_options(argc, argv);
-
-  if (!opt_retval) {
-    if (!opt_quiet) {
-      printf("SmallBASIC version %s, use -h for help\n", SB_STR_VER);
-    }
-    // run it
-    if (!opt_interactive) {
+  if (process_options(argc, argv)) {
+    if (g_file[0]) {
+      char prev_cwd[OS_PATHNAME_SIZE + 1];
+      prev_cwd[0] = 0;
+      getcwd(prev_cwd, sizeof(prev_cwd) - 1);
       sbasic_main(g_file);
+      chdir(prev_cwd);
+    } else {
+      show_brief_help();
     }
-
-    chdir(prev_cwd);
   }
-
-  return gsb_last_error ? gsb_last_error : opt_retval;
+  return gsb_last_error;
 }

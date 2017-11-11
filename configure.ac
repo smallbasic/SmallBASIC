@@ -7,7 +7,7 @@ dnl This program is distributed under the terms of the GPL v2.0
 dnl Download the GNU Public License (GPL) from www.gnu.org
 dnl
 
-AC_INIT([smallbasic], [0.12.9])
+AC_INIT([smallbasic], [0.12.10])
 AC_CONFIG_SRCDIR([configure.ac])
 
 AC_CANONICAL_TARGET
@@ -74,6 +74,32 @@ function checkDebugMode() {
      AC_DEFINE(_DEBUG, 1, [debugging build enabled])
    fi
    AC_SUBST(CFLAGS)
+}
+
+function checkProfiling() {
+   AC_MSG_CHECKING([if profile generate is enabled])
+   AC_ARG_WITH(profile-generate,
+   [  --with-profile-generate          Build the profile generate default=no],
+       [with_prof_gen=$withval],
+       [with_prof_gen=no])
+   AC_MSG_RESULT([$with_prof_gen])
+   if test "$with_prof_gen" = "yes"
+   then
+     CFLAGS="${CFLAGS} -fprofile-generate"
+     CXXFLAGS="${CXXFLAGS} -fprofile-generate"
+   else
+     AC_MSG_CHECKING([if profile use is enabled])
+     AC_ARG_WITH(profile-use,
+     [  --with-profile-use          Build the profile use default=no],
+         [with_prof_use=$withval],
+         [with_prof_use=no])
+     AC_MSG_RESULT([$with_prof_use])
+     if test "$with_prof_use" = "yes"
+     then
+       CFLAGS="${CFLAGS} -fprofile-use"
+       CXXFLAGS="${CXXFLAGS} -fprofile-use"
+     fi
+   fi
 }
 
 function checkPCRE() {
@@ -300,6 +326,7 @@ fi
 checkPCRE
 checkTermios
 checkDebugMode
+checkProfiling
 checkForWindows
 
 PACKAGE_CFLAGS="${PACKAGE_CFLAGS} -Wall -Wno-unused-result"
@@ -311,6 +338,10 @@ AC_DEFINE_UNQUOTED([SB_DWORD_VER],[$SB_DWORD_VER],[SB_DWORD_VER])
 
 AC_SUBST(PACKAGE_CFLAGS)
 AC_SUBST(PACKAGE_LIBS)
+
+dnl change default aru setting to avoid warning
+ARFLAGS=cr
+AC_SUBST(ARFLAGS)
 
 AC_CONFIG_FILES([
 Makefile

@@ -199,7 +199,7 @@ func loadGame(filename)
   local nextLine, i, firstChar, games, nextGame
 
   dim nextGame
-  dim games
+  local games={}
 
   for i = 0 to buffLen
     nextLine = buffer(i)

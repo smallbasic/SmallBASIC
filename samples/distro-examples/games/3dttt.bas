@@ -202,7 +202,7 @@ Next
 
 For i = 1 To 64: ps(i) = pp(i): Next
  vert = 0
- aaa=Rnd(1)*2
+ aaa=Rnd()*2
  If aaa=0 Then vv=vv*(-1)
  If vv=1 Then sss1=1:sss2=76:vv=vv*(-1)
   If vv=-1 Then sss1=76:sss2=1:vv=vv*(-1)

@@ -1,6 +1,6 @@
 // This file is part of SmallBASIC
 //
-// SmallBasic Code & Variable Manager.
+// SmallBASIC Code & Variable Manager.
 //
 // This program is distributed under the terms of the GPL v2.0 or later
 // Download the GNU Public License (GPL) from www.gnu.org
@@ -8,10 +8,10 @@
 // Copyright(C) 2000 Nicholas Christopoulos
 
 /**
- *   @defgroup var Variables
+ * @defgroup var Variables
  */
 /**
- *   @defgroup exec Executor
+ * @defgroup exec Executor
  */
 
 #if !defined(_sb_cvm_h)
@@ -38,6 +38,7 @@
 #define V_MAP       5 /**< variable type, associative array            @ingroup var */
 #define V_REF       6 /**< variable type, reference another var        @ingroup var */
 #define V_FUNC      7 /**< variable type, object method                @ingroup var */
+#define V_NIL       8 /**< variable type, null value                   @ingroup var */
 
 /*
  *   predefined system variables - index
@@ -54,13 +55,15 @@
 #define SYSVAR_X            9  /**< system variable, X         @ingroup var */
 #define SYSVAR_Y            10 /**< system variable, Y         @ingroup var */
 #define SYSVAR_SELF         11 /**< system variable, SELF      @ingroup var */
-#define SYSVAR_COUNT        12
+#define SYSVAR_NONE         12 /**< system variable, NONE      @ingroup var */
+#define SYSVAR_MAXINT       13 /**< system variable, INTMAX    @ingroup var */
+#define SYSVAR_COUNT        14
 
 /**
  * @ingroup var
  * @def MAXDIM Maxium number of array-dimensions
  */
-#define MAXDIM 6     // think before increase this, (possible stack overflow)
+#define MAXDIM 2
 
 #if defined(__cplusplus)
 extern "C" {
@@ -75,12 +78,7 @@ typedef void (*method) (struct var_s *self);
  *
  * VARIANT DATA TYPE
  */
-struct var_s {
-  byte type; /**< variable's type */
-  byte const_flag; /**< non-zero if constants */
-  byte pooled; /** whether held in pooled memory */
-  byte attached; /** whether attached in pooled memory */
-
+typedef struct var_s {
   // value
   union {
     var_num_t n; /**< numeric value */
@@ -105,37 +103,41 @@ struct var_s {
     // object method
     struct {
       method cb;
-      struct var_s *self;
     } fn;
 
     // generic ptr (string)
     struct {
       char *ptr; /**< data ptr (possibly, string pointer) */
       uint32_t length; /**< the string length */
-      uint32_t pos; /**< position in string (used by pv_* functions) */
     } p;
 
     // array
     struct {
       struct var_s *data; /**< array data pointer */
       uint32_t size; /**< the number of elements */
+      uint32_t capacity; /**< the number of slots */
       int32_t lbound[MAXDIM]; /**< lower bound */
       int32_t ubound[MAXDIM]; /**< upper bound */
       byte maxdim; /**< number of dimensions */
     } a;
-  } v;
-};
 
-typedef struct var_s var_t;
+    // next item in the free-list
+    struct var_s *pool_next;
+  } v;
+
+  byte type; /**< variable's type */
+  byte const_flag; /**< non-zero if constants */
+  byte pooled; /** whether held in pooled memory */
+} var_t;
+
 typedef var_t *var_p_t;
 
 /*
  * label
  */
-struct lab_s {
+typedef struct lab_s {
   bcip_t ip;
-};
-typedef struct lab_s lab_t;
+} lab_t;
 
 /**
  * @ingroup exec
@@ -143,22 +145,18 @@ typedef struct lab_s lab_t;
  *
  * EXECUTOR's STACK NODE
  */
-struct stknode_s {
-  code_t type; /**< type of node (keyword id, i.e. kwGOSUB, kwFOR, etc) */
-  bcip_t exit_ip; /**< EXIT command IP to go */
-  int line; /** line number of current execution **/
-
+typedef struct stknode_s {
   union {
     /**
      *  FOR-TO-NEXT
      */
     struct {
-      code_t subtype; /**< kwTO | kwIN */
       var_t *var_ptr; /**< 'FOR' variable */
       var_t *arr_ptr; /**< FOR-IN array-variable */
       bcip_t to_expr_ip; /**< IP of 'TO' expression */
       bcip_t step_expr_ip; /**< IP of 'STEP' expression (FOR-IN = current element) */
       bcip_t jump_ip; /**< code block IP */
+      code_t subtype; /**< kwTO | kwIN */
       byte flags; /**< ... */
     } vfor;
 
@@ -188,29 +186,27 @@ struct stknode_s {
      *  CALL UDP/F
      */
     struct {
-      bcip_t ret_ip;   /**< return ip */
-      uint16_t pcount; /**< number of parameters */
-      bid_t rvid;      /**< return-variable ID */
       var_t *retvar;   /**< return-variable data */
-
-      // unit - version
+      bcip_t ret_ip;   /**< return ip */
+      bid_t rvid;      /**< return-variable ID */
       int task_id; /**< task_id or -1 (this task) */
+      uint16_t pcount; /**< number of parameters */
     } vcall;
 
     /**
      *  Create dynamic variable (LOCAL or PARAMETER)
      */
     struct {
-      bid_t vid; /**< variable index in tvar */
       var_t *vptr; /**< previous variable */
+      bid_t vid; /**< variable index in tvar */
     } vdvar;
 
     /**
      *  parameter (CALL UDP/F)
      */
     struct {
-      uint16_t vcheck; /**< checks (1=BYVAL ONLY, 3=BYVAL|BYREF, 2=BYREF ONLY) */
       var_t *res; /**< variable pointer (for BYVAL this is a clone) */
+      uint16_t vcheck; /**< checks (1=BYVAL ONLY, 3=BYVAL|BYREF, 2=BYREF ONLY) */
     } param;
 
     /**
@@ -224,8 +220,11 @@ struct stknode_s {
       var_t *catch_var;
     } vcatch;
   } x;
-};
-typedef struct stknode_s stknode_t;
+
+  bcip_t exit_ip; /**< EXIT command IP to go */
+  int line; /** line number of current execution **/
+  code_t type; /**< type of node (keyword id, i.e. kwGOSUB, kwFOR, etc) */
+} stknode_t;
 
 /*
  * Basic variable's API
@@ -237,6 +236,13 @@ typedef struct stknode_s stknode_t;
  * intialises the var pool
  */
 void v_init_pool(void);
+
+/**
+ * @ingroup var
+ *
+ * free pooled var
+ */
+void v_pool_free(var_t *var);
 
 /**
  * @ingroup var
@@ -255,6 +261,13 @@ var_t *v_new(void);
  * @return a newly created var_t array of the given size
  */
 void v_new_array(var_t *var, unsigned size);
+
+/**
+ * @ingroup var
+ *
+ * frees memory associated with the given array
+ */
+void v_array_free(var_t *var);
 
 /**
  * @ingroup var
@@ -308,6 +321,16 @@ void v_add(var_t *result, var_t *a, var_t *b);
  * @param src the source-var
  */
 void v_set(var_t *dest, const var_t *src);
+
+/**
+ * @ingroup var
+ *
+ * assigning: dest = src
+ *
+ * @param dest the destination-var
+ * @param src the source-var
+ */
+void v_move(var_t *dest, const var_t *src);
 
 /**
  * @ingroup var
@@ -456,55 +479,45 @@ int v_length(var_t *v);
  * @ingroup var
  * @page var_12_2001 Var API (Dec 2001)
  *
- @code
- Use these routines
-
- Memory free/alloc is contolled inside these functions
- The only thing that you must care of, is when you declare local var_t elements
-
- Auto-type-convertion is controlled inside these functions,
- So if you want a string value of an integer you just do strcpy(buf,v_getstr(&myvar));
- or a numeric value of a string R = v_getnum(&myvar);
-
- Using variables on code:
-
- void    myfunc()    // using them in stack
- {
- var_t    myvar;
- v_init(&myvar);  // DO NOT FORGET THIS! local variables are had random data
- ...
- v_setstr(&myvar, "Hello, world");
- ...
- v_set(&myvar, &another_var); // copy variables (LET myvar = another_var)
- ...
- v_setint(&myvar, 0x100);     // Variable will be cleared automatically
- ...
- v_free(&myvar);
- }
-
- void    myfunc()                    // using dynamic memory
- {
- var_t    *myvar_p;
-
- myvar_p = v_new();               //  create a new variable
- ...
- v_setstr(myvar_p, "Hello, world");
- ...
- v_setint(myvar_p, 0x100);        // Variable will be cleared automatically
- ...
- v_free(myvar_p);             // clear variable's data
- free(myvar_p);               // free the variable
- }
-
- Old API routines that is good to use them:
-
- v_init(), v_free()                  --- basic
- v_new(), v_clone()                  --- create vars in heap, dont forget the free()
-
- v_resize_array()                    --- resize an 1-dim array
- v_tomatrix(), v_toarray1()          --- convertion to matrix (RxC) or 1D array
-
- @endcode
+ * @code
+ * Use these routines
+ *
+ * Memory free/alloc is contolled inside these functions
+ * The only thing that you must care of, is when you declare local var_t elements
+ *
+ * Auto-type-convertion is controlled inside these functions,
+ * So if you want a string value of an integer you just do strcpy(buf,v_getstr(&myvar));
+ * or a numeric value of a string R = v_getnum(&myvar);
+ *
+ * Using variables on code:
+ *
+ * void myfunc() {    // using them in stack
+ *  var_t    myvar;
+ *  v_init(&myvar);  // DO NOT FORGET THIS! local variables are had random data
+ *  ...
+ *  v_setstr(&myvar, "Hello, world");
+ *  ...
+ *  v_set(&myvar, &another_var); // copy variables (LET myvar = another_var)
+ *  ...
+ *  v_setint(&myvar, 0x100);     // Variable will be cleared automatically
+ *  ...
+ *  v_free(&myvar);
+ * }
+ *
+ * void myfunc() {                   // using dynamic memory
+ *  var_t *myvar_p;
+ *
+ *  myvar_p = v_new();               //  create a new variable
+ *  ...
+ *  v_setstr(myvar_p, "Hello, world");
+ *  ...
+ *  v_setint(myvar_p, 0x100);        // Variable will be cleared automatically
+ *  ...
+ *  v_free(myvar_p);             // clear variable's data
+ *  v_detach(myvar_p);               // free the variable
+ * }
+ *
+ * @endcode
  */
 
 /**

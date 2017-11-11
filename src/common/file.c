@@ -53,9 +53,7 @@ int wc_match(const char *mask, char *name) {
  * initialize file system
  */
 int dev_initfs() {
-  int i;
-
-  for (i = 0; i < OS_FILEHANDLES; i++) {
+  for (int i = 0; i < OS_FILEHANDLES; i++) {
     file_table[i].handle = -1;
   }
 
@@ -66,9 +64,7 @@ int dev_initfs() {
  * cleanup file system
  */
 void dev_closefs() {
-  int i;
-
-  for (i = 0; i < OS_FILEHANDLES; i++) {
+  for (int i = 0; i < OS_FILEHANDLES; i++) {
     if (file_table[i].handle != -1) {
       dev_fclose(i + 1);
     }
@@ -79,11 +75,10 @@ void dev_closefs() {
  * returns a free file handle for user's commands
  */
 int dev_freefilehandle() {
-  int i;
-
-  for (i = 0; i < OS_FILEHANDLES; i++) {
+  for (int i = 0; i < OS_FILEHANDLES; i++) {
     if (file_table[i].handle == -1) {
-      return i + 1;             // Warning: BASIC's handles starting from 1
+      // Note: BASIC's handles starting from 1
+      return i + 1;
     }
   }
 
@@ -155,7 +150,6 @@ int select_unix_serial_speed(int n) {
  */
 int dev_fopen(int sb_handle, const char *name, int flags) {
   dev_file_t *f;
-  int i;
 
   if ((f = dev_getfileptr(sb_handle)) == NULL) {
     return 0;
@@ -175,7 +169,7 @@ int dev_fopen(int sb_handle, const char *name, int flags) {
   //
   if (strlen(f->name) > 4) {
     if (f->name[4] == ':') {
-      for (i = 0; i < 5; i++) {
+      for (int i = 0; i < 5; i++) {
         f->name[i] = to_upper(f->name[i]);
       }
       if (strncmp(f->name, "COM", 3) == 0) {
@@ -203,7 +197,7 @@ int dev_fopen(int sb_handle, const char *name, int flags) {
         f->type = ft_stream;
       }
     } else if (f->name[3] == ':') {
-      for (i = 0; i < 4; i++) {
+      for (int i = 0; i < 4; i++) {
         f->name[i] = to_upper(f->name[i]);
       }
 
@@ -436,10 +430,6 @@ int dev_fexists(const char *file) {
  * returns true on success
  */
 int dev_fcopy(const char *file, const char *newfile) {
-  int src, dst;
-  byte *buf;
-  uint32_t i, block_size, block_num, remain, file_len;
-
   if (!opt_file_permitted) {
     rt_raise(ERR_FILE_PERM);
     return 0;
@@ -452,7 +442,7 @@ int dev_fcopy(const char *file, const char *newfile) {
       }
     }
 
-    src = dev_freefilehandle();
+    int src = dev_freefilehandle();
     if (prog_error) {
       return 0;
     }
@@ -460,7 +450,7 @@ int dev_fcopy(const char *file, const char *newfile) {
     if (prog_error) {
       return 0;
     }
-    dst = dev_freefilehandle();
+    int dst = dev_freefilehandle();
     if (prog_error) {
       return 0;
     }
@@ -469,14 +459,14 @@ int dev_fcopy(const char *file, const char *newfile) {
       return 0;
     }
 
-    file_len = dev_flength(src);
+    uint32_t file_len = dev_flength(src);
     if (file_len != -1 && file_len > 0) {
-      block_size = 1024;
-      block_num = file_len / block_size;
-      remain = file_len - (block_num * block_size);
-      buf = malloc(block_size);
+      uint32_t block_size = 1024;
+      uint32_t block_num = file_len / block_size;
+      uint32_t remain = file_len - (block_num * block_size);
+      byte *buf = malloc(block_size);
 
-      for (i = 0; i < block_num; i++) {
+      for (int i = 0; i < block_num; i++) {
         dev_fread(src, buf, block_size);
         if (prog_error) {
           free(buf);
@@ -581,14 +571,20 @@ void dev_chdir(const char *dir) {
 char_p_t *dev_create_file_list(const char *wc, int *count) {
   DIR *dp;
   struct dirent *e;
-  char *p, wc2[OS_FILENAME_SIZE + 1], *name;
+  char wc2[OS_FILENAME_SIZE + 1];
   char path[OS_PATHNAME_SIZE + 1];
   int l, size;
   char_p_t *list;
 
+  if (!opt_file_permitted) {
+    rt_raise(ERR_FILE_PERM);
+    return NULL;
+  }
+
   if (wc) {
     strcpy(path, wc);
-    if ((p = strrchr(path, OS_DIRSEP)) == NULL) {
+    char *p = strrchr(path, OS_DIRSEP);
+    if (p == NULL) {
       getcwd(path, OS_PATHNAME_SIZE);
       if (path[(l = strlen(path))] != OS_DIRSEP) {
         path[l] = OS_DIRSEP;
@@ -620,7 +616,7 @@ char_p_t *dev_create_file_list(const char *wc, int *count) {
   }
 
   while ((e = readdir(dp)) != NULL) {
-    name = e->d_name;
+    char *name = e->d_name;
     if ((strcmp(name, ".") == 0) || (strcmp(name, "..") == 0)) {
       continue;
     }
@@ -651,9 +647,7 @@ char_p_t *dev_create_file_list(const char *wc, int *count) {
  * destroy the file-list
  */
 void dev_destroy_file_list(char_p_t *list, int count) {
-  int i;
-
-  for (i = 0; i < count; i++) {
+  for (int i = 0; i < count; i++) {
     free(list[i]);
   }
   free(list);
@@ -672,8 +666,7 @@ char *dev_getcwd() {
     retbuf[l + 1] = '\0';
   }
 #if defined(_Win32)
-  int i;
-  for (i = 0; i < l; i++) {
+  for (int i = 0; i < l; i++) {
     if (retbuf[i] == '\\') {
       retbuf[i] = OS_DIRSEP;
     }
@@ -720,22 +713,34 @@ int dev_faccess(const char *file) {
 /**
  * returns the last-modified time for a file as a string
  */
-int dev_filemtime(const char *file, char **buffer) {
+int dev_filemtime(var_t *v, char **buffer) {
+  time_t time = 0;
   int size = 0;
-  struct stat st;
 
-  if (!opt_file_permitted) {
-    rt_raise(ERR_FILE_PERM);
-  } else if (stat(file, &st) == 0) {
-    // 2016-02-20 05:23 PM
-    size = 20;
-    *buffer = malloc(size);
-    const time_t t = st.st_mtime;
-    size = strftime(*buffer, size, "%Y-%m-%d %I:%M %p", localtime(&t));
+  if (v_is_type(v, V_INT)) {
+    time = v->v.i;
+  } else if (v_is_type(v, V_STR)) {
+    const char *file = v_str(v);
+    struct stat st;
+    if (!opt_file_permitted) {
+      rt_raise(ERR_FILE_PERM);
+    } else if (stat(file, &st) == 0) {
+      time = st.st_mtime;
+    } else {
+      err_file_not_found();
+    }
   } else {
+    err_argerr();
+  }
+
+  if (prog_error) {
     *buffer = malloc(1);
     *buffer[0] = '\0';
-    err_file_not_found();
+  } else {
+    // size for '2016-02-20 05:23 PM'
+    size = 20;
+    *buffer = malloc(size);
+    size = strftime(*buffer, size, "%Y-%m-%d %I:%M %p", localtime(&time));
   }
   return size;
 }
