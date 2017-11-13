@@ -119,6 +119,14 @@ void FormLink::clicked(int x, int y, bool pressed) {
 void cmd_form_close(var_s *self) {
   g_system->getOutput()->removeInputs();
   g_system->getOutput()->resetScroll();
+
+  var_t arg;
+  v_init(&arg);
+  eval(&arg);
+  if (arg.type == V_STR) {
+    g_system->setLoadBreak(arg.v.p.ptr);
+  }
+  v_free(&arg);
 }
 
 void cmd_form_refresh(var_s *self) {

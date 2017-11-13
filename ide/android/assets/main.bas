@@ -7,7 +7,7 @@ const char_w = txtw(".")
 const lineSpacing = 2 + char_h
 const idxEdit = 6
 const idxFiles = 7
-const sizeDateCol = rgb(100,100,100)
+const colGrey = rgb(100,100,100)
 const menu_gap = -(char_w / 2)
 const is_sdl = instr(sbver, "SDL") != 0
 const onlineUrl = "http://smallbasic.github.io/samples/index.bas"
@@ -24,6 +24,7 @@ const filesId = "_files"
 const setupId = "_setup"
 const aboutId = "_about"
 const backId = "_back"
+const scratchId = "_scratch"
 
 func mk_bn(value, lab, fg)
   local bn
@@ -100,7 +101,7 @@ sub do_about()
   print "Copyright (c) 2002-2017 Chris Warren-Smith"
   print "Copyright (c) 1999-2006 Nic Christopoulos" + chr(10)
   print "https://smallbasic.sourceforge.io" + chr(10)
-  color sizeDateCol,0
+  color colGrey,0
   print "SmallBASIC comes with ABSOLUTELY NO WARRANTY. ";
   print "This program is free software; you can use it ";
   print "redistribute it and/or modify it under the terms of the ";
@@ -322,7 +323,7 @@ sub listFiles(byref frm, path, sortDir, byref basList)
 
       gap = 12 - len(str(node.size))
       n = iff(gap > 1, gap, 1)
-      bn = mk_bn(0, node.size + space(n) + timestamp(node.mtime), sizeDateCol)
+      bn = mk_bn(0, node.size + space(n) + timestamp(node.mtime), colGrey)
       bn.type = "label"
       bn.y = -1
       gap = 29 - len(name)
@@ -566,18 +567,20 @@ sub main
   endif
 
   func makeUI(path, sortDir)
-    local frm, bn_files, bn_online, bn_setup, bn_about, bn_new
+    local frm, bn_files, bn_online, bn_setup, bn_about, bn_new, bn_scratch
     local basList
     dim basList
 
     bn_files = mk_menu(filesId, "File", 0)
     bn_online = mk_menu(onlineUrl, "Online", menu_gap)
+    bn_scratch = mk_menu(scratchId, "Scratch", menu_gap)
     bn_setup = mk_menu(setupId, "Setup", menu_gap)
     bn_about = mk_menu(aboutId, "About", menu_gap)
     bn_online.isExit = true
 
     frm.inputs << bn_files
     frm.inputs << bn_online
+    frm.inputs << bn_scratch
     if (!is_sdl) then
       frm.inputs << bn_setup
     endif
@@ -629,6 +632,9 @@ sub main
         managefiles()
       endif
       frm = makeUI(path, sortDir)
+    elif frm.value == scratchId then
+      mk_scratch()
+      frm.close("scratch.bas")
     elif frm.value == backId then
       cls
       go_back()
