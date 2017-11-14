@@ -48,23 +48,34 @@ func mk_menu(value, lab, x)
   mk_menu = bn
 end
 
-sub mk_scratch()
+func mk_scratch()
   local text
   local file = "scratch.bas"
+  local result = false
 
   if (not exist(file)) then
     dim text
     text << "rem Welcome to SmallBASIC"
     text << "rem"
-    text << "rem Press F1 for keyword help."
-    text << "rem Press and hold Ctrl then press 'h' for editor help."
-    text << "rem Press and hold Ctrl then press 'r' to RUN this program."
+    if (is_sdl) then
+      text << "rem Press F1 for keyword help."
+      text << "rem Press and hold Ctrl then press 'h' for editor help."
+      text << "rem Press and hold Ctrl then press 'r' to RUN this program."
+      text << "rem Click the right mouse button for menu options."
+    else
+      text << "rem Press the 3 vertical dots for menu options."
+    endif
     try
       tsave file, text
+      result = true
     catch e
-      logprint "Failed to create scratch file: " + e
+      local wnd = window()
+      wnd.alert("Failed to create scratch file: " + e)
     end try
+  else
+    result = true
   endif
+  return result
 end
 
 sub do_okay_button()
@@ -94,7 +105,7 @@ sub do_about()
     print "(_ ._ _  _.|||_) /\ (_ |/ "
     print "__)| | |(_||||_)/--\__)|\_"
   endif
-  print 
+  print
   color 7,0
   print "Version "; sbver
   print
@@ -562,10 +573,6 @@ sub main
   local sortDir = env("sortDir")
   if (len(sortDir) == 0) then sortDir = 0
 
-  if (command == "welcome" && len(files("*.bas")) == 0) then
-    mk_scratch()
-  endif
-
   func makeUI(path, sortDir)
     local frm, bn_files, bn_online, bn_setup, bn_about, bn_new, bn_scratch
     local basList
@@ -633,8 +640,9 @@ sub main
       endif
       frm = makeUI(path, sortDir)
     elif frm.value == scratchId then
-      mk_scratch()
-      frm.close("scratch.bas")
+      if (mk_scratch())
+        frm.close("scratch.bas")
+      endif
     elif frm.value == backId then
       cls
       go_back()
