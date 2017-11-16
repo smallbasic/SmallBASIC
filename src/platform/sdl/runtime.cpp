@@ -254,16 +254,19 @@ void Runtime::debugStep(TextEditInput *edit, TextEditHelpWidget *help, bool cont
       edit->gotoLine(buf);
       net_print(g_debugee, "v\n");
       help->reload(NULL);
+      bool endChar = false;
       do {
-        size = net_input(g_debugee, buf, sizeof(buf), "\1\n");
-        if (buf[0] == '\1') {
+        size = net_read(g_debugee, buf, sizeof(buf));
+        if (!size) {
           break;
         }
-        if (size > 0) {
-          help->append(buf, size);
-          help->append("\n", 1);
+        if (buf[size - 1] == '\1') {
+          endChar = true;
+          size--;
         }
-      } while (size > 0);
+        help->append(buf, size);
+        help->append("\n", 1);
+      } while (!endChar);
     }
   }
 }
@@ -1008,7 +1011,7 @@ void signalTrace(SDL_bool debugBreak) {
 }
 
 void dumpStack(socket_t socket) {
-  net_print(socket, "Stack:\n");
+  net_print(socket, "\nStack:\n");
   for (int i = prog_stack_count - 1; i > -1; i--) {
     stknode_t node = prog_stack[i];
     switch (node.type) {
@@ -1026,11 +1029,13 @@ void dumpVariables(socket_t socket) {
   net_print(socket, "Variables:\n");
 
   bool localScope = false;
+  int count = 0;
   for (int i = prog_stack_count - 1; !localScope && i > -1; i--) {
     stknode_t node = prog_stack[i];
     switch (node.type) {
     case kwTYPE_CRVAR:
       // local variable
+      net_printf(socket, "[%d] ", count++);
       pv_writevar(tvar[node.x.vdvar.vid], PV_NET, socket);
       net_print(socket, "\n");
       break;
@@ -1043,6 +1048,10 @@ void dumpVariables(socket_t socket) {
   if (!localScope) {
     for (unsigned i = SYSVAR_COUNT; i < prog_varcount; i++) {
       if (!v_isempty(tvar[i])) {
+        net_printf(socket, "[%d] ", count++);
+        if (tvar[i]->const_flag) {
+          net_print(socket, "const:");
+        }
         pv_writevar(tvar[i], PV_NET, socket);
         net_print(socket, "\n");
       }
