@@ -198,17 +198,22 @@ void Runtime::construct(const char *font, const char *boldFont) {
   }
 }
 
-bool Runtime::debugOpen(const char *file) {
+bool Runtime::debugActive() {
   bool open;
-
   if (g_debugee != -1) {
+    // potentially open
     char buf[OS_PATHNAME_SIZE + 1];
     net_print(g_debugee, "l\n");
     open = net_input(g_debugee, buf, sizeof(buf), "\n") > 0;
   } else {
+    // not open
     open = false;
   }
+  return open;
+}
 
+bool Runtime::debugOpen(const char *file) {
+  bool open = debugActive();
   if (!open) {
     launchDebug(file);
     pause(PAUSE_DEBUG_LAUNCH);
@@ -1134,7 +1139,7 @@ int debugThread(void *data) {
         g_breakPoints.removeAll();
         net_disconnect(socket);
         socket = -1;
-        exit(1);
+        runtime->setExit(true);
         break;
       case 'h':
         net_print(socket, "SmallBASIC debugger\n");

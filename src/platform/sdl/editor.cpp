@@ -322,17 +322,6 @@ void System::editSource(String loadPath) {
           helpWidget->hide();
           debugStop();
           break;
-        case SB_KEY_F(9):
-        case SB_KEY_CTRL('r'):
-          _state = kRunState;
-        break;
-        case SB_KEY_F(10):
-          _output->setStatus("Enter program command line, Esc=Close");
-          widget = helpWidget;
-          helpWidget->createLineEdit(opt_command);
-          helpWidget->show();
-          inputMode = kCommand;
-          break;
         case SB_KEY_CTRL('s'):
           saveFile(editWidget, loadPath);
           break;
@@ -390,6 +379,21 @@ void System::editSource(String loadPath) {
           break;
         case SB_KEY_F(8):
           exportRun((Runtime *)this, editWidget);
+          break;
+        case SB_KEY_F(9):
+        case SB_KEY_CTRL('r'):
+          if (((Runtime *)this)->debugActive()) {
+            exportRun((Runtime *)this, editWidget);
+          } else {
+            _state = kRunState;
+          }
+        break;
+        case SB_KEY_F(10):
+          _output->setStatus("Enter program command line, Esc=Close");
+          widget = helpWidget;
+          helpWidget->createLineEdit(opt_command);
+          helpWidget->show();
+          inputMode = kCommand;
           break;
         case SB_KEY_F(11):
           if (editWidget->getTextLength()) {

@@ -26,6 +26,7 @@ struct Runtime : public System {
   int ask(const char *title, const char *prompt, bool cancel);
   void browseFile(const char *url);
   void construct(const char *font, const char *boldFont);
+  bool debugActive();
   bool debugOpen(const char *file);
   void debugStart(TextEditInput *edit, const char *file);
   void debugStep(TextEditInput *edit, TextEditHelpWidget *help, bool cont);
