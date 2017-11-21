@@ -297,7 +297,7 @@ sub listFiles(byref frm, path, sortDir, byref basList)
   bn.y = -1
   frm.inputs << bn
 
-  abbr = iff(char_w * 65 > xmax, true, false)
+  abbr = iff(char_w * 38 > xmax, true, false)
   if (not abbr) then
     bn = mk_bn(sortSizeId, "[Size]", size_col)
     bn.type = "link"
