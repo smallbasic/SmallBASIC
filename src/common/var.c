@@ -496,6 +496,8 @@ void v_set(var_t *dest, const var_t *src) {
     dest->v.ap.v = src->v.ap.v;
     break;
   case V_MAP:
+    // reset type since not yet a map
+    dest->type = 0;
     map_set(dest, (const var_p_t)src);
     break;
   case V_REF:
