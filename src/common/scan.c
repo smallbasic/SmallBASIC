@@ -1145,6 +1145,14 @@ char *comp_scan_json(char *json, bc_t *bc) {
       *p = '\n';
       break;
     default:
+      if (strncasecmp("rem ", p, 4) == 0) {
+        // 'strip' comments
+        while (*p && *p != V_LINE && *p != '\n') {
+          *p = ' ';
+          p++;
+        }
+        p--;
+      }
       break;
     }
     p++;

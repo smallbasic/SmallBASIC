@@ -281,3 +281,16 @@ if (stack != [1,2]) then throw "stack err"
 queue=[11,12,13,14,15,16]
 delete queue, 0, 3
 if (queue != [14,15,16]) then throw "queue err"
+
+rem --- handle comments inside JSON block
+camera = {
+ x:        512, rem position on the map
+ y:        800, rem y position on the map
+ height:    78, rem height of the camera
+ angle:      0, rem direction of the camera
+ horizon:  100, rem horizon position (look up and down)
+ distance: 800  rem distance of map
+}
+if (camera.x != 512) then throw "invalid x"
+if (camera.height != 78) then throw "invalid height"
+if (camera.distance != 800) then throw "invalid distance"
