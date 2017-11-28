@@ -4776,7 +4776,7 @@ byte_code comp_create_bin() {
     memcpy(&uft.sign, "SBUn", 4);
     uft.version = SB_DWORD_VER;
 
-    strcpy(uft.base, comp_unit_name);
+    strlcpy(uft.base, comp_unit_name, sizeof(uft.base));
     uft.sym_count = comp_expcount;
 
     memcpy(bc.code, &uft, sizeof(unit_file_t));
@@ -4855,23 +4855,21 @@ byte_code comp_create_bin() {
  * @return non-zero on success
  */
 int comp_save_bin(byte_code bc) {
-  int h;
   char fname[OS_FILENAME_SIZE + 1];
-  char *p;
   int result = 1;
 
   if (opt_nosave && !comp_unit_flag) {
     return 1;
   }
 
-  strcpy(fname, comp_file_name);
-  p = strrchr(fname, '.');
+  strlcpy(fname, comp_file_name, sizeof(fname));
+  char *p = strrchr(fname, '.');
   if (p) {
     *p = '\0';
   }
   strcat(fname, comp_unit_flag ? ".sbu" : ".sbx");
 
-  h = open(fname, O_BINARY | O_RDWR | O_TRUNC | O_CREAT, 0660);
+  int h = open(fname, O_BINARY | O_RDWR | O_TRUNC | O_CREAT, 0660);
   if (h != -1) {
     write(h, (char *)bc.code, bc.size);
     close(h);

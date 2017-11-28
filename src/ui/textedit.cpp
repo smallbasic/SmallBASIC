@@ -1374,6 +1374,7 @@ int TextEditInput::getIndent(char *spaces, int len, int pos) {
       if (strncasecmp(buf + j - 4, "then", 4) != 0) {
         // 'then' is not final text on line
         spaces[i] = 0;
+        free(buf);
         return i;
       }
     }

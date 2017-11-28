@@ -1350,7 +1350,7 @@ int cmd_exit() {
       break;
     case kwFOR:
       if (code == 0 || code == kwFORSEP) {
-        addr = node.exit_ip;
+        addr = node.x.vfor.exit_ip;
         ready = 1;
         if (node.x.vfor.subtype == kwIN) {
           if (node.x.vfor.flags & 1) {  // allocated in for
@@ -1362,13 +1362,13 @@ int cmd_exit() {
       break;
     case kwWHILE:
       if (code == 0 || code == kwLOOPSEP) {
-        addr = node.exit_ip;
+        addr = node.x.vloop.exit_ip;
         ready = 1;
       }
       break;
     case kwREPEAT:
       if (code == 0 || code == kwLOOPSEP) {
-        addr = node.exit_ip;
+        addr = node.x.vloop.exit_ip;
         ready = 1;
       }
       break;
@@ -1560,7 +1560,7 @@ void cmd_for() {
   stknode_t node;
   node.type = kwFOR;
   node.x.vfor.subtype = kwTO;
-  node.exit_ip = false_ip + ADDRSZ + ADDRSZ + 1;
+  node.x.vfor.exit_ip = false_ip + ADDRSZ + ADDRSZ + 1;
   node.x.vfor.jump_ip = true_ip;
 
   //
@@ -1734,7 +1734,7 @@ void cmd_while() {
   if (v_sign(&var)) {
     code_jump(true_ip);
     node.type = kwWHILE;
-    node.exit_ip = false_ip + ADDRSZ + ADDRSZ + 1;
+    node.x.vloop.exit_ip = false_ip + ADDRSZ + ADDRSZ + 1;
     code_push(&node);
   } else {
     code_jump(false_ip + ADDRSZ + ADDRSZ + 1);
@@ -1765,7 +1765,7 @@ void cmd_repeat() {
   node.type = kwREPEAT;
   code_skipaddr();
   next_ip = (code_getaddr()) + 1;
-  node.exit_ip = code_peekaddr(next_ip);
+  node.x.vloop.exit_ip = code_peekaddr(next_ip);
   code_push(&node);
 }
 

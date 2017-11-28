@@ -77,7 +77,7 @@ static int slib_add_external_proc(const char *proc_name, int lib_id) {
 
   extproctable[extproccount].lib_id = lib_id;
   extproctable[extproccount].symbol_index = 0;
-  strcpy(extproctable[extproccount].name, buf);
+  strlcpy(extproctable[extproccount].name, buf, sizeof(extproctable[extproccount].name));
   strupper(extproctable[extproccount].name);
 
   if (opt_verbose) {
@@ -112,7 +112,7 @@ static int slib_add_external_func(const char *func_name, int lib_id) {
 
   extfunctable[extfunccount].lib_id = lib_id;
   extfunctable[extfunccount].symbol_index = 0;
-  strcpy(extfunctable[extfunccount].name, buf);
+  strlcpy(extfunctable[extfunccount].name, buf, sizeof(extfunctable[extfunccount].name));
   strupper(extfunctable[extfunccount].name);
 
   if (opt_verbose) {

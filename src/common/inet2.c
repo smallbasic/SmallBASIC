@@ -223,6 +223,7 @@ socket_t net_connect(const char *server_name, int server_port) {
     return sock;
   }
   if (connect(sock, (struct sockaddr *)&ad, sizeof(ad)) < 0) {
+    net_disconnect(sock);
     return -1;
   }
   return sock;
