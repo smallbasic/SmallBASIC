@@ -164,6 +164,9 @@ EditTheme::EditTheme(int fg, int bg) :
   _background(bg),
   _selection_color(bg),
   _selection_background(fg),
+  _number_color(fg),
+  _number_selection_color(fg),
+  _number_selection_background(bg),
   _cursor_color(bg),
   _cursor_background(fg),
   _match_background(fg),
@@ -924,7 +927,9 @@ void TextEditInput::updateField(var_p_t form) {
   var_p_t field = getField(form);
   if (field != NULL) {
     var_p_t value = map_get(field, FORM_INPUT_VALUE);
-    v_setstrn(value, _buf._buffer, _buf._len);
+    if (value != NULL) {
+      v_setstrn(value, _buf._buffer, _buf._len);
+    }
   }
 }
 

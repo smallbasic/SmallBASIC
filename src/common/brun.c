@@ -130,7 +130,7 @@ void code_pop(stknode_t *node, int expected_type) {
     if (node) {
       *node = prog_stack[prog_stack_count];
     }
-    if (expected_type != 0 && node->type != expected_type) {
+    if (node != NULL && expected_type != 0 && node->type != expected_type) {
       free_node(node);
       switch (node->type) {
       case kwTYPE_RET:

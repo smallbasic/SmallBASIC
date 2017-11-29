@@ -29,7 +29,7 @@ const char *FormInput::getValue() {
   var_p_t field = getField(form);
   if (field != NULL) {
     var_p_t value = map_get(field, FORM_INPUT_VALUE);
-    if (value->type == V_STR) {
+    if (value != NULL && value->type == V_STR) {
       result = value->v.p.ptr;
     }
   }
@@ -286,7 +286,7 @@ extern "C" void v_create_form(var_p_t var) {
     var_p_t v_focus = map_get(var, FORM_FOCUS);
     unsigned i_focus = v_focus != NULL ? v_getint(v_focus) : -1;
     var_p_t inputs = map_get(var, FORM_INPUTS);
-    for (unsigned i = 0; i < inputs->v.a.size; i++) {
+    for (unsigned i = 0; inputs != NULL && i < inputs->v.a.size; i++) {
       var_p_t elem = v_elem(inputs, i);
       if (elem->type == V_MAP) {
         FormInput *widget = create_input(elem);
