@@ -239,6 +239,7 @@ char *bc_store_string(bc_t *bc, char *src) {
     }
     p++;
   }
+  free(np);
   return p;
 }
 

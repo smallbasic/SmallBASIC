@@ -196,7 +196,7 @@ int sockcl_close(dev_file_t *f) {
  * write to a socket
  */
 int sockcl_write(dev_file_t *f, byte *data, uint32_t size) {
-  net_print((socket_t) (long) f->handle, (char *)data);
+  net_send((socket_t) (long) f->handle, (char *)data, size);
   return size;
 }
 

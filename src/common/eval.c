@@ -108,6 +108,9 @@ void mat_op1(var_t *l, int op, var_num_t n) {
         case 'A':
           m[pos] = -m1[pos];
           break;
+        default:
+          m[pos] = 0;
+          break;
         }
       }
     }

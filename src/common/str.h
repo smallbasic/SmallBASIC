@@ -15,6 +15,7 @@
 #define _sb_str_h
 
 #include "common/sys.h"
+#include "lib/str.h"
 
 #if defined(__cplusplus)
 extern "C" {
@@ -473,22 +474,6 @@ void cstr_init(cstr *cs, int size);
  * append to string buffer
  */
 void cstr_append(cstr *cs, const char *str);
-
-/**
- * Copy src to string dst of size siz.  At most siz-1 characters
- * will be copied.  Always NUL terminates (unless siz == 0).
- * Returns strlen(src); if retval >= siz, truncation occurred.
- */
-size_t strlcpy(char *dst, const char *src, size_t siz);
-
-/**
- * Appends src to string dst of size siz (unlike strncat, siz is the
- * full size of dst, not space left).  At most siz-1 characters
- * will be copied.  Always NUL terminates (unless siz <= strlen(dst)).
- * Returns strlen(src) + MIN(siz, strlen(initial dst)).
- * If retval >= siz, truncation occurred.
- */
-size_t strlcat(char *dst, const char *src, size_t siz);
 
 #if defined(__cplusplus)
 }

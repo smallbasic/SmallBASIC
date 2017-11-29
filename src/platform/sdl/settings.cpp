@@ -13,6 +13,7 @@
 #include <ctype.h>
 #include <sys/stat.h>
 
+#include "lib/str.h"
 #include "ui/utils.h"
 #include "ui/textedit.h"
 #include "common/smbas.h"
@@ -45,14 +46,14 @@ extern String g_exportAddr;
 extern String g_exportToken;
 enum Settings {k_window, k_debug, k_export};
 
-void createConfigPath(const char *var, const char *home, char *path) {
-  strcpy(path, home);
+void createConfigPath(const char *var, const char *home, char *path, size_t size) {
+  strlcpy(path, home, size);
   if (strcmp(var, "HOME") == 0) {
     // unix path
-    strcat(path, "/.config");
+    strlcat(path, "/.config", size);
     makedir(path);
   }
-  strcat(path, "/SmallBASIC");
+  strlcat(path, "/SmallBASIC", size);
   makedir(path);
 }
 
@@ -65,7 +66,7 @@ FILE *openConfig(bool readMode, Settings settings) {
   for (int i = 0; ENV_VARS[i][0] != '\0' && result == NULL; i++) {
     const char *home = getenv(ENV_VARS[i]);
     if (home && access(home, R_OK) == 0) {
-      createConfigPath(ENV_VARS[i], home, path);
+      createConfigPath(ENV_VARS[i], home, path, sizeof(path));
       switch (settings) {
       case k_debug:
         strcat(path, "/debug.txt");
@@ -319,7 +320,7 @@ String saveGist(const char *buffer, const char *fileName, const char *descriptio
   for (int i = 0; ENV_VARS[i][0] != '\0' && fp == NULL; i++) {
     const char *home = getenv(ENV_VARS[i]);
     if (home && access(home, R_OK) == 0) {
-      createConfigPath(ENV_VARS[i], home, path);
+      createConfigPath(ENV_VARS[i], home, path, sizeof(path));
       strcat(path, "/gist.txt");
       fp = fopen(path, "wb");
     }
@@ -355,12 +356,12 @@ String saveGist(const char *buffer, const char *fileName, const char *descriptio
   return result;
 }
 
-void getScratchFile(char *path) {
+void getScratchFile(char *path, size_t size) {
   for (int i = 0; ENV_VARS[i][0] != '\0'; i++) {
     const char *home = getenv(ENV_VARS[i]);
     if (home && access(home, R_OK) == 0) {
-      strcpy(path, home);
-      strcat(path, "/scratch.bas");
+      strlcpy(path, home, size);
+      strlcat(path, "/scratch.bas", size);
     }
   }
 }

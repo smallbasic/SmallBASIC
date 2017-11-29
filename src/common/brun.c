@@ -268,7 +268,7 @@ void exec_setup_predefined_variables() {
 
 #if defined(_UnixOS)
   if (getenv("HOME")) {
-    strcpy(homedir, getenv("HOME"));
+    strlcpy(homedir, getenv("HOME"), sizeof(homedir));
   }
   else {
     strcpy(homedir, "/tmp/");
@@ -281,7 +281,7 @@ void exec_setup_predefined_variables() {
 #elif defined(_Win32)
   if (getenv("HOME")) {
     // this works on cygwin
-    strcpy(homedir, getenv("HOME"));
+    strlcpy(homedir, getenv("HOME"), sizeof(homedir));
   }
   else {
     GetModuleFileName(NULL, homedir, sizeof(homedir) - 1);

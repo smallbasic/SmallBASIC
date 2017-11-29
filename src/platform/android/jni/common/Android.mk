@@ -19,6 +19,7 @@ LOCAL_SRC_FILES  :=    \
     $(COMMON)/../lib/jsmn.c      \
     $(COMMON)/../lib/lodepng.c   \
     $(COMMON)/../lib/xpm.c       \
+    $(COMMON)/../lib/str.c       \
     $(COMMON)/bc.c               \
     $(COMMON)/blib.c             \
     $(COMMON)/blib_db.c          \

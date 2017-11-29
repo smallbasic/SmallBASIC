@@ -67,14 +67,17 @@ int sys_search_path(const char *path, const char *file, char *retbuf) {
       char *old_path = malloc(strlen(cur_path));
       strcpy(old_path, cur_path + 1);
 #if defined(_UnixOS)
-      sprintf(cur_path, "%s/%s", getenv("HOME"), old_path);
+      strlcpy(cur_path, getenv("HOME"), sizeof(cur_path));
+      strlcat(cur_path, "/", sizeof(cur_path));
 #else
       if (getenv("HOME")) {
-        sprintf(cur_path, "%s\\%s", getenv("HOME"), old_path);
+        strlcpy(cur_path, getenv("HOME"), sizeof(cur_path));
       } else {
-        sprintf(cur_path, "%s\\%s", getenv("HOMEPATH"), old_path);
+        strlcpy(cur_path, getenv("HOMEPATH"), sizeof(cur_path));
       }
+      strlcat(cur_path, "\\", sizeof(cur_path));
 #endif
+      strlcat(cur_path, old_path, sizeof(cur_path));
       free(old_path);
     }
 

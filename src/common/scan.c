@@ -4321,7 +4321,7 @@ void comp_preproc_include(char *p) {
   } else if (strcmp(comp_file_name, path) == 0) {
     sc_raise(MSG_INC_FILE_INC, comp_file_name, path);
   } else {
-    char oldFileName[1024];
+    char oldFileName[OS_PATHNAME_SIZE + 1];
     char oldSec[SB_KEYWORD_SIZE + 1];
     strcpy(oldSec, comp_bc_sec);
     strcpy(oldFileName, comp_file_name);

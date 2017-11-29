@@ -196,7 +196,7 @@ void publish(System *system, const char *text, const char *fileName, const char 
 
 void exportRun(Runtime *runtime, TextEditInput *editor) {
   char path[PATH_MAX];
-  getScratchFile(path);
+  getScratchFile(path, sizeof(path));
   char *buffer = editor->getTextSelection();
   FILE *fp = fopen(path, "wb");
   if (fp) {

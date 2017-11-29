@@ -41,6 +41,7 @@ libsb_common_a_SOURCES =                  \
     ../lib/match.c ../lib/match.h         \
     ../lib/jsmn.c ../lib/jsmn.h           \
     ../lib/lodepng.c ../lib/lodepng.h     \
+    ../lib/str.c ../lib/str.h             \
     ../lib/matrix.c                       \
     ../lib/xpm.c                          \
     bc.c bc.h                             \

@@ -798,7 +798,7 @@ void dirwalk(char *dir, char *wc, bcip_t use_ip, int depth) {
     join_path(path, ++dir);
     dir = path;
   } else if (dir[0] == '~') {
-    strcpy(path, getenv("HOME"));
+    strlcpy(path, getenv("HOME"), sizeof(path));
     join_path(path, ++dir);
     dir = path;
   }

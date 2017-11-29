@@ -344,6 +344,10 @@ dnl change default aru setting to avoid warning
 ARFLAGS=cr
 AC_SUBST(ARFLAGS)
 
+dnl check missing functions
+AC_CHECK_FUNC([strlcpy], [AC_DEFINE([HAVE_STRLCPY], [1], [Define if strlcpy exists.])])
+AC_CHECK_FUNC([strlcat], [AC_DEFINE([HAVE_STRLCAT], [1], [Define if strlcat exists.])])
+
 AC_CONFIG_FILES([
 Makefile
 src/common/Makefile
