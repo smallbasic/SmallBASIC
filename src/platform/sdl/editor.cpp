@@ -526,7 +526,7 @@ void System::editSource(String loadPath) {
               helpWidget->hide();
               break;
             case kCommand:
-              strcpy(opt_command, helpWidget->getText());
+              strlcpy(opt_command, helpWidget->getText(), sizeof(opt_command));
               inputMode = kInit;
               widget = editWidget;
               helpWidget->hide();

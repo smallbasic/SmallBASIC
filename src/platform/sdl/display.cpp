@@ -45,8 +45,14 @@ bool Canvas::create(int w, int h) {
   SDL_PixelFormatEnumToMasks(PIXELFORMAT, &bpp, &rmask, &gmask, &bmask, &amask);
   _ownerSurface = true;
   _surface = SDL_CreateRGBSurface(0, w, h, bpp, rmask, gmask, bmask, amask);
-  _pixels = (pixel_t *)_surface->pixels;
-  return _surface != NULL;
+  bool result;
+  if (_surface != NULL) {
+    _pixels = (pixel_t *)_surface->pixels;
+    result = true;
+  } else {
+    result = false;
+  }
+  return result;
 }
 
 void Canvas::drawRegion(Canvas *src, const MARect *srcRect, int destX, int destY) {

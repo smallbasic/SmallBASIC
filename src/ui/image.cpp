@@ -436,7 +436,7 @@ ImageDisplay *create_display_image(var_p_t var, const char *name) {
   ImageDisplay *result = NULL;
   if (name != NULL && var != NULL) {
     dev_file_t file;
-    strcpy(file.name, name);
+    strlcpy(file.name, name, sizeof(file.name));
     file.type = ft_stream;
     ImageBuffer *buffer = load_image(&file);
     if (buffer != NULL) {
@@ -517,7 +517,7 @@ extern "C" void v_create_image(var_p_t var) {
     eval(&arg);
     if (arg.type == V_STR && !prog_error) {
       dev_file_t file;
-      strcpy(file.name, arg.v.p.ptr);
+      strlcpy(file.name, arg.v.p.ptr, sizeof(file.name));
       file.type = ft_stream;
       image = load_image(&file);
     } else if (arg.type == V_ARRAY && arg.v.a.size > 0 && !prog_error) {

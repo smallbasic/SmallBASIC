@@ -225,9 +225,9 @@ void setupAppPath(const char *path) {
     char cwd[OS_PATHNAME_SIZE + 1];
     cwd[0] = '\0';
     getcwd(cwd, sizeof(cwd) - 1);
-    strcpy(g_appPath, cwd);
-    strcat(g_appPath, "/");
-    strcat(g_appPath, path);
+    strlcpy(g_appPath, cwd, sizeof(g_appPath));
+    strlcat(g_appPath, "/", sizeof(g_appPath));
+    strlcat(g_appPath, path, sizeof(g_appPath));
 #if defined(__linux__)
     if (access(g_appPath, X_OK) != 0) {
       // launched via PATH, retrieve full path

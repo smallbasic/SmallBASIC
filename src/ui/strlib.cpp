@@ -110,7 +110,7 @@ String &String::append(const char *s, int numCopy) {
 String &String::append(FILE *fp, long filelen) {
   int len = length();
   _buffer = (char *)realloc(_buffer, len + filelen + 1);
-  fread((void *)(len + _buffer), 1, filelen, fp);
+  filelen = fread((void *)(len + _buffer), 1, filelen, fp);
   _buffer[len + filelen] = 0;
   return *this;
 }
