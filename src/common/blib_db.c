@@ -862,8 +862,7 @@ void dirwalk(char *dir, char *wc, bcip_t use_ip, int depth) {
       // proceed to the next
       if (access(name, R_OK) == 0) {
         // user-func, possible it is deleted
-        stat(name, &st);
-        if (st.st_mode & S_IFDIR) {
+        if (stat(name, &st) == 0 && st.st_mode & S_IFDIR) {
           dirwalk(name, wc, use_ip, depth + 1);
         }
       }

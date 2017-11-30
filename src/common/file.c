@@ -590,9 +590,9 @@ char_p_t *dev_create_file_list(const char *wc, int *count) {
         path[l] = OS_DIRSEP;
         path[l + 1] = '\0';
       }
-      strcpy(wc2, wc);
+      strlcpy(wc2, wc, sizeof(wc2));
     } else {
-      strcpy(wc2, p + 1);
+      strlcpy(wc2, p + 1, sizeof(wc2));
       *(p + 1) = '\0';
       if (strlen(wc2) == 0) {
         strcpy(wc2, "*");

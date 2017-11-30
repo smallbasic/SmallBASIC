@@ -19,6 +19,7 @@
 
 #include <sys/types.h>
 #include <string.h>
+#include "config.h"
 
 #ifdef __cplusplus
 extern "C" {

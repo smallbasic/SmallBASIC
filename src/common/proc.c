@@ -55,7 +55,7 @@ int sys_search_path(const char *path, const char *file, char *retbuf) {
     p = strchr(ps, ';');
 #endif
     if (!p) {
-      strcpy(cur_path, ps);
+      strlcpy(cur_path, ps, sizeof(cur_path));
     } else {
       strncpy(cur_path, ps, p - ps);
       cur_path[p - ps] = '\0';
@@ -919,9 +919,9 @@ int par_getpartable(par_t **ptable_pp, const char *valid_sep) {
   ptable = *ptable_pp = malloc(sizeof(par_t) * 256);
 
   if (valid_sep) {
-    strcpy(vsep, valid_sep);
+    strlcpy(vsep, valid_sep, sizeof(vsep));
   } else {
-    strcpy(vsep, ",");
+    strlcpy(vsep, ",", sizeof(vsep));
   }
   /*
    *      start

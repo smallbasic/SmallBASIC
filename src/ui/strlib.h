@@ -128,7 +128,7 @@ struct List {
   void add(T object) {
     if (++_count > _size) {
       _size += _growSize;
-      _head = (TP) realloc(_head, sizeof(TP) * _size);
+      _head = (TP) realloc(_head, sizeof(T) * _size);
     }
     _head[_count - 1] = object;
   }
@@ -189,7 +189,7 @@ struct List {
 
   void sort(int (*compareFunc)(const void *p1, const void *p2)) {
     if (_size > 1) {
-      qsort(_head, _count, sizeof(TP), compareFunc);
+      qsort(_head, _count, sizeof(T), compareFunc);
     }
   }
 
@@ -197,7 +197,7 @@ protected:
   void init() {
     _count = 0;
     _size = _growSize;
-    _head = (TP) malloc(sizeof(TP) * _size);
+    _head = (TP) malloc(sizeof(T) * _size);
   }
 
   TP _head;
@@ -233,7 +233,7 @@ struct Queue : public List<T> {
       if (free) {
         delete this->_head[0];
       }
-      memmove(this->_head, this->_head + 1, (--this->_count) * sizeof(T*));
+      memmove(this->_head, this->_head + 1, (--this->_count) * sizeof(T));
     }
   }
   void push(T o) { this->add(o); }

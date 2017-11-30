@@ -68,12 +68,12 @@ void cmd_packed_let() {
 
     int size = PKG_INIT_SIZE;
     int count = 0;
-    var_t **vars = (var_t **)malloc(sizeof(var_t **) * size);
+    var_t **vars = (var_t **)malloc(sizeof(var_t *) * size);
 
     while (code_peek() != kwTYPE_LEVEL_END && !prog_error) {
       if (count + 1 > size) {
         size += PKG_INIT_SIZE;
-        vars = (var_t **)realloc(vars, sizeof(var_t **) * size);
+        vars = (var_t **)realloc(vars, sizeof(var_t *) * size);
       }
       vars[count++] = code_getvarptr();
 

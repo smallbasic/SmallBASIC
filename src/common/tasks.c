@@ -102,7 +102,7 @@ int create_task(const char *name) {
 
   // init task
   memset(&tasks[tid], 0, sizeof(task_t));
-  strcpy(tasks[tid].file, name);
+  strlcpy(tasks[tid].file, name, sizeof(tasks[0].file));
   tasks[tid].status = tsk_ready;
   tasks[tid].parent = task_index;
   tasks[tid].tid = tid;
