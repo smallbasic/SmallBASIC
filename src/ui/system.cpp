@@ -529,10 +529,10 @@ char *System::readSource(const char *fileName) {
           buffer = (char *)malloc(len + 1);
           len = read(h, buffer, len);
           buffer[len] = '\0';
-          close(h);
           _activeFile = fileName;
           _modifiedTime = getModifiedTime();
         }
+        close(h);
       }
     }
   }

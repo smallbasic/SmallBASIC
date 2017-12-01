@@ -265,6 +265,7 @@ socket_t net_listen(int server_port) {
   }
   // set s up to be a server (listening) socket
   if (bind(listener, (struct sockaddr *)&addr, sizeof(addr)) == -1) {
+    net_disconnect(listener);
     return -1;
   }
 

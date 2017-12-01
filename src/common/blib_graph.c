@@ -311,6 +311,7 @@ void cmd_drawpoly() {
   // array
   count = par_getipoly(&poly);
   if (prog_error) {
+    free(poly);
     return;
   }
   if (count == 0) {
