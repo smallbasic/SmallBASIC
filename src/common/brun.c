@@ -32,6 +32,7 @@ void sys_before_comp();
 
 static char fileName[OS_FILENAME_SIZE + 1];
 static int exec_tid;
+static stknode_t err_node;
 
 #define EVT_CHECK_EVERY 50
 #define IF_ERR_BREAK if (prog_error) { \
@@ -46,17 +47,19 @@ void code_jump_label(uint16_t label_id) {
 }
 
 /**
- * Put the node 'node' in stack (PUSH)
+ * Push a new node onto the stack
  */
-void code_push(stknode_t *node) {
+stknode_t *code_push(code_t type) {
+  stknode_t *result;
   if (prog_stack_count + 1 >= prog_stack_alloc) {
     err_stackoverflow();
-    return;
+    result = &err_node;
+  } else {
+    result = &prog_stack[prog_stack_count++];
+    result->type = type;
+    result->line = prog_line;
   }
-
-  prog_stack[prog_stack_count] = *node;
-  prog_stack[prog_stack_count].line = prog_line;
-  prog_stack_count++;
+  return result;
 }
 
 void free_node(stknode_t *node) {

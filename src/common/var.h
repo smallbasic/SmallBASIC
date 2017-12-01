@@ -692,7 +692,7 @@ void code_jump_label(uint16_t label_id);  // IP <- LABEL_IP_TABLE[label_id]
  *
  * @param node the stack node
  */
-void code_push(stknode_t *node);
+stknode_t *code_push(code_t type);
 
 /**
  * @ingroup exec

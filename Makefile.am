@@ -19,6 +19,28 @@ leak-test:
 cppcheck:
 	(cppcheck --quiet --enable=all src/common src/ui src/platform/android/jni src/platform/sdl)
 
+covcheck:
+	(make clean -s && \
+   cov-build --dir cov-int ./configure --enable-sdl && \
+   cov-build --dir cov-int make -s && \
+   tar czvf smallbasic.tgz cov-int)
+
+covcheck-android:
+	(make clean -s && \
+   cov-build --dir cov-int ./configure --enable-android && \
+   cov-build --dir cov-int make -s && \
+   tar czvf smallbasic.tgz cov-int)
+
+clangcheck:
+	(make clean -s && \
+   scan-build ./configure --enable-sdl && \
+   scan-build -o scan make -s)
+
+clangcheck-android:
+	(make clean -s && \
+   scan-build ./configure --enable-android && \
+   scan-build -o scan make -s)
+
 release:
 	(cd $(SUBDIRS) && make release)
 

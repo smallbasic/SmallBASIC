@@ -1155,7 +1155,7 @@ void TextEditInput::editTab() {
   }
 
   // adjust indent for statement terminators
-  if (indent >= _indentLevel && endStatement(buf + curIndent)) {
+  if (indent >= _indentLevel && buf && endStatement(buf + curIndent)) {
     indent -= _indentLevel;
   }
   if (curIndent < indent) {

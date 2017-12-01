@@ -902,7 +902,7 @@ void cmd_input(int input) {
 void cmd_on_go() {
   bcip_t dest_ip;
   var_t var;
-  stknode_t node;
+  stknode_t *node;
 
   bcip_t next_ip = code_getaddr();
   code_skipaddr();
@@ -935,10 +935,9 @@ void cmd_on_go() {
     code_jump(dest_ip);
     break;
   case kwGOSUB:
-    node.type = kwGOSUB;
-    node.x.vgosub.ret_ip = next_ip;
     code_jump(dest_ip);
-    code_push(&node);
+    node = code_push(kwGOSUB);
+    node->x.vgosub.ret_ip = next_ip;
     break;
   case kwNULL:
     break;
@@ -951,12 +950,9 @@ void cmd_on_go() {
  * GOSUB label
  */
 void cmd_gosub() {
-  stknode_t node;
-  bid_t goto_label = code_getaddr();
-  node.type = kwGOSUB;
-  node.x.vgosub.ret_ip = prog_ip;
-  code_jump_label(goto_label);
-  code_push(&node);
+  code_jump_label(code_getaddr());
+  stknode_t *node = code_push(kwGOSUB);
+  node->x.vgosub.ret_ip = prog_ip;
 }
 
 /**
@@ -976,7 +972,6 @@ void cmd_gosub() {
  * @param return-variable ID
  */
 bcip_t cmd_push_args(int cmd, bcip_t goto_addr, bcip_t rvid) {
-  stknode_t param;
   bcip_t ofs;
   bcip_t pcount = 0;
   var_t *arg = NULL;
@@ -1017,10 +1012,9 @@ bcip_t cmd_push_args(int cmd, bcip_t goto_addr, bcip_t rvid) {
       case kwTYPE_VAR:       // the parameter is a variable
         ofs = prog_ip;       // keep expression's IP
         if (code_isvar()) {  // this parameter is a single variable (it is not an expression)
-          param.type = kwTYPE_VAR;
-          param.x.param.res = code_getvarptr(); // var_t pointer; the variable itself
-          param.x.param.vcheck = 0x3; // parameter can be used 'by value' or 'by reference'
-          code_push(&param); // push parameter
+          stknode_t *param = code_push(kwTYPE_VAR); // push parameter
+          param->x.param.res = code_getvarptr(); // var_t pointer; the variable itself
+          param->x.param.vcheck = 0x3; // parameter can be used 'by value' or 'by reference'
           pcount++;
           break;             // we finished with this parameter
         }
@@ -1036,10 +1030,9 @@ bcip_t cmd_push_args(int cmd, bcip_t goto_addr, bcip_t rvid) {
         eval(arg);           // execute the expression and store the result to 'arg'
 
         if (!prog_error) {
-          param.type = kwTYPE_VAR;
-          param.x.param.res = arg;  // var_t pointer; the variable itself
-          param.x.param.vcheck = 1; // parameter can be used only as 'by value'
-          code_push(&param); // push parameter
+          stknode_t *param = code_push(kwTYPE_VAR); // push parameter
+          param->x.param.res = arg;  // var_t pointer; the variable itself
+          param->x.param.vcheck = 1; // parameter can be used only as 'by value'
           pcount++;
         } else {             // error; clean up and return
           v_free(arg);
@@ -1051,21 +1044,18 @@ bcip_t cmd_push_args(int cmd, bcip_t goto_addr, bcip_t rvid) {
   }
 
   // store call-info
-  param.type = cmd;          // type of call (procedure or function)
-  param.x.vcall.pcount = pcount;  // number parameter-nodes in the stack
-  param.x.vcall.ret_ip = prog_ip; // where to go after exit (caller's next address)
-  param.x.vcall.rvid = rvid; // return-variable ID
+  stknode_t *vcall = code_push(cmd); // store it to stack
+  vcall->x.vcall.pcount = pcount;    // number parameter-nodes in the stack
+  vcall->x.vcall.ret_ip = prog_ip;   // where to go after exit (caller's next address)
+  vcall->x.vcall.rvid = rvid;        // return-variable ID
+  vcall->x.vcall.task_id = -1;
 
   if (rvid != INVALID_ADDR) {
     // if we call a function
-    param.x.vcall.retvar = tvar[rvid];  // store previous data of RVID
+    vcall->x.vcall.retvar = tvar[rvid];  // store previous data of RVID
     tvar[rvid] = v_new();    // create a temporary variable to store the function's result
                              // value will be restored on udp-return
   }
-
-  param.x.vcall.task_id = -1;
-  code_push(&param);         // store it to stack
-
   return goto_addr;
 }
 
@@ -1084,7 +1074,6 @@ void cmd_udp(int cmd) {
  * @param rvid return-var-id on callers task (this task)
  */
 void cmd_call_unit_udp(int cmd, int udp_tid, bcip_t goto_addr, bcip_t rvid) {
-  stknode_t param;
   bcip_t ofs;
   var_t *arg = NULL;
   bcip_t pcount = 0;
@@ -1111,16 +1100,12 @@ void cmd_call_unit_udp(int cmd, int udp_tid, bcip_t goto_addr, bcip_t rvid) {
         ofs = prog_ip;       // keep expression's IP
 
         if (code_isvar()) {  // this parameter is a single variable (not an expression)
-          param.type = kwTYPE_VAR;
-          param.x.param.res = code_getvarptr();
-          // var_t pointer; the variable itself
-
-          param.x.param.vcheck = 0x3; // parameter can be used 'by value' or 'by reference'
-
+          var_p_t var = code_getvarptr(); // var_t pointer; the variable itself
           activate_task(udp_tid);
-          code_push(&param); // push parameter, on unit's task
+          stknode_t *param = code_push(kwTYPE_VAR); // push parameter, on unit's task
+          param->x.param.res = var;
+          param->x.param.vcheck = 0x3; // parameter can be used 'by value' or 'by reference'
           activate_task(my_tid);
-
           pcount++;
           break;             // we finished with this parameter
         }
@@ -1136,11 +1121,11 @@ void cmd_call_unit_udp(int cmd, int udp_tid, bcip_t goto_addr, bcip_t rvid) {
         eval(arg);           // execute the expression and store the result to 'arg'
 
         if (!prog_error) {
-          param.type = kwTYPE_VAR;
-          param.x.param.res = arg;  // var_t pointer; the variable itself
-          param.x.param.vcheck = 1; // parameter can be used only as 'by value'
           activate_task(udp_tid);
-          code_push(&param);    // push parameter, on unit's task
+          stknode_t *param = code_push(kwTYPE_VAR);    // push parameter, on unit's task
+          param->x.param.res = arg;  // var_t pointer; the variable itself
+          param->x.param.vcheck = 1; // parameter can be used only as 'by value'
+
           activate_task(my_tid);
           pcount++;
         } else {             // error; clean up and return
@@ -1155,25 +1140,25 @@ void cmd_call_unit_udp(int cmd, int udp_tid, bcip_t goto_addr, bcip_t rvid) {
   if (prog_error) {
     return;
   }
+
   // store call-info
   activate_task(udp_tid);
   if (prog_error) {
     return;
   }
-  param.type = cmd;          // type of call (procedure or function)
-  param.x.vcall.pcount = pcount;  // number of parameters which passed on
-  // (the number of parameter-nodes in the stack)
-  param.x.vcall.ret_ip = prog_ip; // where to go after exit (caller's next address)
-  param.x.vcall.rvid = rvid; // return-variable ID
 
-  if (rvid != INVALID_ADDR) {// if we call a function
-    param.x.vcall.retvar = tvar[rvid];  // store previous data of RVID
-    tvar[rvid] = v_new();    // create a temporary variable to store the
+  stknode_t *vcall = code_push(cmd); // store it to stack, on unit's task
+  vcall->x.vcall.pcount = pcount;   // the number of parameter-nodes in the stack
+  vcall->x.vcall.ret_ip = prog_ip;   // where to go after exit (caller's next address)
+  vcall->x.vcall.rvid = rvid;        // return-variable ID
+  vcall->x.vcall.task_id = my_tid;
+
+  if (rvid != INVALID_ADDR) {            // if we call a function
+    vcall->x.vcall.retvar = tvar[rvid];  // store previous data of RVID
+    tvar[rvid] = v_new();                // create a temporary variable to store the
     // function's result value will be restored on udp-return
   }
 
-  param.x.vcall.task_id = my_tid;
-  code_push(&param);         // store it to stack, on unit's task
   prog_ip = goto_addr + ADDRSZ + 3; // jump to udp's code
 }
 
@@ -1186,14 +1171,12 @@ void cmd_crvar() {
   for (int i = 0; i < count; i++) {
     // an ID on global-variable-table is used
     bcip_t vid = code_getaddr();
-    stknode_t node;
 
     // store previous variable to stack
     // we will restore it at 'return'
-    node.type = kwTYPE_CRVAR;
-    node.x.vdvar.vid = vid;
-    node.x.vdvar.vptr = tvar[vid];
-    code_push(&node);
+    stknode_t *node = code_push(kwTYPE_CRVAR);
+    node->x.vdvar.vid = vid;
+    node->x.vdvar.vptr = tvar[vid];
 
     // create a new variable with the same ID
     tvar[vid] = v_new();
@@ -1312,10 +1295,8 @@ void cmd_udpret() {
   // restore return value
   if (ncall.x.vcall.rvid != (bid_t) INVALID_ADDR) {
     // it is a function store value to stack
-    stknode_t rval;
-    rval.type = kwTYPE_RET;
-    rval.x.vdvar.vptr = tvar[ncall.x.vcall.rvid];
-    code_push(&rval);
+    stknode_t *rval = code_push(kwTYPE_RET);
+    rval->x.vdvar.vptr = tvar[ncall.x.vcall.rvid];
     // restore ptr
     tvar[ncall.x.vcall.rvid] = ncall.x.vcall.retvar;
   }
@@ -1383,7 +1364,8 @@ int cmd_exit() {
     case kwBYREF:
     case kwTYPE_PARAM:
       if (code == 0 || code == kwPROCSEP || code == kwFUNCSEP) {
-        code_push(&node);
+        stknode_t *stknode = code_push(node.type);
+        *stknode = node;
         cmd_udpret();
         exit_from_udp = 1;
         addr = INVALID_ADDR;
@@ -1445,23 +1427,18 @@ void cmd_return() {
  * IF expr [THEN]
  */
 void cmd_if() {
-  bcip_t true_ip, false_ip;
-  var_t var;
-  stknode_t node;
-
-  true_ip = code_getaddr();
-  false_ip = code_getaddr();
+  bcip_t true_ip = code_getaddr();
+  bcip_t false_ip = code_getaddr();
 
   // expression
+  var_t var;
   v_init(&var);
   eval(&var);
 
-  node.type = kwIF;
-  node.x.vif.lcond = v_is_nonzero(&var);
-  code_jump((node.x.vif.lcond) ? true_ip : false_ip);
+  stknode_t *node = code_push(kwIF);
+  node->x.vif.lcond = v_is_nonzero(&var);
+  code_jump((node->x.vif.lcond) ? true_ip : false_ip);
   v_free(&var);
-
-  code_push(&node);
 }
 
 /**
@@ -1487,8 +1464,9 @@ void cmd_else() {
     dump_stack();
     return;
   }
-  code_push(&node);
 
+  stknode_t *stknode = code_push(kwIF);
+  stknode->x.vif.lcond = node.x.vif.lcond;
   code_jump((!node.x.vif.lcond) ? true_ip : false_ip);
 }
 
@@ -1527,13 +1505,13 @@ void cmd_elif() {
     node.x.vif.lcond = v_is_nonzero(&var);
     code_jump((node.x.vif.lcond) ? true_ip : false_ip);
     v_free(&var);
-
-    code_push(&node);
   } else {
     // previous IF succeded
-    code_push(&node);
     code_jump(false_ip);
   }
+
+  stknode_t *stknode = code_push(kwIF);
+  stknode->x.vif.lcond = node.x.vif.lcond;
 }
 
 void cmd_endif() {
@@ -1549,170 +1527,181 @@ void cmd_endif() {
   }
 }
 
-/**
- * FOR var = expr TO expr [STEP expr]
- */
-void cmd_for() {
-  bcip_t true_ip = code_getaddr();
-  bcip_t false_ip = code_getaddr();
-  byte code = code_peek();
+//
+// FOR [EACH] v1 IN v2
+//
+void cmd_for_in(bcip_t true_ip, bcip_t false_ip, var_p_t var_p) {
+  var_p_t array_p;
+  code_skipnext();
+
+  stknode_t node;
+  node.type = kwFOR;
+  node.x.vfor.subtype = kwIN;
+  node.x.vfor.exit_ip = false_ip + ADDRSZ + ADDRSZ + 1;
+  node.x.vfor.jump_ip = true_ip;
+  node.x.vfor.var_ptr = var_p;
+  node.x.vfor.to_expr_ip = prog_ip;
+  node.x.vfor.flags = 0;
+
+  if (code_isvar()) {
+    // array variable
+    node.x.vfor.arr_ptr = array_p = code_getvarptr();
+  } else {
+    // expression
+    var_t *new_var = v_new();
+    eval(new_var);
+    if (prog_error) {
+      v_detach(new_var);
+      return;
+    }
+    if (new_var->type != V_ARRAY) {
+      v_free(new_var);
+      v_detach(new_var);
+      err_typemismatch();
+      return;
+    }
+
+    node.x.vfor.flags = 1;    // allocated here
+    node.x.vfor.arr_ptr = array_p = new_var;
+  }
+
+  if (!prog_error) {
+    node.x.vfor.step_expr_ip = 0; // element-index
+
+    var_p_t var_elem_ptr = 0;
+    switch (array_p->type) {
+    case V_MAP:
+      var_elem_ptr = map_elem_key(array_p, 0);
+      break;
+
+    case V_ARRAY:
+      if (v_asize(array_p) > 0) {
+        var_elem_ptr = v_elem(array_p, 0);
+      }
+      break;
+
+    default:
+      break;
+    }
+
+    if (var_elem_ptr) {
+      v_set(var_p, var_elem_ptr);
+      code_jump(true_ip);
+    } else {
+      code_jump(false_ip);
+    }
+
+    stknode_t *stknode = code_push(kwFOR);
+    stknode->x.vfor = node.x.vfor;
+  }
+}
+
+//
+// FOR v1=exp1 TO exp2 [STEP exp3]
+//
+void cmd_for_to(bcip_t true_ip, bcip_t false_ip, var_p_t var_p) {
+  var_t varstep;
+  var_t var;
+
+  v_init(&varstep);
+  v_init(&var);
 
   stknode_t node;
   node.type = kwFOR;
   node.x.vfor.subtype = kwTO;
   node.x.vfor.exit_ip = false_ip + ADDRSZ + ADDRSZ + 1;
   node.x.vfor.jump_ip = true_ip;
-
-  //
-  // get FOR-variable
-  //
-  var_p_t var_p = code_getvarptr();
-  if (prog_error) {
-    return;
-  }
   node.x.vfor.var_ptr = var_p;
-  v_free(var_p);
 
-  // FOR-EACH or FOR-TO
-  if (code_peek() != kwIN) {
+  // get the first expression
+  eval(&var);
+  if (!prog_error && (var.type == V_NUM || var.type == V_INT)) {
     //
-    // FOR v1=exp1 TO exp2 [STEP exp3]
+    // assign FOR-variable
     //
-    var_t varstep, var;
-    v_init(&varstep);
-    v_init(&var);
+    v_set(var_p, &var);
 
-    // get the first expression
-    eval(&var);
-    if (!prog_error && (var.type == V_NUM || var.type == V_INT)) {
+    if (code_getnext() == kwTO) {
       //
-      // assign FOR-variable
+      // get TO-expression
       //
-      v_set(var_p, &var);
+      node.x.vfor.to_expr_ip = prog_ip;
+      v_init(&var);
+      eval(&var);
 
-      if (code_getnext() == kwTO) {
+      if (!prog_error && (var.type == V_NUM || var.type == V_INT)) {
         //
-        // get TO-expression
+        // step
         //
-        node.x.vfor.to_expr_ip = prog_ip;
-        v_init(&var);
-        eval(&var);
-
-        if (!prog_error && (var.type == V_NUM || var.type == V_INT)) {
-          //
-          // step
-          //
-          code = code_peek();
-          if (code == kwSTEP) {
-            code_skipnext();
-            node.x.vfor.step_expr_ip = prog_ip;
-            eval(&varstep);
-            if (!(varstep.type == V_NUM || varstep.type == V_INT)) {
-              if (!prog_error) {
-                err_syntax(kwFOR, "%N");
-              }
-            }
-          } else {
-            node.x.vfor.step_expr_ip = INVALID_ADDR;
-            varstep.type = V_INT;
-            varstep.v.i = 1;
-          }
-        } else {
-          if (!prog_error) {
-            rt_raise(ERR_SYNTAX);
-          }
-        }
-      } else {
-        rt_raise(ERR_SYNTAX);
-      }
-    }
-    //
-    // run
-    //
-    if (!prog_error) {
-      // var_p=FROM, var=TO
-      int sign = v_sign(&varstep);
-      int cmp = v_compare(var_p, &var);
-      if (sign != 0) {
-        bcip_t next_ip;
-        if (sign < 0) {
-          next_ip = cmp >= 0 ? true_ip : false_ip;
-        } else {
-          next_ip = cmp <= 0 ? true_ip : false_ip;
-        }
-        code_jump(next_ip);
-        if (next_ip == false_ip) {
-          // skip to after kwNEXT
+        byte code = code_peek();
+        if (code == kwSTEP) {
           code_skipnext();
-          code_jump(code_getaddr());
+          node.x.vfor.step_expr_ip = prog_ip;
+          eval(&varstep);
+          if (!(varstep.type == V_NUM || varstep.type == V_INT)) {
+            if (!prog_error) {
+              err_syntax(kwFOR, "%N");
+            }
+          }
         } else {
-          code_push(&node);
+          node.x.vfor.step_expr_ip = INVALID_ADDR;
+          varstep.type = V_INT;
+          varstep.v.i = 1;
         }
       } else {
-        rt_raise(ERR_SYNTAX);
+        if (!prog_error) {
+          rt_raise(ERR_SYNTAX);
+        }
       }
-    }
-    v_free(&varstep);
-    v_free(&var);
-  } else {
-    //
-    // FOR [EACH] v1 IN v2
-    //
-    var_p_t array_p;
-    code_skipnext();      // kwIN
-    node.x.vfor.subtype = kwIN;
-    node.x.vfor.to_expr_ip = prog_ip;
-    node.x.vfor.flags = 0;
-    if (code_isvar()) {
-      // array variable
-      node.x.vfor.arr_ptr = array_p = code_getvarptr();
     } else {
-      // expression
-      var_t *new_var = v_new();
-      eval(new_var);
-      if (prog_error) {
-        v_detach(new_var);
-        return;
-      }
-      if (new_var->type != V_ARRAY) {
-        v_free(new_var);
-        v_detach(new_var);
-        err_typemismatch();
-        return;
-      }
-
-      node.x.vfor.flags = 1;    // allocated here
-      node.x.vfor.arr_ptr = array_p = new_var;
+      rt_raise(ERR_SYNTAX);
     }
-
-    if (!prog_error) {
-      node.x.vfor.step_expr_ip = 0; // element-index
-
-      var_p_t var_elem_ptr = 0;
-
-      switch (array_p->type) {
-      case V_MAP:
-        var_elem_ptr = map_elem_key(array_p, 0);
-        break;
-
-      case V_ARRAY:
-        if (v_asize(array_p) > 0) {
-          var_elem_ptr = v_elem(array_p, 0);
-        }
-        break;
-
-      default:
-        break;
-      }
-
-      if (var_elem_ptr) {
-        v_set(var_p, var_elem_ptr);
-        code_jump(true_ip);
+  }
+  //
+  // run
+  //
+  if (!prog_error) {
+    // var_p=FROM, var=TO
+    int sign = v_sign(&varstep);
+    int cmp = v_compare(var_p, &var);
+    if (sign != 0) {
+      bcip_t next_ip;
+      if (sign < 0) {
+        next_ip = cmp >= 0 ? true_ip : false_ip;
       } else {
-        code_jump(false_ip);
+        next_ip = cmp <= 0 ? true_ip : false_ip;
       }
+      code_jump(next_ip);
+      if (next_ip == false_ip) {
+        // skip to after kwNEXT
+        code_skipnext();
+        code_jump(code_getaddr());
+      } else {
+        stknode_t *stknode = code_push(kwFOR);
+        stknode->x.vfor = node.x.vfor;
+      }
+    } else {
+      rt_raise(ERR_SYNTAX);
+    }
+  }
+  v_free(&varstep);
+  v_free(&var);
+}
 
-      code_push(&node);
+/**
+ * FOR var = expr TO expr [STEP expr]
+ */
+void cmd_for() {
+  bcip_t true_ip = code_getaddr();
+  bcip_t false_ip = code_getaddr();
+  var_p_t var_for = code_getvarptr();
+
+  if (!prog_error) {
+    v_free(var_for);
+    if (code_peek() == kwIN) {
+      cmd_for_in(true_ip, false_ip, var_for);
+    } else {
+      cmd_for_to(true_ip, false_ip, var_for);
     }
   }
 }
@@ -1721,21 +1710,18 @@ void cmd_for() {
  * WHILE expr
  */
 void cmd_while() {
-  bcip_t true_ip, false_ip;
-  var_t var;
-  stknode_t node;
-
-  true_ip = code_getaddr();
-  false_ip = code_getaddr();
+  bcip_t true_ip = code_getaddr();
+  bcip_t false_ip = code_getaddr();
 
   // expression
+  var_t var;
   v_init(&var);
   eval(&var);
+
   if (v_sign(&var)) {
     code_jump(true_ip);
-    node.type = kwWHILE;
-    node.x.vloop.exit_ip = false_ip + ADDRSZ + ADDRSZ + 1;
-    code_push(&node);
+    stknode_t *node = code_push(kwWHILE);
+    node->x.vloop.exit_ip = false_ip + ADDRSZ + ADDRSZ + 1;
   } else {
     code_jump(false_ip + ADDRSZ + ADDRSZ + 1);
   }
@@ -1759,14 +1745,10 @@ void cmd_wend() {
  * REPEAT ... UNTIL
  */
 void cmd_repeat() {
-  stknode_t node;
-  bcip_t next_ip;
-
-  node.type = kwREPEAT;
   code_skipaddr();
-  next_ip = (code_getaddr()) + 1;
-  node.x.vloop.exit_ip = code_peekaddr(next_ip);
-  code_push(&node);
+  bcip_t next_ip = (code_getaddr()) + 1;
+  stknode_t *node = code_push(kwREPEAT);
+  node->x.vloop.exit_ip = code_peekaddr(next_ip);
 }
 
 /**
@@ -1864,7 +1846,8 @@ void cmd_next() {
     //
     if (!prog_error) {
       if (check) {
-        code_push(&node);
+        stknode_t *stknode = code_push(kwFOR);
+        stknode->x.vfor = node.x.vfor;
         code_jump(jump_ip);
       } else {
         code_jump(next_ip);
@@ -1890,7 +1873,8 @@ void cmd_next() {
       if (v_asize(array_p) > (int) node.x.vfor.step_expr_ip) {
         var_elem_ptr = v_elem(array_p, node.x.vfor.step_expr_ip);
       } else {
-        if (node.x.vfor.flags & 1) {  // allocated in for
+        if (node.x.vfor.flags & 1) {
+          // allocated in for
           v_free(node.x.vfor.arr_ptr);
           v_detach(node.x.vfor.arr_ptr);
         }
@@ -1898,7 +1882,8 @@ void cmd_next() {
       break;
 
     default:
-      if (node.x.vfor.flags & 1) {  // allocated in for
+      if (node.x.vfor.flags & 1) {
+        // allocated in for
         v_free(node.x.vfor.arr_ptr);
         v_detach(node.x.vfor.arr_ptr);
       }
@@ -1907,7 +1892,8 @@ void cmd_next() {
 
     if (var_elem_ptr) {
       v_set(var_p, var_elem_ptr);
-      code_push(&node);
+      stknode_t *stknode = code_push(kwFOR);
+      stknode->x.vfor = node.x.vfor;
       code_jump(jump_ip);
     } else {
       code_jump(next_ip);
@@ -2705,16 +2691,13 @@ void cmd_exprseq(void) {
  * end select
  */
 void cmd_select() {
-  stknode_t node;
-
   var_t *expr = v_new();
   v_init(expr);
   eval(expr);
 
-  node.x.vcase.var_ptr = expr;
-  node.x.vcase.flags = 0;
-  node.type = kwSELECT;
-  code_push(&node);
+  stknode_t *node = code_push(kwSELECT);
+  node->x.vcase.var_ptr = expr;
+  node->x.vcase.flags = 0;
 }
 
 /**
@@ -2814,10 +2797,8 @@ void cmd_definekey(void) {
  * Try handler for try/catch
  */
 void cmd_try() {
-  stknode_t node;
-  node.x.vtry.catch_ip = code_getaddr();
-  node.type = kwTRY;
-  code_push(&node);
+  stknode_t *node = code_push(kwTRY);
+  node->x.vtry.catch_ip = code_getaddr();
 }
 
 /**

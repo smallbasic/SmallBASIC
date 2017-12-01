@@ -446,10 +446,8 @@ void err_throw_str(const char *err) {
       err_stack_msg();
     }
   } else {
-    stknode_t node;
-    node.x.vcatch.catch_var = catch_var;
-    node.type = kwCATCH;
-    code_push(&node);
+    stknode_t *node = code_push(kwCATCH);
+    node->x.vcatch.catch_var = catch_var;
     prog_error = errThrow;
   }
 }
