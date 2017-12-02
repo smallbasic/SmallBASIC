@@ -28,6 +28,9 @@ clean-objs: clean-ant
 clean-am: clean-objs
 	(cd jni && ${NDK}/ndk-build clean)
 
+check:
+	(cd jni && ${NDK}/ndk-build NDK_DEBUG=1)
+
 ndk-build-release:
 	(cd jni && ${NDK}/ndk-build NDK_DEBUG=0)
 

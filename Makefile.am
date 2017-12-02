@@ -28,7 +28,7 @@ covcheck:
 covcheck-android:
 	(make clean -s && \
    cov-build --dir cov-int ./configure --enable-android && \
-   cov-build --dir cov-int make -s && \
+   cov-build --dir cov-int make check -s && \
    tar czvf smallbasic.tgz cov-int)
 
 clangcheck:
@@ -39,7 +39,10 @@ clangcheck:
 clangcheck-android:
 	(make clean -s && \
    scan-build ./configure --enable-android && \
-   scan-build -o scan make -s)
+   scan-build -o scan make check -s)
+
+check:
+	(cd $(SUBDIRS) && make check)
 
 release:
 	(cd $(SUBDIRS) && make release)
