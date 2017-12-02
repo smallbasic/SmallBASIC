@@ -173,17 +173,13 @@ void bc_add_creal(bc_t *bc, var_num_t v) {
  * add one command and one string (see: bc_store_string)
  */
 void bc_add_strn(bc_t *bc, const char *str, int len) {
-  if (len > BC_MAX_STORE_SIZE) {
-    sc_raise("String: buffer size limit exceeded");
-  } else {
-    bc_add_code(bc, kwTYPE_STR);
-    bc_add_dword(bc, len);
-    if (bc->count + len >= bc->size) {
-      bc_resize(bc, bc->size + BC_ALLOC_INCR + len);
-    }
-    memcpy(bc->ptr + bc->count, str, len);
-    bc->count += len;
+  bc_add_code(bc, kwTYPE_STR);
+  bc_add_dword(bc, len);
+  if (bc->count + len >= bc->size) {
+    bc_resize(bc, bc->size + BC_ALLOC_INCR + len);
   }
+  memcpy(bc->ptr + bc->count, str, len);
+  bc->count += len;
 }
 
 /*

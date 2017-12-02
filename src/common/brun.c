@@ -351,11 +351,13 @@ void cmd_chain(void) {
       // argument is a file name
       int h = open(var.v.p.ptr, O_BINARY | O_RDONLY, 0644);
       if (h != -1) {
-        int len = lseek(h, 0, SEEK_END);
-        lseek(h, 0, SEEK_SET);
-        code = (char *)malloc(len + 1);
-        len = read(h, code, len);
-        code[len] = '\0';
+        struct stat st;
+        if (fstat(h, &st) == 0) {
+          int len = st.st_size;
+          code = (char *)malloc(len + 1);
+          len = read(h, code, len);
+          code[len] = '\0';
+        }
         close(h);
       }
     }
@@ -1106,27 +1108,25 @@ void dump_stack() {
  * ...exec_close_task()
  */
 int brun_create_task(const char *filename, byte *preloaded_bc, int libf) {
-  unit_file_t uft;
   bc_head_t hdr;
-  byte *cp;
-  int tid;
+  unit_file_t uft;
   byte *source;
   char fname[OS_PATHNAME_SIZE + 1];
 
   if (preloaded_bc) {
     // I have already BC
     source = preloaded_bc;
-    strcpy(fname, filename);
+    strlcpy(fname, filename, sizeof(fname));
   } else {
     // prepare filename
     if (!libf) {
       char *p;
-      strcpy(fname, filename);
+      strlcpy(fname, filename, sizeof(fname));
       p = strrchr(fname, '.');
       if (p) {
         *p = '\0';
       }
-      strcat(fname, ".sbx");
+      strlcat(fname, ".sbx", sizeof(fname));
     } else {
       find_unit(filename, fname);
     }
@@ -1158,10 +1158,10 @@ int brun_create_task(const char *filename, byte *preloaded_bc, int libf) {
   }
 
   // create task
-  tid = create_task(fname);     // create a task
+  int tid = create_task(fname); // create a task
   activate_task(tid);           // make it active
   ctask->bytecode = source;
-  cp = source;
+  byte *cp = source;
 
   if (memcmp(source, "SBUn", 4) == 0) { // load a unit
     memcpy(&uft, cp, sizeof(unit_file_t));
@@ -1697,7 +1697,7 @@ int sbasic_exec(const char *file) {
   }
   // setup global values
   gsb_last_line = gsb_last_error = 0;
-  strcpy(gsb_last_file, file);
+  strlcpy(gsb_last_file, file, sizeof(gsb_last_file));
   strcpy(gsb_last_errmsg, "");
   sbasic_set_bas_dir(file);
   success = sbasic_compile(file);

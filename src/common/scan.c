@@ -4320,8 +4320,8 @@ void comp_preproc_include(char *p) {
   } else {
     char oldFileName[OS_PATHNAME_SIZE + 1];
     char oldSec[SB_KEYWORD_SIZE + 1];
-    strcpy(oldSec, comp_bc_sec);
-    strcpy(oldFileName, comp_file_name);
+    strlcpy(oldSec, comp_bc_sec, sizeof(oldSec));
+    strlcpy(oldFileName, comp_file_name, sizeof(oldFileName));
     char *source = comp_load(path);
     if (source) {
       comp_pass1(NULL, source);

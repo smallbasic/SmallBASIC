@@ -21,10 +21,10 @@ extern ui::Graphics *graphics;
 Canvas::Canvas() :
   _w(0),
   _h(0),
-  _ownerSurface(false),
   _pixels(NULL),
   _surface(NULL),
-  _clip(NULL) {
+  _clip(NULL),
+  _ownerSurface(false) {
 }
 
 Canvas::~Canvas() {

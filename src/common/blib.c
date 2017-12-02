@@ -950,9 +950,12 @@ void cmd_on_go() {
  * GOSUB label
  */
 void cmd_gosub() {
-  code_jump_label(code_getaddr());
+  bid_t goto_label = code_getaddr();
+  bcip_t ret_ip = prog_ip;
+
   stknode_t *node = code_push(kwGOSUB);
-  node->x.vgosub.ret_ip = prog_ip;
+  node->x.vgosub.ret_ip = ret_ip;
+  code_jump_label(goto_label);
 }
 
 /**

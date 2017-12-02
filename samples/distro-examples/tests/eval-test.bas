@@ -362,3 +362,11 @@ moves_called = false
 for i in s.moves()
 next i  
 
+gg = 99
+gosub plus1
+if (gg != 100) then throw "err"
+end
+label plus1
+ gg += 1
+return
+
