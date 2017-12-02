@@ -160,7 +160,7 @@ int dev_fopen(int sb_handle, const char *name, int flags) {
   f->handle = -1;
   f->open_flags = flags;
   f->drv_data = NULL;
-  strcpy(f->name, name);
+  strlcpy(f->name, name, sizeof(f->name));
 
   f->type = ft_stream;
 
@@ -582,7 +582,7 @@ char_p_t *dev_create_file_list(const char *wc, int *count) {
   }
 
   if (wc) {
-    strcpy(path, wc);
+    strlcpy(path, wc, sizeof(path));
     char *p = strrchr(path, OS_DIRSEP);
     if (p == NULL) {
       getcwd(path, OS_PATHNAME_SIZE);

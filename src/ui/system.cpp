@@ -762,7 +762,7 @@ void System::setupPath(String &loadPath) {
         if (stat(loadPath.c_str(), &st_file) < 0) {
           // reset relative path back to full path
           getcwd(path, FILENAME_MAX);
-          strcat(path, filename + len);
+          strlcat(path, filename + len, sizeof(path));
           loadPath = path;
         }
       }

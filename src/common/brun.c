@@ -449,7 +449,7 @@ void cmd_run(int retf) {
     err_typemismatch();
     return;
   } else {
-    strcpy(fileName, var.v.p.ptr);
+    strlcpy(fileName, var.v.p.ptr, sizeof(fileName));
     v_free(&var);
   }
 

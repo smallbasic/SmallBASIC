@@ -4309,8 +4309,8 @@ void comp_preproc_include(char *p) {
 
   int basExists = (access(path, R_OK) == 0);
   if (!basExists && gsb_bas_dir[0]) {
-    strcpy(path, gsb_bas_dir);
-    strcat(path, fileName);
+    strlcpy(path, gsb_bas_dir, sizeof(path));
+    strlcat(path, fileName, sizeof(path));
     basExists = (access(path, R_OK) == 0);
   }
   if (!basExists) {

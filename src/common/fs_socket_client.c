@@ -27,7 +27,7 @@ int sockcl_open(dev_file_t *f) {
     f->handle = (int) net_listen(port);
   } else {
     *p = '\0';
-    strcpy(server, f->name + 5);
+    strlcpy(server, f->name + 5, sizeof(server));
     *p = ':';
     port = xstrtol(p + 1);
     f->handle = (int) net_connect(server, port);
@@ -84,7 +84,7 @@ int http_open(dev_file_t *f) {
     f->drv_dw[1] = lastSlash ? lastSlash - f->name : slash - f->name;
   } else {
     // http://host
-    strcpy(host, f->name + 7);
+    strlcpy(host, f->name + 7, sizeof(host));
     f->drv_dw[1] = strlen(f->name);
   }
 
@@ -167,7 +167,7 @@ int http_read(dev_file_t *f, var_t *var_p) {
         if (strncmp(rxbuff + iattr, "Location: ", 10) == 0) {
           // handle redirection
           sockcl_close(f);
-          strcpy(f->name, rxbuff + iattr + 10);
+          strlcpy(f->name, rxbuff + iattr + 10, sizeof(f->name));
           if (http_open(f) == 0) {
             return 0;
           }

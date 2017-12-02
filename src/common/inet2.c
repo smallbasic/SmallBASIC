@@ -261,6 +261,7 @@ socket_t net_listen(int server_port) {
 
   // prevent address already in use bind errors
   if (setsockopt(listener, SOL_SOCKET, SO_REUSEADDR, (const char*)&yes, sizeof(int)) == -1) {
+    net_disconnect(listener);
     return -1;
   }
   // set s up to be a server (listening) socket
