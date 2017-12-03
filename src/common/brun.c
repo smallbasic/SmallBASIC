@@ -32,6 +32,7 @@ void sys_before_comp();
 
 static char fileName[OS_FILENAME_SIZE + 1];
 static int exec_tid;
+static stknode_t err_node;
 
 #define EVT_CHECK_EVERY 50
 #define IF_ERR_BREAK if (prog_error) { \
@@ -46,17 +47,19 @@ void code_jump_label(uint16_t label_id) {
 }
 
 /**
- * Put the node 'node' in stack (PUSH)
+ * Push a new node onto the stack
  */
-void code_push(stknode_t *node) {
+stknode_t *code_push(code_t type) {
+  stknode_t *result;
   if (prog_stack_count + 1 >= prog_stack_alloc) {
     err_stackoverflow();
-    return;
+    result = &err_node;
+  } else {
+    result = &prog_stack[prog_stack_count++];
+    result->type = type;
+    result->line = prog_line;
   }
-
-  prog_stack[prog_stack_count] = *node;
-  prog_stack[prog_stack_count].line = prog_line;
-  prog_stack_count++;
+  return result;
 }
 
 void free_node(stknode_t *node) {
@@ -130,7 +133,7 @@ void code_pop(stknode_t *node, int expected_type) {
     if (node) {
       *node = prog_stack[prog_stack_count];
     }
-    if (expected_type != 0 && node->type != expected_type) {
+    if (node != NULL && expected_type != 0 && node->type != expected_type) {
       free_node(node);
       switch (node->type) {
       case kwTYPE_RET:
@@ -268,7 +271,7 @@ void exec_setup_predefined_variables() {
 
 #if defined(_UnixOS)
   if (getenv("HOME")) {
-    strcpy(homedir, getenv("HOME"));
+    strlcpy(homedir, getenv("HOME"), sizeof(homedir));
   }
   else {
     strcpy(homedir, "/tmp/");
@@ -281,7 +284,7 @@ void exec_setup_predefined_variables() {
 #elif defined(_Win32)
   if (getenv("HOME")) {
     // this works on cygwin
-    strcpy(homedir, getenv("HOME"));
+    strlcpy(homedir, getenv("HOME"), sizeof(homedir));
   }
   else {
     GetModuleFileName(NULL, homedir, sizeof(homedir) - 1);
@@ -348,11 +351,13 @@ void cmd_chain(void) {
       // argument is a file name
       int h = open(var.v.p.ptr, O_BINARY | O_RDONLY, 0644);
       if (h != -1) {
-        int len = lseek(h, 0, SEEK_END);
-        lseek(h, 0, SEEK_SET);
-        code = (char *)malloc(len + 1);
-        len = read(h, code, len);
-        code[len] = '\0';
+        struct stat st;
+        if (fstat(h, &st) == 0) {
+          int len = st.st_size;
+          code = (char *)malloc(len + 1);
+          len = read(h, code, len);
+          code[len] = '\0';
+        }
         close(h);
       }
     }
@@ -444,7 +449,7 @@ void cmd_run(int retf) {
     err_typemismatch();
     return;
   } else {
-    strcpy(fileName, var.v.p.ptr);
+    strlcpy(fileName, var.v.p.ptr, sizeof(fileName));
     v_free(&var);
   }
 
@@ -724,7 +729,6 @@ void bc_loop(int isf) {
     case kwREM:
     case kwTYPE_EOC:
     case kwTYPE_LINE:
-    case kwGOTO:
       break;
     default:
       now = dev_get_millisecond_count();
@@ -1104,27 +1108,25 @@ void dump_stack() {
  * ...exec_close_task()
  */
 int brun_create_task(const char *filename, byte *preloaded_bc, int libf) {
-  unit_file_t uft;
   bc_head_t hdr;
-  byte *cp;
-  int tid;
+  unit_file_t uft;
   byte *source;
   char fname[OS_PATHNAME_SIZE + 1];
 
   if (preloaded_bc) {
     // I have already BC
     source = preloaded_bc;
-    strcpy(fname, filename);
+    strlcpy(fname, filename, sizeof(fname));
   } else {
     // prepare filename
     if (!libf) {
       char *p;
-      strcpy(fname, filename);
+      strlcpy(fname, filename, sizeof(fname));
       p = strrchr(fname, '.');
       if (p) {
         *p = '\0';
       }
-      strcat(fname, ".sbx");
+      strlcat(fname, ".sbx", sizeof(fname));
     } else {
       find_unit(filename, fname);
     }
@@ -1156,10 +1158,10 @@ int brun_create_task(const char *filename, byte *preloaded_bc, int libf) {
   }
 
   // create task
-  tid = create_task(fname);     // create a task
+  int tid = create_task(fname); // create a task
   activate_task(tid);           // make it active
   ctask->bytecode = source;
-  cp = source;
+  byte *cp = source;
 
   if (memcmp(source, "SBUn", 4) == 0) { // load a unit
     memcpy(&uft, cp, sizeof(unit_file_t));
@@ -1695,7 +1697,7 @@ int sbasic_exec(const char *file) {
   }
   // setup global values
   gsb_last_line = gsb_last_error = 0;
-  strcpy(gsb_last_file, file);
+  strlcpy(gsb_last_file, file, sizeof(gsb_last_file));
   strcpy(gsb_last_errmsg, "");
   sbasic_set_bas_dir(file);
   success = sbasic_compile(file);

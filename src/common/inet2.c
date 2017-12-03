@@ -71,6 +71,10 @@ void net_print(socket_t s, const char *str) {
   send(s, str, strlen(str), 0);
 }
 
+void net_send(socket_t s, const char *str, size_t size) {
+  send(s, str, size, 0);
+}
+
 /**
  * sends a string to socket
  */
@@ -223,6 +227,7 @@ socket_t net_connect(const char *server_name, int server_port) {
     return sock;
   }
   if (connect(sock, (struct sockaddr *)&ad, sizeof(ad)) < 0) {
+    net_disconnect(sock);
     return -1;
   }
   return sock;
@@ -252,17 +257,21 @@ socket_t net_listen(int server_port) {
   addr.sin_family = AF_INET;
   addr.sin_port = htons(server_port);   // clients connect to this port
   addr.sin_addr.s_addr = INADDR_ANY;    // autoselect IP address
+  memset(&addr.sin_zero, 0, sizeof(addr.sin_zero));  
 
   // prevent address already in use bind errors
   if (setsockopt(listener, SOL_SOCKET, SO_REUSEADDR, (const char*)&yes, sizeof(int)) == -1) {
+    net_disconnect(listener);
     return -1;
   }
   // set s up to be a server (listening) socket
   if (bind(listener, (struct sockaddr *)&addr, sizeof(addr)) == -1) {
+    net_disconnect(listener);
     return -1;
   }
 
   if (listen(listener, 1) == -1) {
+    net_disconnect(listener);
     return -1;
   }
   // clear the set

@@ -156,9 +156,17 @@ typedef struct stknode_s {
       bcip_t to_expr_ip; /**< IP of 'TO' expression */
       bcip_t step_expr_ip; /**< IP of 'STEP' expression (FOR-IN = current element) */
       bcip_t jump_ip; /**< code block IP */
+      bcip_t exit_ip; /**< EXIT command IP to go */
       code_t subtype; /**< kwTO | kwIN */
       byte flags; /**< ... */
     } vfor;
+
+    /**
+     *  REPEAT/WHILE
+     */
+    struct {
+      bcip_t exit_ip; /**< EXIT command IP to go */
+    } vloop;
 
     /**
      *  IF/ELIF
@@ -221,7 +229,6 @@ typedef struct stknode_s {
     } vcatch;
   } x;
 
-  bcip_t exit_ip; /**< EXIT command IP to go */
   int line; /** line number of current execution **/
   code_t type; /**< type of node (keyword id, i.e. kwGOSUB, kwFOR, etc) */
 } stknode_t;
@@ -685,7 +692,7 @@ void code_jump_label(uint16_t label_id);  // IP <- LABEL_IP_TABLE[label_id]
  *
  * @param node the stack node
  */
-void code_push(stknode_t *node);
+stknode_t *code_push(code_t type);
 
 /**
  * @ingroup exec

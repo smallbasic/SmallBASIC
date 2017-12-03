@@ -15,6 +15,7 @@
 #define _sb_str_h
 
 #include "common/sys.h"
+#include "lib/str.h"
 
 #if defined(__cplusplus)
 extern "C" {

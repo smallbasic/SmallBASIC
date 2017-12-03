@@ -45,7 +45,7 @@ int net_close(void);
 /**
  * @ingroup net
  *
- * writes a string to a socket
+ * writes a NULL terminated string to a socket
  *
  * @param s the socket
  * @param str the string
@@ -62,6 +62,16 @@ void net_print(socket_t s, const char *str);
  * @param ... the format's parameters
  */
 void net_printf(socket_t s, const char *fmt, ...);
+
+/**
+ * @ingroup net
+ *
+ * writes data to a socket
+ *
+ * @param s the socket
+ * @param str the string
+ */
+void net_send(socket_t s, const char *str, size_t size);
 
 /**
  * @ingroup net

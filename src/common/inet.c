@@ -18,6 +18,7 @@
  int net_close(void) { return 0; }
  void net_print(socket_t s, const char *str) {}
  void net_printf(socket_t s, const char *fmt, ...) {}
+ void net_send(socket_t s, const char *str, size_t size) {}
  int net_input(socket_t s, char *buf, int size, const char *delim) { return 0; }
  int net_read(socket_t s, char *buf, int size) { return 0; }
  socket_t net_connect(const char *server_name, int server_port) { return 0; }

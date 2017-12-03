@@ -306,15 +306,18 @@ void cmd_drawpoly() {
   int32_t color = dev_fgcolor;
   byte filled = 0, scalef = 0;
   var_num_t scale = 1.0;
-  ipt_t *poly;
+  ipt_t *poly = NULL;
 
   // array
   count = par_getipoly(&poly);
-  if (prog_error)
+  if (prog_error) {
+    free(poly);
     return;
-  if (count == 0)
+  }
+  if (count == 0) {
+    free(poly);
     return;
-
+  }
   // x,y origin
   if (code_peek() == kwTYPE_SEP) {
     par_getcomma();

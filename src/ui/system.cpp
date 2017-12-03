@@ -523,14 +523,16 @@ char *System::readSource(const char *fileName) {
     if (!buffer) {
       int h = open(fileName, O_BINARY | O_RDONLY, 0644);
       if (h != -1) {
-        int len = lseek(h, 0, SEEK_END);
-        lseek(h, 0, SEEK_SET);
-        buffer = (char *)malloc(len + 1);
-        len = read(h, buffer, len);
-        buffer[len] = '\0';
+        struct stat st;
+        if (fstat(h, &st) == 0) {
+          int len = st.st_size;
+          buffer = (char *)malloc(len + 1);
+          len = read(h, buffer, len);
+          buffer[len] = '\0';
+          _activeFile = fileName;
+          _modifiedTime = getModifiedTime();
+        }
         close(h);
-        _activeFile = fileName;
-        _modifiedTime = getModifiedTime();
       }
     }
   }
@@ -760,7 +762,7 @@ void System::setupPath(String &loadPath) {
         if (stat(loadPath.c_str(), &st_file) < 0) {
           // reset relative path back to full path
           getcwd(path, FILENAME_MAX);
-          strcat(path, filename + len);
+          strlcat(path, filename + len, sizeof(path));
           loadPath = path;
         }
       }

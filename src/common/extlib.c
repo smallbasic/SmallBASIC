@@ -77,7 +77,7 @@ static int slib_add_external_proc(const char *proc_name, int lib_id) {
 
   extproctable[extproccount].lib_id = lib_id;
   extproctable[extproccount].symbol_index = 0;
-  strcpy(extproctable[extproccount].name, buf);
+  strlcpy(extproctable[extproccount].name, buf, sizeof(extproctable[extproccount].name));
   strupper(extproctable[extproccount].name);
 
   if (opt_verbose) {
@@ -112,7 +112,7 @@ static int slib_add_external_func(const char *func_name, int lib_id) {
 
   extfunctable[extfunccount].lib_id = lib_id;
   extfunctable[extfunccount].symbol_index = 0;
-  strcpy(extfunctable[extfunccount].name, buf);
+  strlcpy(extfunctable[extfunccount].name, buf, sizeof(extfunctable[extfunccount].name));
   strupper(extfunctable[extfunccount].name);
 
   if (opt_verbose) {
@@ -155,8 +155,8 @@ int slib_get_module_id(const char *name) {
   char xname[OS_FILENAME_SIZE + 1];
   slib_t *lib;
 
-  strcpy(xname, name);
-  strcat(xname, LIB_EXT);
+  strlcpy(xname, name, sizeof(xname));
+  strlcat(xname, LIB_EXT, sizeof(xname));
   for (i = 0; i < slib_count; i++) {
     lib = &slib_table[i];
     if (strcasecmp(lib->name, name) == 0) {
@@ -265,7 +265,7 @@ void slib_import_routines(slib_t *lib) {
 
   fcount = slib_getoptptr(lib, "sblib_proc_count");
   fgetname = slib_getoptptr(lib, "sblib_proc_getname");
-  if (fcount) {
+  if (fcount && fgetname) {
     count = fcount();
     for (i = 0; i < count; i++) {
       if (fgetname(i, buf)) {
@@ -275,7 +275,7 @@ void slib_import_routines(slib_t *lib) {
   }
   fcount = slib_getoptptr(lib, "sblib_func_count");
   fgetname = slib_getoptptr(lib, "sblib_func_getname");
-  if (fcount) {
+  if (fcount && fgetname) {
     count = fcount();
     for (i = 0; i < count; i++) {
       if (fgetname(i, buf)) {
@@ -374,15 +374,15 @@ void sblmgr_scanlibs(const char *path) {
     if ((p = strstr(name, LIB_EXT)) != NULL) {
       if (strcmp(p, LIB_EXT) == 0) {
         // store it
-        strcpy(libname, name);
+        strlcpy(libname, name, sizeof(libname));
         p = strchr(libname, '.');
         *p = '\0';
-        strcpy(full, path);
+        strlcpy(full, path, sizeof(full));
         if (path[strlen(path) - 1] != '/') {
           // add trailing separator
-          strcat(full, "/");
+          strlcat(full, "/", sizeof(full));
         }
-        strcat(full, name);
+        strlcat(full, name, sizeof(full));
         slib_import(libname, full);
       }
     }

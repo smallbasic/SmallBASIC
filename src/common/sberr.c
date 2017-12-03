@@ -17,15 +17,14 @@
 void err_title_msg(const char *seg, const char *file, int line) {
   gsb_last_line = line;
   gsb_last_error = prog_error;
-  strcpy(gsb_last_file, file);
+  strlcpy(gsb_last_file, file, sizeof(gsb_last_file));
   log_printf("\n\033[0m");
   log_printf("\033[7m * %s-%s %s:%d * \033[0m\n\n", seg, WORD_ERROR_AT, file, line);
 }
 
 void err_detail_msg(const char *descr) {
-  strncpy(prog_errmsg, descr, SB_ERRMSG_SIZE);
-  prog_errmsg[SB_ERRMSG_SIZE] = '\0';
-  strcpy(gsb_last_errmsg, prog_errmsg);
+  strlcpy(prog_errmsg, descr, sizeof(prog_errmsg));
+  strlcpy(gsb_last_errmsg, prog_errmsg, sizeof(gsb_last_errmsg));
   log_printf("\033[4m%s:\033[0m\n%s\n", WORD_DESCRIPTION, descr);
   log_printf("\033[80m\033[0m");
 }
@@ -446,10 +445,8 @@ void err_throw_str(const char *err) {
       err_stack_msg();
     }
   } else {
-    stknode_t node;
-    node.x.vcatch.catch_var = catch_var;
-    node.type = kwCATCH;
-    code_push(&node);
+    stknode_t *node = code_push(kwCATCH);
+    node->x.vcatch.catch_var = catch_var;
     prog_error = errThrow;
   }
 }

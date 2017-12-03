@@ -7,7 +7,6 @@
 //
 // Copyright(C) 2000 Nicholas Christopoulos
 
-#include "common/sys.h"
 #include "common/str.h"
 #include "common/fmt.h"
 

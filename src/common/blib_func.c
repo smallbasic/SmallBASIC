@@ -91,6 +91,7 @@ void dar_first(long funcCode, var_t *r, var_t *elem_p) {
     case kwABSMAX:
     case kwABSMIN:
       r->v.n = fabsl(n);
+      break;
     case kwSUM:
     case kwSTATMEAN:
       r->v.n = n;
@@ -2084,7 +2085,7 @@ void cmd_genfunc(long funcCode, var_t *r) {
     //
   case kwFORMAT:
     v_init(&arg);
-    eval(&arg);                 // condition
+    eval(&arg);
     if (!prog_error) {
       par_getcomma();
       IF_ERR_RETURN;
@@ -2099,18 +2100,15 @@ void cmd_genfunc(long funcCode, var_t *r) {
           switch (arg2.type) {
           case V_STR:
             buf = format_str(arg.v.p.ptr, arg2.v.p.ptr);
+            v_setstr(r, buf);
+            break;
           case V_INT:
-            if (arg2.type == V_INT) {
-              buf = format_num(arg.v.p.ptr, arg2.v.i);
-            }
+            buf = format_num(arg.v.p.ptr, arg2.v.i);
+            v_setstr(r, buf);
+            break;
           case V_NUM:
-            if (arg2.type == V_NUM) {
-              buf = format_num(arg.v.p.ptr, arg2.v.n);
-            }
-            r->type = V_STR;
-            r->v.p.length = strlen(buf) + 1;
-            r->v.p.ptr = malloc(r->v.p.length);
-            strcpy(r->v.p.ptr, buf);
+            buf = format_num(arg.v.p.ptr, arg2.v.n);
+            v_setstr(r, buf);
             break;
           default:
             err_typemismatch();
@@ -2833,7 +2831,7 @@ void cmd_genfunc(long funcCode, var_t *r) {
       char_p_t *list = dev_create_file_list(wc, &count);
 
       // create the array
-      if (count) {
+      if (count && list != NULL) {
         v_toarray1(r, count);
 
         // add the entries

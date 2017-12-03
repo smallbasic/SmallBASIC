@@ -681,6 +681,7 @@ void GraphicScreen::imageScroll() {
     _curY -= scrollBack;
   } else {
     // unable to create duplicate
+    maDestroyPlaceholder(newImage);
     clear();
   }
 }

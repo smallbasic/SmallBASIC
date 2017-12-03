@@ -29,8 +29,8 @@ void loadIcon(SDL_Window *window) {
     SDL_VERSION(&wminfo.version);
     if (SDL_GetWindowWMInfo(window, &wminfo) == 1) {
       HWND hwnd = wminfo.info.win.window;
-      ::SendMessage(hwnd, WM_SETICON, 0, reinterpret_cast<LONG>(icon));
-      ::SendMessage(hwnd, WM_SETICON, 1, reinterpret_cast<LONG>(icon));
+      ::SendMessage(hwnd, WM_SETICON, 0, (LPARAM)icon);
+      ::SendMessage(hwnd, WM_SETICON, 1, (LPARAM)icon);
     }
   }
 }

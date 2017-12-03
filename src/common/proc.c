@@ -55,7 +55,7 @@ int sys_search_path(const char *path, const char *file, char *retbuf) {
     p = strchr(ps, ';');
 #endif
     if (!p) {
-      strcpy(cur_path, ps);
+      strlcpy(cur_path, ps, sizeof(cur_path));
     } else {
       strncpy(cur_path, ps, p - ps);
       cur_path[p - ps] = '\0';
@@ -67,14 +67,17 @@ int sys_search_path(const char *path, const char *file, char *retbuf) {
       char *old_path = malloc(strlen(cur_path));
       strcpy(old_path, cur_path + 1);
 #if defined(_UnixOS)
-      sprintf(cur_path, "%s/%s", getenv("HOME"), old_path);
+      strlcpy(cur_path, getenv("HOME"), sizeof(cur_path));
+      strlcat(cur_path, "/", sizeof(cur_path));
 #else
       if (getenv("HOME")) {
-        sprintf(cur_path, "%s\\%s", getenv("HOME"), old_path);
+        strlcpy(cur_path, getenv("HOME"), sizeof(cur_path));
       } else {
-        sprintf(cur_path, "%s\\%s", getenv("HOMEPATH"), old_path);
+        strlcpy(cur_path, getenv("HOMEPATH"), sizeof(cur_path));
       }
+      strlcat(cur_path, "\\", sizeof(cur_path));
 #endif
+      strlcat(cur_path, old_path, sizeof(cur_path));
       free(old_path);
     }
 
@@ -916,9 +919,9 @@ int par_getpartable(par_t **ptable_pp, const char *valid_sep) {
   ptable = *ptable_pp = malloc(sizeof(par_t) * 256);
 
   if (valid_sep) {
-    strcpy(vsep, valid_sep);
+    strlcpy(vsep, valid_sep, sizeof(vsep));
   } else {
-    strcpy(vsep, ",");
+    strlcpy(vsep, ",", sizeof(vsep));
   }
   /*
    *      start

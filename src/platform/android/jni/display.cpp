@@ -23,6 +23,8 @@ extern ui::Graphics *graphics;
 // Canvas implementation
 //
 Canvas::Canvas() :
+  _w(0),
+  _h(0),
   _pixels(NULL),
   _clip(NULL) {
 }

@@ -7,7 +7,7 @@ const char_w = txtw(".")
 const lineSpacing = 2 + char_h
 const idxEdit = 6
 const idxFiles = 7
-const sizeDateCol = rgb(100,100,100)
+const colGrey = rgb(100,100,100)
 const menu_gap = -(char_w / 2)
 const is_sdl = instr(sbver, "SDL") != 0
 const onlineUrl = "http://smallbasic.github.io/samples/index.bas"
@@ -24,6 +24,7 @@ const filesId = "_files"
 const setupId = "_setup"
 const aboutId = "_about"
 const backId = "_back"
+const scratchId = "_scratch"
 
 func mk_bn(value, lab, fg)
   local bn
@@ -47,23 +48,34 @@ func mk_menu(value, lab, x)
   mk_menu = bn
 end
 
-sub mk_scratch()
+func mk_scratch()
   local text
   local file = "scratch.bas"
+  local result = false
 
   if (not exist(file)) then
     dim text
     text << "rem Welcome to SmallBASIC"
     text << "rem"
-    text << "rem Press F1 for keyword help."
-    text << "rem Press and hold Ctrl then press 'h' for editor help."
-    text << "rem Press and hold Ctrl then press 'r' to RUN this program."
+    if (is_sdl) then
+      text << "rem Press F1 for keyword help."
+      text << "rem Press and hold Ctrl then press 'h' for editor help."
+      text << "rem Press and hold Ctrl then press 'r' to RUN this program."
+      text << "rem Click the right mouse button for menu options."
+    else
+      text << "rem Press the 3 vertical dots for menu options."
+    endif
     try
       tsave file, text
+      result = true
     catch e
-      logprint "Failed to create scratch file: " + e
+      local wnd = window()
+      wnd.alert("Failed to create scratch file: " + e)
     end try
+  else
+    result = true
   endif
+  return result
 end
 
 sub do_okay_button()
@@ -93,14 +105,14 @@ sub do_about()
     print "(_ ._ _  _.|||_) /\ (_ |/ "
     print "__)| | |(_||||_)/--\__)|\_"
   endif
-  print 
+  print
   color 7,0
   print "Version "; sbver
   print
   print "Copyright (c) 2002-2017 Chris Warren-Smith"
   print "Copyright (c) 1999-2006 Nic Christopoulos" + chr(10)
   print "https://smallbasic.sourceforge.io" + chr(10)
-  color sizeDateCol,0
+  color colGrey,0
   print "SmallBASIC comes with ABSOLUTELY NO WARRANTY. ";
   print "This program is free software; you can use it ";
   print "redistribute it and/or modify it under the terms of the ";
@@ -285,7 +297,7 @@ sub listFiles(byref frm, path, sortDir, byref basList)
   bn.y = -1
   frm.inputs << bn
 
-  abbr = iff(char_w * 65 > xmax, true, false)
+  abbr = iff(char_w * 38 > xmax, true, false)
   if (not abbr) then
     bn = mk_bn(sortSizeId, "[Size]", size_col)
     bn.type = "link"
@@ -322,7 +334,7 @@ sub listFiles(byref frm, path, sortDir, byref basList)
 
       gap = 12 - len(str(node.size))
       n = iff(gap > 1, gap, 1)
-      bn = mk_bn(0, node.size + space(n) + timestamp(node.mtime), sizeDateCol)
+      bn = mk_bn(0, node.size + space(n) + timestamp(node.mtime), colGrey)
       bn.type = "label"
       bn.y = -1
       gap = 29 - len(name)
@@ -561,23 +573,21 @@ sub main
   local sortDir = env("sortDir")
   if (len(sortDir) == 0) then sortDir = 0
 
-  if (command == "welcome" && len(files("*.bas")) == 0) then
-    mk_scratch()
-  endif
-
   func makeUI(path, sortDir)
-    local frm, bn_files, bn_online, bn_setup, bn_about, bn_new
+    local frm, bn_files, bn_online, bn_setup, bn_about, bn_new, bn_scratch
     local basList
     dim basList
 
     bn_files = mk_menu(filesId, "File", 0)
     bn_online = mk_menu(onlineUrl, "Online", menu_gap)
+    bn_scratch = mk_menu(scratchId, "Scratch", menu_gap)
     bn_setup = mk_menu(setupId, "Setup", menu_gap)
     bn_about = mk_menu(aboutId, "About", menu_gap)
     bn_online.isExit = true
 
     frm.inputs << bn_files
     frm.inputs << bn_online
+    frm.inputs << bn_scratch
     if (!is_sdl) then
       frm.inputs << bn_setup
     endif
@@ -629,6 +639,10 @@ sub main
         managefiles()
       endif
       frm = makeUI(path, sortDir)
+    elif frm.value == scratchId then
+      if (mk_scratch())
+        frm.close("scratch.bas")
+      endif
     elif frm.value == backId then
       cls
       go_back()

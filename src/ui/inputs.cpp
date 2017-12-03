@@ -236,7 +236,9 @@ void FormInput::drawText(const char *caption, int dx, int dy, int sw, int chw) {
   if (width > _width) {
     width = _width;
   }
-  if (strWidth > width) {
+  if (caption == NULL) {
+    // nothing to draw
+  } else if (strWidth > width) {
     int len = width / chw;
     if (len > 0) {
       char *buffer = new char[len + 1];
@@ -692,7 +694,9 @@ void FormLineInput::updateField(var_p_t form) {
   var_p_t field = getField(form);
   if (field != NULL) {
     var_p_t value = map_get(field, FORM_INPUT_VALUE);
-    v_setstr(value, _buffer);
+    if (value != NULL) {
+      v_setstr(value, _buffer);
+    }
   }
 }
 
@@ -936,7 +940,9 @@ void FormList::updateForm(var_p_t form) {
   var_p_t field = getField(form);
   if (field != NULL) {
     value = map_get(field, FORM_INPUT_INDEX);
-    v_setint(value, _model->selected());
+    if (value != NULL) {
+      v_setint(value, _model->selected());
+    }
   }
 }
 

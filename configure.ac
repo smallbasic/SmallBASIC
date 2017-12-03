@@ -164,7 +164,8 @@ function buildSDL() {
      dnl do not depend on cygwin.dll under cygwin build
      PACKAGE_CFLAGS="${PACKAGE_CFLAGS} -mms-bitfields"
      PACKAGE_LIBS="${PACKAGE_LIBS} -lwsock32 -lws2_32 -static-libgcc -static-libstdc++"
-     PACKAGE_LIBS="-Wl,-Bstatic ${PACKAGE_LIBS} `sdl2-config --static-libs` `freetype-config --libs`"
+     PACKAGE_LIBS="${PACKAGE_LIBS} -Wl,-Bstatic -Wl,-Map=output.map"
+     PACKAGE_LIBS="${PACKAGE_LIBS} `sdl2-config --static-libs` `freetype-config --libs`"
      AC_DEFINE(_Win32, 1, [Windows build])
      ;;
 
@@ -342,6 +343,10 @@ AC_SUBST(PACKAGE_LIBS)
 dnl change default aru setting to avoid warning
 ARFLAGS=cr
 AC_SUBST(ARFLAGS)
+
+dnl check missing functions
+AC_CHECK_FUNC([strlcpy], [AC_DEFINE([HAVE_STRLCPY], [1], [Define if strlcpy exists.])])
+AC_CHECK_FUNC([strlcat], [AC_DEFINE([HAVE_STRLCAT], [1], [Define if strlcat exists.])])
 
 AC_CONFIG_FILES([
 Makefile

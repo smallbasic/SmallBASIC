@@ -13,8 +13,7 @@
 #include "common/sys.h"
 #include "common/kw.h"
 
-#define BC_ALLOC_INCR     1024
-#define BC_MAX_STORE_SIZE   0x7FFFFFFF
+#define BC_ALLOC_INCR 1024
 #define V_QUOTE '\1'
 #define V_LINE '\2'
 #define V_JOIN_LINE '\3'

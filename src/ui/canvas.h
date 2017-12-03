@@ -36,10 +36,10 @@ struct Canvas {
 
   int _w;
   int _h;
-  bool _ownerSurface;
   pixel_t *_pixels;
   SDL_Surface *_surface;
   SDL_Rect *_clip;
+  bool _ownerSurface;
 };
 
 #else

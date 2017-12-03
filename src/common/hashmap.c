@@ -127,9 +127,8 @@ void hashmap_create(var_p_t map, int size) {
 
 int hashmap_destroy(var_p_t var_p) {
   if (var_p->type == V_MAP && var_p->v.m.map != NULL) {
-    int i;
-    for (i = 0; i < var_p->v.m.size; i++) {
-      Node **table = (Node **)var_p->v.m.map;
+    Node **table = (Node **)var_p->v.m.map;
+    for (int i = 0; i < var_p->v.m.size; i++) {
       if (table[i] != NULL) {
         tree_destroy(table[i]);
       }
@@ -229,9 +228,8 @@ var_p_t hashmap_get(var_p_t map, const char *key) {
 
 void hashmap_foreach(var_p_t map, hashmap_foreach_func func, hashmap_cb *data) {
   if (map && map->type == V_MAP) {
-    int i;
-    for (i = 0; i < map->v.m.size; i++) {
-      Node **table = (Node **)map->v.m.map;
+    Node **table = (Node **)map->v.m.map;
+    for (int i = 0; i < map->v.m.size; i++) {
       if (table[i] != NULL) {
         if (!tree_foreach(table[i], func, data)) {
           break;

@@ -72,7 +72,7 @@ typedef struct {
   int extfunccount; /**< ext-func table count                   */
 
   char file_name[OS_PATHNAME_SIZE + 1];
-  char unit_name[OS_PATHNAME_SIZE + 1];
+  char unit_name[SB_KEYWORD_SIZE + 1];
   int unit_flag;
 
   bc_lib_rec_table_t libtable;

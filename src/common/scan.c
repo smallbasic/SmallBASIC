@@ -116,16 +116,16 @@ bc_symbol_rec_t *add_imptable_rec(const char *proc_name, int lib_id, int symbol_
   bc_symbol_rec_t *sym = (bc_symbol_rec_t *)malloc(sizeof(bc_symbol_rec_t));
   memset(sym, 0, sizeof(bc_symbol_rec_t));
 
-  strcpy(sym->symbol, proc_name);  // symbol name
+  strlcpy(sym->symbol, proc_name, sizeof(sym->symbol));  // symbol name
   sym->type = symbol_type;         // symbol type
   sym->lib_id = lib_id;            // library id
   sym->sym_id = comp_impcount;     // symbol index
 
   if (comp_imptable.count) {
     comp_imptable.elem = (bc_symbol_rec_t **)realloc(comp_imptable.elem,
-                                                     (comp_imptable.count + 1) * sizeof(bc_symbol_rec_t **));
+                                                     (comp_imptable.count + 1) * sizeof(bc_symbol_rec_t *));
   } else {
-    comp_imptable.elem = (bc_symbol_rec_t **)malloc(sizeof(bc_symbol_rec_t **));
+    comp_imptable.elem = (bc_symbol_rec_t **)malloc(sizeof(bc_symbol_rec_t *));
   }
   comp_imptable.elem[comp_imptable.count] = sym;
   comp_imptable.count++;
@@ -137,15 +137,15 @@ void add_libtable_rec(const char *lib, int uid, int type) {
   bc_lib_rec_t *imlib = (bc_lib_rec_t *)malloc(sizeof(bc_lib_rec_t));
   memset(imlib, 0, sizeof(bc_lib_rec_t));
 
-  strcpy(imlib->lib, lib);
+  strlcpy(imlib->lib, lib, sizeof(imlib->lib));
   imlib->id = uid;
   imlib->type = type;
 
   if (comp_libtable.count) {
     comp_libtable.elem = (bc_lib_rec_t **)realloc(comp_libtable.elem,
-                                                 (comp_libtable.count + 1) * sizeof(bc_lib_rec_t **));
+                                                 (comp_libtable.count + 1) * sizeof(bc_lib_rec_t *));
   } else {
-    comp_libtable.elem = (bc_lib_rec_t **)malloc(sizeof(bc_lib_rec_t **));
+    comp_libtable.elem = (bc_lib_rec_t **)malloc(sizeof(bc_lib_rec_t *));
   }
   comp_libtable.elem[comp_libtable.count] = imlib;
   comp_libtable.count++;
@@ -167,7 +167,7 @@ int comp_add_external_proc(const char *proc_name, int lib_id) {
 
   comp_extproctable[comp_extproccount].lib_id = lib_id;
   comp_extproctable[comp_extproccount].symbol_index = comp_impcount;
-  strcpy(comp_extproctable[comp_extproccount].name, proc_name);
+  strlcpy(comp_extproctable[comp_extproccount].name, proc_name, sizeof(comp_extproctable[0].name));
   strupper(comp_extproctable[comp_extproccount].name);
   comp_extproccount++;
 
@@ -191,7 +191,7 @@ int comp_add_external_func(const char *func_name, int lib_id) {
 
   comp_extfunctable[comp_extfunccount].lib_id = lib_id;
   comp_extfunctable[comp_extfunccount].symbol_index = comp_impcount;
-  strcpy(comp_extfunctable[comp_extfunccount].name, func_name);
+  strlcpy(comp_extfunctable[comp_extfunccount].name, func_name, sizeof(comp_extfunctable[0].name));
   strupper(comp_extfunctable[comp_extfunccount].name);
   comp_extfunccount++;
 
@@ -598,7 +598,7 @@ int comp_check_labels() {
 int comp_check_lib(const char *name) {
   char tmp[SB_KEYWORD_SIZE + 1];
 
-  strcpy(tmp, name);
+  strlcpy(tmp, name, sizeof(tmp));
   char *p = strchr(tmp, '.');
   if (p) {
     *p = '\0';
@@ -825,7 +825,7 @@ void comp_push(bcip_t ip) {
   comp_pass_node_t *node = (comp_pass_node_t *)malloc(sizeof(comp_pass_node_t));
   memset(node, 0, sizeof(comp_pass_node_t));
 
-  strcpy(node->sec, comp_bc_sec);
+  strlcpy(node->sec, comp_bc_sec, sizeof(node->sec));
   node->pos = ip;
   node->level = comp_block_level;
   node->block_id = comp_block_id;
@@ -1145,6 +1145,14 @@ char *comp_scan_json(char *json, bc_t *bc) {
       *p = '\n';
       break;
     default:
+      if (strncasecmp("rem ", p, 4) == 0) {
+        // 'strip' comments
+        while (*p && *p != V_LINE && *p != '\n') {
+          *p = ' ';
+          p++;
+        }
+        p--;
+      }
       break;
     }
     p++;
@@ -1705,7 +1713,7 @@ int comp_single_line_if(char *text) {
     if (pthen) {
       // store the expression
       SKIP_SPACES(p);
-      strcpy(buf, p);
+      strlcpy(buf, p, sizeof(buf));
       p = strstr(buf, LCN_THEN_WS);
       *p = '\0';
 
@@ -1733,10 +1741,10 @@ int comp_single_line_if(char *text) {
 
         if (is_digit(*p)) {
           // add goto
-          strcpy(buf, LCN_GOTO_WRS);
-          strcat(buf, p);
+          strlcpy(buf, LCN_GOTO_WRS, sizeof(buf));
+          strlcat(buf, p, sizeof(buf));
         } else {
-          strcpy(buf, p);
+          strlcpy(buf, p, sizeof(buf));
         }
         // ELSE command
         // If there are more inline-ifs (nested) the ELSE belongs
@@ -1931,17 +1939,17 @@ void bc_store_exports(const char *slist) {
     offset = comp_exptable.count;
     comp_exptable.count += count;
     comp_exptable.elem = (unit_sym_t **)realloc(comp_exptable.elem,
-                                                comp_exptable.count * sizeof(unit_sym_t **));
+                                                comp_exptable.count * sizeof(unit_sym_t *));
   } else {
     offset = 0;
     comp_exptable.count = count;
-    comp_exptable.elem = (unit_sym_t **)malloc(comp_exptable.count * sizeof(unit_sym_t **));
+    comp_exptable.elem = (unit_sym_t **)malloc(comp_exptable.count * sizeof(unit_sym_t *));
   }
 
   for (i = 0; i < count; i++) {
     unit_sym_t *sym = (unit_sym_t *)malloc(sizeof(unit_sym_t));
     memset(sym, 0, sizeof(unit_sym_t));
-    strcpy(sym->symbol, pars[i]);
+    strlcpy(sym->symbol, pars[i], sizeof(sym->symbol));
     comp_exptable.elem[offset + i] = sym;
   }
 
@@ -2938,9 +2946,6 @@ void comp_text_line(char *text, int addLineNo) {
       return;
     }
   }
-  if (idx == kwREM) {
-    return;
-  }
 
   int sharp, ladd,linc, ldec, leqop;
   sharp = (comp_bc_parm[0] == '#'); // if # -> file commands
@@ -3778,11 +3783,11 @@ void comp_init() {
 
   comp_labtable.count = 0;
   comp_labtable.size = 256;
-  comp_labtable.elem = (comp_label_t **)malloc(comp_labtable.size * sizeof(comp_label_t **));
+  comp_labtable.elem = (comp_label_t **)malloc(comp_labtable.size * sizeof(comp_label_t *));
 
   comp_stack.count = 0;
   comp_stack.size = 256;
-  comp_stack.elem = (comp_pass_node_t **)malloc(comp_stack.size * sizeof(comp_pass_node_t **));
+  comp_stack.elem = (comp_pass_node_t **)malloc(comp_stack.size * sizeof(comp_pass_node_t *));
 
   comp_libtable.count = 0;
   comp_libtable.elem = NULL;
@@ -3877,7 +3882,7 @@ void comp_close() {
  */
 char *comp_load(const char *file_name) {
   char *buf;
-  strcpy(comp_file_name, file_name);
+  strlcpy(comp_file_name, file_name, sizeof(comp_file_name));
 #if defined(IMPL_DEV_READ)
   buf = dev_read(file_name);
 #else
@@ -4304,8 +4309,8 @@ void comp_preproc_include(char *p) {
 
   int basExists = (access(path, R_OK) == 0);
   if (!basExists && gsb_bas_dir[0]) {
-    strcpy(path, gsb_bas_dir);
-    strcat(path, fileName);
+    strlcpy(path, gsb_bas_dir, sizeof(path));
+    strlcat(path, fileName, sizeof(path));
     basExists = (access(path, R_OK) == 0);
   }
   if (!basExists) {
@@ -4313,10 +4318,10 @@ void comp_preproc_include(char *p) {
   } else if (strcmp(comp_file_name, path) == 0) {
     sc_raise(MSG_INC_FILE_INC, comp_file_name, path);
   } else {
-    char oldFileName[1024];
+    char oldFileName[OS_PATHNAME_SIZE + 1];
     char oldSec[SB_KEYWORD_SIZE + 1];
-    strcpy(oldSec, comp_bc_sec);
-    strcpy(oldFileName, comp_file_name);
+    strlcpy(oldSec, comp_bc_sec, sizeof(oldSec));
+    strlcpy(oldFileName, comp_file_name, sizeof(oldFileName));
     char *source = comp_load(path);
     if (source) {
       comp_pass1(NULL, source);
@@ -4768,7 +4773,7 @@ byte_code comp_create_bin() {
     memcpy(&uft.sign, "SBUn", 4);
     uft.version = SB_DWORD_VER;
 
-    strcpy(uft.base, comp_unit_name);
+    strlcpy(uft.base, comp_unit_name, sizeof(uft.base));
     uft.sym_count = comp_expcount;
 
     memcpy(bc.code, &uft, sizeof(unit_file_t));
@@ -4847,23 +4852,21 @@ byte_code comp_create_bin() {
  * @return non-zero on success
  */
 int comp_save_bin(byte_code bc) {
-  int h;
   char fname[OS_FILENAME_SIZE + 1];
-  char *p;
   int result = 1;
 
   if (opt_nosave && !comp_unit_flag) {
     return 1;
   }
 
-  strcpy(fname, comp_file_name);
-  p = strrchr(fname, '.');
+  strlcpy(fname, comp_file_name, sizeof(fname));
+  char *p = strrchr(fname, '.');
   if (p) {
     *p = '\0';
   }
   strcat(fname, comp_unit_flag ? ".sbu" : ".sbx");
 
-  h = open(fname, O_BINARY | O_RDWR | O_TRUNC | O_CREAT, 0660);
+  int h = open(fname, O_BINARY | O_RDWR | O_TRUNC | O_CREAT, 0660);
   if (h != -1) {
     write(h, (char *)bc.code, bc.size);
     close(h);

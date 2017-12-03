@@ -39,3 +39,8 @@ C=LinEqn(a,b)
 print "[x; y; z] = "; C
 ?
 
+rem -- handling for dot product and multiplication of two 1D arrays
+a1=[1,2,4]
+a2=[1,4,5]
+if (a1 * a2 != [1,8,20]) then throw "err"
+if (a1 % a2 != 29) then throw "err"

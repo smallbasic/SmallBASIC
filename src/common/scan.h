@@ -110,11 +110,11 @@ typedef struct {
  */
 struct comp_var_s {
   char *name; /**< variable's name    @ingroup scan */
-  byte dolar_sup; /**< used on system variables (so, COMMAND and COMMAND$ to be the same) @ingroup scan */
   int lib_id; /**< library id (if it is an external variable; otherwise -1) @ingroup scan */
   int symbol_index; /**< symbol index on symbol-table */
   int local_id;
   int local_proc_level;
+  byte dolar_sup; /**< used on system variables (so, COMMAND and COMMAND$ to be the same) @ingroup scan */
 };
 
 typedef struct comp_var_s comp_var_t;
@@ -128,9 +128,9 @@ typedef struct comp_var_s comp_var_t;
 struct comp_label_s {
   char name[SB_KEYWORD_SIZE + 1]; /**< label name    @ingroup scan */
   bcip_t ip; /**< address in BC @ingroup scan */
-  byte level; /**< block level (used for GOTOs) @ingroup scan */
   bid_t block_id; /**< block_id (FOR-NEXT,IF-FI,etc) used for GOTOs @ingroup scan */
   bcip_t dp; /**< data pointer @ingroup scan */
+  byte level; /**< block level (used for GOTOs) @ingroup scan */
 };
 
 typedef struct comp_label_s comp_label_t;
@@ -149,11 +149,11 @@ typedef struct {
  */
 struct comp_proc_s {
   char *name; /**< procedure/function name  @ingroup scan */
-  bcip_t ip; /**< address in BC            @ingroup scan */
+  bcip_t ip; /**< address in BC             @ingroup scan */
   bid_t vid; /**< variable index (return variable-id; for functions) @ingroup scan */
-  byte level; /**< block level (used for GOTOs) @ingroup scan */
   bid_t block_id; /**< block_id (FOR-NEXT,IF-FI,etc) used for GOTOs @ingroup scan */
-  int pline; /**< source code line number      @ingroup scan */
+  int pline; /**< source code line number       @ingroup scan */
+  byte level; /**< block level (used for GOTOs) @ingroup scan */
 };
 
 typedef struct comp_proc_s comp_udp_t;
@@ -168,8 +168,8 @@ struct comp_pass_node_s {
   char sec[SB_KEYWORD_SIZE + 1]; /**< section-name (PalmOS) @ingroup scan */
   bcip_t pos; /**< address in BC         @ingroup scan */
   int line; /**< source code line number @ingroup scan */
-  byte level; /**< block level             @ingroup scan */
-  bid_t block_id; /**< block ID                @ingroup scan */
+  bid_t block_id; /**< block ID          @ingroup scan */
+  byte level; /**< block level           @ingroup scan */
 };
 
 typedef struct comp_pass_node_s comp_pass_node_t;

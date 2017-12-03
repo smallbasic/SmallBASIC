@@ -17,6 +17,7 @@
 #include "platform/sdl/settings.h"
 #include "platform/sdl/syswm.h"
 #include "common/smbas.h"
+#include "lib/str.h"
 
 #if !defined(_Win32)
 #include <fontconfig/fontconfig.h>
@@ -218,15 +219,15 @@ void setupAppPath(const char *path) {
   if (path[0] == '/' ||
       (path[1] == ':' && ((path[2] == '\\') || path[2] == '/'))) {
     // full path or C:/
-    strcpy(g_appPath, path);
+    strlcpy(g_appPath, path, sizeof(g_appPath));
   } else {
     // relative path
     char cwd[OS_PATHNAME_SIZE + 1];
     cwd[0] = '\0';
     getcwd(cwd, sizeof(cwd) - 1);
-    strcpy(g_appPath, cwd);
-    strcat(g_appPath, "/");
-    strcat(g_appPath, path);
+    strlcpy(g_appPath, cwd, sizeof(g_appPath));
+    strlcat(g_appPath, "/", sizeof(g_appPath));
+    strlcat(g_appPath, path, sizeof(g_appPath));
 #if defined(__linux__)
     if (access(g_appPath, X_OK) != 0) {
       // launched via PATH, retrieve full path

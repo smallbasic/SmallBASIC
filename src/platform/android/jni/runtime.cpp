@@ -190,6 +190,7 @@ Runtime::Runtime(android_app *app) :
   pthread_mutex_init(&_mutex, NULL);
   _looper = ALooper_forThread();
   _sensorManager = ASensorManager_getInstance();
+  memset(&_sensorEvent, 0, sizeof(_sensorEvent));
 }
 
 Runtime::~Runtime() {
@@ -525,13 +526,16 @@ bool Runtime::loadSettings(Properties<String *> &settings) {
   FILE *fp = fopen(path.c_str(), "r");
   if (fp) {
     String buffer;
-    fseek(fp, 0, SEEK_END);
-    long len = ftell(fp);
-    rewind(fp);
-    buffer.append(fp, len);
+    struct stat st;
+    if (stat(path.c_str(), &st) == 0) {
+      int len = st.st_size;
+      buffer.append(fp, len);
+      settings.load(buffer.c_str(), buffer.length());
+      result = true;
+    } else {
+      result = false;
+    }
     fclose(fp);
-    settings.load(buffer.c_str(), buffer.length());
-    result = true;
   } else {
     result = false;
   }

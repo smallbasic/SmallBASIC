@@ -407,8 +407,8 @@ char *format_num(const char *fmt_cnst, var_num_t x) {
     p = strchr(dest, 'E');
     if (p) {
       *p = '\0';
-      strcpy(left, dest);
-      strcpy(right, p + 1);
+      strlcpy(left, dest, sizeof(left));
+      strlcpy(right, p + 1, sizeof(right));
       int lsz = strlen(left);
       int rsz = strlen(right) + 1;
 
@@ -421,12 +421,12 @@ char *format_num(const char *fmt_cnst, var_num_t x) {
       if (lc < lsz + rsz + 1) {
         left[lc - rsz] = '\0';
       }
-      strcpy(lbuf, left);
-      strcat(lbuf, "E");
-      strcat(lbuf, right);
+      strlcpy(lbuf, left, sizeof(lbuf));
+      strlcat(lbuf, "E", sizeof(lbuf));
+      strlcat(lbuf, right, sizeof(lbuf));
       fmt_nmap(-1, dest, fmt, lbuf);
     } else {
-      strcpy(left, dest);
+      strlcpy(left, dest, sizeof(left));
       fmt_nmap(-1, dest, fmt, left);
     }
   } else {
@@ -455,9 +455,9 @@ char *format_num(const char *fmt_cnst, var_num_t x) {
     p = strchr(dest, '.');
     if (p) {
       *p = '\0';
-      strcpy(right, p + 1);
+      strlcpy(right, p + 1, sizeof(right));
     }
-    strcpy(left, dest);
+    strlcpy(left, dest, sizeof(left));
 
     // map format
     char rbuf[64];
