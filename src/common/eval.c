@@ -188,6 +188,33 @@ void mat_sub(var_t *l, var_t *r) {
 }
 
 /**
+ * matrix: multiply two 1d arrays
+ */
+void mat_mul_1d(var_t *l, var_t *r) {
+  uint32_t size = v_asize(l);
+  for (uint32_t i = 0; i < size; i++) {
+    var_t *elem = v_elem(r, i);
+    var_num_t v1 = v_getval(v_elem(l, i));
+    var_num_t v2 = v_getval(elem);
+    v_setreal(elem, (v1 * v2));
+  }
+}
+
+/**
+ * matrix: dot product of two 1d arrays
+ */
+void mat_dot(var_t *l, var_t *r) {
+  var_num_t result = 0;
+  uint32_t size = v_asize(l);
+  for (uint32_t i = 0; i < size; i++) {
+    var_num_t v1 = v_getval(v_elem(l, i));
+    var_num_t v2 = v_getval(v_elem(r, i));
+    result += (v1 * v2);
+  }
+  v_setreal(r, result);
+}
+
+/**
  * matrix: multiply
  */
 void mat_mul(var_t *l, var_t *r) {
@@ -344,7 +371,15 @@ static inline void oper_mul(var_t *r, var_t *left) {
   if (r->type == V_ARRAY || v_is_type(left, V_ARRAY)) {
     // arrays
     if (r->type == V_ARRAY && v_is_type(left, V_ARRAY)) {
-      if (op == '*') {
+      if (left->v.a.maxdim == r->v.a.maxdim && r->v.a.maxdim == 1) {
+        if (op == '*') {
+          mat_mul_1d(left, r);
+        } else if (op == '%') {
+          mat_dot(left, r);
+        } else {
+          err_matop();
+        }
+     } else if (op == '*') {
         mat_mul(left, r);
       } else {
         err_matop();
