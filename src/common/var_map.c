@@ -208,7 +208,7 @@ var_p_t map_resolve_fields(var_p_t base, var_p_t *parent) {
     int len = code_getstrlen();
     const char *key = (const char *)&prog_source[prog_ip];
     prog_ip += len;
-    field = hashmap_put(base, key, len);
+    field = hashmap_putc(base, key, len);
     if (parent != NULL) {
       *parent = base;
     }

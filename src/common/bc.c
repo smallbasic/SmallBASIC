@@ -174,12 +174,13 @@ void bc_add_creal(bc_t *bc, var_num_t v) {
  */
 void bc_add_strn(bc_t *bc, const char *str, int len) {
   bc_add_code(bc, kwTYPE_STR);
-  bc_add_dword(bc, len);
+  bc_add_dword(bc, len + 1);
   if (bc->count + len >= bc->size) {
     bc_resize(bc, bc->size + BC_ALLOC_INCR + len);
   }
   memcpy(bc->ptr + bc->count, str, len);
   bc->count += len;
+  bc_add1(bc, 0);
 }
 
 /*

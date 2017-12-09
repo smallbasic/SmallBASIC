@@ -183,6 +183,7 @@ void pv_write(char *str, int method, int handle) {
     vp->v.p.length += strlen(str);
     if (vp->v.p.ptr == NULL) {
       vp->v.p.ptr = malloc(vp->v.p.length + 1);
+      vp->v.p.owner = 1;
       strcpy((char *)vp->v.p.ptr, str);
     } else {
       vp->v.p.ptr = realloc(vp->v.p.ptr, vp->v.p.length + 1);

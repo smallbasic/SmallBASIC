@@ -109,6 +109,7 @@ typedef struct var_s {
     struct {
       char *ptr; /**< data ptr (possibly, string pointer) */
       uint32_t length; /**< the string length */
+      byte owner;
     } p;
 
     // array
@@ -275,6 +276,20 @@ void v_new_array(var_t *var, unsigned size);
  * frees memory associated with the given array
  */
 void v_array_free(var_t *var);
+
+/**
+ * @ingroup var
+ *
+ * initialise the variable as a string of the given length
+ */
+void v_init_str(var_t *var, int length);
+
+/**
+ * @ingroup var
+ *
+ * takes ownership of the given allocated string
+ */
+void v_move_str(var_t *var, char *str);
 
 /**
  * @ingroup var

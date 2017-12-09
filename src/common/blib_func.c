@@ -933,8 +933,6 @@ void cmd_str1(long funcCode, var_t *arg, var_t *r) {
     // str <- CBS$(str)
     // convert C-Style string to BASIC-style string
     //
-    v_tostr(arg);
-    IF_ERR_RETURN;
     r->v.p.ptr = cstrdup(arg->v.p.ptr);
     r->v.p.length = strlen(r->v.p.ptr) + 1;
     break;
@@ -943,9 +941,6 @@ void cmd_str1(long funcCode, var_t *arg, var_t *r) {
     // str <- BCS$(str)
     // convert BASIC-Style string to C-style string
     //
-    v_tostr(arg);
-    IF_ERR_RETURN;
-
     r->v.p.ptr = bstrdup(arg->v.p.ptr);
     r->v.p.length = strlen(r->v.p.ptr) + 1;
     break;
@@ -988,8 +983,6 @@ void cmd_str1(long funcCode, var_t *arg, var_t *r) {
     //
     // str <- LCASE$(s)
     //
-    v_tostr(arg);
-    IF_ERR_RETURN;
     r->v.p.ptr = (char *)malloc(strlen(arg->v.p.ptr) + 1);
     strcpy(r->v.p.ptr, arg->v.p.ptr);
     p = r->v.p.ptr;
@@ -1003,8 +996,6 @@ void cmd_str1(long funcCode, var_t *arg, var_t *r) {
     //
     // str <- UCASE$(s)
     //
-    v_tostr(arg);
-    IF_ERR_RETURN;
     r->v.p.ptr = (char *)malloc(strlen(arg->v.p.ptr) + 1);
     strcpy(r->v.p.ptr, arg->v.p.ptr);
     p = r->v.p.ptr;
@@ -1018,8 +1009,6 @@ void cmd_str1(long funcCode, var_t *arg, var_t *r) {
     //
     // str <- LTRIM$(s)
     //
-    v_tostr(arg);
-    IF_ERR_RETURN;
     p = arg->v.p.ptr;
     while (is_wspace(*p)) {
       p++;
@@ -1036,8 +1025,6 @@ void cmd_str1(long funcCode, var_t *arg, var_t *r) {
     //
     // str <- RTRIM$(s)
     //
-    v_tostr(arg);
-    IF_ERR_RETURN;
     p = arg->v.p.ptr;
     if (*p != '\0') {
       while (*p) {
@@ -1144,8 +1131,6 @@ void cmd_str1(long funcCode, var_t *arg, var_t *r) {
     //
     // str <- ENVIRON$(str)
     //
-    v_tostr(arg);
-    IF_ERR_RETURN;
     if (*arg->v.p.ptr != '\0') {
       // return the variable
       const char *v = dev_getenv(arg->v.p.ptr);
@@ -1293,6 +1278,7 @@ void cmd_str0(long funcCode, var_t *r) {
     tms = *localtime(&now);
     r->type = V_STR;
     r->v.p.ptr = malloc(32);
+    r->v.p.owner = 1;
     sprintf(r->v.p.ptr, "%02d/%02d/%04d", tms.tm_mday, tms.tm_mon + 1, tms.tm_year + 1900);
     r->v.p.length = strlen(r->v.p.ptr) + 1;
     break;
@@ -1304,6 +1290,7 @@ void cmd_str0(long funcCode, var_t *r) {
     tms = *localtime(&now);
     r->type = V_STR;
     r->v.p.ptr = malloc(32);
+    r->v.p.owner = 1;
     sprintf(r->v.p.ptr, "%02d:%02d:%02d", tms.tm_hour, tms.tm_min, tms.tm_sec);
     r->v.p.length = strlen(r->v.p.ptr) + 1;
     break;
@@ -2216,9 +2203,7 @@ void cmd_genfunc(long funcCode, var_t *r) {
 
     if (funcCode == kwDATEFMT) {
       // format
-      r->type = V_STR;
-      r->v.p.ptr = date_fmt(arg.v.p.ptr, d, m, y);
-      r->v.p.length = strlen(r->v.p.ptr) + 1;
+      v_move_str(r, date_fmt(arg.v.p.ptr, d, m, y));
       v_free(&arg);
     } else {
       // weekday
@@ -2247,6 +2232,7 @@ void cmd_genfunc(long funcCode, var_t *r) {
       r->type = V_STR;
       r->v.p.ptr = malloc((count << 1) + 1);
       r->v.p.ptr[0] = '\0';
+      r->v.p.owner = 1;
       len = 0;
       char tmp[3];
       for (int i = 0; i < count; i++) {
@@ -2279,9 +2265,7 @@ void cmd_genfunc(long funcCode, var_t *r) {
       r->v.p.ptr[len] = '\0';
     } else {
       // file
-      r->type = V_STR;
-      r->v.p.ptr = malloc(count + 1);
-      r->v.p.length = count + 1;
+      v_init_str(r, count);
       dev_fread(handle, (byte *)r->v.p.ptr, count);
       r->v.p.ptr[count] = '\0';
     }
@@ -2837,9 +2821,7 @@ void cmd_genfunc(long funcCode, var_t *r) {
         // add the entries
         for (int i = 0; i < count; i++) {
           var_t *elem_p = v_elem(r, i);
-          elem_p->type = V_STR;
-          elem_p->v.p.length = strlen(list[i]) + 1;
-          elem_p->v.p.ptr = malloc(elem_p->v.p.length);
+          v_init_str(elem_p, strlen(list[i]));
           strcpy(elem_p->v.p.ptr, list[i]);
         }
       } else {
