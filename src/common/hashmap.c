@@ -57,11 +57,11 @@ void tree_delete_node(Node *node) {
 
 static inline int tree_compare(const char *key, int length, var_p_t vkey) {
   int len1 = length;
-  if (key[len1 - 1] == '\0') {
+  if (len1 && key[len1 - 1] == '\0') {
     len1--;
   }
   int len2 = vkey->v.p.length;
-  if (vkey->v.p.ptr[len2 - 1] == '\0') {
+  if (len2 && vkey->v.p.ptr[len2 - 1] == '\0') {
     len2--;
   }
   return strcaselessn(key, len1, vkey->v.p.ptr, len2);

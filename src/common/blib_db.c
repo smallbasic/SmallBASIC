@@ -589,8 +589,7 @@ void cmd_floadln() {
       // build var for line
       var_p = v_elem(array_p, index);
       int size = GROW_SIZE;
-      var_p->type = V_STR;
-      var_p->v.p.ptr = malloc(size);
+      v_init_str(var_p, size);
       index++;
 
       // process the next line
@@ -654,9 +653,7 @@ void cmd_floadln() {
   } else {                        // if type=1
     // build string
     v_free(var_p);
-    var_p->type = V_STR;
-    var_p->v.p.length = dev_flength(handle) + 1;
-    var_p->v.p.ptr = malloc(var_p->v.p.length);
+    v_init_str(var_p, dev_flength(handle));
     if (var_p->v.p.length > 1) {
       dev_fread(handle, (byte *)var_p->v.p.ptr, var_p->v.p.length - 1);
     }
