@@ -1643,7 +1643,8 @@ void sbasic_exec_prepare(const char *filename) {
  * remember the directory location of the running program
  */
 void sbasic_set_bas_dir(const char *bas_file) {
-  int path_len = strrchr(bas_file, OS_DIRSEP) - bas_file;
+  const char *sep = strrchr(bas_file, OS_DIRSEP);
+  int path_len =  sep == NULL ? 0 : (sep - bas_file);
   char cwd[OS_PATHNAME_SIZE + 1];
 
   cwd[0] = '\0';
