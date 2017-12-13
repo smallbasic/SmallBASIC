@@ -29,17 +29,17 @@ struct System {
 
   int getPen(int code);
   char *getText(char *dest, int maxSize);
-  bool isActive() { return _state != kInitState && _state != kDoneState; }
-  bool isBack() { return _state == kBackState; }
-  bool isBreak() { return _state >= kBreakState; }
-  bool isClosing() { return _state >= kClosingState; }
-  bool isEditing() { return _state == kEditState; }
-  bool isInitial() { return _state == kInitState; }
-  bool isModal() { return _state == kModalState; }
-  bool isRestart() { return _state == kRestartState; }
-  bool isRunning() { return _state == kRunState || _state == kModalState; }
-  bool isThreadActive() { return _state == kActiveState; }
-  bool isSystemScreen() { return _userScreenId != -1; }
+  bool isActive() const { return _state != kInitState && _state != kDoneState; }
+  bool isBack() const { return _state == kBackState; }
+  bool isBreak() const { return _state >= kBreakState; }
+  bool isClosing() const { return _state >= kClosingState; }
+  bool isEditing() const { return _state == kEditState; }
+  bool isInitial() const { return _state == kInitState; }
+  bool isModal() const { return _state == kModalState; }
+  bool isRestart() const { return _state == kRestartState; }
+  bool isRunning() const { return _state == kRunState || _state == kModalState; }
+  bool isThreadActive() const { return _state == kActiveState; }
+  bool isSystemScreen() const { return _userScreenId != -1; }
   void logStack(const char *keyword, int type, int line);
   char *readSource(const char *fileName);
   void setBack();
@@ -81,6 +81,7 @@ protected:
   void handleEvent(MAEvent &event);
   void handleMenu(MAEvent &event);
   bool isEditEnabled() const {return opt_ide == IDE_INTERNAL || isScratchLoad();}
+  bool isEditReady() const {return !isRestart() && isEditEnabled() && !isNetworkLoad();}
   bool isNetworkLoad() const {return _loadPath.indexOf("://", 1) != -1;}
   bool isScratchLoad() const {return _loadPath.indexOf("scratch", 0) != -1;}
   bool loadSource(const char *fileName);

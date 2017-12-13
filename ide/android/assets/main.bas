@@ -25,7 +25,7 @@ const setupId = "_setup"
 const aboutId = "_about"
 const backId = "_back"
 const scratchId = "_scratch"
-const scratch_file = "scratch.bas"
+const scratch_file = HOME + "scratch.bas"
 
 func mk_bn(value, lab, fg)
   local bn

@@ -269,36 +269,37 @@ void exec_setup_predefined_variables() {
   setsysvar_var(SYSVAR_NONE, 0, V_NIL);
   setsysvar_num(SYSVAR_MAXINT, VAR_MAX_INT);
 
-#if defined(_UnixOS)
+#if defined(_ANDROID)
+  strcpy(homedir, "/sdcard/");
+#else
+#if defined(_Win32)
+  if (getenv("HOMEPATH")) {
+    strlcpy(homedir, getenv("HOMEPATH"), sizeof(homedir));
+  }
+  else {
+    GetModuleFileName(NULL, homedir, sizeof(homedir) - 1);
+    char *p = strrchr(homedir, '\\');
+    if (p) {
+      *p = '\0';
+    }
+  }
+  for (char *p = homedir; *p; p++) {
+    if (*p == '\\') {
+      *p = '/';
+    }
+  }
+#elif defined(_UnixOS)
   if (getenv("HOME")) {
     strlcpy(homedir, getenv("HOME"), sizeof(homedir));
   }
   else {
     strcpy(homedir, "/tmp/");
   }
+#endif
   int l = strlen(homedir);
   if (homedir[l - 1] != OS_DIRSEP) {
     homedir[l] = OS_DIRSEP;
     homedir[l + 1] = '\0';
-  }
-#elif defined(_Win32)
-  if (getenv("HOME")) {
-    // this works on cygwin
-    strlcpy(homedir, getenv("HOME"), sizeof(homedir));
-  }
-  else {
-    GetModuleFileName(NULL, homedir, sizeof(homedir) - 1);
-    char *p = strrchr(homedir, '\\');
-    *p = '\0';
-    strcat(homedir, "\\");
-    if (OS_DIRSEP == '/') {
-      p = homedir;
-      while (*p) {
-        if (*p == '\\')
-        *p = '/';
-        p++;
-      }
-    }
   }
 #endif
   setsysvar_str(SYSVAR_HOME, homedir);
