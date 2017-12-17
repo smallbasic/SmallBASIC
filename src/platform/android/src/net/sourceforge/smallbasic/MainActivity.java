@@ -444,11 +444,12 @@ public class MainActivity extends NativeActivity {
     }
   }
 
-  public void setTtsLocale(String locale) {
+  public void setTtsLocale(final byte[] localeBytes) {
     if (_tts == null) {
       _tts = new TextToSpeechAdapter(this, "");
     }
     try {
+      final String locale = new String(localeBytes, CP1252);
       _tts.setLocale(new Locale(locale));
     } catch (Exception e) {
       Log.i(TAG, "setttsLocale failed:", e);
