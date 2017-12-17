@@ -952,7 +952,7 @@ void System::editSource(strlib::String loadPath) {
   _output->addInput(editWidget);
   _output->addInput(helpWidget);
 
-  if (gsb_last_line && isBack()) {
+  if (gsb_last_line && isBreak()) {
     String msg = "Break at line: ";
     msg.append(gsb_last_line);
     runtime->alert(msg);
@@ -1082,7 +1082,6 @@ void System::editSource(strlib::String loadPath) {
 
   // deletes editWidget unless it has been removed
   _output->removeInputs();
-
   if (!isClosing()) {
     _output->selectScreen(prevScreenId);
   }
