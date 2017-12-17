@@ -956,7 +956,7 @@ void System::editSource(strlib::String loadPath) {
     String msg = "Break at line: ";
     msg.append(gsb_last_line);
     runtime->alert(msg);
-  } else if (gsb_last_error && isBack()) {
+  } else if (gsb_last_error && !isBack()) {
     // program stopped with an error
     editWidget->setCursorRow(gsb_last_line + editWidget->getSelectionRow() - 1);
     runtime->alert(gsb_last_errmsg);
