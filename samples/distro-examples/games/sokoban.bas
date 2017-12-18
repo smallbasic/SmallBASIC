@@ -383,6 +383,7 @@ sub main
     frm.inputs(0).value = game_names
     frm.inputs(1).label = "Open"
     frm.inputs(2).label = "Play"
+    frm.focus = 0
     frm = form(frm)
   end
 

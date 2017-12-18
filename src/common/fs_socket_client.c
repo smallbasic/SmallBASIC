@@ -153,6 +153,7 @@ int http_read(dev_file_t *f, var_t *var_p) {
         if (rxbuff[i + 2] == '\n') {
           var_p->v.p.length = bytes - i - 3;
           var_p->v.p.ptr = malloc(var_p->v.p.length + 1);
+          var_p->v.p.owner = 1;
           memcpy(var_p->v.p.ptr, rxbuff + i + 3, var_p->v.p.length);
           var_p->v.p.ptr[var_p->v.p.length] = 0;
           inHeader = 0;

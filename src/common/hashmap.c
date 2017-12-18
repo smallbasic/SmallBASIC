@@ -56,7 +56,15 @@ void tree_delete_node(Node *node) {
 }
 
 static inline int tree_compare(const char *key, int length, var_p_t vkey) {
-  return strcaselessn(key, length, vkey->v.p.ptr, vkey->v.p.length - 1);
+  int len1 = length;
+  if (len1 && key[len1 - 1] == '\0') {
+    len1--;
+  }
+  int len2 = vkey->v.p.length;
+  if (len2 && vkey->v.p.ptr[len2 - 1] == '\0') {
+    len2--;
+  }
+  return strcaselessn(key, len1, vkey->v.p.ptr, len2);
 }
 
 void tree_destroy(Node *node) {
@@ -190,6 +198,21 @@ var_p_t hashmap_put(var_p_t map, const char *key, int length) {
     node->key = v_new();
     node->value = v_new();
     v_setstrn(node->key, key, length);
+    map->v.m.count++;
+  }
+  return node->value;
+}
+
+var_p_t hashmap_putc(var_p_t map, const char *key, int length) {
+  Node *node = hashmap_search(map, key, length);
+  if (node->key == NULL) {
+    var_t *var_key = v_new();
+    var_key->type = V_STR;
+    var_key->v.p.length = length;
+    var_key->v.p.ptr = (char *)key;
+    var_key->v.p.owner = 0;
+    node->key = var_key;
+    node->value = v_new();
     map->v.m.count++;
   }
   return node->value;

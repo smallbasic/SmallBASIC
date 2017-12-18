@@ -206,7 +206,9 @@ static inline void v_detach(var_t *v) {
 static inline void v_free(var_t *v) {
   switch (v->type) {
   case V_STR:
-    free(v->v.p.ptr);
+    if (v->v.p.owner) {
+      free(v->v.p.ptr);
+    }
     break;
   case V_ARRAY:
     v_array_free(v);

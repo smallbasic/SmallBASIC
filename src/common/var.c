@@ -83,6 +83,21 @@ void v_array_free(var_t *var) {
   }
 }
 
+void v_init_str(var_t *var, int length) {
+  var->type = V_STR;
+  var->v.p.ptr = malloc(length + 1);
+  var->v.p.ptr[0] = '\0';
+  var->v.p.length = length + 1;
+  var->v.p.owner = 1;
+}
+
+void v_move_str(var_t *var, char *str) {
+  var->type = V_STR;
+  var->v.p.ptr = str;
+  var->v.p.length = strlen(str) + 1;
+  var->v.p.owner = 1;
+}
+
 /*
  * returns true if the user's program must use this var as an empty var
  * this is usefull for arrays
@@ -385,12 +400,9 @@ void v_add(var_t *result, var_t *a, var_t *b) {
 
   if (a->type == V_STR && b->type == V_STR) {
     int length = strlen(a->v.p.ptr) + strlen(b->v.p.ptr);
-    result->type = V_STR;
-    result->v.p.ptr = malloc(length + 1);
+    v_init_str(result, length);
     strcpy(result->v.p.ptr, a->v.p.ptr);
     strcat(result->v.p.ptr, b->v.p.ptr);
-    result->v.p.ptr[length] = '\0';
-    result->v.p.length = length + 1;
     return;
   } else if (a->type == V_INT && b->type == V_INT) {
     result->type = V_INT;
@@ -417,8 +429,7 @@ void v_add(var_t *result, var_t *a, var_t *b) {
         result->v.n = b->v.n + v_getval(a);
       }
     } else {
-      result->type = V_STR;
-      result->v.p.ptr = (char *)malloc(strlen(a->v.p.ptr) + INT_STR_LEN);
+      v_init_str(result, strlen(a->v.p.ptr) + INT_STR_LEN);
       strcpy(result->v.p.ptr, a->v.p.ptr);
       if (b->type == V_INT) {
         ltostr(b->v.i, tmpsb);
@@ -437,8 +448,7 @@ void v_add(var_t *result, var_t *a, var_t *b) {
         result->v.n = a->v.n + v_getval(b);
       }
     } else {
-      result->type = V_STR;
-      result->v.p.ptr = (char *)malloc(strlen(b->v.p.ptr) + INT_STR_LEN);
+      v_init_str(result, strlen(b->v.p.ptr) + INT_STR_LEN);
       if (a->type == V_INT) {
         ltostr(a->v.i, tmpsb);
       } else {
@@ -472,9 +482,16 @@ void v_set(var_t *dest, const var_t *src) {
     dest->v.n = src->v.n;
     break;
   case V_STR:
-    dest->v.p.length = v_strlen(src) + 1;
-    dest->v.p.ptr = (char *)malloc(dest->v.p.length);
-    strcpy(dest->v.p.ptr, src->v.p.ptr);
+    if (src->v.p.owner) {
+      dest->v.p.length = v_strlen(src) + 1;
+      dest->v.p.ptr = (char *)malloc(dest->v.p.length);
+      dest->v.p.owner = 1;
+      strcpy(dest->v.p.ptr, src->v.p.ptr);
+    } else {
+      dest->v.p.length = src->v.p.length;
+      dest->v.p.ptr = src->v.p.ptr;
+      dest->v.p.owner = 0;
+    }
     break;
   case V_ARRAY:
     if (src->v.a.size) {
@@ -488,7 +505,7 @@ void v_set(var_t *dest, const var_t *src) {
         v_set(dest_vp, v_elem(src, i));
       }
     } else {
-      v_init_array(dest);      
+      v_init_array(dest);
     }
     break;
   case V_PTR:
@@ -531,6 +548,7 @@ void v_move(var_t *dest, const var_t *src) {
   case V_STR:
     dest->v.p.ptr = src->v.p.ptr;
     dest->v.p.length = src->v.p.length;
+    dest->v.p.owner = src->v.p.owner;
     break;
   case V_ARRAY:
     memcpy(&dest->v.a, &src->v.a, sizeof(src->v.a));
@@ -600,10 +618,7 @@ int v_sign(var_t *x) {
  * setup a string variable
  */
 void v_createstr(var_t *v, const char *src) {
-  int l = strlen(src) + 1;
-  v->type = V_STR;
-  v->v.p.ptr = malloc(l);
-  v->v.p.length = l;
+  v_init_str(v, strlen(src));
   strcpy(v->v.p.ptr, src);
 }
 
@@ -651,12 +666,8 @@ char *v_str(var_t *arg) {
 void v_tostr(var_t *arg) {
   if (arg->type != V_STR) {
     char *tmp = v_str(arg);
-    int len = strlen(tmp) + 1;
-
     v_free(arg);
-    arg->type = V_STR;
-    arg->v.p.ptr = malloc(len);
-    arg->v.p.length = len;
+    v_init_str(arg, strlen(tmp));
     strcpy(arg->v.p.ptr, tmp);
     free(tmp);
   }
@@ -665,38 +676,43 @@ void v_tostr(var_t *arg) {
 /*
  * set the value of 'var' to string
  */
-void v_setstr(var_t *var, const char *string) {
-  if (var->type != V_STR || strcmp(string, var->v.p.ptr) != 0) {
+void v_setstr(var_t *var, const char *str) {
+  if (var->type != V_STR || strcmp(str, var->v.p.ptr) != 0) {
     v_free(var);
-    var->type = V_STR;
-    var->v.p.length = strlen(string) + 1;
-    var->v.p.ptr = malloc(var->v.p.length);
-    strcpy(var->v.p.ptr, string);
+    v_init_str(var, strlen(str));
+    strcpy(var->v.p.ptr, str);
   }
 }
 
-void v_setstrn(var_t *var, const char *string, int len) {
-  if (var->type != V_STR || strncmp(string, var->v.p.ptr, len) != 0) {
+void v_setstrn(var_t *var, const char *str, int len) {
+  if (var->type != V_STR || strncmp(str, var->v.p.ptr, len) != 0) {
     v_free(var);
-    var->type = V_STR;
-    var->v.p.length = len + 1;
-    var->v.p.ptr = malloc(var->v.p.length);
-    strncpy(var->v.p.ptr, string, len);
-    var->v.p.ptr[len] = '\0';
+    v_init_str(var, len);
+    strlcpy(var->v.p.ptr, str, len + 1);
   }
 }
 
 /*
  * adds a string to current string value
  */
-void v_strcat(var_t *var, const char *string) {
+void v_strcat(var_t *var, const char *str) {
   if (var->type == V_INT || var->type == V_NUM) {
     v_tostr(var);
   }
   if (var->type == V_STR) {
-    var->v.p.length = strlen(var->v.p.ptr) + strlen(string) + 1;
-    var->v.p.ptr = realloc(var->v.p.ptr, var->v.p.length);
-    strcat(var->v.p.ptr, string);
+    if (var->v.p.owner) {
+      var->v.p.length = strlen(var->v.p.ptr) + strlen(str) + 1;
+      var->v.p.ptr = realloc(var->v.p.ptr, var->v.p.length);
+      strcat(var->v.p.ptr, str);
+    } else {
+      // mutate into owner string
+      char *p = var->v.p.ptr;
+      int len = var->v.p.length + strlen(str);
+      v_init_str(var, len);
+      strcpy(var->v.p.ptr, p);
+      strcat(var->v.p.ptr, str);
+    }
+
   } else {
     err_typemismatch();
   }
@@ -735,10 +751,8 @@ char *v_getstr(var_t *var) {
  */
 void v_zerostr(var_t *r) {
   v_free(r);
-  r->type = V_STR;
-  r->v.p.ptr = malloc(1);
+  v_init_str(r, 0);
   r->v.p.ptr[0] = '\0';
-  r->v.p.length = 1;
 }
 
 /*

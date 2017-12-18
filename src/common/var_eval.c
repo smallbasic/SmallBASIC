@@ -340,9 +340,8 @@ void v_eval_str(var_p_t v) {
   int len = code_getstrlen();
   v->type = V_STR;
   v->v.p.length = len;
-  v->v.p.ptr = malloc(len + 1);
-  memcpy(v->v.p.ptr, &prog_source[prog_ip], len);
-  *((char *)(v->v.p.ptr + len)) = '\0';
+  v->v.p.ptr = (char *)&prog_source[prog_ip];
+  v->v.p.owner = 0;
   prog_ip += len;
 }
 

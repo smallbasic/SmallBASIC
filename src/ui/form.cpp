@@ -178,16 +178,16 @@ void cmd_form_do_events(var_s *self) {
         }
       }
     }
-
     form = NULL;
   }
 }
 
 int get_selected_index(var_p_t v_field) {
   var_p_t value = map_get(v_field, FORM_INPUT_INDEX);
-  int result = 0;
+  int result;
   if (value == NULL) {
-    value = map_add_var(v_field, FORM_INPUT_INDEX, result);
+    result = 0;
+    map_add_var(v_field, FORM_INPUT_INDEX, result);
   } else {
     result = v_getint(value);
   }

@@ -562,6 +562,7 @@ void cmd_print(int output) {
     vuser_p->type = V_STR;
     vuser_p->v.p.ptr = NULL;
     vuser_p->v.p.length = 0;
+    vuser_p->v.p.owner = 1;
     handle = (intptr_t)vuser_p;
   }
 
@@ -1964,6 +1965,7 @@ void cmd_read() {
           prog_dp += OS_STRLEN;
 
           vp->v.p.ptr = malloc(len + 1);
+          vp->v.p.owner = 1;
           memcpy(vp->v.p.ptr, prog_source + prog_dp, len);
           *((char *) (vp->v.p.ptr + len)) = '\0';
           vp->v.p.length = len;
@@ -2288,6 +2290,7 @@ void cmd_wjoin() {
   v_free(str);
   str->type = V_STR;
   str->v.p.ptr = malloc(size);
+  str->v.p.owner = 1;
   str->v.p.ptr[0] = '\0';
 
   for (i = 0; i < v_asize(var_p); i++) {

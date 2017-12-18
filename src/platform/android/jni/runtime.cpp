@@ -933,24 +933,35 @@ void System::editSource(strlib::String loadPath) {
   int charWidth = _output->getCharWidth();
   int charHeight = _output->getCharHeight();
   int prevScreenId = _output->selectScreen(SOURCE_SCREEN);
-  TextEditInput *editWidget = new TextEditInput(_programSrc, charWidth, charHeight, 0, 0, w, h);
+  TextEditInput *editWidget;
+  if (_editor != NULL) {
+    editWidget = _editor;
+    editWidget->_width = w;
+    editWidget->_height = h;
+  } else {
+    editWidget = new TextEditInput(_programSrc, charWidth, charHeight, 0, 0, w, h);
+  }
   TextEditHelpWidget *helpWidget = new TextEditHelpWidget(editWidget, charWidth, charHeight, false);
   TextEditInput *widget = editWidget;
   _modifiedTime = getModifiedTime();
   editWidget->updateUI(NULL, NULL);
   editWidget->setLineNumbers();
   editWidget->setFocus(true);
-  if (strcmp(gsb_last_file, loadPath.c_str()) == 0) {
-    editWidget->setCursorRow(gsb_last_line - 1);
-  }
-  if (gsb_last_error && !isBack()) {
-    editWidget->setCursorRow(gsb_last_line - 1);
-    runtime->alert(gsb_last_errmsg);
-  }
-  _srcRendered = false;
+
   _output->clearScreen();
   _output->addInput(editWidget);
   _output->addInput(helpWidget);
+
+  if (gsb_last_line && isBreak()) {
+    String msg = "Break at line: ";
+    msg.append(gsb_last_line);
+    runtime->alert(msg);
+  } else if (gsb_last_error && !isBack()) {
+    // program stopped with an error
+    editWidget->setCursorRow(gsb_last_line + editWidget->getSelectionRow() - 1);
+    runtime->alert(gsb_last_errmsg);
+  }
+  _srcRendered = false;
   _output->setStatus(cleanFile);
   _output->redraw();
   _state = kEditState;
@@ -1058,6 +1069,18 @@ void System::editSource(strlib::String loadPath) {
     }
   }
 
+  if (_state == kRunState) {
+    // allow the editor to be restored on return
+    if (!_output->removeInput(editWidget)) {
+      trace("Failed to remove editor input");
+    }
+    _editor = editWidget;
+    _editor->setFocus(false);
+  } else {
+    _editor = NULL;
+  }
+
+  // deletes editWidget unless it has been removed
   _output->removeInputs();
   if (!isClosing()) {
     _output->selectScreen(prevScreenId);
@@ -1170,7 +1193,9 @@ int sensor_off(int param_count, slib_par_t *params, var_t *retval) {
 
 int tts_speak(int param_count, slib_par_t *params, var_t *retval) {
   int result;
-  if (param_count == 1 && v_is_type(params[0].var_p, V_STR)) {
+  if (opt_mute_audio) {
+    result = 1;
+  } else if (param_count == 1 && v_is_type(params[0].var_p, V_STR)) {
     runtime->speak(v_getstr(params[0].var_p));
     result = 1;
   } else {

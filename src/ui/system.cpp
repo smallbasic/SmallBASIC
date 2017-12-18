@@ -610,7 +610,9 @@ void System::runMain(const char *mainBasPath) {
       if (fileExists(_loadPath)) {
         _mainBas = false;
         activePath = _loadPath;
-        setupPath(_loadPath);
+        if (!isEditReady()) {
+          setupPath(_loadPath);
+        }
       } else {
         _mainBas = true;
         _loadPath = mainBasPath;
@@ -618,8 +620,7 @@ void System::runMain(const char *mainBasPath) {
       }
     }
 
-    if (!_mainBas && !isRestart() && isEditEnabled() &&
-        !isNetworkLoad() && loadSource(_loadPath)) {
+    if (!_mainBas && isEditReady() && loadSource(_loadPath)) {
       editSource(_loadPath);
       if (isBack()) {
         _loadPath.clear();

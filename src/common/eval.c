@@ -795,6 +795,7 @@ static inline void eval_push(var_t *r) {
     len = r->v.p.length;
     eval_stk[eval_sp].type = V_STR;
     eval_stk[eval_sp].v.p.ptr = malloc(len + 1);
+    eval_stk[eval_sp].v.p.owner = 1;
     strcpy(eval_stk[eval_sp].v.p.ptr, r->v.p.ptr);
     eval_stk[eval_sp].v.p.length = len;
     break;
@@ -852,6 +853,7 @@ static inline void eval_callf_str1(long fcode, var_t *r) {
         IP++;
         r->type = V_STR;
         r->v.p.ptr = NULL;
+        r->v.p.owner = 1;
         cmd_str1(fcode, &vtmp, r);
         v_free(&vtmp);
       }
@@ -865,6 +867,7 @@ static inline void eval_callf_strn(long fcode, var_t *r) {
     err_missing_lp();
   } else {
     r->type = V_STR;
+    r->v.p.owner = 1;
     r->v.p.ptr = NULL;
     IP++;                 // '('
     cmd_strN(fcode, r);

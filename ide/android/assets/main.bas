@@ -25,6 +25,7 @@ const setupId = "_setup"
 const aboutId = "_about"
 const backId = "_back"
 const scratchId = "_scratch"
+const scratch_file = HOME + "scratch.bas"
 
 func mk_bn(value, lab, fg)
   local bn
@@ -50,10 +51,9 @@ end
 
 func mk_scratch()
   local text
-  local file = "scratch.bas"
   local result = false
 
-  if (not exist(file)) then
+  if (not exist(scratch_file)) then
     dim text
     text << "rem Welcome to SmallBASIC"
     text << "rem"
@@ -66,7 +66,7 @@ func mk_scratch()
       text << "rem Press the 3 vertical dots for menu options."
     endif
     try
-      tsave file, text
+      tsave scratch_file, text
       result = true
     catch e
       local wnd = window()
@@ -232,6 +232,7 @@ end
 
 sub loadFileList(path, byref basList)
   erase basList
+  local emptyNode
 
   func walker(node)
     if (node.depth==0) then
@@ -246,6 +247,14 @@ sub loadFileList(path, byref basList)
     return node.depth == 0
   end
   dirwalk path, "", use walker(x)
+
+  if (path = "/" && len(basList) == 0 && !is_sdl) then
+     emptyNode.name = "sdcard"
+     emptyNode.dir = true
+     emptyNode.size = ""
+     emptyNode.mtime = 0
+     basList << emptyNode
+  endif
 end
 
 sub listFiles(byref frm, path, sortDir, byref basList)
@@ -641,7 +650,7 @@ sub main
       frm = makeUI(path, sortDir)
     elif frm.value == scratchId then
       if (mk_scratch())
-        frm.close("scratch.bas")
+        frm.close(scratch_file)
       endif
     elif frm.value == backId then
       cls
