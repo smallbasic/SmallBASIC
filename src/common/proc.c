@@ -15,6 +15,8 @@
 #include <limits.h>
 #include <dirent.h>
 
+#define MAX_PARAM 8
+
 /*
  * returns the last-modified time of the file
  *
@@ -117,10 +119,8 @@ int sys_search_path(const char *path, const char *file, char *retbuf) {
  * ip  - expression's address
  */
 void exec_usefunc(var_t *var, bcip_t ip) {
-  var_t *old_x;
-
   // save X
-  old_x = v_clone(tvar[SYSVAR_X]);
+  var_t *old_x = v_clone(tvar[SYSVAR_X]);
 
   // run
   v_set(tvar[SYSVAR_X], var);
@@ -142,11 +142,9 @@ void exec_usefunc(var_t *var, bcip_t ip) {
  * ip   - expression's address
  */
 void exec_usefunc2(var_t *var1, var_t *var2, bcip_t ip) {
-  var_t *old_x, *old_y;
-
   // save X
-  old_x = v_clone(tvar[SYSVAR_X]);
-  old_y = v_clone(tvar[SYSVAR_Y]);
+  var_t *old_x = v_clone(tvar[SYSVAR_X]);
+  var_t *old_y = v_clone(tvar[SYSVAR_Y]);
 
   // run
   v_set(tvar[SYSVAR_X], var1);
@@ -261,13 +259,12 @@ void logprint_var(var_t *v) {
  * skip parameter
  */
 void par_skip() {
-  byte exitf = 0, code;
+  byte exitf = 0;
   uint32_t len;
   int level = 0;
 
   do {
-    code = code_peek();
-    switch (code) {
+    switch (code_peek()) {
     case kwTYPE_INT:           // integer
       prog_ip += OS_INTSZ + 1;
       break;
@@ -313,15 +310,17 @@ void par_skip() {
     case kwTYPE_LINE:
     case kwTYPE_EOC:
     case kwUSE:
-      if (level != 0)
+      if (level != 0) {
         rt_raise("Block error!");
+      }
       exitf = 1;
       break;
     case kwTYPE_SEP:
-      if (level <= 0)
+      if (level <= 0) {
         exitf = 1;
-      else
+      } else {
         prog_ip += 2;
+      }
       break;
     default:
       prog_ip++;
@@ -333,10 +332,7 @@ void par_skip() {
  * get next parameter as var_t
  */
 void par_getvar(var_t *var) {
-  byte code;
-
-  code = code_peek();
-  switch (code) {
+  switch (code_peek()) {
   case kwTYPE_LINE:
   case kwTYPE_EOC:
   case kwTYPE_SEP:
@@ -352,11 +348,9 @@ void par_getvar(var_t *var) {
  * get next parameter as var_t/array
  */
 var_t *par_getvarray() {
-  byte code;
   var_t *var;
 
-  code = code_peek();
-  switch (code) {
+  switch (code_peek()) {
   case kwTYPE_LINE:
   case kwTYPE_EOC:
   case kwTYPE_SEP:
@@ -392,10 +386,7 @@ var_t *par_getvar_ptr() {
  * get next parameter as var_t
  */
 void par_getstr(var_t *var) {
-  byte code;
-
-  code = code_peek();
-  switch (code) {
+  switch (code_peek()) {
   case kwTYPE_LINE:
   case kwTYPE_EOC:
   case kwTYPE_SEP:
@@ -417,11 +408,10 @@ void par_getstr(var_t *var) {
  */
 var_int_t par_getint() {
   var_t var;
-  var_int_t i;
 
   v_init(&var);
   par_getvar(&var);
-  i = v_getint(&var);
+  var_int_t i = v_getint(&var);
   v_free(&var);
 
   return i;
@@ -432,11 +422,10 @@ var_int_t par_getint() {
  */
 var_num_t par_getnum() {
   var_t var;
-  var_num_t f;
 
   v_init(&var);
   par_getvar(&var);
-  f = v_getval(&var);
+  var_num_t f = v_getval(&var);
   v_free(&var);
 
   return f;
@@ -504,15 +493,10 @@ var_int_t par_getval(var_int_t def) {
  * returns the separator
  */
 int par_getsep() {
-  int last_op;
-  byte code;
-
-  code = code_peek();
-  switch (code) {
+  switch (code_peek()) {
   case kwTYPE_SEP:
     code_skipnext();
-    last_op = code_getnext();
-    return last_op;
+    return code_getnext();
   default:
     err_missing_sep();
   };
@@ -907,27 +891,23 @@ void par_freepartable(par_t **ptable_pp, int pcount) {
  * IF THERE IS NO ERROR, CALL TO par_freepartable IS NOT NEEDED
  */
 int par_getpartable(par_t **ptable_pp, const char *valid_sep) {
-  byte ready, last_sep = 0;
-  par_t *ptable;
   bcip_t ofs;
   char vsep[8];
-  var_t *par = NULL;
-  int pcount = 0;
 
-  /*
-   *      initialize
-   */
-  ptable = *ptable_pp = malloc(sizeof(par_t) * 256);
+  // initialize
+  var_t *par = NULL;
+  byte last_sep = 0;
+  int pcount = 0;
+  par_t *ptable = *ptable_pp = malloc(sizeof(par_t) * MAX_PARAM);
 
   if (valid_sep) {
     strlcpy(vsep, valid_sep, sizeof(vsep));
   } else {
     strlcpy(vsep, ",", sizeof(vsep));
   }
-  /*
-   *      start
-   */
-  ready = 0;
+
+  // start
+  byte ready = 0;
   do {
     switch (code_peek()) {
     case kwTYPE_EOC:
@@ -964,7 +944,11 @@ int par_getpartable(par_t **ptable_pp, const char *valid_sep) {
       if (code_isvar()) {
         // push parameter
         ptable[pcount].var = code_getvarptr();
-        pcount++;
+        if (++pcount == MAX_PARAM) {
+          par_freepartable(ptable_pp, pcount);
+          err_parfmt(__FILE__);
+          return -1;
+        }
         break;
       }
       // Its no a single variable, its an expression
@@ -980,7 +964,11 @@ int par_getpartable(par_t **ptable_pp, const char *valid_sep) {
         // push parameter
         ptable[pcount].var = par;
         ptable[pcount].flags |= PAR_BYVAL;
-        pcount++;
+        if (++pcount == MAX_PARAM) {
+          par_freepartable(ptable_pp, pcount);
+          err_parfmt(__FILE__);
+          return -1;
+        }
       } else {
         v_free(par);
         v_detach(par);
