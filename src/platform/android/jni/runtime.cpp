@@ -668,7 +668,7 @@ void Runtime::handleKeyEvent(MAEvent &event) {
     if (event.nativeKey >= AKEYCODE_F1 && event.nativeKey <= AKEYCODE_F12) {
       for (int fn = 0; fn < 12; fn++) {
         if (event.nativeKey == AKEYCODE_F1 + fn) {
-          event.key = SB_KEY_F(fn);
+          event.key = SB_KEY_F(fn + 1);
           break;
         }
       }
@@ -985,7 +985,20 @@ void System::editSource(strlib::String loadPath) {
         char *text;
 
         switch (event.key) {
+        case SB_KEY_F(2):
+        case SB_KEY_F(3):
+        case SB_KEY_F(4):
+        case SB_KEY_F(5):
+        case SB_KEY_F(6):
+        case SB_KEY_F(7):
+        case SB_KEY_F(8):
+        case SB_KEY_F(10):
+        case SB_KEY_F(11):
+        case SB_KEY_F(12):
         case SB_KEY_MENU:
+        case SB_KEY_ESCAPE:
+        case SB_KEY_BREAK:
+          // unhandled keys
           redraw = false;
           break;
         case SB_KEY_F(1):
