@@ -417,7 +417,11 @@ void Runtime::handleKeyEvent(MAEvent &event) {
 
   // handle ALT/SHIFT/CTRL states
   if (event.key != -1) {
-    if ((event.nativeKey & KMOD_CTRL) &&
+    if ((event.nativeKey & KMOD_ALT) &&
+        (event.key == SDLK_LALT || event.key == SDLK_RALT)) {
+      // ignore ALT press without modifier key
+      event.key = -1;
+    } else if ((event.nativeKey & KMOD_CTRL) &&
         (event.nativeKey & KMOD_ALT)) {
       event.key = SB_KEY_CTRL_ALT(event.key);
     } else if ((event.nativeKey & KMOD_CTRL) &&
