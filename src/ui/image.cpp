@@ -391,7 +391,7 @@ void cmd_image_save(var_s *self) {
         saved = true;
       }
     } else if (array != NULL) {
-      v_tomatrix(array, w, h);
+      v_tomatrix(array, h, w);
       for (int y = 0; y < h; y++) {
         int yoffs = (4 * y * w);
         for (int x = 0; x < w; x++) {
