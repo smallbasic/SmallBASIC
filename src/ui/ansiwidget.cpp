@@ -203,7 +203,7 @@ void AnsiWidget::print(const char *str) {
       case '\003': // end of text
         flush(true);
         break;
-      case '\xC':
+      case '\xC':  // form feed
         clearScreen();
         break;
       case '\033': // ESC ctrl chars
@@ -217,9 +217,6 @@ void AnsiWidget::print(const char *str) {
         break;
       case '\r':   // return
         _back->_curX = INITXY;     // erasing the line will clear any previous text
-        break;
-      case 'm':    // scroll to the top (M = scroll up one line)
-        _back->_scrollY = 0;
         break;
       default:
         p += _back->print(p, lineHeight) - 1; // allow for p++
@@ -658,11 +655,46 @@ bool AnsiWidget::drawHoverLink(MAEvent &event) {
 
 // print() helper
 void AnsiWidget::handleEscape(const char *&p, int lineHeight) {
-  if (*(p + 1) == '[') {
+  switch (*(p + 1)) {
+  case '[':
     p += 2;
     while (doEscape(p, lineHeight)) {
       // continue
     }
+    break;
+  case 'm':
+    // scroll to the top (M = scroll up one line)
+    p += 2;
+    _back->_scrollY = 0;
+    break;
+  case '<':
+    // select back screen
+    switch (*(p + 2)) {
+    case '1':
+      p += 3;
+      selectBackScreen(USER_SCREEN1);
+      break;
+    case '2':
+      p += 3;
+      selectBackScreen(USER_SCREEN2);
+      break;
+    }
+    break;
+  case '>':
+    // select front screen
+    switch (*(p + 2)) {
+    case '1':
+      p += 3;
+      selectFrontScreen(USER_SCREEN1);
+      break;
+    case '2':
+      p += 3;
+      selectFrontScreen(USER_SCREEN2);
+      break;
+    }
+    break;
+  default:
+    break;
   }
 }
 
