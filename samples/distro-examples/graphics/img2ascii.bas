@@ -10,13 +10,53 @@ func calc_block(byref dat, h, y2, w, x2)
   for y = 0 to h
     for x = 0 to w
       c = -dat[y2 + y, x2 + x]
-      r = (c band 0xff0000) rshift 16
-      g = (c band 0xff00) rshift 8
+      r = ((c band 0xff0000) rshift 16)
+      g = ((c band 0xff00) rshift 8)
       b = (c band 0xff)
       n += (r + g + b) / 3
     next x
   next y
   return n
+end
+
+func calc_color(byref dat, h, y2, w, x2)
+  local y,x,c
+  local r = 0
+  local g = 0
+  local b = 0
+  local wh = w * h
+  
+  for y = 0 to h
+    for x = 0 to w
+      c = -dat[y2 + y, x2 + x]
+      rx = ((c band 0xff0000) rshift 16)
+      gx = ((c band 0xff00) rshift 8)
+      bx= (c band 0xff)
+
+      r += ((c band 0xff0000) rshift 16)
+      g += ((c band 0xff00) rshift 8)
+      b += (c band 0xff)
+    next x
+  next y
+
+  r = r / wh
+  g = g / wh
+  b = b / wh
+ 
+  local minv = min(r,g,b)
+  local maxv = max(r,g,b)
+
+  if (minv < maxv) then
+    local diff = iff(maxv - minv == 0, 1, maxv - minv)
+    r = int(255 * (r - minv) / diff)
+    g = int(255 * (g - minv) / diff)
+    b = int(255 * (b - minv) / diff)
+    return rgb(r,g,b)
+  else
+    r = min(255, r)
+    return rgb(r,r,r) 
+  endif
+
 end
 
 func get_char(byref tbl, n)
@@ -38,11 +78,11 @@ func create_table
   local w = txtw(chars)
   local h = txth(chars)
   local cw = txtw("1")
-  
+
   cls: print chars
-  img = image(0, 0, w, h)
+  img = image(0, 0, w, h, 1)
   img.save(dat)
-  cls
+  cls: showpage
 
   local vals = []
   local minv = maxint
@@ -61,7 +101,8 @@ func create_table
   local tbl = {}
   for i = 1 to len(chars)
     ch = mid(chars, i, 1)
-    n = 255 * (vals[i - 1] - minv) / (maxv - minv)
+    diff = iff(maxv - minv == 0, 1, maxv - minv)
+    n = 255 * (vals[i - 1] - minv) / diff
     vals[i - 1] = n
     tbl[n] = ch
   next i
@@ -100,13 +141,17 @@ sub imageToAscii(path)
   next bly
 
   for bly = 0 to blh - 1
-    row = ""
     for blx = 0 to blw - 1
-      n = 255 * (pic[bly,blx] - minv) / (maxv - minv)
-      row += get_char(tbl, n)
+      diff = iff(maxv - minv == 0, 1, maxv - minv)
+      n = 255 * (pic[bly, blx] - minv) / diff
+      y2 = iff(bly==0,1,bly) * block_height
+      x2 = iff(blx==0,1,blx) * block_width
+      color calc_color(dat, block_height, y2, block_width - 1, x2)
+      print get_char(tbl, n);
     next blx
-    print row
+    print
   next bly
+  showpage
 end
 
 imageToAscii("tree.png")
