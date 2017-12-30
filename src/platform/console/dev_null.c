@@ -62,7 +62,7 @@ void osd_setxy(int x, int y) {
  * Basic output - print sans control codes
  */
 void osd_write(const char *str) {
-  int len = str == NULL ? 0 : strlen(str);
+  int len = strlen(str);
   if (len) {
     int i, index = 0, escape = 0;
     char *buffer = (char *)malloc(len + 1);

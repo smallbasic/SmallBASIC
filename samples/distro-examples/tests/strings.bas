@@ -169,5 +169,6 @@ sub cmd_str1(n)
  x=tab(n)
 end
 cmd_str1("")
+cmd_str1(0)
 
 

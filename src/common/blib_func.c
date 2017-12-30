@@ -934,7 +934,7 @@ void cmd_str1(long funcCode, var_t *arg, var_t *r) {
     // convert C-Style string to BASIC-style string
     //
     if (!v_is_type(arg, V_STR)) {
-      v_init(arg);
+      v_init(r);
       break;
     }
     r->v.p.ptr = cstrdup(arg->v.p.ptr);
@@ -946,7 +946,7 @@ void cmd_str1(long funcCode, var_t *arg, var_t *r) {
     // convert BASIC-Style string to C-style string
     //
     if (!v_is_type(arg, V_STR)) {
-      v_init(arg);
+      v_init(r);
       break;
     }
     r->v.p.ptr = bstrdup(arg->v.p.ptr);
@@ -1016,7 +1016,7 @@ void cmd_str1(long funcCode, var_t *arg, var_t *r) {
     // str <- LTRIM$(s)
     //
     if (!v_is_type(arg, V_STR)) {
-      v_init(arg);
+      v_init(r);
       break;
     }
     p = arg->v.p.ptr;
@@ -1036,7 +1036,7 @@ void cmd_str1(long funcCode, var_t *arg, var_t *r) {
     // str <- RTRIM$(s)
     //
     if (!v_is_type(arg, V_STR)) {
-      v_init(arg);
+      v_init(r);
       break;
     }
     p = arg->v.p.ptr;
