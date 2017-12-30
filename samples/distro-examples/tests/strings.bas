@@ -152,3 +152,22 @@ rem --- test line numbers are correctly maintained when using multiline strings
 if (PROGLINE != 152) then
   throw "invalid line no"
 endif
+
+rem -- invalid input
+sub cmd_str1(n)
+ x=chr(n)
+ x=str(n)
+ x=oct(n)
+ x=bin(n)
+ x=hex(n)
+ x=lcase(n)
+ x=ucase(n)
+ x=ltrim(n)
+ x=rtrim(n)
+ x=trim(n)
+ x=cat(n)
+ x=tab(n)
+end
+cmd_str1("")
+
+

@@ -933,6 +933,10 @@ void cmd_str1(long funcCode, var_t *arg, var_t *r) {
     // str <- CBS$(str)
     // convert C-Style string to BASIC-style string
     //
+    if (!v_is_type(arg, V_STR)) {
+      v_init(arg);
+      break;
+    }
     r->v.p.ptr = cstrdup(arg->v.p.ptr);
     r->v.p.length = strlen(r->v.p.ptr) + 1;
     break;
@@ -941,6 +945,10 @@ void cmd_str1(long funcCode, var_t *arg, var_t *r) {
     // str <- BCS$(str)
     // convert BASIC-Style string to C-style string
     //
+    if (!v_is_type(arg, V_STR)) {
+      v_init(arg);
+      break;
+    }
     r->v.p.ptr = bstrdup(arg->v.p.ptr);
     r->v.p.length = strlen(r->v.p.ptr) + 1;
     break;
@@ -983,32 +991,34 @@ void cmd_str1(long funcCode, var_t *arg, var_t *r) {
     //
     // str <- LCASE$(s)
     //
-    r->v.p.ptr = (char *)malloc(strlen(arg->v.p.ptr) + 1);
-    strcpy(r->v.p.ptr, arg->v.p.ptr);
+    r->v.p.ptr = v_str(arg);
+    r->v.p.length = strlen(r->v.p.ptr) + 1;
     p = r->v.p.ptr;
     while (*p) {
       *p = to_lower(*p);
       p++;
     }
-    r->v.p.length = arg->v.p.length;
     break;
   case kwUCASE:
     //
     // str <- UCASE$(s)
     //
-    r->v.p.ptr = (char *)malloc(strlen(arg->v.p.ptr) + 1);
-    strcpy(r->v.p.ptr, arg->v.p.ptr);
+    r->v.p.ptr = v_str(arg);
+    r->v.p.length = strlen(r->v.p.ptr) + 1;
     p = r->v.p.ptr;
     while (*p) {
       *p = to_upper(*p);
       p++;
     }
-    r->v.p.length = arg->v.p.length;
     break;
   case kwLTRIM:
     //
     // str <- LTRIM$(s)
     //
+    if (!v_is_type(arg, V_STR)) {
+      v_init(arg);
+      break;
+    }
     p = arg->v.p.ptr;
     while (is_wspace(*p)) {
       p++;
@@ -1025,6 +1035,10 @@ void cmd_str1(long funcCode, var_t *arg, var_t *r) {
     //
     // str <- RTRIM$(s)
     //
+    if (!v_is_type(arg, V_STR)) {
+      v_init(arg);
+      break;
+    }
     p = arg->v.p.ptr;
     if (*p != '\0') {
       while (*p) {
@@ -1131,7 +1145,7 @@ void cmd_str1(long funcCode, var_t *arg, var_t *r) {
     //
     // str <- ENVIRON$(str)
     //
-    if (*arg->v.p.ptr != '\0') {
+    if (v_is_type(arg, V_STR) && *arg->v.p.ptr != '\0') {
       // return the variable
       const char *v = dev_getenv(arg->v.p.ptr);
       if (v) {
