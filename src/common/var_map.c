@@ -404,7 +404,7 @@ char *map_to_str(const var_p_t var_p) {
 /**
  * Print the contents of the structure
  */
-void map_write(const var_p_t var_p, int method, int handle) {
+void map_write(const var_p_t var_p, int method, intptr_t handle) {
   if (var_p->type == V_MAP || var_p->type == V_ARRAY) {
     char *buffer = map_to_str(var_p);
     pv_write(buffer, method, handle);

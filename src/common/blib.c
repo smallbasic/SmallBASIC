@@ -513,7 +513,7 @@ void cmd_print(int output) {
   byte last_op = 0;
   byte exitf = 0;
   byte use_format = 0;
-  int handle = 0;
+  intptr_t handle = 0;
   var_t var;
 
   // prefix - # (file)
@@ -654,7 +654,7 @@ void cmd_input(int input) {
   byte print_crlf = 1;
   var_t prompt;
   var_t *vuser_p = NULL;
-  int handle = 0;
+  intptr_t handle = 0;
   char *inps = NULL;
 
   v_init(&prompt);

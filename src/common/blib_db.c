@@ -672,7 +672,7 @@ void cmd_floadln() {
 void cmd_fsaveln() {
   var_t file_name, *array_p = NULL, *var_p = NULL;
   int flags = DEV_FILE_OUTPUT;
-  int handle;
+  intptr_t handle;
 
   if (code_peek() == kwTYPE_SEP) {
     // "filename" is an already open file number

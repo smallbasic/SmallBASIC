@@ -163,33 +163,34 @@ void exec_usefunc2(var_t *var1, var_t *var2, bcip_t ip) {
   v_detach(old_y);
 }
 
+void pv_write_str(char *str, var_t *vp) {
+  vp->v.p.length += strlen(str);
+  if (vp->v.p.ptr == NULL) {
+    vp->v.p.ptr = malloc(vp->v.p.length + 1);
+    vp->v.p.owner = 1;
+    strcpy((char *)vp->v.p.ptr, str);
+  } else {
+    vp->v.p.ptr = realloc(vp->v.p.ptr, vp->v.p.length + 1);
+    strcat((char *)vp->v.p.ptr, str);
+  }
+}
+
 /*
  * Write string to output device
  */
-void pv_write(char *str, int method, int handle) {
-  var_t *vp;
-
+void pv_write(char *str, int method, intptr_t handle) {
   switch (method) {
   case PV_FILE:
-    dev_fwrite(handle, (byte *)str, strlen(str));
+    dev_fwrite((int)handle, (byte *)str, strlen(str));
     break;
   case PV_LOG:
     lwrite(str);
     break;
   case PV_STRING:
-    vp = (var_t*)(intptr_t)handle;
-    vp->v.p.length += strlen(str);
-    if (vp->v.p.ptr == NULL) {
-      vp->v.p.ptr = malloc(vp->v.p.length + 1);
-      vp->v.p.owner = 1;
-      strcpy((char *)vp->v.p.ptr, str);
-    } else {
-      vp->v.p.ptr = realloc(vp->v.p.ptr, vp->v.p.length + 1);
-      strcat((char *)vp->v.p.ptr, str);
-    }
+    pv_write_str(str, (var_t *)handle);
     break;
   case PV_NET:
-    net_print((socket_t) handle, (const char *)str);
+    net_print((socket_t)handle, (const char *)str);
     break;
   default:
     dev_print(str);
@@ -199,7 +200,7 @@ void pv_write(char *str, int method, int handle) {
 /*
  * just prints the value of variable 'var'
  */
-void pv_writevar(var_t *var, int method, int handle) {
+void pv_writevar(var_t *var, int method, intptr_t handle) {
   char tmpsb[64];
 
   // start with a clean buffer
@@ -244,7 +245,7 @@ void print_var(var_t *v) {
 /*
  * write a variable to a file
  */
-void fprint_var(int handle, var_t *v) {
+void fprint_var(intptr_t handle, var_t *v) {
   pv_writevar(v, PV_FILE, handle);
 }
 

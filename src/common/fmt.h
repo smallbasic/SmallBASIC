@@ -118,7 +118,7 @@ void free_format(void);
  * @param output is the output-set-of-routines code (see PV_xxx macros)
  * @param handle is the output handle (depented on output-code)
  */
-void fmt_printN(var_num_t x, int output, int handle);
+void fmt_printN(var_num_t x, int output, intptr_t handle);
 
 /**
  * @ingroup str
@@ -131,7 +131,7 @@ void fmt_printN(var_num_t x, int output, int handle);
  * @param output is the output-set-of-routines code (see PV_xxx macros)
  * @param handle is the output handle (depented on output-code)
  */
-void fmt_printS(const char *str, int output, int handle);
+void fmt_printS(const char *str, int output, intptr_t handle);
 
 #if defined(__cplusplus)
 }
