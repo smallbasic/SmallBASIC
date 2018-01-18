@@ -106,6 +106,26 @@ bool getFontFiles(const char *familyName, String &fontFile, String &fontFileBold
   }
   return true;
 }
+#elif defined(__MACH__)
+bool getFontFiles(const char *familyName, String &fontFile, String &fontFileBold) {
+  fontFile = "Envy Code R.ttf";
+  fontFileBold = "Envy Code R Bold.ttf";
+  if (access(fontFile.c_str(), 0) != 0) {
+    fontFile = "SourceCodePro-Regular.ttf";
+    fontFileBold = "SourceCodePro-Bold.ttf";
+  }
+  if ((familyName != NULL && strcasecmp(familyName, "andale") == 0)
+      || access(fontFile.c_str(), 0) != 0) {
+    fontFile = "/Library/Fonts/Andale Mono.ttf";
+    fontFileBold = "/Library/Fonts/Andale Mono.ttf";
+  }
+  if ((familyName != NULL && strcasecmp(familyName, "courier") == 0)
+      || access(fontFile.c_str(), 0) != 0) {
+    fontFile = "/Library/Fonts/Courier New.ttf";
+    fontFileBold = "/Library/Fonts/Courier New Bold.ttf";
+  }
+  return true;
+}
 #else
 bool getFont(FcFontSet *fs, const char *familyName, int fontWeight, String &name) {
   bool result = false;
