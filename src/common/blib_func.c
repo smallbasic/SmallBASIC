@@ -1873,10 +1873,10 @@ void cmd_intN(long funcCode, var_t *r) {
 
         if (!prog_error) {
           l--;
-          if (l >= 0 && l < var_p->v.a.maxdim) {
-            r->v.i = var_p->v.a.lbound[l];
+          if (l >= 0 && l < v_maxdim(var_p)) {
+            r->v.i = v_lbound(var_p, l);
           } else {
-            rt_raise(ERR_BOUND_DIM, var_p->v.a.maxdim, l);
+            rt_raise(ERR_BOUND_DIM, v_maxdim(var_p), l);
           }
         }
       } else {
@@ -1909,10 +1909,10 @@ void cmd_intN(long funcCode, var_t *r) {
 
         if (!prog_error) {
           l--;
-          if (l >= 0 && l < var_p->v.a.maxdim) {
-            r->v.i = var_p->v.a.ubound[l];
+          if (l >= 0 && l < v_maxdim(var_p)) {
+            r->v.i = v_ubound(var_p, l);
           } else {
-            rt_raise(ERR_BOUND_DIM, var_p->v.a.maxdim);
+            rt_raise(ERR_BOUND_DIM, v_maxdim(var_p));
           }
         }
       } else {

@@ -44,15 +44,15 @@ var_num_t *mat_toc(var_t *v, int32_t *rows, int32_t *cols) {
     return NULL;
   }
 
-  if (v->v.a.maxdim > 2) {
+  if (v_maxdim(v) > 2) {
     // too many dimensions
     err_matdim();
     return NULL;
   }
-  *rows = ABS(v->v.a.lbound[0] - v->v.a.ubound[0]) + 1;
+  *rows = ABS(v_lbound(v, 0) - v_ubound(v, 0)) + 1;
 
-  if (v->v.a.maxdim == 2) {
-    *cols = ABS(v->v.a.lbound[1] - v->v.a.ubound[1]) + 1;
+  if (v_maxdim(v) == 2) {
+    *cols = ABS(v_lbound(v, 1) - v_ubound(v, 1)) + 1;
   } else {
     *cols = *rows;
     *rows = 1;
@@ -166,7 +166,7 @@ void mat_op2(var_t *l, var_t *r, int op) {
       free(m1);
       free(m2);
       if (m) {
-        if (r->v.a.maxdim == 1) {
+        if (v_maxdim(r) == 1) {
           mat_tov(l, m, lc, 1, 0);
         } else {
           mat_tov(l, m, lr, lc, 1);
@@ -273,7 +273,7 @@ int v_wc_match(var_t *vwc, var_t *v) {
   if (v->type == V_ARRAY) {
     int i;
     ri = 1;
-    for (i = 0; i < v->v.a.size; i++) {
+    for (i = 0; i < v_asize(v); i++) {
       var_t *elem_p = v_elem(v, i);
       if (v_wc_match(vwc, elem_p) == 0) {
         ri = 0;
@@ -371,7 +371,7 @@ static inline void oper_mul(var_t *r, var_t *left) {
   if (r->type == V_ARRAY || v_is_type(left, V_ARRAY)) {
     // arrays
     if (r->type == V_ARRAY && v_is_type(left, V_ARRAY)) {
-      if (left->v.a.maxdim == r->v.a.maxdim && r->v.a.maxdim == 1) {
+      if (v_maxdim(left) == v_maxdim(r) && v_maxdim(r) == 1) {
         if (op == '*') {
           mat_mul_1d(left, r);
         } else if (op == '%') {
@@ -619,7 +619,7 @@ static inline void oper_cmp(var_t *r, var_t *left) {
     ri = 0;
     if (r->type == V_ARRAY) {
       int i;
-      for (i = 0; i < r->v.a.size; i++) {
+      for (i = 0; i < v_asize(r); i++) {
         var_t *elem_p = v_elem(r, i);
         if (v_compare(left, elem_p) == 0) {
           ri = i + 1;

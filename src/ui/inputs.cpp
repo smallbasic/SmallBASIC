@@ -279,7 +279,7 @@ var_p_t FormInput::getField(var_p_t form) {
   if (form->type == V_MAP) {
     var_p_t inputs = map_get(form, FORM_INPUTS);
     if (inputs != NULL && inputs->type == V_ARRAY) {
-      for (unsigned i = 0; i < inputs->v.a.size && !result; i++) {
+      for (unsigned i = 0; i < v_asize(inputs) && !result; i++) {
         var_p_t elem = v_elem(inputs, i);
         if (elem->type == V_MAP && (_id == map_get_int(elem, FORM_INPUT_ID, -1))) {
           result = elem;
@@ -828,7 +828,7 @@ void ListModel::create(var_t *v) {
 
 // construct from an array of values
 void ListModel::fromArray(var_t *v) {
-  for (unsigned i = 0; i < v->v.a.size; i++) {
+  for (unsigned i = 0; i < v_asize(v); i++) {
     var_t *el_p = v_elem(v, i);
     if (el_p->type == V_STR) {
       _list.add(new strlib::String((const char *)el_p->v.p.ptr));

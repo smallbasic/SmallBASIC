@@ -149,18 +149,18 @@ void write_encoded_var(int handle, var_t *var) {
     dev_fwrite(handle, (byte *)var->v.p.ptr, fv.size);
     break;
   case V_ARRAY:
-    fv.size = var->v.a.size;
+    fv.size = v_asize(var);
     dev_fwrite(handle, (byte *)&fv, sizeof(struct file_encoded_var));
 
     // write additional data about array
-    dev_fwrite(handle, &var->v.a.maxdim, 1);
-    for (int i = 0; i < var->v.a.maxdim; i++) {
-      dev_fwrite(handle, (byte *)&var->v.a.lbound[i], sizeof(int));
-      dev_fwrite(handle, (byte *)&var->v.a.ubound[i], sizeof(int));
+    dev_fwrite(handle, &v_maxdim(var), 1);
+    for (int i = 0; i < v_maxdim(var); i++) {
+      dev_fwrite(handle, (byte *)&v_lbound(var, i), sizeof(int));
+      dev_fwrite(handle, (byte *)&v_ubound(var, i), sizeof(int));
     }
 
     // write elements
-    for (int i = 0; i < var->v.a.size; i++) {
+    for (int i = 0; i < v_asize(var); i++) {
       var_t *elem = v_elem(var, i);
       write_encoded_var(handle, elem);
     }
@@ -200,14 +200,14 @@ int read_encoded_var(int handle, var_t *var) {
     v_new_array(var, fv.size);
 
     // read additional data about array
-    dev_fread(handle, (byte *)&var->v.a.maxdim, 1);
-    for (int i = 0; i < var->v.a.maxdim; i++) {
-      dev_fread(handle, (byte *)&var->v.a.lbound[i], sizeof(int));
-      dev_fread(handle, (byte *)&var->v.a.ubound[i], sizeof(int));
+    dev_fread(handle, (byte *)&v_maxdim(var), 1);
+    for (int i = 0; i < v_maxdim(var); i++) {
+      dev_fread(handle, (byte *)&v_lbound(var, i), sizeof(int));
+      dev_fread(handle, (byte *)&v_ubound(var, i), sizeof(int));
     }
 
     // write elements
-    for (int i = 0; i < var->v.a.size; i++) {
+    for (int i = 0; i < v_asize(var); i++) {
       var_t *elem = v_elem(var, i);
       v_init(elem);
       read_encoded_var(handle, elem);
@@ -711,7 +711,7 @@ void cmd_fsaveln() {
 
   if (var_p->type == V_ARRAY) {
     // parameter is an array
-    for (int i = 0; i < array_p->v.a.size; i++) {
+    for (int i = 0; i < v_asize(array_p); i++) {
       var_p = v_elem(array_p, i);
       fprint_var(handle, var_p);
       dev_fwrite(handle, (byte *)"\n", 1);

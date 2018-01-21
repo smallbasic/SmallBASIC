@@ -560,7 +560,7 @@ pt_t par_getpt() {
   if (!prog_error) {
     if (var->type == V_ARRAY) {
       // array
-      if (var->v.a.size != 2) {
+      if (v_asize(var) != 2) {
         rt_raise(ERR_POLY_POINT);
       } else {
         pt.x = v_getreal(v_elem(var, 0));
@@ -612,7 +612,7 @@ ipt_t par_getipt() {
   if (!prog_error) {
     if (var->type == V_ARRAY) {
       // array
-      if (var->v.a.size != 2) {
+      if (v_asize(var) != 2) {
         rt_raise(ERR_POLY_POINT);
       } else {
         pt.x = v_getint(v_elem(var, 0));
@@ -664,7 +664,7 @@ int par_getpoly(pt_t **poly_pp) {
   }
 
   // zero-length or non array
-  if (var->type != V_ARRAY || var->v.a.size == 0) {
+  if (var->type != V_ARRAY || v_asize(var) == 0) {
     if (alloc) {
       v_free(var);
       v_detach(var);
@@ -680,7 +680,7 @@ int par_getpoly(pt_t **poly_pp) {
 
   // error check
   if (style == 1) {
-    if (el->v.a.size != 2) {
+    if (v_asize(el) != 2) {
       err_parsepoly(-1, 1);
       if (alloc) {
         v_free(var);
@@ -689,9 +689,9 @@ int par_getpoly(pt_t **poly_pp) {
       return 0;
     }
 
-    count = var->v.a.size;
+    count = v_asize(var);
   } else if (style == 0) {
-    if ((var->v.a.size % 2) != 0) {
+    if ((v_asize(var) % 2) != 0) {
       err_parsepoly(-1, 2);
       if (alloc) {
         v_free(var);
@@ -700,7 +700,7 @@ int par_getpoly(pt_t **poly_pp) {
       return 0;
     }
 
-    count = var->v.a.size >> 1;
+    count = v_asize(var) >> 1;
   }
   // build array
   *poly_pp = poly = malloc(sizeof(pt_t) * count);
@@ -715,7 +715,7 @@ int par_getpoly(pt_t **poly_pp) {
       // error check
       if (el->type != V_ARRAY) {
         err_parsepoly(i, 3);
-      } else if (el->v.a.size != 2) {
+      } else if (v_asize(el) != 2) {
         err_parsepoly(i, 4);
       }
       if (prog_error) {
@@ -774,7 +774,7 @@ int par_getipoly(ipt_t **poly_pp) {
   }
 
   // zero-length or non array
-  if (var->type != V_ARRAY || var->v.a.size == 0) {
+  if (var->type != V_ARRAY || v_asize(var) == 0) {
     if (alloc) {
       v_free(var);
       v_detach(var);
@@ -791,7 +791,7 @@ int par_getipoly(ipt_t **poly_pp) {
 
   // error check
   if (style == 1) {
-    if (el->v.a.size != 2) {
+    if (v_asize(el) != 2) {
       err_parsepoly(-1, 1);
       if (alloc) {
         v_free(var);
@@ -800,9 +800,9 @@ int par_getipoly(ipt_t **poly_pp) {
       return 0;
     }
 
-    count = var->v.a.size;
+    count = v_asize(var);
   } else if (style == 0) {
-    if ((var->v.a.size % 2) != 0) {
+    if ((v_asize(var) % 2) != 0) {
       err_parsepoly(-1, 2);
       if (alloc) {
         v_free(var);
@@ -811,7 +811,7 @@ int par_getipoly(ipt_t **poly_pp) {
       return 0;
     }
 
-    count = var->v.a.size >> 1;
+    count = v_asize(var) >> 1;
   }
   // build array
   *poly_pp = poly = malloc(sizeof(ipt_t) * count);
@@ -826,7 +826,7 @@ int par_getipoly(ipt_t **poly_pp) {
       // error check
       if (el->type != V_ARRAY) {
         err_parsepoly(i, 3);
-      } else if (el->v.a.size != 2) {
+      } else if (v_asize(el) != 2) {
         err_parsepoly(i, 4);
       }
       if (prog_error) {

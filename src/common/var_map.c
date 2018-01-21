@@ -237,12 +237,12 @@ var_p_t map_add_var(var_p_t base, const char *name, int value) {
  * an empty variable that will be returned in a further call
  */
 void map_get_value(var_p_t base, var_p_t var_key, var_p_t *result) {
-  if (base->type == V_ARRAY && base->v.a.size) {
+  if (base->type == V_ARRAY && v_asize(base)) {
     // convert the non-empty array to a map
     var_t *clone = v_clone(base);
 
     hashmap_create(base, 0);
-    for (int i = 0; i < clone->v.a.size; i++) {
+    for (int i = 0; i < v_asize(clone); i++) {
       const var_t *element = v_elem(clone, i);
       var_p_t key = v_new();
       v_setint(key, i);
@@ -352,10 +352,10 @@ void array_append_elem(hashmap_cb *cb, var_t *elem) {
  */
 void array_to_str(hashmap_cb *cb, var_t *var) {
   strcpy(cb->buffer, "[");
-  if (var->v.a.maxdim == 2) {
+  if (v_maxdim(var) == 2) {
     // NxN
-    int rows = ABS(var->v.a.ubound[0] - var->v.a.lbound[0]) + 1;
-    int cols = ABS(var->v.a.ubound[1] - var->v.a.lbound[1]) + 1;
+    int rows = ABS(v_ubound(var, 0) - v_lbound(var, 0)) + 1;
+    int cols = ABS(v_ubound(var, 1) - v_lbound(var, 1)) + 1;
 
     for (int i = 0; i < rows; i++) {
       for (int j = 0; j < cols; j++) {
@@ -371,10 +371,10 @@ void array_to_str(hashmap_cb *cb, var_t *var) {
       }
     }
   } else {
-    for (int i = 0; i < var->v.a.size; i++) {
+    for (int i = 0; i < v_asize(var); i++) {
       var_t *elem = v_elem(var, i);
       array_append_elem(cb, elem);
-      if (i != var->v.a.size - 1) {
+      if (i != v_asize(var) - 1) {
         strcat(cb->buffer, ",");
       }
     }

@@ -366,9 +366,9 @@ void cmd_chain(void) {
       code = strdup(var.v.p.ptr);
     }
   } else if (var.type == V_ARRAY) {
-    int el;
     int len = 0;
-    for (el = 0; el < var.v.a.size; el++) {
+    uint32_t size = v_asize(&var);
+    for (int el = 0; el < size; el++) {
       var_t *el_p = v_elem(&var, el);
       if (el_p->type == V_STR) {
         int str_len = strlen(el_p->v.p.ptr) + 2;

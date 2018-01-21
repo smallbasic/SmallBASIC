@@ -72,6 +72,16 @@ extern "C" {
 struct var_s;
 typedef void (*method) (struct var_s *self);
 
+// array
+typedef struct {
+  struct var_s *data; /**< array data pointer */
+  uint32_t size; /**< the number of elements */
+  uint32_t capacity; /**< the number of slots */
+  int32_t ubound[MAXDIM]; /**< upper bound */
+  int8_t  lbound[MAXDIM]; /**< lower bound */
+  uint8_t maxdim; /**< number of dimensions */
+} var_array;
+
 /**
  * @ingroup var
  * @typedef var_s
@@ -113,14 +123,7 @@ typedef struct var_s {
     } p;
 
     // array
-    struct {
-      struct var_s *data; /**< array data pointer */
-      uint32_t size; /**< the number of elements */
-      uint32_t capacity; /**< the number of slots */
-      int32_t lbound[MAXDIM]; /**< lower bound */
-      int32_t ubound[MAXDIM]; /**< upper bound */
-      byte maxdim; /**< number of dimensions */
-    } a;
+    var_array a;
 
     // next item in the free-list
     struct var_s *pool_next;
@@ -625,19 +628,49 @@ void v_input2var(const char *str, var_t *var);
  * < the number of the elements of the array (x)
  * @ingroup var
  */
-#define v_asize(x)      ((x)->v.a.size)
+#define v_asize(x) ((x)->v.a.size)
+
+/**
+ * < the number of array dimensions (x)
+ * @ingroup var
+ */
+#define v_maxdim(x) ((x)->v.a.maxdim)
+
+/**
+ * < the array lower bound of the given dimension (x)
+ * @ingroup var
+ */
+#define v_lbound(x, i) ((x)->v.a.lbound[i])
+
+/**
+ * < the array upper bound of the given dimension (x)
+ * @ingroup var
+ */
+#define v_ubound(x, i) ((x)->v.a.ubound[i])
+
+/**
+ * < the array data
+ * @ingroup var
+ */
+#define v_data(x) ((x)->v.a.data)
+
+/**
+ * < the array capacity
+ * @ingroup var
+ */
+#define v_capacity(x) ((x)->v.a.capacity)
 
 /**
  * < returns the integer value of variable v
  * @ingroup var
  */
-#define v_getint(v)  v_igetval((v))
+#define v_getint(v) v_igetval((v))
 
 /**
  * < returns the real value of variable v
  * @ingroup var
  */
-#define v_getreal(v)  v_getval((v))
+#define v_getreal(v) v_getval((v))
 
 /**
  * @ingroup var
