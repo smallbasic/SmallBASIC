@@ -63,7 +63,7 @@
  * @ingroup var
  * @def MAXDIM Maxium number of array-dimensions
  */
-#define MAXDIM 2
+#define MAXDIM 6
 
 #if defined(__cplusplus)
 extern "C" {
@@ -71,16 +71,6 @@ extern "C" {
 
 struct var_s;
 typedef void (*method) (struct var_s *self);
-
-// array
-typedef struct {
-  struct var_s *data; /**< array data pointer */
-  uint32_t size; /**< the number of elements */
-  uint32_t capacity; /**< the number of slots */
-  int32_t ubound[MAXDIM]; /**< upper bound */
-  int8_t  lbound[MAXDIM]; /**< lower bound */
-  uint8_t maxdim; /**< number of dimensions */
-} var_array;
 
 /**
  * @ingroup var
@@ -123,7 +113,14 @@ typedef struct var_s {
     } p;
 
     // array
-    var_array a;
+    struct {
+      struct var_s *data; /**< array data pointer */
+      uint32_t size; /**< the number of elements */
+      uint32_t capacity; /**< the number of slots */
+      int32_t ubound[MAXDIM]; /**< upper bound */
+      int8_t  lbound[MAXDIM]; /**< lower bound */
+      uint8_t maxdim; /**< number of dimensions */
+    } a;
 
     // next item in the free-list
     struct var_s *pool_next;

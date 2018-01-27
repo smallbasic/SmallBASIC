@@ -60,9 +60,9 @@ uint32_t v_get_capacity(uint32_t size) {
   return size + (size / 2) + 1;
 }
 
-void v_new_array(var_t *var, uint32_t size) {
+// allocate capacity in the array container
+void v_alloc_capacity(var_t *var, uint32_t size) {
   uint32_t capacity = v_get_capacity(size);
-  var->type = V_ARRAY;
   v_capacity(var) = capacity;
   v_asize(var) = size;
   v_data(var) = (var_t *)malloc(sizeof(var_t) * capacity);
@@ -73,13 +73,55 @@ void v_new_array(var_t *var, uint32_t size) {
   }
 }
 
+// create an new empty array
+void v_init_array(var_t *var) {
+  v_capacity(var) = 0;
+  v_asize(var) = 0;
+  v_data(var) = NULL;
+  v_maxdim(var) = 1;
+  v_ubound(var, 0) = opt_base;
+  v_lbound(var, 0) = opt_base;
+}
+
+// create an array of the given size
+void v_new_array(var_t *var, uint32_t size) {
+  var->type = V_ARRAY;
+  v_alloc_capacity(var, size);
+}
+
+void v_set_array1_size(var_t *var, uint32_t size) {
+  v_asize(var) = size;
+  v_maxdim(var) = 1;
+  v_ubound(var, 0) = v_lbound(var, 0) + (size - 1);
+}
+
+void v_copy_array(var_t *dest, const var_t *src) {
+  dest->type = V_ARRAY;
+  v_alloc_capacity(dest, v_asize(src));
+
+  // copy dimensions
+  v_maxdim(dest) = v_maxdim(src);
+  for (int i = 0; i < v_maxdim(src); i++) {
+    v_ubound(dest, i) = v_ubound(src, i);
+    v_lbound(dest, i) = v_lbound(src, i);
+  }
+
+  // copy each element
+  uint32_t v_size = v_asize(src);
+  for (uint32_t i = 0; i < v_size; i++) {
+    var_t *dest_vp = v_elem(dest, i);
+    v_init(dest_vp);
+    v_set(dest_vp, v_elem(src, i));
+  }
+}
+
 void v_array_free(var_t *var) {
   uint32_t v_size = v_capacity(var);
   if (v_size && v_data(var)) {
     for (uint32_t i = 0; i < v_size; i++) {
       v_free(v_elem(var, i));
     }
-    free(v_data(var));
+    free(var->v.a.data);
   }
 }
 
@@ -180,33 +222,6 @@ var_t *v_getelemptr(var_t *v, uint32_t index) {
   return NULL;
 }
 
-void v_set_array1_size(var_t *var, uint32_t size) {
-  v_asize(var) = size;
-  v_maxdim(var) = 1;
-  v_ubound(var, 0) = v_lbound(var, 0) + (size - 1);
-}
-
-void v_init_array(var_t *var) {
-  v_capacity(var) = 0;
-  v_asize(var) = 0;
-  v_data(var) = NULL;
-  v_ubound(var, 0) = opt_base;
-  v_lbound(var, 0) = opt_base;
-  v_maxdim(var) = 1;
-}
-
-void v_copy_array(var_t *dest, const var_t *src) {
-  memcpy(&dest->v.a, &src->v.a, sizeof(src->v.a));
-  v_new_array(dest, v_asize(src));
-  // copy each element
-  uint32_t v_size = v_asize(src);
-  for (uint32_t i = 0; i < v_size; i++) {
-    var_t *dest_vp = v_elem(dest, i);
-    v_init(dest_vp);
-    v_set(dest_vp, v_elem(src, i));
-  }
-}
-
 /*
  * resize an existing array
  */
@@ -235,7 +250,7 @@ void v_resize_array(var_t *v, uint32_t size) {
     // insufficient capacity
     uint32_t prev_size = v_asize(v);
     if (prev_size == 0) {
-      v_new_array(v, size);
+      v_alloc_capacity(v, size);
     } else if (prev_size < size) {
       // resize & copy
       uint32_t capacity = v_get_capacity(size);
@@ -263,10 +278,10 @@ void v_resize_array(var_t *v, uint32_t size) {
 void v_tomatrix(var_t *v, int r, int c) {
   v_free(v);
   v_new_array(v, r * c);
+  v_maxdim(v) = 2;
   v_lbound(v, 0) = v_lbound(v, 1) = opt_base;
   v_ubound(v, 0) = opt_base + (r - 1);
   v_ubound(v, 1) = opt_base + (c - 1);
-  v_maxdim(v) = 2;
 }
 
 /*
@@ -606,6 +621,7 @@ void v_inc(var_t *a, var_t *b) {
 }
 
 /*
+ * returns the sign of a variable
  */
 int v_sign(var_t *x) {
   if (x->type == V_INT) {
@@ -771,14 +787,13 @@ void v_input2var(const char *str, var_t *var) {
     // no data
     v_setstr(var, str);
   } else {
-    char *np, *sb;
     char buf[INT_STR_LEN];
     int type;
     var_int_t lv;
     var_num_t dv;
 
-    sb = strdup(str);
-    np = get_numexpr(sb, buf, &type, &lv, &dv);
+    char *sb = strdup(str);
+    char *np = get_numexpr(sb, buf, &type, &lv, &dv);
 
     if (type == 1 && *np == '\0') {
       v_setint(var, lv);

@@ -121,8 +121,8 @@ void cmd_packed_let() {
   }
 }
 
-unsigned get_dimensions(int32_t **lbound, int32_t **ubound) {
-  unsigned count = 0;
+uint8_t get_dimensions(int32_t **lbound, int32_t **ubound) {
+  uint8_t count = 0;
   if (code_peek() == kwTYPE_LEVEL_BEGIN) {
     code_skipnext();
     while (code_peek() != kwTYPE_LEVEL_END && !prog_error) {
@@ -193,7 +193,7 @@ void cmd_dim(int preserve) {
       code_skipnext();
       if (code_getnext() != ',') {
         err_missing_comma();
-        return;
+        break;
       }
     }
 
@@ -204,30 +204,31 @@ void cmd_dim(int preserve) {
 
     int32_t *lbound = NULL;
     int32_t *ubound = NULL;
-    unsigned dimensions = get_dimensions(&lbound, &ubound);
+    uint8_t dimensions = get_dimensions(&lbound, &ubound);
     if (!prog_error) {
+      if (!preserve || var_p->type != V_ARRAY) {
+        v_free(var_p);
+      }
       if (!dimensions) {
         v_toarray1(var_p, 0);
+        continue;
+      }
+      int size = 1;
+      for (int i = 0; i < dimensions; i++) {
+        size = size * (ABS(ubound[i] - lbound[i]) + 1);
+      }
+      if (!preserve || var_p->type != V_ARRAY) {
+        v_new_array(var_p, size);
+      } else if (v_maxdim(var_p) != dimensions) {
+        err_matdim();
       } else {
-        int size = 1;
-        for (int i = 0; i < dimensions; i++) {
-          size = size * (ABS(ubound[i] - lbound[i]) + 1);
-        }
-        if (!preserve) {
-          v_new_array(var_p, size);
-        } else {
-          if (var_p->type == V_ARRAY) {
-            v_resize_array(var_p, size);
-          } else {
-            v_new_array(var_p, size);
-          }
-        }
-        // dim
-        v_maxdim(var_p) = dimensions;
-        for (int i = 0; i < dimensions; i++) {
-          v_lbound(var_p, i) = lbound[i];
-          v_ubound(var_p, i) = ubound[i];
-        }
+        // preserve previous array contents
+        v_resize_array(var_p, size);
+      }
+      v_maxdim(var_p) = dimensions;
+      for (int i = 0; i < dimensions; i++) {
+        v_lbound(var_p, i) = lbound[i];
+        v_ubound(var_p, i) = ubound[i];
       }
     }
     free(lbound);
