@@ -66,10 +66,14 @@ void v_alloc_capacity(var_t *var, uint32_t size) {
   v_capacity(var) = capacity;
   v_asize(var) = size;
   v_data(var) = (var_t *)malloc(sizeof(var_t) * capacity);
-  for (uint32_t i = 0; i < capacity; i++) {
-    var_t *e = v_elem(var, i);
-    e->pooled = 0;
-    v_init(e);
+  if (!v_data(var)) {
+    err_memory();
+  } else {
+    for (uint32_t i = 0; i < capacity; i++) {
+      var_t *e = v_elem(var, i);
+      e->pooled = 0;
+      v_init(e);
+    }
   }
 }
 

@@ -213,7 +213,7 @@ void cmd_dim(int preserve) {
         v_toarray1(var_p, 0);
         continue;
       }
-      int size = 1;
+      uint32_t size = 1;
       for (int i = 0; i < dimensions; i++) {
         size = size * (ABS(ubound[i] - lbound[i]) + 1);
       }
