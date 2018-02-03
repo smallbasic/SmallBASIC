@@ -253,7 +253,7 @@ int process_options(int argc, char *argv[]) {
   return 1;
 }
 
-#if defined(__GNUC__) && !defined(__MACH__)
+#if defined(__GNUC__) && !defined(__MACH__) && !defined(_Win32)
 // for analysing excessive malloc calls using kdbg
 extern void *__libc_malloc(size_t size);
 void *malloc(size_t size) {
