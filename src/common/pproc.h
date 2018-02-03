@@ -79,7 +79,7 @@ void set_dataip(uint16_t label_id);
  *
  * @note avoid to use it
  */
-void pv_write(char *str, int method, int handle);
+void pv_write(char *str, int method, intptr_t handle);
 
 /**
  * @ingroup exec
@@ -88,7 +88,7 @@ void pv_write(char *str, int method, int handle);
  *
  * @note avoid to use it
  */
-void pv_writevar(var_t *var, int method, int handle);
+void pv_writevar(var_t *var, int method, intptr_t handle);
 
 /**
  * @ingroup exec
@@ -107,7 +107,7 @@ void print_var(var_t *var);
  * @param var is the variable
  * @param handle is the file-handle
  */
-void fprint_var(int handle, var_t *var);
+void fprint_var(intptr_t handle, var_t *var);
 
 /**
  * @ingroup exec

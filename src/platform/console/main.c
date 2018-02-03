@@ -13,6 +13,13 @@
 // global filename (its needed for CTRL+C signal - delete temporary)
 char g_file[OS_PATHNAME_SIZE + 1];
 
+// decompile handling
+int decomp;
+void dump_bytecode(FILE *output);
+int sbasic_compile(const char *file);
+int sbasic_exec_prepare(const char *file);
+int exec_close(int tid);
+
 /*
  * remove temporary files
  *
@@ -131,6 +138,7 @@ int setup_file(const char *program) {
 int process_options(int argc, char *argv[]) {
   int opt_ihavename = 0;
   int opt_nomore = 0;
+  decomp = 0;
 
   for (int i = 1; i < argc; i++) {
     if (argv[i][0] == '-') {
@@ -152,7 +160,8 @@ int process_options(int argc, char *argv[]) {
 
         case 's':
           // decompile
-          opt_decomp++;
+          decomp = 1;
+          opt_nosave = 1;
           break;
 
         case 'c':
@@ -253,13 +262,59 @@ int process_options(int argc, char *argv[]) {
   return 1;
 }
 
-#if defined(__GNUC__)
+#if defined(__GNUC__) && !defined(__MACH__) && !defined(_Win32)
 // for analysing excessive malloc calls using kdbg
 extern void *__libc_malloc(size_t size);
-void* malloc (size_t size) {
+void *malloc(size_t size) {
   return __libc_malloc(size);
 }
 #endif
+
+void print_taskinfo(FILE *output) {
+  int prev_tid = 0;
+
+  fprintf(output, "\n* task list:\n");
+  for (int i = 0; i < count_tasks(); i++) {
+    prev_tid = activate_task(i);
+    fprintf(output, "  id %d, child of %d, file %s, status %d\n",
+            ctask->tid, ctask->parent, ctask->file, ctask->status);
+  }
+  activate_task(prev_tid);
+}
+
+void print_bytecode(int tid, FILE *output) {
+  int prev_tid = activate_task(tid);
+  fprintf(stderr, "%d %d %d\n", prev_tid, tid, count_tasks());
+
+  for (int i = 0; i < count_tasks(); i++) {
+    activate_task(i);
+    if (ctask->parent == tid) {
+      // do the same for the childs
+      print_bytecode(ctask->tid, output);
+      exit(1);
+    }
+  }
+
+  activate_task(tid);
+  fprintf(output, "\n* task: %d/%d (%s)\n", ctask->tid, count_tasks(), prog_file);
+  dump_bytecode(output);
+  activate_task(prev_tid);
+}
+
+void decompile() {
+  init_tasks();
+  unit_mgr_init();
+  sblmgr_init(0, NULL);
+  if (sbasic_compile(g_file)) {
+    int exec_tid = sbasic_exec_prepare(g_file);
+    print_taskinfo(stdout);
+    print_bytecode(exec_tid, stdout);
+    exec_close(exec_tid);
+  }
+  unit_mgr_close();
+  sblmgr_close();
+  destroy_tasks();
+}
 
 /*
  * program entry point
@@ -282,7 +337,11 @@ int main(int argc, char *argv[]) {
       char prev_cwd[OS_PATHNAME_SIZE + 1];
       prev_cwd[0] = 0;
       getcwd(prev_cwd, sizeof(prev_cwd) - 1);
-      sbasic_main(g_file);
+      if (decomp) {
+        decompile();
+      } else {
+        sbasic_main(g_file);
+      }
       chdir(prev_cwd);
     } else {
       show_brief_help();

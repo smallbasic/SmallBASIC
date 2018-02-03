@@ -185,9 +185,9 @@ ImageBuffer *load_image(var_t *var) {
         }
       }
     }
-  } else if (var->type == V_ARRAY && var->v.a.maxdim == 2) {
-    int w = ABS(var->v.a.lbound[0] - var->v.a.ubound[0]) + 1;
-    int h = ABS(var->v.a.lbound[1] - var->v.a.ubound[1]) + 1;
+  } else if (var->type == V_ARRAY && v_maxdim(var) == 2) {
+    int w = ABS(v_lbound(var, 0) - v_ubound(var, 0)) + 1;
+    int h = ABS(v_lbound(var, 1) - v_ubound(var, 1)) + 1;
     int size = w * h * 4;
     unsigned char *image = (unsigned char *)malloc(size);
     for (int y = 0; y < h; y++) {
@@ -520,26 +520,26 @@ extern "C" void v_create_image(var_p_t var) {
       strlcpy(file.name, arg.v.p.ptr, sizeof(file.name));
       file.type = ft_stream;
       image = load_image(&file);
-    } else if (arg.type == V_ARRAY && arg.v.a.size > 0 && !prog_error) {
+    } else if (arg.type == V_ARRAY && v_asize(&arg) > 0 && !prog_error) {
       var_p_t elem0 = v_elem(&arg, 0);
       if (elem0->type == V_STR) {
-        char **data = new char*[arg.v.a.size];
-        for (unsigned i = 0; i < arg.v.a.size; i++) {
+        char **data = new char*[v_asize(&arg)];
+        for (unsigned i = 0; i < v_asize(&arg); i++) {
           var_p_t elem = v_elem(&arg, i);
           data[i] = elem->v.p.ptr;
         }
         image = load_xpm_image(data);
         delete [] data;
-      } else if (arg.v.a.maxdim == 2) {
+      } else if (v_maxdim(&arg) == 2) {
         // load from 2d array
         image = load_image(&arg);
       } else if (elem0->type == V_INT) {
-        unsigned char *data = new unsigned char[arg.v.a.size];
-        for (unsigned i = 0; i < arg.v.a.size; i++) {
+        unsigned char *data = new unsigned char[v_asize(&arg)];
+        for (unsigned i = 0; i < v_asize(&arg); i++) {
           var_p_t elem = v_elem(&arg, i);
           data[i] = (unsigned char)elem->v.i;
         }
-        image = load_image(data, arg.v.a.size);
+        image = load_image(data, v_asize(&arg));
         delete [] data;
       }
     } else if (arg.type == V_INT && !prog_error) {

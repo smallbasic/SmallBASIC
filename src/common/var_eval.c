@@ -37,11 +37,11 @@ bcip_t get_array_idx(var_t *array) {
       bcip_t i;
       bcip_t idim = v_getint(&var);
       v_free(&var);
-      idim = idim - array->v.a.lbound[lev];
+      idim = idim - v_lbound(array, lev);
 
       m = idim;
-      for (i = lev + 1; i < array->v.a.maxdim; i++) {
-        m = m * (ABS(array->v.a.ubound[i] - array->v.a.lbound[i]) + 1);
+      for (i = lev + 1; i < v_maxdim(array); i++) {
+        m = m * (ABS(v_ubound(array, i) - v_lbound(array, i)) + 1);
       }
       idx += m;
 
@@ -59,7 +59,7 @@ bcip_t get_array_idx(var_t *array) {
   } while (!prog_error && code_peek() != kwTYPE_LEVEL_END);
 
   if (!prog_error) {
-    if ((int) array->v.a.maxdim != lev) {
+    if ((int) v_maxdim(array) != lev) {
       err_missing_sep();
     }
   }
@@ -108,7 +108,7 @@ var_t *code_getvarptr_arridx(var_t *basevar_p) {
     code_skipnext();
     bcip_t array_index = get_array_idx(basevar_p);
     if (!prog_error) {
-      if ((int) array_index < basevar_p->v.a.size && (int) array_index >= 0) {
+      if ((int) array_index < v_asize(basevar_p) && (int) array_index >= 0) {
         var_p = v_elem(basevar_p, array_index);
         if (code_peek() == kwTYPE_LEVEL_END) {
           code_skipnext();
@@ -124,7 +124,7 @@ var_t *code_getvarptr_arridx(var_t *basevar_p) {
           err_arrmis_rp();
         }
       } else {
-        err_arridx(array_index, basevar_p->v.a.size);
+        err_arridx(array_index, v_asize(basevar_p));
       }
     }
   }

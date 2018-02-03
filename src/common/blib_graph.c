@@ -1194,7 +1194,7 @@ void cmd_chart() {
   var_p = par_getvarray();
   if (prog_error)
     return;
-  count = var_p->v.a.size;
+  count = v_asize(var_p);
 
   // optional labels-flag
   if (code_peek() == kwTYPE_SEP) {
@@ -1274,7 +1274,7 @@ var_t *par_getm3() {
   if (prog_error) {
     return NULL;
   }
-  if (vp == NULL || vp->type != V_ARRAY || vp->v.a.size != 9) {
+  if (vp == NULL || vp->type != V_ARRAY || v_asize(vp) != 9) {
     err_typemismatch();
     return NULL;
   }
@@ -1486,7 +1486,7 @@ void cmd_m3apply() {
   p = par_getvarray();
   if (prog_error)
     return;
-  count = p->v.a.size;
+  count = v_asize(p);
 
   // copy m to om
   for (i = 0; i < 3; i++) {
@@ -1501,7 +1501,7 @@ void cmd_m3apply() {
   if (e->type != V_ARRAY) {
     int o;
 
-    count = (p->v.a.size >> 1);
+    count = (v_asize(p) >> 1);
     for (i = 0; i < count; i++) {
       o = i << 1;
       x = v_getreal(v_elem(p, o));
@@ -1515,7 +1515,7 @@ void cmd_m3apply() {
 
       if (e->type != V_ARRAY)
         err_parsepoly(i, 10);
-      else if ((e->v.a.size % 2) != 0)
+      else if ((v_asize(e) % 2) != 0)
         err_parsepoly(i, 11);
 
       if (prog_error)

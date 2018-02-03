@@ -1857,8 +1857,7 @@ void cmd_intN(long funcCode, var_t *r) {
     //
     if (code_peek() == kwTYPE_VAR) {
       var_p = code_getvarptr();
-      if (var_p->type == V_ARRAY) {
-
+      if (!prog_error && var_p->type == V_ARRAY) {
         l = 1;
         if (code_peek() == kwTYPE_SEP) {
           par_getcomma();
@@ -1873,10 +1872,10 @@ void cmd_intN(long funcCode, var_t *r) {
 
         if (!prog_error) {
           l--;
-          if (l >= 0 && l < var_p->v.a.maxdim) {
-            r->v.i = var_p->v.a.lbound[l];
+          if (l >= 0 && l < v_maxdim(var_p)) {
+            r->v.i = v_lbound(var_p, l);
           } else {
-            rt_raise(ERR_BOUND_DIM, var_p->v.a.maxdim, l);
+            rt_raise(ERR_BOUND_DIM, v_maxdim(var_p), l);
           }
         }
       } else {
@@ -1892,9 +1891,8 @@ void cmd_intN(long funcCode, var_t *r) {
     // int <- UBOUND(array [, dim])
     //
     if (code_peek() == kwTYPE_VAR) {
-      code_skipnext();
-      var_p = tvar[code_getaddr()];
-      if (var_p->type == V_ARRAY) {
+      var_p = code_getvarptr();
+      if (!prog_error && var_p->type == V_ARRAY) {
         l = 1;
         if (code_peek() == kwTYPE_SEP) {
           par_getcomma();
@@ -1909,10 +1907,10 @@ void cmd_intN(long funcCode, var_t *r) {
 
         if (!prog_error) {
           l--;
-          if (l >= 0 && l < var_p->v.a.maxdim) {
-            r->v.i = var_p->v.a.ubound[l];
+          if (l >= 0 && l < v_maxdim(var_p)) {
+            r->v.i = v_ubound(var_p, l);
           } else {
-            rt_raise(ERR_BOUND_DIM, var_p->v.a.maxdim);
+            rt_raise(ERR_BOUND_DIM, v_maxdim(var_p));
           }
         }
       } else {
@@ -2556,7 +2554,7 @@ void cmd_genfunc(long funcCode, var_t *r) {
         ofs = prog_ip;
         if (code_isvar()) {
           var_t *basevar_p = code_getvarptr();
-          if (basevar_p->type == V_ARRAY) {
+          if (!prog_error && basevar_p->type == V_ARRAY) {
             count = v_asize(basevar_p);
             for (int i = 0; i < count; i++) {
               var_t *elem_p = v_getelemptr(basevar_p, i);
@@ -2626,7 +2624,7 @@ void cmd_genfunc(long funcCode, var_t *r) {
         ofs = prog_ip;
         if (code_isvar()) {
           var_t *basevar_p = code_getvarptr();
-          if (basevar_p->type == V_ARRAY) {
+          if (!prog_error && basevar_p->type == V_ARRAY) {
             count = v_asize(basevar_p);
             for (int i = 0; i < count; i++) {
               var_t *elem_p = v_getelemptr(basevar_p, i);

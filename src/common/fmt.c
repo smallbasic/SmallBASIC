@@ -41,7 +41,7 @@ int fmt_cdig(char *fmt);
 char *fmt_getnumfmt(char *dest, char *source);
 char *fmt_getstrfmt(char *dest, char *source);
 void fmt_addfmt(const char *fmt, int type);
-void fmt_printL(int output, int handle);
+void fmt_printL(int output, intptr_t handle);
 
 typedef struct {
   char *fmt;    // the format or a string
@@ -787,7 +787,7 @@ void build_format(const char *fmt_cnst) {
 /*
  * print simple strings (parts of format)
  */
-void fmt_printL(int output, int handle) {
+void fmt_printL(int output, intptr_t handle) {
   if (fmt_count == 0) {
     return;
   } else {
@@ -808,15 +808,16 @@ void fmt_printL(int output, int handle) {
 /*
  * print formated number
  */
-void fmt_printN(var_num_t x, int output, int handle) {
+void fmt_printN(var_num_t x, int output, intptr_t handle) {
   if (fmt_count == 0) {
     rt_raise(ERR_FORMAT_INVALID_FORMAT);
   } else {
     fmt_printL(output, handle);
     fmt_node_t *node = &fmt_stack[fmt_cur];
     fmt_cur++;
-    if (fmt_cur >= fmt_count)
+    if (fmt_cur >= fmt_count) {
       fmt_cur = 0;
+    }
     if (node->type == 1) {
       char *buf = format_num(node->fmt, x);
       pv_write(buf, output, handle);
@@ -833,7 +834,7 @@ void fmt_printN(var_num_t x, int output, int handle) {
 /*
  * print formated string
  */
-void fmt_printS(const char *str, int output, int handle) {
+void fmt_printS(const char *str, int output, intptr_t handle) {
   if (fmt_count == 0) {
     rt_raise(ERR_FORMAT_INVALID_FORMAT);
   } else {

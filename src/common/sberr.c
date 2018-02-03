@@ -318,6 +318,10 @@ void err_form_input() {
   err_throw(ERR_FORM_INPUT);
 }
 
+void err_memory() {
+  rt_raise(ERR_MEMORY);
+}
+
 /**
  * the DONE message
  */

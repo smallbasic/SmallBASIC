@@ -101,7 +101,6 @@ typedef struct {
 
 EXTERN byte opt_graphics; /**< command-line option: start in graphics mode   */
 EXTERN byte opt_quiet; /**< command-line option: quiet                       */
-EXTERN byte opt_decomp; /**< decompile                                       */
 EXTERN char opt_command[OPT_CMD_SZ]; /**< command-line parameters (COMMAND$) */
 EXTERN int opt_base; /**< OPTION BASE x                                      */
 EXTERN byte opt_loadmod; /**< load all modules                               */
@@ -241,14 +240,6 @@ void brun_stop(void);
  * @return BRUN_STOPPED or BRUN_RUNNING
  */
 int brun_status(void);
-
-/**
- * decompiler,
- * dumps the code in the current task
- *
- * @param output the output stream (FILE*)
- */
-void dump_bytecode(FILE *output);
 
 /**
  * returns the last-modified time of the file

@@ -163,33 +163,34 @@ void exec_usefunc2(var_t *var1, var_t *var2, bcip_t ip) {
   v_detach(old_y);
 }
 
+void pv_write_str(char *str, var_t *vp) {
+  vp->v.p.length += strlen(str);
+  if (vp->v.p.ptr == NULL) {
+    vp->v.p.ptr = malloc(vp->v.p.length + 1);
+    vp->v.p.owner = 1;
+    strcpy((char *)vp->v.p.ptr, str);
+  } else {
+    vp->v.p.ptr = realloc(vp->v.p.ptr, vp->v.p.length + 1);
+    strcat((char *)vp->v.p.ptr, str);
+  }
+}
+
 /*
  * Write string to output device
  */
-void pv_write(char *str, int method, int handle) {
-  var_t *vp;
-
+void pv_write(char *str, int method, intptr_t handle) {
   switch (method) {
   case PV_FILE:
-    dev_fwrite(handle, (byte *)str, strlen(str));
+    dev_fwrite((int)handle, (byte *)str, strlen(str));
     break;
   case PV_LOG:
     lwrite(str);
     break;
   case PV_STRING:
-    vp = (var_t*)(intptr_t)handle;
-    vp->v.p.length += strlen(str);
-    if (vp->v.p.ptr == NULL) {
-      vp->v.p.ptr = malloc(vp->v.p.length + 1);
-      vp->v.p.owner = 1;
-      strcpy((char *)vp->v.p.ptr, str);
-    } else {
-      vp->v.p.ptr = realloc(vp->v.p.ptr, vp->v.p.length + 1);
-      strcat((char *)vp->v.p.ptr, str);
-    }
+    pv_write_str(str, (var_t *)handle);
     break;
   case PV_NET:
-    net_print((socket_t) handle, (const char *)str);
+    net_print((socket_t)handle, (const char *)str);
     break;
   default:
     dev_print(str);
@@ -199,7 +200,7 @@ void pv_write(char *str, int method, int handle) {
 /*
  * just prints the value of variable 'var'
  */
-void pv_writevar(var_t *var, int method, int handle) {
+void pv_writevar(var_t *var, int method, intptr_t handle) {
   char tmpsb[64];
 
   // start with a clean buffer
@@ -244,7 +245,7 @@ void print_var(var_t *v) {
 /*
  * write a variable to a file
  */
-void fprint_var(int handle, var_t *v) {
+void fprint_var(intptr_t handle, var_t *v) {
   pv_writevar(v, PV_FILE, handle);
 }
 
@@ -559,7 +560,7 @@ pt_t par_getpt() {
   if (!prog_error) {
     if (var->type == V_ARRAY) {
       // array
-      if (var->v.a.size != 2) {
+      if (v_asize(var) != 2) {
         rt_raise(ERR_POLY_POINT);
       } else {
         pt.x = v_getreal(v_elem(var, 0));
@@ -611,7 +612,7 @@ ipt_t par_getipt() {
   if (!prog_error) {
     if (var->type == V_ARRAY) {
       // array
-      if (var->v.a.size != 2) {
+      if (v_asize(var) != 2) {
         rt_raise(ERR_POLY_POINT);
       } else {
         pt.x = v_getint(v_elem(var, 0));
@@ -663,7 +664,7 @@ int par_getpoly(pt_t **poly_pp) {
   }
 
   // zero-length or non array
-  if (var->type != V_ARRAY || var->v.a.size == 0) {
+  if (var->type != V_ARRAY || v_asize(var) == 0) {
     if (alloc) {
       v_free(var);
       v_detach(var);
@@ -679,7 +680,7 @@ int par_getpoly(pt_t **poly_pp) {
 
   // error check
   if (style == 1) {
-    if (el->v.a.size != 2) {
+    if (v_asize(el) != 2) {
       err_parsepoly(-1, 1);
       if (alloc) {
         v_free(var);
@@ -688,9 +689,9 @@ int par_getpoly(pt_t **poly_pp) {
       return 0;
     }
 
-    count = var->v.a.size;
+    count = v_asize(var);
   } else if (style == 0) {
-    if ((var->v.a.size % 2) != 0) {
+    if ((v_asize(var) % 2) != 0) {
       err_parsepoly(-1, 2);
       if (alloc) {
         v_free(var);
@@ -699,7 +700,7 @@ int par_getpoly(pt_t **poly_pp) {
       return 0;
     }
 
-    count = var->v.a.size >> 1;
+    count = v_asize(var) >> 1;
   }
   // build array
   *poly_pp = poly = malloc(sizeof(pt_t) * count);
@@ -714,7 +715,7 @@ int par_getpoly(pt_t **poly_pp) {
       // error check
       if (el->type != V_ARRAY) {
         err_parsepoly(i, 3);
-      } else if (el->v.a.size != 2) {
+      } else if (v_asize(el) != 2) {
         err_parsepoly(i, 4);
       }
       if (prog_error) {
@@ -773,7 +774,7 @@ int par_getipoly(ipt_t **poly_pp) {
   }
 
   // zero-length or non array
-  if (var->type != V_ARRAY || var->v.a.size == 0) {
+  if (var->type != V_ARRAY || v_asize(var) == 0) {
     if (alloc) {
       v_free(var);
       v_detach(var);
@@ -790,7 +791,7 @@ int par_getipoly(ipt_t **poly_pp) {
 
   // error check
   if (style == 1) {
-    if (el->v.a.size != 2) {
+    if (v_asize(el) != 2) {
       err_parsepoly(-1, 1);
       if (alloc) {
         v_free(var);
@@ -799,9 +800,9 @@ int par_getipoly(ipt_t **poly_pp) {
       return 0;
     }
 
-    count = var->v.a.size;
+    count = v_asize(var);
   } else if (style == 0) {
-    if ((var->v.a.size % 2) != 0) {
+    if ((v_asize(var) % 2) != 0) {
       err_parsepoly(-1, 2);
       if (alloc) {
         v_free(var);
@@ -810,7 +811,7 @@ int par_getipoly(ipt_t **poly_pp) {
       return 0;
     }
 
-    count = var->v.a.size >> 1;
+    count = v_asize(var) >> 1;
   }
   // build array
   *poly_pp = poly = malloc(sizeof(ipt_t) * count);
@@ -825,7 +826,7 @@ int par_getipoly(ipt_t **poly_pp) {
       // error check
       if (el->type != V_ARRAY) {
         err_parsepoly(i, 3);
-      } else if (el->v.a.size != 2) {
+      } else if (v_asize(el) != 2) {
         err_parsepoly(i, 4);
       }
       if (prog_error) {

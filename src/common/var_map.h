@@ -35,7 +35,7 @@ void map_get_value(var_p_t base, var_p_t key, var_p_t *result);
 void map_set(var_p_t dest, const var_p_t src);
 void map_set_int(var_p_t base, const char *name, var_int_t n);
 char *map_to_str(const var_p_t var_p);
-void map_write(const var_p_t var_p, int method, int handle);
+void map_write(const var_p_t var_p, int method, intptr_t handle);
 void map_parse_str(const char *js, size_t len, var_p_t dest);
 void map_from_str(var_p_t var_p);
 void map_from_codearray(var_p_t var_p);

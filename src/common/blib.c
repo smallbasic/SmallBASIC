@@ -121,6 +121,62 @@ void cmd_packed_let() {
   }
 }
 
+uint8_t get_dimensions(int32_t **lbound, int32_t **ubound) {
+  uint8_t count = 0;
+  if (code_peek() == kwTYPE_LEVEL_BEGIN) {
+    code_skipnext();
+    while (code_peek() != kwTYPE_LEVEL_END && !prog_error) {
+      if (count == MAXDIM) {
+        err_matdim();
+        break;
+      }
+      var_t arg;
+      v_init(&arg);
+      eval(&arg);
+      if (prog_error) {
+        break;
+      }
+      int dim = v_getint(&arg);
+      v_free(&arg);
+
+      if (count) {
+        // allocate for extra dimension
+        *lbound = (int32_t *)realloc(*lbound, (sizeof(int32_t) * (count + 1)));
+        *ubound = (int32_t *)realloc(*ubound, (sizeof(int32_t) * (count + 1)));
+      } else {
+        // allocate for first dimension
+        *lbound = (int32_t *)malloc(sizeof(int32_t));
+        *ubound = (int32_t *)malloc(sizeof(int32_t));
+      }
+
+      if (code_peek() == kwTO) {
+        (*lbound)[count] = dim;
+        code_skipnext();
+        eval(&arg);
+        (*ubound)[count] = v_getint(&arg);
+        v_free(&arg);
+      } else {
+        (*lbound)[count] = opt_base;
+        (*ubound)[count] = dim;
+      }
+
+      count++;
+
+      // skip separator
+      if (code_peek() == kwTYPE_SEP) {
+        code_skipnext();
+        if (code_getnext() != ',') {
+          err_missing_comma();
+          break;
+        }
+      }
+    }
+    // skip end separator
+    code_skipnext();
+  }
+  return count;
+}
+
 /**
  *  DIM var([lower TO] uppper [, ...])
  */
@@ -131,95 +187,52 @@ void cmd_dim(int preserve) {
     byte code = code_peek();
     if (code == kwTYPE_LINE || code == kwTYPE_EOC) {
       exitf = 1;
-    } else {
-      var_t array;
-      array.v.a.maxdim = 0;
-      if (code_peek() == kwTYPE_SEP) {
-        code_skipnext();
-        if (code_getnext() != ',') {
-          err_missing_comma();
-        }
-      }
-
-      var_t *var_p = code_getvarptr_parens(1);
-      byte zero_length = 1;
-
-      if (!prog_error) {
-        if (code_peek() == kwTYPE_LEVEL_BEGIN) {
-          code_skipnext();
-          while (code_peek() != kwTYPE_LEVEL_END) {
-            zero_length = 0;
-            var_t arg;
-            v_init(&arg);
-            eval(&arg);
-            if (prog_error) {
-              return;
-            }
-            if (code_peek() == kwTO) {
-              array.v.a.lbound[array.v.a.maxdim] = v_getint(&arg);
-              code_skipnext();
-              eval(&arg);
-              if (prog_error) {
-                return;
-              }
-              array.v.a.ubound[array.v.a.maxdim] = v_getint(&arg);
-            } else {
-              array.v.a.lbound[array.v.a.maxdim] = opt_base;
-              array.v.a.ubound[array.v.a.maxdim] = v_getint(&arg);
-            }
-            v_free(&arg);
-            array.v.a.maxdim++;
-
-            // skip separator
-            if (code_peek() == kwTYPE_SEP) {
-              code_skipnext();
-              if (code_getnext() != ',') {
-                err_missing_comma();
-              }
-            }
-          }
-          // skip end separator
-          code_skipnext();
-        } else {
-          zero_length = 1;
-        }
-      } else {
-        rt_raise(ERR_SYNTAX);
-      }
-
-      //
-      // run...
-      //
-      if (!prog_error) {
-        if (zero_length) {
-          v_toarray1(var_p, 0);
-        } else {
-          int i;
-          int size = 1;
-          for (i = 0; i < array.v.a.maxdim; i++) {
-            size = size * (ABS(array.v.a.ubound[i] - array.v.a.lbound[i]) + 1);
-          }
-          if (!preserve) {
-            v_toarray1(var_p, size);
-          } else {
-            if (var_p->type == V_ARRAY) {
-              v_resize_array(var_p, size);
-            } else {
-              v_toarray1(var_p, size);
-            }
-          }
-
-          // dim
-          var_p->v.a.maxdim = array.v.a.maxdim;
-          for (i = 0; i < array.v.a.maxdim; i++) {
-            var_p->v.a.lbound[i] = array.v.a.lbound[i];
-            var_p->v.a.ubound[i] = array.v.a.ubound[i];
-          }
-        }
-      } else {
-        exitf = 1;
+      break;
+    }
+    if (code_peek() == kwTYPE_SEP) {
+      code_skipnext();
+      if (code_getnext() != ',') {
+        err_missing_comma();
+        break;
       }
     }
+
+    var_t *var_p = code_getvarptr_parens(1);
+    if (prog_error) {
+      break;
+    }
+
+    int32_t *lbound = NULL;
+    int32_t *ubound = NULL;
+    uint8_t dimensions = get_dimensions(&lbound, &ubound);
+    if (!prog_error) {
+      if (!preserve || var_p->type != V_ARRAY) {
+        v_free(var_p);
+      }
+      if (!dimensions) {
+        v_toarray1(var_p, 0);
+        continue;
+      }
+      uint32_t size = 1;
+      for (int i = 0; i < dimensions; i++) {
+        size = size * (ABS(ubound[i] - lbound[i]) + 1);
+      }
+      if (!preserve || var_p->type != V_ARRAY) {
+        v_new_array(var_p, size);
+      } else if (v_maxdim(var_p) != dimensions) {
+        err_matdim();
+      } else {
+        // preserve previous array contents
+        v_resize_array(var_p, size);
+      }
+      v_maxdim(var_p) = dimensions;
+      for (int i = 0; i < dimensions; i++) {
+        v_lbound(var_p, i) = lbound[i];
+        v_ubound(var_p, i) = ubound[i];
+      }
+    }
+    free(lbound);
+    free(ubound);
   } while (!exitf && !prog_error);
 }
 
@@ -328,7 +341,7 @@ void cmd_lins() {
   if (prog_error) {
     return;
   }
-  idx -= var_p->v.a.lbound[0];
+  idx -= v_lbound(var_p, 0);
 
   par_getcomma();
   if (prog_error) {
@@ -412,7 +425,7 @@ void cmd_ldel() {
   if (prog_error) {
     return;
   }
-  idx -= var_p->v.a.lbound[0];
+  idx -= v_lbound(var_p, 0);
   if ((idx >= size) || (idx < 0)) {
     err_out_of_range();
     return;
@@ -513,7 +526,7 @@ void cmd_print(int output) {
   byte last_op = 0;
   byte exitf = 0;
   byte use_format = 0;
-  int handle = 0;
+  intptr_t handle = 0;
   var_t var;
 
   // prefix - # (file)
@@ -654,7 +667,7 @@ void cmd_input(int input) {
   byte print_crlf = 1;
   var_t prompt;
   var_t *vuser_p = NULL;
-  int handle = 0;
+  intptr_t handle = 0;
   char *inps = NULL;
 
   v_init(&prompt);
@@ -2520,7 +2533,7 @@ void cmd_sort() {
   if (!errf) {
     if (v_asize(var_p) > 1) {
       static_qsort_last_use_ip = use_ip;
-      qsort(var_p->v.a.data, v_asize(var_p), sizeof(var_t), qs_cmp);
+      qsort(v_data(var_p), v_asize(var_p), sizeof(var_t), qs_cmp);
     }
   }
   // NO RTE anymore... there is no meaning on this because of empty
@@ -2585,12 +2598,12 @@ void cmd_search() {
   }
   // search
   if (!errf) {
-    rv_p->v.i = var_p->v.a.lbound[0] - 1;
+    rv_p->v.i = v_lbound(var_p, 0) - 1;
     for (int i = 0; i < v_asize(var_p); i++) {
       var_t *elem_p = v_elem(var_p, i);
       int bcmp = sb_qcmp(elem_p, &vkey, use_ip);
       if (bcmp == 0) {
-        rv_p->v.i = i + var_p->v.a.lbound[0];
+        rv_p->v.i = i + v_lbound(var_p, 0);
         break;
       }
     }

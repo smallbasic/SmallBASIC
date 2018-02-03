@@ -294,3 +294,23 @@ camera = {
 if (camera.x != 512) then throw "invalid x"
 if (camera.height != 78) then throw "invalid height"
 if (camera.distance != 800) then throw "invalid distance"
+
+rem --- 6d arrays
+dim a6d(0 to 5, 0 to 5, 0 to 5, 0 to 5, 0 to 5, 4 to 5)
+a6d(0,1,2,3,4,5)=99
+if (a6d(0,1,2,3,4,5) <> 99) then
+  throw "a6d error 1"
+endif
+dim m(1 to 11, 2 to 12, 3 to 13, 4 to 14, 5 to 15, 6 to 16)
+for i = 1 to 6
+  if (lbound(m,i) != i) then
+    throw "lbound error"
+  endif
+  if (ubound(m,i) != 10+i) then
+    throw "ubound error"
+  endif
+next i
+m[1,2,3,4,5,6]=999
+if (999 <> m[1,2,3,4,5,6]) then
+  throw "e"
+endif
