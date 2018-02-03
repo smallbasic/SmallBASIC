@@ -31,7 +31,6 @@ int exec_close_task();
 void sys_before_comp();
 
 static char fileName[OS_FILENAME_SIZE + 1];
-static int exec_tid;
 static stknode_t err_node;
 
 #define EVT_CHECK_EVERY 50
@@ -1528,47 +1527,7 @@ int sbasic_recursive_exec(int tid) {
 }
 
 /**
- * dump-taskinfo
- */
-void sbasic_dump_taskinfo(FILE * output) {
-  int i;
-  int prev_tid = 0;
-
-  fprintf(output, "\n* task list:\n");
-  for (i = 0; i < count_tasks(); i++) {
-    prev_tid = activate_task(i);
-    fprintf(output, "  id %d, child of %d, file %s, status %d\n", ctask->tid, ctask->parent, ctask->file,
-        ctask->status);
-  }
-  activate_task(prev_tid);
-}
-
-/**
- * dump-bytecode
- */
-void sbasic_dump_bytecode(int tid, FILE *output) {
-  int i;
-  int prev_tid;
-
-  prev_tid = activate_task(tid);
-
-  for (i = 0; i < count_tasks(); i++) {
-    activate_task(i);
-    if (ctask->parent == tid) {
-      // do the same for the childs
-      sbasic_dump_bytecode(ctask->tid, output);
-    }
-  }
-
-  activate_task(tid);
-  fprintf(output, "\n* task: %d/%d (%s)\n", ctask->tid, count_tasks(), prog_file);
-  // run the code
-  dump_bytecode(output);
-  activate_task(prev_tid);
-}
-
-/**
- * TODO add comment
+ * compile the given file into bytecode
  */
 int sbasic_compile(const char *file) {
   int comp_rq = 0;              // compilation required = 0
@@ -1626,18 +1585,21 @@ int sbasic_compile(const char *file) {
 /**
  * initialize executor and run a binary
  */
-void sbasic_exec_prepare(const char *filename) {
+int sbasic_exec_prepare(const char *filename) {
+  int taskId;
+
   v_init_pool();
 
   // load source
   if (opt_nosave) {
-    exec_tid = brun_create_task(filename, ctask->bytecode, 0);
+    taskId = brun_create_task(filename, ctask->bytecode, 0);
   } else {
-    exec_tid = brun_create_task(filename, 0, 0);
+    taskId = brun_create_task(filename, 0, 0);
   }
   // reset system
   cmd_play_reset();
   graph_reset();
+  return taskId;
 }
 
 /*
@@ -1694,9 +1656,6 @@ int sbasic_exec(const char *file) {
   opt_pref_height = 0;
   opt_show_page = 0;
 
-  if (opt_decomp) {
-    opt_nosave = 1;
-  }
   // setup global values
   gsb_last_line = gsb_last_error = 0;
   strlcpy(gsb_last_file, file, sizeof(gsb_last_file));
@@ -1708,12 +1667,6 @@ int sbasic_exec(const char *file) {
     // cannot run a unit
     exec_rq = 0;
     gsb_last_error = 1;
-  } else if (opt_decomp && success) {
-    sbasic_exec_prepare(file);  // load everything
-    sbasic_dump_taskinfo(stdout);
-    sbasic_dump_bytecode(exec_tid, stdout);
-    exec_close(exec_tid);       // clean up executor's garbages
-    exec_rq = 0;
   } else if (!success) {        // there was some errors; do not continue
     exec_rq = 0;
     gsb_last_error = 1;
@@ -1721,7 +1674,7 @@ int sbasic_exec(const char *file) {
 
   if (exec_rq) {                // we will run it
     // load everything
-    sbasic_exec_prepare(file);
+    int exec_tid = sbasic_exec_prepare(file);
 
     dev_init(opt_graphics, 0);  // initialize output device for graphics
     srand(clock());             // randomize

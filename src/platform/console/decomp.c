@@ -10,11 +10,9 @@
 #include "common/sbapp.h"
 
 /**
- *
  * decompiler
- *
  */
-void dump_bytecode(FILE * output) {
+void dump_bytecode(FILE *output) {
   int i, c, b, d, h, l, j;
   long lng;
   int len, new_ip;

@@ -53,7 +53,6 @@ libsb_common_a_SOURCES =                  \
     blib_sound.c                          \
     brun.c                                \
     ceval.c                               \
-    decomp.c                              \
     device.c device.h                     \
     screen.c                              \
     system.c                              \
