@@ -3,7 +3,7 @@
           package="net.sourceforge.smallbasic"
           android:installLocation="preferExternal"
           android:versionCode="27"
-          android:versionName="0.12.12">
+          android:versionName="0.12.13">
   <uses-sdk android:minSdkVersion="15"/>
 
   <!-- support large + xlarge screens to avoid compatibility mode -->
