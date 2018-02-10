@@ -62,6 +62,7 @@
 #include "common/sys.h"
 #include "common/var.h"
 #include "common/device.h"
+#include "include/module.h"
 
 #if defined(__cplusplus)
 extern "C" {
@@ -88,9 +89,6 @@ typedef struct {
   int first_func;
 } slib_t;
 
-/*
- *   slib_t flags
- */
 /**
  * @ingroup mod
  *
@@ -179,127 +177,9 @@ int sblmgr_procexec(int lib, int index);
  * @param ret is the variable to store the result
  * @return non-zero on success
  */
-int sblmgr_funcexec(int lib, int index, var_t * ret);
-
-/* ---------- Common interface ---------- */
-
-/**
- * @ingroup modstd
- * @typedef slib_par_t
- *
- * Parameter structure
- */
-typedef struct {
-  var_t *var_p; /**< the parameter itself */
-  byte byref; /**< parameter can be used as byref */
-} slib_par_t;
-
-/**
- * @ingroup modstd
- *
- * Initialize the library. Called by module manager on loading.
- *
- * @return non-zero on success
- */
-int sblib_init(void);
-
-/**
- * @ingroup modlib
- *
- * returns the module name
- *
- * @return module name
- */
-const char *sblib_get_module_name();
-
-/**
- * @ingroup modstd
- *
- * Closes the library. Called by module manager on unload.
- */
-void sblib_close(void);
-
-/**
- * @ingroup modstd
- *
- * returns the type of the library (slib_tp)
- *
- * @return the type of the library
- */
-int sblib_type(void);
-
-/**
- * @ingroup modlib
- *
- * returns the number of procedures that are supported by the library
- *
- * @return the number of the procedures
- */
-int sblib_proc_count(void);
-
-/**
- * @ingroup modlib
- *
- * returns the name of the procedure 'index'
- *
- * @param index the procedure's index
- * @param proc_name the buffer to store the name
- * @return non-zero on success
- */
-int sblib_proc_getname(int index, char *proc_name);
-
-/**
- * @ingroup modlib
- *
- * executes a procedure
- *
- * the retval can be used to returns an error-message
- * in case of an error.
- *
- * @param index the procedure's index
- * @param param_count the number of the parameters
- * @param params the parameters table
- * @param retval a var_t object to set the return value
- * @return non-zero on success
- */
-int sblib_proc_exec(int index, int param_count,
-                    slib_par_t *params, var_t *retval);
-
-/**
- * @ingroup modlib
- *
- * returns the number of functions that are supported by the library
- *
- * @return the number of the functions
- */
-int sblib_func_count(void);
-
-/**
- * @ingroup modlib
- *
- * returns the name of the function 'index'
- *
- * @param index the function's index
- * @param func_name the buffer to store the name
- * @return non-zero on success
- */
-int sblib_func_getname(int index, char *func_name);
-
-/**
- * @ingroup modlib
- *
- * executes a function
- *
- * @param index the procedure's index
- * @param param_count the number of the parameters
- * @param params the parameters table
- * @param retval a var_t object to set the return value
- * @return non-zero on success
- */
-int sblib_func_exec(int index, int param_count,
-                    slib_par_t *params, var_t *retval);
+int sblmgr_funcexec(int lib, int index, var_t *ret);
 
 #if defined(__cplusplus)
-  }
+}
 #endif
 #endif

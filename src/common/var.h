@@ -18,27 +18,7 @@
 #define _sb_cvm_h
 
 #include "common/sys.h"
-
-#ifdef V_INT
-#undef V_INT
-#endif
-
-#ifdef V_ARRAY
-#undef V_ARRAY
-#endif
-
-/*
- * Variable - types
- */
-#define V_INT       0 /**< variable type, 32bit integer                @ingroup var */
-#define V_NUM       1 /**< variable type, 64bit float (same as V_NUM)  @ingroup var */
-#define V_STR       2 /**< variable type, string                       @ingroup var */
-#define V_ARRAY     3 /**< variable type, array of variables           @ingroup var */
-#define V_PTR       4 /**< variable type, pointer to UDF or label      @ingroup var */
-#define V_MAP       5 /**< variable type, associative array            @ingroup var */
-#define V_REF       6 /**< variable type, reference another var        @ingroup var */
-#define V_FUNC      7 /**< variable type, object method                @ingroup var */
-#define V_NIL       8 /**< variable type, null value                   @ingroup var */
+#include "common/sys.h"
 
 /*
  *   predefined system variables - index
@@ -59,79 +39,9 @@
 #define SYSVAR_MAXINT       13 /**< system variable, INTMAX    @ingroup var */
 #define SYSVAR_COUNT        14
 
-/**
- * @ingroup var
- * @def MAXDIM Maxium number of array-dimensions
- */
-#define MAXDIM 6
-
 #if defined(__cplusplus)
 extern "C" {
 #endif
-
-struct var_s;
-typedef void (*method) (struct var_s *self);
-
-/**
- * @ingroup var
- * @typedef var_s
- *
- * VARIANT DATA TYPE
- */
-typedef struct var_s {
-  // value
-  union {
-    var_num_t n; /**< numeric value */
-    var_int_t i; /**< integer value */
-
-    // pointer to sub/func variable
-    struct {
-      bcip_t p; /** address pointer */
-      bcip_t v; /** return-var ID */
-    } ap;
-
-    // associative array/map
-    struct {
-      void *map; /** pointer the map structure */
-      uint32_t count;
-      uint32_t size;
-    } m;
-
-    // reference variable
-    struct var_s *ref;
-
-    // object method
-    struct {
-      method cb;
-    } fn;
-
-    // generic ptr (string)
-    struct {
-      char *ptr; /**< data ptr (possibly, string pointer) */
-      uint32_t length; /**< the string length */
-      byte owner;
-    } p;
-
-    // array
-    struct {
-      struct var_s *data; /**< array data pointer */
-      uint32_t size; /**< the number of elements */
-      uint32_t capacity; /**< the number of slots */
-      int32_t ubound[MAXDIM]; /**< upper bound */
-      int8_t  lbound[MAXDIM]; /**< lower bound */
-      uint8_t maxdim; /**< number of dimensions */
-    } a;
-
-    // next item in the free-list
-    struct var_s *pool_next;
-  } v;
-
-  byte type; /**< variable's type */
-  byte const_flag; /**< non-zero if constants */
-  byte pooled; /** whether held in pooled memory */
-} var_t;
-
-typedef var_t *var_p_t;
 
 /*
  * label

@@ -5,8 +5,7 @@
 # Download the GNU Public License (GPL) from www.gnu.org
 # 
 
-INCLUDES = -I../../ -I/usr/include
-
+AM_CPPFLAGS = -I../../include
 lib_LTLIBRARIES = libmysql.la
-libmysql_la_SOURCES = mysql.c ../mod_utils.c
+libmysql_la_SOURCES = mysql.c mod_utils.c
 libmysql_la_LDFLAGS = -module -rpath '$(libdir)' -lmysqlclient

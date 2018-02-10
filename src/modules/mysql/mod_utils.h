@@ -7,7 +7,8 @@
 //
 // Copyright(C) 2000 Nicholas Christopoulos
 
-#include "common/extlib.h"
+#include "var.h"
+#include "module.h"
 
 #if defined(__cplusplus)
 extern "C" {
