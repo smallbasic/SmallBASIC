@@ -1,6 +1,6 @@
 // This file is part of SmallBASIC
 //
-// SmallBASIC module (shared-lib) manager
+// SmallBASIC plugin manager
 //
 // This program is distributed under the terms of the GPL v2.0 or later
 // Download the GNU Public License (GPL) from www.gnu.org
@@ -70,27 +70,6 @@ extern "C" {
 
 /**
  * @ingroup mod
- * @typedef slib_t
- * shared-lib information structure
- */
-typedef struct {
-  int id; /**< library ID */
-  char name[256]; /**< name of library (basename) */
-  char fullname[1024]; /**< full pathname */
-  void *handle; /**< handle to the lib */
-  uint32_t flags; /**< flags */
-
-  /*
-   * ------------------ Language ------------------
-   */
-  int proc_count; /**< if lang.ext.; number of procedures */
-  int func_count; /**< if lang.ext.; number of functions */
-  int first_proc;
-  int first_func;
-} slib_t;
-
-/**
- * @ingroup mod
  *
  * Initialize module-manager
  *
@@ -107,6 +86,13 @@ void sblmgr_init(int mcount, const char *list);
  * close module manager
  */
 void sblmgr_close(void);
+
+/**
+ * @ingroup mod
+ *
+ * invoke plugin event handling
+ */
+int sblmgr_events(int wait_flag);
 
 /**
  * @ingroup mod

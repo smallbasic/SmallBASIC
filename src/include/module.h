@@ -50,6 +50,13 @@ const char *sblib_get_module_name();
 void sblib_close(void);
 
 /**
+ * @ingroup modstd
+ *
+ * plugin based event handling
+ */
+int sblib_events(int wait_flag);
+
+/**
  * @ingroup modlib
  *
  * returns the number of procedures that are supported by the library
