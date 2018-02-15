@@ -30,14 +30,12 @@ void err_detail_msg(const char *descr) {
 }
 
 void va_err_detail_msg(const char *format, va_list args, unsigned size) {
-  if (size) {
-    char *buff = malloc(size + 1);
-    buff[0] = '\0';
-    vsnprintf(buff, size + 1, format, args);
-    buff[size] = '\0';
-    err_detail_msg(buff);
-    free(buff);
-  }
+  char *buff = malloc(size + 1);
+  buff[0] = '\0';
+  vsnprintf(buff, size + 1, format, args);
+  buff[size] = '\0';
+  err_detail_msg(buff);
+  free(buff);
 }
 
 void err_stack_msg() {
@@ -82,12 +80,13 @@ void sc_raise(const char *format, ...) {
     unsigned size = vsnprintf(NULL, 0, format, args);
     va_end(args);
 
-    va_start(args, format);
-    va_err_detail_msg(format, args, size);
-    va_end(args);
-
     if (comp_bc_sec) {
       err_title_msg(WORD_COMP, comp_bc_sec, comp_line);
+    }
+    if (size) {
+      va_start(args, format);
+      va_err_detail_msg(format, args, size);
+      va_end(args);
     }
   }
 }
@@ -104,11 +103,12 @@ void rt_raise(const char *format, ...) {
     unsigned size = vsnprintf(NULL, 0, format, args);
     va_end(args);
 
-    va_start(args, format);
-    va_err_detail_msg(format, args, size);
-    va_end(args);
-
     err_title_msg(WORD_RTE, prog_file, prog_line);
+    if (size) {
+      va_start(args, format);
+      va_err_detail_msg(format, args, size);
+      va_end(args);
+    }
     err_stack_msg();
   }
 }
