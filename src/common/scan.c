@@ -24,7 +24,6 @@ void comp_text_line(char *text, int addLineNo);
 bcip_t comp_search_bc(bcip_t ip, code_t code);
 bcip_t comp_next_bc_cmd(bc_t *bc, bcip_t ip);
 extern void expr_parser(bc_t *bc);
-extern void sc_raise2(const char *fmt, int line, const char *buff);
 
 #define STRLEN(s) ((sizeof(s) / sizeof(s[0])) - 1)
 #define LEN_OPTION     STRLEN(LCN_OPTION)
@@ -248,26 +247,6 @@ int comp_is_external_func(const char *name) {
  *  next            ' level 1, id 1
  *  ? ooo           ' level 0, id 0
  */
-
-/*
- * error messages
- */
-void sc_raise(const char *fmt, ...) {
-  if (!prog_error) {
-    char *buff;
-    va_list ap;
-
-    va_start(ap, fmt);
-    comp_error = 1;
-
-    buff = malloc(SB_SOURCELINE_SIZE + 1);
-    vsnprintf(buff, SB_SOURCELINE_SIZE, fmt, ap);
-    va_end(ap);
-
-    sc_raise2(comp_bc_sec, comp_line, buff);  // sberr.h
-    free(buff);
-  }
-}
 
 /*
  * prepare name (keywords, variables, labels, proc/func names)

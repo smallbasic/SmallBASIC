@@ -1716,8 +1716,11 @@ int sbasic_main(const char *file) {
   } else {
     sblmgr_init(0, NULL);
   }
-  // go...
-  success = sbasic_exec(file);
+  if (prog_error) {
+    success = 0;
+  } else {
+    success = sbasic_exec(file);
+  }
 
   unit_mgr_close();             // shutdown SB's unit manager
   sblmgr_close();               // shutdown C-coded modules

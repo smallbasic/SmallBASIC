@@ -66,7 +66,7 @@ static int extfunccount;
 int slib_llopen(slib_t *lib) {
   lib->handle = dlopen(lib->fullname, RTLD_NOW);
   if (lib->handle == NULL) {
-    rt_raise("lib: error on loading %s\n%s", lib->name, dlerror());
+    sc_raise("LIB: error on loading %s\n%s", lib->name, dlerror());
   }
   return (lib->handle != NULL);
 }
@@ -91,7 +91,7 @@ int slib_llopen(slib_t *lib) {
   cygwin_conv_path(CCP_POSIX_TO_WIN_A, lib->fullname, win32Path, sizeof(win32Path));
   lib->handle = LoadLibrary(win32Path);
   if (lib->handle == NULL) {
-    rt_raise("lib: error on loading %s\n", win32Path);
+    sc_raise("LIB: error on loading %s\n", win32Path);
   }
   return (lib->handle != NULL);
 }
@@ -100,7 +100,7 @@ int slib_llopen(slib_t *lib) {
 int slib_llopen(slib_t *lib) {
   lib->handle = LoadLibrary(lib->fullname);
   if (lib->handle == NULL) {
-    rt_raise("lib: error on loading %s\n", lib->name);
+    sc_raise("LIB: error on loading %s\n", lib->name);
   }
   return (lib->handle != NULL);
 }
@@ -131,15 +131,14 @@ int slib_add_external_proc(const char *proc_name, int lib_id) {
   // scan for conflicts
   for (int i = 0; i < extproccount; i++) {
     if (strcmp(extproctable[i].name, buf) == 0) {
-      rt_raise("lib: duplicate proc %s", buf);
+      sc_raise("LIB: duplicate proc %s", buf);
       return -1;
     }
   }
   if (extproctable == NULL) {
     extprocsize = TABLE_GROW_SIZE;
     extproctable = (ext_proc_node_t *)malloc(sizeof(ext_proc_node_t) * extprocsize);
-  }
-  else if (extprocsize <= (extproccount + 1)) {
+  } else if (extprocsize <= (extproccount + 1)) {
     extprocsize += TABLE_GROW_SIZE;
     extproctable = (ext_proc_node_t *)
                    realloc(extproctable, sizeof(ext_proc_node_t) * extprocsize);
@@ -151,7 +150,7 @@ int slib_add_external_proc(const char *proc_name, int lib_id) {
   strupper(extproctable[extproccount].name);
 
   if (opt_verbose) {
-    log_printf("lib: %d, Idx: %d, PROC '%s'\n", lib_id, extproccount,
+    log_printf("LIB: %d, Idx: %d, PROC '%s'\n", lib_id, extproccount,
                extproctable[extproccount].name);
   }
   extproccount++;
@@ -169,15 +168,14 @@ int slib_add_external_func(const char *func_name, int lib_id) {
   // scan for conflicts
   for (int i = 0; i < extfunccount; i++) {
     if (strcmp(extfunctable[i].name, buf) == 0) {
-      rt_raise("lib: duplicate func %s", buf);
+      sc_raise("LIB: duplicate func %s", buf);
       return -1;
     }
   }
   if (extfunctable == NULL) {
     extfuncsize = TABLE_GROW_SIZE;
     extfunctable = (ext_func_node_t *)malloc(sizeof(ext_func_node_t) * extfuncsize);
-  }
-  else if (extfuncsize <= (extfunccount + 1)) {
+  } else if (extfuncsize <= (extfunccount + 1)) {
     extfuncsize += TABLE_GROW_SIZE;
     extfunctable = (ext_func_node_t *)
                    realloc(extfunctable, sizeof(ext_func_node_t) * extfuncsize);
@@ -189,7 +187,7 @@ int slib_add_external_func(const char *func_name, int lib_id) {
   strupper(extfunctable[extfunccount].name);
 
   if (opt_verbose) {
-    log_printf("lib: %d, Idx: %d, FUNC '%s'\n", lib_id, extfunccount,
+    log_printf("LIB: %d, Idx: %d, FUNC '%s'\n", lib_id, extfunccount,
                extfunctable[extfunccount].name);
   }
   extfunccount++;
@@ -323,7 +321,7 @@ void slib_import(const char *name, const char *fullname) {
   lib->id = slib_count;
 
   if (!opt_quiet) {
-    log_printf("lib: importing %s", fullname);
+    log_printf("LIB: importing %s", fullname);
   }
   if (slib_llopen(lib)) {
     mok = 1;
@@ -333,7 +331,7 @@ void slib_import(const char *name, const char *fullname) {
     if (minit) {
       if (!minit()) {
         mok = 0;
-        rt_raise("lib: %s->sblib_init(), failed", lib->name);
+        sc_raise("LIB: %s->sblib_init(), failed", lib->name);
       }
     }
 
@@ -345,17 +343,15 @@ void slib_import(const char *name, const char *fullname) {
 
     slib_import_routines(lib);
     mok = 1;
-  }
-  else {
-    rt_raise("lib: can't open %s", fullname);
+  } else {
+    sc_raise("LIB: can't open %s", fullname);
   }
   if (mok) {
     slib_count++;
     if (!opt_quiet) {
       log_printf("... done\n");
     }
-  }
-  else {
+  } else {
     if (!opt_quiet) {
       log_printf("... error\n");
     }
@@ -374,7 +370,7 @@ void sblmgr_scanlibs(const char *path) {
 
   if ((dp = opendir(path)) == NULL) {
     if (!opt_quiet) {
-      log_printf("lib: module path %s not found.\n", path);
+      log_printf("LIB: module path %s not found.\n", path);
     }
     return;
   }
@@ -410,7 +406,7 @@ void sblmgr_init(int mcount, const char *mlist) {
   slib_count = 0;
   if (mcount && mlist && mlist[0] != '\0') {
     if (!opt_quiet) {
-      log_printf("lib: scanning for modules...\n");
+      log_printf("LIB: scanning for modules...\n");
     }
     // the -m argument specifies the location of all modules
     sblmgr_scanlibs(mlist);
@@ -523,8 +519,7 @@ int slib_build_ptable(slib_par_t *ptable) {
           ptable[pcount].var_p = arg;
           ptable[pcount].byref = 0;
           pcount++;
-        }
-        else {
+        } else {
           v_free(arg);
           v_detach(arg);
           return pcount;
@@ -581,9 +576,9 @@ int sblmgr_procexec(int lib_id, int index) {
   // error
   if (!success) {
     if (ret.type == V_STR) {
-      err_throw("lib:%s: %s\n", lib->name, ret.v.p.ptr);
+      err_throw("LIB:%s: %s\n", lib->name, ret.v.p.ptr);
     } else {
-      err_throw("lib:%s: Unspecified error\n", lib->name);
+      err_throw("LIB:%s: Unspecified error\n", lib->name);
     }
   }
   // clean-up
@@ -629,9 +624,9 @@ int sblmgr_funcexec(int lib_id, int index, var_t *ret) {
   // error
   if (!success) {
     if (ret->type == V_STR) {
-      err_throw("lib:%s: %s\n", lib->name, ret->v.p.ptr);
+      err_throw("LIB:%s: %s\n", lib->name, ret->v.p.ptr);
     } else {
-      err_throw("lib:%s: Unspecified error\n", lib->name);
+      err_throw("LIB:%s: Unspecified error\n", lib->name);
     }
   }
   // clean-up

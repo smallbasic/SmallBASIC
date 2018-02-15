@@ -29,6 +29,17 @@ void err_detail_msg(const char *descr) {
   log_printf("\033[80m\033[0m");
 }
 
+void va_err_detail_msg(const char *format, va_list args, unsigned size) {
+  if (size) {
+    char *buff = malloc(size + 1);
+    buff[0] = '\0';
+    vsnprintf(buff, size + 1, format, args);
+    buff[size] = '\0';
+    err_detail_msg(buff);
+    free(buff);
+  }
+}
+
 void err_stack_msg() {
   int i_stack, i_kw;
 
@@ -59,31 +70,46 @@ void err_stack_msg() {
 }
 
 /**
- * raise a compiler error
+ * raise a pre-execution/compiler error
  */
-void sc_raise2(const char *sec, int scline, const char *buff) {
-  prog_error = errCompile;
-  err_title_msg(WORD_COMP, sec, scline);
-  err_detail_msg(buff);
+void sc_raise(const char *format, ...) {
+  if (!prog_error) {
+    comp_error = 1;
+    prog_error = errCompile;
+
+    va_list args;
+    va_start(args, format);
+    unsigned size = vsnprintf(NULL, 0, format, args);
+    va_end(args);
+
+    va_start(args, format);
+    va_err_detail_msg(format, args, size);
+    va_end(args);
+
+    if (comp_bc_sec) {
+      err_title_msg(WORD_COMP, comp_bc_sec, comp_line);
+    }
+  }
 }
 
 /**
  * run-time error
  */
-void rt_raise(const char *fmt, ...) {
-  char *buff;
-  va_list ap;
-
+void rt_raise(const char *format, ...) {
   if (!gsb_last_error && !prog_error && prog_source) {
     prog_error = errRuntime;
-    va_start(ap, fmt);
-    buff = malloc(SB_TEXTLINE_SIZE + 1);
-    vsprintf(buff, fmt, ap);
-    va_end(ap);
+
+    va_list args;
+    va_start(args, format);
+    unsigned size = vsnprintf(NULL, 0, format, args);
+    va_end(args);
+
+    va_start(args, format);
+    va_err_detail_msg(format, args, size);
+    va_end(args);
+
     err_title_msg(WORD_RTE, prog_file, prog_line);
-    err_detail_msg(buff);
     err_stack_msg();
-    free(buff);
   }
 }
 
