@@ -37,6 +37,7 @@
 #define TABLE_GROW_SIZE 16
 #define NAME_SIZE 256
 #define PATH_SIZE 1024
+#define DEFAULT_PATH "/usr/lib/sbasic/modules:/usr/local/lib/sbasic/modules"
 
 typedef int (*sblib_events_fn)(int);
 
@@ -195,28 +196,6 @@ int slib_add_external_func(const char *func_name, int lib_id) {
 }
 
 /**
- * plugin event handling
- */
-int sblmgr_events(int wait_flag) {
-  int result = 0;
-  for (int i = 0; i < slib_count; i++) {
-    slib_t *lib = &slib_table[i];
-    if (lib->handle && lib->dev_events) {
-      int events = lib->dev_events(wait_flag);
-      if (events == -2) {
-        // BREAK
-        result = events;
-        break;
-      } else if (events != 0) {
-        // events exist
-        result = events;
-      }
-    }
-  }
-  return result;
-}
-
-/**
  * returns the ID of the keyword
  */
 int slib_get_kid(const char *name) {
@@ -316,8 +295,8 @@ void slib_import(const char *name, const char *fullname) {
 
   slib_t *lib = &slib_table[slib_count];
   memset(lib, 0, sizeof(slib_t));
-  strncpy(lib->name, name + name_index, 255);
-  strncpy(lib->fullname, fullname, 1023);
+  strlcpy(lib->name, name + name_index, NAME_SIZE);
+  strlcpy(lib->fullname, fullname, PATH_SIZE);
   lib->id = slib_count;
 
   if (!opt_quiet) {
@@ -338,7 +317,7 @@ void slib_import(const char *name, const char *fullname) {
     // override default name
     get_module_name = slib_getoptptr(lib, "sblib_get_module_name");
     if (get_module_name) {
-      strncpy(lib->name, get_module_name(), 255);
+      strlcpy(lib->name, get_module_name(), NAME_SIZE);
     }
 
     slib_import_routines(lib);
@@ -358,58 +337,100 @@ void slib_import(const char *name, const char *fullname) {
   }
 }
 
+void slib_import_path(const char *path, const char *name) {
+  char *p;
+  if ((p = strstr(name, LIB_EXT)) != NULL) {
+    if (strcmp(p, LIB_EXT) == 0) {
+      // ends with LIB_EXT
+      char full[PATH_SIZE];
+      char libname[NAME_SIZE];
+
+      // copy name without extension
+      strlcpy(libname, name, sizeof(libname));
+      p = strchr(libname, '.');
+      *p = '\0';
+
+      // copy full path to name
+      strlcpy(full, path, sizeof(full));
+      if (path[strlen(path) - 1] != '/') {
+        // add trailing separator
+        strlcat(full, "/", sizeof(full));
+      }
+      strlcat(full, name, sizeof(full));
+      slib_import(libname, full);
+    }
+  }
+}
+
 /**
  * scan libraries
  */
 void sblmgr_scanlibs(const char *path) {
   DIR *dp;
   struct dirent *e;
-  char *name, *p;
-  char full[PATH_SIZE];
-  char libname[NAME_SIZE];
 
   if ((dp = opendir(path)) == NULL) {
     if (!opt_quiet) {
       log_printf("LIB: module path %s not found.\n", path);
     }
-    return;
-  }
-
-  while ((e = readdir(dp)) != NULL) {
-    name = e->d_name;
-    if ((strcmp(name, ".") == 0) || (strcmp(name, "..") == 0)) {
-      continue;
-    }
-    if ((p = strstr(name, LIB_EXT)) != NULL) {
-      if (strcmp(p, LIB_EXT) == 0) {
-        // store it
-        strlcpy(libname, name, sizeof(libname));
-        p = strchr(libname, '.');
-        *p = '\0';
-        strlcpy(full, path, sizeof(full));
-        if (path[strlen(path) - 1] != '/') {
-          // add trailing separator
-          strlcat(full, "/", sizeof(full));
-        }
-        strlcat(full, name, sizeof(full));
-        slib_import(libname, full);
+  } else {
+    while ((e = readdir(dp)) != NULL) {
+      char *name = e->d_name;
+      if (strcmp(name, ".") != 0 && strcmp(name, "..") != 0) {
+        slib_import_path(path, name);
       }
     }
+    closedir(dp);
   }
-  closedir(dp);
+}
+
+void sblmgr_init_path() {
+  char *path = opt_modlist;
+  while (path && path[0] != '\0') {
+    char *sep = strchr(path, ':');
+    if (sep) {
+      // null terminate the current path
+      *sep = '\0';
+      struct stat stbuf;
+      if (stat(path, &stbuf) != -1) {
+        if (S_ISREG(stbuf.st_mode)) {
+          char *name = strrchr(path, '/');
+          slib_import_path(path, (name ? name + 1 : path));
+        } else {
+          sblmgr_scanlibs(path);
+        }
+      }
+      path = sep + 1;
+    } else {
+      sblmgr_scanlibs(path);
+      path = NULL;
+    }
+  }
 }
 
 /**
  * slib-manager: initialize manager
  */
-void sblmgr_init(int mcount, const char *mlist) {
+void sblmgr_init() {
   slib_count = 0;
-  if (mcount && mlist && mlist[0] != '\0') {
+
+  if (!prog_error && opt_loadmod) {
     if (!opt_quiet) {
       log_printf("LIB: scanning for modules...\n");
     }
-    // the -m argument specifies the location of all modules
-    sblmgr_scanlibs(mlist);
+
+    if (opt_modlist[0] == '\0') {
+      const char *modpath = getenv("SBASICPATH");
+      if (modpath != NULL) {
+        strlcpy(opt_modlist, modpath, OPT_MOD_SZ);
+      }
+    }
+
+    if (opt_modlist[0] == '\0') {
+      strcpy(opt_modlist, DEFAULT_PATH);
+    }
+
+    sblmgr_init_path();
   }
 }
 
@@ -636,6 +657,28 @@ int sblmgr_funcexec(int lib_id, int index, var_t *ret) {
   }
 
   return success;
+}
+
+/**
+ * plugin event handling
+ */
+int sblmgr_events(int wait_flag) {
+  int result = 0;
+  for (int i = 0; i < slib_count; i++) {
+    slib_t *lib = &slib_table[i];
+    if (lib->handle && lib->dev_events) {
+      int events = lib->dev_events(wait_flag);
+      if (events == -2) {
+        // BREAK
+        result = events;
+        break;
+      } else if (events != 0) {
+        // events exist
+        result = events;
+      }
+    }
+  }
+  return result;
 }
 
 #else

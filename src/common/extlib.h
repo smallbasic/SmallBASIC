@@ -74,11 +74,8 @@ extern "C" {
  * Initialize module-manager
  *
  * default path /usr/lib/sbasic/modules/:/usr/local/lib/sbasic/modules/
- *
- * @param mcount non-zero for check for modules
- * @param list the list of the modules or "" for auto-search/load-all
  */
-void sblmgr_init(int mcount, const char *list);
+void sblmgr_init();
 
 /**
  * @ingroup mod

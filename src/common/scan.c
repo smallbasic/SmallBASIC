@@ -4191,17 +4191,16 @@ void comp_preproc_import(const char *slist) {
     // import name
     strlower(buf);
     int uid = slib_get_module_id(buf);
-    if (uid != -1) {  // C module
+    if (uid != -1) {
       // store C module lib-record
       slib_setup_comp(uid);
       add_libtable_rec(buf, uid, 0);
-    } else {                      // SB unit
+    } else {
       uid = open_unit(buf);
       if (uid < 0) {
         sc_raise(MSG_UNIT_NOT_FOUND, buf);
         return;
       }
-
       if (import_unit(uid) < 0) {
         sc_raise(MSG_IMPORT_FAILED, buf);
         close_unit(uid);
@@ -4354,7 +4353,8 @@ char *comp_preproc_options(char *p) {
       *pe = lc;
     } else if (strncmp(LCN_LOAD_MODULES, p, LEN_LDMODULES) == 0 &&
                opt_modlist[0] != '\0' && !opt_loadmod) {
-      sblmgr_init(1, opt_modlist);
+      opt_loadmod = 1;
+      sblmgr_init();
     } else {
       SKIP_SPACES(p);
       char *pe = p;

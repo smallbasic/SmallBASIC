@@ -1704,18 +1704,15 @@ int sbasic_exec(const char *file) {
 int sbasic_main(const char *file) {
   int success;
 
-  // initialize task manager
+  // initialize the task manager
   init_tasks();
 
-  // initialize SB's units manager
+  // initialize the unit manager
   unit_mgr_init();
 
-  // load external C modules
-  if (opt_loadmod) {
-    sblmgr_init(1, opt_modlist);
-  } else {
-    sblmgr_init(0, NULL);
-  }
+  // initialize the plugin manager
+  sblmgr_init();
+
   if (prog_error) {
     success = 0;
   } else {

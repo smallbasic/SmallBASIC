@@ -10,7 +10,7 @@ AM_CPPFLAGS = -I$(top_builddir)/src -I. @PACKAGE_CFLAGS@
 bin_PROGRAMS = sbasic
 
 sbasic_SOURCES =    \
-  ../console/main.c	\
+  ../console/main.cpp	\
   ../console/decomp.c	\
   ../console/dev_null.c
 
