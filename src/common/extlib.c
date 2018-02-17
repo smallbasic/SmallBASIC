@@ -361,14 +361,9 @@ void slib_import_path(const char *path, const char *name) {
  * scan libraries
  */
 void slib_scan_libs(const char *path) {
-  DIR *dp;
-  struct dirent *e;
-
-  if ((dp = opendir(path)) == NULL) {
-    if (!opt_quiet) {
-      log_printf("LIB: module path %s not found.\n", path);
-    }
-  } else {
+  DIR *dp = opendir(path);
+  if (dp != NULL) {
+    struct dirent *e;
     while ((e = readdir(dp)) != NULL) {
       char *name = e->d_name;
       if (strcmp(name, ".") != 0 && strcmp(name, "..") != 0) {
@@ -388,6 +383,8 @@ void slib_scan_path(const char *path) {
     } else {
       slib_scan_libs(path);
     }
+  } else if (!opt_quiet) {
+    log_printf("LIB: module path %s not found.\n", path);
   }
 }
 

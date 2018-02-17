@@ -119,6 +119,12 @@ int open_unit(const char *file) {
 
   // create corresponding sbu path version
   strcpy(unitname, bas_file);
+
+  if (strcmp(comp_file_name, bas_file) == 0) {
+    // unit and program are the same
+    return -1;
+  }
+
   unitname[strlen(bas_file) - 4] = 0;
   strcat(unitname, ".sbu");
 

@@ -4913,10 +4913,12 @@ int comp_compile(const char *sb_file_name) {
   }
 
   int is_unit = comp_unit_flag;
+  int error = comp_error;
   comp_close();
   close_task(tid);
   activate_task(prev_tid);
   ctask->bc_type = is_unit ? 2 : 1;
+  ctask->error = error;
 
   if (opt_nosave && !is_unit) {
     ctask->bytecode = bc.code;

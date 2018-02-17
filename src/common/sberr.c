@@ -71,9 +71,8 @@ void err_stack_msg() {
  * raise a pre-execution/compiler error
  */
 void sc_raise(const char *format, ...) {
-  if (!prog_error) {
+  if (!comp_error) {
     comp_error = 1;
-    prog_error = errCompile;
 
     va_list args;
     va_start(args, format);
