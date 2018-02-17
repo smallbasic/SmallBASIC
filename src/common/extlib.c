@@ -36,7 +36,7 @@
 #include <dirent.h>
 
 #define MAX_SLIBS 256
-#define MAX_PARAM 64
+#define MAX_PARAM 16
 #define TABLE_GROW_SIZE 16
 #define NAME_SIZE 256
 #define PATH_SIZE 1024
@@ -542,7 +542,10 @@ int slib_build_ptable(slib_par_t *ptable) {
           return pcount;
         }
       }
-    } while (!ready);
+      if (pcount == MAX_PARAM) {
+        err_parm_limit(MAX_PARAM);
+      }
+    } while (!ready && !prog_error);
     // kwTYPE_LEVEL_END
     code_skipnext();
   }
@@ -577,8 +580,15 @@ int slib_procexec(int lib_id, int index) {
   }
 
   // build parameter table
-  slib_par_t *ptable = (slib_par_t *)malloc(sizeof(slib_par_t) * MAX_PARAM);
-  int pcount = slib_build_ptable(ptable);
+  slib_par_t *ptable;  
+  int pcount;
+  if (code_peek() == kwTYPE_LEVEL_BEGIN) {
+    ptable = (slib_par_t *)malloc(sizeof(slib_par_t) * MAX_PARAM);
+    pcount = slib_build_ptable(ptable);
+  } else {
+    ptable = NULL;
+    pcount = 0;
+  }
   if (prog_error) {
     slib_free_ptable(ptable, pcount);
     free(ptable);
@@ -612,7 +622,6 @@ int slib_procexec(int lib_id, int index) {
  * execute a function
  */
 int slib_funcexec(int lib_id, int index, var_t *ret) {
-  slib_par_t *ptable = NULL;
   int (*pexec) (int, int, slib_par_t *, var_t *);
 
   if (lib_id < 0 || lib_id >= slib_count) {
@@ -626,8 +635,15 @@ int slib_funcexec(int lib_id, int index, var_t *ret) {
   }
 
   // build parameter table
-  ptable = malloc(sizeof(slib_par_t) * MAX_PARAM);
-  int pcount = slib_build_ptable(ptable);
+  slib_par_t *ptable;  
+  int pcount;
+  if (code_peek() == kwTYPE_LEVEL_BEGIN) {
+    ptable = malloc(sizeof(slib_par_t) * MAX_PARAM);
+    pcount = slib_build_ptable(ptable);
+  } else {
+    ptable = NULL;
+    pcount = 0;
+  }
   if (prog_error) {
     slib_free_ptable(ptable, pcount);
     free(ptable);

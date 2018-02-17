@@ -37,6 +37,7 @@ void err_noargs();
 void err_syntax(int keyword, const char *fmt);
 void err_syntax_unknown();
 void err_parm_num(int found, int expected);
+void err_parm_limit(int count);
 void err_typemismatch(void);
 void err_stackmess(void);
 void err_parm_byref(int n);

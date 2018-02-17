@@ -191,6 +191,10 @@ void err_parm_num(int found, int expected) {
   rt_raise(ERR_PARAM_NUM, found, expected);
 }
 
+void err_parm_limit(int count) {
+  rt_raise(MSG_PARNUM_LIMIT, count);
+}
+
 void err_stackoverflow(void) {
   rt_raise(ERR_STACK_OVERFLOW);
 }
