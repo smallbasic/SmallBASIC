@@ -155,7 +155,6 @@ void add_libtable_rec(const char *lib, int uid, int type) {
  * add an external procedure to the list
  */
 int comp_add_external_proc(const char *proc_name, int lib_id) {
-  // TODO: scan for conflicts
   if (comp_extproctable == NULL) {
     comp_extprocsize = 16;
     comp_extproctable = (ext_proc_node_t *)malloc(sizeof(ext_proc_node_t) * comp_extprocsize);
@@ -179,7 +178,6 @@ int comp_add_external_proc(const char *proc_name, int lib_id) {
  * Add an external function to the list
  */
 int comp_add_external_func(const char *func_name, int lib_id) {
-  // TODO: scan for conflicts
   if (comp_extfunctable == NULL) {
     comp_extfuncsize = 16;
     comp_extfunctable = (ext_func_node_t *)malloc(sizeof(ext_func_node_t) * comp_extfuncsize);
@@ -4174,16 +4172,17 @@ const char *get_unit_name(const char *p, char *buf_p) {
   return p;
 }
 
-const char *get_alias(const char *p, char *buf_p) {
+const char *get_alias(const char *p, char *alias, const char *def) {
   SKIP_SPACES(p);
-
-  *buf_p = '\0';
+  *alias = '\0';
   if (CHKOPT(LCN_AS_WRS)) {
     p += LEN_AS_WRS;
     while (is_alnum(*p) || *p == '_') {
-      *buf_p++ = *p++;
+      *alias++ = *p++;
     }
-    *buf_p = '\0';
+    *alias = '\0';
+  } else {
+    strcpy(alias, def);
   }
   return p;
 }
@@ -4202,7 +4201,7 @@ void comp_preproc_import(const char *slist) {
   while (is_alpha(*p)) {
     // get name - "Import other.Foo => "other/Foo"
     p = get_unit_name(p, buf);
-    p = get_alias(p, alias);
+    p = get_alias(p, alias, buf);
 
     // import name
     strlower(buf);
@@ -4210,7 +4209,7 @@ void comp_preproc_import(const char *slist) {
     if (uid != -1) {
       // store C module lib-record
       slib_setup_comp(uid);
-      add_libtable_rec(buf, uid, 0);
+      add_libtable_rec(alias, uid, 0);
     } else {
       uid = open_unit(buf);
       if (uid < 0) {

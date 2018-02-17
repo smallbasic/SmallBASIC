@@ -127,14 +127,10 @@ int slib_llclose(slib_t *lib) {
  * add an external procedure to the list
  */
 int slib_add_external_proc(const char *proc_name, int lib_id) {
-  char buf[NAME_SIZE];
-  sprintf(buf, "%s.%s", slib_table[lib_id].name, proc_name);
-  strupper(buf);
-
   // scan for conflicts
   for (int i = 0; i < extproccount; i++) {
-    if (strcmp(extproctable[i].name, buf) == 0) {
-      sc_raise("LIB: duplicate proc %s", buf);
+    if (strcmp(extproctable[i].name, proc_name) == 0) {
+      sc_raise("LIB: duplicate proc %s", proc_name);
       return -1;
     }
   }
@@ -149,7 +145,7 @@ int slib_add_external_proc(const char *proc_name, int lib_id) {
 
   extproctable[extproccount].lib_id = lib_id;
   extproctable[extproccount].symbol_index = 0;
-  strlcpy(extproctable[extproccount].name, buf, sizeof(extproctable[extproccount].name));
+  strlcpy(extproctable[extproccount].name, proc_name, sizeof(extproctable[extproccount].name));
   strupper(extproctable[extproccount].name);
 
   if (opt_verbose) {
@@ -164,14 +160,10 @@ int slib_add_external_proc(const char *proc_name, int lib_id) {
  * Add an external function to the list
  */
 int slib_add_external_func(const char *func_name, int lib_id) {
-  char buf[NAME_SIZE];
-  sprintf(buf, "%s.%s", slib_table[lib_id].name, func_name);
-  strupper(buf);
-
   // scan for conflicts
   for (int i = 0; i < extfunccount; i++) {
-    if (strcmp(extfunctable[i].name, buf) == 0) {
-      sc_raise("LIB: duplicate func %s", buf);
+    if (strcmp(extfunctable[i].name, func_name) == 0) {
+      sc_raise("LIB: duplicate func %s", func_name);
       return -1;
     }
   }
@@ -186,7 +178,7 @@ int slib_add_external_func(const char *func_name, int lib_id) {
 
   extfunctable[extfunccount].lib_id = lib_id;
   extfunctable[extfunccount].symbol_index = 0;
-  strlcpy(extfunctable[extfunccount].name, buf, sizeof(extfunctable[extfunccount].name));
+  strlcpy(extfunctable[extfunccount].name, func_name, sizeof(extfunctable[extfunccount].name));
   strupper(extfunctable[extfunccount].name);
 
   if (opt_verbose) {
@@ -229,22 +221,6 @@ int slib_get_module_id(const char *name, const char *alias) {
   return -1;
 }
 
-/**
- * updates compiler with the module's keywords
- */
-void slib_setup_comp(int mid) {
-  for (int i = 0; i < extproccount; i++) {
-    if (extproctable[i].lib_id == mid) {
-      comp_add_external_proc(extproctable[i].name, mid);
-    }
-  }
-  for (int i = 0; i < extfunccount; i++) {
-    if (extfunctable[i].lib_id == mid) {
-      comp_add_external_func(extfunctable[i].name, mid);
-    }
-  }
-}
-
 void slib_import_routines(slib_t *lib) {
   char buf[SB_KEYWORD_SIZE];
   int (*fgetname) (int, char *);
@@ -261,11 +237,18 @@ void slib_import_routines(slib_t *lib) {
     int count = fcount();
     for (int i = 0; i < count; i++) {
       if (fgetname(i, buf)) {
-        slib_add_external_proc(buf, lib->id);
+        char name[NAME_SIZE];
+        sprintf(name, "%s.%s", lib->name, buf);
+        strupper(name);
+        if (slib_add_external_proc(name, lib->id) == -1) {
+          break;
+        } else {
+          comp_add_external_proc(name, lib->id);
+        }
       }
     }
   }
-
+  
   fcount = slib_getoptptr(lib, "sblib_func_count");
   fgetname = slib_getoptptr(lib, "sblib_func_getname");
 
@@ -273,19 +256,36 @@ void slib_import_routines(slib_t *lib) {
     int count = fcount();
     for (int i = 0; i < count; i++) {
       if (fgetname(i, buf)) {
-        slib_add_external_func(buf, lib->id);
+        char name[NAME_SIZE];
+        sprintf(name, "%s.%s", lib->name, buf);
+        strupper(name);
+        if (slib_add_external_func(name, lib->id) == -1) {
+          break;
+        } else {
+          comp_add_external_func(name, lib->id);
+        }
       }
     }
   }
 }
 
 /**
+ * updates compiler with the module's keywords
+ */
+void slib_setup_comp(int lib_id) {
+  slib_t *lib = &slib_table[lib_id];
+  if (lib) {
+    slib_import_routines(lib);
+  }
+}
+
+/**
  * load a lib
  */
-void slib_import(const char *name, const char *fullname) {
+void slib_import(const char *fullname, const char *name) {
   int (*minit) (void);
   const char *(*get_module_name) (void);
-  int mok = 0;
+  int success = 0;
   int name_index = 0;
 
   if (strncmp(name, "lib", 3) == 0) {
@@ -303,13 +303,13 @@ void slib_import(const char *name, const char *fullname) {
     log_printf("LIB: importing %s", fullname);
   }
   if (slib_llopen(lib)) {
-    mok = 1;
+    success = 1;
 
     // init
     minit = slib_getoptptr(lib, "sblib_init");
     if (minit) {
       if (!minit()) {
-        mok = 0;
+        success = 0;
         sc_raise("LIB: %s->sblib_init(), failed", lib->name);
       }
     }
@@ -319,21 +319,16 @@ void slib_import(const char *name, const char *fullname) {
     if (get_module_name) {
       strlcpy(lib->name, get_module_name(), NAME_SIZE);
     }
-
-    slib_import_routines(lib);
-    mok = 1;
   } else {
     sc_raise("LIB: can't open %s", fullname);
   }
-  if (mok) {
+  if (success) {
     slib_count++;
     if (!opt_quiet) {
       log_printf("... done\n");
     }
-  } else {
-    if (!opt_quiet) {
-      log_printf("... error\n");
-    }
+  } else if (!opt_quiet) {
+    log_printf("... error\n");
   }
 }
 
@@ -357,7 +352,7 @@ void slib_import_path(const char *path, const char *name) {
         strlcat(full, "/", sizeof(full));
       }
       strlcat(full, name, sizeof(full));
-      slib_import(libname, full);
+      slib_import(full, libname);
     }
   }
 }
@@ -696,5 +691,5 @@ int slib_get_module_id(const char *name, const char *alias) { return -1; }
 void slib_close() {}
 int slib_events(int wait_flag) { return 0; }
 void slib_init(int mcount, const char *mlist) {}
-void slib_setup_comp(int mid) {}
+void slib_setup_comp(int lib_id) {}
 #endif
