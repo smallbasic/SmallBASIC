@@ -162,15 +162,13 @@ void dump_bytecode(FILE *output) {
         if (c & UID_UNIT_BIT) {
           fprintf(output, "call external (unit) function; lid 0x%X, sid %d", c, d);
         } else {
-          slib_getfuncname(c, prog_symtable[d].exp_idx, cmd);
-          fprintf(output, "call external (c-lib) function; lid 0x%X, sid %d (%s)", c, d, cmd);
+          fprintf(output, "call external (c-lib) function; lid 0x%X, sid %d", c, d);
         }
       } else {
         if (c & UID_UNIT_BIT) {
           fprintf(output, "call external (unit) procedure; lid 0x%X, sid %d", c, d);
         } else {
-          slib_getprocname(c, prog_symtable[d].exp_idx, cmd);
-          fprintf(output, "call external (c-lib) procedure; lid 0x%X, sid %d (%s)", c, d, cmd);
+          fprintf(output, "call external (c-lib) procedure; lid 0x%X, sid %d", c, d);
         }
       }
       break;

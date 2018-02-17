@@ -42,28 +42,30 @@
 #define PATH_SIZE 1024
 
 typedef int (*sblib_events_fn)(int);
+typedef int (*sblib_exec_fn)(int, int, slib_par_t *, var_t *);
 
 typedef struct {
   char name[NAME_SIZE];
   char fullname[PATH_SIZE];
   void *handle;
+  sblib_exec_fn sblib_proc_exec;
+  sblib_exec_fn sblib_func_exec;
   sblib_events_fn dev_events;
   uint32_t id;
   uint32_t flags;
-  uint32_t proc_count;
-  uint32_t func_count;
   uint32_t first_proc;
   uint32_t first_func;
+  uint8_t  imported;
 } slib_t;
 
 static slib_t slib_table[MAX_SLIBS];
 static int slib_count;
-static ext_proc_node_t *extproctable;
 static int extprocsize;
 static int extproccount;
-static ext_func_node_t *extfunctable;
 static int extfuncsize;
 static int extfunccount;
+static ext_func_node_t *extfunctable;
+static ext_proc_node_t *extproctable;
 
 #if defined(LNX_EXTLIB)
 int slib_llopen(slib_t *lib) {
@@ -192,14 +194,18 @@ int slib_add_external_func(const char *func_name, int lib_id) {
 /**
  * returns the ID of the keyword
  */
-int slib_get_kid(const char *name) {
+int slib_get_kid(int lib_id, const char *name) {
+  const char *dot = strchr(name, '.');
+  const char *field = (dot != NULL ? dot + 1 : name);
   for (int i = 0; i < extproccount; i++) {
-    if (strcmp(extproctable[i].name, name) == 0) {
+    if (extproctable[i].lib_id == lib_id &&
+        strcmp(extproctable[i].name, field) == 0) {
       return i;
     }
   }
   for (int i = 0; i < extfunccount; i++) {
-    if (strcmp(extfunctable[i].name, name) == 0) {
+    if (extproctable[i].lib_id == lib_id &&
+        strcmp(extfunctable[i].name, field) == 0) {
       return i;
     }
   }
@@ -221,13 +227,15 @@ int slib_get_module_id(const char *name, const char *alias) {
   return -1;
 }
 
-void slib_import_routines(slib_t *lib) {
+void slib_import_routines(slib_t *lib, int comp) {
   char buf[SB_KEYWORD_SIZE];
   int (*fgetname) (int, char *);
   int (*fcount) (void);
 
   lib->first_proc = extproccount;
   lib->first_func = extfunccount;
+  lib->sblib_func_exec = slib_getoptptr(lib, "sblib_func_exec");
+  lib->sblib_proc_exec = slib_getoptptr(lib, "sblib_proc_exec");
   lib->dev_events = slib_getoptptr(lib, "sblib_events");
 
   fcount = slib_getoptptr(lib, "sblib_proc_count");
@@ -237,18 +245,19 @@ void slib_import_routines(slib_t *lib) {
     int count = fcount();
     for (int i = 0; i < count; i++) {
       if (fgetname(i, buf)) {
-        char name[NAME_SIZE];
-        sprintf(name, "%s.%s", lib->name, buf);
-        strupper(name);
-        if (slib_add_external_proc(name, lib->id) == -1) {
+        strupper(buf);
+        if (slib_add_external_proc(buf, lib->id) == -1) {
           break;
-        } else {
+        } else if (comp) {
+          char name[NAME_SIZE];
+          sprintf(name, "%s.%s", lib->name, buf);
+          strupper(name);
           comp_add_external_proc(name, lib->id);
         }
       }
     }
   }
-  
+
   fcount = slib_getoptptr(lib, "sblib_func_count");
   fgetname = slib_getoptptr(lib, "sblib_func_getname");
 
@@ -256,12 +265,13 @@ void slib_import_routines(slib_t *lib) {
     int count = fcount();
     for (int i = 0; i < count; i++) {
       if (fgetname(i, buf)) {
-        char name[NAME_SIZE];
-        sprintf(name, "%s.%s", lib->name, buf);
-        strupper(name);
-        if (slib_add_external_func(name, lib->id) == -1) {
+        strupper(buf);
+        if (slib_add_external_func(buf, lib->id) == -1) {
           break;
-        } else {
+        } else if (comp) {
+          char name[NAME_SIZE];
+          sprintf(name, "%s.%s", lib->name, buf);
+          strupper(name);
           comp_add_external_func(name, lib->id);
         }
       }
@@ -272,17 +282,18 @@ void slib_import_routines(slib_t *lib) {
 /**
  * updates compiler with the module's keywords
  */
-void slib_setup_comp(int lib_id) {
+void slib_import(int lib_id, int comp) {
   slib_t *lib = &slib_table[lib_id];
-  if (lib) {
-    slib_import_routines(lib);
+  if (lib && !lib->imported) {
+    slib_import_routines(lib, comp);
+    lib->imported = 1;
   }
 }
 
 /**
- * load a lib
+ * opens the library and invokes the init function
  */
-void slib_import(const char *fullname, const char *name) {
+void slib_open(const char *fullname, const char *name) {
   int (*minit) (void);
   const char *(*get_module_name) (void);
   int success = 0;
@@ -298,6 +309,7 @@ void slib_import(const char *fullname, const char *name) {
   strlcpy(lib->name, name + name_index, NAME_SIZE);
   strlcpy(lib->fullname, fullname, PATH_SIZE);
   lib->id = slib_count;
+  lib->imported = 0;
 
   if (!opt_quiet) {
     log_printf("LIB: importing %s", fullname);
@@ -332,28 +344,26 @@ void slib_import(const char *fullname, const char *name) {
   }
 }
 
-void slib_import_path(const char *path, const char *name) {
+void slib_open_path(const char *path, const char *name) {
   char *p;
-  if ((p = strstr(name, LIB_EXT)) != NULL) {
-    if (strcmp(p, LIB_EXT) == 0) {
-      // ends with LIB_EXT
-      char full[PATH_SIZE];
-      char libname[NAME_SIZE];
+  if (((p = strstr(name, LIB_EXT)) != NULL) && strcmp(p, LIB_EXT) == 0) {
+    // ends with LIB_EXT
+    char full[PATH_SIZE];
+    char libname[NAME_SIZE];
 
-      // copy name without extension
-      strlcpy(libname, name, sizeof(libname));
-      p = strchr(libname, '.');
-      *p = '\0';
+    // copy name without extension
+    strlcpy(libname, name, sizeof(libname));
+    p = strchr(libname, '.');
+    *p = '\0';
 
-      // copy full path to name
-      strlcpy(full, path, sizeof(full));
-      if (path[strlen(path) - 1] != '/') {
-        // add trailing separator
-        strlcat(full, "/", sizeof(full));
-      }
-      strlcat(full, name, sizeof(full));
-      slib_import(full, libname);
+    // copy full path to name
+    strlcpy(full, path, sizeof(full));
+    if (path[strlen(path) - 1] != '/') {
+      // add trailing separator
+      strlcat(full, "/", sizeof(full));
     }
+    strlcat(full, name, sizeof(full));
+    slib_open(full, libname);
   }
 }
 
@@ -367,7 +377,7 @@ void slib_scan_libs(const char *path) {
     while ((e = readdir(dp)) != NULL) {
       char *name = e->d_name;
       if (strcmp(name, ".") != 0 && strcmp(name, "..") != 0) {
-        slib_import_path(path, name);
+        slib_open_path(path, name);
       }
     }
     closedir(dp);
@@ -379,7 +389,7 @@ void slib_scan_path(const char *path) {
   if (stat(path, &stbuf) != -1) {
     if (S_ISREG(stbuf.st_mode)) {
       char *name = strrchr(path, '/');
-      slib_import_path(path, (name ? name + 1 : path));
+      slib_open_path(path, (name ? name + 1 : path));
     } else {
       slib_scan_libs(path);
     }
@@ -460,36 +470,6 @@ void slib_close() {
 }
 
 /**
- * returns the 'index' function-name of the 'lib'
- */
-int slib_getfuncname(int lib_id, int index, char *buf) {
-  int (*mgf) (int, char *);
-
-  buf[0] = '\0';
-  if (lib_id < 0 || lib_id >= slib_count) {
-    return 0;
-  }
-  slib_t *lib = &slib_table[lib_id];
-  mgf = slib_getoptptr(lib, "sblib_func_getname");
-  return !mgf ? 0 : mgf(index, buf);
-}
-
-/**
- * returns the 'index' procedure-name of the 'lib'
- */
-int slib_getprocname(int lib_id, int index, char *buf) {
-  int (*mgp) (int, char *);
-
-  buf[0] = '\0';
-  if (lib_id < 0 || lib_id >= slib_count) {
-    return 0;
-  }
-  slib_t *lib = &slib_table[lib_id];
-  mgp = slib_getoptptr(lib, "sblib_proc_getname");
-  return !mgp ? 0 : mgp(index, buf);
-}
-
-/**
  * build parameter table
  */
 int slib_build_ptable(slib_par_t *ptable) {
@@ -565,22 +545,10 @@ void slib_free_ptable(slib_par_t *ptable, int pcount) {
 }
 
 /**
- * execute a procedure
+ * execute a function or procedure
  */
-int slib_procexec(int lib_id, int index) {
-  if (lib_id < 0 || lib_id >= slib_count) {
-    return 0;
-  }
-
-  int (*pexec) (int, int, slib_par_t *, var_t *);
-  slib_t *lib = &slib_table[lib_id];
-  pexec = slib_getoptptr(lib, "sblib_proc_exec");
-  if (pexec == NULL) {
-    return 0;
-  }
-
-  // build parameter table
-  slib_par_t *ptable;  
+int slib_exec(slib_t *lib, var_t *ret, int index, int proc) {
+  slib_par_t *ptable;
   int pcount;
   if (code_peek() == kwTYPE_LEVEL_BEGIN) {
     ptable = (slib_par_t *)malloc(sizeof(slib_par_t) * MAX_PARAM);
@@ -595,73 +563,23 @@ int slib_procexec(int lib_id, int index) {
     return 0;
   }
 
-  // exec
-  var_t ret;
-  v_init(&ret);
-  int success = pexec(index - lib->first_proc, pcount, ptable, &ret);
-
-  // error
-  if (!success) {
-    if (ret.type == V_STR) {
-      err_throw("LIB:%s: %s\n", lib->name, ret.v.p.ptr);
-    } else {
-      err_throw("LIB:%s: Unspecified error\n", lib->name);
-    }
-  }
-  // clean-up
-  if (ptable) {
-    slib_free_ptable(ptable, pcount);
-    free(ptable);
-  }
-
-  v_free(&ret);
-  return success;
-}
-
-/**
- * execute a function
- */
-int slib_funcexec(int lib_id, int index, var_t *ret) {
-  int (*pexec) (int, int, slib_par_t *, var_t *);
-
-  if (lib_id < 0 || lib_id >= slib_count) {
-    return 0;
-  }
-
-  slib_t *lib = &slib_table[lib_id];
-  pexec = slib_getoptptr(lib, "sblib_func_exec");
-  if (pexec == NULL) {
-    return 0;
-  }
-
-  // build parameter table
-  slib_par_t *ptable;  
-  int pcount;
-  if (code_peek() == kwTYPE_LEVEL_BEGIN) {
-    ptable = malloc(sizeof(slib_par_t) * MAX_PARAM);
-    pcount = slib_build_ptable(ptable);
-  } else {
-    ptable = NULL;
-    pcount = 0;
-  }
-  if (prog_error) {
-    slib_free_ptable(ptable, pcount);
-    free(ptable);
-    return 0;
-  }
-
-  // exec
+  int success;
   v_init(ret);
-  int success = pexec(index - lib->first_func, pcount, ptable, ret);
+  if (proc) {
+    success = lib->sblib_proc_exec(index - lib->first_proc, pcount, ptable, ret);
+  } else {
+    success = lib->sblib_func_exec(index - lib->first_func, pcount, ptable, ret);
+  }
 
   // error
   if (!success) {
     if (ret->type == V_STR) {
       err_throw("LIB:%s: %s\n", lib->name, ret->v.p.ptr);
     } else {
-      err_throw("LIB:%s: Unspecified error\n", lib->name);
+      err_throw("LIB:%s: Unspecified error calling %s\n", lib->name, (proc ? "SUB" : "FUNC"));
     }
   }
+
   // clean-up
   if (ptable) {
     slib_free_ptable(ptable, pcount);
@@ -669,6 +587,41 @@ int slib_funcexec(int lib_id, int index, var_t *ret) {
   }
 
   return success;
+}
+
+/**
+ * execute a procedure
+ */
+int slib_procexec(int lib_id, int index) {
+  if (lib_id < 0 || lib_id >= slib_count) {
+    return 0;
+  }
+
+  slib_t *lib = &slib_table[lib_id];
+  if (!lib->sblib_proc_exec) {
+    return 0;
+  }
+
+  var_t ret;
+  int result = slib_exec(lib, &ret, index, 1);
+  v_free(&ret);
+  return result;
+}
+
+/**
+ * execute a function
+ */
+int slib_funcexec(int lib_id, int index, var_t *ret) {
+  if (lib_id < 0 || lib_id >= slib_count) {
+    return 0;
+  }
+
+  slib_t *lib = &slib_table[lib_id];
+  if (!lib->sblib_func_exec) {
+    return 0;
+  }
+
+  return slib_exec(lib, ret, index, 0);
 }
 
 /**
@@ -696,10 +649,8 @@ int slib_events(int wait_flag) {
 #else
 // dummy implementations
 int slib_funcexec(int lib_id, int index, var_t *ret) { return 0; }
-int slib_getfuncname(int lib_id, int index, char *buf) { return 0; }
-int slib_getprocname(int lib_id, int index, char *buf) { return 0; }
 int slib_procexec(int lib_id, int index) { return 0; }
-int slib_get_kid(const char *name) { return -1; }
+int slib_get_kid(int lib_id, const char *name) { return -1; }
 int slib_get_module_id(const char *name, const char *alias) { return -1; }
 void slib_close() {}
 int slib_events(int wait_flag) { return 0; }

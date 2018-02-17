@@ -4208,7 +4208,7 @@ void comp_preproc_import(const char *slist) {
     int uid = slib_get_module_id(buf, alias);
     if (uid != -1) {
       // store C module lib-record
-      slib_setup_comp(uid);
+      slib_import(uid, 1);
       add_libtable_rec(alias, uid, 0);
     } else {
       uid = open_unit(buf);
@@ -4761,7 +4761,7 @@ byte_code comp_create_bin() {
 
     // it is a unit... add more info
     bc.size = hdr.size;
-    bc.code = malloc(bc.size);
+    bc.code = calloc(bc.size, 1);
 
     // unit header
     memcpy(&uft.sign, "SBUn", 4);
@@ -4786,7 +4786,7 @@ byte_code comp_create_bin() {
   } else {
     // simple executable
     bc.size = hdr.size + 4;
-    bc.code = malloc(bc.size);
+    bc.code = calloc(bc.size, 1);
     cp = bc.code;
     memcpy(cp, &hdr, sizeof(bc_head_t));
     cp += sizeof(bc_head_t);

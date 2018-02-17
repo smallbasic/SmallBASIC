@@ -104,40 +104,17 @@ int slib_get_module_id(const char *name, const char *alias);
 /**
  * @ingroup mod
  *
- * updates the compiler with the module (mid) keywords
+ * imports the modules routine and optionally updates the compiler 
+ * with the module (mid) keywords.
  */
-void slib_setup_comp(int mid);
+void slib_import(int lib_id, int comp);
 
 /**
  * @ingroup mod
  *
  * returns the ID of the keyword. used at run-time to assign BCs ID with slib_mgr's one
  */
-int slib_get_kid(const char *name);
-
-/**
- * @ingroup mod
- *
- * returns a library's function name
- *
- * @param lib is the lib-id
- * @param index is the index of the function
- * @param buf is the buffer to store the name
- * @return non-zero on success
- */
-int slib_getfuncname(int lib, int index, char *buf);
-
-/**
- * @ingroup mod
- *
- * returns a library's procedure name
- *
- * @param lib is the lib-id
- * @param index is the index of the procedure
- * @param buf is the buffer to store the name
- * @return non-zero on success
- */
-int slib_getprocname(int lib, int index, char *buf);
+int slib_get_kid(int lib_id, const char *name);
 
 /**
  * @ingroup mod
