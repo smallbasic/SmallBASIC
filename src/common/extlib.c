@@ -50,7 +50,7 @@ typedef struct {
   void *handle;
   sblib_exec_fn sblib_proc_exec;
   sblib_exec_fn sblib_func_exec;
-  sblib_events_fn dev_events;
+  sblib_events_fn sblib_events;
   uint32_t id;
   uint32_t flags;
   uint32_t first_proc;
@@ -236,7 +236,7 @@ void slib_import_routines(slib_t *lib, int comp) {
   lib->first_func = extfunccount;
   lib->sblib_func_exec = slib_getoptptr(lib, "sblib_func_exec");
   lib->sblib_proc_exec = slib_getoptptr(lib, "sblib_proc_exec");
-  lib->dev_events = slib_getoptptr(lib, "sblib_events");
+  lib->sblib_events = slib_getoptptr(lib, "sblib_events");
 
   fcount = slib_getoptptr(lib, "sblib_proc_count");
   fgetname = slib_getoptptr(lib, "sblib_proc_getname");
@@ -631,8 +631,8 @@ int slib_events(int wait_flag) {
   int result = 0;
   for (int i = 0; i < slib_count; i++) {
     slib_t *lib = &slib_table[i];
-    if (lib->handle && lib->dev_events) {
-      int events = lib->dev_events(wait_flag);
+    if (lib->handle && lib->sblib_events) {
+      int events = lib->sblib_events(wait_flag);
       if (events == -2) {
         // BREAK
         result = events;
