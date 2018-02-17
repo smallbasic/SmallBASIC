@@ -75,21 +75,21 @@ extern "C" {
  *
  * default path /usr/lib/sbasic/modules/:/usr/local/lib/sbasic/modules/
  */
-void sblmgr_init();
+void slib_init();
 
 /**
  * @ingroup mod
  *
  * close module manager
  */
-void sblmgr_close(void);
+void slib_close(void);
 
 /**
  * @ingroup mod
  *
  * invoke plugin event handling
  */
-int sblmgr_events(int wait_flag);
+int slib_events(int wait_flag);
 
 /**
  * @ingroup mod
@@ -99,7 +99,7 @@ int sblmgr_events(int wait_flag);
  * @param name is the name of the library (without the file-extention)
  * @return the id or -1 for error
  */
-int slib_get_module_id(const char *name);
+int slib_get_module_id(const char *name, const char *alias);
 
 /**
  * @ingroup mod
@@ -125,7 +125,7 @@ int slib_get_kid(const char *name);
  * @param buf is the buffer to store the name
  * @return non-zero on success
  */
-int sblmgr_getfuncname(int lib, int index, char *buf);
+int slib_getfuncname(int lib, int index, char *buf);
 
 /**
  * @ingroup mod
@@ -137,7 +137,7 @@ int sblmgr_getfuncname(int lib, int index, char *buf);
  * @param buf is the buffer to store the name
  * @return non-zero on success
  */
-int sblmgr_getprocname(int lib, int index, char *buf);
+int slib_getprocname(int lib, int index, char *buf);
 
 /**
  * @ingroup mod
@@ -148,7 +148,7 @@ int sblmgr_getprocname(int lib, int index, char *buf);
  * @param index is the index of the procedure
  * @return non-zero on success
  */
-int sblmgr_procexec(int lib, int index);
+int slib_procexec(int lib, int index);
 
 /**
  * @ingroup mod
@@ -160,7 +160,7 @@ int sblmgr_procexec(int lib, int index);
  * @param ret is the variable to store the result
  * @return non-zero on success
  */
-int sblmgr_funcexec(int lib, int index, var_t *ret);
+int slib_funcexec(int lib, int index, var_t *ret);
 
 #if defined(__cplusplus)
 }

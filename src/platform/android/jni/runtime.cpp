@@ -453,7 +453,7 @@ void Runtime::runShell() {
   os_color_depth = 16;
   opt_mute_audio = 0;
   opt_loadmod = 0;
-  strcpy(opt_modlist, "/data/data/net.sourceforge.smallbasic/lib");
+  strcpy(opt_modpath, "/data/data/net.sourceforge.smallbasic/lib");
 
   _app->activity->callbacks->onContentRectChanged = onContentRectChanged;
   loadConfig();

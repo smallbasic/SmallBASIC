@@ -47,7 +47,7 @@ void init() {
   opt_file_permitted = 0;
   opt_graphics = 1;
   opt_ide = 0;
-  opt_modlist[0] = '\0';
+  opt_modpath[0] = '\0';
   opt_nosave = 1;
   opt_pref_height = 0;
   opt_pref_width = 0;
@@ -238,7 +238,7 @@ int main(int argc, char **argv) {
 
   while (1) {
     int option_index = 0;
-    int c = getopt_long(argc, argv, "hvfp:t:m:r:w:e:c:g:", OPTIONS, &option_index);
+    int c = getopt_long(argc, argv, "hvfp:t:m::r:w:e:c:g:", OPTIONS, &option_index);
     if (c == -1) {
       break;
     }
@@ -281,7 +281,9 @@ int main(int argc, char **argv) {
       break;
     case 'm':
       opt_loadmod = 1;
-      strcpy(opt_modlist, optarg);
+      if (optarg) {
+        strcpy(opt_modpath, optarg);
+      }
       break;
     default:
       show_help();

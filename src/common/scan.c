@@ -46,6 +46,7 @@ extern void expr_parser(bc_t *bc);
 #define LEN_ANTIALIAS  STRLEN(LCN_ANTIALIAS)
 #define LEN_LDMODULES  STRLEN(LCN_LOAD_MODULES)
 #define LEN_AUTOLOCAL  STRLEN(LCN_AUTOLOCAL)
+#define LEN_AS_WRS     STRLEN(LCN_AS_WRS)
 
 #define SKIP_SPACES(p)                          \
   while (*p == ' ' || *p == '\t') {             \
@@ -4173,24 +4174,39 @@ const char *get_unit_name(const char *p, char *buf_p) {
   return p;
 }
 
+const char *get_alias(const char *p, char *buf_p) {
+  SKIP_SPACES(p);
+
+  *buf_p = '\0';
+  if (CHKOPT(LCN_AS_WRS)) {
+    p += LEN_AS_WRS;
+    while (is_alnum(*p) || *p == '_') {
+      *buf_p++ = *p++;
+    }
+    *buf_p = '\0';
+  }
+  return p;
+}
+
 /**
  * imports units
  */
 void comp_preproc_import(const char *slist) {
-  const char *p;
   char buf[OS_PATHNAME_SIZE + 1];
+  char alias[OS_PATHNAME_SIZE + 1];
 
-  p = slist;
+  const char *p = slist;
 
   SKIP_SPACES(p);
 
   while (is_alpha(*p)) {
     // get name - "Import other.Foo => "other/Foo"
     p = get_unit_name(p, buf);
+    p = get_alias(p, alias);
 
     // import name
     strlower(buf);
-    int uid = slib_get_module_id(buf);
+    int uid = slib_get_module_id(buf, alias);
     if (uid != -1) {
       // store C module lib-record
       slib_setup_comp(uid);
@@ -4352,9 +4368,9 @@ char *comp_preproc_options(char *p) {
       }
       *pe = lc;
     } else if (strncmp(LCN_LOAD_MODULES, p, LEN_LDMODULES) == 0 &&
-               opt_modlist[0] != '\0' && !opt_loadmod) {
+               opt_modpath[0] != '\0' && !opt_loadmod) {
       opt_loadmod = 1;
-      sblmgr_init();
+      slib_init();
     } else {
       SKIP_SPACES(p);
       char *pe = p;

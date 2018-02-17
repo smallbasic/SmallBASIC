@@ -685,7 +685,7 @@ static inline void bc_loop_call_extp() {
       prog_error = gsb_last_error;
     }
   } else {
-    sblmgr_procexec(lib, prog_symtable[idx].exp_idx);
+    slib_procexec(lib, prog_symtable[idx].exp_idx);
   }
 }
 
@@ -1704,14 +1704,10 @@ int sbasic_exec(const char *file) {
 int sbasic_main(const char *file) {
   int success;
 
-  // initialize the task manager
+  // initialize managers
   init_tasks();
-
-  // initialize the unit manager
   unit_mgr_init();
-
-  // initialize the plugin manager
-  sblmgr_init();
+  slib_init();
 
   if (prog_error) {
     success = 0;
@@ -1719,9 +1715,10 @@ int sbasic_main(const char *file) {
     success = sbasic_exec(file);
   }
 
-  unit_mgr_close();             // shutdown SB's unit manager
-  sblmgr_close();               // shutdown C-coded modules
-  destroy_tasks();              // closes all remaining tasks
+  // clean up managers
+  unit_mgr_close();
+  slib_close();
+  destroy_tasks();
 
   return success;
 }

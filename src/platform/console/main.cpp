@@ -181,15 +181,18 @@ void decompile(const char *path) {
   opt_nosave = 1;
   init_tasks();
   unit_mgr_init();
-  sblmgr_init();
+  slib_init();
+
   if (sbasic_compile(path)) {
     int exec_tid = sbasic_exec_prepare(path);
     print_taskinfo(stdout);
     print_bytecode(exec_tid, stdout);
     exec_close(exec_tid);
   }
+
+  // cleanup
   unit_mgr_close();
-  sblmgr_close();
+  slib_close();
   destroy_tasks();
   chdir(prev_cwd);
 }
@@ -238,7 +241,7 @@ bool process_options(int argc, char *argv[], char **runFile, bool *tmpFile) {
     case 'm':
       opt_loadmod = 1;
       if (optarg) {
-        strcpy(opt_modlist, optarg);
+        strcpy(opt_modpath, optarg);
       }
       break;
     case 'u':
@@ -299,7 +302,7 @@ int main(int argc, char *argv[]) {
   opt_graphics = 0;
   opt_ide = 0;
   opt_loadmod = 0;
-  opt_modlist[0] = 0;
+  opt_modpath[0] = 0;
   opt_nosave = 1;
   opt_pref_height = 0;
   opt_pref_width = 0;

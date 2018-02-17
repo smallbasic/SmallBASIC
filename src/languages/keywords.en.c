@@ -476,6 +476,7 @@ struct proc_keyword_s proc_table[] = {
 #define LCN_ANTIALIAS           "ANTIALIAS"
 #define LCN_LOAD_MODULES        "LOAD MODULES"
 #define LCN_AUTOLOCAL           "AUTOLOCAL"
+#define LCN_AS_WRS              "AS "
 
 /* system variables */
 #define LCN_SV_SBVER            "SBVER"

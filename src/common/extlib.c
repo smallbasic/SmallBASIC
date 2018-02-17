@@ -16,14 +16,17 @@
  #include <sys/cygwin.h>
  #define WIN_EXTLIB
  #define LIB_EXT ".dll"
+ #define DEFAULT_PATH "c:/sbasic/lib"
 #elif defined(__MINGW32__)
  #include <windows.h>
  #define WIN_EXTLIB
  #define LIB_EXT ".dll"
+ #define DEFAULT_PATH "c:/sbasic/lib"
 #elif defined(__linux__) && defined(_UnixOS)
  #include <dlfcn.h>
  #define LNX_EXTLIB
  #define LIB_EXT ".so"
+ #define DEFAULT_PATH "/usr/lib/sbasic/modules:/usr/local/lib/sbasic/modules"
 #endif
 
 #if defined(LNX_EXTLIB) || defined(WIN_EXTLIB)
@@ -37,7 +40,6 @@
 #define TABLE_GROW_SIZE 16
 #define NAME_SIZE 256
 #define PATH_SIZE 1024
-#define DEFAULT_PATH "/usr/lib/sbasic/modules:/usr/local/lib/sbasic/modules"
 
 typedef int (*sblib_events_fn)(int);
 
@@ -215,13 +217,11 @@ int slib_get_kid(const char *name) {
 /**
  * returns the library-id (index of library of the current process)
  */
-int slib_get_module_id(const char *name) {
-  char xname[OS_FILENAME_SIZE + 1];
-  strlcpy(xname, name, sizeof(xname));
-  strlcat(xname, LIB_EXT, sizeof(xname));
+int slib_get_module_id(const char *name, const char *alias) {
   for (int i = 0; i < slib_count; i++) {
     slib_t *lib = &slib_table[i];
     if (strcasecmp(lib->name, name) == 0) {
+      strcpy(lib->name, alias);
       return i;
     }
   }
@@ -365,7 +365,7 @@ void slib_import_path(const char *path, const char *name) {
 /**
  * scan libraries
  */
-void sblmgr_scanlibs(const char *path) {
+void slib_scan_libs(const char *path) {
   DIR *dp;
   struct dirent *e;
 
@@ -384,25 +384,29 @@ void sblmgr_scanlibs(const char *path) {
   }
 }
 
-void sblmgr_init_path() {
-  char *path = opt_modlist;
+void slib_scan_path(const char *path) {
+  struct stat stbuf;
+  if (stat(path, &stbuf) != -1) {
+    if (S_ISREG(stbuf.st_mode)) {
+      char *name = strrchr(path, '/');
+      slib_import_path(path, (name ? name + 1 : path));
+    } else {
+      slib_scan_libs(path);
+    }
+  }
+}
+
+void slib_init_path() {
+  char *path = opt_modpath;
   while (path && path[0] != '\0') {
     char *sep = strchr(path, ':');
     if (sep) {
       // null terminate the current path
       *sep = '\0';
-      struct stat stbuf;
-      if (stat(path, &stbuf) != -1) {
-        if (S_ISREG(stbuf.st_mode)) {
-          char *name = strrchr(path, '/');
-          slib_import_path(path, (name ? name + 1 : path));
-        } else {
-          sblmgr_scanlibs(path);
-        }
-      }
+      slib_scan_path(path);
       path = sep + 1;
     } else {
-      sblmgr_scanlibs(path);
+      slib_scan_path(path);
       path = NULL;
     }
   }
@@ -411,7 +415,7 @@ void sblmgr_init_path() {
 /**
  * slib-manager: initialize manager
  */
-void sblmgr_init() {
+void slib_init() {
   slib_count = 0;
 
   if (!prog_error && opt_loadmod) {
@@ -419,25 +423,25 @@ void sblmgr_init() {
       log_printf("LIB: scanning for modules...\n");
     }
 
-    if (opt_modlist[0] == '\0') {
+    if (opt_modpath[0] == '\0') {
       const char *modpath = getenv("SBASICPATH");
       if (modpath != NULL) {
-        strlcpy(opt_modlist, modpath, OPT_MOD_SZ);
+        strlcpy(opt_modpath, modpath, OPT_MOD_SZ);
       }
     }
 
-    if (opt_modlist[0] == '\0') {
-      strcpy(opt_modlist, DEFAULT_PATH);
+    if (opt_modpath[0] == '\0') {
+      strcpy(opt_modpath, DEFAULT_PATH);
     }
 
-    sblmgr_init_path();
+    slib_init_path();
   }
 }
 
 /**
  * slib-manager: close everything
  */
-void sblmgr_close() {
+void slib_close() {
   void (*mclose) (void);
 
   for (int i = 0; i < slib_count; i++) {
@@ -466,7 +470,7 @@ void sblmgr_close() {
 /**
  * returns the 'index' function-name of the 'lib'
  */
-int sblmgr_getfuncname(int lib_id, int index, char *buf) {
+int slib_getfuncname(int lib_id, int index, char *buf) {
   int (*mgf) (int, char *);
 
   buf[0] = '\0';
@@ -481,7 +485,7 @@ int sblmgr_getfuncname(int lib_id, int index, char *buf) {
 /**
  * returns the 'index' procedure-name of the 'lib'
  */
-int sblmgr_getprocname(int lib_id, int index, char *buf) {
+int slib_getprocname(int lib_id, int index, char *buf) {
   int (*mgp) (int, char *);
 
   buf[0] = '\0';
@@ -568,7 +572,7 @@ void slib_free_ptable(slib_par_t *ptable, int pcount) {
 /**
  * execute a procedure
  */
-int sblmgr_procexec(int lib_id, int index) {
+int slib_procexec(int lib_id, int index) {
   if (lib_id < 0 || lib_id >= slib_count) {
     return 0;
   }
@@ -615,7 +619,7 @@ int sblmgr_procexec(int lib_id, int index) {
 /**
  * execute a function
  */
-int sblmgr_funcexec(int lib_id, int index, var_t *ret) {
+int slib_funcexec(int lib_id, int index, var_t *ret) {
   slib_par_t *ptable = NULL;
   int (*pexec) (int, int, slib_par_t *, var_t *);
 
@@ -662,7 +666,7 @@ int sblmgr_funcexec(int lib_id, int index, var_t *ret) {
 /**
  * plugin event handling
  */
-int sblmgr_events(int wait_flag) {
+int slib_events(int wait_flag) {
   int result = 0;
   for (int i = 0; i < slib_count; i++) {
     slib_t *lib = &slib_table[i];
@@ -683,19 +687,14 @@ int sblmgr_events(int wait_flag) {
 
 #else
 // dummy implementations
-int sblmgr_funcexec(int lib_id, int index, var_t *ret) { return 0; }
-int sblmgr_getfuncname(int lib_id, int index, char *buf) { return 0; }
-int sblmgr_getprocname(int lib_id, int index, char *buf) { return 0; }
-int sblmgr_procexec(int lib_id, int index) { return 0; }
-int slib_build_ptable(slib_par_t *ptable) { return 0; }
+int slib_funcexec(int lib_id, int index, var_t *ret) { return 0; }
+int slib_getfuncname(int lib_id, int index, char *buf) { return 0; }
+int slib_getprocname(int lib_id, int index, char *buf) { return 0; }
+int slib_procexec(int lib_id, int index) { return 0; }
 int slib_get_kid(const char *name) { return -1; }
-int slib_get_module_id(const char *name) { return -1; }
-void sblmgr_close() {}
-int sblmgr_events(int wait_flag) { return 0; }
-void sblmgr_init(int mcount, const char *mlist) {}
-void sblmgr_scanlibs(const char *path) {}
-void slib_free_ptable(slib_par_t *ptable, int pcount) {}
-void slib_import(const char *name, const char *fullname) {}
-void slib_import_routines(slib_t *lib) {}
+int slib_get_module_id(const char *name, const char *alias) { return -1; }
+void slib_close() {}
+int slib_events(int wait_flag) { return 0; }
+void slib_init(int mcount, const char *mlist) {}
 void slib_setup_comp(int mid) {}
 #endif

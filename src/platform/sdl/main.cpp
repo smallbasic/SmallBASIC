@@ -296,7 +296,7 @@ int main(int argc, char* argv[]) {
 
   while (1) {
     int option_index = 0;
-    int c = getopt_long(argc, argv, "hvkc:f:r:m:e:d:p:", OPTIONS, &option_index);
+    int c = getopt_long(argc, argv, "hvkc:f:r:m::e:d:p:", OPTIONS, &option_index);
     if (c == -1) {
       // no more options
       if (!option_index) {
@@ -346,7 +346,9 @@ int main(int argc, char* argv[]) {
       break;
     case 'm':
       opt_loadmod = 1;
-      strcpy(opt_modlist, optarg);
+      if (optarg) {
+        strcpy(opt_modpath, optarg);
+      }
       break;
     case 'd':
       runFile = strdup(optarg);
