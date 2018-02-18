@@ -94,9 +94,10 @@ int slib_events(int wait_flag);
 /**
  * @ingroup mod
  *
- * returns a library's ID
+ * set the alias and returns a library's ID
  *
  * @param name is the name of the library (without the file-extention)
+ * @param alias updates the internal name with the given alias
  * @return the id or -1 for error
  */
 int slib_get_module_id(const char *name, const char *alias);
@@ -104,7 +105,7 @@ int slib_get_module_id(const char *name, const char *alias);
 /**
  * @ingroup mod
  *
- * imports the modules routine and optionally updates the compiler 
+ * imports the modules routine and optionally updates the compiler
  * with the module (mid) keywords.
  */
 void slib_import(int lib_id, int comp);

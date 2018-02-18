@@ -280,10 +280,20 @@ void slib_import_routines(slib_t *lib, int comp) {
 }
 
 /**
+ * returns slib_t* for the given id
+ */
+slib_t *get_lib(int lib_id) {
+  if (lib_id < 0 || lib_id >= slib_count) {
+    return NULL;
+  }
+  return &slib_table[lib_id];
+}
+
+/**
  * updates compiler with the module's keywords
  */
 void slib_import(int lib_id, int comp) {
-  slib_t *lib = &slib_table[lib_id];
+  slib_t *lib = get_lib(lib_id);
   if (lib && !lib->imported) {
     slib_import_routines(lib, comp);
     lib->imported = 1;
@@ -435,11 +445,10 @@ void slib_init() {
  * slib-manager: close everything
  */
 void slib_close() {
-  void (*mclose) (void);
-
   for (int i = 0; i < slib_count; i++) {
     slib_t *lib = &slib_table[i];
     if (lib->handle) {
+      void (*mclose) (void);
       mclose = slib_getoptptr(lib, "sblib_close");
       if (mclose) {
         mclose();
@@ -486,7 +495,6 @@ int slib_build_ptable(slib_par_t *ptable) {
       case kwTYPE_VAR:
         // variable
         ofs = prog_ip;
-
         if (code_isvar()) {
           // push parameter
           ptable[pcount].var_p = code_getvarptr();
@@ -584,18 +592,15 @@ int slib_exec(slib_t *lib, var_t *ret, int index, int proc) {
  * execute a procedure
  */
 int slib_procexec(int lib_id, int index) {
-  if (lib_id < 0 || lib_id >= slib_count) {
-    return 0;
+  int result;
+  slib_t *lib = get_lib(lib_id);
+  if (lib && lib->sblib_proc_exec) {
+    var_t ret;
+    result = slib_exec(lib, &ret, index, 1);
+    v_free(&ret);
+  } else {
+    result = 0;
   }
-
-  slib_t *lib = &slib_table[lib_id];
-  if (!lib->sblib_proc_exec) {
-    return 0;
-  }
-
-  var_t ret;
-  int result = slib_exec(lib, &ret, index, 1);
-  v_free(&ret);
   return result;
 }
 
@@ -603,16 +608,14 @@ int slib_procexec(int lib_id, int index) {
  * execute a function
  */
 int slib_funcexec(int lib_id, int index, var_t *ret) {
-  if (lib_id < 0 || lib_id >= slib_count) {
-    return 0;
+  int result;
+  slib_t *lib = get_lib(lib_id);
+  if (lib && lib->sblib_func_exec) {
+    result = slib_exec(lib, ret, index, 0);
+  } else {
+    result = 0;
   }
-
-  slib_t *lib = &slib_table[lib_id];
-  if (!lib->sblib_func_exec) {
-    return 0;
-  }
-
-  return slib_exec(lib, ret, index, 0);
+  return result;
 }
 
 /**
