@@ -1701,8 +1701,8 @@ int sbasic_main(const char *file) {
   }
 
   // clean up managers
-  unit_mgr_close();
   slib_close();
+  unit_mgr_close();
   destroy_tasks();
 
   return success;
