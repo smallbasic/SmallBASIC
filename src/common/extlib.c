@@ -204,7 +204,7 @@ int slib_get_kid(int lib_id, const char *name) {
     }
   }
   for (int i = 0; i < extfunccount; i++) {
-    if (extproctable[i].lib_id == lib_id &&
+    if (extfunctable[i].lib_id == lib_id &&
         strcmp(extfunctable[i].name, field) == 0) {
       return i;
     }
@@ -294,8 +294,6 @@ void slib_import(int lib_id, int comp) {
  * opens the library and invokes the init function
  */
 void slib_open(const char *fullname, const char *name) {
-  int (*minit) (void);
-  const char *(*get_module_name) (void);
   int success = 0;
   int name_index = 0;
 
@@ -318,15 +316,17 @@ void slib_open(const char *fullname, const char *name) {
     success = 1;
 
     // init
+    int (*minit) (void);
     minit = slib_getoptptr(lib, "sblib_init");
     if (minit) {
       if (!minit()) {
-        success = 0;
         sc_raise("LIB: %s->sblib_init(), failed", lib->name);
+        success = 0;
       }
     }
 
     // override default name
+    const char *(*get_module_name) (void);
     get_module_name = slib_getoptptr(lib, "sblib_get_module_name");
     if (get_module_name) {
       strlcpy(lib->name, get_module_name(), NAME_SIZE);
@@ -339,8 +339,6 @@ void slib_open(const char *fullname, const char *name) {
     if (!opt_quiet) {
       log_printf("... done\n");
     }
-  } else if (!opt_quiet) {
-    log_printf("... error\n");
   }
 }
 
@@ -367,23 +365,6 @@ void slib_open_path(const char *path, const char *name) {
   }
 }
 
-/**
- * scan libraries
- */
-void slib_scan_libs(const char *path) {
-  DIR *dp = opendir(path);
-  if (dp != NULL) {
-    struct dirent *e;
-    while ((e = readdir(dp)) != NULL) {
-      char *name = e->d_name;
-      if (strcmp(name, ".") != 0 && strcmp(name, "..") != 0) {
-        slib_open_path(path, name);
-      }
-    }
-    closedir(dp);
-  }
-}
-
 void slib_scan_path(const char *path) {
   struct stat stbuf;
   if (stat(path, &stbuf) != -1) {
@@ -391,7 +372,17 @@ void slib_scan_path(const char *path) {
       char *name = strrchr(path, '/');
       slib_open_path(path, (name ? name + 1 : path));
     } else {
-      slib_scan_libs(path);
+      DIR *dp = opendir(path);
+      if (dp != NULL) {
+        struct dirent *e;
+        while ((e = readdir(dp)) != NULL) {
+          char *name = e->d_name;
+          if (strcmp(name, ".") != 0 && strcmp(name, "..") != 0) {
+            slib_open_path(path, name);
+          }
+        }
+        closedir(dp);
+      }
     }
   } else if (!opt_quiet) {
     log_printf("LIB: module path %s not found.\n", path);
