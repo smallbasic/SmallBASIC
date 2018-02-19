@@ -87,13 +87,6 @@ void slib_close(void);
 /**
  * @ingroup mod
  *
- * invoke plugin event handling
- */
-int slib_events(int wait_flag);
-
-/**
- * @ingroup mod
- *
  * set the alias and returns a library's ID
  *
  * @param name is the name of the library (without the file-extention)
@@ -139,6 +132,16 @@ int slib_procexec(int lib, int index);
  * @return non-zero on success
  */
 int slib_funcexec(int lib, int index, var_t *ret);
+
+/**
+ * @ingroup mod
+ *
+ * returns the function from the first available module
+ *
+ * @param name the function name
+ * @return non-zero on success
+ */
+void *slib_get_func(const char *name);
 
 #if defined(__cplusplus)
 }

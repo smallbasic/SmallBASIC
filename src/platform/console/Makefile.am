@@ -11,8 +11,8 @@ bin_PROGRAMS = sbasic
 
 sbasic_SOURCES =    \
   ../console/main.cpp	\
-  ../console/decomp.c	\
-  ../console/dev_null.c
+  ../console/device.cpp \
+  ../console/decomp.c
 
 sbasic_LDADD = -L$(top_srcdir)/src/common -lsb_common @PACKAGE_LIBS@
 

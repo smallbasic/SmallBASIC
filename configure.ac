@@ -202,7 +202,6 @@ function buildSDL() {
    dnl preconfigured values for SDL build
    AC_DEFINE(_SDL, 1, [Defined when building SDL version])
    AC_DEFINE(_UnixOS, 1, [Building under Unix like systems.])
-   AC_DEFINE(DEV_EVENTS_OSD, 1, [dev_events() implemented using osd_events().])
    AC_DEFINE(IMPL_DEV_DELAY, 1, [Driver implements dev_delay()])
    AC_DEFINE(IMPL_LOG_WRITE, 1, [Driver implements lwrite()])
    AC_DEFINE(IMPL_DEV_READ, 1, [Implement dev_read()])
@@ -221,7 +220,6 @@ function buildAndroid() {
 
    AC_DEFINE(_UnixOS, 1, [Building under Unix like systems.])
    AC_DEFINE(_ANDROID, 1, [Defined for Android build.])
-   AC_DEFINE(DEV_EVENTS_OSD, 1, [dev_events() implemented using osd_events().])
    AC_DEFINE(IMPL_DEV_READ, 1, [Implement dev_read()])
    AC_DEFINE(IMPL_DEV_DELAY, 1, [Driver implements dev_delay()])
    AC_DEFINE(IMPL_LOG_WRITE, 1, [Driver implements lwrite()])
@@ -261,7 +259,6 @@ function buildConsole() {
          dnl preconfigured values for cygwin console build (depends on cygwin.dll)
          TARGET="Building Cygwin console version."
          AC_DEFINE(_UnixOS, 1, [Building under Unix like systems.])
-         AC_DEFINE(DEV_EVENTS_OSD, 0, [dev_events() implemented using osd_events().])
          AC_DEFINE(_CygWin, 1, [Building a minimal dev_null based command-line version.])
          AC_DEFINE(__CYGWIN__, 1, [as above])
          AC_DEFINE(INET_UNSUP, 1, [inet not supported.])
@@ -280,7 +277,6 @@ function buildConsole() {
       dnl preconfigured values for unix console build
       TARGET="Building Unix console version."
       AC_DEFINE(_UnixOS, 1, [Building under Unix like systems.])
-      AC_DEFINE(DEV_EVENTS_OSD, 0, [dev_events() implemented using osd_events().])
       PACKAGE_LIBS="${PACKAGE_LIBS} -lm -ldl -lpthread"
       BUILD_SUBDIRS="src/common src/platform/console"
       TEST_DIR="src/platform/console"
@@ -306,7 +302,6 @@ function buildWeb() {
    BUILD_SUBDIRS="src/common src/platform/web"
    AM_CONDITIONAL(WITH_CYGWIN_CONSOLE, false)
    AC_DEFINE(_UnixOS, 1, [Building under Unix like systems.])
-   AC_DEFINE(DEV_EVENTS_OSD, 1, [dev_events() implemented using osd_events().])
    AC_DEFINE(IMPL_DEV_DELAY, 1, [Driver implements dev_delay()])
    AC_DEFINE(IMPL_LOG_WRITE, 1, [Driver implements lwrite()])
    AC_DEFINE(USE_TERM_IO, 0, [dont use the termios library.])

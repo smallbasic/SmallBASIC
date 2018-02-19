@@ -41,7 +41,6 @@
 #define NAME_SIZE 256
 #define PATH_SIZE 1024
 
-typedef int (*sblib_events_fn)(int);
 typedef int (*sblib_exec_fn)(int, int, slib_par_t *, var_t *);
 
 typedef struct {
@@ -50,7 +49,6 @@ typedef struct {
   void *handle;
   sblib_exec_fn sblib_proc_exec;
   sblib_exec_fn sblib_func_exec;
-  sblib_events_fn sblib_events;
   uint32_t id;
   uint32_t flags;
   uint32_t first_proc;
@@ -236,7 +234,6 @@ void slib_import_routines(slib_t *lib, int comp) {
   lib->first_func = extfunccount;
   lib->sblib_func_exec = slib_getoptptr(lib, "sblib_func_exec");
   lib->sblib_proc_exec = slib_getoptptr(lib, "sblib_proc_exec");
-  lib->sblib_events = slib_getoptptr(lib, "sblib_events");
 
   fcount = slib_getoptptr(lib, "sblib_proc_count");
   fgetname = slib_getoptptr(lib, "sblib_proc_getname");
@@ -618,24 +615,11 @@ int slib_funcexec(int lib_id, int index, var_t *ret) {
   return result;
 }
 
-/**
- * plugin event handling
- */
-int slib_events(int wait_flag) {
-  int result = 0;
-  for (int i = 0; i < slib_count; i++) {
+void *slib_get_func(const char *name) {
+  void *result = NULL;
+  for (int i = 0; i < slib_count && result == NULL; i++) {
     slib_t *lib = &slib_table[i];
-    if (lib->handle && lib->sblib_events) {
-      int events = lib->sblib_events(wait_flag);
-      if (events == -2) {
-        // BREAK
-        result = events;
-        break;
-      } else if (events != 0) {
-        // events exist
-        result = events;
-      }
-    }
+    result = slib_getoptptr(lib, name);
   }
   return result;
 }
