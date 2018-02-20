@@ -82,6 +82,10 @@ void default_write(const char *str) {
   }
 }
 
+void console_init() {
+  p_write = default_write;
+}
+
 // initialize driver
 int osd_devinit() {
   p_settextcolor = (settextcolor_fn)slib_get_func("sblib_settextcolor");

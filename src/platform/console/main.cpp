@@ -19,6 +19,8 @@ extern "C" {
   int exec_close(int tid);
 }
 
+void console_init();
+
 static struct option OPTIONS[] = {
   {"help",           no_argument,       NULL, 'h'},
   {"verbose",        no_argument,       NULL, 'v'},
@@ -273,6 +275,10 @@ bool process_options(int argc, char *argv[], char **runFile, bool *tmpFile) {
     }
   }
 
+  if (getenv("SBASICPATH") != NULL) {
+    opt_loadmod = 1;
+  }
+
   if (strcmp("--", argv[argc - 1]) == 0) {
     if (*runFile != NULL) {
       // run file already set
@@ -308,6 +314,8 @@ int main(int argc, char *argv[]) {
   opt_pref_width = 0;
   opt_quiet = 1;
   opt_verbose = 0;
+
+  console_init();
 
   char *file = NULL;
   bool tmpFile = false;
