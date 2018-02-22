@@ -1129,7 +1129,7 @@ int par_massget(const char *fmt, ...) {
       case 'F':
         // real (var_num_t)
         f = va_arg(ap, var_num_t*);
-        *f = v_getnum(ptable[curpar].var);
+        *f = v_getreal(ptable[curpar].var);
         curpar++;
         break;
       case 'p':

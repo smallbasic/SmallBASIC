@@ -211,22 +211,6 @@ int v_length(var_t *var) {
 }
 
 /*
- * return array element pointer
- */
-var_t *v_getelemptr(var_t *v, uint32_t index) {
-  if (v->type == V_ARRAY) {
-    if (index < v_asize(v)) {
-      return v_elem(v, index);
-    } else {
-      err_vararridx(index, v_asize(v));
-      return NULL;
-    }
-  }
-  err_varisnotarray();
-  return NULL;
-}
-
-/*
  * resize an existing array
  */
 void v_resize_array(var_t *v, uint32_t size) {

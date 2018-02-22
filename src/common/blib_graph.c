@@ -1237,7 +1237,7 @@ void cmd_chart() {
   // get array's values
   vals = (var_num_t *) malloc(sizeof(var_num_t) * count);
   for (i = 0; i < count; i++) {
-    elem_p = v_getelemptr(var_p, i);
+    elem_p = v_elem(var_p, i);
     if (prog_error) {
       free(vals);
       return;
