@@ -88,29 +88,29 @@ void console_init() {
 
 // initialize driver
 int osd_devinit() {
-  p_settextcolor = (settextcolor_fn)slib_get_func("sblib_settextcolor");
-  p_setpenmode = (setpenmode_fn)slib_get_func("sblib_setpenmode");
-  p_getpen = (getpen_fn)slib_get_func("sblib_getpen");
+  p_arc = (arc_fn)slib_get_func("sblib_arc");
+  p_audio = (audio_fn)slib_get_func("sblib_audio");
+  p_beep = (beep_fn)slib_get_func("sblib_beep");
+  p_clear_sound_queue = (clear_sound_queue_fn)slib_get_func("sblib_clear_sound_queue");
   p_cls = (cls_fn)slib_get_func("sblib_cls");
+  p_ellipse = (ellipse_fn)slib_get_func("sblib_ellipse");
+  p_events = (events_fn)slib_get_func("sblib_events");
+  p_getpen = (getpen_fn)slib_get_func("sblib_getpen");
+  p_getpixel = (getpixel_fn)slib_get_func("sblib_getpixel");
   p_getx = (getx_fn)slib_get_func("sblib_getx");
   p_gety = (gety_fn)slib_get_func("sblib_gety");
-  p_setxy = (setxy_fn)slib_get_func("sblib_setxy");
-  p_write = (write_fn)slib_get_func("sblib_write");
-  p_events = (events_fn)slib_get_func("sblib_events");
-  p_setcolor = (setcolor_fn)slib_get_func("sblib_setcolor");
   p_line = (line_fn)slib_get_func("sblib_line");
-  p_ellipse = (ellipse_fn)slib_get_func("sblib_ellipse");
-  p_arc = (arc_fn)slib_get_func("sblib_arc");
-  p_setpixel = (setpixel_fn)slib_get_func("sblib_setpixel");
-  p_getpixel = (getpixel_fn)slib_get_func("sblib_getpixel");
   p_rect = (rect_fn)slib_get_func("sblib_rect");
   p_refresh = (refresh_fn)slib_get_func("sblib_refresh");
-  p_beep = (beep_fn)slib_get_func("sblib_beep");
+  p_setcolor = (setcolor_fn)slib_get_func("sblib_setcolor");
+  p_setpenmode = (setpenmode_fn)slib_get_func("sblib_setpenmode");
+  p_setpixel = (setpixel_fn)slib_get_func("sblib_setpixel");
+  p_settextcolor = (settextcolor_fn)slib_get_func("sblib_settextcolor");
+  p_setxy = (setxy_fn)slib_get_func("sblib_setxy");
   p_sound = (sound_fn)slib_get_func("sblib_sound");
-  p_clear_sound_queue = (clear_sound_queue_fn)slib_get_func("sblib_p_clear_sound_queue");
-  p_audio = (audio_fn)slib_get_func("sblib_audio");
-  p_textwidth = (textwidth_fn)slib_get_func("sblib_textwidth");
   p_textheight = (textheight_fn)slib_get_func("sblib_textheight");
+  p_textwidth = (textwidth_fn)slib_get_func("sblib_textwidth");
+  p_write = (write_fn)slib_get_func("sblib_write");
 
   if (p_write == NULL) {
     p_write = default_write;

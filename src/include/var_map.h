@@ -7,7 +7,7 @@
 //
 // Copyright(C) 2007-2014 Chris Warren-Smith. [http://tinyurl.com/ja2ss]
 
-#include "common/var.h"
+#include "include/var.h"
 
 #ifndef VAR_MAP_H
 #define VAR_MAP_H

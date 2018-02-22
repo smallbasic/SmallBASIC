@@ -8,10 +8,7 @@
 // Copyright(C) 2007-2014 Chris Warren-Smith.
 
 #include "common/sys.h"
-#include "common/var.h"
-#include "common/var_map.h"
 #include "common/pproc.h"
-#include "common/device.h"
 #include "lib/maapi.h"
 #include "ui/system.h"
 

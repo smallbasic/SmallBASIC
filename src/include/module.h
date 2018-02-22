@@ -125,6 +125,35 @@ int sblib_func_getname(int index, char *func_name);
  */
 int sblib_func_exec(int index, int param_count, slib_par_t *params, var_t *retval);
 
+/**
+ * @ingroup modlib
+ *
+ * overrides for osd_xx functions
+ */
+int  sblib_events(int);
+int  sblib_getpen(int code);
+int  sblib_getx();
+int  sblib_gety();
+int  sblib_textheight(const char *str);
+int  sblib_textwidth(const char *str);
+long sblib_getpixel(int x, int y);
+void sblib_arc(int xc, int yc, double r, double as, double ae, double aspect);
+void sblib_audio(const char *path);
+void sblib_beep();
+void sblib_clear_sound_queue();
+void sblib_cls();
+void sblib_ellipse(int xc, int yc, int xr, int yr, int fill);
+void sblib_line(int x1, int y1, int x2, int y2);
+void sblib_rect(int x1, int y1, int x2, int y2, int fill);
+void sblib_refresh();
+void sblib_setcolor(long color);
+void sblib_setpenmode(int enable);
+void sblib_setpixel(int x, int y);
+void sblib_settextcolor(long fg, long bg);
+void sblib_setxy(int x, int y);
+void sblib_sound(int frq, int ms, int vol, int bgplay);
+void sblib_write(const char *str);
+
 #if defined(__cplusplus)
 }
 #endif

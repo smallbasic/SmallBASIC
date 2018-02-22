@@ -7,7 +7,7 @@
 //
 // Copyright(C) 2014 Chris Warren-Smith
 
-#include "common/var_map.h"
+#include "include/var_map.h"
 #include "common/var_eval.h"
 
 void err_evsyntax(void);

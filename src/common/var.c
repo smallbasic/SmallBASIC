@@ -8,11 +8,7 @@
 // Copyright(C) 2000 Nicholas Christopoulos
 
 #include "common/sys.h"
-#include "common/str.h"
-#include "common/var.h"
-#include "common/smbas.h"
 #include "common/sberr.h"
-#include "common/var_map.h"
 
 #define INT_STR_LEN 64
 #define VAR_POOL_SIZE 8192
