@@ -39,14 +39,10 @@ void va_err_detail_msg(const char *format, va_list args, unsigned size) {
 }
 
 void err_stack_msg() {
-  int i_stack, i_kw;
-
-  if (prog_stack_count) {
-    log_printf("\033[4mStack:\033[0m\n");
-  }
+  int header = 0;
 
   // log the stack trace
-  for (i_stack = prog_stack_count; i_stack > 0; i_stack--) {
+  for (int i_stack = prog_stack_count; i_stack > 0; i_stack--) {
     stknode_t node = prog_stack[i_stack - 1];
     switch (node.type) {
     case 0xFF:
@@ -56,8 +52,12 @@ void err_stack_msg() {
       break;
 
     default:
-      for (i_kw = 0; keyword_table[i_kw].name[0] != '\0'; i_kw++) {
+      for (int i_kw = 0; keyword_table[i_kw].name[0] != '\0'; i_kw++) {
         if (node.type == keyword_table[i_kw].code) {
+          if (!header) {
+            log_printf("\033[4mStack:\033[0m\n");
+            header = 1;
+          }
           dev_log_stack(keyword_table[i_kw].name, node.type, node.line);
           log_printf(" %s: %d", keyword_table[i_kw].name, node.line);
           break;
