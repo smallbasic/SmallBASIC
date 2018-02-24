@@ -634,4 +634,5 @@ void slib_close() {}
 int slib_events(int wait_flag) { return 0; }
 void slib_init(int mcount, const char *mlist) {}
 void slib_setup_comp(int lib_id) {}
+void *slib_get_func(const char *name) {}
 #endif

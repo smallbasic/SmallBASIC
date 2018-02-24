@@ -461,7 +461,7 @@ struct proc_keyword_s proc_table[] = {
 #define LCN_QUIET               "QUIET"
 #define LCN_GRMODE              "GRMODE"
 #define LCN_TEXTMODE            "TEXTMODE"
-#define LCN_UNIT_PATH           "UNITPATH"
+#define LCN_SBASICPATH          "SBASICPATH"
 #define LCN_COMMAND             "COMMAND"
 #define LCN_INC                 "INCLUDE"
 #define LCN_SUB_WRS             "SUB "

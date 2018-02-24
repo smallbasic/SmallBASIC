@@ -10,7 +10,7 @@
 #include "common/device.h"
 #include "common/extlib.h"
 #include "common/osd.h"
-#include "common/str.h"
+#include "common/smbas.h"
 
 typedef void (*settextcolor_fn)(long fg, long bg);
 typedef void (*setpenmode_fn)(int enable);
@@ -35,6 +35,7 @@ typedef void (*clear_sound_queue_fn)();
 typedef void (*audio_fn)(const char *path);
 typedef int  (*textwidth_fn)(const char *str);
 typedef int  (*textheight_fn)(const char *str);
+typedef int  (*init_fn)(int width, int height);
 
 static settextcolor_fn p_settextcolor;
 static setpenmode_fn p_setpenmode;
@@ -112,13 +113,21 @@ int osd_devinit() {
   p_textwidth = (textwidth_fn)slib_get_func("sblib_textwidth");
   p_write = (write_fn)slib_get_func("sblib_write");
 
+  init_fn devinit = (init_fn)slib_get_func("sblib_devinit");
+  if (devinit) {
+    devinit(opt_pref_width, opt_pref_height);
+    os_graf_mx = opt_pref_width;
+    os_graf_my = opt_pref_height;
+  } else {
+    os_graf_mx = 80;
+    os_graf_my = 25;
+  }
+
   if (p_write == NULL) {
     p_write = default_write;
   }
 
   os_color_depth = 1;
-  os_graf_mx = 80;
-  os_graf_my = 25;
   osd_cls();
   return 1;
 }

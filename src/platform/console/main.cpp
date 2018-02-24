@@ -28,7 +28,6 @@ static struct option OPTIONS[] = {
   {"no-file-perm",   no_argument,       NULL, 'f'},
   {"gen-sbx",        no_argument,       NULL, 'x'},
   {"module",         optional_argument, NULL, 'm'},
-  {"unitpath",       optional_argument, NULL, 'u'},
   {"decompile",      optional_argument, NULL, 's'},
   {"option",         optional_argument, NULL, 'o'},
   {"cmd",            optional_argument, NULL, 'c'},
@@ -206,7 +205,7 @@ bool process_options(int argc, char *argv[], char **runFile, bool *tmpFile) {
   bool result = true;
   while (result) {
     int option_index = 0;
-    int c = getopt_long(argc, argv, "hvkfxm::u:s::o:c:", OPTIONS, &option_index);
+    int c = getopt_long(argc, argv, "hvkfxm::s::o:c:", OPTIONS, &option_index);
     if (c == -1 && !option_index) {
       // no more options
       for (int i = 1; i < argc; i++) {
@@ -245,9 +244,6 @@ bool process_options(int argc, char *argv[], char **runFile, bool *tmpFile) {
       if (optarg) {
         strcpy(opt_modpath, optarg);
       }
-      break;
-    case 'u':
-      dev_setenv("UNITPATH", optarg);
       break;
     case 's':
       if (*runFile) {

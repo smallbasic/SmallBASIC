@@ -41,21 +41,17 @@ time_t sys_filetime(const char *file) {
  * @return non-zero if found
  */
 int sys_search_path(const char *path, const char *file, char *retbuf) {
-  const char *ps, *p;
   char cur_path[OS_PATHNAME_SIZE + 1];
   int found = 0;
 
   if (path == NULL || strlen(path) == 0) {
     return 0;
   }
-  ps = path;
+  const char *ps = path;
+  const char *p;
   do {
     // next element, build cur_path
-#if defined(_UnixOS)
     p = strchr(ps, ':');
-#else
-    p = strchr(ps, ';');
-#endif
     if (!p) {
       strlcpy(cur_path, ps, sizeof(cur_path));
     } else {
@@ -68,17 +64,12 @@ int sys_search_path(const char *path, const char *file, char *retbuf) {
     if (cur_path[0] == '~') {
       char *old_path = malloc(strlen(cur_path));
       strcpy(old_path, cur_path + 1);
-#if defined(_UnixOS)
-      strlcpy(cur_path, getenv("HOME"), sizeof(cur_path));
-      strlcat(cur_path, "/", sizeof(cur_path));
-#else
       if (getenv("HOME")) {
         strlcpy(cur_path, getenv("HOME"), sizeof(cur_path));
       } else {
         strlcpy(cur_path, getenv("HOMEPATH"), sizeof(cur_path));
       }
-      strlcat(cur_path, "\\", sizeof(cur_path));
-#endif
+      strlcat(cur_path, "/", sizeof(cur_path));
       strlcat(cur_path, old_path, sizeof(cur_path));
       free(old_path);
     }
@@ -89,11 +80,7 @@ int sys_search_path(const char *path, const char *file, char *retbuf) {
       while (!found && (entry = readdir(dp)) != NULL) {
         if (strcasecmp(entry->d_name, file) == 0) {
           int end = strlen(cur_path);
-#if defined(_UnixOS)
           strcat(cur_path, "/");
-#else
-          strcat(cur_path, "\\");
-#endif
           strcat(cur_path, entry->d_name);
           if (access(cur_path, R_OK) == 0) {
             if (retbuf) {

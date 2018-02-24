@@ -142,6 +142,7 @@ void sblib_audio(const char *path);
 void sblib_beep();
 void sblib_clear_sound_queue();
 void sblib_cls();
+void sblib_devinit(int width, int height);
 void sblib_ellipse(int xc, int yc, int xr, int yr, int fill);
 void sblib_line(int x1, int y1, int x2, int y2);
 void sblib_rect(int x1, int y1, int x2, int y2, int fill);

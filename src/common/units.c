@@ -57,8 +57,8 @@ int find_unit_path(const char *name, char *file) {
   strcat(file, ".bas");
 
   // find in unitpath
-  if (getenv("UNITPATH")) {
-    if (sys_search_path(getenv("UNITPATH"), file, file)) {
+  if (getenv("SBASICPATH")) {
+    if (sys_search_path(getenv("SBASICPATH"), file, file)) {
       return 1;
     }
   }

@@ -29,7 +29,7 @@ extern void expr_parser(bc_t *bc);
 #define LEN_OPTION     STRLEN(LCN_OPTION)
 #define LEN_IMPORT     STRLEN(LCN_IMPORT_WRS)
 #define LEN_UNIT       STRLEN(LCN_UNIT_WRS)
-#define LEN_UNIT_PATH  STRLEN(LCN_UNIT_PATH)
+#define LEN_SBASICPATH STRLEN(LCN_SBASICPATH)
 #define LEN_INC        STRLEN(LCN_INC)
 #define LEN_SUB_WRS    STRLEN(LCN_SUB_WRS)
 #define LEN_FUNC_WRS   STRLEN(LCN_FUNC_WRS)
@@ -4139,20 +4139,35 @@ void comp_preproc_grmode(const char *source) {
 
   p = buffer;
   SKIP_SPACES(p);
-  char *v = p;                  // 'v' points to first letter of 'width', (1024x768)
-  p = strchr(v, 'X');           // search for the end of 'width' parameter
-                                // (1024x768). Remeber that the string is in upper-case
-  if (!p) {                     // we don't accept one parameter, the
-                                // width must followed by the height
-                                // so, if 'X' delimiter is omitted, there is no height parameter
+
+  // 'v' points to first letter of 'width', (1024x768)
+  char *v = p;
+
+  // search for the end of 'width' parameter
+  // (1024x768). Remeber that the string is in upper-case
+  p = strchr(v, 'X');
+  if (!p) {
+    p = strchr(v, 'x');
+  }
+  if (!p) {
+    // we don't accept one parameter, the width must followed by the height
+    // so, if 'X' delimiter is omitted, there is no height parameter
     err_grmode();
     return;
   }
-  *p = '\0';                    // we close the string at X position
-                                // (example: "1024x768" it will be "1024\0768")
-  opt_pref_width = xstrtol(v);  // now the v points to a string-of-digits,
-  v = ++p;                      // v points to first letter of 'height'
-  opt_pref_height = xstrtol(v); // now the v points to a string-of-digits,
+
+  // we close the string at X position
+  // (example: "1024x768" it will be "1024\0768")
+  *p = '\0';
+
+  // now the v points to a string-of-digits,
+  opt_pref_width = xstrtol(v);
+
+  // v points to first letter of 'height'
+  v = ++p;
+
+  // now the v points to a string-of-digits,
+  opt_pref_height = xstrtol(v);
 }
 
 /**
@@ -4384,9 +4399,9 @@ char *comp_preproc_options(char *p) {
 }
 
 /**
- * Setup the UNITPATH environment variable.
+ * Setup the SBASICPATH environment variable.
  */
-void comp_preproc_unit_path(char *p) {
+void comp_preproc_sbasicpath(char *p) {
   SKIP_SPACES(p);
   if (*p == '=') {
     p++;
@@ -4400,7 +4415,7 @@ void comp_preproc_unit_path(char *p) {
       *up++ = *p++;
     }
     *up = '\0';
-    dev_setenv(LCN_UNIT_PATH, upath);
+    dev_setenv(LCN_SBASICPATH, upath);
   }
 }
 
@@ -4508,9 +4523,9 @@ void comp_preproc_pass1(char *p) {
         comp_preproc_unit(p + LEN_UNIT);
       }
       comp_preproc_remove_line(p, 1);
-    } else if (strncmp(LCN_UNIT_PATH, p, LEN_UNIT_PATH) == 0) {
-      // unitpath
-      comp_preproc_unit_path(p + LEN_UNIT_PATH);
+    } else if (strncmp(LCN_SBASICPATH, p, LEN_SBASICPATH) == 0) {
+      // sbasicpath
+      comp_preproc_sbasicpath(p + LEN_SBASICPATH);
       comp_preproc_remove_line(p, 0);
     } else if (strncmp(LCN_INC, p, LEN_INC) == 0) {
       // include
