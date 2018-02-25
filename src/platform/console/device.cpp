@@ -35,7 +35,7 @@ typedef void (*clear_sound_queue_fn)();
 typedef void (*audio_fn)(const char *path);
 typedef int  (*textwidth_fn)(const char *str);
 typedef int  (*textheight_fn)(const char *str);
-typedef int  (*init_fn)(int width, int height);
+typedef int  (*init_fn)(const char *prog, int width, int height);
 
 static settextcolor_fn p_settextcolor;
 static setpenmode_fn p_setpenmode;
@@ -115,7 +115,7 @@ int osd_devinit() {
 
   init_fn devinit = (init_fn)slib_get_func("sblib_devinit");
   if (devinit) {
-    devinit(opt_pref_width, opt_pref_height);
+    devinit(prog_file, opt_pref_width, opt_pref_height);
     os_graf_mx = opt_pref_width;
     os_graf_my = opt_pref_height;
   } else {
