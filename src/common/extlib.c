@@ -619,7 +619,9 @@ void *slib_get_func(const char *name) {
   void *result = NULL;
   for (int i = 0; i < slib_count && result == NULL; i++) {
     slib_t *lib = &slib_table[i];
-    result = slib_getoptptr(lib, name);
+    if (lib->imported) {
+      result = slib_getoptptr(lib, name);
+    }
   }
   return result;
 }
