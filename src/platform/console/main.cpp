@@ -214,8 +214,9 @@ bool process_options(int argc, char *argv[], char **runFile, bool *tmpFile) {
         if (*runFile == NULL &&
             (strcasecmp(s + len - 4, ".bas") == 0 && access(s, 0) == 0)) {
           *runFile = strdup(s);
-        } else if (chdir(s) != 0) {
-          strcpy(opt_command, s);
+        } else {
+          strlcat(opt_command, " ", OPT_CMD_SZ);
+          strlcat(opt_command, s, OPT_CMD_SZ);
         }
       }
       break;
@@ -299,7 +300,7 @@ bool process_options(int argc, char *argv[], char **runFile, bool *tmpFile) {
  */
 int main(int argc, char *argv[]) {
   opt_autolocal = 0;
-  opt_command[0] = 0;
+  opt_command[0] = '\0';
   opt_file_permitted = 1;
   opt_graphics = 0;
   opt_ide = 0;
