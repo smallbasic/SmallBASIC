@@ -654,14 +654,19 @@ void cmd_floadln() {
     } else {
       v_resize_array(array_p, 0); // v_free() is here
     }
-  } else {                        // if type=1
-    // build string
+  } else {
+    // type == 1, build string
     v_free(var_p);
-    v_init_str(var_p, dev_flength(handle));
-    if (var_p->v.p.length > 1) {
-      dev_fread(handle, (byte *)var_p->v.p.ptr, var_p->v.p.length - 1);
+    int len = dev_flength(handle);
+    if (len < 1 || prog_error) {
+      err_throw(FSERR_NOT_FOUND);
+    } else {
+      v_init_str(var_p, len);
+      if (var_p->v.p.length > 1) {
+        dev_fread(handle, (byte *)var_p->v.p.ptr, var_p->v.p.length - 1);
+        var_p->v.p.ptr[var_p->v.p.length - 1] = '\0';
+      }
     }
-    var_p->v.p.ptr[var_p->v.p.length - 1] = '\0';
   }
   if (flags == DEV_FILE_INPUT) {
     dev_fclose(handle);
