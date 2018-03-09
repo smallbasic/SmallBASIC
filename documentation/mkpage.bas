@@ -81,5 +81,6 @@ sub process(filename)
 end
 
 print "import site"
+print "if (exist(command)) then tload command, content, 1"
 process(trim(command))
 

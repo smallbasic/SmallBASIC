@@ -248,6 +248,7 @@ sub mk_markdown(byref in_map)
       buffer << fix_comments_jekyll(in_map(i).comment_body_value, keyword)
     wend
     filename = in_map(i).entity_id + "-" + lower(group) + "-" + lower(keyword) + ".markdown"
+    filename = translate(filename, " ", "")
     tsave filename, buffer
   next i
 end
