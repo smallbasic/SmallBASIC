@@ -329,7 +329,7 @@ int main(int argc, char *argv[]) {
     }
     free(file);
   }
-  return gsb_last_error;
+  return gsb_last_error ? gsb_last_line : 0;
 }
 
 #if defined(__GNUC__) && !defined(__MACH__) && !defined(_Win32)

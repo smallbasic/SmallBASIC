@@ -78,6 +78,15 @@ func fix_comments_jekyll(comments, keyword)
   fix_comments_jekyll = comments
 end
 
+func fix_comments_pandoc(comments, keyword)
+  comments = translate(comments, "<code>", chr(10) + "~~~" + chr(10))
+  comments = translate(comments, "</code>", chr(10) + "~~~" + chr(10))
+  comments = translate(comments, "p. ", "")
+  comments = translate(comments, "bc. ", "> ")
+  comments = fix_comments(comments, keyword)
+  return comments
+end
+
 sub mk_bas(byref in_map)
   local i, row, group, keyword
   local in_map_len = len(in_map) - 1
@@ -213,40 +222,43 @@ end
 '
 ' make post files for smallbasic.github.io
 '
-' local test: $ bundle exec jekyll serve
-'
 sub mk_markdown(byref in_map)
   local i, row, group, type, keyword, syntax, brief, comments, buffer, filename
   local in_map_len = len(in_map) - 1
   local end_block = "<!-- end heading block -->"
-  dim buffer
+
+  sub append_buf(s)
+    buffer += s
+    buffer += chr(10)
+  end
 
   for i = 0 to in_map_len
-    erase buffer
+    buffer=""
     row = in_map(i).body_value
     group = get_field(row, "group=", false)
     type = get_field(row, "type=", false)
     keyword = get_field(row, "keyword=", false)
     syntax = get_field(row, "syntax=", false)
     brief = get_field(row, "brief=", false)
-    buffer << "### " + group
-    buffer << ""
-    buffer << "> " + syntax
-    buffer << ""
-    buffer << brief
-    buffer << ""
+    append_buf("# " + keyword)
+    append_buf("")
+    append_buf("> " + syntax)
+    append_buf("")
+    append_buf(brief)
+    append_buf("")
     pos = instr(row, end_block) + len(end_block)
     if (pos < len(row)) then
-      buffer << fix_comments_jekyll(mid(row, pos), keyword)
+      append_buf(fix_comments_pandoc(mid(row, pos), keyword))
     endif
     comments = in_map(i).comment_body_value
     if (comments != "NULL") then
-      buffer << fix_comments_jekyll(comments, keyword)
+      append_buf(fix_comments_pandoc(comments, keyword))
     endif
     while (i + 1 < in_map_len && in_map(i).entity_id == in_map(i + 1).entity_id)
       i++
-      buffer << fix_comments_jekyll(in_map(i).comment_body_value, keyword)
+      append_buf(fix_comments_pandoc(in_map(i).comment_body_value, keyword))
     wend
+
     filename = in_map(i).entity_id + "-" + lower(group) + "-" + lower(keyword) + ".markdown"
     filename = translate(filename, " ", "")
     tsave filename, buffer
