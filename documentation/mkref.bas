@@ -80,7 +80,15 @@ end
 
 func fix_comments_pandoc(comments, keyword)
   comments = translate(comments, "<code>", chr(10) + "~~~" + chr(10))
+  comments = translate(comments, "<?code>", chr(10) + "~~~" + chr(10))
   comments = translate(comments, "</code>", chr(10) + "~~~" + chr(10))
+  comments = translate(comments, "<strong>", "**")
+  comments = translate(comments, "</strong", "**")
+  comments = translate(comments, "<cite>", "")
+  comments = translate(comments, "</cite", "")
+  comments = translate(comments, "<blockquote>", "> ")
+  comments = translate(comments, "</blockquote>", "")
+  comments = translate(comments, "</blockqoute>", "")
   comments = translate(comments, "p. ", "")
   comments = translate(comments, "bc. ", "> ")
   comments = fix_comments(comments, keyword)
@@ -220,6 +228,83 @@ sub mk_jekyll(byref in_map)
 end
 
 '
+' must contain at least 3 | chars
+'
+func is_table(s)
+  local z
+  z = instr(0, s, "|")
+  if (z!=1) then return false
+
+  z = instr(z, s, "|")
+  if (z==0) then return false
+
+  z = instr(z, s, "|")
+  if (z==0) then return false
+
+  return true
+end
+
+'
+' generate the table pattern
+'
+func table_markdown(s)
+  local result = ""
+  local s_len = len(s)
+  local i
+  for i = 1 to s_len
+    if (mid(s, i, 1) == "|") then
+      result += " "
+    else
+      result += "-"
+    endif
+  next i
+  return result
+end
+
+'
+' convert textile to markdown
+'
+func table_row(table_md, s)
+  local out = trim(leftoflast(rightof(s, "|"), "|"))
+  local j = instr(table_md, " ")
+  local x = instr(out, "|")
+  local n = max(1, j - x)
+  return translate(out, "|", space(n))
+end
+
+'
+' convert textile to markdown
+'
+func update_tables(byref in_str)
+  local in_table = false
+  local table_md = ""
+  local out = ""
+  local row, rows
+
+  split in_str, chr(10), rows
+  for row in rows
+    if (is_table(row)) then
+      if (!in_table) then
+        table_md = ltrim(table_markdown(row))
+        in_table = true
+        out += table_md
+        out += chr(10)
+      endif
+      out += table_row(table_md, row)
+    else
+      if (in_table) then
+        out += table_md
+        out += chr(10)
+        in_table = false
+      endif
+      out += row
+    endif
+    out += chr(10)
+  next row
+  return out
+end
+
+'
 ' make post files for smallbasic.github.io
 '
 sub mk_markdown(byref in_map)
@@ -261,6 +346,7 @@ sub mk_markdown(byref in_map)
 
     filename = in_map(i).entity_id + "-" + lower(group) + "-" + lower(keyword) + ".markdown"
     filename = translate(filename, " ", "")
+    buffer = update_tables(buffer)
     tsave filename, buffer
   next i
 end

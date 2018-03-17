@@ -1134,12 +1134,16 @@ void cmd_str1(long funcCode, var_t *arg, var_t *r) {
     // str <- SPACE$(n)
     //
     l = v_getint(arg);
-    wp = r->v.p.ptr = (char *)malloc(l + 1);
-    for (int i = 0; i < l; i++) {
-      wp[i] = ' ';
+    if (l < 0) {
+      err_argerr();
+    } else {
+      wp = r->v.p.ptr = (char *)malloc(l + 1);
+      for (int i = 0; i < l; i++) {
+        wp[i] = ' ';
+      }
+      wp[l] = '\0';
+      r->v.p.length = strlen(r->v.p.ptr) + 1;
     }
-    wp[l] = '\0';
-    r->v.p.length = strlen(r->v.p.ptr) + 1;
     break;
   case kwENVIRONF:
     //
