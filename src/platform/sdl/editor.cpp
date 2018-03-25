@@ -95,15 +95,9 @@ void onlineHelp(Runtime *runtime, TextEditInput *widget) {
   char path[100];
   const char *nodeId = widget->getNodeId();
   if (nodeId != NULL && nodeId[0] != '0') {
-    sprintf(path, "https://smallbasic.sourceforge.io?q=node/%s", nodeId);
+    sprintf(path, "http://smallbasic.github.io/reference/%s.html", nodeId);
   } else {
-    char *selection = widget->getWordBeforeCursor();
-    if (selection != NULL) {
-      sprintf(path, "https://smallbasic.sourceforge.io?q=search/node/%s", selection);
-      free(selection);
-    } else {
-      sprintf(path, "https://smallbasic.sourceforge.io");
-    }
+    sprintf(path, "https://smallbasic.github.io");
   }
   runtime->browseFile(path);
 }

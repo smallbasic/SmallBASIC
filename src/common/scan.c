@@ -2565,6 +2565,7 @@ int comp_text_line_command(bid_t idx, int decl, int sharp, char *last_cmd) {
       // handle same line variable assignment, eg local blah = foo
       for (int i = 0; i < count; i++) {
         comp_prepare_name(vname, pars[i], SB_KEYWORD_SIZE);
+        str_alltrim(pars[i]);
         if (strlen(vname) != strlen(pars[i])) {
           // kwTYPE_LINE is required for executor
           comp_text_line(pars[i], 1);

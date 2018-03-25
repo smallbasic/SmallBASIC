@@ -347,6 +347,10 @@ sub mk_markdown(byref in_map)
     filename = in_map(i).entity_id + "-" + lower(group) + "-" + lower(keyword) + ".markdown"
     filename = translate(filename, " ", "")
     buffer = update_tables(buffer)
+
+    if (len(filename) > 200) then
+      filename = in_map(i).entity_id + ".markdown"
+    endif
     tsave filename, buffer
   next i
 end

@@ -1,4 +1,7 @@
 2018-03-08 (0.12.13)
+	COMMON: Fix trailing spaces with LOCAL command when terminated with comma
+
+2018-03-08 (0.12.13)
 	COMMON: Fix TLOAD input error handling
 
 2018-02-03 (0.12.13)
