@@ -247,7 +247,9 @@ void slib_import_routines(slib_t *lib, int comp) {
           break;
         } else if (comp) {
           char name[NAME_SIZE];
-          sprintf(name, "%s.%s", lib->name, buf);
+          strlcpy(name, lib->name, sizeof(name));
+          strlcat(name, ".", sizeof(name));
+          strlcat(name, buf, sizeof(name));
           strupper(name);
           comp_add_external_proc(name, lib->id);
         }
@@ -267,7 +269,9 @@ void slib_import_routines(slib_t *lib, int comp) {
           break;
         } else if (comp) {
           char name[NAME_SIZE];
-          sprintf(name, "%s.%s", lib->name, buf);
+          strlcpy(name, lib->name, sizeof(name));
+          strlcat(name, ".", sizeof(name));
+          strlcat(name, buf, sizeof(name));
           strupper(name);
           comp_add_external_func(name, lib->id);
         }

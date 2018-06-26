@@ -242,7 +242,7 @@ int main(int argc, char **argv) {
     if (c == -1) {
       break;
     }
-    if (OPTIONS[option_index].has_arg && optarg == '\0') {
+    if (OPTIONS[option_index].has_arg && optarg[0] == '\0') {
       show_help();
       exit(1);
     }

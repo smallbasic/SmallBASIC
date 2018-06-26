@@ -310,7 +310,7 @@ void System::editSource(String loadPath) {
         case SB_KEY_F(12):
         case SB_KEY_MENU:
           redraw = false;
-        break;
+          break;
         case SB_KEY_ESCAPE:
           widget = editWidget;
           helpWidget->hide();
@@ -323,11 +323,11 @@ void System::editSource(String loadPath) {
         case SB_KEY_CTRL('x'):
         case SB_KEY_CTRL(SB_KEY_INSERT):
           text = widget->copy(event.key == (int)SB_KEY_CTRL('x'));
-        if (text) {
-          setClipboardText(text);
-          free(text);
-        }
-        break;
+          if (text) {
+            setClipboardText(text);
+            free(text);
+          }
+          break;
         case SB_KEY_F(1):
         case SB_KEY_ALT('h'):
           _output->setStatus("Keyword Help. F2=online, Esc=Close");

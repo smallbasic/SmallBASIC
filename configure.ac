@@ -325,6 +325,7 @@ checkDebugMode
 checkProfiling
 checkForWindows
 
+CFLAGS="${CFLAGS} -std=gnu11"
 PACKAGE_CFLAGS="${PACKAGE_CFLAGS} -Wall -Wno-unused-result"
 BUILD_DATE=`date +"%a, %d %b %Y"`
 AC_DEFINE_UNQUOTED([BUILD_DATE],["$BUILD_DATE"],[Build date])
