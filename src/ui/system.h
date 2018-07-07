@@ -87,6 +87,7 @@ protected:
   bool loadSource(const char *fileName);
   void resize();
   void runEdit(const char *startupBas);
+  void runLive(const char *startupBas);
   void runMain(const char *mainBasPath);
   void runOnce(const char *startupBas);
   void saveFile(TextEditInput *edit, strlib::String &path);
@@ -101,6 +102,7 @@ protected:
   void showMenu();
   void showSystemScreen(bool showSrc);
   void waitForBack();
+  void waitForChange();
   AnsiWidget *_output;
 
   // platform static virtual

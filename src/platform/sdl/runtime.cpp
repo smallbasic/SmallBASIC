@@ -351,6 +351,8 @@ int Runtime::runShell(const char *startupBas, int fontScale, int debugPort) {
     String bas = startupBas;
     if (opt_ide == IDE_INTERNAL) {
       runEdit(bas.c_str());
+    } else if (opt_ide == IDE_EXTERNAL) {
+      runLive(bas.c_str());
     } else {
       runOnce(bas.c_str());
     }

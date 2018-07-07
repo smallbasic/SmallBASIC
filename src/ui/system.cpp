@@ -52,6 +52,7 @@
 #define MENU_COMPETION_3  (MENU_SIZE + 4)
 #define MAX_COMPLETIONS 4
 #define MAX_CACHE 8
+#define CHANGE_WAIT_SLEEP 1000
 
 #define FONT_SCALE_INTERVAL 10
 #define FONT_MIN 20
@@ -587,6 +588,24 @@ void System::runEdit(const char *startupBas) {
   }
 }
 
+void System::runLive(const char *startupBas) {
+  logEntered();
+  _mainBas = false;
+
+  while (!isBack() && !isClosing()) {
+    bool success = execute(startupBas);
+    if (!success) {
+      showSystemScreen(true);
+      _output->selectBackScreen(CONSOLE_SCREEN);
+      _output->flush(true);
+    }
+    waitForChange();
+    if (!success) {
+      showSystemScreen(false);
+    }
+  }
+}
+
 void System::runMain(const char *mainBasPath) {
   logEntered();
 
@@ -953,6 +972,16 @@ void System::waitForBack() {
     MAEvent event = getNextEvent();
     if (event.type == EVENT_TYPE_KEY_PRESSED &&
         event.key == SB_KEY_BACKSPACE) {
+      break;
+    }
+  }
+}
+
+void System::waitForChange() {
+  while (!isBack() && !isClosing()) {
+    processEvents(0);
+    dev_delay(CHANGE_WAIT_SLEEP);
+    if (_modifiedTime != getModifiedTime()) {
       break;
     }
   }
