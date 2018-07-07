@@ -380,6 +380,12 @@ int main(int argc, char* argv[]) {
   }
 
   restoreSettings(rect, fontScale, debug, argc == 1);
+  if (debug) {
+    // retrieve fontScale from non-debug settings
+    SDL_Rect unused;
+    restoreSettings(unused, fontScale, false, false);
+  }
+
   if (ide_option != -1) {
     opt_ide = ide_option;
   }

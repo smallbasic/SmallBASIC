@@ -102,7 +102,7 @@ protected:
   void showMenu();
   void showSystemScreen(bool showSrc);
   void waitForBack();
-  void waitForChange();
+  void waitForChange(bool error);
   AnsiWidget *_output;
 
   // platform static virtual

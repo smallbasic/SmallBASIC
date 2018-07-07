@@ -594,14 +594,15 @@ void System::runLive(const char *startupBas) {
 
   while (!isBack() && !isClosing()) {
     bool success = execute(startupBas);
-    if (!success) {
+    if (isBack() || isClosing()) {
+      break;
+    } else if (!success) {
       showSystemScreen(true);
       _output->selectBackScreen(CONSOLE_SCREEN);
       _output->flush(true);
-    }
-    waitForChange();
-    if (!success) {
-      showSystemScreen(false);
+      waitForChange(true);
+    } else {
+      waitForChange(false);
     }
   }
 }
@@ -977,13 +978,18 @@ void System::waitForBack() {
   }
 }
 
-void System::waitForChange() {
+void System::waitForChange(bool error) {
   while (!isBack() && !isClosing()) {
     processEvents(0);
-    dev_delay(CHANGE_WAIT_SLEEP);
+    if (error && _userScreenId == -1) {
+      // back button presses while error displayed
+      setExit(true);
+      break;
+    }
     if (_modifiedTime != getModifiedTime()) {
       break;
     }
+    dev_delay(CHANGE_WAIT_SLEEP);
   }
 }
 
