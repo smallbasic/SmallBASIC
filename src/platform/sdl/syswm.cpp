@@ -49,10 +49,20 @@ int getStartupFontSize(SDL_Window *window) {
 }
 
 void launchDebug(const char *file) {
-  STARTUPINFO info={sizeof(info)};
+  STARTUPINFO info = {sizeof(info)};
   PROCESS_INFORMATION processInfo;
   char cmd[1024];
   sprintf(cmd, "-p %d -d %s", g_debugPort, file);
+  if (!CreateProcess(g_appPath, cmd, NULL, NULL, TRUE, 0, NULL, NULL, &info, &processInfo)) {
+    appLog("failed to start %d %s %s\n", GetLastError(), g_appPath, cmd);
+  }
+}
+
+void launchExec(const char *file) {
+  STARTUPINFO info = {sizeof(info)};
+  PROCESS_INFORMATION processInfo;
+  char cmd[1024];
+  sprintf(cmd, "-x %s", file);
   if (!CreateProcess(g_appPath, cmd, NULL, NULL, TRUE, 0, NULL, NULL, &info, &processInfo)) {
     appLog("failed to start %d %s %s\n", GetLastError(), g_appPath, cmd);
   }
@@ -91,6 +101,26 @@ void launchDebug(const char *file) {
     // child process
     sprintf(port, "-p %d", g_debugPort);
     if (execl(g_appPath, g_appPath, port, "-d", file, (char *)0) == -1) {
+      fprintf(stderr, "exec failed [%s] %s\n", strerror(errno), g_appPath);
+      exit(1);
+    }
+    break;
+  default:
+    // parent process - continue
+    break;
+  }
+}
+
+void launchExec(const char *file) {
+  pid_t pid = fork();
+
+  switch (pid) {
+  case -1:
+    // failed
+    break;
+  case 0:
+    // child process
+    if (execl(g_appPath, g_appPath, "-x", file, (char *)0) == -1) {
       fprintf(stderr, "exec failed [%s] %s\n", strerror(errno), g_appPath);
       exit(1);
     }

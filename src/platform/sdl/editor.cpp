@@ -188,22 +188,6 @@ void publish(System *system, const char *text, const char *fileName, const char 
   }
 }
 
-void exportRun(Runtime *runtime, TextEditInput *editor) {
-  char path[PATH_MAX];
-  getScratchFile(path, sizeof(path));
-  char *buffer = editor->getTextSelection();
-  FILE *fp = fopen(path, "wb");
-  if (fp) {
-    fputs(buffer, fp);
-    fputs("\npause\n", fp);
-    fclose(fp);
-    runtime->exportRun(path);
-  } else {
-    runtime->alert("Run", "Failed to save scratch file.");
-  }
-  free(buffer);
-}
-
 void System::editSource(String loadPath) {
   logEntered();
 
@@ -372,16 +356,12 @@ void System::editSource(String loadPath) {
           debugStep(editWidget, helpWidget, true);
           break;
         case SB_KEY_F(8):
-          exportRun((Runtime *)this, editWidget);
+          ((Runtime *)this)->exportRun(loadPath);
           break;
         case SB_KEY_F(9):
         case SB_KEY_CTRL('r'):
-          if (((Runtime *)this)->debugActive()) {
-            exportRun((Runtime *)this, editWidget);
-          } else {
-            _state = kRunState;
-          }
-        break;
+          _state = kRunState;
+          break;
         case SB_KEY_F(10):
           _output->setStatus("Enter program command line, Esc=Close");
           widget = helpWidget;

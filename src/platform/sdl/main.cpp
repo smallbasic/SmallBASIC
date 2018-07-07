@@ -343,6 +343,8 @@ int main(int argc, char* argv[]) {
       break;
     case 'x':
       runFile = strdup(optarg);
+      g_debugPort = 0;
+      debug = true;
       ide_option = IDE_EXTERNAL;
       break;
     case 'e':

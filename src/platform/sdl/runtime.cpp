@@ -290,12 +290,8 @@ void Runtime::enableCursor(bool enabled) {
 }
 
 void Runtime::exportRun(const char *file) {
-  if (!debugOpen(file)) {
-    g_debugee = net_connect("localhost", g_debugPort);
-  }
-  if (g_debugee != -1) {
-    net_print(g_debugee, "x\n");
-  }
+  launchExec(file);
+  SDL_SetWindowInputFocus(_window);
 }
 
 void Runtime::pushEvent(MAEvent *event) {
