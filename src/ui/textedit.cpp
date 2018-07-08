@@ -92,9 +92,9 @@ int g_lineMarker[MAX_MARKERS] = {
 // 16 - row_marker
 
 const int solarized_dark[] = {
-  sol_base0, sol_base02, sol_base01, sol_base02, 0xa7aebc, sol_green,
+  sol_base0, sol_base02, sol_base01, sol_base02, 0xa7aebc, sol_base01,
   sol_base03, sol_base1, sol_base0, 0x3875ed, 0x373b88, sol_base02,
-  sol_cyan, sol_blue, sol_violet, sol_red, 0x0083f8
+  sol_green, sol_blue, sol_violet, sol_cyan, 0x0083f8
 };
 
 const int solarized_light[] = {
