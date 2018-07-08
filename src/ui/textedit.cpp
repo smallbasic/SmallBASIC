@@ -91,31 +91,31 @@ int g_lineMarker[MAX_MARKERS] = {
 // 15 - syntax_digit
 // 16 - row_marker
 
-const int theme1[] = {
-  sol_base0, 0xa7aebc, 0x484f5f, 0xa7aebc, 0xa7aebc, 0x00bb00,
-  sol_base03, 0x3d4350, 0x2b3039, 0x3875ed, 0x373b88, sol_base02,
-  0x0083f8, 0xff9d00, 0x31ccac, 0xc679dd, 0x0083f8
+const int solarized_dark[] = {
+  sol_base0, sol_base02, sol_base01, sol_base02, 0xa7aebc, sol_green,
+  sol_base03, sol_base1, sol_base0, 0x3875ed, 0x373b88, sol_base02,
+  sol_cyan, sol_blue, sol_violet, sol_red, 0x0083f8
 };
 
-const int theme2[] = {
-  sol_base00, 0xa7aebc, sol_base1, 0xa7aebc, 0xa7aebc, sol_base1,
-  sol_base3, 0x3d4350, 0x2b3039, 0x3875ed, 0x373b88, sol_base2,
+const int solarized_light[] = {
+  sol_base00, sol_base02, sol_base1, sol_base03, 0xa7aebc, sol_base1,
+  sol_base3, sol_base1, sol_base0, 0x3875ed, 0x373b88, sol_base2,
   sol_green, sol_violet, sol_yellow, sol_blue, 0x0083f8
 };
 
-const int theme3[] = {
-  0xc8cedb, 0xa7aebc, 0x484f5f, 0xa7aebc, 0xa7aebc, 0x00bb00,
-  0x272b33, 0x3d4350, 0x2b3039, 0x3875ed, 0x373b88, 0x2b313a,
-  0x0083f8, 0xff9d00, 0x31ccac, 0xc679dd, 0x0083f8
-};
-
-const int theme4[] = {
+const int shian[] = {
   0xcccccc, 0x000077, 0x333333, 0x333333, 0x0000aa, 0x008888,
   0x010101, 0xeeeeee, 0x010101, 0xffff00, 0x00ff00, 0x010101,
   0x00ffff, 0xff00ff, 0xffffff, 0x00ffff, 0x00aaff
 };
 
-const int theme5[] = {
+const int atom1[] = {
+  0xc8cedb, 0xa7aebc, 0x484f5f, 0xa7aebc, 0xa7aebc, 0x00bb00,
+  0x272b33, 0x3d4350, 0x2b3039, 0x3875ed, 0x373b88, 0x2b313a,
+  0x0083f8, 0xff9d00, 0x31ccac, 0xc679dd, 0x0083f8
+};
+
+const int atom2[] = {
   0xc8cedb, 0xd7decc, 0x484f5f, 0xa7aebc, 0xa7aebc, 0x00bb00,
   0x001b33, 0x0088ff, 0x000d1a, 0x0051b1, 0x373b88, 0x022444,
   0x0083f8, 0xff9d00, 0x31ccac, 0xc679dd, 0x0083f8
@@ -128,7 +128,7 @@ int g_user_theme[] = {
 };
 
 const int* themes[] = {
-  theme1, theme2, theme3, theme4, theme5, g_user_theme
+  solarized_dark, solarized_light, shian, atom1, atom2, g_user_theme
 };
 
 const char *helpText =
