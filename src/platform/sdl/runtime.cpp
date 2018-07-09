@@ -109,6 +109,7 @@ Runtime::Runtime(SDL_Window *window) :
   System(),
   _menuX(0),
   _menuY(0),
+  _fullscreen(false),
   _graphics(NULL),
   _eventQueue(NULL),
   _window(window),
@@ -292,6 +293,15 @@ void Runtime::enableCursor(bool enabled) {
 void Runtime::exportRun(const char *file) {
   launchExec(file);
   SDL_SetWindowInputFocus(_window);
+}
+
+void Runtime::toggleFullscreen() {
+  _fullscreen = !_fullscreen;
+  if (_fullscreen) {
+    SDL_SetWindowFullscreen(_window, SDL_WINDOW_FULLSCREEN_DESKTOP);
+  } else {
+    SDL_SetWindowFullscreen(_window, 0);
+  }
 }
 
 void Runtime::pushEvent(MAEvent *event) {

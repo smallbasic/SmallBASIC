@@ -1,4 +1,8 @@
 2018-07-07 (0.12.13)
+	SDL: Added solarized color schemes
+	F11 key in editor now toggles fullscreen
+
+2018-07-07 (0.12.13)
 	SDL: Implemented live edit mode
 
 2018-03-08 (0.12.13)

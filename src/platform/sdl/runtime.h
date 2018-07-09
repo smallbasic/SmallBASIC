@@ -34,6 +34,7 @@ struct Runtime : public System {
   void enableCursor(bool enabled);
   void exportRun(const char *path);
   void redraw() { _graphics->redraw(); }
+  void toggleFullscreen();
   void handleKeyEvent(MAEvent &event);
   bool hasEvent() { return _eventQueue && _eventQueue->size() > 0; }
   void pause(int timeout);
@@ -55,6 +56,7 @@ struct Runtime : public System {
 
 private:
   int _menuX, _menuY;
+  bool _fullscreen;
   Graphics *_graphics;
   Stack<MAEvent *> *_eventQueue;
   SDL_Window *_window;

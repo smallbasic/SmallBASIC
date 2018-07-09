@@ -168,7 +168,7 @@ const char *helpText =
   "F8 live edit\n"
   "F9, C-r run\n"
   "F10 set command$\n"
-  "F11 publish\n";
+  "F11 full screen\n";
 
 inline bool match(const char *str, const char *pattern , int len) {
   int i, j;
@@ -1028,9 +1028,12 @@ char *TextEditInput::copy(bool cut) {
 
 void TextEditInput::paste(const char *text) {
   if (text != NULL) {
+    int lines = _buf._lines;
     stb_textedit_paste(&_buf, &_state, text, strlen(text));
-    _cursorRow = getCursorRow();
-    updateScroll();
+    if (lines != _buf._lines) {
+      _cursorRow = getCursorRow();
+      updateScroll();
+    }
   }
 }
 

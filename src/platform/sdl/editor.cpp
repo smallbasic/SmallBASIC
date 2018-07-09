@@ -370,13 +370,7 @@ void System::editSource(String loadPath) {
           inputMode = kCommand;
           break;
         case SB_KEY_F(11):
-          if (editWidget->getTextLength()) {
-            _output->setStatus("Enter description, Esc=Close [Publish on GitHub]");
-            widget = helpWidget;
-            helpWidget->createLineEdit("");
-            helpWidget->show();
-            inputMode = kPublish;
-          }
+          ((Runtime *)this)->toggleFullscreen();
           break;
         case SB_KEY_CTRL('h'):
           _output->setStatus("Keystroke help. Esc=Close");
