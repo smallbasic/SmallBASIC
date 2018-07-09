@@ -370,7 +370,9 @@ void System::editSource(String loadPath) {
           inputMode = kCommand;
           break;
         case SB_KEY_F(11):
-          ((Runtime *)this)->toggleFullscreen();
+          if (((Runtime *)this)->toggleFullscreen()) {
+            _output->setStatus("Press F11 to exit full screen.");
+          }
           break;
         case SB_KEY_CTRL('h'):
           _output->setStatus("Keystroke help. Esc=Close");

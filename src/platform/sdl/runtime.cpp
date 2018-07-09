@@ -292,16 +292,13 @@ void Runtime::enableCursor(bool enabled) {
 
 void Runtime::exportRun(const char *file) {
   launchExec(file);
-  SDL_SetWindowInputFocus(_window);
+  SDL_RaiseWindow(_window);
 }
 
-void Runtime::toggleFullscreen() {
+bool Runtime::toggleFullscreen() {
   _fullscreen = !_fullscreen;
-  if (_fullscreen) {
-    SDL_SetWindowFullscreen(_window, SDL_WINDOW_FULLSCREEN_DESKTOP);
-  } else {
-    SDL_SetWindowFullscreen(_window, 0);
-  }
+  SDL_SetWindowFullscreen(_window, _fullscreen ? SDL_WINDOW_FULLSCREEN_DESKTOP : 0);
+  return _fullscreen;
 }
 
 void Runtime::pushEvent(MAEvent *event) {

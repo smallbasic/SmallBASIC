@@ -34,7 +34,7 @@ struct Runtime : public System {
   void enableCursor(bool enabled);
   void exportRun(const char *path);
   void redraw() { _graphics->redraw(); }
-  void toggleFullscreen();
+  bool toggleFullscreen();
   void handleKeyEvent(MAEvent &event);
   bool hasEvent() { return _eventQueue && _eventQueue->size() > 0; }
   void pause(int timeout);
