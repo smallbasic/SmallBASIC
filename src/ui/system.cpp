@@ -594,7 +594,7 @@ void System::runLive(const char *startupBas) {
 
   while (!isBack() && !isClosing()) {
     bool success = execute(startupBas);
-    if (isBack() || isClosing()) {
+    if (isClosing()) {
       break;
     } else if (!success) {
       showSystemScreen(true);
@@ -602,6 +602,7 @@ void System::runLive(const char *startupBas) {
       _output->flush(true);
       waitForChange(true);
     } else {
+      _state = kActiveState;
       waitForChange(false);
     }
   }
