@@ -94,7 +94,7 @@ int g_lineMarker[MAX_MARKERS] = {
 const int solarized_dark[] = {
   sol_base0, sol_base02, sol_base01, sol_base02, 0xa7aebc, sol_base01,
   sol_base03, sol_base1, sol_base0, 0x3875ed, 0x373b88, sol_base02,
-  sol_green, sol_blue, sol_violet, sol_cyan, 0x0083f8
+  sol_green, sol_yellow, sol_blue, sol_cyan, 0x0083f8
 };
 
 const int solarized_light[] = {
@@ -165,7 +165,7 @@ const char *helpText =
   "F2 online help\n"
   "F3,F4 export\n"
   "F5,F6,F7 debug\n"
-  "F8 repl run\n"
+  "F8 live edit\n"
   "F9, C-r run\n"
   "F10 set command$\n"
   "F11 publish\n";
