@@ -1,3 +1,6 @@
+2018-07-15 (0.12.13)
+	SDL: Added window.setSize function
+
 2018-07-07 (0.12.13)
 	SDL: Added solarized color schemes
 	F11 key in editor now toggles fullscreen

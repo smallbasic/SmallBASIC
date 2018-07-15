@@ -25,6 +25,7 @@ extern System *g_system;
 #define WINDOW_VKEYPAD  "showKeypad"
 #define WINDOW_INSET    "insetTextScreen"
 #define WINDOW_SETFONT  "setFont"
+#define WINDOW_SETSIZE  "setSize"
 
 // returns the next set of string variable arguments as a String list
 StringList *get_items() {
@@ -88,7 +89,7 @@ void cmd_window_inset(var_s *self) {
   }
 }
 
-void cmd_window_setfont(var_s *self) {
+void cmd_window_set_font(var_s *self) {
   var_num_t size;
   var_int_t bold, italic;
   char *unit = NULL;
@@ -98,6 +99,12 @@ void cmd_window_setfont(var_s *self) {
   }
   g_system->getOutput()->setFont(size, bold, italic);
   pfree(unit);
+}
+
+void cmd_window_set_size(var_s *self) {
+  var_int_t width, height;
+  par_massget("II", &width, &height);
+  g_system->setWindowSize(width, height);
 }
 
 void cmd_window_alert(var_s *self) {
@@ -149,7 +156,8 @@ extern "C" void v_create_window(var_p_t var) {
   create_func(var, WINDOW_MENU, cmd_window_menu);
   create_func(var, WINDOW_VKEYPAD, cmd_window_show_keypad);
   create_func(var, WINDOW_INSET, cmd_window_inset);
-  create_func(var, WINDOW_SETFONT, cmd_window_setfont);
+  create_func(var, WINDOW_SETFONT, cmd_window_set_font);
+  create_func(var, WINDOW_SETSIZE, cmd_window_set_size);
 }
 
 extern "C" void dev_show_page() {

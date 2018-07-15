@@ -661,6 +661,13 @@ void Runtime::processEvent(MAEvent &event) {
   }
 }
 
+void Runtime::setWindowSize(int width, int height) {
+  logEntered();
+  SDL_SetWindowSize(_window, width, height);
+  _graphics->resize(width, height);
+  resize();
+}
+
 void Runtime::setWindowTitle(const char *title) {
   if (strcmp(title, MAIN_BAS) == 0) {
     SDL_SetWindowTitle(_window, "SmallBASIC");
