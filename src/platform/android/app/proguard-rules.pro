@@ -23,3 +23,6 @@
     public *;
 }
 
+-keepclasseswithmembernames class * {
+    native <methods>;
+}

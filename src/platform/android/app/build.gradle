@@ -2,13 +2,13 @@ apply plugin: 'com.android.application'
 
 android {
   // app can use the API features included in this API level and lower.
-  compileSdkVersion 28
+  compileSdkVersion 27
 
   // can override some attributes in main/AndroidManifest.xml
   defaultConfig {
     applicationId 'net.sourceforge.smallbasic'
     minSdkVersion 15
-    targetSdkVersion 28
+    targetSdkVersion 27
     versionCode 27
     versionName "0.12.13"
     resConfigs "en"
@@ -35,7 +35,7 @@ android {
       buildConfigField "java.util.Date", "BUILD_TIME", "new java.util.Date(" + System.currentTimeMillis() + "L)"
       shrinkResources true
       minifyEnabled true
-      proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-android.txt'
+      proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
       signingConfig signingConfigs.release
     }
   }
@@ -47,5 +47,6 @@ android {
 }
 
 dependencies {
+  implementation 'com.android.support:support-compat:27.1.1'
   testImplementation 'junit:junit:4.12'
 }

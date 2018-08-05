@@ -13,6 +13,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
+import java.net.Inet4Address;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.ServerSocket;
@@ -32,6 +33,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Semaphore;
 import java.util.zip.GZIPInputStream;
 
+import android.Manifest;
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.AlertDialog;
@@ -42,6 +44,7 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.DialogInterface.OnCancelListener;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.content.res.Resources;
 import android.graphics.Rect;
 import android.location.Criteria;
@@ -51,6 +54,9 @@ import android.media.AudioManager;
 import android.media.MediaPlayer;
 import android.net.Uri;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
+import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.ContextCompat;
 import android.util.Base64;
 import android.util.DisplayMetrics;
 import android.util.Log;
@@ -77,6 +83,7 @@ public class MainActivity extends NativeActivity {
   private static final int BASE_FONT_SIZE = 18;
   private static final long LOCATION_INTERVAL = 1000;
   private static final float LOCATION_DISTANCE = 1;
+  private static final int REQUEST_STORAGE_PERMISSION = 1;
   private String _startupBas = null;
   private boolean _untrusted = false;
   private ExecutorService _audioExecutor = Executors.newSingleThreadExecutor();
@@ -192,8 +199,7 @@ public class MainActivity extends NativeActivity {
     if (_tts != null) {
       _tts.stop();
     }
-    removeLocationUpdates();
-    return true;
+    return removeLocationUpdates();
   }
 
   public byte[] getClipboardText() {
@@ -240,8 +246,9 @@ public class MainActivity extends NativeActivity {
         if (!network.getDisplayName().startsWith("dummy")) {
           for (Enumeration<InetAddress> address = network.getInetAddresses(); address.hasMoreElements();) {
             InetAddress inetAddress = address.nextElement();
-            if (!inetAddress.isLoopbackAddress()) {
+            if (!inetAddress.isLoopbackAddress() && inetAddress instanceof Inet4Address) {
               result = inetAddress.getHostAddress();
+              Log.i(TAG, "getIPAddress: " + inetAddress);
             }
           }
         }
@@ -257,14 +264,16 @@ public class MainActivity extends NativeActivity {
   public String getLocation() {
     LocationManager locationService = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
     Location location = _locationAdapter != null ? _locationAdapter.getLocation() : null;
-    if (location == null) {
-      location = locationService.getLastKnownLocation(LocationManager.GPS_PROVIDER);
-    }
-    if (location == null) {
-      location = locationService.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
-    }
-    if (location == null) {
-      location = locationService.getLastKnownLocation(LocationManager.PASSIVE_PROVIDER);
+    if (locationService != null) {
+      if (location == null) {
+        location = locationService.getLastKnownLocation(LocationManager.GPS_PROVIDER);
+      }
+      if (location == null) {
+        location = locationService.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
+      }
+      if (location == null) {
+        location = locationService.getLastKnownLocation(LocationManager.PASSIVE_PROVIDER);
+      }
     }
     StringBuilder result = new StringBuilder("{");
     if (location != null) {
@@ -350,6 +359,16 @@ public class MainActivity extends NativeActivity {
     return super.onPrepareOptionsMenu(menu);
   }
 
+  @Override
+  public void onRequestPermissionsResult(int requestCode,
+                                         @NonNull String[] permissions,
+                                         @NonNull int[] grantResults) {
+    super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+    if (requestCode == REQUEST_STORAGE_PERMISSION && grantResults[0] == PackageManager.PERMISSION_DENIED) {
+      exit();
+    }
+  }
+
   public void optionsBox(final String[] items) {
     this._options = items;
     runOnUiThread(new Runnable() {
@@ -395,14 +414,14 @@ public class MainActivity extends NativeActivity {
   }
 
   public boolean removeLocationUpdates() {
-    boolean result;
+    boolean result = false;
     if (_locationAdapter != null) {
       LocationManager locationService = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
-      locationService.removeUpdates(_locationAdapter);
-      _locationAdapter = null;
-      result = true;
-    } else {
-      result = false;
+      if (locationService != null) {
+        locationService.removeUpdates(_locationAdapter);
+        _locationAdapter = null;
+        result = true;
+      }
     }
     Log.i(TAG, "removeRuntimeHandlers=" + result);
     return result;
@@ -410,22 +429,22 @@ public class MainActivity extends NativeActivity {
 
   public boolean requestLocationUpdates() {
     final LocationManager locationService = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
-    final Criteria criteria = new Criteria();
-    final String provider = locationService.getBestProvider(criteria, true);
-    boolean result;
-    if (_locationAdapter == null && provider != null &&
+    boolean result = false;
+    if (locationService != null) {
+      final Criteria criteria = new Criteria();
+      final String provider = locationService.getBestProvider(criteria, true);
+      if (_locationAdapter == null && provider != null &&
         locationService.isProviderEnabled(provider)) {
-      _locationAdapter = new LocationAdapter();
-      result = true;
-      runOnUiThread(new Runnable() {
-        @SuppressLint("MissingPermission")
-        public void run() {
-          locationService.requestLocationUpdates(provider, LOCATION_INTERVAL,
-                                                 LOCATION_DISTANCE, _locationAdapter);
-        }
-      });
-    } else {
-      result = false;
+        _locationAdapter = new LocationAdapter();
+        result = true;
+        runOnUiThread(new Runnable() {
+          @SuppressLint("MissingPermission")
+          public void run() {
+            locationService.requestLocationUpdates(provider, LOCATION_INTERVAL,
+              LOCATION_DISTANCE, _locationAdapter);
+          }
+        });
+      }
     }
     Log.i(TAG, "requestLocationUpdates=" + result);
     return result;
@@ -438,8 +457,10 @@ public class MainActivity extends NativeActivity {
         public void run() {
           ClipboardManager clipboard =
             (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
-          ClipData clip = ClipData.newPlainText("text", text);
-          clipboard.setPrimaryClip(clip);
+          if (clipboard != null) {
+            ClipData clip = ClipData.newPlainText("text", text);
+            clipboard.setPrimaryClip(clip);
+          }
         }
       });
     } catch (UnsupportedEncodingException e) {
@@ -455,7 +476,7 @@ public class MainActivity extends NativeActivity {
       final String locale = new String(localeBytes, CP1252);
       _tts.setLocale(new Locale(locale));
     } catch (Exception e) {
-      Log.i(TAG, "setttsLocale failed:", e);
+      Log.i(TAG, "setTtsLocale failed:", e);
     }
   }
 
@@ -522,13 +543,13 @@ public class MainActivity extends NativeActivity {
     final View view = getWindow().getDecorView();
     runOnUiThread(new Runnable() {
       public void run() {
-        InputMethodManager imm = (InputMethodManager)
-            getSystemService(Context.INPUT_METHOD_SERVICE);
-        if (show) {
-          imm.showSoftInput(view, InputMethodManager.SHOW_IMPLICIT);
-        } else {
-          imm.hideSoftInputFromWindow(view.getWindowToken(),
-              InputMethodManager.HIDE_NOT_ALWAYS);
+        InputMethodManager imm = (InputMethodManager)getSystemService(Context.INPUT_METHOD_SERVICE);
+        if (imm != null) {
+          if (show) {
+            imm.showSoftInput(view, InputMethodManager.SHOW_IMPLICIT);
+          } else {
+            imm.hideSoftInputFromWindow(view.getWindowToken(), InputMethodManager.HIDE_NOT_ALWAYS);
+          }
         }
       }
     });
@@ -556,31 +577,9 @@ public class MainActivity extends NativeActivity {
   @Override
   protected void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
-    Intent intent = getIntent();
-    Uri uri = intent.getData();
-    if (uri != null) {
-      String data = intent.getDataString();
-      if (data.startsWith(SCHEME)) {
-        execScheme(data);
-        Log.i(TAG, "data=" + data);
-      } else {
-        _startupBas = uri.getPath();
-      }
-      Log.i(TAG, "startupBas=" + _startupBas);
-    }
-    try {
-      Properties p = new Properties();
-      p.load(getApplication().openFileInput("settings.txt"));
-      int socket = Integer.valueOf(p.getProperty("serverSocket", "-1"));
-      String token = p.getProperty("serverToken", new Date().toString());
-      if (socket != -1) {
-        startServer(socket, token);
-      } else {
-        Log.i(TAG, "Web service disabled");
-      }
-    } catch (Exception e) {
-      Log.i(TAG, "Failed to start web service: ", e);
-    }
+    checkPermissions();
+    processIntent();
+    processSettings();
   }
 
   @Override
@@ -608,6 +607,15 @@ public class MainActivity extends NativeActivity {
   private String buildTokenForm() {
     return "<p>Enter access token:</p><form method=post><input type=text name=token>" +
       "<input value=OK name=okay type=submit style='vertical-align:top'></form>";
+  }
+
+  private void checkPermissions() {
+    if (!hasPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE)) {
+      String[] permissions = {
+        Manifest.permission.WRITE_EXTERNAL_STORAGE,
+      };
+      ActivityCompat.requestPermissions(this, permissions, REQUEST_STORAGE_PERMISSION);
+    }
   }
 
   private String execBuffer(final String buffer, final String name, boolean run) throws IOException {
@@ -648,38 +656,35 @@ public class MainActivity extends NativeActivity {
     }
   }
 
-  private void execStream(String line, DataInputStream inputStream) throws IOException {
+  private void execStream(final String line, DataInputStream inputStream) throws IOException {
     File outputFile = getApplication().getFileStreamPath(WEB_BAS);
     BufferedWriter output = new BufferedWriter(new FileWriter(outputFile));
     Log.i(TAG, "execStream() entered");
-    while (line != null) {
-      output.write(line + "\n");
-      line = readLine(inputStream);
+    String nextLine = line;
+    while (nextLine != null) {
+      output.write(nextLine + "\n");
+      nextLine = readLine(inputStream);
     }
     output.close();
     Log.i(TAG, "invoke runFile: " + outputFile.getAbsolutePath());
     runFile(outputFile.getAbsolutePath());
   }
 
-  private String getString(final byte[] promptBytes) {
-    try {
-      return new String(promptBytes, CP1252);
-    } catch (UnsupportedEncodingException e) {
-      Log.i(TAG, "getString failed: ", e);
-      e.printStackTrace();
-      return "";
-    }
+  private void exit() {
+    moveTaskToBack(true);
+    android.os.Process.killProcess(android.os.Process.myPid());
+    System.exit(1);
   }
 
-  private Map<String, String> getPostData(DataInputStream inputStream, String line)
-      throws IOException, UnsupportedEncodingException {
+  private Map<String, String> getPostData(DataInputStream inputStream, final String line) throws IOException {
     int length = 0;
     final String lengthHeader = "content-length: ";
-    while (line != null && line.length() > 0) {
-      if (line.toLowerCase(Locale.ENGLISH).startsWith(lengthHeader)) {
-        length = Integer.valueOf(line.substring(lengthHeader.length()));
+    String nextLine = line;
+    while (nextLine != null && nextLine.length() > 0) {
+      if (nextLine.toLowerCase(Locale.ENGLISH).startsWith(lengthHeader)) {
+        length = Integer.valueOf(nextLine.substring(lengthHeader.length()));
       }
-      line = readLine(inputStream);
+      nextLine = readLine(inputStream);
     }
     StringBuilder postData = new StringBuilder();
     for (int i = 0; i < length; i++) {
@@ -701,6 +706,51 @@ public class MainActivity extends NativeActivity {
       }
     }
     return result;
+  }
+
+  private String getString(final byte[] promptBytes) {
+    try {
+      return new String(promptBytes, CP1252);
+    } catch (UnsupportedEncodingException e) {
+      Log.i(TAG, "getString failed: ", e);
+      e.printStackTrace();
+      return "";
+    }
+  }
+
+  private boolean hasPermission(String permission) {
+    return (ContextCompat.checkSelfPermission(this, permission) == PackageManager.PERMISSION_GRANTED);
+  }
+
+  private void processIntent() {
+    Intent intent = getIntent();
+    Uri uri = intent.getData();
+    if (uri != null) {
+      String data = intent.getDataString();
+      if (data != null && data.startsWith(SCHEME)) {
+        execScheme(data);
+        Log.i(TAG, "data=" + data);
+      } else {
+        _startupBas = uri.getPath();
+      }
+      Log.i(TAG, "startupBas=" + _startupBas);
+    }
+  }
+
+  private void processSettings() {
+    try {
+      Properties p = new Properties();
+      p.load(getApplication().openFileInput("settings.txt"));
+      int socket = Integer.valueOf(p.getProperty("serverSocket", "-1"));
+      String token = p.getProperty("serverToken", new Date().toString());
+      if (socket != -1) {
+        startServer(socket, token);
+      } else {
+        Log.i(TAG, "Web service disabled");
+      }
+    } catch (Exception e) {
+      Log.i(TAG, "Failed to start web service: ", e);
+    }
   }
 
   private String readBuffer(File inputFile) {
@@ -779,7 +829,9 @@ public class MainActivity extends NativeActivity {
       }
       finally {
         Log.i(TAG, "socket cleanup");
-        socket.close();
+        if (socket != null) {
+          socket.close();
+        }
         if (inputStream != null) {
           inputStream.close();
         }
