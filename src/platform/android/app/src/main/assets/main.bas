@@ -109,8 +109,8 @@ sub do_about()
   color 7,0
   print "Version "; sbver
   print
-  print "Copyright (c) 2002-2017 Chris Warren-Smith"
-  print "Copyright (c) 1999-2006 Nic Christopoulos" + chr(10)
+  print "Copyright (c) 2002-2018 Chris Warren-Smith"
+  print "Copyright (c) 1999-2006 Nicholas Christopoulos" + chr(10)
   print "https://smallbasic.sourceforge.io" + chr(10)
   color colGrey,0
   print "SmallBASIC comes with ABSOLUTELY NO WARRANTY. ";

@@ -7,20 +7,16 @@
 
 all-am: Makefile
 
-ndk-build-test: all-am
-	(cd jni && ${NDK}/ndk-build NDK_DEBUG=1)
+build-test: ndk-build-test
+	(./gradlew installDebug)
 
-ant-build-test: ndk-build-test
-	(cd ../../../ide/android && ant -quiet debug install)
-
-test: ant-build-test
-	(cd ../../../ide/android && \
-   adb -a logcat -c && \
+test: build-test
+	(adb -a logcat -c && \
    adb -a shell am start net.sourceforge.smallbasic/net.sourceforge.smallbasic.MainActivity && \
    adb -a logcat DEBUG:I smallbasic:I AndroidRuntime:E *:S)
 
 clean-ant:
-	(cd ../../../ide/android && ant -quiet clean)
+	(./gradlew clean)
 
 clean-objs: clean-ant
 	(rm -rf obj/ libs/)
@@ -34,6 +30,6 @@ check:
 ndk-build-release:
 	(cd jni && ${NDK}/ndk-build NDK_DEBUG=0)
 
-release: ndk-build-release
-	(cd ../../../ide/android && ant release install)
+release:
+	(./gradle assemble)
 

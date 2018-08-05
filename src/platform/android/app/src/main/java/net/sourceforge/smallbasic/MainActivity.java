@@ -32,6 +32,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Semaphore;
 import java.util.zip.GZIPInputStream;
 
+import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.NativeActivity;
@@ -79,7 +80,7 @@ public class MainActivity extends NativeActivity {
   private String _startupBas = null;
   private boolean _untrusted = false;
   private ExecutorService _audioExecutor = Executors.newSingleThreadExecutor();
-  private Queue<Sound> _sounds = new ConcurrentLinkedQueue<Sound>();
+  private Queue<Sound> _sounds = new ConcurrentLinkedQueue<>();
   private String[] _options = null;
   private MediaPlayer _mediaPlayer = null;
   private LocationAdapter _locationAdapter = null;
@@ -203,7 +204,7 @@ public class MainActivity extends NativeActivity {
       public void run() {
         ClipboardManager clipboard =
           (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
-        ClipData clip = clipboard.getPrimaryClip();
+        ClipData clip = clipboard != null ? clipboard.getPrimaryClip() : null;
         if (clip != null && clip.getItemCount() > 0) {
           ClipData.Item item = clip.getItemAt(0);
           if (item != null) {
@@ -235,12 +236,12 @@ public class MainActivity extends NativeActivity {
     String result = "";
     try {
       for (Enumeration<NetworkInterface> en = NetworkInterface.getNetworkInterfaces(); en.hasMoreElements();) {
-        NetworkInterface intf = en.nextElement();
-        if (!intf.getDisplayName().startsWith("dummy")) {
-          for (Enumeration<InetAddress> enumIpAddr = intf.getInetAddresses(); enumIpAddr.hasMoreElements();) {
-            InetAddress inetAddress = enumIpAddr.nextElement();
+        NetworkInterface network = en.nextElement();
+        if (!network.getDisplayName().startsWith("dummy")) {
+          for (Enumeration<InetAddress> address = network.getInetAddresses(); address.hasMoreElements();) {
+            InetAddress inetAddress = address.nextElement();
             if (!inetAddress.isLoopbackAddress()) {
-              result = inetAddress.getHostAddress().toString();
+              result = inetAddress.getHostAddress();
             }
           }
         }
@@ -252,6 +253,7 @@ public class MainActivity extends NativeActivity {
     return result;
   }
 
+  @SuppressLint("MissingPermission")
   public String getLocation() {
     LocationManager locationService = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
     Location location = _locationAdapter != null ? _locationAdapter.getLocation() : null;
@@ -416,6 +418,7 @@ public class MainActivity extends NativeActivity {
       _locationAdapter = new LocationAdapter();
       result = true;
       runOnUiThread(new Runnable() {
+        @SuppressLint("MissingPermission")
         public void run() {
           locationService.requestLocationUpdates(provider, LOCATION_INTERVAL,
                                                  LOCATION_DISTANCE, _locationAdapter);
@@ -594,27 +597,17 @@ public class MainActivity extends NativeActivity {
   }
 
   private String buildRunForm(String buffer, String token) {
-    String response = new StringBuilder()
-      .append("<form method=post>")
-      .append("<input type=hidden name=token value='")
-      .append(token)
-      .append("'><textarea cols=60 rows=30 name=src>")
-      .append(buffer)
-      .append("</textarea>")
-      .append("<input value=Run name=run type=submit style='vertical-align:top'>")
-      .append("<input value=Save name=save type=submit style='vertical-align:top'>")
-      .append("</form>").toString();
-    return response;
+    return "<form method=post>" +
+      "<input type=hidden name=token value='" + token +
+      "'><textarea cols=60 rows=30 name=src>" + buffer + "</textarea>" +
+      "<input value=Run name=run type=submit style='vertical-align:top'>" +
+      "<input value=Save name=save type=submit style='vertical-align:top'>" +
+      "</form>";
   }
 
   private String buildTokenForm() {
-    String response = new StringBuilder()
-      .append("<p>Enter access token:</p>")
-      .append("<form method=post>")
-      .append("<input type=text name=token>")
-      .append("<input value=OK name=okay type=submit style='vertical-align:top'>")
-      .append("</form>").toString();
-    return response;
+    return "<p>Enter access token:</p><form method=post><input type=text name=token>" +
+      "<input value=OK name=okay type=submit style='vertical-align:top'></form>";
   }
 
   private String execBuffer(final String buffer, final String name, boolean run) throws IOException {
@@ -698,7 +691,7 @@ public class MainActivity extends NativeActivity {
       }
     }
     String[] fields = postData.toString().split("&");
-    Map<String, String> result = new HashMap<String, String>();
+    Map<String, String> result = new HashMap<>();
     for (String nextField : fields) {
       int eq = nextField.indexOf("=");
       if (eq != -1) {
@@ -774,7 +767,7 @@ public class MainActivity extends NativeActivity {
               sendResponse(socket, buildTokenForm());
             }
             Log.i(TAG, "Sent POST response");
-          } else if (line.indexOf(token) != -1) {
+          } else if (line.contains(token)) {
             execStream(line, inputStream);
           } else {
             Log.i(TAG, "Invalid request");
