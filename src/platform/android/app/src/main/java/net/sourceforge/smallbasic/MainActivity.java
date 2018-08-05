@@ -84,6 +84,7 @@ public class MainActivity extends NativeActivity {
   private static final long LOCATION_INTERVAL = 1000;
   private static final float LOCATION_DISTANCE = 1;
   private static final int REQUEST_STORAGE_PERMISSION = 1;
+  private static final int REQUEST_LOCATION_PERMISSION = 2;
   private String _startupBas = null;
   private boolean _untrusted = false;
   private final ExecutorService _audioExecutor = Executors.newSingleThreadExecutor();
@@ -284,6 +285,8 @@ public class MainActivity extends NativeActivity {
         .append("\"longitude\":").append(location.getLongitude()).append(",")
         .append("\"speed\":").append(location.getSpeed()).append(",")
         .append("\"provider\":\"").append(location.getProvider()).append("\"");
+    } else if (notPermitted(Manifest.permission.ACCESS_FINE_LOCATION)) {
+      result.append("\"locationPermission\":\"false\"");
     }
     result.append("}");
     return result.toString();
@@ -430,7 +433,10 @@ public class MainActivity extends NativeActivity {
   public boolean requestLocationUpdates() {
     final LocationManager locationService = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
     boolean result = false;
-    if (locationService != null) {
+    if (notPermitted(Manifest.permission.ACCESS_FINE_LOCATION)) {
+      String[] permissions = {Manifest.permission.ACCESS_FINE_LOCATION};
+      ActivityCompat.requestPermissions(this, permissions, REQUEST_LOCATION_PERMISSION);
+    } else if (locationService != null) {
       final Criteria criteria = new Criteria();
       final String provider = locationService.getBestProvider(criteria, true);
       if (_locationAdapter == null && provider != null &&
@@ -577,7 +583,7 @@ public class MainActivity extends NativeActivity {
   @Override
   protected void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
-    checkPermissions();
+    checkFilePermission();
     processIntent();
     processSettings();
   }
@@ -609,11 +615,9 @@ public class MainActivity extends NativeActivity {
       "<input value=OK name=okay type=submit style='vertical-align:top'></form>";
   }
 
-  private void checkPermissions() {
-    if (!hasPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE)) {
-      String[] permissions = {
-        Manifest.permission.WRITE_EXTERNAL_STORAGE,
-      };
+  private void checkFilePermission() {
+    if (notPermitted(Manifest.permission.WRITE_EXTERNAL_STORAGE)) {
+      String[] permissions = {Manifest.permission.WRITE_EXTERNAL_STORAGE};
       ActivityCompat.requestPermissions(this, permissions, REQUEST_STORAGE_PERMISSION);
     }
   }
@@ -718,8 +722,8 @@ public class MainActivity extends NativeActivity {
     }
   }
 
-  private boolean hasPermission(String permission) {
-    return (ContextCompat.checkSelfPermission(this, permission) == PackageManager.PERMISSION_GRANTED);
+  private boolean notPermitted(String permission) {
+    return (ContextCompat.checkSelfPermission(this, permission) != PackageManager.PERMISSION_GRANTED);
   }
 
   private void processIntent() {
