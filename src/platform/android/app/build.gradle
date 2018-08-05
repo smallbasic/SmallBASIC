@@ -1,0 +1,53 @@
+apply plugin: 'com.android.application'
+
+android {
+  // app can use the API features included in this API level and lower.
+  compileSdkVersion 28
+
+  // can override some attributes in main/AndroidManifest.xml
+  defaultConfig {
+    applicationId 'net.sourceforge.smallbasic'
+    minSdkVersion 15
+    targetSdkVersion 28
+    versionCode 27
+    versionName "0.12.13"
+    resConfigs "en"
+  }
+
+  signingConfigs {
+    release {
+      Properties properties = new Properties()
+      properties.load(project.rootProject.file('local.properties').newDataInputStream())
+      storeFile file(properties.getProperty('storeFile'))
+      keyAlias properties.getProperty('keyAlias')
+      storePassword properties.getProperty('storePassword')
+      keyPassword properties.getProperty('keyPassword')
+    }
+  }
+
+  buildTypes {
+    debug {
+      buildConfigField "boolean", "DEBUG_VIEW", "true"
+      buildConfigField "java.util.Date", "BUILD_TIME", "new java.util.Date(" + System.currentTimeMillis() + "L)"
+    }
+    release {
+      buildConfigField "boolean", "DEBUG_VIEW", "false"
+      buildConfigField "java.util.Date", "BUILD_TIME", "new java.util.Date(" + System.currentTimeMillis() + "L)"
+      shrinkResources true
+      minifyEnabled true
+      proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-android.txt'
+      signingConfig signingConfigs.release
+    }
+  }
+  externalNativeBuild {
+    ndkBuild {
+      path '../jni/Android.mk'
+    }
+  }
+}
+
+dependencies {
+  debugImplementation 'com.squareup.leakcanary:leakcanary-android:1.6.1'
+  releaseImplementation 'com.squareup.leakcanary:leakcanary-android-no-op:1.6.1'
+  testImplementation 'junit:junit:4.12'
+}
