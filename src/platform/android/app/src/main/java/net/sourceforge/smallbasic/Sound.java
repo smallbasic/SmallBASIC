@@ -10,13 +10,13 @@ import android.util.Log;
  * 
  * @author chrisws
  */
-public class Sound {
+class Sound {
   private static final String TAG = "smallbasic";
   private static final int AUDIO_SAMPLE_RATE = 8000;
   private static final int WAVE_MAX = 32000;
-  private byte[] _sound;
-  private float _volume;
-  private int _dur;
+  private final byte[] _sound;
+  private final float _volume;
+  private final int _dur;
   private boolean _silent;
   
   public Sound(int frq, int dur, float vol) {
@@ -55,7 +55,7 @@ public class Sound {
   /**
    * http://stackoverflow.com/questions/2413426/playing-an-arbitrary-tone-with-android
    */
-  private final byte[] generateTone(int freqOfTone, int durationMillis) {
+  private byte[] generateTone(int freqOfTone, int durationMillis) {
     int numSamples = durationMillis * AUDIO_SAMPLE_RATE / 1000;
     double sample[] = new double[numSamples];
     byte result[] = new byte[2 * numSamples];

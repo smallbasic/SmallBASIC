@@ -86,8 +86,8 @@ public class MainActivity extends NativeActivity {
   private static final int REQUEST_STORAGE_PERMISSION = 1;
   private String _startupBas = null;
   private boolean _untrusted = false;
-  private ExecutorService _audioExecutor = Executors.newSingleThreadExecutor();
-  private Queue<Sound> _sounds = new ConcurrentLinkedQueue<>();
+  private final ExecutorService _audioExecutor = Executors.newSingleThreadExecutor();
+  private final Queue<Sound> _sounds = new ConcurrentLinkedQueue<>();
   private String[] _options = null;
   private MediaPlayer _mediaPlayer = null;
   private LocationAdapter _locationAdapter = null;

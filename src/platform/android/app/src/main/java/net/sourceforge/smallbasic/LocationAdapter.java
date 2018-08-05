@@ -4,7 +4,7 @@ import android.location.Location;
 import android.location.LocationListener;
 import android.os.Bundle;
 
-public class LocationAdapter implements LocationListener {
+class LocationAdapter implements LocationListener {
   private Location _location;
 
   public LocationAdapter() {
