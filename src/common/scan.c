@@ -4383,9 +4383,11 @@ char *comp_preproc_options(char *p) {
       }
       *pe = lc;
     } else if (strncmp(LCN_LOAD_MODULES, p, LEN_LDMODULES) == 0 &&
-               opt_modpath[0] != '\0' && !opt_loadmod) {
-      opt_loadmod = 1;
-      slib_init();
+               opt_modpath[0] != '\0') {
+      if (!opt_loadmod) {
+        opt_loadmod = 1;
+        slib_init();
+      }
     } else {
       SKIP_SPACES(p);
       char *pe = p;

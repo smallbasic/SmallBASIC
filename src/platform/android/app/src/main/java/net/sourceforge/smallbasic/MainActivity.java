@@ -263,30 +263,30 @@ public class MainActivity extends NativeActivity {
 
   @SuppressLint("MissingPermission")
   public String getLocation() {
-    LocationManager locationService = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
-    Location location = _locationAdapter != null ? _locationAdapter.getLocation() : null;
-    if (locationService != null) {
-      if (location == null) {
-        location = locationService.getLastKnownLocation(LocationManager.GPS_PROVIDER);
-      }
-      if (location == null) {
-        location = locationService.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
-      }
-      if (location == null) {
-        location = locationService.getLastKnownLocation(LocationManager.PASSIVE_PROVIDER);
-      }
-    }
     StringBuilder result = new StringBuilder("{");
-    if (location != null) {
-      result.append("\"accuracy\":").append(location.getAccuracy()).append(",")
-        .append("\"altitude\":").append(location.getAltitude()).append(",")
-        .append("\"bearing\":").append(location.getBearing()).append(",")
-        .append("\"latitude\":").append(location.getLatitude()).append(",")
-        .append("\"longitude\":").append(location.getLongitude()).append(",")
-        .append("\"speed\":").append(location.getSpeed()).append(",")
-        .append("\"provider\":\"").append(location.getProvider()).append("\"");
-    } else if (notPermitted(Manifest.permission.ACCESS_FINE_LOCATION)) {
-      result.append("\"locationPermission\":\"false\"");
+    if (permitted(Manifest.permission.ACCESS_FINE_LOCATION)) {
+      LocationManager locationService = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
+      Location location = _locationAdapter != null ? _locationAdapter.getLocation() : null;
+      if (locationService != null) {
+        if (location == null) {
+          location = locationService.getLastKnownLocation(LocationManager.GPS_PROVIDER);
+        }
+        if (location == null) {
+          location = locationService.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
+        }
+        if (location == null) {
+          location = locationService.getLastKnownLocation(LocationManager.PASSIVE_PROVIDER);
+        }
+      }
+      if (location != null) {
+        result.append("\"accuracy\":").append(location.getAccuracy()).append(",")
+          .append("\"altitude\":").append(location.getAltitude()).append(",")
+          .append("\"bearing\":").append(location.getBearing()).append(",")
+          .append("\"latitude\":").append(location.getLatitude()).append(",")
+          .append("\"longitude\":").append(location.getLongitude()).append(",")
+          .append("\"speed\":").append(location.getSpeed()).append(",")
+          .append("\"provider\":\"").append(location.getProvider()).append("\"");
+      }
     }
     result.append("}");
     return result.toString();
@@ -433,9 +433,14 @@ public class MainActivity extends NativeActivity {
   public boolean requestLocationUpdates() {
     final LocationManager locationService = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
     boolean result = false;
-    if (notPermitted(Manifest.permission.ACCESS_FINE_LOCATION)) {
-      String[] permissions = {Manifest.permission.ACCESS_FINE_LOCATION};
-      ActivityCompat.requestPermissions(this, permissions, REQUEST_LOCATION_PERMISSION);
+    if (!permitted(Manifest.permission.ACCESS_FINE_LOCATION)) {
+      runOnUiThread(new Runnable() {
+        @Override
+        public void run() {
+          String[] permissions = {Manifest.permission.ACCESS_FINE_LOCATION};
+          ActivityCompat.requestPermissions(MainActivity.this, permissions, REQUEST_LOCATION_PERMISSION);
+        }
+      });
     } else if (locationService != null) {
       final Criteria criteria = new Criteria();
       final String provider = locationService.getBestProvider(criteria, true);
@@ -616,7 +621,7 @@ public class MainActivity extends NativeActivity {
   }
 
   private void checkFilePermission() {
-    if (notPermitted(Manifest.permission.WRITE_EXTERNAL_STORAGE)) {
+    if (!permitted(Manifest.permission.WRITE_EXTERNAL_STORAGE)) {
       String[] permissions = {Manifest.permission.WRITE_EXTERNAL_STORAGE};
       ActivityCompat.requestPermissions(this, permissions, REQUEST_STORAGE_PERMISSION);
     }
@@ -722,8 +727,8 @@ public class MainActivity extends NativeActivity {
     }
   }
 
-  private boolean notPermitted(String permission) {
-    return (ContextCompat.checkSelfPermission(this, permission) != PackageManager.PERMISSION_GRANTED);
+  private boolean permitted(String permission) {
+    return (ContextCompat.checkSelfPermission(this, permission) == PackageManager.PERMISSION_GRANTED);
   }
 
   private void processIntent() {

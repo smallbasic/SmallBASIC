@@ -209,7 +209,7 @@ function buildSDL() {
 
    BUILD_SUBDIRS="src/common src/platform/sdl"
    AC_SUBST(BUILD_SUBDIRS)
-   (cd ide/android/assets && xxd -i main.bas > ../../../src/platform/sdl/main_bas.h)
+   (xxd -i src/platform/android/app/src/main/assets/main.bas > src/platform/sdl/main_bas.h)
    (cd documentation && g++ -o build_kwp build_kwp.cpp && ./build_kwp > ../src/ui/kwp.h)
 }
 
