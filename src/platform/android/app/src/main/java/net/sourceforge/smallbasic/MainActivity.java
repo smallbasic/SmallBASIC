@@ -8,6 +8,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -20,6 +21,9 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
 import java.net.URLDecoder;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Date;
 import java.util.Enumeration;
 import java.util.HashMap;
@@ -53,8 +57,11 @@ import android.location.LocationManager;
 import android.media.AudioManager;
 import android.media.MediaPlayer;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
+import android.os.Environment;
 import android.support.annotation.NonNull;
+import android.support.annotation.RequiresApi;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.util.Base64;
@@ -235,6 +242,22 @@ public class MainActivity extends NativeActivity {
     } catch (UnsupportedEncodingException e) {
       Log.i(TAG, "getClipboardText failed: ", e);
       result = null;
+    }
+    return result;
+  }
+
+  public String getExternalStorage() {
+    String result;
+    String path = Environment.getExternalStorageDirectory().getAbsolutePath();
+    if (isPublicStorage(path)) {
+      File sb = new File(path, "sbasic");
+      if ((sb.isDirectory() && sb.canWrite()) || sb.mkdirs()) {
+        result = path + "/sbasic";
+      } else {
+        result = path;
+      }
+    } else {
+      result = getFilesDir().getAbsolutePath();
     }
     return result;
   }
@@ -725,6 +748,17 @@ public class MainActivity extends NativeActivity {
       e.printStackTrace();
       return "";
     }
+  }
+
+  private boolean isPublicStorage(String dir) {
+    boolean result;
+    if (dir == null || dir.isEmpty()) {
+      result = false;
+    } else {
+      File file = new File(dir);
+      result = file.isDirectory() && file.canWrite();
+    }
+    return result;
   }
 
   private boolean permitted(String permission) {

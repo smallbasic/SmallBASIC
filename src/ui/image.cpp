@@ -471,7 +471,7 @@ void screen_dump() {
   if (image != NULL) {
     const char *path = gsb_bas_dir;
 #if defined(_ANDROID)
-    path = "/sdcard/";
+    path = getenv("EXTERNAL_STORAGE");
 #endif
     for (int i = 0; i < 1000; i++) {
       char file[OS_PATHNAME_SIZE];

@@ -232,7 +232,7 @@ end
 
 sub loadFileList(path, byref basList)
   erase basList
-  local emptyNode
+  local emptyNode, storage
 
   func walker(node)
     if (node.depth==0) then
@@ -249,11 +249,14 @@ sub loadFileList(path, byref basList)
   dirwalk path, "", use walker(x)
 
   if (path = "/" && len(basList) == 0 && !is_sdl) then
-     emptyNode.name = "sdcard"
-     emptyNode.dir = true
-     emptyNode.size = ""
-     emptyNode.mtime = 0
-     basList << emptyNode
+     storage = env("EXTERNAL_STORAGE")
+     if (len(storage) > 0) then
+       emptyNode.name = mid(storage, 2)
+       emptyNode.dir = true
+       emptyNode.size = ""
+       emptyNode.mtime = 0
+       basList << emptyNode
+     endif
   endif
 end
 

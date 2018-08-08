@@ -269,13 +269,14 @@ void exec_setup_predefined_variables() {
   setsysvar_num(SYSVAR_MAXINT, VAR_MAX_INT);
 
 #if defined(_ANDROID)
-  strcpy(homedir, "/sdcard/");
+  if (getenv("EXTERNAL_STORAGE")) {
+    strlcpy(homedir, getenv("EXTERNAL_STORAGE"), sizeof(homedir));
+  }
 #else
 #if defined(_Win32)
   if (getenv("HOMEPATH")) {
     strlcpy(homedir, getenv("HOMEPATH"), sizeof(homedir));
-  }
-  else {
+  } else {
     GetModuleFileName(NULL, homedir, sizeof(homedir) - 1);
     char *p = strrchr(homedir, '\\');
     if (p) {
@@ -290,8 +291,7 @@ void exec_setup_predefined_variables() {
 #elif defined(_UnixOS)
   if (getenv("HOME")) {
     strlcpy(homedir, getenv("HOME"), sizeof(homedir));
-  }
-  else {
+  } else {
     strcpy(homedir, "/tmp/");
   }
 #endif
@@ -1549,12 +1549,10 @@ int sbasic_compile(const char *file) {
       if (bin_date >= src_date) {
         // TODO: check binary version
         ;
-      }
-      else {
+      } else {
         comp_rq = 1;
       }
-    }
-    else {
+    } else {
       comp_rq = 1;
     }
   }

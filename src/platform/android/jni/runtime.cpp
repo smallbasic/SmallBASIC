@@ -486,8 +486,12 @@ void Runtime::loadConfig() {
   _output->setTextColor(DEFAULT_FOREGROUND, DEFAULT_BACKGROUND);
   _output->setFontSize(fontSize);
   _initialFontSize = _output->getFontSize();
-  chdir("/sdcard");
 
+  String storage = getString("getExternalStorage");
+  if (!storage.empty()) {
+    setenv("EXTERNAL_STORAGE", storage.c_str(), 1);
+    chdir(storage.c_str());
+  }
   if (loadSettings(settings)) {
     String *s = settings.get(FONT_SCALE_KEY);
     if (s) {
