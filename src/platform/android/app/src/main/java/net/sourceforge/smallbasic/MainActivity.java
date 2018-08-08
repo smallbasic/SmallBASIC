@@ -257,12 +257,16 @@ public class MainActivity extends NativeActivity {
         result = path;
       }
     } else {
-      result = getFilesDir().getAbsolutePath();
+      result = getInternalStorage();
     }
     return result;
   }
 
-  public String getIPAddress() {
+  public String getInternalStorage() {
+    return getFilesDir().getAbsolutePath();
+  }
+
+  public String getIpAddress() {
     String result = "";
     try {
       for (Enumeration<NetworkInterface> en = NetworkInterface.getNetworkInterfaces(); en.hasMoreElements();) {
@@ -383,16 +387,6 @@ public class MainActivity extends NativeActivity {
       }
     }
     return super.onPrepareOptionsMenu(menu);
-  }
-
-  @Override
-  public void onRequestPermissionsResult(int requestCode,
-                                         @NonNull String[] permissions,
-                                         @NonNull int[] grantResults) {
-    super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-    if (requestCode == REQUEST_STORAGE_PERMISSION && grantResults[0] == PackageManager.PERMISSION_DENIED) {
-      exit();
-    }
   }
 
   public void optionsBox(final String[] items) {
@@ -700,12 +694,6 @@ public class MainActivity extends NativeActivity {
     output.close();
     Log.i(TAG, "invoke runFile: " + outputFile.getAbsolutePath());
     runFile(outputFile.getAbsolutePath());
-  }
-
-  private void exit() {
-    moveTaskToBack(true);
-    android.os.Process.killProcess(android.os.Process.myPid());
-    System.exit(1);
   }
 
   private Map<String, String> getPostData(DataInputStream inputStream, final String line) throws IOException {

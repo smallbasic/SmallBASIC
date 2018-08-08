@@ -232,7 +232,7 @@ end
 
 sub loadFileList(path, byref basList)
   erase basList
-  local emptyNode, storage
+  local emptyNode, ext_storage, int_storage
 
   func walker(node)
     if (node.depth==0) then
@@ -249,9 +249,17 @@ sub loadFileList(path, byref basList)
   dirwalk path, "", use walker(x)
 
   if (path = "/" && len(basList) == 0 && !is_sdl) then
-     storage = env("EXTERNAL_STORAGE")
-     if (len(storage) > 0) then
-       emptyNode.name = mid(storage, 2)
+     ext_storage = env("EXTERNAL_STORAGE")
+     if (len(ext_storage) > 0) then
+       emptyNode.name = mid(ext_storage, 2)
+       emptyNode.dir = true
+       emptyNode.size = ""
+       emptyNode.mtime = 0
+       basList << emptyNode
+     endif
+     int_storage = env("INTERNAL_STORAGE")
+     if (len(int_storage) > 0 && int_storage != ext_storage) then
+       emptyNode.name = mid(int_storage, 2)
        emptyNode.dir = true
        emptyNode.size = ""
        emptyNode.mtime = 0

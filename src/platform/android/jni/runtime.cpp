@@ -458,7 +458,7 @@ void Runtime::runShell() {
   _app->activity->callbacks->onContentRectChanged = onContentRectChanged;
   loadConfig();
 
-  String ipAddress = getString("getIPAddress");
+  String ipAddress = getString("getIpAddress");
   if (!ipAddress.empty()) {
     setenv("IP_ADDR", ipAddress.c_str(), 1);
   }
@@ -487,7 +487,11 @@ void Runtime::loadConfig() {
   _output->setFontSize(fontSize);
   _initialFontSize = _output->getFontSize();
 
-  String storage = getString("getExternalStorage");
+  String storage = getString("getInternalStorage");
+  if (!storage.empty()) {
+    setenv("INTERNAL_STORAGE", storage.c_str(), 1);
+  }
+  storage = getString("getExternalStorage");
   if (!storage.empty()) {
     setenv("EXTERNAL_STORAGE", storage.c_str(), 1);
     chdir(storage.c_str());
