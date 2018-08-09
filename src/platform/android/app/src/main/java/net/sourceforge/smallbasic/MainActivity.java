@@ -22,6 +22,7 @@ import android.media.MediaPlayer;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
+import android.os.Handler;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.util.Base64;
@@ -184,17 +185,6 @@ public class MainActivity extends NativeActivity {
     } catch (Exception e) {
       Log.i(TAG, "browseFile failed: " + e.toString());
     }
-  }
-
-  public int checkFilePermission() {
-    int result;
-    if (!permitted(Manifest.permission.WRITE_EXTERNAL_STORAGE)) {
-      checkPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE, REQUEST_STORAGE_PERMISSION);
-      result = 1;
-    } else {
-      result = 0;
-    }
-    return result;
   }
 
   public void clearSoundQueue() {
@@ -606,6 +596,7 @@ public class MainActivity extends NativeActivity {
     super.onCreate(savedInstanceState);
     processIntent();
     processSettings();
+    checkFilePermission();
   }
 
   @Override
@@ -633,6 +624,18 @@ public class MainActivity extends NativeActivity {
   private String buildTokenForm() {
     return "<p>Enter access token:</p><form method=post><input type=text name=token>" +
       "<input value=OK name=okay type=submit style='vertical-align:top'></form>";
+  }
+
+  private void checkFilePermission() {
+    if (!permitted(Manifest.permission.WRITE_EXTERNAL_STORAGE)) {
+      Runnable handler = new Runnable() {
+        @Override
+        public void run() {
+          checkPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE, REQUEST_STORAGE_PERMISSION);
+        }
+      };
+      new Handler().postDelayed(handler, 250);
+    }
   }
 
   private void checkPermission(final String permission, final int result) {
