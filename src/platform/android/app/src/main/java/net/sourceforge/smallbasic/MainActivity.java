@@ -1,42 +1,5 @@
 package net.sourceforge.smallbasic;
 
-import java.io.BufferedOutputStream;
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.DataInputStream;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.FileReader;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.UnsupportedEncodingException;
-import java.net.Inet4Address;
-import java.net.InetAddress;
-import java.net.NetworkInterface;
-import java.net.ServerSocket;
-import java.net.Socket;
-import java.net.SocketException;
-import java.net.URLDecoder;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.Date;
-import java.util.Enumeration;
-import java.util.HashMap;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Properties;
-import java.util.Queue;
-import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Semaphore;
-import java.util.zip.GZIPInputStream;
-
 import android.Manifest;
 import android.annotation.SuppressLint;
 import android.app.Activity;
@@ -57,11 +20,8 @@ import android.location.LocationManager;
 import android.media.AudioManager;
 import android.media.MediaPlayer;
 import android.net.Uri;
-import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
-import android.support.annotation.NonNull;
-import android.support.annotation.RequiresApi;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.util.Base64;
@@ -75,6 +35,39 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.Toast;
+
+import java.io.BufferedOutputStream;
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.DataInputStream;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.UnsupportedEncodingException;
+import java.net.Inet4Address;
+import java.net.InetAddress;
+import java.net.NetworkInterface;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.net.SocketException;
+import java.net.URLDecoder;
+import java.util.Date;
+import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Properties;
+import java.util.Queue;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Semaphore;
+import java.util.zip.GZIPInputStream;
 
 /**
  * Extends NativeActivity to provide interface methods for runtime.cpp
@@ -92,6 +85,7 @@ public class MainActivity extends NativeActivity {
   private static final float LOCATION_DISTANCE = 1;
   private static final int REQUEST_STORAGE_PERMISSION = 1;
   private static final int REQUEST_LOCATION_PERMISSION = 2;
+  private static final String FOLDER_NAME = "SmallBASIC";
   private String _startupBas = null;
   private boolean _untrusted = false;
   private final ExecutorService _audioExecutor = Executors.newSingleThreadExecutor();
@@ -192,6 +186,17 @@ public class MainActivity extends NativeActivity {
     }
   }
 
+  public int checkFilePermission() {
+    int result;
+    if (!permitted(Manifest.permission.WRITE_EXTERNAL_STORAGE)) {
+      checkPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE, REQUEST_STORAGE_PERMISSION);
+      result = 1;
+    } else {
+      result = 0;
+    }
+    return result;
+  }
+
   public void clearSoundQueue() {
     Log.i(TAG, "clearSoundQueue");
     for (Sound sound : _sounds) {
@@ -250,9 +255,9 @@ public class MainActivity extends NativeActivity {
     String result;
     String path = Environment.getExternalStorageDirectory().getAbsolutePath();
     if (isPublicStorage(path)) {
-      File sb = new File(path, "sbasic");
+      File sb = new File(path, FOLDER_NAME);
       if ((sb.isDirectory() && sb.canWrite()) || sb.mkdirs()) {
-        result = path + "/sbasic";
+        result = path + "/" + FOLDER_NAME;
       } else {
         result = path;
       }
@@ -451,13 +456,7 @@ public class MainActivity extends NativeActivity {
     final LocationManager locationService = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
     boolean result = false;
     if (!permitted(Manifest.permission.ACCESS_FINE_LOCATION)) {
-      runOnUiThread(new Runnable() {
-        @Override
-        public void run() {
-          String[] permissions = {Manifest.permission.ACCESS_FINE_LOCATION};
-          ActivityCompat.requestPermissions(MainActivity.this, permissions, REQUEST_LOCATION_PERMISSION);
-        }
-      });
+      checkPermission(Manifest.permission.ACCESS_FINE_LOCATION, REQUEST_LOCATION_PERMISSION);
     } else if (locationService != null) {
       final Criteria criteria = new Criteria();
       final String provider = locationService.getBestProvider(criteria, true);
@@ -605,7 +604,6 @@ public class MainActivity extends NativeActivity {
   @Override
   protected void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
-    checkFilePermission();
     processIntent();
     processSettings();
   }
@@ -637,11 +635,14 @@ public class MainActivity extends NativeActivity {
       "<input value=OK name=okay type=submit style='vertical-align:top'></form>";
   }
 
-  private void checkFilePermission() {
-    if (!permitted(Manifest.permission.WRITE_EXTERNAL_STORAGE)) {
-      String[] permissions = {Manifest.permission.WRITE_EXTERNAL_STORAGE};
-      ActivityCompat.requestPermissions(this, permissions, REQUEST_STORAGE_PERMISSION);
-    }
+  private void checkPermission(final String permission, final int result) {
+    runOnUiThread(new Runnable() {
+      @Override
+      public void run() {
+        String[] permissions = {permission};
+        ActivityCompat.requestPermissions(MainActivity.this, permissions, result);
+      }
+    });
   }
 
   private String execBuffer(final String buffer, final String name, boolean run) throws IOException {

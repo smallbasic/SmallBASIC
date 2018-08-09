@@ -458,6 +458,8 @@ void Runtime::runShell() {
   _app->activity->callbacks->onContentRectChanged = onContentRectChanged;
   loadConfig();
 
+  getInteger("checkFilePermission");
+
   String ipAddress = getString("getIpAddress");
   if (!ipAddress.empty()) {
     setenv("IP_ADDR", ipAddress.c_str(), 1);
