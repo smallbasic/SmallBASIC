@@ -269,8 +269,8 @@ void exec_setup_predefined_variables() {
   setsysvar_num(SYSVAR_MAXINT, VAR_MAX_INT);
 
 #if defined(_ANDROID)
-  if (getenv("EXTERNAL_STORAGE")) {
-    strlcpy(homedir, getenv("EXTERNAL_STORAGE"), sizeof(homedir));
+  if (getenv("HOME_DIR")) {
+    strlcpy(homedir, getenv("HOME_DIR"), sizeof(homedir));
   }
 #else
 #if defined(_Win32)

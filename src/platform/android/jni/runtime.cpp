@@ -147,6 +147,15 @@ extern "C" JNIEXPORT void JNICALL Java_net_sourceforge_smallbasic_MainActivity_r
   env->ReleaseStringUTFChars(path, fileName);
 }
 
+extern "C" JNIEXPORT void JNICALL Java_net_sourceforge_smallbasic_MainActivity_setenv
+  (JNIEnv *env, jclass jclazz, jstring nameString, jstring valueString) {
+  const char *name = env->GetStringUTFChars(nameString, JNI_FALSE);
+  const char *value = env->GetStringUTFChars(valueString, JNI_FALSE);
+  setenv(name, value, 1);
+  env->ReleaseStringUTFChars(nameString, name);
+  env->ReleaseStringUTFChars(valueString, value);
+}
+
 extern "C" JNIEXPORT void JNICALL Java_net_sourceforge_smallbasic_MainActivity_onResize
   (JNIEnv *env, jclass jclazz, jint width, jint height) {
   if (runtime != NULL && !runtime->isClosing() && runtime->isActive() && os_graphics) {
@@ -487,14 +496,13 @@ void Runtime::loadConfig() {
   _output->setFontSize(fontSize);
   _initialFontSize = _output->getFontSize();
 
-  String storage = getString("getInternalStorage");
-  if (!storage.empty()) {
-    setenv("INTERNAL_STORAGE", storage.c_str(), 1);
+  const char *storage = getenv("EXTERNAL_DIR");
+  if (!storage) {
+    storage = getenv("INTERNAL_DIR");
   }
-  storage = getString("getExternalStorage");
-  if (!storage.empty()) {
-    setenv("EXTERNAL_STORAGE", storage.c_str(), 1);
-    chdir(storage.c_str());
+  if (storage) {
+    setenv("HOME_DIR", storage, 1);
+    chdir(storage);
   }
   if (loadSettings(settings)) {
     String *s = settings.get(FONT_SCALE_KEY);

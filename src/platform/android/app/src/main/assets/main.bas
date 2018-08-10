@@ -249,7 +249,7 @@ sub loadFileList(path, byref basList)
   dirwalk path, "", use walker(x)
 
   if (path = "/" && len(basList) == 0 && !is_sdl) then
-     ext_storage = env("EXTERNAL_STORAGE")
+     ext_storage = env("EXTERNAL_DIR")
      if (len(ext_storage) > 0) then
        emptyNode.name = mid(ext_storage, 2)
        emptyNode.dir = true
@@ -257,7 +257,7 @@ sub loadFileList(path, byref basList)
        emptyNode.mtime = 0
        basList << emptyNode
      endif
-     int_storage = env("INTERNAL_STORAGE")
+     int_storage = env("INTERNAL_DIR")
      if (len(int_storage) > 0 && int_storage != ext_storage) then
        emptyNode.name = mid(int_storage, 2)
        emptyNode.dir = true

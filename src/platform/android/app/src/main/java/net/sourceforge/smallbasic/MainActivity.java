@@ -23,6 +23,7 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
+import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.util.Base64;
@@ -104,6 +105,7 @@ public class MainActivity extends NativeActivity {
   public static native void onUnicodeChar(int ch);
   public static native boolean optionSelected(int index);
   public static native void runFile(String fileName);
+  public static native void setenv(String name, String value);
 
   public void addShortcut(final byte[] pathBytes) {
     final String path = getString(pathBytes);
@@ -168,7 +170,6 @@ public class MainActivity extends NativeActivity {
       mutex.acquire();
     } catch (InterruptedException e) {
       Log.i(TAG, "ask failed: ", e);
-      e.printStackTrace();
     }
     Log.i(TAG, "ask result=" + result);
     return result.value;
@@ -229,7 +230,6 @@ public class MainActivity extends NativeActivity {
       mutex.acquire();
     } catch (InterruptedException e) {
       Log.i(TAG, "getClipboardText failed: ", e);
-      e.printStackTrace();
     }
     byte[] result;
     try {
@@ -239,26 +239,6 @@ public class MainActivity extends NativeActivity {
       result = null;
     }
     return result;
-  }
-
-  public String getExternalStorage() {
-    String result;
-    String path = Environment.getExternalStorageDirectory().getAbsolutePath();
-    if (isPublicStorage(path)) {
-      File sb = new File(path, FOLDER_NAME);
-      if ((sb.isDirectory() && sb.canWrite()) || sb.mkdirs()) {
-        result = path + "/" + FOLDER_NAME;
-      } else {
-        result = path;
-      }
-    } else {
-      result = getInternalStorage();
-    }
-    return result;
-  }
-
-  public String getInternalStorage() {
-    return getFilesDir().getAbsolutePath();
   }
 
   public String getIpAddress() {
@@ -382,6 +362,16 @@ public class MainActivity extends NativeActivity {
       }
     }
     return super.onPrepareOptionsMenu(menu);
+  }
+
+  @Override
+  public void onRequestPermissionsResult(int requestCode,
+                                         @NonNull String[] permissions,
+                                         @NonNull int[] grantResults) {
+    super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+    if (requestCode == REQUEST_STORAGE_PERMISSION && grantResults[0] != PackageManager.PERMISSION_DENIED) {
+      setupStorageEnvironment(true);
+    }
   }
 
   public void optionsBox(final String[] items) {
@@ -628,6 +618,7 @@ public class MainActivity extends NativeActivity {
 
   private void checkFilePermission() {
     if (!permitted(Manifest.permission.WRITE_EXTERNAL_STORAGE)) {
+      setupStorageEnvironment(false);
       Runnable handler = new Runnable() {
         @Override
         public void run() {
@@ -635,6 +626,8 @@ public class MainActivity extends NativeActivity {
         }
       };
       new Handler().postDelayed(handler, 250);
+    } else {
+      setupStorageEnvironment(true);
     }
   }
 
@@ -700,6 +693,27 @@ public class MainActivity extends NativeActivity {
     runFile(outputFile.getAbsolutePath());
   }
 
+  private String getExternalStorage() {
+    String result;
+    String path = Environment.getExternalStorageDirectory().getAbsolutePath();
+    if (isPublicStorage(path)) {
+      File sb = new File(path, FOLDER_NAME);
+      if ((sb.isDirectory() && sb.canWrite()) || sb.mkdirs()) {
+        result = path + "/" + FOLDER_NAME;
+      } else {
+        result = path;
+      }
+    } else {
+      result = getInternalStorage();
+    }
+    return result;
+  }
+
+  private String getInternalStorage() {
+    Log.d(TAG, "internal = " + getFilesDir().getAbsolutePath());
+    return getFilesDir().getAbsolutePath();
+  }
+
   private Map<String, String> getPostData(DataInputStream inputStream, final String line) throws IOException {
     int length = 0;
     final String lengthHeader = "content-length: ";
@@ -737,7 +751,6 @@ public class MainActivity extends NativeActivity {
       return new String(promptBytes, CP1252);
     } catch (UnsupportedEncodingException e) {
       Log.i(TAG, "getString failed: ", e);
-      e.printStackTrace();
       return "";
     }
   }
@@ -748,7 +761,7 @@ public class MainActivity extends NativeActivity {
       result = false;
     } else {
       File file = new File(dir);
-      result = file.isDirectory() && file.canWrite();
+      result = file.isDirectory() && file.canRead() && file.canWrite();
     }
     return result;
   }
@@ -885,6 +898,13 @@ public class MainActivity extends NativeActivity {
     out.write(content.getBytes());
     out.flush();
     out.close();
+  }
+
+  private void setupStorageEnvironment(boolean external) {
+    if (external) {
+      setenv("EXTERNAL_DIR", getExternalStorage());
+    }
+    setenv("INTERNAL_DIR", getInternalStorage());
   }
 
   private void startServer(final int socketNum, final String token) {
