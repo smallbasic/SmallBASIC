@@ -710,7 +710,6 @@ public class MainActivity extends NativeActivity {
   }
 
   private String getInternalStorage() {
-    Log.d(TAG, "internal = " + getFilesDir().getAbsolutePath());
     return getFilesDir().getAbsolutePath();
   }
 
@@ -901,10 +900,10 @@ public class MainActivity extends NativeActivity {
   }
 
   private void setupStorageEnvironment(boolean external) {
+    setenv("INTERNAL_DIR", getInternalStorage());
     if (external) {
       setenv("EXTERNAL_DIR", getExternalStorage());
     }
-    setenv("INTERNAL_DIR", getInternalStorage());
   }
 
   private void startServer(final int socketNum, final String token) {
