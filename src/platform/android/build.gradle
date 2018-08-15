@@ -1,0 +1,25 @@
+buildscript {
+  // configure the repositories and dependencies for Gradle itself
+  repositories {
+    google()
+    jcenter()
+  }
+  dependencies {
+    classpath 'com.android.tools.build:gradle:3.1.4'
+    classpath "com.github.ben-manes:gradle-versions-plugin:0.20.0"
+  }
+}
+
+allprojects {
+  repositories {
+    google()
+    jcenter()
+  }
+}
+
+apply plugin: 'idea'
+apply plugin: "com.github.ben-manes.versions"
+
+task clean(type: Delete) {
+  delete rootProject.buildDir
+}

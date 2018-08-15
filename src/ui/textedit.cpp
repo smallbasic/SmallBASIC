@@ -1,6 +1,6 @@
 // This file is part of SmallBASIC
 //
-// Copyright(C) 2001-2017 Chris Warren-Smith.
+// Copyright(C) 2001-2018 Chris Warren-Smith.
 //
 // This program is distributed under the terms of the GPL v2.0 or later
 // Download the GNU Public License (GPL) from www.gnu.org
@@ -32,7 +32,7 @@ void safe_memmove(void *dest, const void *src, size_t n) {
 #define LINE_BUFFER_SIZE 200
 #define INDENT_LEVEL 2
 #define HELP_WIDTH 22
-#define NUM_THEMES 5
+#define NUM_THEMES 6
 #define TWISTY1_OPEN  "> "
 #define TWISTY1_CLOSE "< "
 #define TWISTY2_OPEN  "  > "
@@ -55,28 +55,70 @@ int g_lineMarker[MAX_MARKERS] = {
   -1, -1, -1, -1, -1, -1, -1, -1, -1, -1
 };
 
-const int theme1[] = {
-  0xc8cedb, 0xa7aebc, 0x484f5f, 0xa7aebc, 0xa7aebc, 0x00bb00,
-  0x272b33, 0x3d4350, 0x2b3039, 0x3875ed, 0x373b88, 0x2b313a,
-  0x0083f8, 0xff9d00, 0x31ccac, 0xc679dd, 0x0083f8
+// see: http://ethanschoonover.com/solarized#features
+#define sol_base03  0x002b36
+#define sol_base02  0x073642
+#define sol_base01  0x586e75
+#define sol_base00  0x657b83
+#define sol_base0   0x839496
+#define sol_base1   0x93a1a1
+#define sol_base2   0xeee8d5
+#define sol_base3   0xfdf6e3
+#define sol_yellow  0xb58900
+#define sol_orange  0xcb4b16
+#define sol_red     0xdc322f
+#define sol_magenta 0xd33682
+#define sol_violet  0x6c71c4
+#define sol_blue    0x268bd2
+#define sol_cyan    0x2aa198
+#define sol_green   0x859900
+
+// 0 - color
+// 1 - selection_color
+// 2 - number_color
+// 3 - number_selection_color
+// 4 - cursor_color
+// 5 - syntax_comments
+// 6 - background
+// 7 - selection_background
+// 8 - number_selection_background
+// 9 - cursor_background
+// 10 - match_background
+// 11 - row_cursor
+// 12 - syntax_text
+// 13 - syntax_command
+// 14 - syntax_statement
+// 15 - syntax_digit
+// 16 - row_marker
+
+const int solarized_dark[] = {
+  sol_base0, sol_base02, sol_base01, sol_base02, 0xa7aebc, sol_base01,
+  sol_base03, sol_base1, sol_base0, 0x3875ed, 0x373b88, sol_base02,
+  sol_green, sol_yellow, sol_blue, sol_cyan, 0x0083f8
 };
 
-const int theme2[] = {
+const int solarized_light[] = {
+  sol_base00, sol_base02, sol_base1, sol_base03, 0xa7aebc, sol_base1,
+  sol_base3, sol_base1, sol_base0, 0x3875ed, 0x373b88, sol_base2,
+  sol_green, sol_violet, sol_yellow, sol_blue, 0x0083f8
+};
+
+const int shian[] = {
   0xcccccc, 0x000077, 0x333333, 0x333333, 0x0000aa, 0x008888,
   0x010101, 0xeeeeee, 0x010101, 0xffff00, 0x00ff00, 0x010101,
   0x00ffff, 0xff00ff, 0xffffff, 0x00ffff, 0x00aaff
 };
 
-const int theme3[] = {
-  0xc8cedb, 0xd7decc, 0x484f5f, 0xa7aebc, 0xa7aebc, 0x00bb00,
-  0x001b33, 0x0088ff, 0x000d1a, 0x0051b1, 0x373b88, 0x022444,
+const int atom1[] = {
+  0xc8cedb, 0xa7aebc, 0x484f5f, 0xa7aebc, 0xa7aebc, 0x00bb00,
+  0x272b33, 0x3d4350, 0x2b3039, 0x3875ed, 0x373b88, 0x2b313a,
   0x0083f8, 0xff9d00, 0x31ccac, 0xc679dd, 0x0083f8
 };
 
-const int theme4[] = {
-  0x4f4a44, 0x222228, 0x77839b, 0x484f5f, 0xa7aebc, 0x5f9e59,
-  0xcdc0b0, 0xe1e1e1, 0xefeff0, 0x1f51eb, 0x000000, 0xcbb8a2,
-  0x4c9f9a, 0xaf5fd6, 0x0000ff, 0xc679dd, 0x0083f8, 0
+const int atom2[] = {
+  0xc8cedb, 0xd7decc, 0x484f5f, 0xa7aebc, 0xa7aebc, 0x00bb00,
+  0x001b33, 0x0088ff, 0x000d1a, 0x0051b1, 0x373b88, 0x022444,
+  0x0083f8, 0xff9d00, 0x31ccac, 0xc679dd, 0x0083f8
 };
 
 int g_user_theme[] = {
@@ -86,7 +128,7 @@ int g_user_theme[] = {
 };
 
 const int* themes[] = {
-  theme1, theme2, theme3, theme4, g_user_theme
+  solarized_dark, solarized_light, shian, atom1, atom2, g_user_theme
 };
 
 const char *helpText =
@@ -123,10 +165,10 @@ const char *helpText =
   "F2 online help\n"
   "F3,F4 export\n"
   "F5,F6,F7 debug\n"
-  "F8 repl run\n"
+  "F8 live edit\n"
   "F9, C-r run\n"
   "F10 set command$\n"
-  "F11 publish\n";
+  "F11 full screen\n";
 
 inline bool match(const char *str, const char *pattern , int len) {
   int i, j;
@@ -986,9 +1028,12 @@ char *TextEditInput::copy(bool cut) {
 
 void TextEditInput::paste(const char *text) {
   if (text != NULL) {
+    int lines = _buf._lines;
     stb_textedit_paste(&_buf, &_state, text, strlen(text));
-    _cursorRow = getCursorRow();
-    updateScroll();
+    if (lines != _buf._lines) {
+      _cursorRow = getCursorRow();
+      updateScroll();
+    }
   }
 }
 

@@ -109,6 +109,7 @@ Runtime::Runtime(SDL_Window *window) :
   System(),
   _menuX(0),
   _menuY(0),
+  _fullscreen(false),
   _graphics(NULL),
   _eventQueue(NULL),
   _window(window),
@@ -290,12 +291,14 @@ void Runtime::enableCursor(bool enabled) {
 }
 
 void Runtime::exportRun(const char *file) {
-  if (!debugOpen(file)) {
-    g_debugee = net_connect("localhost", g_debugPort);
-  }
-  if (g_debugee != -1) {
-    net_print(g_debugee, "x\n");
-  }
+  launchExec(file);
+  SDL_RaiseWindow(_window);
+}
+
+bool Runtime::toggleFullscreen() {
+  _fullscreen = !_fullscreen;
+  SDL_SetWindowFullscreen(_window, _fullscreen ? SDL_WINDOW_FULLSCREEN_DESKTOP : 0);
+  return _fullscreen;
 }
 
 void Runtime::pushEvent(MAEvent *event) {
@@ -351,6 +354,8 @@ int Runtime::runShell(const char *startupBas, int fontScale, int debugPort) {
     String bas = startupBas;
     if (opt_ide == IDE_INTERNAL) {
       runEdit(bas.c_str());
+    } else if (opt_ide == IDE_EXTERNAL) {
+      runLive(bas.c_str());
     } else {
       runOnce(bas.c_str());
     }
@@ -654,6 +659,13 @@ void Runtime::processEvent(MAEvent &event) {
     handleEvent(event);
     break;
   }
+}
+
+void Runtime::setWindowSize(int width, int height) {
+  logEntered();
+  SDL_SetWindowSize(_window, width, height);
+  _graphics->resize(width, height);
+  resize();
 }
 
 void Runtime::setWindowTitle(const char *title) {

@@ -24,13 +24,12 @@ void comp_text_line(char *text, int addLineNo);
 bcip_t comp_search_bc(bcip_t ip, code_t code);
 bcip_t comp_next_bc_cmd(bc_t *bc, bcip_t ip);
 extern void expr_parser(bc_t *bc);
-extern void sc_raise2(const char *fmt, int line, const char *buff);
 
 #define STRLEN(s) ((sizeof(s) / sizeof(s[0])) - 1)
 #define LEN_OPTION     STRLEN(LCN_OPTION)
 #define LEN_IMPORT     STRLEN(LCN_IMPORT_WRS)
 #define LEN_UNIT       STRLEN(LCN_UNIT_WRS)
-#define LEN_UNIT_PATH  STRLEN(LCN_UNIT_PATH)
+#define LEN_SBASICPATH STRLEN(LCN_SBASICPATH)
 #define LEN_INC        STRLEN(LCN_INC)
 #define LEN_SUB_WRS    STRLEN(LCN_SUB_WRS)
 #define LEN_FUNC_WRS   STRLEN(LCN_FUNC_WRS)
@@ -47,6 +46,7 @@ extern void sc_raise2(const char *fmt, int line, const char *buff);
 #define LEN_ANTIALIAS  STRLEN(LCN_ANTIALIAS)
 #define LEN_LDMODULES  STRLEN(LCN_LOAD_MODULES)
 #define LEN_AUTOLOCAL  STRLEN(LCN_AUTOLOCAL)
+#define LEN_AS_WRS     STRLEN(LCN_AS_WRS)
 
 #define SKIP_SPACES(p)                          \
   while (*p == ' ' || *p == '\t') {             \
@@ -155,7 +155,6 @@ void add_libtable_rec(const char *lib, int uid, int type) {
  * add an external procedure to the list
  */
 int comp_add_external_proc(const char *proc_name, int lib_id) {
-  // TODO: scan for conflicts
   if (comp_extproctable == NULL) {
     comp_extprocsize = 16;
     comp_extproctable = (ext_proc_node_t *)malloc(sizeof(ext_proc_node_t) * comp_extprocsize);
@@ -179,7 +178,6 @@ int comp_add_external_proc(const char *proc_name, int lib_id) {
  * Add an external function to the list
  */
 int comp_add_external_func(const char *func_name, int lib_id) {
-  // TODO: scan for conflicts
   if (comp_extfunctable == NULL) {
     comp_extfuncsize = 16;
     comp_extfunctable = (ext_func_node_t *)malloc(sizeof(ext_func_node_t) * comp_extfuncsize);
@@ -248,26 +246,6 @@ int comp_is_external_func(const char *name) {
  *  next            ' level 1, id 1
  *  ? ooo           ' level 0, id 0
  */
-
-/*
- * error messages
- */
-void sc_raise(const char *fmt, ...) {
-  if (!prog_error) {
-    char *buff;
-    va_list ap;
-
-    va_start(ap, fmt);
-    comp_error = 1;
-
-    buff = malloc(SB_SOURCELINE_SIZE + 1);
-    vsnprintf(buff, SB_SOURCELINE_SIZE, fmt, ap);
-    va_end(ap);
-
-    sc_raise2(comp_bc_sec, comp_line, buff);  // sberr.h
-    free(buff);
-  }
-}
 
 /*
  * prepare name (keywords, variables, labels, proc/func names)
@@ -2587,6 +2565,7 @@ int comp_text_line_command(bid_t idx, int decl, int sharp, char *last_cmd) {
       // handle same line variable assignment, eg local blah = foo
       for (int i = 0; i < count; i++) {
         comp_prepare_name(vname, pars[i], SB_KEYWORD_SIZE);
+        str_alltrim(pars[i]);
         if (strlen(vname) != strlen(pars[i])) {
           // kwTYPE_LINE is required for executor
           comp_text_line(pars[i], 1);
@@ -4161,20 +4140,35 @@ void comp_preproc_grmode(const char *source) {
 
   p = buffer;
   SKIP_SPACES(p);
-  char *v = p;                  // 'v' points to first letter of 'width', (1024x768)
-  p = strchr(v, 'X');           // search for the end of 'width' parameter
-                                // (1024x768). Remeber that the string is in upper-case
-  if (!p) {                     // we don't accept one parameter, the
-                                // width must followed by the height
-                                // so, if 'X' delimiter is omitted, there is no height parameter
+
+  // 'v' points to first letter of 'width', (1024x768)
+  char *v = p;
+
+  // search for the end of 'width' parameter
+  // (1024x768). Remeber that the string is in upper-case
+  p = strchr(v, 'X');
+  if (!p) {
+    p = strchr(v, 'x');
+  }
+  if (!p) {
+    // we don't accept one parameter, the width must followed by the height
+    // so, if 'X' delimiter is omitted, there is no height parameter
     err_grmode();
     return;
   }
-  *p = '\0';                    // we close the string at X position
-                                // (example: "1024x768" it will be "1024\0768")
-  opt_pref_width = xstrtol(v);  // now the v points to a string-of-digits,
-  v = ++p;                      // v points to first letter of 'height'
-  opt_pref_height = xstrtol(v); // now the v points to a string-of-digits,
+
+  // we close the string at X position
+  // (example: "1024x768" it will be "1024\0768")
+  *p = '\0';
+
+  // now the v points to a string-of-digits,
+  opt_pref_width = xstrtol(v);
+
+  // v points to first letter of 'height'
+  v = ++p;
+
+  // now the v points to a string-of-digits,
+  opt_pref_height = xstrtol(v);
 }
 
 /**
@@ -4194,35 +4188,50 @@ const char *get_unit_name(const char *p, char *buf_p) {
   return p;
 }
 
+const char *get_alias(const char *p, char *alias, const char *def) {
+  SKIP_SPACES(p);
+  *alias = '\0';
+  if (CHKOPT(LCN_AS_WRS)) {
+    p += LEN_AS_WRS;
+    while (is_alnum(*p) || *p == '_') {
+      *alias++ = *p++;
+    }
+    *alias = '\0';
+  } else {
+    strcpy(alias, def);
+  }
+  return p;
+}
+
 /**
  * imports units
  */
 void comp_preproc_import(const char *slist) {
-  const char *p;
   char buf[OS_PATHNAME_SIZE + 1];
+  char alias[OS_PATHNAME_SIZE + 1];
 
-  p = slist;
+  const char *p = slist;
 
   SKIP_SPACES(p);
 
   while (is_alpha(*p)) {
     // get name - "Import other.Foo => "other/Foo"
     p = get_unit_name(p, buf);
+    p = get_alias(p, alias, buf);
 
     // import name
     strlower(buf);
-    int uid = slib_get_module_id(buf);
-    if (uid != -1) {  // C module
+    int uid = slib_get_module_id(buf, alias);
+    if (uid != -1) {
       // store C module lib-record
-      slib_setup_comp(uid);
-      add_libtable_rec(buf, uid, 0);
-    } else {                      // SB unit
+      slib_import(uid, 1);
+      add_libtable_rec(alias, uid, 0);
+    } else {
       uid = open_unit(buf);
       if (uid < 0) {
         sc_raise(MSG_UNIT_NOT_FOUND, buf);
         return;
       }
-
       if (import_unit(uid) < 0) {
         sc_raise(MSG_IMPORT_FAILED, buf);
         close_unit(uid);
@@ -4374,8 +4383,11 @@ char *comp_preproc_options(char *p) {
       }
       *pe = lc;
     } else if (strncmp(LCN_LOAD_MODULES, p, LEN_LDMODULES) == 0 &&
-               opt_modlist[0] != '\0' && !opt_loadmod) {
-      sblmgr_init(1, opt_modlist);
+               opt_modpath[0] != '\0') {
+      if (!opt_loadmod) {
+        opt_loadmod = 1;
+        slib_init();
+      }
     } else {
       SKIP_SPACES(p);
       char *pe = p;
@@ -4390,9 +4402,9 @@ char *comp_preproc_options(char *p) {
 }
 
 /**
- * Setup the UNITPATH environment variable.
+ * Setup the SBASICPATH environment variable.
  */
-void comp_preproc_unit_path(char *p) {
+void comp_preproc_sbasicpath(char *p) {
   SKIP_SPACES(p);
   if (*p == '=') {
     p++;
@@ -4406,7 +4418,7 @@ void comp_preproc_unit_path(char *p) {
       *up++ = *p++;
     }
     *up = '\0';
-    dev_setenv(LCN_UNIT_PATH, upath);
+    dev_setenv(LCN_SBASICPATH, upath);
   }
 }
 
@@ -4514,9 +4526,9 @@ void comp_preproc_pass1(char *p) {
         comp_preproc_unit(p + LEN_UNIT);
       }
       comp_preproc_remove_line(p, 1);
-    } else if (strncmp(LCN_UNIT_PATH, p, LEN_UNIT_PATH) == 0) {
-      // unitpath
-      comp_preproc_unit_path(p + LEN_UNIT_PATH);
+    } else if (strncmp(LCN_SBASICPATH, p, LEN_SBASICPATH) == 0) {
+      // sbasicpath
+      comp_preproc_sbasicpath(p + LEN_SBASICPATH);
       comp_preproc_remove_line(p, 0);
     } else if (strncmp(LCN_INC, p, LEN_INC) == 0) {
       // include
@@ -4767,7 +4779,7 @@ byte_code comp_create_bin() {
 
     // it is a unit... add more info
     bc.size = hdr.size;
-    bc.code = malloc(bc.size);
+    bc.code = calloc(bc.size, 1);
 
     // unit header
     memcpy(&uft.sign, "SBUn", 4);
@@ -4792,7 +4804,7 @@ byte_code comp_create_bin() {
   } else {
     // simple executable
     bc.size = hdr.size + 4;
-    bc.code = malloc(bc.size);
+    bc.code = calloc(bc.size, 1);
     cp = bc.code;
     memcpy(cp, &hdr, sizeof(bc_head_t));
     cp += sizeof(bc_head_t);
@@ -4919,10 +4931,12 @@ int comp_compile(const char *sb_file_name) {
   }
 
   int is_unit = comp_unit_flag;
+  int error = comp_error;
   comp_close();
   close_task(tid);
   activate_task(prev_tid);
   ctask->bc_type = is_unit ? 2 : 1;
+  ctask->error = error;
 
   if (opt_nosave && !is_unit) {
     ctask->bytecode = bc.code;

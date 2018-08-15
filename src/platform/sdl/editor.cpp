@@ -95,15 +95,9 @@ void onlineHelp(Runtime *runtime, TextEditInput *widget) {
   char path[100];
   const char *nodeId = widget->getNodeId();
   if (nodeId != NULL && nodeId[0] != '0') {
-    sprintf(path, "https://smallbasic.sourceforge.io?q=node/%s", nodeId);
+    sprintf(path, "http://smallbasic.github.io/reference/%s.html", nodeId);
   } else {
-    char *selection = widget->getWordBeforeCursor();
-    if (selection != NULL) {
-      sprintf(path, "https://smallbasic.sourceforge.io?q=search/node/%s", selection);
-      free(selection);
-    } else {
-      sprintf(path, "https://smallbasic.sourceforge.io");
-    }
+    sprintf(path, "https://smallbasic.github.io");
   }
   runtime->browseFile(path);
 }
@@ -192,22 +186,6 @@ void publish(System *system, const char *text, const char *fileName, const char 
       }
     }
   }
-}
-
-void exportRun(Runtime *runtime, TextEditInput *editor) {
-  char path[PATH_MAX];
-  getScratchFile(path, sizeof(path));
-  char *buffer = editor->getTextSelection();
-  FILE *fp = fopen(path, "wb");
-  if (fp) {
-    fputs(buffer, fp);
-    fputs("\npause\n", fp);
-    fclose(fp);
-    runtime->exportRun(path);
-  } else {
-    runtime->alert("Run", "Failed to save scratch file.");
-  }
-  free(buffer);
 }
 
 void System::editSource(String loadPath) {
@@ -316,7 +294,7 @@ void System::editSource(String loadPath) {
         case SB_KEY_F(12):
         case SB_KEY_MENU:
           redraw = false;
-        break;
+          break;
         case SB_KEY_ESCAPE:
           widget = editWidget;
           helpWidget->hide();
@@ -329,11 +307,11 @@ void System::editSource(String loadPath) {
         case SB_KEY_CTRL('x'):
         case SB_KEY_CTRL(SB_KEY_INSERT):
           text = widget->copy(event.key == (int)SB_KEY_CTRL('x'));
-        if (text) {
-          setClipboardText(text);
-          free(text);
-        }
-        break;
+          if (text) {
+            setClipboardText(text);
+            free(text);
+          }
+          break;
         case SB_KEY_F(1):
         case SB_KEY_ALT('h'):
           _output->setStatus("Keyword Help. F2=online, Esc=Close");
@@ -378,16 +356,12 @@ void System::editSource(String loadPath) {
           debugStep(editWidget, helpWidget, true);
           break;
         case SB_KEY_F(8):
-          exportRun((Runtime *)this, editWidget);
+          ((Runtime *)this)->exportRun(loadPath);
           break;
         case SB_KEY_F(9):
         case SB_KEY_CTRL('r'):
-          if (((Runtime *)this)->debugActive()) {
-            exportRun((Runtime *)this, editWidget);
-          } else {
-            _state = kRunState;
-          }
-        break;
+          _state = kRunState;
+          break;
         case SB_KEY_F(10):
           _output->setStatus("Enter program command line, Esc=Close");
           widget = helpWidget;
@@ -396,12 +370,8 @@ void System::editSource(String loadPath) {
           inputMode = kCommand;
           break;
         case SB_KEY_F(11):
-          if (editWidget->getTextLength()) {
-            _output->setStatus("Enter description, Esc=Close [Publish on GitHub]");
-            widget = helpWidget;
-            helpWidget->createLineEdit("");
-            helpWidget->show();
-            inputMode = kPublish;
+          if (((Runtime *)this)->toggleFullscreen()) {
+            _output->setStatus("Press F11 to exit full screen.");
           }
           break;
         case SB_KEY_CTRL('h'):

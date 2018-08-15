@@ -269,13 +269,14 @@ void exec_setup_predefined_variables() {
   setsysvar_num(SYSVAR_MAXINT, VAR_MAX_INT);
 
 #if defined(_ANDROID)
-  strcpy(homedir, "/sdcard/");
+  if (getenv("HOME_DIR")) {
+    strlcpy(homedir, getenv("HOME_DIR"), sizeof(homedir));
+  }
 #else
 #if defined(_Win32)
   if (getenv("HOMEPATH")) {
     strlcpy(homedir, getenv("HOMEPATH"), sizeof(homedir));
-  }
-  else {
+  } else {
     GetModuleFileName(NULL, homedir, sizeof(homedir) - 1);
     char *p = strrchr(homedir, '\\');
     if (p) {
@@ -290,8 +291,7 @@ void exec_setup_predefined_variables() {
 #elif defined(_UnixOS)
   if (getenv("HOME")) {
     strlcpy(homedir, getenv("HOME"), sizeof(homedir));
-  }
-  else {
+  } else {
     strcpy(homedir, "/tmp/");
   }
 #endif
@@ -685,7 +685,7 @@ static inline void bc_loop_call_extp() {
       prog_error = gsb_last_error;
     }
   } else {
-    sblmgr_procexec(lib, prog_symtable[idx].exp_idx);
+    slib_procexec(lib, prog_symtable[idx].exp_idx);
   }
 }
 
@@ -1249,16 +1249,8 @@ int brun_create_task(const char *filename, byte *preloaded_bc, int libf) {
 
   exec_setup_predefined_variables();
 
-  /*
-   *      --------------
-   *      load libraries
-   *      --------------
-   *
-   *      each library is loaded on new task
-   */
+  // load libraries - each library is loaded on new task
   if (prog_libcount) {
-    int lib_tid;
-
     // reset symbol mapping
     for (int i = 0; i < prog_symcount; i++) {
       prog_symtable[i].task_id = prog_symtable[i].exp_idx = -1;
@@ -1267,24 +1259,18 @@ int brun_create_task(const char *filename, byte *preloaded_bc, int libf) {
     for (int i = 0; i < prog_libcount; i++) {
       if (prog_libtable[i].type == 1) {
         // === SB Unit ===
-
         // create task
-        lib_tid = brun_create_task(prog_libtable[i].lib, 0, 1);
+        int lib_tid = brun_create_task(prog_libtable[i].lib, 0, 1);
         activate_task(tid);
 
-        // update lib-table's task-id field (in this code; not in
-        // lib's code)
+        // update lib-table's task-id field (in this code; not in lib's code)
         prog_libtable[i].tid = lib_tid;
 
-        // update lib-symbols's task-id field (in this code; not
-        // in lib's code)
+        // update lib-symbols's task-id field (in this code; not in lib's code)
         for (int j = 0; j < prog_symcount; j++) {
-          char *pname;
-
-          pname = strrchr(prog_symtable[j].symbol, '.') + 1;
+          char *pname = strrchr(prog_symtable[j].symbol, '.') + 1;
           // the name without the 'class'
           if ((prog_symtable[j].lib_id & (~UID_UNIT_BIT)) == prog_libtable[i].id) {
-
             // find symbol by name (for sure) and update it
             // this is required because lib may be newer than
             // parent
@@ -1296,20 +1282,19 @@ int brun_create_task(const char *filename, byte *preloaded_bc, int libf) {
                 // connect the library
                 break;
               }
-            }                   // k
+            }
           }
-        }                       // j
-      }                         // if type = 1
-      else {
+        }
+      } else {
         // === C Module ===
-        // update lib-table's task-id field (in this code; not in
-        // lib's code)
+        // update lib-table's task-id field (in this code; not in lib's code)
         prog_libtable[i].tid = -1;  // not a task
+        int lib_id = prog_libtable[i].id;
+        slib_import(lib_id, 0);
 
-        // update lib-symbols's task-id field (in this code; not
-        // in lib's code)
+        // update lib-symbols's task-id field (in this code; not in lib's code)
         for (int j = 0; j < prog_symcount; j++) {
-          prog_symtable[j].exp_idx = slib_get_kid(prog_symtable[j].symbol);
+          prog_symtable[j].exp_idx = slib_get_kid(lib_id, prog_symtable[j].symbol);
           // adjust sid (sid is <-> exp_idx in lib)
           prog_symtable[j].task_id = -1;  // connect the library
         }
@@ -1564,12 +1549,10 @@ int sbasic_compile(const char *file) {
       if (bin_date >= src_date) {
         // TODO: check binary version
         ;
-      }
-      else {
+      } else {
         comp_rq = 1;
       }
-    }
-    else {
+    } else {
       comp_rq = 1;
     }
   }
@@ -1704,24 +1687,21 @@ int sbasic_exec(const char *file) {
 int sbasic_main(const char *file) {
   int success;
 
-  // initialize task manager
+  // initialize managers
   init_tasks();
-
-  // initialize SB's units manager
   unit_mgr_init();
+  slib_init();
 
-  // load external C modules
-  if (opt_loadmod) {
-    sblmgr_init(1, opt_modlist);
+  if (prog_error) {
+    success = 0;
   } else {
-    sblmgr_init(0, NULL);
+    success = sbasic_exec(file);
   }
-  // go...
-  success = sbasic_exec(file);
 
-  unit_mgr_close();             // shutdown SB's unit manager
-  sblmgr_close();               // shutdown C-coded modules
-  destroy_tasks();              // closes all remaining tasks
+  // clean up managers
+  slib_close();
+  unit_mgr_close();
+  destroy_tasks();
 
   return success;
 }

@@ -61,6 +61,7 @@ struct Runtime : public System {
   void runShell();
   char *loadResource(const char *fileName);
   void optionsBox(StringList *items);
+  void setWindowSize(int width, int height) {};
   void setWindowTitle(const char *title) {}
   void share(const char *path) { setString("share", path); }
   void showCursor(CursorType cursorType) {}

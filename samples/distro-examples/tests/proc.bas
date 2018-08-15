@@ -61,8 +61,6 @@ vv()=fill3(vv())
 ' new code
 vv=fill4(vv)
 
-end
-
 ' =====================================
 
 ' Simple procedure
@@ -156,4 +154,8 @@ v(0)=1
 fill4=v
 end
 
-
+' allow trailing comma after local declaration
+local blah,
+local z,
+blah=1
+z=blah

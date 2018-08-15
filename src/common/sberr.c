@@ -29,15 +29,20 @@ void err_detail_msg(const char *descr) {
   log_printf("\033[80m\033[0m");
 }
 
-void err_stack_msg() {
-  int i_stack, i_kw;
+void va_err_detail_msg(const char *format, va_list args, unsigned size) {
+  char *buff = malloc(size + 1);
+  buff[0] = '\0';
+  vsnprintf(buff, size + 1, format, args);
+  buff[size] = '\0';
+  err_detail_msg(buff);
+  free(buff);
+}
 
-  if (prog_stack_count) {
-    log_printf("\033[4mStack:\033[0m\n");
-  }
+void err_stack_msg() {
+  int header = 0;
 
   // log the stack trace
-  for (i_stack = prog_stack_count; i_stack > 0; i_stack--) {
+  for (int i_stack = prog_stack_count; i_stack > 0; i_stack--) {
     stknode_t node = prog_stack[i_stack - 1];
     switch (node.type) {
     case 0xFF:
@@ -47,8 +52,12 @@ void err_stack_msg() {
       break;
 
     default:
-      for (i_kw = 0; keyword_table[i_kw].name[0] != '\0'; i_kw++) {
+      for (int i_kw = 0; keyword_table[i_kw].name[0] != '\0'; i_kw++) {
         if (node.type == keyword_table[i_kw].code) {
+          if (!header) {
+            log_printf("\033[4mStack:\033[0m\n");
+            header = 1;
+          }
           dev_log_stack(keyword_table[i_kw].name, node.type, node.line);
           log_printf(" %s: %d", keyword_table[i_kw].name, node.line);
           break;
@@ -59,31 +68,47 @@ void err_stack_msg() {
 }
 
 /**
- * raise a compiler error
+ * raise a pre-execution/compiler error
  */
-void sc_raise2(const char *sec, int scline, const char *buff) {
-  prog_error = errCompile;
-  err_title_msg(WORD_COMP, sec, scline);
-  err_detail_msg(buff);
+void sc_raise(const char *format, ...) {
+  if (!comp_error) {
+    comp_error = 1;
+
+    va_list args;
+    va_start(args, format);
+    unsigned size = vsnprintf(NULL, 0, format, args);
+    va_end(args);
+
+    if (comp_bc_sec) {
+      err_title_msg(WORD_COMP, comp_bc_sec, comp_line);
+    }
+    if (size) {
+      va_start(args, format);
+      va_err_detail_msg(format, args, size);
+      va_end(args);
+    }
+  }
 }
 
 /**
  * run-time error
  */
-void rt_raise(const char *fmt, ...) {
-  char *buff;
-  va_list ap;
-
+void rt_raise(const char *format, ...) {
   if (!gsb_last_error && !prog_error && prog_source) {
     prog_error = errRuntime;
-    va_start(ap, fmt);
-    buff = malloc(SB_TEXTLINE_SIZE + 1);
-    vsprintf(buff, fmt, ap);
-    va_end(ap);
+
+    va_list args;
+    va_start(args, format);
+    unsigned size = vsnprintf(NULL, 0, format, args);
+    va_end(args);
+
     err_title_msg(WORD_RTE, prog_file, prog_line);
-    err_detail_msg(buff);
+    if (size) {
+      va_start(args, format);
+      va_err_detail_msg(format, args, size);
+      va_end(args);
+    }
     err_stack_msg();
-    free(buff);
   }
 }
 
@@ -164,6 +189,10 @@ void err_syntax_unknown() {
 
 void err_parm_num(int found, int expected) {
   rt_raise(ERR_PARAM_NUM, found, expected);
+}
+
+void err_parm_limit(int count) {
+  rt_raise(MSG_PARNUM_LIMIT, count);
 }
 
 void err_stackoverflow(void) {

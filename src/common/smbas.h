@@ -104,7 +104,7 @@ EXTERN byte opt_quiet; /**< command-line option: quiet                       */
 EXTERN char opt_command[OPT_CMD_SZ]; /**< command-line parameters (COMMAND$) */
 EXTERN int opt_base; /**< OPTION BASE x                                      */
 EXTERN byte opt_loadmod; /**< load all modules                               */
-EXTERN char opt_modlist[OPT_MOD_SZ]; /**< Modules list                       */
+EXTERN char opt_modpath[OPT_MOD_SZ]; /**< Modules path                       */
 EXTERN int opt_verbose; /**< print some additional infos                     */
 EXTERN int opt_ide; /**< 0=no IDE, 1=IDE is linked, 2=IDE is external exe)   */
 EXTERN byte os_charset; /**< use charset encoding                            */

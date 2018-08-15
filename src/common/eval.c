@@ -825,7 +825,7 @@ static inline void eval_extf(var_t *r) {
   if (lib & UID_UNIT_BIT) {
     unit_exec(lib & (~UID_UNIT_BIT), idx, r);
   } else {
-    sblmgr_funcexec(lib, prog_symtable[idx].exp_idx, r);
+    slib_funcexec(lib, prog_symtable[idx].exp_idx, r);
   }
 }
 

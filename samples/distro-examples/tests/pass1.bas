@@ -8,10 +8,9 @@ else
   print "OK"
 end if
 
-UNITPATH = "/foo"
-if ENV("UNITPATH") != "/foo" then
-  print "ERROR" + " WAS:" + ENV("UNITPATH")
+SBASICPATH = "/foo"
+if ENV("SBASICPATH") != "/foo" then
+  print "ERROR" + " WAS:" + ENV("SBASICPATH")
 else 
   print "OK"
 end if
-

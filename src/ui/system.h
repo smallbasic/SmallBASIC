@@ -66,6 +66,7 @@ struct System {
   virtual MAEvent processEvents(int waitFlag) = 0;
   virtual char *loadResource(const char *fileName);
   virtual void optionsBox(StringList *items) = 0;
+  virtual void setWindowSize(int width, int height) = 0;
   virtual void setWindowTitle(const char *title) = 0;
   virtual void share(const char *path) = 0;
   virtual void showCursor(CursorType cursorType) = 0;
@@ -87,6 +88,7 @@ protected:
   bool loadSource(const char *fileName);
   void resize();
   void runEdit(const char *startupBas);
+  void runLive(const char *startupBas);
   void runMain(const char *mainBasPath);
   void runOnce(const char *startupBas);
   void saveFile(TextEditInput *edit, strlib::String &path);
@@ -101,6 +103,7 @@ protected:
   void showMenu();
   void showSystemScreen(bool showSrc);
   void waitForBack();
+  void waitForChange(bool error);
   AnsiWidget *_output;
 
   // platform static virtual

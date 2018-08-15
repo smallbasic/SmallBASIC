@@ -1134,12 +1134,16 @@ void cmd_str1(long funcCode, var_t *arg, var_t *r) {
     // str <- SPACE$(n)
     //
     l = v_getint(arg);
-    wp = r->v.p.ptr = (char *)malloc(l + 1);
-    for (int i = 0; i < l; i++) {
-      wp[i] = ' ';
+    if (l < 0) {
+      err_argerr();
+    } else {
+      wp = r->v.p.ptr = (char *)malloc(l + 1);
+      for (int i = 0; i < l; i++) {
+        wp[i] = ' ';
+      }
+      wp[l] = '\0';
+      r->v.p.length = strlen(r->v.p.ptr) + 1;
     }
-    wp[l] = '\0';
-    r->v.p.length = strlen(r->v.p.ptr) + 1;
     break;
   case kwENVIRONF:
     //
@@ -2332,8 +2336,8 @@ void cmd_genfunc(long funcCode, var_t *r) {
 
     err = geo_polycentroid(poly, count, &x, &y, &area);
     v_toarray1(r, 2);
-    v_setreal(v_getelemptr(r, 0), x);
-    v_setreal(v_getelemptr(r, 1), y);
+    v_setreal(v_elem(r, 0), x);
+    v_setreal(v_elem(r, 1), y);
     if (err == 2 && area == 0) {
       rt_raise(ERR_CENTROID);
     } else {
@@ -2557,7 +2561,7 @@ void cmd_genfunc(long funcCode, var_t *r) {
           if (!prog_error && basevar_p->type == V_ARRAY) {
             count = v_asize(basevar_p);
             for (int i = 0; i < count; i++) {
-              var_t *elem_p = v_getelemptr(basevar_p, i);
+              var_t *elem_p = v_elem(basevar_p, i);
               if (!prog_error) {
                 if (first) {
                   dar_first(funcCode, r, elem_p);
@@ -2627,7 +2631,7 @@ void cmd_genfunc(long funcCode, var_t *r) {
           if (!prog_error && basevar_p->type == V_ARRAY) {
             count = v_asize(basevar_p);
             for (int i = 0; i < count; i++) {
-              var_t *elem_p = v_getelemptr(basevar_p, i);
+              var_t *elem_p = v_elem(basevar_p, i);
               if (!prog_error) {
                 if (tcount >= len) {
                   len += BUF_LEN;

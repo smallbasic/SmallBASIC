@@ -57,8 +57,8 @@ int find_unit_path(const char *name, char *file) {
   strcat(file, ".bas");
 
   // find in unitpath
-  if (getenv("UNITPATH")) {
-    if (sys_search_path(getenv("UNITPATH"), file, file)) {
+  if (getenv("SBASICPATH")) {
+    if (sys_search_path(getenv("SBASICPATH"), file, file)) {
       return 1;
     }
   }
@@ -119,6 +119,12 @@ int open_unit(const char *file) {
 
   // create corresponding sbu path version
   strcpy(unitname, bas_file);
+
+  if (strcmp(comp_file_name, bas_file) == 0) {
+    // unit and program are the same
+    return -1;
+  }
+
   unitname[strlen(bas_file) - 4] = 0;
   strcat(unitname, ".sbu");
 

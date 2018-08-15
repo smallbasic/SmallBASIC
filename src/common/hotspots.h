@@ -7,7 +7,7 @@
 //
 // Copyright(C) 2014 Chris Warren-Smith
 
-#include "common/var_map.h"
+#include "include/var_map.h"
 #include "common/var_eval.h"
 
 void err_evsyntax(void);
@@ -86,8 +86,6 @@ static inline var_num_t v_getval(var_t *v) {
   return 0;
 }
 
-#define v_getnum(a) v_getval((a))
-
 /**
  * @ingroup var
  *
@@ -159,14 +157,6 @@ static inline var_t *code_getvarptr_parens(int until_parens) {
 
   return var_p;
 }
-
-/**
- * @ingroup var
- *
- * Returns the varptr of the next variable. if the variable is an array 
- * returns the element ptr
- */
-#define code_getvarptr() code_getvarptr_parens(0)
 
 /**
  * @ingroup var

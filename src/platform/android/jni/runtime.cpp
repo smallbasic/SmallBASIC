@@ -147,6 +147,15 @@ extern "C" JNIEXPORT void JNICALL Java_net_sourceforge_smallbasic_MainActivity_r
   env->ReleaseStringUTFChars(path, fileName);
 }
 
+extern "C" JNIEXPORT void JNICALL Java_net_sourceforge_smallbasic_MainActivity_setenv
+  (JNIEnv *env, jclass jclazz, jstring nameString, jstring valueString) {
+  const char *name = env->GetStringUTFChars(nameString, JNI_FALSE);
+  const char *value = env->GetStringUTFChars(valueString, JNI_FALSE);
+  setenv(name, value, 1);
+  env->ReleaseStringUTFChars(nameString, name);
+  env->ReleaseStringUTFChars(valueString, value);
+}
+
 extern "C" JNIEXPORT void JNICALL Java_net_sourceforge_smallbasic_MainActivity_onResize
   (JNIEnv *env, jclass jclazz, jint width, jint height) {
   if (runtime != NULL && !runtime->isClosing() && runtime->isActive() && os_graphics) {
@@ -453,12 +462,12 @@ void Runtime::runShell() {
   os_color_depth = 16;
   opt_mute_audio = 0;
   opt_loadmod = 0;
-  strcpy(opt_modlist, "/data/data/net.sourceforge.smallbasic/lib");
+  strcpy(opt_modpath, "/data/data/net.sourceforge.smallbasic/lib");
 
   _app->activity->callbacks->onContentRectChanged = onContentRectChanged;
   loadConfig();
 
-  String ipAddress = getString("getIPAddress");
+  String ipAddress = getString("getIpAddress");
   if (!ipAddress.empty()) {
     setenv("IP_ADDR", ipAddress.c_str(), 1);
   }
@@ -486,8 +495,15 @@ void Runtime::loadConfig() {
   _output->setTextColor(DEFAULT_FOREGROUND, DEFAULT_BACKGROUND);
   _output->setFontSize(fontSize);
   _initialFontSize = _output->getFontSize();
-  chdir("/sdcard");
 
+  const char *storage = getenv("EXTERNAL_DIR");
+  if (!storage) {
+    storage = getenv("INTERNAL_DIR");
+  }
+  if (storage) {
+    setenv("HOME_DIR", storage, 1);
+    chdir(storage);
+  }
   if (loadSettings(settings)) {
     String *s = settings.get(FONT_SCALE_KEY);
     if (s) {

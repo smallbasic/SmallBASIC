@@ -7,14 +7,17 @@
 //
 // Copyright(C) 2003 Nicholas Christopoulos
 
-#include "../mod_utils.h"
+#include <string.h>
+#include <stdio.h>
 #include <mysql/mysql.h>
+#include "mod_utils.h"
 
 typedef struct {
   MYSQL *dbf;
 } dbnode_t;
 
 #define MAX_OPEN_DB 256
+#define MESSAGE_LEN 128
 
 static dbnode_t table[MAX_OPEN_DB];
 static int hcount;
@@ -74,14 +77,16 @@ int mq_connect(slib_par_t * params, int pcount, var_t * retval) {
 
     handle = get_free_handle();
     if (handle >= 0) {
-      table[handle].dbf = tmp_alloc(sizeof(MYSQL));
+      table[handle].dbf = malloc(sizeof(MYSQL));
       mysql_init(table[handle].dbf);
       mysql_options(table[handle].dbf, MYSQL_READ_DEFAULT_GROUP, "SmallBASIC");
       if (!mysql_real_connect
           (table[handle].dbf, host, user, paswd, dbname, 0, NULL, 0)) {
         success = 0;
-        v_setstrf(retval, "MySQL/CONNECT: %s", mysql_error(table[handle].dbf));
-        tmp_free(table[handle].dbf);
+        char buffer[MESSAGE_LEN];
+        sprintf(buffer, "MySQL/CONNECT: %s", mysql_error(table[handle].dbf));
+        v_setstr(retval, buffer);
+        free(table[handle].dbf);
       }
       else
         v_setint(retval, handle);
@@ -108,7 +113,7 @@ int mq_disconnect(slib_par_t * params, int pcount, var_t * retval) {
   if (success) {
     if (is_valid_handle(handle)) {
       mysql_close(table[handle].dbf);
-      tmp_free(table[handle].dbf);
+      free(table[handle].dbf);
       table[handle].dbf = NULL;
       success = 1;
     }
@@ -136,7 +141,9 @@ int mq_use(slib_par_t * params, int pcount, var_t * retval) {
   if (success) {
     if (is_valid_handle(handle)) {
       if (mysql_select_db(table[handle].dbf, dbname)) {
-        v_setstrf(retval, "MySQL/USE: %s\n", mysql_error(table[handle].dbf));
+        char buffer[MESSAGE_LEN];
+        sprintf(buffer, "MySQL/USE: %s\n", mysql_error(table[handle].dbf));
+        v_setstr(retval, buffer);
         success = 0;
       }
     }
@@ -171,15 +178,15 @@ void mq_build_result_array(MYSQL * mysql, MYSQL_RES * result, var_t * retval) {
     for (i = 0; i < num_fields; i++) {
       var_t *e;
 
-      e = (var_t *) (retval->v.a.ptr + (sizeof(var_t) * (crow * num_fields + i)));
+      e = (var_t *) (retval->v.a.data + (sizeof(var_t) * (crow * num_fields + i)));
       if (row[i]) {
         char *buf;
 
-        buf = (char *)tmp_alloc(lengths[i] + 1);
+        buf = (char *)malloc(lengths[i] + 1);
         strncpy(buf, row[i], lengths[i]);
         buf[lengths[i]] = '\0';
         v_setstr(e, buf);
-        tmp_free(buf);
+        free(buf);
       }
       else {
         v_setstr(e, "");
@@ -227,7 +234,9 @@ int mq_query(slib_par_t * params, int pcount, var_t * retval) {
           }
           else {                // mysql_store_result() should have returned
                                 // data
-            v_setstrf(retval, "MySQL/QUERY(): %s\n", mysql_error(mysql));
+            char buffer[MESSAGE_LEN];
+            sprintf(buffer, "MySQL/QUERY(): %s\n", mysql_error(mysql));
+            v_setstr(retval, buffer);
           }
         }
       }
@@ -263,8 +272,11 @@ int mq_listtbls(slib_par_t * params, int pcount, var_t * retval) {
         mq_build_result_array(mysql, result, retval);
         mysql_free_result(result);
       }
-      else
-        v_setstrf(retval, "MySQL/LISTTABLES: %s\n", mysql_error(mysql));
+      else {
+        char buffer[MESSAGE_LEN];
+        sprintf(buffer, "MySQL/LISTTABLES: %s\n", mysql_error(mysql));
+        v_setstr(retval, buffer);
+      }
     }
     else {
       success = 0;
@@ -297,8 +309,11 @@ int mq_listdbs(slib_par_t * params, int pcount, var_t * retval) {
         mq_build_result_array(mysql, result, retval);
         mysql_free_result(result);
       }
-      else
-        v_setstrf(retval, "MySQL/LISTDBS(): %s\n", mysql_error(mysql));
+      else {
+        char buffer[MESSAGE_LEN];
+        sprintf(buffer, "MySQL/LISTDBS(): %s\n", mysql_error(mysql));
+        v_setstr(retval, buffer);
+      }
     }
     else {
       success = 0;
@@ -332,8 +347,11 @@ int mq_listflds(slib_par_t * params, int pcount, var_t * retval) {
         mq_build_result_array(mysql, result, retval);
         mysql_free_result(result);
       }
-      else
-        v_setstrf(retval, "MySQL/LISTFIELDS(): %s\n", mysql_error(mysql));
+      else {
+        char buffer[MESSAGE_LEN];
+        sprintf(buffer, "MySQL/LISTFIELDS(): %s\n", mysql_error(mysql));
+        v_setstr(retval, buffer);
+      }
     }
     else {
       success = 0;

@@ -8,11 +8,7 @@
 // Copyright(C) 2000 Nicholas Christopoulos
 
 #include "common/sys.h"
-#include "common/str.h"
-#include "common/var.h"
-#include "common/smbas.h"
 #include "common/sberr.h"
-#include "common/var_map.h"
 
 #define INT_STR_LEN 64
 #define VAR_POOL_SIZE 8192
@@ -208,22 +204,6 @@ int v_length(var_t *var) {
     return v_length(var->v.ref);
   }
   return 0;
-}
-
-/*
- * return array element pointer
- */
-var_t *v_getelemptr(var_t *v, uint32_t index) {
-  if (v->type == V_ARRAY) {
-    if (index < v_asize(v)) {
-      return v_elem(v, index);
-    } else {
-      err_vararridx(index, v_asize(v));
-      return NULL;
-    }
-  }
-  err_varisnotarray();
-  return NULL;
 }
 
 /*

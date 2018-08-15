@@ -461,7 +461,7 @@ struct proc_keyword_s proc_table[] = {
 #define LCN_QUIET               "QUIET"
 #define LCN_GRMODE              "GRMODE"
 #define LCN_TEXTMODE            "TEXTMODE"
-#define LCN_UNIT_PATH           "UNITPATH"
+#define LCN_SBASICPATH          "SBASICPATH"
 #define LCN_COMMAND             "COMMAND"
 #define LCN_INC                 "INCLUDE"
 #define LCN_SUB_WRS             "SUB "
@@ -476,6 +476,7 @@ struct proc_keyword_s proc_table[] = {
 #define LCN_ANTIALIAS           "ANTIALIAS"
 #define LCN_LOAD_MODULES        "LOAD MODULES"
 #define LCN_AUTOLOCAL           "AUTOLOCAL"
+#define LCN_AS_WRS              "AS "
 
 /* system variables */
 #define LCN_SV_SBVER            "SBVER"

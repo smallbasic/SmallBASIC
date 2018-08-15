@@ -10,11 +10,7 @@
 #include "common/sys.h"
 #include "common/messages.h"
 #include "common/pproc.h"
-#include "common/sberr.h"
-#include "common/device.h"
 #include "common/fs_socket_client.h"
-#include "common/var.h"
-#include "common/var_map.h"
 #include "lib/maapi.h"
 #include "ui/image.h"
 #include "ui/system.h"
@@ -475,7 +471,7 @@ void screen_dump() {
   if (image != NULL) {
     const char *path = gsb_bas_dir;
 #if defined(_ANDROID)
-    path = "/sdcard/";
+    path = getenv("EXTERNAL_STORAGE");
 #endif
     for (int i = 0; i < 1000; i++) {
       char file[OS_PATHNAME_SIZE];

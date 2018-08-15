@@ -47,6 +47,7 @@ static struct option OPTIONS[] = {
   {"command",   optional_argument, NULL, 'c'},
   {"font",      optional_argument, NULL, 'f'},
   {"run",       optional_argument, NULL, 'r'},
+  {"run-live",  optional_argument, NULL, 'x'},
   {"module",    optional_argument, NULL, 'm'},
   {"edit",      optional_argument, NULL, 'e'},
   {"debug",     optional_argument, NULL, 'd'},
@@ -296,7 +297,7 @@ int main(int argc, char* argv[]) {
 
   while (1) {
     int option_index = 0;
-    int c = getopt_long(argc, argv, "hvkc:f:r:m:e:d:p:", OPTIONS, &option_index);
+    int c = getopt_long(argc, argv, "hvkc:f:r:x:m:e:d:p:", OPTIONS, &option_index);
     if (c == -1) {
       // no more options
       if (!option_index) {
@@ -340,13 +341,21 @@ int main(int argc, char* argv[]) {
       runFile = strdup(optarg);
       ide_option = IDE_NONE;
       break;
+    case 'x':
+      runFile = strdup(optarg);
+      g_debugPort = 0;
+      debug = true;
+      ide_option = IDE_EXTERNAL;
+      break;
     case 'e':
       runFile = strdup(optarg);
       ide_option = IDE_INTERNAL;
       break;
     case 'm':
       opt_loadmod = 1;
-      strcpy(opt_modlist, optarg);
+      if (optarg) {
+        strcpy(opt_modpath, optarg);
+      }
       break;
     case 'd':
       runFile = strdup(optarg);
@@ -371,6 +380,12 @@ int main(int argc, char* argv[]) {
   }
 
   restoreSettings(rect, fontScale, debug, argc == 1);
+  if (debug) {
+    // retrieve fontScale from non-debug settings
+    SDL_Rect unused;
+    restoreSettings(unused, fontScale, false, false);
+  }
+
   if (ide_option != -1) {
     opt_ide = ide_option;
   }

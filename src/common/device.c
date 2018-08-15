@@ -70,33 +70,7 @@ int dev_restore() {
  * returns 0 for no events in queue
  */
 int dev_events(int wait_flag) {
-#if !defined(DEV_EVENTS_OSD)
-  if (os_graphics) {
-    osd_refresh();
-  }
-#endif
-
-#if DEV_EVENTS_OSD
   return osd_events(wait_flag);
-#else
-  if (wait_flag) {
-    int evc;
-    while ((evc = dev_events(0)) == 0)
- #if defined(_UnixOS)
-      usleep(31250);
- #elif defined(_Win32)
-      ;
- #else
-      dev_delay(31);            // sleep for 1000/32 and try again
- #endif
-    return evc;
-  } else {
-    if (os_graphics) {
-      return osd_events(0);
-    }
-    return 0;
-  }
-#endif // DEV_EVENTS_OSD
 }
 
 #ifndef IMPL_DEV_DELAY
@@ -335,31 +309,25 @@ void dev_beep() {
  * plays an OGG or MP3 file
  */
 void dev_audio(const char *path) {
-#if !defined(BUILD_CONSOLE)
   if (!opt_mute_audio) {
     osd_audio(path);
   }
-#endif
 }
 
 /**
  * plays a sound
  */
 void dev_sound(int frq, int ms, int vol, int bgplay) {
-#if !defined(BUILD_CONSOLE)
   if (!opt_mute_audio) {
     osd_sound(frq, ms, vol, bgplay);
   }
-#endif
 }
 
 /**
  * clear background sound queue
  */
 void dev_clear_sound_queue() {
-#if !defined(BUILD_CONSOLE)
   osd_clear_sound_queue();
-#endif
 }
 
 /**

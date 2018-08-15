@@ -42,15 +42,11 @@ extern "C" {
 #define EPSILON DBL_EPSILON
 #define OS_PREC64
 
-typedef double var_num_t;
-typedef long int var_int_t;
 #define VAR_MAX_INT     LONG_MAX
 #define VAR_NUM_FMT     "%f"
 #define VAR_INT_FMT     "%ld"
 #define VAR_INT_NUM_FMT "%.0f"
 
-#define OS_INTSZ  sizeof(var_int_t)  // size of integer
-#define OS_REALSZ sizeof(var_num_t)  // size of real
 #define OS_PATHNAME_SIZE    1024
 #define OS_FILENAME_SIZE    256
 #define OS_FILEHANDLES      256
@@ -119,6 +115,7 @@ typedef uint32_t bcip_t;
 #define CODESZ      OS_CODESZ
 #define BC_CTRLSZ   (ADDRSZ+ADDRSZ)
 
+#include "include/var.h"
 #include "common/str.h"
 
 #if !defined(O_BINARY)

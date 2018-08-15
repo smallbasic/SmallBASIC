@@ -356,12 +356,3 @@ String saveGist(const char *buffer, const char *fileName, const char *descriptio
   return result;
 }
 
-void getScratchFile(char *path, size_t size) {
-  for (int i = 0; ENV_VARS[i][0] != '\0'; i++) {
-    const char *home = getenv(ENV_VARS[i]);
-    if (home && access(home, R_OK) == 0) {
-      strlcpy(path, home, size);
-      strlcat(path, "/scratch.bas", size);
-    }
-  }
-}

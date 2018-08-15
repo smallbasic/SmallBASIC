@@ -8,13 +8,7 @@
 // Copyright(C) 2000 Nicholas Christopoulos
 
 #include "common/sys.h"
-#include "common/kw.h"
-#include "common/var.h"
-#include "common/var_map.h"
-#include "common/device.h"
-#include "common/blib.h"
 #include "common/pproc.h"
-#include "common/smbas.h"
 #include "common/fmt.h"
 #include "common/keymap.h"
 #include "common/messages.h"

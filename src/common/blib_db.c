@@ -58,7 +58,7 @@ void cmd_fopen() {
 
     code_skipnext();
   } else {
-    flags = 0;                  // ????
+    flags = 0;
   }
 
   // file handle
@@ -69,10 +69,11 @@ void cmd_fopen() {
     if (!prog_error) {
       int handle = par_getint();
       if (!prog_error) {
-        if (dev_fstatus(handle) == 0)
+        if (dev_fstatus(handle) == 0) {
           dev_fopen(handle, (char *)file_name.v.p.ptr, flags);
-        else
+        } else {
           rt_raise("OPEN: FILE IS ALREADY OPENED");
+        }
       }
     }
   } else {
@@ -569,8 +570,11 @@ void cmd_floadln() {
       rt_raise(FSERR_GENERIC);
       return;
     }
-
-    dev_fopen(handle, (char *)file_name.v.p.ptr, flags);
+    if (v_strlen(&file_name) == 0) {
+      err_throw(FSERR_NOT_FOUND);
+    } else {
+      dev_fopen(handle, (char *)file_name.v.p.ptr, flags);
+    }
     v_free(&file_name);
     CHK_ERR(FSERR_GENERIC);
   }
@@ -650,14 +654,19 @@ void cmd_floadln() {
     } else {
       v_resize_array(array_p, 0); // v_free() is here
     }
-  } else {                        // if type=1
-    // build string
+  } else {
+    // type == 1, build string
     v_free(var_p);
-    v_init_str(var_p, dev_flength(handle));
-    if (var_p->v.p.length > 1) {
-      dev_fread(handle, (byte *)var_p->v.p.ptr, var_p->v.p.length - 1);
+    int len = dev_flength(handle);
+    if (len < 1 || prog_error) {
+      err_throw(FSERR_NOT_FOUND);
+    } else {
+      v_init_str(var_p, len);
+      if (var_p->v.p.length > 1) {
+        dev_fread(handle, (byte *)var_p->v.p.ptr, var_p->v.p.length - 1);
+        var_p->v.p.ptr[var_p->v.p.length - 1] = '\0';
+      }
     }
-    var_p->v.p.ptr[var_p->v.p.length - 1] = '\0';
   }
   if (flags == DEV_FILE_INPUT) {
     dev_fclose(handle);

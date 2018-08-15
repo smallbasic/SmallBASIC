@@ -29,7 +29,7 @@ typedef enum {
 #define IF_ERR_RETURN if (prog_error) {return;}
 #define IF_ERR_RETURN_0 if (prog_error) {return 0;}
 
-void sc_raise2(const char *sec, int scline, const char *buff);
+void sc_raise(const char *fmt, ...);
 void rt_raise(const char *fmt, ...);
 void err_missing_rp();
 void err_matdim();
@@ -37,6 +37,7 @@ void err_noargs();
 void err_syntax(int keyword, const char *fmt);
 void err_syntax_unknown();
 void err_parm_num(int found, int expected);
+void err_parm_limit(int count);
 void err_typemismatch(void);
 void err_stackmess(void);
 void err_parm_byref(int n);

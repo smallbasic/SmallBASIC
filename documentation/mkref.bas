@@ -32,6 +32,8 @@ elif (len(args) == 2 && args(1) == "bas") then
   mk_bas(in_map)
 elif (len(args) == 2 && args(1) == "jekyll") then
   mk_jekyll(in_map)
+elif (len(args) == 2 && args(1) == "markdown") then
+  mk_markdown(in_map)
 elif (len(args) == 2 && args(1) == "test") then
   mk_test(in_map)
 else
@@ -74,6 +76,23 @@ func fix_comments_jekyll(comments, keyword)
   comments = translate(comments, "bc. ", "<pre>")
   comments = fix_comments(comments, keyword)
   fix_comments_jekyll = comments
+end
+
+func fix_comments_pandoc(comments, keyword)
+  comments = translate(comments, "<code>", chr(10) + "~~~" + chr(10))
+  comments = translate(comments, "<?code>", chr(10) + "~~~" + chr(10))
+  comments = translate(comments, "</code>", chr(10) + "~~~" + chr(10))
+  comments = translate(comments, "<strong>", "**")
+  comments = translate(comments, "</strong", "**")
+  comments = translate(comments, "<cite>", "")
+  comments = translate(comments, "</cite", "")
+  comments = translate(comments, "<blockquote>", "> ")
+  comments = translate(comments, "</blockquote>", "")
+  comments = translate(comments, "</blockqoute>", "")
+  comments = translate(comments, "p. ", "")
+  comments = translate(comments, "bc. ", "> ")
+  comments = fix_comments(comments, keyword)
+  return comments
 end
 
 sub mk_bas(byref in_map)
@@ -166,7 +185,7 @@ end
 ' local test: $ bundle exec jekyll serve
 '
 sub mk_jekyll(byref in_map)
-  local i, row, group, type, keyword, syntax, brief, comments, buffer, fname
+  local i, row, group, type, keyword, syntax, brief, comments, buffer, filename
   local in_map_len = len(in_map) - 1
   local end_block = "<!-- end heading block -->"
   dim buffer
@@ -203,8 +222,136 @@ sub mk_jekyll(byref in_map)
       i++
       buffer << fix_comments_jekyll(in_map(i).comment_body_value, keyword)
     wend
-    fname = "2016-06-04-" + lower(group) + "-" + lower(keyword) + ".markdown"
-    tsave fname, buffer
+    filename = "2016-06-04-" + lower(group) + "-" + lower(keyword) + ".markdown"
+    tsave filename, buffer
+  next i
+end
+
+'
+' must contain at least 3 | chars
+'
+func is_table(s)
+  local z
+  z = instr(0, s, "|")
+  if (z!=1) then return false
+
+  z = instr(z, s, "|")
+  if (z==0) then return false
+
+  z = instr(z, s, "|")
+  if (z==0) then return false
+
+  return true
+end
+
+'
+' generate the table pattern
+'
+func table_markdown(s)
+  local result = ""
+  local s_len = len(s)
+  local i
+  for i = 1 to s_len
+    if (mid(s, i, 1) == "|") then
+      result += " "
+    else
+      result += "-"
+    endif
+  next i
+  return result
+end
+
+'
+' convert textile to markdown
+'
+func table_row(table_md, s)
+  local out = trim(leftoflast(rightof(s, "|"), "|"))
+  local j = instr(table_md, " ")
+  local x = instr(out, "|")
+  local n = max(1, j - x)
+  return translate(out, "|", space(n))
+end
+
+'
+' convert textile to markdown
+'
+func update_tables(byref in_str)
+  local in_table = false
+  local table_md = ""
+  local out = ""
+  local row, rows
+
+  split in_str, chr(10), rows
+  for row in rows
+    if (is_table(row)) then
+      if (!in_table) then
+        table_md = ltrim(table_markdown(row))
+        in_table = true
+        out += table_md
+        out += chr(10)
+      endif
+      out += table_row(table_md, row)
+    else
+      if (in_table) then
+        out += table_md
+        out += chr(10)
+        in_table = false
+      endif
+      out += row
+    endif
+    out += chr(10)
+  next row
+  return out
+end
+
+'
+' make post files for smallbasic.github.io
+'
+sub mk_markdown(byref in_map)
+  local i, row, group, type, keyword, syntax, brief, comments, buffer, filename
+  local in_map_len = len(in_map) - 1
+  local end_block = "<!-- end heading block -->"
+
+  sub append_buf(s)
+    buffer += s
+    buffer += chr(10)
+  end
+
+  for i = 0 to in_map_len
+    buffer=""
+    row = in_map(i).body_value
+    group = get_field(row, "group=", false)
+    type = get_field(row, "type=", false)
+    keyword = get_field(row, "keyword=", false)
+    syntax = get_field(row, "syntax=", false)
+    brief = get_field(row, "brief=", false)
+    append_buf("# " + keyword)
+    append_buf("")
+    append_buf("> " + syntax)
+    append_buf("")
+    append_buf(brief)
+    append_buf("")
+    pos = instr(row, end_block) + len(end_block)
+    if (pos < len(row)) then
+      append_buf(fix_comments_pandoc(mid(row, pos), keyword))
+    endif
+    comments = in_map(i).comment_body_value
+    if (comments != "NULL") then
+      append_buf(fix_comments_pandoc(comments, keyword))
+    endif
+    while (i + 1 < in_map_len && in_map(i).entity_id == in_map(i + 1).entity_id)
+      i++
+      append_buf(fix_comments_pandoc(in_map(i).comment_body_value, keyword))
+    wend
+
+    filename = in_map(i).entity_id + "-" + lower(group) + "-" + lower(keyword) + ".markdown"
+    filename = translate(filename, " ", "")
+    buffer = update_tables(buffer)
+
+    if (len(filename) > 200) then
+      filename = in_map(i).entity_id + ".markdown"
+    endif
+    tsave filename, buffer
   next i
 end
 

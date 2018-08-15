@@ -30,13 +30,13 @@ WHILE NOT EOF(F)
 WEND
 CLOSE #F
 
-# find main.c in the console folder
+# find main.cpp in the console folder
 has_main = false
 func walker(node)
-  if (node.name == "main.c") then has_main=true
+  if (node.name == "main.cpp") then has_main=true
   return 1
 end
-dirwalk "./", "*.c" use walker(x)
+dirwalk "./", "*.cpp" use walker(x)
 if (!has_main) then throw "dirwalk error"
 
 

@@ -10,8 +10,8 @@
 
 #include "common/sys.h"
 #include "common/pproc.h"
-#include "common/var_map.h"
 #include "common/hashmap.h"
+#include "include/var_map.h"
 #include "lib/jsmn.h"
 
 #define BUFFER_GROW_SIZE 64
