@@ -369,11 +369,6 @@ void System::editSource(String loadPath) {
           helpWidget->show();
           inputMode = kCommand;
           break;
-        case SB_KEY_F(11):
-          if (((Runtime *)this)->toggleFullscreen()) {
-            _output->setStatus("Press F11 to exit full screen.");
-          }
-          break;
         case SB_KEY_CTRL('h'):
           _output->setStatus("Keystroke help. Esc=Close");
           widget = helpWidget;

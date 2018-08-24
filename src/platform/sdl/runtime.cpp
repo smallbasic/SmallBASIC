@@ -539,6 +539,10 @@ void Runtime::pollEvents(bool blocking) {
           _output->scroll(false, false);
         } else if (ev.key.keysym.sym == SDLK_p && (ev.key.keysym.mod & KMOD_CTRL)) {
           ::screen_dump();
+        } else if (ev.key.keysym.sym == SDLK_F11) {
+          if (toggleFullscreen()) {
+            _output->setStatus("Press F11 to exit full screen.");
+          }
         } else {
           int lenMap = sizeof(keymap) / sizeof(keymap[0]);
           for (int i = 0; i < lenMap; i++) {
