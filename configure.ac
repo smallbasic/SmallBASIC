@@ -284,6 +284,8 @@ function buildConsole() {
    fi
 
    AC_SUBST(BUILD_SUBDIRS)
+
+   (cd documentation && g++ -o build_kwp build_kwp.cpp && ./build_kwp > ../src/ui/kwp.h)
 }
 
 function buildWeb() {
