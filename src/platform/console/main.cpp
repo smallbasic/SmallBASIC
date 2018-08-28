@@ -58,18 +58,19 @@ void show_brief_help() {
 }
 
 void command_help(const char *selection) {
-  int len = strlen(selection);
   bool found = false;
+  const char *pattern = "%s\033[50D\033[14C%s\n";
   for (int i = 0; i < keyword_help_len; i++) {
-    if (strncasecmp(selection, keyword_help[i].keyword, len) == 0) {
-      fprintf(stdout, "%s : %s\n", keyword_help[i].keyword, keyword_help[i].help);
+    if (selection[0] == '?' || strcasecmp(selection, keyword_help[i].package) == 0) {
+      fprintf(stdout, pattern, keyword_help[i].keyword, keyword_help[i].help);
       found = true;
     }
   }
   if (!found) {
+    int len = strlen(selection);
     for (int i = 0; i < keyword_help_len; i++) {
-      if (strncasecmp(selection, keyword_help[i].package, len) == 0) {
-        fprintf(stdout, "%s : %s\n", keyword_help[i].keyword, keyword_help[i].help);
+      if (strncasecmp(selection, keyword_help[i].keyword, len) == 0) {
+        fprintf(stdout, pattern, keyword_help[i].keyword, keyword_help[i].help);
         found = true;
       }
     }
