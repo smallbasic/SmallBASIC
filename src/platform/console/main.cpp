@@ -62,14 +62,14 @@ void command_help(const char *selection) {
   bool found = false;
   for (int i = 0; i < keyword_help_len; i++) {
     if (strncasecmp(selection, keyword_help[i].keyword, len) == 0) {
-      fprintf(stderr, "%s : %s\n", keyword_help[i].keyword, keyword_help[i].help);
+      fprintf(stdout, "%s : %s\n", keyword_help[i].keyword, keyword_help[i].help);
       found = true;
     }
   }
   if (!found) {
     for (int i = 0; i < keyword_help_len; i++) {
       if (strncasecmp(selection, keyword_help[i].package, len) == 0) {
-        fprintf(stderr, "%s : %s\n", keyword_help[i].keyword, keyword_help[i].help);
+        fprintf(stdout, "%s : %s\n", keyword_help[i].keyword, keyword_help[i].help);
         found = true;
       }
     }
@@ -78,7 +78,7 @@ void command_help(const char *selection) {
     const char *last_package = NULL;
     for (int i = 0; i < keyword_help_len; i++) {
       if (last_package == NULL || strcmp(last_package, keyword_help[i].package) != 0) {
-        fprintf(stderr, "%s\n", keyword_help[i].package);
+        fprintf(stdout, "%s\n", keyword_help[i].package);
         last_package = keyword_help[i].package;
       }
     }
