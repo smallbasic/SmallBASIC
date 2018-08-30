@@ -2857,18 +2857,17 @@ void cmd_genfunc(long funcCode, var_t *r) {
     //
   case kwSEQ: {
     var_int_t count;
-    var_num_t xmin, xmax, dx;
-
+    var_num_t xmin, xmax;
     par_massget("FFI", &xmin, &xmax, &count);
-
     if (!prog_error) {
       // create the array
       if (count > 1) {
         v_toarray1(r, count);
-        dx = (xmax - xmin) / (count - 1);
+        var_num_t dx = (xmax - xmin) / (count - 1);
+        var_num_t x = xmin;
 
         // add the entries
-        for (int i = 0, x = xmin; i < count; i++, x += dx) {
+        for (int i = 0; i < count; i++, x += dx) {
           var_t *elem_p = v_elem(r, i);
           elem_p->type = V_NUM;
           elem_p->v.n = x;
