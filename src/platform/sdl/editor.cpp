@@ -412,7 +412,8 @@ void System::editSource(String loadPath) {
           if (getRecentFile(recentFile, event.key - SB_KEY_ALT('1'))) {
             if (loadSource(recentFile.c_str())) {
               editWidget->reload(_programSrc);
-              statusMessage.setFilename(loadPath);
+              statusMessage.setFilename(recentFile);
+              statusMessage.update(editWidget, _output, true);
               setLoadPath(recentFile);
               setWindowTitle(statusMessage._fileName);
               loadPath = recentFile;
