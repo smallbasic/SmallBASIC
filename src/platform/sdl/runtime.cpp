@@ -296,6 +296,9 @@ void Runtime::exportRun(const char *file) {
 }
 
 bool Runtime::toggleFullscreen() {
+  if (!_fullscreen) {
+    setWindowRect(_windowRect);
+  }
   _fullscreen = !_fullscreen;
   SDL_SetWindowFullscreen(_window, _fullscreen ? SDL_WINDOW_FULLSCREEN_DESKTOP : 0);
   return _fullscreen;
@@ -813,6 +816,21 @@ void Runtime::optionsBox(StringList *items) {
   }
 
   _output->redraw();
+}
+
+SDL_Rect Runtime::getWindowRect() {
+  SDL_Rect result;
+  if (_fullscreen) {
+    result = _windowRect;
+  } else {
+    setWindowRect(result);
+  }
+  return result;
+}
+
+void Runtime::setWindowRect(SDL_Rect &rc) {
+  SDL_GetWindowPosition(_window, &rc.x, &rc.y);
+  SDL_GetWindowSize(_window, &rc.w, &rc.h);
 }
 
 void Runtime::setClipboardText(const char *text) {

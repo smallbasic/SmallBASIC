@@ -12,7 +12,7 @@
 #include <SDL.h>
 
 void restoreSettings(SDL_Rect &rect, int &fontScale, bool debug, bool restoreDir);
-void saveSettings(SDL_Window *window, int fontScale, bool debug);
+void saveSettings(SDL_Rect &rect, int fontScale, bool debug);
 String saveGist(const char *buffer, const char *fileName, const char *description);
 void setRecentFile(const char *path);
 bool getRecentFile(strlib::String &path, unsigned position);

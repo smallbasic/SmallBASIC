@@ -54,10 +54,13 @@ struct Runtime : public System {
   void onResize(int w, int h);
   void setClipboardText(const char *text);
   char *getClipboardText();
+  void setWindowRect(SDL_Rect &rect);
+  SDL_Rect getWindowRect();
 
 private:
   int _menuX, _menuY;
   bool _fullscreen;
+  SDL_Rect _windowRect;
   Graphics *_graphics;
   Stack<MAEvent *> *_eventQueue;
   SDL_Window *_window;
