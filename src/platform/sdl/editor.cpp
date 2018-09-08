@@ -261,7 +261,7 @@ void System::editSource(String loadPath) {
         case SB_KEY_ESCAPE:
           widget = editWidget;
           helpWidget->hide();
-          debugStop();
+          ((Runtime *)this)->debugStop();
           break;
         case SB_KEY_CTRL('s'):
           saveFile(editWidget, loadPath);
@@ -308,15 +308,15 @@ void System::editSource(String loadPath) {
           widget = helpWidget;
           helpWidget->createMessage();
           helpWidget->show();
-          debugStart(editWidget, loadPath.c_str());
+          ((Runtime *)this)->debugStart(editWidget, loadPath.c_str());
           statusMessage._row = editWidget->getRow();
           statusMessage._col = editWidget->getCol();
           break;
         case SB_KEY_F(6):
-          debugStep(editWidget, helpWidget, false);
+          ((Runtime *)this)->debugStep(editWidget, helpWidget, false);
           break;
         case SB_KEY_F(7):
-          debugStep(editWidget, helpWidget, true);
+          ((Runtime *)this)->debugStep(editWidget, helpWidget, true);
           break;
         case SB_KEY_F(8):
           ((Runtime *)this)->exportRun(loadPath);
