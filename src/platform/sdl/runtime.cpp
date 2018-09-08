@@ -330,7 +330,6 @@ int Runtime::runShell(const char *startupBas, int fontScale, int debugPort) {
     _output->setFontSize(fontSize);
   }
 
-  SDL_Init(SDL_INIT_AUDIO);
   SDL_AudioSpec desiredSpec;
   desiredSpec.freq = FREQUENCY;
   desiredSpec.format = AUDIO_S16SYS;
