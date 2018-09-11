@@ -3884,6 +3884,26 @@ char *comp_load(const char *file_name) {
   return buf;
 }
 
+const char *format_numeric_text(const char *str, char **output) {
+  const char *result = str;
+  int value = 0;
+  int digits = 0;
+
+  while (isdigit(*str)) {
+    value = (value << 3) + (*str - '0');
+    digits++;
+    str++;
+  }
+
+  if (digits == 3 && value > V_JOIN_LINE && value < 256) {
+    **output = value;
+    (*output)++;
+    result = str;
+  }
+
+  return result;
+}
+
 /**
  * format source-code text
  *
@@ -3895,24 +3915,21 @@ char *comp_load(const char *file_name) {
  * returns a newly created string
  */
 char *comp_format_text(const char *source) {
-  const char *p;
-  char *ps;
   int quotes = 0;
-  char *new_text;
-  int sl, last_ch = 0, i;
-  char *last_nonsp_ptr;
+  int last_ch = 0;
   int adj_line_num = 0;
   int multi_line_string = 0;
   int curley_brace = 0;
   int square_brace = 0;
+  int sl = strlen(source);
+  char *new_text = malloc(sl + 2);
+  char *ps = new_text;
+  char *last_nonsp_ptr = new_text;
+  const char *p = source;
 
-  sl = strlen(source);
-  new_text = malloc(sl + 2);
   memset(new_text, 0, sl + 2);
-
   comp_line = 0;
-  p = source;
-  last_nonsp_ptr = ps = new_text;
+
   while (*p) {
     if (!quotes) {
       switch (*p) {
@@ -3934,7 +3951,7 @@ char *comp_format_text(const char *source) {
           ps++;
           p++;
         } else {
-          for (i = 0; i <= adj_line_num; i++) {
+          for (int i = 0; i <= adj_line_num; i++) {
             // at least one nl
             *ps++ = '\n';
           }
@@ -4095,6 +4112,9 @@ char *comp_format_text(const char *source) {
         }
         // new line auto-ends the quoted string
         quotes = !quotes;
+      } else if (*p == '\\') {
+        p = format_numeric_text(p + 1, &ps);
+        continue;
       }
       *ps++ = *p++;
     }

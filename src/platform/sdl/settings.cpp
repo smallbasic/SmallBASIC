@@ -217,13 +217,10 @@ void restoreSettings(SDL_Rect &rect, int &fontScale, bool debug, bool restoreDir
 //
 // save the window position
 //
-void saveSettings(SDL_Window *window, int fontScale, bool debug) {
+void saveSettings(SDL_Rect &rect, int fontScale, bool debug) {
   FILE *fp = openConfig(false, debug ? k_debug : k_window);
   if (fp) {
-    int x, y, w, h;
-    SDL_GetWindowPosition(window, &x, &y);
-    SDL_GetWindowSize(window, &w, &h);
-    fprintf(fp, "%d,%d,%d,%d,%d,%d,%d,%d\n", x, y, w, h,
+    fprintf(fp, "%d,%d,%d,%d,%d,%d,%d,%d\n", rect.x, rect.y, rect.w, rect.h,
             fontScale, opt_mute_audio, opt_ide, g_themeId);
     // print user theme colours on the second line
     for (int i = 0; i < THEME_COLOURS; i++) {

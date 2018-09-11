@@ -151,43 +151,6 @@ void exportBuffer(AnsiWidget *out, const char *text, String &dest, String &token
   out->setStatus(buffer);
 }
 
-void publish(System *system, const char *text, const char *fileName, const char *description) {
-  String gist = saveGist(text, fileName, description);
-  if (gist.empty()) {
-    system->alert("Publish", "Failed to save gist file.");
-  } else {
-    String command;
-    var_t result;
-
-    command.append("curl -X POST -d @")
-      .append(gist)
-      .append("  https://api.github.com/gists")
-      .append(" --header \"Content-Type:application/json\"");
-    v_init(&result);
-    if (!dev_run(command, &result, 1)) {
-      system->alert("Publish", "Failed to invoke curl.");
-    } else {
-      const char *str = v_str(&result);
-      const char *field = "html_url";
-      const char *url = strstr(str, field);
-      String html;
-
-      if (url != NULL) {
-        const char *q1 = strchr(url + strlen(field) + 2, '\"');
-        const char *q2 = q1 == NULL ? NULL : strchr(q1 + 1, '\"');
-        if (q1 != NULL && q2 != NULL) {
-          html.append(q1 + 1, q2 - q1 - 1);
-        }
-      }
-      if (html.empty()) {
-        system->alert("Publish", "Failed to publish gist.");
-      } else {
-        system->browseFile(html);
-      }
-    }
-  }
-}
-
 void System::editSource(String loadPath) {
   logEntered();
 
@@ -209,7 +172,7 @@ void System::editSource(String loadPath) {
   String recentFile;
   StatusMessage statusMessage(editWidget);
   enum InputMode {
-    kInit, kExportAddr, kExportToken, kCommand, kPublish
+    kInit, kExportAddr, kExportToken, kCommand
   } inputMode = kInit;
 
   _modifiedTime = getModifiedTime();
@@ -298,7 +261,7 @@ void System::editSource(String loadPath) {
         case SB_KEY_ESCAPE:
           widget = editWidget;
           helpWidget->hide();
-          debugStop();
+          ((Runtime *)this)->debugStop();
           break;
         case SB_KEY_CTRL('s'):
           saveFile(editWidget, loadPath);
@@ -345,15 +308,15 @@ void System::editSource(String loadPath) {
           widget = helpWidget;
           helpWidget->createMessage();
           helpWidget->show();
-          debugStart(editWidget, loadPath.c_str());
+          ((Runtime *)this)->debugStart(editWidget, loadPath.c_str());
           statusMessage._row = editWidget->getRow();
           statusMessage._col = editWidget->getCol();
           break;
         case SB_KEY_F(6):
-          debugStep(editWidget, helpWidget, false);
+          ((Runtime *)this)->debugStep(editWidget, helpWidget, false);
           break;
         case SB_KEY_F(7):
-          debugStep(editWidget, helpWidget, true);
+          ((Runtime *)this)->debugStep(editWidget, helpWidget, true);
           break;
         case SB_KEY_F(8):
           ((Runtime *)this)->exportRun(loadPath);
@@ -368,11 +331,6 @@ void System::editSource(String loadPath) {
           helpWidget->createLineEdit(opt_command);
           helpWidget->show();
           inputMode = kCommand;
-          break;
-        case SB_KEY_F(11):
-          if (((Runtime *)this)->toggleFullscreen()) {
-            _output->setStatus("Press F11 to exit full screen.");
-          }
           break;
         case SB_KEY_CTRL('h'):
           _output->setStatus("Keystroke help. Esc=Close");
@@ -454,7 +412,8 @@ void System::editSource(String loadPath) {
           if (getRecentFile(recentFile, event.key - SB_KEY_ALT('1'))) {
             if (loadSource(recentFile.c_str())) {
               editWidget->reload(_programSrc);
-              statusMessage.setFilename(loadPath);
+              statusMessage.setFilename(recentFile);
+              statusMessage.update(editWidget, _output, true);
               setLoadPath(recentFile);
               setWindowTitle(statusMessage._fileName);
               loadPath = recentFile;
@@ -500,15 +459,6 @@ void System::editSource(String loadPath) {
               inputMode = kInit;
               widget = editWidget;
               helpWidget->hide();
-              break;
-            case kPublish:
-              _output->setStatus("Sending gist...");
-              _output->redraw();
-              publish(this, editWidget->getText(), statusMessage._fileName, helpWidget->getText());
-              inputMode = kInit;
-              widget = editWidget;
-              helpWidget->hide();
-              statusMessage._dirty = !widget->isDirty();
               break;
             default:
               break;

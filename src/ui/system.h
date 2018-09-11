@@ -60,9 +60,6 @@ struct System {
   virtual void alert(const char *title, const char *message) = 0;
   virtual int ask(const char *title, const char *prompt, bool cancel=true) = 0;
   virtual void browseFile(const char *url) = 0;
-  virtual void debugStart(TextEditInput *edit, const char *file) = 0;
-  virtual void debugStep(TextEditInput *edit, TextEditHelpWidget *help, bool cont) = 0;
-  virtual void debugStop() = 0;
   virtual MAEvent processEvents(int waitFlag) = 0;
   virtual char *loadResource(const char *fileName);
   virtual void optionsBox(StringList *items) = 0;

@@ -296,6 +296,9 @@ void Runtime::exportRun(const char *file) {
 }
 
 bool Runtime::toggleFullscreen() {
+  if (!_fullscreen) {
+    setWindowRect(_windowRect);
+  }
   _fullscreen = !_fullscreen;
   SDL_SetWindowFullscreen(_window, _fullscreen ? SDL_WINDOW_FULLSCREEN_DESKTOP : 0);
   return _fullscreen;
@@ -327,7 +330,6 @@ int Runtime::runShell(const char *startupBas, int fontScale, int debugPort) {
     _output->setFontSize(fontSize);
   }
 
-  SDL_Init(SDL_INIT_AUDIO);
   SDL_AudioSpec desiredSpec;
   desiredSpec.freq = FREQUENCY;
   desiredSpec.format = AUDIO_S16SYS;
@@ -539,6 +541,10 @@ void Runtime::pollEvents(bool blocking) {
           _output->scroll(false, false);
         } else if (ev.key.keysym.sym == SDLK_p && (ev.key.keysym.mod & KMOD_CTRL)) {
           ::screen_dump();
+        } else if (ev.key.keysym.sym == SDLK_F11) {
+          if (toggleFullscreen()) {
+            _output->setStatus("Press F11 to exit full screen.");
+          }
         } else {
           int lenMap = sizeof(keymap) / sizeof(keymap[0]);
           for (int i = 0; i < lenMap; i++) {
@@ -809,6 +815,21 @@ void Runtime::optionsBox(StringList *items) {
   }
 
   _output->redraw();
+}
+
+SDL_Rect Runtime::getWindowRect() {
+  SDL_Rect result;
+  if (_fullscreen) {
+    result = _windowRect;
+  } else {
+    setWindowRect(result);
+  }
+  return result;
+}
+
+void Runtime::setWindowRect(SDL_Rect &rc) {
+  SDL_GetWindowPosition(_window, &rc.x, &rc.y);
+  SDL_GetWindowSize(_window, &rc.w, &rc.h);
 }
 
 void Runtime::setClipboardText(const char *text) {

@@ -390,7 +390,7 @@ int main(int argc, char* argv[]) {
     opt_ide = ide_option;
   }
 
-  SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS);
+  SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS | SDL_INIT_AUDIO);
   SDL_Window *window = SDL_CreateWindow("SmallBASIC",
                                         rect.x, rect.y, rect.w, rect.h,
                                         SDL_WINDOW_SHOWN |
@@ -405,11 +405,12 @@ int main(int argc, char* argv[]) {
       Runtime *runtime = new Runtime(window);
       runtime->construct(font.c_str(), fontBold.c_str());
       fontScale = runtime->runShell(runFile, fontScale, debug ? g_debugPort : 0);
+      rect = runtime->getWindowRect();
       delete runtime;
     } else {
       fprintf(stderr, "Failed to locate display font\n");
     }
-    saveSettings(window, fontScale, debug);
+    saveSettings(rect, fontScale, debug);
     SDL_DestroyWindow(window);
   } else {
     fprintf(stderr, "Could not create window: %s\n", SDL_GetError());

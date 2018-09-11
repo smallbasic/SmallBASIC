@@ -1,4 +1,10 @@
 2018-08-08 (0.12.13)
+	SDL: fix incorrect file loading with ALT+1-9 command
+
+2018-08-08 (0.12.13)
+	COMMON: fix problem with SEQ command
+
+2018-08-08 (0.12.13)
 	ANDROID: remove hardcoded references to "/sdcard" path
 
 2018-07-15 (0.12.13)

@@ -77,7 +77,6 @@ uint32_t serial_length(dev_file_t *f) {
 }
 
 #elif defined(_Win32)
-typedef int FileHand;
 
 int serial_open(dev_file_t *f) {
   DCB dcb;
@@ -114,32 +113,32 @@ int serial_open(dev_file_t *f) {
     return 0;
   }
 
-  f->handle = (FileHand) hCom;
+  f->handle = (intptr_t)hCom;
   return 1;
 }
 
 int serial_close(dev_file_t *f) {
-  CloseHandle((HANDLE) f->handle);
+  CloseHandle((HANDLE) (intptr_t)f->handle);
   f->handle = -1;
   return 1;
 }
 
 int serial_write(dev_file_t *f, byte *data, uint32_t size) {
   DWORD bytes;
-  f->last_error = !WriteFile((HANDLE) f->handle, data, size, &bytes, NULL);
+  f->last_error = !WriteFile((HANDLE)(intptr_t)f->handle, data, size, &bytes, NULL);
   return bytes;
 }
 
 int serial_read(dev_file_t *f, byte *data, uint32_t size) {
   DWORD bytes;
-  f->last_error = !ReadFile((HANDLE) f->handle, data, size, &bytes, NULL);
+  f->last_error = !ReadFile((HANDLE)(intptr_t)f->handle, data, size, &bytes, NULL);
   return bytes;
 }
 
 uint32_t serial_length(dev_file_t *f) {
   COMSTAT cs;
   DWORD de = CE_BREAK;
-  ClearCommError((HANDLE) f->handle, &de, &cs);
+  ClearCommError((HANDLE)(intptr_t)f->handle, &de, &cs);
   return cs.cbInQue;
 }
 

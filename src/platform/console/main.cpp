@@ -10,6 +10,7 @@
 #include "config.h"
 #include <getopt.h>
 #include "common/sbapp.h"
+#include "ui/kwp.h"
 
 // decompile handling
 extern "C" {
@@ -22,7 +23,6 @@ extern "C" {
 void console_init();
 
 static struct option OPTIONS[] = {
-  {"help",           no_argument,       NULL, 'h'},
   {"verbose",        no_argument,       NULL, 'v'},
   {"keywords",       no_argument,       NULL, 'k'},
   {"no-file-perm",   no_argument,       NULL, 'f'},
@@ -32,6 +32,7 @@ static struct option OPTIONS[] = {
   {"option",         optional_argument, NULL, 'o'},
   {"cmd",            optional_argument, NULL, 'c'},
   {"stdin",          optional_argument, NULL, '-'},
+  {"help",           optional_argument, NULL, 'h'},
   {0, 0, 0, 0}
 };
 
@@ -54,6 +55,35 @@ void show_help() {
 
 void show_brief_help() {
   fprintf(stdout, "SmallBASIC version %s - use -h for help\n",  SB_STR_VER);
+}
+
+void command_help(const char *selection) {
+  bool found = false;
+  const char *pattern = "%s\033[50D\033[14C%s\n";
+  for (int i = 0; i < keyword_help_len; i++) {
+    if (selection[0] == '?' || strcasecmp(selection, keyword_help[i].package) == 0) {
+      fprintf(stdout, pattern, keyword_help[i].keyword, keyword_help[i].help);
+      found = true;
+    }
+  }
+  if (!found) {
+    int len = strlen(selection);
+    for (int i = 0; i < keyword_help_len; i++) {
+      if (strncasecmp(selection, keyword_help[i].keyword, len) == 0) {
+        fprintf(stdout, pattern, keyword_help[i].keyword, keyword_help[i].help);
+        found = true;
+      }
+    }
+  }
+  if (!found) {
+    const char *last_package = NULL;
+    for (int i = 0; i < keyword_help_len; i++) {
+      if (last_package == NULL || strcmp(last_package, keyword_help[i].package) != 0) {
+        fprintf(stdout, "%s\n", keyword_help[i].package);
+        last_package = keyword_help[i].package;
+      }
+    }
+  }
 }
 
 /*
@@ -205,7 +235,7 @@ bool process_options(int argc, char *argv[], char **runFile, bool *tmpFile) {
   bool result = true;
   while (result) {
     int option_index = 0;
-    int c = getopt_long(argc, argv, "hvkfxm::s::o:c:", OPTIONS, &option_index);
+    int c = getopt_long(argc, argv, "vkfxm::s::o:c:h::", OPTIONS, &option_index);
     if (c == -1 && !option_index) {
       // no more options
       for (int i = 1; i < argc; i++) {
@@ -225,7 +255,13 @@ bool process_options(int argc, char *argv[], char **runFile, bool *tmpFile) {
     }
     switch (c) {
     case 'h':
-      show_help();
+      if (optarg) {
+        command_help(optarg);
+      } else if (argv[optind] != NULL && argv[optind][0] != '-') {
+        command_help(argv[optind]);
+      } else {
+        show_help();
+      }
       result = false;
       break;
     case 'v':
