@@ -22,7 +22,7 @@
  #define WIN_EXTLIB
  #define LIB_EXT ".dll"
  #define DEFAULT_PATH "c:/sbasic/lib"
-#elif defined(__linux__) && defined(_UnixOS)
+#elif defined(__linux__) || defined(__midipix__) && defined(_UnixOS)
  #include <dlfcn.h>
  #define LNX_EXTLIB
  #define LIB_EXT ".so"
