@@ -62,7 +62,7 @@ void launchExec(const char *file) {
   STARTUPINFO info = {sizeof(info)};
   PROCESS_INFORMATION processInfo;
   char cmd[1024];
-  sprintf(cmd, "-x %s", file);
+  sprintf(cmd, "%s -x %s", g_appPath, file);
   if (!CreateProcess(g_appPath, cmd, NULL, NULL, TRUE, 0, NULL, NULL, &info, &processInfo)) {
     appLog("failed to start %d %s %s\n", GetLastError(), g_appPath, cmd);
   }
