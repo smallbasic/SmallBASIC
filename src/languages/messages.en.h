@@ -220,3 +220,5 @@
 #define ERR_PACK_TOO_MANY       "Too many values to unpack"
 #define ERR_PACK_TOO_FEW        "Need more than %d values to unpack"
 #define ERR_MEMORY              "Out of memory error"
+#define ERR_NETWORK             "Network error"
+#define ERR_XPM_IMAGE           "Invalid xpm image"

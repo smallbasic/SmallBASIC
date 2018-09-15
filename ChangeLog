@@ -1,3 +1,6 @@
+2018-08-08 (0.12.14)
+	COMMON: fix crash when attempting to load an image from a failed network connection
+
 2018-08-08 (0.12.13)
 	SDL: fix incorrect file loading with ALT+1-9 command
 
