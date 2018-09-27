@@ -26,3 +26,5 @@
 -keepclasseswithmembernames class * {
     native <methods>;
 }
+
+-printmapping build/outputs/mapping/release/mapping.txt
