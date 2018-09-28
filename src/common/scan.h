@@ -362,16 +362,6 @@ int comp_pass2(void);
 /**
  * @ingroup scan
  *
- * returns true if the SB-source file 'basfile' exists
- *
- * @param basfile the filename
- * @return non-zero if SB-source file 'basfile' exists
- */
-int comp_bas_exist(const char *basfile);
-
-/**
- * @ingroup scan
- *
  * setup prefered graphics mode (global variables)
  *
  * @param source is a string of form "WIDTHxHEIGHT[xBPP]"

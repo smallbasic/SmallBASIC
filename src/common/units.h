@@ -54,8 +54,7 @@ typedef struct {
  */
 typedef enum {
   unit_undefined, /**< unused record */
-  unit_loaded, /**< unit is loaded */
-  unit_nil
+  unit_loaded     /**< unit is loaded */
 } unit_status_t;
 
 /**

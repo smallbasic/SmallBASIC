@@ -77,7 +77,7 @@ void bc_resize(bc_t *bc, uint32_t newsize);
  * @param bc the bc structure
  * @param code the byte
  */
-void bc_add1(bc_t *bc, byte code);
+void bc_add1(bc_t *bc, char code);
 
 /**
  * @ingroup scan

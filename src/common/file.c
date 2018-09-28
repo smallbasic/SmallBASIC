@@ -22,8 +22,6 @@
 #include <unistd.h>
 #endif
 
-typedef int FileHand;
-
 // drivers
 #include "common/fs_stream.h"
 #include "common/fs_serial.h"

@@ -50,7 +50,7 @@ void bc_resize(bc_t *bc, uint32_t new_size) {
 /*
  * add one command
  */
-void bc_add1(bc_t *bc, byte code) {
+void bc_add1(bc_t *bc, char code) {
   if (bc->count + sizeof(byte) >= bc->size) {
     bc_resize(bc, bc->size + BC_ALLOC_INCR);
   }

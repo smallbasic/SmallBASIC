@@ -665,7 +665,7 @@ void cmd_draw() {
   if (prog_error) {
     return;
   }
-  p = (char *) var.v.p.ptr;
+  p = var.v.p.ptr;
   while (*p) {
 
     // 'N' command must affect only the next drawing command.

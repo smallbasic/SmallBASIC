@@ -281,12 +281,12 @@ int v_wc_match(var_t *vwc, var_t *v) {
       }
     }
   } else if (v->type == V_STR) {
-    ri = wc_match((char *)vwc->v.p.ptr, (char *)v->v.p.ptr);
+    ri = wc_match(vwc->v.p.ptr, v->v.p.ptr);
   } else if (v->type == V_NUM || v->type == V_INT) {
     var_t *vt = v_clone(v);
     v_tostr(vt);
     if (!prog_error) {
-      ri = wc_match((char *)vwc->v.p.ptr, (char *)vt->v.p.ptr);
+      ri = wc_match(vwc->v.p.ptr, vt->v.p.ptr);
     }
     V_FREE(vt);
     v_detach(vt);

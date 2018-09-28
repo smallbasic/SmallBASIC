@@ -198,6 +198,7 @@ function buildSDL() {
    esac
 
    PACKAGE_CFLAGS="${PACKAGE_CFLAGS} `sdl2-config --cflags` `freetype-config --cflags` -fno-exceptions"
+   CXXFLAGS="${CXXFLAGS} -fno-rtti -std=c++11"
 
    dnl preconfigured values for SDL build
    AC_DEFINE(_SDL, 1, [Defined when building SDL version])

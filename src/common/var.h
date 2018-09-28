@@ -315,7 +315,6 @@ stknode_t *code_stackpeek();
 #define code_skipnext()     prog_ip++   /**< IP ++;   @ingroup exec */
 #define code_skipnext16()   prog_ip+=2  /**< IP += 2; @ingroup exec */
 #define code_skipnext32()   prog_ip+=4  /**< IP += 4; @ingroup exec */
-#define code_skipnext64()   prog_ip+=8  /**< IP += 8; @ingroup exec */
 
 #if defined(CPU_BIGENDIAN)
 #define code_getnext16()    (prog_ip+=2, (prog_source[prog_ip-2]<<8)|prog_source[prog_ip-1])

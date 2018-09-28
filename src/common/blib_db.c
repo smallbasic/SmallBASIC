@@ -70,7 +70,7 @@ void cmd_fopen() {
       int handle = par_getint();
       if (!prog_error) {
         if (dev_fstatus(handle) == 0) {
-          dev_fopen(handle, (char *)file_name.v.p.ptr, flags);
+          dev_fopen(handle, file_name.v.p.ptr, flags);
         } else {
           rt_raise("OPEN: FILE IS ALREADY OPENED");
         }
@@ -145,7 +145,7 @@ void write_encoded_var(int handle, var_t *var) {
     dev_fwrite(handle, (byte *)&var->v.n, fv.size);
     break;
   case V_STR:
-    fv.size = strlen((char *)var->v.p.ptr);
+    fv.size = strlen(var->v.p.ptr);
     dev_fwrite(handle, (byte *)&fv, sizeof(struct file_encoded_var));
     dev_fwrite(handle, (byte *)var->v.p.ptr, fv.size);
     break;
@@ -201,7 +201,7 @@ int read_encoded_var(int handle, var_t *var) {
     v_new_array(var, fv.size);
 
     // read additional data about array
-    dev_fread(handle, (byte *)&v_maxdim(var), 1);
+    dev_fread(handle, &v_maxdim(var), 1);
     for (int i = 0; i < v_maxdim(var); i++) {
       dev_fread(handle, (byte *)&v_lbound(var, i), sizeof(int));
       dev_fread(handle, (byte *)&v_ubound(var, i), sizeof(int));
@@ -398,7 +398,7 @@ void cmd_flineinput() {
       v_free(var_p);
       var_p->type = V_STR;
       var_p->v.p.ptr = calloc(SB_TEXTLINE_SIZE + 1, 1);
-      dev_gets((char *)var_p->v.p.ptr, SB_TEXTLINE_SIZE);
+      dev_gets(var_p->v.p.ptr, SB_TEXTLINE_SIZE);
       var_p->v.p.length = strlen(var_p->v.p.ptr);
       dev_print("\n");
     }
@@ -417,8 +417,8 @@ void cmd_fkill() {
   if (prog_error) {
     return;
   }
-  if (dev_fexists((char *)file_name.v.p.ptr)) {
-    dev_fremove((char *)file_name.v.p.ptr);
+  if (dev_fexists(file_name.v.p.ptr)) {
+    dev_fremove(file_name.v.p.ptr);
   }
   v_free(&file_name);
 }
@@ -447,11 +447,11 @@ void cmd_filecp(int mv) {
     return;
   }
 
-  if (dev_fexists((char *)src.v.p.ptr)) {
+  if (dev_fexists(src.v.p.ptr)) {
     if (!mv) {
-      dev_fcopy((char *)src.v.p.ptr, (char *)dst.v.p.ptr);
+      dev_fcopy(src.v.p.ptr, dst.v.p.ptr);
     } else {
-      dev_frename((char *)src.v.p.ptr, (char *)dst.v.p.ptr);
+      dev_frename(src.v.p.ptr, dst.v.p.ptr);
     }
   } else {
     rt_raise("COPY/RENAME: FILE DOES NOT EXIST");
@@ -472,7 +472,7 @@ void cmd_chdir() {
   if (prog_error) {
     return;
   }
-  dev_chdir((char *)dir.v.p.ptr);
+  dev_chdir(dir.v.p.ptr);
   v_free(&dir);
 }
 
@@ -488,7 +488,7 @@ void cmd_rmdir() {
   if (prog_error) {
     return;
   }
-  dev_rmdir((char *)dir.v.p.ptr);
+  dev_rmdir(dir.v.p.ptr);
   v_free(&dir);
 }
 
@@ -504,7 +504,7 @@ void cmd_mkdir() {
   if (prog_error) {
     return;
   }
-  dev_mkdir((char *)dir.v.p.ptr);
+  dev_mkdir(dir.v.p.ptr);
   v_free(&dir);
 }
 
@@ -573,7 +573,7 @@ void cmd_floadln() {
     if (v_strlen(&file_name) == 0) {
       err_throw(FSERR_NOT_FOUND);
     } else {
-      dev_fopen(handle, (char *)file_name.v.p.ptr, flags);
+      dev_fopen(handle, file_name.v.p.ptr, flags);
     }
     v_free(&file_name);
     CHK_ERR(FSERR_GENERIC);
@@ -710,7 +710,7 @@ void cmd_fsaveln() {
       return;
     }
 
-    int success = dev_fopen(handle, (char *)file_name.v.p.ptr, flags);
+    int success = dev_fopen(handle, file_name.v.p.ptr, flags);
     v_free(&file_name);
     CHK_ERR(FSERR_GENERIC);
     if (!success) {
@@ -771,7 +771,7 @@ void cmd_chmod() {
     return;
   }
 
-  chmod((char *)str.v.p.ptr, mode);
+  chmod(str.v.p.ptr, mode);
   v_free(&str);
 }
 

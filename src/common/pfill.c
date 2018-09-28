@@ -11,15 +11,6 @@
 #include "common/sys.h"
 #include "common/device.h"
 
-struct HLine {
-  int XStart; /* X coordinate of leftmost pixel in line */
-  int XEnd; /* X coordinate of rightmost pixel in line */
-};
-
-struct HLineList {
-  struct HLine *HLinePtr; /* pointer to list of horz lines */
-};
-
 struct EdgeState {
   struct EdgeState *NextEdge;
   int X, StartY;

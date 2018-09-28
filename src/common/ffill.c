@@ -39,7 +39,7 @@ typedef struct tagQUEUE QUEUE;
 // Global variables of the module.
 static struct tagParams ff_buf1[QUEUESIZE];
 static struct tagParams ff_buf2[QUEUESIZE];
-static long ucBorder, ucFill;
+static long ucBorder;
 static QUEUE Qup;
 static QUEUE Qdn;
 static int scan_type;
@@ -63,7 +63,6 @@ void dev_ffill(uint16_t x0, uint16_t y0, long fill_color, long border_color) {
   memset(&Qup, 0, sizeof(QUEUE));
   memset(&Qdn, 0, sizeof(QUEUE));
   ucBorder = 0;
-  ucFill = 0;
   scan_type = 0;
 
   pcolor = dev_fgcolor;
@@ -91,7 +90,6 @@ void dev_ffill(uint16_t x0, uint16_t y0, long fill_color, long border_color) {
 
   // save the border and fill values in global variables
   ucBorder = border_color;
-  ucFill = fill_color;
 
   // initialize the queues
   Qup.pQ = &Qdn;  // pointer to opposite queue

@@ -438,7 +438,7 @@ bid_t comp_add_udp(const char *proc_name) {
 /*
  * sets the IP of the user-defined-procedure (or function)
  */
-bid_t comp_udp_setip(const char *proc_name, bcip_t ip) {
+bid_t comp_udp_setip(const char *proc_name) {
   bid_t idx;
   char *name = comp_bc_temp;
 
@@ -473,7 +473,7 @@ bcip_t comp_udp_getip(const char *proc_name) {
  * parameters string-section
  */
 char *get_param_sect(char *text, const char *delim, char *dest) {
-  char *p = (char *)text;
+  char *p = text;
   char *d = dest;
   int quotes = 0, level = 0, skip_ch = 0;
   int curley_brace = 0;
@@ -1150,7 +1150,7 @@ char *comp_scan_json(char *json, bc_t *bc) {
  * scan expression
  */
 void comp_expression(char *expr, byte no_parser) {
-  char *ptr = (char *)expr;
+  char *ptr = expr;
   int level = 0, check_udf = 0;
   int kw_exec_more = 0;
   var_int_t lv = 0;
@@ -1678,7 +1678,7 @@ char *comp_getlist_insep(char *source, char_p_t *args, char *sep, int maxarg, in
  */
 int comp_single_line_if(char *text) {
   // *text points to 'expr'
-  char *p = (char *)text;
+  char *p = text;
   char *pthen, *pelse;
   char buf[SB_SOURCELINE_SIZE + 1];
 
@@ -2142,9 +2142,9 @@ void comp_text_line_func(bid_t idx, int decl) {
     } else {
       // setup routine's address (and get an id)
       int pidx;
-      if ((pidx = comp_udp_setip(pname, comp_prog.count)) == -1) {
+      if ((pidx = comp_udp_setip(pname)) == -1) {
         pidx = comp_add_udp(pname);
-        comp_udp_setip(pname, comp_prog.count);
+        comp_udp_setip(pname);
       }
       // put JMP to the next command after the END
       // (now we just keep the rq space, pass2 will update that)

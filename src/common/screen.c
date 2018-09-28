@@ -27,7 +27,6 @@
                             c |= ((y > dev_Vy2) << 3); }
 #define CLIPIN(c) ((c & 0xF) == 0)
 
-uint32_t os_ver = 0x40000;
 uint32_t os_color_depth = 16;
 byte os_graphics = 0; // CONSOLE
 int os_graf_mx = 80;
@@ -301,7 +300,6 @@ void dev_arc(int xc, int yc, double r, double start, double end, double aspect) 
  * @param y2 line coordinates
  */
 void osd_line(int x1, int y1, int x2, int y2);
-
 
 /**
  * draw rectangle (filled or not)

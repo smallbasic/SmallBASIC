@@ -131,17 +131,6 @@ char *strlower(char *str);
 /**
  * @ingroup str
  *
- * stores the next keyword of text in dest and returns a pointer to the next position
- *
- * @param text the source string
- * @param dest the buffer to store the keyword
- * @return a pointer in 'text' that points to the next position
- */
-char *get_keyword(char *text, char *dest);
-
-/**
- * @ingroup str
- *
  * Returns the number of a complex constant numeric expression
  *
  * type  <=0 = error
@@ -212,7 +201,6 @@ long hextol(const char *str);
  * @return the number
  */
 var_num_t sb_strtof(const char *str);
-#define xsb_strtof(s) sb_strtof((s))
 
 /**
  * @ingroup str
@@ -256,20 +244,6 @@ char *ltostr(var_int_t num, char *dest);
  * @return
  */
 int strcaselessn(const char *s1, int s1n, const char *s2, int s2n);
-
-/**
- * @ingroup str
- *
- * locate the substring 's2' into 's1' and return a pointer of the
- * first occurence (in 's1') or NULL if not found.
- *
- * the difference with strstr() is that the stristr do the search ignoring the case
- *
- * @param s1 the text
- * @param s2 the substring
- * @return on success a pointer to 's1' in the place which the 's2' is starting; otherwise NULL
- */
-char *stristr(const char *s1, const char *s2);
 
 /**
  * @ingroup str
@@ -380,33 +354,6 @@ char *trimdup(const char *str);
 /**
  * @ingroup str
  *
- * with few words, the filename's playground.
- *
- * @param dest is the buffer to store the result
- * @param source is the filename
- * @param newdir if not NULL, the directory to replace the old-one (note the newdir must ends with directory-separator character)
- * @param prefix if not NULL, the prefix to be used on the basename
- * @param new_ext if not NULL, the new extension of the file
- * @param suffix if not NULL, the suffix to be used on the basename (before the extension)
- * @return a pointer to dest
- */
-char *chgfilename(char *dest, char *source, char *newdir, char *prefix, char *new_ext, char *suffix);
-
-/**
- * @ingroup str
- *
- * returns the basename of source. basename means the name without the directory.
- * on error the dest will be empty.
- *
- * @param dest is the buffer to store the name
- * @param source is the filename
- * @return a pointer to dest
- */
-char *xbasename(char *dest, const char *source);
-
-/**
- * @ingroup str
- *
  * Converts a string which contains c-style special characters
  * to normal text.
  *
@@ -435,10 +382,6 @@ char *bstrdup(const char *source);
  * @return pointer to base
  */
 const char *baseof(const char *source, int delim);
-
-/*
- */
-char char_table_replace(const char *what_table, int ch, const char *replace_table);
 
 /**
  * @ingroup sys

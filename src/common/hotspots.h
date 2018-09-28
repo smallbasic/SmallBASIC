@@ -71,7 +71,7 @@ static inline var_num_t v_getval(var_t *v) {
   case V_NUM:
     return v->v.n;
   case V_STR:
-    return numexpr_sb_strtof((char *) v->v.p.ptr);
+    return numexpr_sb_strtof(v->v.p.ptr);
   case V_PTR:
     return v->v.ap.p;
   case V_MAP:
@@ -102,7 +102,7 @@ static inline var_int_t v_igetval(var_t *v) {
   case V_NUM:
     return v->v.n;
   case V_STR:
-    return numexpr_strtol((char *) v->v.p.ptr);
+    return numexpr_strtol(v->v.p.ptr);
   case V_PTR:
     return v->v.ap.p;
   case V_MAP:
