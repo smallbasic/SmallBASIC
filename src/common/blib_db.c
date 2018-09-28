@@ -18,11 +18,17 @@
 
 #include <dirent.h>
 
+#define LDLN_INC    256
+#define GROW_SIZE   1024
+#define BUFMAX      256
+#define CHK_ERR_CLEANUP(s) if (err_handle_error(s, &file_name)) return;
+#define CHK_ERR(s) if (err_handle_error(s, NULL)) return;
+
 struct file_encoded_var {
-  byte sign;                    // always '$'
-  byte version;                 //
-  byte type;
-  uint32_t size;
+  byte sign;     // always '$'
+  byte version;  //
+  byte type;     //
+  uint32_t size; //
 };
 
 /*
@@ -235,12 +241,13 @@ void cmd_fwrite() {
         if (!dev_fstatus(handle)) {
           // dev_fwrite(handle, "\n", 1);
         } else {
-          rt_raise("FIO: FILE IS NOT OPENED");
+          rt_raise(ERR_FILE_NOT_OPEN);
         }
         return;
       }
 
-      par_getsep();             // allow commas
+      // allow commas
+      par_getsep();
 
       if (!prog_error) {
         if (dev_fstatus(handle)) {
@@ -271,7 +278,7 @@ void cmd_fwrite() {
             }
           } while (!exitf);
         } else {
-          rt_raise("FIO: FILE IS NOT OPENED");
+          rt_raise(ERR_FILE_NOT_OPEN);
         }
       }
     }
@@ -290,7 +297,8 @@ void cmd_fread() {
       return;
     }
 
-    par_getsep();               // allow commas
+    // allow commas
+    par_getsep();
     if (prog_error) {
       return;
     }
@@ -313,13 +321,55 @@ void cmd_fread() {
         // next
         byte code = code_peek();
         if (code == kwTYPE_SEP) {
-          par_getsep();         // allow commas
+          // allow commas
+          par_getsep();
         } else {
           break;
         }
       } while (1);
     } else {
-      rt_raise("FIO: FILE IS NOT OPENED");
+      rt_raise(ERR_FILE_NOT_OPEN);
+    }
+  }
+}
+
+void cmd_read_variable(int handle) {
+  byte code = code_peek();
+  if (code != kwTYPE_VAR) {
+    err_syntax(kwLINEINPUT, "%P");
+  } else {
+    var_t *var_p = code_getvarptr();
+    if (!prog_error) {
+      v_free(var_p);
+      int size = BUFMAX;
+      int index = 0;
+      byte ch;
+
+      var_p->type = V_STR;
+      var_p->v.p.ptr = malloc(size);
+
+      // READ IT
+      while (!dev_feof(handle)) {
+        dev_fread(handle, &ch, 1);
+        if (prog_error) {
+          v_free(var_p);
+          var_p->type = V_INT;
+          var_p->v.i = -1;
+          return;
+        } else if (ch == '\n') {
+          break;
+        } else if (ch != '\r') {
+          // store char
+          if (index == (size - 1)) {
+            size += BUFMAX;
+            var_p->v.p.ptr = realloc(var_p->v.p.ptr, size);
+          }
+          var_p->v.p.ptr[index] = ch;
+          index++;
+        }
+      }
+      var_p->v.p.ptr[index] = '\0';
+      var_p->v.p.length = index + 1;
     }
   }
 }
@@ -332,59 +382,17 @@ void cmd_flineinput() {
     //
     // FILE OR DEVICE
     //
-
-    // file handle
     par_getsharp();
     if (!prog_error) {
       int handle = par_getint();
       if (!prog_error) {
-        // par_getsemicolon();
-        par_getsep();           // allow commas
+        // allow commas
+        par_getsep();
         if (!prog_error) {
           if (dev_fstatus(handle)) {
-            // get the variable
-            byte code = code_peek();
-            if (code != kwTYPE_VAR) {
-              err_syntax(kwLINEINPUT, "%P");
-              return;
-            }
-            var_t *var_p = code_getvarptr();
-            if (!prog_error) {
-              v_free(var_p);
-              int size = 256;
-              int index = 0;
-              byte ch;
-
-              var_p->type = V_STR;
-              var_p->v.p.ptr = malloc(size);
-
-              // READ IT
-              while (!dev_feof(handle)) {
-                dev_fread(handle, &ch, 1);
-                if (prog_error) {
-                  v_free(var_p);
-                  var_p->type = V_INT;
-                  var_p->v.i = -1;
-                  return;
-                } else if (ch == '\n') {
-                  break;
-                }
-                else if (ch != '\r') {
-                  // store char
-                  if (index == (size - 1)) {
-                    size += 256;
-                    var_p->v.p.ptr = realloc(var_p->v.p.ptr, size);
-                  }
-                  var_p->v.p.ptr[index] = ch;
-                  index++;
-                }
-              }
-              var_p->v.p.ptr[index] = '\0';
-              var_p->v.p.length = index + 1;
-            }
-            else {
-              rt_raise("FIO: FILE IS NOT OPENED");
-            }
+            cmd_read_variable(handle);
+          } else {
+            rt_raise(ERR_FILE_NOT_OPEN);
           }
         }
       }
@@ -509,17 +517,11 @@ void cmd_mkdir() {
 }
 
 /*
- *   load text-file to string or to array
- *   Modified 2-May-2002 Chris Warren-Smith. Implemented buffered read
+ * load text-file to string or to array
+ * Modified 2-May-2002 Chris Warren-Smith. Implemented buffered read
  *
- *   TLOAD filename, variable [, type]
+ * TLOAD filename, variable [, type]
  */
-#define LDLN_INC    256
-#define GROW_SIZE   1024
-#define BUFMAX      256
-#define CHK_ERR_CLEANUP(s) if (err_handle_error(s, &file_name)) return;
-#define CHK_ERR(s) if (err_handle_error(s, NULL)) return;
-
 void cmd_floadln() {
   var_t file_name, *array_p = NULL, *var_p = NULL;
   int flags = DEV_FILE_INPUT;
@@ -826,8 +828,7 @@ void dirwalk(char *dir, char *wc, bcip_t use_ip, int depth) {
     }
     if (strlen(dir) + strlen(dp->d_name) + 2 > OS_PATHNAME_SIZE) {
       rt_raise("DIRWALK: name %s/%s too long", dir, dp->d_name);
-    }
-    else {
+    } else {
       // check filename
       int callusr;
       int contf = 1;
@@ -835,8 +836,7 @@ void dirwalk(char *dir, char *wc, bcip_t use_ip, int depth) {
 
       if (!wc) {
         callusr = 1;
-      }
-      else {
+      } else {
         callusr = wc_match(wc, dp->d_name);
       }
 
@@ -920,7 +920,8 @@ void cmd_bputc() {
     if (prog_error) {
       return;
     }
-    par_getsep();               // allow commas
+    // allow commas
+    par_getsep();
     if (prog_error) {
       return;
     }

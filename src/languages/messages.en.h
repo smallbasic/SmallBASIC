@@ -222,3 +222,4 @@
 #define ERR_MEMORY              "Out of memory error"
 #define ERR_NETWORK             "Network error"
 #define ERR_XPM_IMAGE           "Invalid xpm image"
+#define ERR_FILE_NOT_OPEN       "IOError: File not open for reading"

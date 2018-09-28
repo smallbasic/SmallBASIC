@@ -1,4 +1,7 @@
 2018-08-08 (0.12.14)
+	COMMON: fix error message when command "LINE INPUT" attempts to read a non open file
+
+2018-08-08 (0.12.14)
 	COMMON: fix crash when attempting to load an image from a failed network connection
 
 2018-08-08 (0.12.13)
