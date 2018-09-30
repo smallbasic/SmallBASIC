@@ -29,6 +29,7 @@ typedef struct {
   bcip_t cp; /**< current position (used by readers not writers) */
   bcip_t size; /**< allocation size (optimization) */
   bcip_t count; /**< current size (used by writers as the current position) */
+  bcip_t eoc_position; /**< position of most recent kwTYPE_LINE or kwTYPE_EOC */
 } bc_t;
 
 /**

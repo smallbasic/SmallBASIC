@@ -2863,6 +2863,7 @@ void comp_text_line(char *text, int addLineNo) {
   }
   if (addLineNo) {
     // add debug info: line-number
+    comp_prog.eoc_position = comp_prog.count;
     bc_add_code(&comp_prog, kwTYPE_LINE);
     bc_add_addr(&comp_prog, comp_line);
   }

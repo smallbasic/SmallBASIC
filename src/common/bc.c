@@ -21,6 +21,7 @@ void bc_create(bc_t *bc) {
   bc->size = BC_ALLOC_INCR;
   bc->count = 0;
   bc->cp = 0;
+  bc->eoc_position = 0;
 }
 
 /*
@@ -245,8 +246,9 @@ char *bc_store_string(bc_t *bc, char *src) {
  */
 void bc_eoc(bc_t *bc) {
   if (bc && bc->count &&
-      (bc->ptr[bc->count - 1] != kwTYPE_LINE &&
-       bc->ptr[bc->count - 1] != kwTYPE_EOC)) {
+      (bc->eoc_position == 0 || bc->eoc_position != bc->count - 1)) {
+    // avoid appending multiple kwTYPE_EOCs (or kwTYPE_LINE)
+    bc->eoc_position = bc->count;
     bc_add1(bc, kwTYPE_EOC);
   }
 }
