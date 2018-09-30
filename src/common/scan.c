@@ -3724,6 +3724,11 @@ void comp_optimise() {
     case kwAPPEND:
       ip = comp_optimise_let(ip, kwTYPE_SEP, ',', kwAPPEND_OPT);
       break;
+    case kwTYPE_EOC:
+      if (comp_prog.ptr[ip + 1] == kwTYPE_EOC) {
+        sc_raise(ERR_UNSUPPORTED);
+      }
+      break;
     default:
       break;
     }
