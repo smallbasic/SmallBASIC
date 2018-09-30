@@ -242,6 +242,13 @@ function buildConsole() {
         win32="yes"
    esac
 
+   AC_C_BIGENDIAN(
+     AC_DEFINE(CPU_BIGENDIAN, 1, [machine is big-endian]),
+     AC_DEFINE(CPU_LITTLE_ENDIAN, 1, [machine is little-endian]),
+     AC_MSG_ERROR(unknown endianess),
+     AC_MSG_ERROR(universial endianess not supported)
+   )
+
    AM_CONDITIONAL(WITH_CYGWIN_CONSOLE, test $win32 = yes)
    AC_DEFINE(BUILD_CONSOLE, 1, [Building a console based system.])
 
