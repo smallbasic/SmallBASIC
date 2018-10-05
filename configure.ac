@@ -224,7 +224,6 @@ function buildAndroid() {
    AC_DEFINE(IMPL_DEV_READ, 1, [Implement dev_read()])
    AC_DEFINE(IMPL_DEV_DELAY, 1, [Driver implements dev_delay()])
    AC_DEFINE(IMPL_LOG_WRITE, 1, [Driver implements lwrite()])
-   AC_DEFINE(CPU_BIGENDIAN, 1, [Android uses big-endian])
 
    BUILD_SUBDIRS="src/platform/android"
    AC_SUBST(BUILD_SUBDIRS)

@@ -8,6 +8,11 @@
 
 #include "config.h"
 #include "platform/android/jni/runtime.h"
+#include <endian.h>
+
+#if _BYTE_ORDER != _LITTLE_ENDIAN || defined (__BIG_ENDIAN_BITFIELD)
+  #error "Big-Endian Arch is not supported"
+#endif
 
 void android_main(android_app *app) {
   logEntered();
