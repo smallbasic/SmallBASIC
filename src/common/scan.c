@@ -26,27 +26,27 @@ bcip_t comp_next_bc_cmd(bc_t *bc, bcip_t ip);
 extern void expr_parser(bc_t *bc);
 
 #define STRLEN(s) ((sizeof(s) / sizeof(s[0])) - 1)
-#define LEN_OPTION     STRLEN(LCN_OPTION)
-#define LEN_IMPORT     STRLEN(LCN_IMPORT_WRS)
-#define LEN_UNIT       STRLEN(LCN_UNIT_WRS)
-#define LEN_SBASICPATH STRLEN(LCN_SBASICPATH)
-#define LEN_INC        STRLEN(LCN_INC)
-#define LEN_SUB_WRS    STRLEN(LCN_SUB_WRS)
-#define LEN_FUNC_WRS   STRLEN(LCN_FUNC_WRS)
-#define LEN_DEF_WRS    STRLEN(LCN_DEF_WRS)
-#define LEN_END_WRS    STRLEN(LCN_END_WRS)
-#define LEN_END_SELECT STRLEN(LCN_END_SELECT)
-#define LEN_END_TRY    STRLEN(LCN_END_TRY)
-#define LEN_PREDEF     STRLEN(LCN_PREDEF)
-#define LEN_QUIET      STRLEN(LCN_QUIET)
-#define LEN_GRMODE     STRLEN(LCN_GRMODE)
-#define LEN_TEXTMODE   STRLEN(LCN_TEXTMODE)
-#define LEN_COMMAND    STRLEN(LCN_COMMAND)
-#define LEN_SHOWPAGE   STRLEN(LCN_SHOWPAGE)
-#define LEN_ANTIALIAS  STRLEN(LCN_ANTIALIAS)
-#define LEN_LDMODULES  STRLEN(LCN_LOAD_MODULES)
-#define LEN_AUTOLOCAL  STRLEN(LCN_AUTOLOCAL)
-#define LEN_AS_WRS     STRLEN(LCN_AS_WRS)
+const int LEN_OPTION     = STRLEN(LCN_OPTION);
+const int LEN_IMPORT     = STRLEN(LCN_IMPORT_WRS);
+const int LEN_UNIT       = STRLEN(LCN_UNIT_WRS);
+const int LEN_SBASICPATH = STRLEN(LCN_SBASICPATH);
+const int LEN_INC        = STRLEN(LCN_INC);
+const int LEN_SUB_WRS    = STRLEN(LCN_SUB_WRS);
+const int LEN_FUNC_WRS   = STRLEN(LCN_FUNC_WRS);
+const int LEN_DEF_WRS    = STRLEN(LCN_DEF_WRS);
+const int LEN_END_WRS    = STRLEN(LCN_END_WRS);
+const int LEN_END_SELECT = STRLEN(LCN_END_SELECT);
+const int LEN_END_TRY    = STRLEN(LCN_END_TRY);
+const int LEN_PREDEF     = STRLEN(LCN_PREDEF);
+const int LEN_QUIET      = STRLEN(LCN_QUIET);
+const int LEN_GRMODE     = STRLEN(LCN_GRMODE);
+const int LEN_TEXTMODE   = STRLEN(LCN_TEXTMODE);
+const int LEN_COMMAND    = STRLEN(LCN_COMMAND);
+const int LEN_SHOWPAGE   = STRLEN(LCN_SHOWPAGE);
+const int LEN_ANTIALIAS  = STRLEN(LCN_ANTIALIAS);
+const int LEN_LDMODULES  = STRLEN(LCN_LOAD_MODULES);
+const int LEN_AUTOLOCAL  = STRLEN(LCN_AUTOLOCAL);
+const int LEN_AS_WRS     = STRLEN(LCN_AS_WRS);
 
 #define KW_TYPE_LINE_BYTES 5
 
@@ -60,6 +60,13 @@ extern void expr_parser(bc_t *bc);
 
 #define GROWSIZE 128
 #define MAX_PARAMS 256
+
+// the offset to a single byte stored in an 32 bit field
+#if defined(CPU_BIGENDIAN)
+ #define BYTE_OFFSET_IN_32 4
+#else
+ #define BYTE_OFFSET_IN_32 1
+#endif
 
 typedef struct  {
   byte *code;
@@ -3397,7 +3404,7 @@ void comp_pass2_scan() {
         w = label->ip;
 
         // number of POPs
-        level = comp_prog.ptr[node->pos + (ADDRSZ + 1)];
+        level = comp_prog.ptr[node->pos + (ADDRSZ + BYTE_OFFSET_IN_32)];
         if (level >= label->level) {
           comp_prog.ptr[node->pos + (ADDRSZ + 1)] = level - label->level;
         } else {
@@ -3638,7 +3645,7 @@ void comp_pass2_scan() {
 
     case kwFUNC_RETURN:
       // address for the FUNCs kwTYPE_RET
-      level = comp_prog.ptr[node->pos + 1];
+      level = comp_prog.ptr[node->pos + BYTE_OFFSET_IN_32];
       true_ip = comp_search_bc_stack(i + 1, kwTYPE_RET, level, -1);
       if (true_ip != INVALID_ADDR) {
         // otherwise error handled elsewhere
