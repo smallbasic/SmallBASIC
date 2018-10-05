@@ -48,6 +48,8 @@ extern void expr_parser(bc_t *bc);
 #define LEN_AUTOLOCAL  STRLEN(LCN_AUTOLOCAL)
 #define LEN_AS_WRS     STRLEN(LCN_AS_WRS)
 
+#define KW_TYPE_LINE_BYTES 5
+
 #define SKIP_SPACES(p)                          \
   while (*p == ' ' || *p == '\t') {             \
     p++;                                        \
@@ -2379,9 +2381,8 @@ void comp_text_line_for() {
  * Insert the local variables detected during sub/func processing
  */
 void comp_insert_locals() {
-  int i;
   int count_local = 0;
-  for (i = 0; i < comp_varcount; i++) {
+  for (int i = 0; i < comp_varcount; i++) {
     if (comp_vartable[i].local_id != -1 &&
         comp_vartable[i].local_proc_level == comp_proc_level) {
       count_local++;
@@ -2390,7 +2391,7 @@ void comp_insert_locals() {
 
   comp_pass_node_t *node;
   bcip_t pos_goto = INVALID_ADDR;
-  for (i = comp_stack.count - 1; i >= 0; i--) {
+  for (int i = comp_stack.count - 1; i >= 0; i--) {
     node = comp_stack.elem[i];
     if (comp_prog.ptr[node->pos] == kwGOTO &&
         node->block_id != -1 &&
@@ -2422,7 +2423,7 @@ void comp_insert_locals() {
       memcpy(comp_prog.ptr + pos_goto + 1, &ip, ADDRSZ);
       bc_add_code(&comp_prog, kwTYPE_CRVAR);
       bc_add_code(&comp_prog, count_local);
-      for (i = 0; i < comp_varcount; i++) {
+      for (int i = 0; i < comp_varcount; i++) {
         if (comp_vartable[i].local_id != -1 &&
             comp_vartable[i].local_proc_level == comp_proc_level) {
           bc_add_addr(&comp_prog, comp_vartable[i].local_id);
@@ -2863,9 +2864,19 @@ void comp_text_line(char *text, int addLineNo) {
   }
   if (addLineNo) {
     // add debug info: line-number
-    comp_prog.eoc_position = comp_prog.count;
-    bc_add_code(&comp_prog, kwTYPE_LINE);
-    bc_add_addr(&comp_prog, comp_line);
+    if (comp_prog.line_position == 0 ||
+        comp_prog.line_position != (comp_prog.count - KW_TYPE_LINE_BYTES)) {
+      // not an adjoining kwTYPE_LINE
+      if (!opt_autolocal && comp_prog.eoc_position == comp_prog.count - 1) {
+        // overwrite any adjoining kwTYPE_EOC (can't do this with autolocal)
+        comp_prog.count--;
+      }
+      // prevent kwTYPE_EOC from being appended to this kwTYPE_LINE
+      comp_prog.eoc_position = comp_prog.count;
+      comp_prog.line_position = comp_prog.count;
+      bc_add_code(&comp_prog, kwTYPE_LINE);
+      bc_add_addr(&comp_prog, comp_line);
+    }
   }
   if (idx == -1) {
     idx = comp_is_proc(comp_bc_name);
@@ -3725,7 +3736,8 @@ void comp_optimise() {
       ip = comp_optimise_let(ip, kwTYPE_SEP, ',', kwAPPEND_OPT);
       break;
     case kwTYPE_EOC:
-      if (comp_prog.ptr[ip + 1] == kwTYPE_EOC) {
+      if (!opt_autolocal &&
+          (comp_prog.ptr[ip + 1] == kwTYPE_EOC || comp_prog.ptr[ip + 1] == kwTYPE_LINE)) {
         sc_raise(ERR_UNSUPPORTED);
       }
       break;

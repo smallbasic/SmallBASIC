@@ -94,7 +94,6 @@ void net_printf(socket_t s, const char *fmt, ...) {
 int net_read(socket_t s, char *buf, int size) {
   fd_set readfds;
   struct timeval tv;
-  int rv;
 
   // clear the set
   FD_ZERO(&readfds);
@@ -104,7 +103,7 @@ int net_read(socket_t s, char *buf, int size) {
     tv.tv_sec = 0;
     tv.tv_usec = BLOCK_INTERVAL;
 
-    rv = select(s + 1, &readfds, NULL, NULL, &tv);
+    int rv = select(s + 1, &readfds, NULL, NULL, &tv);
     if (rv == -1) {
       // an error occured
       return 0;
@@ -204,7 +203,6 @@ socket_t net_connect(const char *server_name, int server_port) {
   socket_t sock;
   uint32_t inaddr;
   struct sockaddr_in ad;
-  struct hostent *hp;
 
   net_init();
 
@@ -212,7 +210,7 @@ socket_t net_connect(const char *server_name, int server_port) {
   ad.sin_family = AF_INET;
 
   if ((inaddr = inet_addr(server_name)) == INADDR_NONE) {
-    hp = gethostbyname(server_name);
+    struct hostent *hp = gethostbyname(server_name);
     if (hp == NULL) {
       return -1;
     }

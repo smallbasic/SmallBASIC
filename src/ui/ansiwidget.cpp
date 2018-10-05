@@ -273,7 +273,7 @@ void AnsiWidget::resize(int newWidth, int newHeight) {
 }
 
 void AnsiWidget::removeHover() {
-  if ( _hoverInput) {
+  if (_hoverInput) {
     int dx = _front->_x;
     int dy = _front->_y - _front->_scrollY;
     _hoverInput->drawHover(dx, dy, false);

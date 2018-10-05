@@ -46,10 +46,10 @@
 #define MENU_SHORTCUT   22
 #define MENU_SHARE      23
 #define MENU_SIZE       24
-#define MENU_COMPETION_0  (MENU_SIZE + 1)
-#define MENU_COMPETION_1  (MENU_SIZE + 2)
-#define MENU_COMPETION_2  (MENU_SIZE + 3)
-#define MENU_COMPETION_3  (MENU_SIZE + 4)
+#define MENU_COMPLETION_0  (MENU_SIZE + 1)
+#define MENU_COMPLETION_1  (MENU_SIZE + 2)
+#define MENU_COMPLETION_2  (MENU_SIZE + 3)
+#define MENU_COMPLETION_3  (MENU_SIZE + 4)
 #define MAX_COMPLETIONS 4
 #define MAX_CACHE 8
 #define CHANGE_WAIT_SLEEP 1000
@@ -377,16 +377,16 @@ void System::handleMenu(MAEvent &event) {
       share(_activeFile.c_str());
     }
     break;
-  case MENU_COMPETION_0:
+  case MENU_COMPLETION_0:
     completeKeyword(0);
     break;
-  case MENU_COMPETION_1:
+  case MENU_COMPLETION_1:
     completeKeyword(1);
     break;
-  case MENU_COMPETION_2:
+  case MENU_COMPLETION_2:
     completeKeyword(2);
     break;
-  case MENU_COMPETION_3:
+  case MENU_COMPLETION_3:
     completeKeyword(3);
     break;
   }
@@ -866,7 +866,7 @@ void System::showMenu() {
 #endif
         items->add(new String("Help"));
         for (int i = 0; i < completions; i++) {
-          _systemMenu[index++] = MENU_COMPETION_0 + i;
+          _systemMenu[index++] = MENU_COMPLETION_0 + i;
         }
         _systemMenu[index++] = MENU_UNDO;
         _systemMenu[index++] = MENU_REDO;

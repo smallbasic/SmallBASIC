@@ -22,6 +22,7 @@ void bc_create(bc_t *bc) {
   bc->count = 0;
   bc->cp = 0;
   bc->eoc_position = 0;
+  bc->line_position = 0;
 }
 
 /*
