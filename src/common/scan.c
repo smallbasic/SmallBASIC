@@ -3403,6 +3403,11 @@ void comp_pass2_scan() {
         label = comp_labtable.elem[label_id];
         w = label->ip;
 
+        // adjust the address to compensate for optimisation to remove adjoining kwEOC
+        if (comp_prog.ptr[w] != kwTYPE_LINE && comp_prog.ptr[w - 1] == kwTYPE_LINE) {
+          w--;
+        }
+
         // number of POPs
         level = comp_prog.ptr[node->pos + (ADDRSZ + BYTE_OFFSET_IN_32)];
         if (level >= label->level) {
