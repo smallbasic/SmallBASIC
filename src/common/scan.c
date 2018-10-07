@@ -3389,6 +3389,11 @@ void comp_pass2_scan() {
         memcpy(&label_id, comp_prog.ptr + node->pos + (j * ADDRSZ) + (ADDRSZ + ADDRSZ + 3), ADDRSZ);
         label = comp_labtable.elem[label_id];
         w = label->ip;
+
+        // adjust the address to compensate for optimisation to remove adjoining kwEOC
+        if (comp_prog.ptr[w] != kwTYPE_LINE && comp_prog.ptr[w - 1] == kwTYPE_LINE) {
+          w--;
+        }
         memcpy(comp_prog.ptr + node->pos + (j * ADDRSZ) + (ADDRSZ + ADDRSZ + 3), &w, ADDRSZ);
       }
       break;
