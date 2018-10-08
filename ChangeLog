@@ -1,3 +1,6 @@
+2018-10-09 (0.12.14)
+	COMMON: fix crash when passing zero as format argument to DATEFMT
+
 2018-09-30 (0.12.14)
 	COMMON: fix broken implementation to avoid appending multiple kwTYPE_EOCs (or kwTYPE_LINE)
 

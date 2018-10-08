@@ -323,7 +323,7 @@ char *date_fmt(char *fmt, long d, long m, long y) {
   mc = 0;
   yc = 0;
   p = fmt;
-  if (!(*p)) {
+  if (p == NULL || !(*p)) {
     return str.buf;
   }
   while (1) {

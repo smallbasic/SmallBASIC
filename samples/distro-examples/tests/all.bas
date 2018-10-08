@@ -134,7 +134,7 @@ print "CREAL:" + CREAL (x)
 print "CSC:" + CSC (x)
 print "CSCH:" + CSCH (x)
 print "DATE:"' + DATE
-print "DATEFMT:" + DATEFMT("ddmmyy", 12345) + " " + DATEFMT("yyymmdd", d,m,y)
+print "DATEFMT:" + DATEFMT("ddmmyy", 12345) + " " + DATEFMT("yyymmdd", d,m,y): xx=datefmt(0,date)
 print "DEFINEKEY:"' + DEFINEKEY k,sub
 print "DEG:" + DEG (x)
 print "DETERM:"' + DETERM (A, 1)
