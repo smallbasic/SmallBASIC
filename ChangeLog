@@ -1,3 +1,6 @@
+2018-10-13 (0.12.14)
+	COMMON: fix about page logo
+
 2018-10-09 (0.12.14)
 	COMMON: fix crash when passing zero as format argument to DATEFMT
 
