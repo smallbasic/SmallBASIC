@@ -78,14 +78,17 @@ func mk_scratch()
   return result
 end
 
-sub do_okay_button()
+sub do_okay_button(bn_extra)
   local frm, button
   button.label = "[Close]"
   button.x = (xmax - txtw(button.label)) / 2
-  button.y = -1
+  button.y = ypos * char_h
   button.backgroundColor = 0
   button.color = 3
   button.type = "link"
+  if (ismap(bn_extra)) then
+    frm.inputs << bn_extra
+  endif
   frm.inputs << button
   frm = form(frm)
   print
@@ -98,12 +101,12 @@ sub do_about()
   if (char_w * 45 < xmax) then
     print "   ____          _______  ___   _____________"
     print "  / ____ _ ___ _/ / / _ )/ _ | / __/  _/ ___/"
-    print " _\ \/  ' / _ `/ / / _  / __ |_\ \_/ // /__  "
-    print "/___/_/_/_\_,_/_/_/____/_/ |_/___/___/\___/  "
+    print " _\\ \\/  ' / _ `/ / / _  / __ |_\\ \\_/ // /"
+    print "/___/_/_/_\\_,_/_/_/____/_/ |_/___/___/\\___/"
   else
-    print " __           _      ___ _"
-    print "(_ ._ _  _.|||_) /\ (_ |/ "
-    print "__)| | |(_||||_)/--\__)|\_"
+    print " __           _      ___ _  "
+    print "(_ ._ _  _.|||_) /\\ (_ |/  "
+    print "__)| | |(_||||_)/--\\__)|\\_"
   endif
   print
   color 7,0
@@ -111,7 +114,16 @@ sub do_about()
   print
   print "Copyright (c) 2002-2018 Chris Warren-Smith"
   print "Copyright (c) 1999-2006 Nicholas Christopoulos" + chr(10)
-  print "https://smallbasic.github.io" + chr(10)
+
+  local bn_home
+  bn_home.x = 2
+  bn_home.y = ypos * char_h
+  bn_home.type = "link"
+  bn_home.isExternal = true
+  bn_home.label = "https://smallbasic.github.io"
+  bn_home.color = 3
+  print:print
+
   color colGrey,0
   print "SmallBASIC comes with ABSOLUTELY NO WARRANTY. ";
   print "This program is free software; you can use it ";
@@ -121,7 +133,7 @@ sub do_about()
   print
   color 7,0
   server_info()
-  do_okay_button()
+  do_okay_button(bn_home)
   cls
 end
 
@@ -501,7 +513,7 @@ sub manageFiles()
       for i = 0 to len_buffer
         print buffer(i)
       next i
-      do_okay_button
+      do_okay_button(nil)
       wnd.graphicsScreen1()
       f.value = selectedFile
     endIf
