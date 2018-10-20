@@ -3924,17 +3924,20 @@ const char *format_numeric_text(const char *str, char **output) {
   int value = 0;
   int digits = 0;
 
-  while (isdigit(*str)) {
-    value = (value << 3) + (*str - '0');
+  while (isdigit(*result)) {
+    value = (value << 3) + (*result - '0');
     digits++;
-    str++;
+    result++;
   }
 
   if (digits == 3 && value > V_JOIN_LINE && value < 256) {
     **output = value;
-    (*output)++;
+  } else {
+    **output = *str;
     result = str;
   }
+
+  (*output)++;
 
   return result;
 }
