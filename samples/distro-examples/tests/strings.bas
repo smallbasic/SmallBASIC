@@ -176,8 +176,8 @@ if expect != seq(0, 2*pi, 360/15+1) then throw "SEQ error"
 
 s="Hello\033There"
 if (27 != asc(mid(s, 6, 1))) then throw "err"
-s="This\033T\ha\t\The\"Other"
-rem ThisnT\ha\t\The"Other - non escaping '\' should appear verbatim
-if len(s) != 21 then throw "escape error"
-s="Hello\03There"
-if len(s) != 13 then throw "escape error"
+rem Non escaping '\' should appear verbatim
+s= "a\c\e"
+if mid(s, 2, 1) != "\\" then throw s
+if mid(s, 4, 1) != "\\" then throw s
+
