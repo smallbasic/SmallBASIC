@@ -58,12 +58,13 @@ func mk_scratch()
     text << "rem Welcome to SmallBASIC"
     text << "rem"
     if (is_sdl) then
-      text << "rem Press F1 for keyword help."
+      text << "rem Press F1 or F2 for keyword help."
       text << "rem Press and hold Ctrl then press 'h' for editor help."
       text << "rem Press and hold Ctrl then press 'r' to RUN this program."
       text << "rem Click the right mouse button for menu options."
     else
       text << "rem Press the 3 vertical dots for menu options."
+      text << "rem Press and drag the line numbers to scroll."
     endif
     try
       tsave scratch_file, text

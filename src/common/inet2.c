@@ -312,10 +312,12 @@ socket_t net_listen(int server_port) {
  * disconnect the given network connection
  */
 void net_disconnect(socket_t s) {
+  if (s != -1) {
 #if defined(_Win32)
-  closesocket(s);
+    closesocket(s);
 #else
-  close(s);
+    close(s);
 #endif
+  }
 }
 

@@ -491,6 +491,13 @@ char *System::loadResource(const char *fileName) {
       opt_file_permitted = 0;
     }
   }
+  if (buffer == NULL) {
+    // remove failed item from history
+    strlib::String *old = _history.peek();
+    if (old && old->equals(fileName)) {
+      delete _history.pop();
+    }
+  }
   return buffer;
 }
 

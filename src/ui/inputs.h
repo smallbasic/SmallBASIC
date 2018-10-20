@@ -16,9 +16,10 @@
 #include "ui/strlib.h"
 #include "ui/shape.h"
 #include "ui/image.h"
+#include "ui/utils.h"
 
 const uint32_t colors[] = {
-  0x000000, // 0 black
+  DEFAULT_BACKGROUND, // 0 black
   0x000080, // 1 blue
   0x008000, // 2 green
   0x008080, // 3 cyan

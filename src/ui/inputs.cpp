@@ -56,7 +56,7 @@ int get_color(var_p_t value, int def) {
     } else if (n[0] == '#' && n[1]) {
       result = strtol(n + 1, NULL, 16);
     } else if (strcasecmp(n, "black") == 0) {
-      result = 0;
+      result = DEFAULT_BACKGROUND;
     } else if (strcasecmp(n, "red") == 0) {
       result = 0x800000;
     } else if (strcasecmp(n, "green") == 0) {
