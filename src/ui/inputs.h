@@ -75,6 +75,7 @@ namespace form_ui {
   bool optionSelected(int index);
 };
 
+void set_input_defaults(int fg, int bg);
 int get_color(var_p_t value, int def);
 
 struct IFormWidgetListModel {
