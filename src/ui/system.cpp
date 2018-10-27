@@ -537,8 +537,15 @@ char *System::readSource(const char *fileName) {
           buffer = (char *)malloc(len + 1);
           len = read(h, buffer, len);
           buffer[len] = '\0';
-          _activeFile = fileName;
-          _modifiedTime = getModifiedTime();
+          _modifiedTime = st.st_mtime;
+          char fullPath[PATH_MAX + 1];
+          char *path = realpath(fileName, fullPath);
+          if (path != NULL) {
+            // set full path for getModifiedTime()
+            _activeFile = fullPath;
+          } else {
+            _activeFile = fileName;
+          }
         }
         close(h);
       }
