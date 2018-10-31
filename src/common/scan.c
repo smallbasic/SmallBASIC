@@ -1849,7 +1849,12 @@ char *comp_array_params(char *src, char exitChar) {
             *se = '\0';
             bc_add_code(&comp_prog, kwTYPE_LEVEL_BEGIN);
             comp_expression(ss, 0);
-            bc_store1(&comp_prog, comp_prog.count - 1, kwTYPE_LEVEL_END);
+            // overwrite kwTYPE_EOC with kwTYPE_LEVEL_END
+            if (!bc_pop_eoc(&comp_prog)) {
+              sc_raise(ERR_UNSUPPORTED);
+            }
+            bc_add_code(&comp_prog, kwTYPE_LEVEL_END);
+            comp_prog.eoc_position = 0;
             *ss = ssSave;
             *se = seSave;
             ss = se = NULL;
@@ -2812,6 +2817,24 @@ int comp_text_line_command(bid_t idx, int decl, int sharp, char *last_cmd) {
   return result;
 }
 
+void add_line_no() {
+  if (comp_prog.line_position == 0 ||
+      comp_prog.line_position != (comp_prog.count - KW_TYPE_LINE_BYTES)) {
+    // not an adjoining kwTYPE_LINE
+    if (!opt_autolocal && comp_prog.eoc_position == comp_prog.count - 1) {
+      // overwrite any adjoining kwTYPE_EOC (can't do this with autolocal)
+      if (!bc_pop_eoc(&comp_prog)) {
+        sc_raise(ERR_UNSUPPORTED);
+      }
+    }
+
+    // prevent adjoining kwTYPE_LINEs
+    comp_prog.line_position = comp_prog.count;
+    bc_add_code(&comp_prog, kwTYPE_LINE);
+    bc_add_addr(&comp_prog, comp_line);
+  }
+}
+
 /*
  * Pass 1: scan source line
  */
@@ -2870,20 +2893,7 @@ void comp_text_line(char *text, int addLineNo) {
     return;
   }
   if (addLineNo) {
-    // add debug info: line-number
-    if (comp_prog.line_position == 0 ||
-        comp_prog.line_position != (comp_prog.count - KW_TYPE_LINE_BYTES)) {
-      // not an adjoining kwTYPE_LINE
-      if (!opt_autolocal && comp_prog.eoc_position == comp_prog.count - 1) {
-        // overwrite any adjoining kwTYPE_EOC (can't do this with autolocal)
-        comp_prog.count--;
-      }
-      // prevent kwTYPE_EOC from being appended to this kwTYPE_LINE
-      comp_prog.eoc_position = comp_prog.count;
-      comp_prog.line_position = comp_prog.count;
-      bc_add_code(&comp_prog, kwTYPE_LINE);
-      bc_add_addr(&comp_prog, comp_line);
-    }
+    add_line_no();
   }
   if (idx == -1) {
     idx = comp_is_proc(comp_bc_name);
@@ -3719,13 +3729,15 @@ bcip_t comp_optimise_let(bcip_t ip, byte kw_opr, char sep, byte opt_kw) {
   bcip_t ip_next = ip + 1;
   if (comp_prog.ptr[ip_next] == kwTYPE_VAR) {
     ip_next += 1 + sizeof(bcip_t);
-    while (ip_next < comp_prog.count && comp_prog.ptr[ip_next] != kwTYPE_EOC) {
+    while (ip_next < comp_prog.count && comp_prog.ptr[ip_next] != kwTYPE_EOC
+           && comp_prog.ptr[ip_next] != kwTYPE_LINE) {
       if (comp_prog.ptr[ip_next] == kw_opr &&
           comp_prog.ptr[ip_next + 1] == sep) {
         ip_next += 2;
         if (ip_next < comp_prog.count &&
             comp_prog.ptr[ip_next] == kwTYPE_VAR &&
-            comp_prog.ptr[ip_next + 1 + sizeof(bcip_t)] == kwTYPE_EOC) {
+            (comp_prog.ptr[ip_next + 1 + sizeof(bcip_t)] == kwTYPE_EOC ||
+             comp_prog.ptr[ip_next + 1 + sizeof(bcip_t)] == kwTYPE_LINE)) {
           comp_prog.ptr[ip] = opt_kw;
           ip = ip_next;
         }

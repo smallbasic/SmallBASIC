@@ -84,16 +84,6 @@ void bc_add1(bc_t *bc, char code);
 /**
  * @ingroup scan
  *
- * put 1 byte to specified offset
- *
- * @param bc the bc structure
- * @param code the byte
- */
-void bc_store1(bc_t *bc, bcip_t offset, byte code);
-
-/**
- * @ingroup scan
- *
  * add 1 uint32_t (4-bytes) to segment
  *
  * @param bc the bc structure
@@ -127,6 +117,16 @@ char *bc_store_string(bc_t *bc, char *src);
  * @param bc the bc structure
  */
 void bc_eoc(bc_t *bc);
+
+/**
+ * @ingroup scan
+ *
+ * pops any EOC mark at the current position
+ *
+ * @param bc the bc segment
+ * @return whether kwTYPE_EOC was popped
+ */
+int bc_pop_eoc(bc_t *bc);
 
 /**
  * @ingroup scan

@@ -9,9 +9,6 @@
 
 #include "common/bc.h"
 #include "common/smbas.h"
-#if defined(_UnixOS)
-#include <assert.h>
-#endif
 
 /*
  * Create a bytecode segment
@@ -34,6 +31,8 @@ void bc_destroy(bc_t *bc) {
   bc->size = 0;
   bc->count = 0;
   bc->cp = 0;
+  bc->eoc_position = 0;
+  bc->line_position = 0;
 }
 
 /*
@@ -58,13 +57,6 @@ void bc_add1(bc_t *bc, char code) {
   }
   bc->ptr[bc->count] = code;
   bc->count++;
-}
-
-/*
- * change one command
- */
-void bc_store1(bc_t *bc, bcip_t offset, byte code) {
-  bc->ptr[offset] = code;
 }
 
 /*
@@ -252,6 +244,20 @@ void bc_eoc(bc_t *bc) {
     bc->eoc_position = bc->count;
     bc_add1(bc, kwTYPE_EOC);
   }
+}
+
+/*
+ * pops any EOC mark at the current position
+ */
+int bc_pop_eoc(bc_t *bc) {
+  int result;
+  if (bc->eoc_position > 0 && bc->eoc_position == bc->count - 1) {
+    bc->eoc_position = 0;
+    result = (bc->ptr[--bc->count] == kwTYPE_EOC);
+  } else {
+    result = 0;
+  }
+  return result;
 }
 
 /*

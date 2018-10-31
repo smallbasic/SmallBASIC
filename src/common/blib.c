@@ -1009,6 +1009,9 @@ bcip_t cmd_push_args(int cmd, bcip_t goto_addr, bcip_t rvid) {
     do {
       byte code = code_peek();  // get next BC
       switch (code) {
+      case kwTYPE_LINE:
+        ready = 1;           // finish flag
+        break;
       case kwTYPE_EOC:       // end of an expression (parameter)
         code_skipnext();     // ignore it
         break;
@@ -1097,6 +1100,9 @@ void cmd_call_unit_udp(int cmd, int udp_tid, bcip_t goto_addr, bcip_t rvid) {
     do {
       byte code = code_peek();    // get next BC
       switch (code) {
+      case kwTYPE_LINE:
+        ready = 1;           // finish flag
+        break;
       case kwTYPE_EOC:       // end of an expression (parameter)
         code_skipnext();     // ignore it
         break;
