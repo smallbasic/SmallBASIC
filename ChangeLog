@@ -1,3 +1,6 @@
+2018-11-11 (0.12.14)
+	CONSOLE: added support for IMAGE command
+
 2018-10-20 (0.12.14)
 	UI: fix navigation when network access down then available
 	UI: changed display of "BLACK" to be a slightly ligher onyx colour.
