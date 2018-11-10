@@ -384,7 +384,6 @@ void log_printf(const char *format, ...) {
 }
 
 #if defined(BUILD_CONSOLE)
-void v_create_image(var_p_t var) {}
 void v_create_form(var_p_t var) {}
 void v_create_window(var_p_t var) {}
 void dev_show_page() {}

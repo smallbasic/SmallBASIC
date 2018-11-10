@@ -1,6 +1,6 @@
 // This file is part of SmallBASIC
 //
-// Copyright(C) 2001-2015 Chris Warren-Smith.
+// Copyright(C) 2001-2018 Chris Warren-Smith.
 //
 // This program is distributed under the terms of the GPL v2.0 or later
 // Download the GNU Public License (GPL) from www.gnu.org
@@ -8,12 +8,6 @@
 
 #ifndef UI_CANVAS
 #define UI_CANVAS
-
-#if defined(PIXELFORMAT_RGB565)
-  typedef uint16_t pixel_t;
-#else
-  typedef uint32_t pixel_t;
-#endif
 
 #if defined(_SDL)
 #include <SDL.h>
