@@ -11,6 +11,7 @@
 #define PIXELFORMAT_RGBA8888
 #define IMG_WIDTH "width"
 #define IMG_HEIGHT "height"
+#define IMG_NAME "name"
 #define IMG_ID "ID"
 #define IMG_BID "BID"
 
@@ -429,6 +430,10 @@ void create_image(var_p_t var, ImageBuffer *image) {
   map_add_var(var, IMG_WIDTH, image->_width);
   map_add_var(var, IMG_HEIGHT, image->_height);
   map_add_var(var, IMG_BID, image->_bid);
+  if (image->_filename != NULL) {
+    var_p_t value = map_add_var(var, IMG_NAME, 0);
+    v_setstr(value, image->_filename);
+  }
   create_function(var, "clip", cmd_image_clip);
   create_function(var, "filter", cmd_image_filter);
   create_function(var, "paste", cmd_image_paste);
