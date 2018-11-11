@@ -20,7 +20,6 @@
 #include "common/pproc.h"
 #include "common/fs_socket_client.h"
 #include "ui/strlib.h"
-#include "ui/utils.h"
 #include "ui/rgb.h"
 
 extern "C" {
@@ -35,7 +34,7 @@ struct ImageBuffer {
 
   unsigned _bid;
   char *_filename;
-  unsigned char *_image;
+  uint8_t *_image;
   int _width;
   int _height;
 };
@@ -70,13 +69,13 @@ ImageBuffer::~ImageBuffer() {
   _image = NULL;
 }
 
-void create_func(var_p_t map, const char *name, method cb) {
+void create_function(var_p_t map, const char *name, method cb) {
   var_p_t v_func = map_add_var(map, name, 0);
   v_func->type = V_FUNC;
   v_func->v.fn.cb = cb;
 }
 
-dev_file_t *eval_filep() {
+dev_file_t *get_file() {
   dev_file_t *result = NULL;
   code_skipnext();
   if (code_getnext() == '#') {
@@ -98,7 +97,7 @@ ImageBuffer *load_image(int w) {
       err_throw(ERR_PARAM);
     } else {
       int size = w * h * 4;
-      unsigned char *image = (unsigned char *)calloc(size, 1);
+      uint8_t *image = (uint8_t *)calloc(size, 1);
       result = new ImageBuffer();
       result->_bid = ++nextId;
       result->_width = w;
@@ -129,7 +128,7 @@ ImageBuffer *load_image(var_t *var) {
     int w = ABS(v_lbound(var, 0) - v_ubound(var, 0)) + 1;
     int h = ABS(v_lbound(var, 1) - v_ubound(var, 1)) + 1;
     int size = w * h * 4;
-    unsigned char *image = (unsigned char *)malloc(size);
+    uint8_t *image = (uint8_t *)malloc(size);
     for (int y = 0; y < h; y++) {
       int yoffs = (4 * y * w);
       for (int x = 0; x < w; x++) {
@@ -156,10 +155,10 @@ ImageBuffer *load_image(var_t *var) {
   return result;
 }
 
-ImageBuffer *load_image(const unsigned char* buffer, int32_t size) {
+ImageBuffer *load_image(const uint8_t* buffer, int32_t size) {
   ImageBuffer *result = NULL;
   unsigned w, h;
-  unsigned char *image;
+  uint8_t *image;
   unsigned error = 0;
 
   error = lodepng_decode32(&image, &w, &h, buffer, size);
@@ -192,7 +191,7 @@ ImageBuffer *load_image(dev_file_t *filep) {
 
   if (result == NULL) {
     unsigned w, h;
-    unsigned char *image;
+    uint8_t *image;
     unsigned error = 0;
     unsigned network_error = 0;
     var_t *var_p;
@@ -205,8 +204,7 @@ ImageBuffer *load_image(dev_file_t *filep) {
       } else {
         var_p = v_new();
         http_read(filep, var_p);
-        error = lodepng_decode32(&image, &w, &h, (unsigned char *)var_p->v.p.ptr,
-                                 var_p->v.p.length);
+        error = lodepng_decode32(&image, &w, &h, (uint8_t *)var_p->v.p.ptr, var_p->v.p.length);
         v_free(var_p);
         v_detach(var_p);
       }
@@ -237,7 +235,7 @@ ImageBuffer *load_image(dev_file_t *filep) {
 
 ImageBuffer *load_xpm_image(char **data) {
   unsigned w, h;
-  unsigned char *image;
+  uint8_t *image;
   unsigned error = xpm_decode32(&image, &w, &h, data);
   ImageBuffer *result = NULL;
   if (!error) {
@@ -255,45 +253,50 @@ ImageBuffer *load_xpm_image(char **data) {
 }
 
 //
-// png.save("horse1.png")
-// png.save(#1)
+// Reduces the size of the image
+// arguments: left, top, right, bottom
 //
-void cmd_image_save(var_s *self) {
+// png.clip(10, 10, 10, 10)
+//
+void cmd_image_clip(var_s *self) {
+  var_int_t left, top, right, bottom;
   ImageBuffer *image = load_image(self);
-  dev_file_t *filep = NULL;
-  byte code = code_peek();
-  int error = -1;
-  int w = image->_width;
-  int h = image->_height;
-  var_t var;
-
-  if (!prog_error && image != NULL) {
-    switch (code) {
-    case kwTYPE_SEP:
-      filep = eval_filep();
-      if (filep != NULL && filep->open_flags == DEV_FILE_OUTPUT) {
-        error = lodepng_encode32_file(filep->name, image->_image, w, h);
+  if (par_massget("iiii", &left, &top, &right, &bottom) == 4) {
+    int w = image->_width - (right + left);
+    int h = image->_height - (bottom + top);
+    int size = w * h * 4;
+    int oldSize = image->_width * image->_height * 4;
+    if (size > oldSize) {
+      err_throw(ERR_PARAM);
+    } else if (size != oldSize) {
+      uint8_t *dst = (uint8_t *)calloc(size, 1);
+      uint8_t *src = image->_image;
+      for (int y = 0; y < h; y++) {
+        int syoffs = (4 * (y + top) * image->_width);
+        int dyoffs = (4 * y * w);
+        for (int x = 0; x < w; x++) {
+          int spos = syoffs + (4 * (x + left));
+          int dpos = dyoffs + (4 * x);
+          dst[dpos + 0] = src[spos + 0];
+          dst[dpos + 1] = src[spos + 1];
+          dst[dpos + 2] = src[spos + 2];
+          dst[dpos + 3] = src[spos + 3];
+        }
       }
-      break;
-    default:
-      v_init(&var);
-      eval(&var);
-      if (var.type == V_STR && !prog_error) {
-        error = lodepng_encode32_file(var.v.p.ptr, image->_image, w, h);
-      }
-      v_free(&var);
-      break;
+      free(image->_image);
+      image->_image = dst;
+      image->_width = w;
+      image->_height = h;
+      map_set_int(self, IMG_WIDTH, w);
+      map_set_int(self, IMG_HEIGHT, h);
     }
-  }
-  if (error == -1) {
+  } else {
     err_throw(ERR_PARAM);
-  } else if (error != 0) {
-    err_throw(ERR_IMAGE_SAVE_ERR, lodepng_error_text(error));
   }
 }
 
 //
-// calls the supplied callback function on each pixel
+// Calls the supplied callback function on each pixel
 //
 // func colorToAlpha(x)
 //   return x
@@ -308,7 +311,7 @@ void cmd_image_filter(var_s *self) {
     bcip_t exit_ip = code_getaddr();
     int w = image_buffer->_width;
     int h = image_buffer->_height;
-    unsigned char *image = image_buffer->_image;
+    uint8_t *image = image_buffer->_image;
     var_t var;
     v_init(&var);
     for (int y = 0; y < h; y++) {
@@ -337,15 +340,17 @@ void cmd_image_filter(var_s *self) {
 }
 
 //
+// Paste the given image into this image at the given x, y location
+//
 // png2 = image(w, h)
-// png2.paste(png1, 0, 0, w, h)
+// png2.paste(png1, 0, 0)
 //
 void cmd_image_paste(var_s *self) {
-  var_int_t x, y, w, h;
+  var_int_t x, y;
   var_t *var;
   ImageBuffer *image = load_image(self);
-  int count = par_massget("Piiii", &var, &x, &y, &w, &h);
-  if (image != NULL && (count == 1 || count == 3 || count == 5)) {
+  int count = par_massget("Piiii", &var, &x, &y);
+  if (image != NULL && (count == 1 || count == 3)) {
     ImageBuffer *srcImage = load_image(var);
     if (srcImage == NULL) {
       err_throw(ERR_PARAM);
@@ -354,31 +359,67 @@ void cmd_image_paste(var_s *self) {
         x = 0;
         y = 0;
       }
-      if (count < 5) {
-        w = image->_width;
-        h = image->_height;
-      }
       int dw = image->_width;
       int dh = image->_height;
-      int sw = MIN(w, srcImage->_width);
-      int sh = MIN(h, srcImage->_height);
-      unsigned char *src = srcImage->_image;
-      unsigned char *dst = image->_image;
+      int sw = srcImage->_width;
+      int sh = srcImage->_height;
+      uint8_t *src = srcImage->_image;
+      uint8_t *dst = image->_image;
       for (int sy = 0, dy = y; sy < sh && dy < dh; sy++, dy++) {
         int syoffs = (4 * sy * srcImage->_width);
         int dyoffs = (4 * dy * dw);
         for (int sx = 0, dx = x; sx < sw && dx < dw; sx++, dx++) {
-          int soffs = syoffs + (4 * sx);
-          int doffs = dyoffs + (4 * dx);
-          dst[doffs + 0] = src[soffs + 0];
-          dst[doffs + 1] = src[soffs + 1];
-          dst[doffs + 2] = src[soffs + 2];
-          dst[doffs + 3] = src[soffs + 3];
+          int spos = syoffs + (4 * sx);
+          int dpos = dyoffs + (4 * dx);
+          dst[dpos + 0] = src[spos + 0];
+          dst[dpos + 1] = src[spos + 1];
+          dst[dpos + 2] = src[spos + 2];
+          dst[dpos + 3] = src[spos + 3];
         }
       }
     }
   } else {
     err_throw(ERR_PARAM);
+  }
+}
+
+//
+// Output the image to a PNG file
+//
+// png.save("horse1.png")
+// png.save(#1)
+//
+void cmd_image_save(var_s *self) {
+  ImageBuffer *image = load_image(self);
+  dev_file_t *filep = NULL;
+  byte code = code_peek();
+  int error = -1;
+  int w = image->_width;
+  int h = image->_height;
+  var_t var;
+
+  if (!prog_error && image != NULL) {
+    switch (code) {
+    case kwTYPE_SEP:
+      filep = get_file();
+      if (filep != NULL && filep->open_flags == DEV_FILE_OUTPUT) {
+        error = lodepng_encode32_file(filep->name, image->_image, w, h);
+      }
+      break;
+    default:
+      v_init(&var);
+      eval(&var);
+      if (var.type == V_STR && !prog_error) {
+        error = lodepng_encode32_file(var.v.p.ptr, image->_image, w, h);
+      }
+      v_free(&var);
+      break;
+    }
+  }
+  if (error == -1) {
+    err_throw(ERR_PARAM);
+  } else if (error != 0) {
+    err_throw(ERR_IMAGE_SAVE_ERR, lodepng_error_text(error));
   }
 }
 
@@ -388,11 +429,14 @@ void create_image(var_p_t var, ImageBuffer *image) {
   map_add_var(var, IMG_WIDTH, image->_width);
   map_add_var(var, IMG_HEIGHT, image->_height);
   map_add_var(var, IMG_BID, image->_bid);
-  create_func(var, "filter", cmd_image_filter);
-  create_func(var, "paste", cmd_image_paste);
-  create_func(var, "save", cmd_image_save);
+  create_function(var, "clip", cmd_image_clip);
+  create_function(var, "filter", cmd_image_filter);
+  create_function(var, "paste", cmd_image_paste);
+  create_function(var, "save", cmd_image_save);
 }
 
+//
+// Creates an image object
 //
 // png = image(#1)
 // png = image("file.png")
@@ -408,7 +452,7 @@ extern "C" void v_create_image(var_p_t var) {
   byte code = code_peek();
   switch (code) {
   case kwTYPE_SEP:
-    filep = eval_filep();
+    filep = get_file();
     if (filep != NULL) {
       image = load_image(filep);
     }
@@ -440,10 +484,10 @@ extern "C" void v_create_image(var_p_t var) {
         // load from 2d array
         image = load_image(&arg);
       } else if (elem0->type == V_INT) {
-        unsigned char *data = new unsigned char[v_asize(&arg)];
+        uint8_t *data = new uint8_t[v_asize(&arg)];
         for (unsigned i = 0; i < v_asize(&arg); i++) {
           var_p_t elem = v_elem(&arg, i);
-          data[i] = (unsigned char)elem->v.i;
+          data[i] = (uint8_t)elem->v.i;
         }
         image = load_image(data, v_asize(&arg));
         delete [] data;
