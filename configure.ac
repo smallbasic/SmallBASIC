@@ -161,6 +161,9 @@ function buildSDL() {
      dnl avoid using MSCRT versions of printf for long double
      PACKAGE_CFLAGS="${PACKAGE_CFLAGS} -D__USE_MINGW_ANSI_STDIO"
 
+     AC_DEFINE(_USE_MATH_DEFINES, 1, [for M_PI in math.h])
+     AC_DEFINE(realpath(P, R), _fullpath((char *)P, R, PATH_MAX), [add missing realpath for system.cpp])
+
      dnl do not depend on cygwin.dll under cygwin build
      PACKAGE_CFLAGS="${PACKAGE_CFLAGS} -mms-bitfields"
      PACKAGE_LIBS="${PACKAGE_LIBS} -lwsock32 -lws2_32 -static-libgcc -static-libstdc++"
