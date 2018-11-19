@@ -162,7 +162,7 @@ function buildSDL() {
      PACKAGE_CFLAGS="${PACKAGE_CFLAGS} -D__USE_MINGW_ANSI_STDIO"
 
      AC_DEFINE(_USE_MATH_DEFINES, 1, [for M_PI in math.h])
-     AC_DEFINE(realpath(P, R), _fullpath((char *)P, R, PATH_MAX), [add missing realpath for system.cpp])
+     AC_DEFINE(realpath(F, R), _fullpath(R, F, PATH_MAX), [add missing realpath for system.cpp])
 
      dnl do not depend on cygwin.dll under cygwin build
      PACKAGE_CFLAGS="${PACKAGE_CFLAGS} -mms-bitfields"
