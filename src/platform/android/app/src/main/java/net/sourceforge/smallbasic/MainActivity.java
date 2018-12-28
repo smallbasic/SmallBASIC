@@ -12,6 +12,7 @@ import android.content.DialogInterface;
 import android.content.DialogInterface.OnCancelListener;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.content.res.Configuration;
 import android.content.res.Resources;
 import android.graphics.Rect;
 import android.location.Criteria;
@@ -378,7 +379,17 @@ public class MainActivity extends NativeActivity {
     this._options = items;
     runOnUiThread(new Runnable() {
       public void run() {
-        openOptionsMenu();
+        invalidateOptionsMenu();
+        Configuration config = getResources().getConfiguration();
+        // https://stackoverflow.com/questions/9996333/openoptionsmenu-function-not-working-in-ics/17903128#17903128
+        if ((config.screenLayout & Configuration.SCREENLAYOUT_SIZE_MASK) > Configuration.SCREENLAYOUT_SIZE_LARGE) {
+          int originalScreenLayout = config.screenLayout;
+          config.screenLayout = Configuration.SCREENLAYOUT_SIZE_LARGE;
+          openOptionsMenu();
+          config.screenLayout = originalScreenLayout;
+        } else {
+          openOptionsMenu();
+        }
       }
     });
   }
