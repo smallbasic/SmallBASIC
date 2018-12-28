@@ -3401,7 +3401,7 @@ void comp_pass2_scan() {
         w = label->ip;
 
         // adjust the address to compensate for optimisation to remove adjoining kwEOC
-        if (comp_prog.ptr[w] != kwTYPE_LINE && comp_prog.ptr[w - 1] == kwTYPE_LINE) {
+        if (w > 0 && w < comp_prog.count && comp_prog.ptr[w] != kwTYPE_LINE && comp_prog.ptr[w - 1] == kwTYPE_LINE) {
           w--;
         }
         memcpy(comp_prog.ptr + node->pos + (j * ADDRSZ) + (ADDRSZ + ADDRSZ + 3), &w, ADDRSZ);
@@ -3419,7 +3419,7 @@ void comp_pass2_scan() {
         w = label->ip;
 
         // adjust the address to compensate for optimisation to remove adjoining kwEOC
-        if (comp_prog.ptr[w] != kwTYPE_LINE && comp_prog.ptr[w - 1] == kwTYPE_LINE) {
+        if (w > 0 && w < comp_prog.count && comp_prog.ptr[w] != kwTYPE_LINE && comp_prog.ptr[w - 1] == kwTYPE_LINE) {
           w--;
         }
 
@@ -3697,12 +3697,14 @@ bcip_t comp_optimise_line_goto(bcip_t ip) {
 
   ip = comp_read_goto(ip + 1, &addr, &level);
   bcip_t goto_ip = addr;
-  if (comp_prog.ptr[goto_ip] == kwTYPE_EOC) {
+
+  // note: INVALID_ADDR is assumed to be > comp_prog.count
+  if (goto_ip < comp_prog.count && comp_prog.ptr[goto_ip] == kwTYPE_EOC) {
     new_addr = goto_ip + 1;
   }
-  while (goto_ip > 0 && comp_prog.ptr[goto_ip] == kwTYPE_LINE) {
+  while (goto_ip > -1 && comp_prog.ptr[goto_ip] == kwTYPE_LINE) {
     goto_ip += 1 + sizeof(bcip_t);
-    if (comp_prog.ptr[goto_ip] == kwGOTO) {
+    if (goto_ip < comp_prog.count && comp_prog.ptr[goto_ip] == kwGOTO) {
       code_t next_level;
       comp_read_goto(goto_ip + 1, &addr, &next_level);
       goto_ip = addr;
