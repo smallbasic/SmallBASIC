@@ -588,7 +588,7 @@ void cmd_print(int output) {
         v_free(&var);
         return;
       } else {
-        build_format((char *) var.v.p.ptr);
+        build_format(var.v.p.ptr);
         v_free(&var);
       }
     }
@@ -626,7 +626,7 @@ void cmd_print(int output) {
         if (use_format) {
           switch (var.type) {
           case V_STR:
-            fmt_printS((char *)var.v.p.ptr, output, handle);
+            fmt_printS(var.v.p.ptr, output, handle);
             break;
           case V_INT:
             fmt_printN(var.v.i, output, handle);
@@ -748,7 +748,7 @@ void cmd_input(int input) {
       // "redo from start"
       if (input == PV_CONSOLE) {  // prompt
         if (prompt.v.p.ptr) {
-          pv_write((char *) prompt.v.p.ptr, input, handle);
+          pv_write(prompt.v.p.ptr, input, handle);
         }
       }
 
@@ -768,7 +768,7 @@ void cmd_input(int input) {
         break;
       case PV_STRING:
         // string (SINPUT)
-        inps = strdup((char *)vuser_p->v.p.ptr);
+        inps = strdup(vuser_p->v.p.ptr);
         break;
       case PV_FILE:
         // file (INPUT#)
@@ -857,7 +857,7 @@ void cmd_input(int input) {
               *p = lc;
 
               // next pos
-              inp_p = p + ((next_is_const) ? strlen((char *) ptable[cur_par_idx].var->v.p.ptr) : 1);
+              inp_p = p + ((next_is_const) ? strlen(ptable[cur_par_idx].var->v.p.ptr) : 1);
               if (*p == '\0') {
                 input_is_finished = 1;
               }
@@ -1009,6 +1009,9 @@ bcip_t cmd_push_args(int cmd, bcip_t goto_addr, bcip_t rvid) {
     do {
       byte code = code_peek();  // get next BC
       switch (code) {
+      case kwTYPE_LINE:
+        ready = 1;           // finish flag
+        break;
       case kwTYPE_EOC:       // end of an expression (parameter)
         code_skipnext();     // ignore it
         break;
@@ -1097,6 +1100,9 @@ void cmd_call_unit_udp(int cmd, int udp_tid, bcip_t goto_addr, bcip_t rvid) {
     do {
       byte code = code_peek();    // get next BC
       switch (code) {
+      case kwTYPE_LINE:
+        ready = 1;           // finish flag
+        break;
       case kwTYPE_EOC:       // end of an expression (parameter)
         code_skipnext();     // ignore it
         break;
@@ -1974,7 +1980,7 @@ void cmd_read() {
           vp->v.p.ptr = malloc(len + 1);
           vp->v.p.owner = 1;
           memcpy(vp->v.p.ptr, prog_source + prog_dp, len);
-          *((char *) (vp->v.p.ptr + len)) = '\0';
+          *((vp->v.p.ptr + len)) = '\0';
           vp->v.p.length = len;
           prog_dp += len;
         }
@@ -2317,11 +2323,11 @@ void cmd_wjoin() {
     }
 
     len += el_len;
-    strcat((char *)str->v.p.ptr, (char *)e_str.v.p.ptr);
+    strcat(str->v.p.ptr, e_str.v.p.ptr);
     v_free(&e_str);
 
     if (i != var_p->v.p.length - 1) {
-      strcat((char *)str->v.p.ptr, (char *)del.v.p.ptr);
+      strcat(str->v.p.ptr, del.v.p.ptr);
       len += del_len;
     }
   }
@@ -2365,7 +2371,7 @@ void cmd_datedmy() {
   eval(&arg);
 
   if (arg.type == V_STR) {
-    date_str2dmy((char *) arg.v.p.ptr, &d, &m, &y);
+    date_str2dmy(arg.v.p.ptr, &d, &m, &y);
     v_free(&arg);
   } else {
     // julian
@@ -2423,7 +2429,7 @@ void cmd_timehms() {
 
   if (arg.type == V_STR) {
     // string
-    date_str2hms((char *) arg.v.p.ptr, &h, &m, &s);
+    date_str2hms(arg.v.p.ptr, &h, &m, &s);
     v_free(&arg);
   } else {
     // timer

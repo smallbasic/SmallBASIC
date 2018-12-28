@@ -9,9 +9,6 @@
 
 #include "common/bc.h"
 #include "common/smbas.h"
-#if defined(_UnixOS)
-#include <assert.h>
-#endif
 
 /*
  * Create a bytecode segment
@@ -21,6 +18,8 @@ void bc_create(bc_t *bc) {
   bc->size = BC_ALLOC_INCR;
   bc->count = 0;
   bc->cp = 0;
+  bc->eoc_position = 0;
+  bc->line_position = 0;
 }
 
 /*
@@ -32,6 +31,8 @@ void bc_destroy(bc_t *bc) {
   bc->size = 0;
   bc->count = 0;
   bc->cp = 0;
+  bc->eoc_position = 0;
+  bc->line_position = 0;
 }
 
 /*
@@ -50,19 +51,12 @@ void bc_resize(bc_t *bc, uint32_t new_size) {
 /*
  * add one command
  */
-void bc_add1(bc_t *bc, byte code) {
+void bc_add1(bc_t *bc, char code) {
   if (bc->count + sizeof(byte) >= bc->size) {
     bc_resize(bc, bc->size + BC_ALLOC_INCR);
   }
   bc->ptr[bc->count] = code;
   bc->count++;
-}
-
-/*
- * change one command
- */
-void bc_store1(bc_t *bc, bcip_t offset, byte code) {
-  bc->ptr[offset] = code;
 }
 
 /*
@@ -245,10 +239,25 @@ char *bc_store_string(bc_t *bc, char *src) {
  */
 void bc_eoc(bc_t *bc) {
   if (bc && bc->count &&
-      (bc->ptr[bc->count - 1] != kwTYPE_LINE &&
-       bc->ptr[bc->count - 1] != kwTYPE_EOC)) {
+      (bc->eoc_position == 0 || bc->eoc_position != bc->count - 1)) {
+    // avoid appending multiple kwTYPE_EOCs (or kwTYPE_LINE)
+    bc->eoc_position = bc->count;
     bc_add1(bc, kwTYPE_EOC);
   }
+}
+
+/*
+ * pops any EOC mark at the current position
+ */
+int bc_pop_eoc(bc_t *bc) {
+  int result;
+  if (bc->eoc_position > 0 && bc->eoc_position == bc->count - 1) {
+    bc->eoc_position = 0;
+    result = (bc->ptr[--bc->count] == kwTYPE_EOC);
+  } else {
+    result = 0;
+  }
+  return result;
 }
 
 /*

@@ -1,3 +1,26 @@
+2018-11-11 (0.12.14)
+	CONSOLE: added support for IMAGE command
+
+2018-10-20 (0.12.14)
+	UI: fix navigation when network access down then available
+	UI: changed display of "BLACK" to be a slightly ligher onyx colour.
+	ANDROID: update help tip in scratch window
+
+2018-10-13 (0.12.14)
+	COMMON: fix about page logo
+
+2018-10-09 (0.12.14)
+	COMMON: fix crash when passing zero as format argument to DATEFMT
+
+2018-09-30 (0.12.14)
+	COMMON: fix broken implementation to avoid appending multiple kwTYPE_EOCs (or kwTYPE_LINE)
+
+2018-09-23 (0.12.14)
+	COMMON: fix error message when command "LINE INPUT" attempts to read a non open file
+
+2018-09-23 (0.12.14)
+	COMMON: fix crash when attempting to load an image from a failed network connection
+
 2018-08-08 (0.12.13)
 	SDL: fix incorrect file loading with ALT+1-9 command
 

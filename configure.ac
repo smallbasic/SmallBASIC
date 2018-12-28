@@ -7,7 +7,7 @@ dnl This program is distributed under the terms of the GPL v2.0
 dnl Download the GNU Public License (GPL) from www.gnu.org
 dnl
 
-AC_INIT([smallbasic], [0.12.13])
+AC_INIT([smallbasic], [0.12.14])
 AC_CONFIG_SRCDIR([configure.ac])
 
 AC_CANONICAL_TARGET
@@ -161,6 +161,9 @@ function buildSDL() {
      dnl avoid using MSCRT versions of printf for long double
      PACKAGE_CFLAGS="${PACKAGE_CFLAGS} -D__USE_MINGW_ANSI_STDIO"
 
+     AC_DEFINE(_USE_MATH_DEFINES, 1, [for M_PI in math.h])
+     AC_DEFINE(realpath(F, R), _fullpath(R, F, PATH_MAX), [add missing realpath for system.cpp])
+
      dnl do not depend on cygwin.dll under cygwin build
      PACKAGE_CFLAGS="${PACKAGE_CFLAGS} -mms-bitfields"
      PACKAGE_LIBS="${PACKAGE_LIBS} -lwsock32 -lws2_32 -static-libgcc -static-libstdc++"
@@ -198,6 +201,7 @@ function buildSDL() {
    esac
 
    PACKAGE_CFLAGS="${PACKAGE_CFLAGS} `sdl2-config --cflags` `freetype-config --cflags` -fno-exceptions"
+   CXXFLAGS="${CXXFLAGS} -fno-rtti -std=c++11"
 
    dnl preconfigured values for SDL build
    AC_DEFINE(_SDL, 1, [Defined when building SDL version])
@@ -223,7 +227,6 @@ function buildAndroid() {
    AC_DEFINE(IMPL_DEV_READ, 1, [Implement dev_read()])
    AC_DEFINE(IMPL_DEV_DELAY, 1, [Driver implements dev_delay()])
    AC_DEFINE(IMPL_LOG_WRITE, 1, [Driver implements lwrite()])
-   AC_DEFINE(CPU_BIGENDIAN, 1, [Android uses big-endian])
 
    BUILD_SUBDIRS="src/platform/android"
    AC_SUBST(BUILD_SUBDIRS)
@@ -240,6 +243,13 @@ function buildConsole() {
      *mingw* | pw32* | cygwin*)
         win32="yes"
    esac
+
+   AC_C_BIGENDIAN(
+     AC_DEFINE(CPU_BIGENDIAN, 1, [machine is big-endian]),
+     AC_DEFINE(CPU_LITTLE_ENDIAN, 1, [machine is little-endian]),
+     AC_MSG_ERROR(unknown endianess),
+     AC_MSG_ERROR(universial endianess not supported)
+   )
 
    AM_CONDITIONAL(WITH_CYGWIN_CONSOLE, test $win32 = yes)
    AC_DEFINE(BUILD_CONSOLE, 1, [Building a console based system.])

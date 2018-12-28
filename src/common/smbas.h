@@ -139,8 +139,6 @@ EXTERN char gsb_last_errmsg[SB_ERRMSG_SIZE + 1]; /**< last error message     */
 #define prog_error          ctask->error
 #define comp_error          ctask->error
 #define prog_file           ctask->file
-#define comp_file           prog_file
-#define comp_errmsg         ctask->errmsg
 #define prog_errmsg         ctask->errmsg
 #define prog_length         ctask->sbe.exec.length
 #define prog_ip             ctask->sbe.exec.ip
@@ -195,7 +193,6 @@ EXTERN char gsb_last_errmsg[SB_ERRMSG_SIZE + 1]; /**< last error message     */
 #define comp_udptable       ctask->sbe.comp.udptable
 #define comp_udpcount       ctask->sbe.comp.udpcount
 #define comp_udpsize        ctask->sbe.comp.udpsize
-#define comp_next_field_id  ctask->sbe.comp.next_field_id
 #define comp_use_global_vartable    ctask->sbe.comp.use_global_vartable
 #define comp_stack          ctask->sbe.comp.stack
 #define comp_sp             ctask->sbe.comp.stack.count
@@ -207,8 +204,6 @@ EXTERN char gsb_last_errmsg[SB_ERRMSG_SIZE + 1]; /**< last error message     */
 #define tlab                prog_labtable
 #define tvar                prog_vartable
 #define eval_size           eval_stk_size
-#define data_dp             prog_dp
-#define brun_first_data_ip  data_org
 #define prog_stack_sp       prog_sp
 #define prog_stack_count    prog_stack_sp
 

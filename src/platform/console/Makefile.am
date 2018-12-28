@@ -1,5 +1,5 @@
 # SmallBASIC command line version
-# Copyright(C) 2001-2012 Chris Warren-Smith.
+# Copyright(C) 2001-2018 Chris Warren-Smith.
 #
 # This program is distributed under the terms of the GPL v2.0 or later
 # Download the GNU Public License (GPL) from www.gnu.org
@@ -12,6 +12,7 @@ bin_PROGRAMS = sbasic
 sbasic_SOURCES =    \
   ../console/main.cpp	\
   ../console/device.cpp \
+  ../console/image.cpp \
   ../console/decomp.c
 
 sbasic_LDADD = -L$(top_srcdir)/src/common -lsb_common @PACKAGE_LIBS@

@@ -17,7 +17,7 @@ extern "C" {
 #endif
 
 typedef enum {
-  tsk_free, tsk_ready, tsk_nil
+  tsk_free, tsk_ready
 } task_status_t;
 
 typedef struct timer_s timer_s;

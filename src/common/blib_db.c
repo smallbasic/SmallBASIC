@@ -18,11 +18,17 @@
 
 #include <dirent.h>
 
+#define LDLN_INC    256
+#define GROW_SIZE   1024
+#define BUFMAX      256
+#define CHK_ERR_CLEANUP(s) if (err_handle_error(s, &file_name)) return;
+#define CHK_ERR(s) if (err_handle_error(s, NULL)) return;
+
 struct file_encoded_var {
-  byte sign;                    // always '$'
-  byte version;                 //
-  byte type;
-  uint32_t size;
+  byte sign;     // always '$'
+  byte version;  //
+  byte type;     //
+  uint32_t size; //
 };
 
 /*
@@ -70,7 +76,7 @@ void cmd_fopen() {
       int handle = par_getint();
       if (!prog_error) {
         if (dev_fstatus(handle) == 0) {
-          dev_fopen(handle, (char *)file_name.v.p.ptr, flags);
+          dev_fopen(handle, file_name.v.p.ptr, flags);
         } else {
           rt_raise("OPEN: FILE IS ALREADY OPENED");
         }
@@ -145,7 +151,7 @@ void write_encoded_var(int handle, var_t *var) {
     dev_fwrite(handle, (byte *)&var->v.n, fv.size);
     break;
   case V_STR:
-    fv.size = strlen((char *)var->v.p.ptr);
+    fv.size = strlen(var->v.p.ptr);
     dev_fwrite(handle, (byte *)&fv, sizeof(struct file_encoded_var));
     dev_fwrite(handle, (byte *)var->v.p.ptr, fv.size);
     break;
@@ -201,7 +207,7 @@ int read_encoded_var(int handle, var_t *var) {
     v_new_array(var, fv.size);
 
     // read additional data about array
-    dev_fread(handle, (byte *)&v_maxdim(var), 1);
+    dev_fread(handle, &v_maxdim(var), 1);
     for (int i = 0; i < v_maxdim(var); i++) {
       dev_fread(handle, (byte *)&v_lbound(var, i), sizeof(int));
       dev_fread(handle, (byte *)&v_ubound(var, i), sizeof(int));
@@ -235,12 +241,13 @@ void cmd_fwrite() {
         if (!dev_fstatus(handle)) {
           // dev_fwrite(handle, "\n", 1);
         } else {
-          rt_raise("FIO: FILE IS NOT OPENED");
+          rt_raise(ERR_FILE_NOT_OPEN);
         }
         return;
       }
 
-      par_getsep();             // allow commas
+      // allow commas
+      par_getsep();
 
       if (!prog_error) {
         if (dev_fstatus(handle)) {
@@ -271,7 +278,7 @@ void cmd_fwrite() {
             }
           } while (!exitf);
         } else {
-          rt_raise("FIO: FILE IS NOT OPENED");
+          rt_raise(ERR_FILE_NOT_OPEN);
         }
       }
     }
@@ -290,7 +297,8 @@ void cmd_fread() {
       return;
     }
 
-    par_getsep();               // allow commas
+    // allow commas
+    par_getsep();
     if (prog_error) {
       return;
     }
@@ -313,13 +321,55 @@ void cmd_fread() {
         // next
         byte code = code_peek();
         if (code == kwTYPE_SEP) {
-          par_getsep();         // allow commas
+          // allow commas
+          par_getsep();
         } else {
           break;
         }
       } while (1);
     } else {
-      rt_raise("FIO: FILE IS NOT OPENED");
+      rt_raise(ERR_FILE_NOT_OPEN);
+    }
+  }
+}
+
+void cmd_read_variable(int handle) {
+  byte code = code_peek();
+  if (code != kwTYPE_VAR) {
+    err_syntax(kwLINEINPUT, "%P");
+  } else {
+    var_t *var_p = code_getvarptr();
+    if (!prog_error) {
+      v_free(var_p);
+      int size = BUFMAX;
+      int index = 0;
+      byte ch;
+
+      var_p->type = V_STR;
+      var_p->v.p.ptr = malloc(size);
+
+      // READ IT
+      while (!dev_feof(handle)) {
+        dev_fread(handle, &ch, 1);
+        if (prog_error) {
+          v_free(var_p);
+          var_p->type = V_INT;
+          var_p->v.i = -1;
+          return;
+        } else if (ch == '\n') {
+          break;
+        } else if (ch != '\r') {
+          // store char
+          if (index == (size - 1)) {
+            size += BUFMAX;
+            var_p->v.p.ptr = realloc(var_p->v.p.ptr, size);
+          }
+          var_p->v.p.ptr[index] = ch;
+          index++;
+        }
+      }
+      var_p->v.p.ptr[index] = '\0';
+      var_p->v.p.length = index + 1;
     }
   }
 }
@@ -332,59 +382,17 @@ void cmd_flineinput() {
     //
     // FILE OR DEVICE
     //
-
-    // file handle
     par_getsharp();
     if (!prog_error) {
       int handle = par_getint();
       if (!prog_error) {
-        // par_getsemicolon();
-        par_getsep();           // allow commas
+        // allow commas
+        par_getsep();
         if (!prog_error) {
           if (dev_fstatus(handle)) {
-            // get the variable
-            byte code = code_peek();
-            if (code != kwTYPE_VAR) {
-              err_syntax(kwLINEINPUT, "%P");
-              return;
-            }
-            var_t *var_p = code_getvarptr();
-            if (!prog_error) {
-              v_free(var_p);
-              int size = 256;
-              int index = 0;
-              byte ch;
-
-              var_p->type = V_STR;
-              var_p->v.p.ptr = malloc(size);
-
-              // READ IT
-              while (!dev_feof(handle)) {
-                dev_fread(handle, &ch, 1);
-                if (prog_error) {
-                  v_free(var_p);
-                  var_p->type = V_INT;
-                  var_p->v.i = -1;
-                  return;
-                } else if (ch == '\n') {
-                  break;
-                }
-                else if (ch != '\r') {
-                  // store char
-                  if (index == (size - 1)) {
-                    size += 256;
-                    var_p->v.p.ptr = realloc(var_p->v.p.ptr, size);
-                  }
-                  var_p->v.p.ptr[index] = ch;
-                  index++;
-                }
-              }
-              var_p->v.p.ptr[index] = '\0';
-              var_p->v.p.length = index + 1;
-            }
-            else {
-              rt_raise("FIO: FILE IS NOT OPENED");
-            }
+            cmd_read_variable(handle);
+          } else {
+            rt_raise(ERR_FILE_NOT_OPEN);
           }
         }
       }
@@ -398,7 +406,7 @@ void cmd_flineinput() {
       v_free(var_p);
       var_p->type = V_STR;
       var_p->v.p.ptr = calloc(SB_TEXTLINE_SIZE + 1, 1);
-      dev_gets((char *)var_p->v.p.ptr, SB_TEXTLINE_SIZE);
+      dev_gets(var_p->v.p.ptr, SB_TEXTLINE_SIZE);
       var_p->v.p.length = strlen(var_p->v.p.ptr);
       dev_print("\n");
     }
@@ -417,8 +425,8 @@ void cmd_fkill() {
   if (prog_error) {
     return;
   }
-  if (dev_fexists((char *)file_name.v.p.ptr)) {
-    dev_fremove((char *)file_name.v.p.ptr);
+  if (dev_fexists(file_name.v.p.ptr)) {
+    dev_fremove(file_name.v.p.ptr);
   }
   v_free(&file_name);
 }
@@ -447,11 +455,11 @@ void cmd_filecp(int mv) {
     return;
   }
 
-  if (dev_fexists((char *)src.v.p.ptr)) {
+  if (dev_fexists(src.v.p.ptr)) {
     if (!mv) {
-      dev_fcopy((char *)src.v.p.ptr, (char *)dst.v.p.ptr);
+      dev_fcopy(src.v.p.ptr, dst.v.p.ptr);
     } else {
-      dev_frename((char *)src.v.p.ptr, (char *)dst.v.p.ptr);
+      dev_frename(src.v.p.ptr, dst.v.p.ptr);
     }
   } else {
     rt_raise("COPY/RENAME: FILE DOES NOT EXIST");
@@ -472,7 +480,7 @@ void cmd_chdir() {
   if (prog_error) {
     return;
   }
-  dev_chdir((char *)dir.v.p.ptr);
+  dev_chdir(dir.v.p.ptr);
   v_free(&dir);
 }
 
@@ -488,7 +496,7 @@ void cmd_rmdir() {
   if (prog_error) {
     return;
   }
-  dev_rmdir((char *)dir.v.p.ptr);
+  dev_rmdir(dir.v.p.ptr);
   v_free(&dir);
 }
 
@@ -504,22 +512,16 @@ void cmd_mkdir() {
   if (prog_error) {
     return;
   }
-  dev_mkdir((char *)dir.v.p.ptr);
+  dev_mkdir(dir.v.p.ptr);
   v_free(&dir);
 }
 
 /*
- *   load text-file to string or to array
- *   Modified 2-May-2002 Chris Warren-Smith. Implemented buffered read
+ * load text-file to string or to array
+ * Modified 2-May-2002 Chris Warren-Smith. Implemented buffered read
  *
- *   TLOAD filename, variable [, type]
+ * TLOAD filename, variable [, type]
  */
-#define LDLN_INC    256
-#define GROW_SIZE   1024
-#define BUFMAX      256
-#define CHK_ERR_CLEANUP(s) if (err_handle_error(s, &file_name)) return;
-#define CHK_ERR(s) if (err_handle_error(s, NULL)) return;
-
 void cmd_floadln() {
   var_t file_name, *array_p = NULL, *var_p = NULL;
   int flags = DEV_FILE_INPUT;
@@ -573,7 +575,7 @@ void cmd_floadln() {
     if (v_strlen(&file_name) == 0) {
       err_throw(FSERR_NOT_FOUND);
     } else {
-      dev_fopen(handle, (char *)file_name.v.p.ptr, flags);
+      dev_fopen(handle, file_name.v.p.ptr, flags);
     }
     v_free(&file_name);
     CHK_ERR(FSERR_GENERIC);
@@ -710,7 +712,7 @@ void cmd_fsaveln() {
       return;
     }
 
-    int success = dev_fopen(handle, (char *)file_name.v.p.ptr, flags);
+    int success = dev_fopen(handle, file_name.v.p.ptr, flags);
     v_free(&file_name);
     CHK_ERR(FSERR_GENERIC);
     if (!success) {
@@ -771,7 +773,7 @@ void cmd_chmod() {
     return;
   }
 
-  chmod((char *)str.v.p.ptr, mode);
+  chmod(str.v.p.ptr, mode);
   v_free(&str);
 }
 
@@ -826,8 +828,7 @@ void dirwalk(char *dir, char *wc, bcip_t use_ip, int depth) {
     }
     if (strlen(dir) + strlen(dp->d_name) + 2 > OS_PATHNAME_SIZE) {
       rt_raise("DIRWALK: name %s/%s too long", dir, dp->d_name);
-    }
-    else {
+    } else {
       // check filename
       int callusr;
       int contf = 1;
@@ -835,8 +836,7 @@ void dirwalk(char *dir, char *wc, bcip_t use_ip, int depth) {
 
       if (!wc) {
         callusr = 1;
-      }
-      else {
+      } else {
         callusr = wc_match(wc, dp->d_name);
       }
 
@@ -920,7 +920,8 @@ void cmd_bputc() {
     if (prog_error) {
       return;
     }
-    par_getsep();               // allow commas
+    // allow commas
+    par_getsep();
     if (prog_error) {
       return;
     }

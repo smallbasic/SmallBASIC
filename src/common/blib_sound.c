@@ -39,7 +39,7 @@ void cmd_beep() {
 // SOUND frq, dur [, vol] [BG]
 //
 void cmd_sound() {
-  int frq, ms = 250, vol = 100;
+  int frq, ms, vol = 100;
   int bg = 0;
 
   frq = par_getint();
@@ -113,7 +113,7 @@ void cmd_play() {
   str = (char *) malloc(var.v.p.length + 1);
 
   // copy without spaces
-  p = (char *) var.v.p.ptr;
+  p = var.v.p.ptr;
   s = str;
   while (*p) {
     if (*p > 32) {

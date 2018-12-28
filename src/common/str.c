@@ -288,7 +288,7 @@ char *strlower(char *str) {
  * Warning: octals are different from C (QB compatibility: 009 = 9)
  */
 char *get_numexpr(char *text, char *dest, int *type, var_int_t *lv, var_num_t *dv) {
-  char *p = (char *)text;
+  char *p = text;
   char *d = dest;
   char *epos = NULL;
   byte base = 10;

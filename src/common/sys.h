@@ -87,11 +87,6 @@ extern "C" {
 #define SWAP(a,b,c) ( (c) = (a), (a) = (b), (b) = (c) ) // swap values
 #define FLOOR(a)    ((a)>0 ? (int)(a) : -(int)(-a))     // floor
 #define CEILING(a)  ((a)==(int)(a) ? (a) : (a)>0 ? 1+(int)(a) : -(1+(int)(-a)))
-#define ROUND(a)    ((a)>0 ? (int)(a+0.5) : -(int)(0.5-a)) // round
-#define ISWAP(a,b)  ( a^=b, b^=a, a^=b )                // integer swap
-#define I2MIN(a,b)      ( ((a) < (b)) ? (a) : (b) )     // min
-#define I2MAX(a,b)      ( ((a) > (b)) ? (a) : (b) )     // max
-#define CLAMP(v,l,h)    ((v)<(l) ? (l) : (v) > (h) ? (h) : v) // clamp to specified range
 
 #if !defined(NULL)
 #define NULL (void*)0L

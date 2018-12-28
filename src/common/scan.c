@@ -26,27 +26,29 @@ bcip_t comp_next_bc_cmd(bc_t *bc, bcip_t ip);
 extern void expr_parser(bc_t *bc);
 
 #define STRLEN(s) ((sizeof(s) / sizeof(s[0])) - 1)
-#define LEN_OPTION     STRLEN(LCN_OPTION)
-#define LEN_IMPORT     STRLEN(LCN_IMPORT_WRS)
-#define LEN_UNIT       STRLEN(LCN_UNIT_WRS)
-#define LEN_SBASICPATH STRLEN(LCN_SBASICPATH)
-#define LEN_INC        STRLEN(LCN_INC)
-#define LEN_SUB_WRS    STRLEN(LCN_SUB_WRS)
-#define LEN_FUNC_WRS   STRLEN(LCN_FUNC_WRS)
-#define LEN_DEF_WRS    STRLEN(LCN_DEF_WRS)
-#define LEN_END_WRS    STRLEN(LCN_END_WRS)
-#define LEN_END_SELECT STRLEN(LCN_END_SELECT)
-#define LEN_END_TRY    STRLEN(LCN_END_TRY)
-#define LEN_PREDEF     STRLEN(LCN_PREDEF)
-#define LEN_QUIET      STRLEN(LCN_QUIET)
-#define LEN_GRMODE     STRLEN(LCN_GRMODE)
-#define LEN_TEXTMODE   STRLEN(LCN_TEXTMODE)
-#define LEN_COMMAND    STRLEN(LCN_COMMAND)
-#define LEN_SHOWPAGE   STRLEN(LCN_SHOWPAGE)
-#define LEN_ANTIALIAS  STRLEN(LCN_ANTIALIAS)
-#define LEN_LDMODULES  STRLEN(LCN_LOAD_MODULES)
-#define LEN_AUTOLOCAL  STRLEN(LCN_AUTOLOCAL)
-#define LEN_AS_WRS     STRLEN(LCN_AS_WRS)
+const int LEN_OPTION     = STRLEN(LCN_OPTION);
+const int LEN_IMPORT     = STRLEN(LCN_IMPORT_WRS);
+const int LEN_UNIT       = STRLEN(LCN_UNIT_WRS);
+const int LEN_SBASICPATH = STRLEN(LCN_SBASICPATH);
+const int LEN_INC        = STRLEN(LCN_INC);
+const int LEN_SUB_WRS    = STRLEN(LCN_SUB_WRS);
+const int LEN_FUNC_WRS   = STRLEN(LCN_FUNC_WRS);
+const int LEN_DEF_WRS    = STRLEN(LCN_DEF_WRS);
+const int LEN_END_WRS    = STRLEN(LCN_END_WRS);
+const int LEN_END_SELECT = STRLEN(LCN_END_SELECT);
+const int LEN_END_TRY    = STRLEN(LCN_END_TRY);
+const int LEN_PREDEF     = STRLEN(LCN_PREDEF);
+const int LEN_QUIET      = STRLEN(LCN_QUIET);
+const int LEN_GRMODE     = STRLEN(LCN_GRMODE);
+const int LEN_TEXTMODE   = STRLEN(LCN_TEXTMODE);
+const int LEN_COMMAND    = STRLEN(LCN_COMMAND);
+const int LEN_SHOWPAGE   = STRLEN(LCN_SHOWPAGE);
+const int LEN_ANTIALIAS  = STRLEN(LCN_ANTIALIAS);
+const int LEN_LDMODULES  = STRLEN(LCN_LOAD_MODULES);
+const int LEN_AUTOLOCAL  = STRLEN(LCN_AUTOLOCAL);
+const int LEN_AS_WRS     = STRLEN(LCN_AS_WRS);
+
+#define KW_TYPE_LINE_BYTES 5
 
 #define SKIP_SPACES(p)                          \
   while (*p == ' ' || *p == '\t') {             \
@@ -58,6 +60,13 @@ extern void expr_parser(bc_t *bc);
 
 #define GROWSIZE 128
 #define MAX_PARAMS 256
+
+// the offset to a single byte stored in an 32 bit field
+#if defined(CPU_BIGENDIAN)
+ #define BYTE_OFFSET_IN_32 4
+#else
+ #define BYTE_OFFSET_IN_32 1
+#endif
 
 typedef struct  {
   byte *code;
@@ -438,7 +447,7 @@ bid_t comp_add_udp(const char *proc_name) {
 /*
  * sets the IP of the user-defined-procedure (or function)
  */
-bid_t comp_udp_setip(const char *proc_name, bcip_t ip) {
+bid_t comp_udp_setip(const char *proc_name) {
   bid_t idx;
   char *name = comp_bc_temp;
 
@@ -473,7 +482,7 @@ bcip_t comp_udp_getip(const char *proc_name) {
  * parameters string-section
  */
 char *get_param_sect(char *text, const char *delim, char *dest) {
-  char *p = (char *)text;
+  char *p = text;
   char *d = dest;
   int quotes = 0, level = 0, skip_ch = 0;
   int curley_brace = 0;
@@ -1150,7 +1159,7 @@ char *comp_scan_json(char *json, bc_t *bc) {
  * scan expression
  */
 void comp_expression(char *expr, byte no_parser) {
-  char *ptr = (char *)expr;
+  char *ptr = expr;
   int level = 0, check_udf = 0;
   int kw_exec_more = 0;
   var_int_t lv = 0;
@@ -1678,7 +1687,7 @@ char *comp_getlist_insep(char *source, char_p_t *args, char *sep, int maxarg, in
  */
 int comp_single_line_if(char *text) {
   // *text points to 'expr'
-  char *p = (char *)text;
+  char *p = text;
   char *pthen, *pelse;
   char buf[SB_SOURCELINE_SIZE + 1];
 
@@ -1840,7 +1849,12 @@ char *comp_array_params(char *src, char exitChar) {
             *se = '\0';
             bc_add_code(&comp_prog, kwTYPE_LEVEL_BEGIN);
             comp_expression(ss, 0);
-            bc_store1(&comp_prog, comp_prog.count - 1, kwTYPE_LEVEL_END);
+            // overwrite kwTYPE_EOC with kwTYPE_LEVEL_END
+            if (!bc_pop_eoc(&comp_prog)) {
+              sc_raise(ERR_UNSUPPORTED);
+            }
+            bc_add_code(&comp_prog, kwTYPE_LEVEL_END);
+            comp_prog.eoc_position = 0;
             *ss = ssSave;
             *se = seSave;
             ss = se = NULL;
@@ -2142,9 +2156,9 @@ void comp_text_line_func(bid_t idx, int decl) {
     } else {
       // setup routine's address (and get an id)
       int pidx;
-      if ((pidx = comp_udp_setip(pname, comp_prog.count)) == -1) {
+      if ((pidx = comp_udp_setip(pname)) == -1) {
         pidx = comp_add_udp(pname);
-        comp_udp_setip(pname, comp_prog.count);
+        comp_udp_setip(pname);
       }
       // put JMP to the next command after the END
       // (now we just keep the rq space, pass2 will update that)
@@ -2379,9 +2393,8 @@ void comp_text_line_for() {
  * Insert the local variables detected during sub/func processing
  */
 void comp_insert_locals() {
-  int i;
   int count_local = 0;
-  for (i = 0; i < comp_varcount; i++) {
+  for (int i = 0; i < comp_varcount; i++) {
     if (comp_vartable[i].local_id != -1 &&
         comp_vartable[i].local_proc_level == comp_proc_level) {
       count_local++;
@@ -2390,7 +2403,7 @@ void comp_insert_locals() {
 
   comp_pass_node_t *node;
   bcip_t pos_goto = INVALID_ADDR;
-  for (i = comp_stack.count - 1; i >= 0; i--) {
+  for (int i = comp_stack.count - 1; i >= 0; i--) {
     node = comp_stack.elem[i];
     if (comp_prog.ptr[node->pos] == kwGOTO &&
         node->block_id != -1 &&
@@ -2422,7 +2435,7 @@ void comp_insert_locals() {
       memcpy(comp_prog.ptr + pos_goto + 1, &ip, ADDRSZ);
       bc_add_code(&comp_prog, kwTYPE_CRVAR);
       bc_add_code(&comp_prog, count_local);
-      for (i = 0; i < comp_varcount; i++) {
+      for (int i = 0; i < comp_varcount; i++) {
         if (comp_vartable[i].local_id != -1 &&
             comp_vartable[i].local_proc_level == comp_proc_level) {
           bc_add_addr(&comp_prog, comp_vartable[i].local_id);
@@ -2804,6 +2817,24 @@ int comp_text_line_command(bid_t idx, int decl, int sharp, char *last_cmd) {
   return result;
 }
 
+void add_line_no() {
+  if (comp_prog.line_position == 0 ||
+      comp_prog.line_position != (comp_prog.count - KW_TYPE_LINE_BYTES)) {
+    // not an adjoining kwTYPE_LINE
+    if (!opt_autolocal && comp_prog.eoc_position == comp_prog.count - 1) {
+      // overwrite any adjoining kwTYPE_EOC (can't do this with autolocal)
+      if (!bc_pop_eoc(&comp_prog)) {
+        sc_raise(ERR_UNSUPPORTED);
+      }
+    }
+
+    // prevent adjoining kwTYPE_LINEs
+    comp_prog.line_position = comp_prog.count;
+    bc_add_code(&comp_prog, kwTYPE_LINE);
+    bc_add_addr(&comp_prog, comp_line);
+  }
+}
+
 /*
  * Pass 1: scan source line
  */
@@ -2862,9 +2893,7 @@ void comp_text_line(char *text, int addLineNo) {
     return;
   }
   if (addLineNo) {
-    // add debug info: line-number
-    bc_add_code(&comp_prog, kwTYPE_LINE);
-    bc_add_addr(&comp_prog, comp_line);
+    add_line_no();
   }
   if (idx == -1) {
     idx = comp_is_proc(comp_bc_name);
@@ -3370,6 +3399,11 @@ void comp_pass2_scan() {
         memcpy(&label_id, comp_prog.ptr + node->pos + (j * ADDRSZ) + (ADDRSZ + ADDRSZ + 3), ADDRSZ);
         label = comp_labtable.elem[label_id];
         w = label->ip;
+
+        // adjust the address to compensate for optimisation to remove adjoining kwEOC
+        if (comp_prog.ptr[w] != kwTYPE_LINE && comp_prog.ptr[w - 1] == kwTYPE_LINE) {
+          w--;
+        }
         memcpy(comp_prog.ptr + node->pos + (j * ADDRSZ) + (ADDRSZ + ADDRSZ + 3), &w, ADDRSZ);
       }
       break;
@@ -3384,8 +3418,13 @@ void comp_pass2_scan() {
         label = comp_labtable.elem[label_id];
         w = label->ip;
 
+        // adjust the address to compensate for optimisation to remove adjoining kwEOC
+        if (comp_prog.ptr[w] != kwTYPE_LINE && comp_prog.ptr[w - 1] == kwTYPE_LINE) {
+          w--;
+        }
+
         // number of POPs
-        level = comp_prog.ptr[node->pos + (ADDRSZ + 1)];
+        level = comp_prog.ptr[node->pos + (ADDRSZ + BYTE_OFFSET_IN_32)];
         if (level >= label->level) {
           comp_prog.ptr[node->pos + (ADDRSZ + 1)] = level - label->level;
         } else {
@@ -3626,7 +3665,7 @@ void comp_pass2_scan() {
 
     case kwFUNC_RETURN:
       // address for the FUNCs kwTYPE_RET
-      level = comp_prog.ptr[node->pos + 1];
+      level = comp_prog.ptr[node->pos + BYTE_OFFSET_IN_32];
       true_ip = comp_search_bc_stack(i + 1, kwTYPE_RET, level, -1);
       if (true_ip != INVALID_ADDR) {
         // otherwise error handled elsewhere
@@ -3690,13 +3729,15 @@ bcip_t comp_optimise_let(bcip_t ip, byte kw_opr, char sep, byte opt_kw) {
   bcip_t ip_next = ip + 1;
   if (comp_prog.ptr[ip_next] == kwTYPE_VAR) {
     ip_next += 1 + sizeof(bcip_t);
-    while (ip_next < comp_prog.count && comp_prog.ptr[ip_next] != kwTYPE_EOC) {
+    while (ip_next < comp_prog.count && comp_prog.ptr[ip_next] != kwTYPE_EOC
+           && comp_prog.ptr[ip_next] != kwTYPE_LINE) {
       if (comp_prog.ptr[ip_next] == kw_opr &&
           comp_prog.ptr[ip_next + 1] == sep) {
         ip_next += 2;
         if (ip_next < comp_prog.count &&
             comp_prog.ptr[ip_next] == kwTYPE_VAR &&
-            comp_prog.ptr[ip_next + 1 + sizeof(bcip_t)] == kwTYPE_EOC) {
+            (comp_prog.ptr[ip_next + 1 + sizeof(bcip_t)] == kwTYPE_EOC ||
+             comp_prog.ptr[ip_next + 1 + sizeof(bcip_t)] == kwTYPE_LINE)) {
           comp_prog.ptr[ip] = opt_kw;
           ip = ip_next;
         }
@@ -3722,6 +3763,12 @@ void comp_optimise() {
       break;
     case kwAPPEND:
       ip = comp_optimise_let(ip, kwTYPE_SEP, ',', kwAPPEND_OPT);
+      break;
+    case kwTYPE_EOC:
+      if (!opt_autolocal &&
+          (comp_prog.ptr[ip + 1] == kwTYPE_EOC || comp_prog.ptr[ip + 1] == kwTYPE_LINE)) {
+        sc_raise(ERR_UNSUPPORTED);
+      }
       break;
     default:
       break;
@@ -3885,21 +3932,24 @@ char *comp_load(const char *file_name) {
 }
 
 const char *format_numeric_text(const char *str, char **output) {
-  const char *result = str;
+  const char *result = str + 1;
   int value = 0;
   int digits = 0;
 
-  while (isdigit(*str)) {
-    value = (value << 3) + (*str - '0');
+  while (isdigit(*result)) {
+    value = (value << 3) + (*result - '0');
     digits++;
-    str++;
+    result++;
   }
 
   if (digits == 3 && value > V_JOIN_LINE && value < 256) {
     **output = value;
-    (*output)++;
-    result = str;
+  } else {
+    **output = *str;
+    result = str + 1;
   }
+
+  (*output)++;
 
   return result;
 }
@@ -4113,7 +4163,7 @@ char *comp_format_text(const char *source) {
         // new line auto-ends the quoted string
         quotes = !quotes;
       } else if (*p == '\\') {
-        p = format_numeric_text(p + 1, &ps);
+        p = format_numeric_text(p, &ps);
         continue;
       }
       *ps++ = *p++;

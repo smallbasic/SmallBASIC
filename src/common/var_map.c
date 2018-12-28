@@ -17,7 +17,6 @@
 #define BUFFER_GROW_SIZE 64
 #define BUFFER_PADDING   10
 #define TOKEN_GROW_SIZE  16
-#define ARRAY_GROW_SIZE  8
 
 /**
  * Container for map_from_str
@@ -26,7 +25,6 @@ typedef struct JsonTokens {
   const char *js;
   jsmntok_t *tokens;
   int num_tokens;
-  int code_array;
 } JsonTokens;
 
 struct ArrayNode;

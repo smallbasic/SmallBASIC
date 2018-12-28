@@ -164,7 +164,6 @@ enum keyword {                // line 50
   kwFILEREAD,
   kwCLOSE,
   kwSEEK,
-  kwTYPE,
   kwSPRINT,
   kwDO,
   kwOPTION,
@@ -189,7 +188,6 @@ enum keyword {                // line 50
  */
 enum proc_keywords {
   kwCLS = 0x100,              // 256 (generic keywords)
-  kwSHELL,
   kwENVIRON,
   kwLOCATE,
   kwAT,
@@ -394,7 +392,6 @@ enum func_keywords {
   kwBIN,
   kwENCLOSE,
   kwDISCLOSE,
-  kwSEARCHF,
   kwTRANSLATEF,
   kwCHOP,
   kwBGETC,
@@ -473,7 +470,6 @@ int kw_getprocname(bid_t code, char *dest);
 int kw_noarg_func(bid_t code);
 
 #define OPTION_BASE                     1
-#define OPTION_GRMODE                   3
 #define OPTION_MATCH                    4
 
 #if defined(__cplusplus)

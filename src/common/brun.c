@@ -694,6 +694,20 @@ static inline void bc_loop_end() {
   prog_error = errEnd;
 }
 
+void bc_loop_goto() {
+  bcip_t next_ip = code_getaddr();
+
+  // clear the stack
+  byte pops = code_getnext();
+  while (pops > 0) {
+    code_pop_and_free();
+    pops--;
+  }
+
+  // jump
+  prog_ip = next_ip;
+}
+
 /**
  * execute commands (loop)
  *
@@ -703,7 +717,6 @@ static inline void bc_loop_end() {
  */
 void bc_loop(int isf) {
   byte pops;
-  bcip_t next_ip;
   int i;
   int proc_level = 0;
   byte code = 0;
@@ -781,17 +794,7 @@ void bc_loop(int isf) {
         cmd_packed_let();
         break;
       case kwGOTO:
-        next_ip = code_getaddr();
-
-        // clear the stack (whatever you can)
-        pops = code_getnext();
-        while (pops > 0) {
-          code_pop_and_free();
-          pops--;
-        }
-
-        // jump
-        prog_ip = next_ip;
+        bc_loop_goto();
         continue;
       case kwGOSUB:
         cmd_gosub();

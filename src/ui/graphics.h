@@ -1,6 +1,6 @@
 // This file is part of SmallBASIC
 //
-// Copyright(C) 2001-2015 Chris Warren-Smith.
+// Copyright(C) 2001-2018 Chris Warren-Smith.
 //
 // This program is distributed under the terms of the GPL v2.0 or later
 // Download the GNU Public License (GPL) from www.gnu.org
@@ -11,6 +11,7 @@
 
 #include "lib/maapi.h"
 #include "ui/strlib.h"
+#include "ui/rgb.h"
 #include "ui/canvas.h"
 
 #include <ft2build.h>
@@ -20,37 +21,6 @@
 #define MAX_GLYPHS 256
 
 using namespace strlib;
-
-inline void RGB888_to_RGB(pixel_t c, uint8_t &r, uint8_t &g, uint8_t &b) {
-  r = (c & 0xff0000) >> 16;
-  g = (c & 0xff00) >> 8;
-  b = (c & 0xff);
-}
-
-inline pixel_t RGB888_to_RGBA8888(unsigned c) {
-  uint8_t r = (c & 0xff0000) >> 16;
-  uint8_t g = (c & 0xff00) >> 8;
-  uint8_t b = (c & 0xff);
-  return ((0xff000000) | (b << 16) | (g << 8) | (r));
-}
-
-inline void RGB888_BE_to_RGB(pixel_t c, uint8_t &r, uint8_t &g, uint8_t &b) {
-  b = (c & 0xff0000) >> 16;
-  g = (c & 0xff00) >> 8;
-  r = (c & 0xff);
-}
-
-#if defined(PIXELFORMAT_RGBA8888)
-  #define SET_RGB(r, g, b) ((0xff000000) | (r << 16) | (g << 8) | (b))
-  #define GET_RGB RGB888_to_RGB
-  #define GET_RGB2 RGB888_to_RGB
-  #define GET_FROM_RGB888 RGB888_to_RGBA8888
-#else
-  #define SET_RGB(r, g, b) ((r << 16) | (g << 8) | (b))
-  #define GET_RGB  RGB888_to_RGB
-  #define GET_RGB2 RGB888_to_RGB
-  #define GET_FROM_RGB888(c) (c)
-#endif
 
 namespace ui {
 

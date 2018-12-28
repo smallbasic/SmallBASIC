@@ -158,7 +158,7 @@ int dev_input_insert_char(int ch, char *dest, int pos, int replace_mode) {
   // store character into buffer
   if (replace_mode) {
     // overwrite mode
-    remain = strlen((char *)(dest + pos));
+    remain = strlen((dest + pos));
     buf = malloc(remain + 1);
     strcpy(buf, dest + pos);
     memcpy(dest + pos, cstr, count);
@@ -170,17 +170,17 @@ int dev_input_insert_char(int ch, char *dest, int pos, int replace_mode) {
       count = 1;
     }
     if (buf[0]) {                // not a '\0'
-      strcat((char *)dest, (char *)(buf + count));
+      strcat(dest, (buf + count));
     }
     free(buf);
   } else {
     // insert mode
-    remain = strlen((char *)(dest + pos));
+    remain = strlen((dest + pos));
     buf = malloc(remain + 1);
     strcpy(buf, dest + pos);
     memcpy(dest + pos, cstr, count);
     dest[pos + count] = '\0';
-    strcat((char *)dest, (char *)buf);
+    strcat(dest, buf);
     free(buf);
   }
 
@@ -201,12 +201,12 @@ int dev_input_remove_char(char *dest, int pos) {
     } else {
       count = 1;
     }
-    remain = strlen((char *)(dest + pos + 1));
+    remain = strlen((dest + pos + 1));
     buf = malloc(remain + 1);
     strcpy(buf, dest + pos + count);
 
     dest[pos] = '\0';
-    strcat((char *)dest, (char *)buf);
+    strcat(dest, buf);
     free(buf);
     return count;
   }
@@ -384,7 +384,6 @@ void log_printf(const char *format, ...) {
 }
 
 #if defined(BUILD_CONSOLE)
-void v_create_image(var_p_t var) {}
 void v_create_form(var_p_t var) {}
 void v_create_window(var_p_t var) {}
 void dev_show_page() {}

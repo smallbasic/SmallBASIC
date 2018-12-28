@@ -282,6 +282,7 @@ extern "C" void v_create_form(var_p_t var) {
   }
 
   if (hasInputs) {
+    set_input_defaults(out->getColor(), out->getBackgroundColor());
     map_set(var, arg);
     var_p_t v_focus = map_get(var, FORM_FOCUS);
     unsigned i_focus = v_focus != NULL ? v_getint(v_focus) : -1;

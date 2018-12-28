@@ -142,3 +142,26 @@ cache = {}
 for i = 0 to 8096
   cache[i] = "."
 next i
+
+'
+' regression modifying kwTYPE_EOC
+'
+func GridClass()
+  sub setCellValue(a)
+    ? a
+  end
+  local result = {}
+  result.setCellValue = @setCellValue
+  return result
+end
+func Game()
+  sub start()
+    self.grid.setCellValue(10)
+  end
+  local result = {}
+  result.grid = GridClass()
+  result.start = @start
+  return result
+end
+g = Game()
+g.start()

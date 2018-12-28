@@ -14,22 +14,19 @@
 #include <time.h>
 
 int sockcl_open(dev_file_t *f) {
-  char *p;
-  int port;
-  char server[129];
-
   // open "SOCL:smallbasic.sf.net:80" as #1
   // open "SOCL:80" as #2
   f->drv_dw[0] = 1;
-  p = strchr(f->name + 5, ':');
+  char *p = strchr(f->name + 5, ':');
   if (!p) {
-    port = xstrtol(f->name + 5);
+    int port = xstrtol(f->name + 5);
     f->handle = (int) net_listen(port);
   } else {
     *p = '\0';
+    char server[255];
     strlcpy(server, f->name + 5, sizeof(server));
     *p = ':';
-    port = xstrtol(p + 1);
+    int port = xstrtol(p + 1);
     f->handle = (int) net_connect(server, port);
   }
 

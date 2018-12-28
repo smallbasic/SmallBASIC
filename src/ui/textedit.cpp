@@ -978,11 +978,7 @@ void TextEditInput::updateField(var_p_t form) {
 bool TextEditInput::updateUI(var_p_t form, var_p_t field) {
   bool updated = (form && field) ? FormInput::updateUI(form, field) : false;
   if (!_theme) {
-    if (_fg == DEFAULT_FOREGROUND && _bg == DEFAULT_BACKGROUND) {
-      _theme = new EditTheme();
-    } else {
-      _theme = new EditTheme(_fg, _bg);
-    }
+    _theme = new EditTheme();
     updated = true;
   }
   return updated;

@@ -176,3 +176,8 @@ if expect != seq(0, 2*pi, 360/15+1) then throw "SEQ error"
 
 s="Hello\033There"
 if (27 != asc(mid(s, 6, 1))) then throw "err"
+rem Non escaping '\' should appear verbatim
+s= "a\c\e"
+if mid(s, 2, 1) != "\\" then throw s
+if mid(s, 4, 1) != "\\" then throw s
+

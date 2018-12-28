@@ -247,17 +247,22 @@ ImageBuffer *load_image(dev_file_t *filep) {
     unsigned w, h;
     unsigned char *image;
     unsigned error = 0;
+    unsigned network_error = 0;
     var_t *var_p;
 
     switch (filep->type) {
     case ft_http_client:
       // open "http://localhost/image1.gif" as #1
-      var_p = v_new();
-      http_read(filep, var_p);
-      error = lodepng_decode32(&image, &w, &h, (unsigned char *)var_p->v.p.ptr,
-                               var_p->v.p.length);
-      v_free(var_p);
-      v_detach(var_p);
+      if (filep->handle == -1) {
+        network_error = 1;
+      } else {
+        var_p = v_new();
+        http_read(filep, var_p);
+        error = lodepng_decode32(&image, &w, &h, (unsigned char *)var_p->v.p.ptr,
+                                 var_p->v.p.length);
+        v_free(var_p);
+        v_detach(var_p);
+      }
       break;
     case ft_stream:
       error = lodepng_decode32_file(&image, &w, &h, filep->name);
@@ -266,7 +271,11 @@ ImageBuffer *load_image(dev_file_t *filep) {
       error = 1;
       break;
     }
-    if (!error) {
+    if (network_error) {
+      err_throw(ERR_IMAGE_LOAD, ERR_NETWORK);
+    } else if (error) {
+      err_throw(ERR_IMAGE_LOAD, lodepng_error_text(error));
+    } else {
       result = new ImageBuffer();
       result->_bid = ++nextId;
       result->_width = w;
@@ -274,8 +283,6 @@ ImageBuffer *load_image(dev_file_t *filep) {
       result->_filename = strdup(filep->name);
       result->_image = image;
       cache.add(result);
-    } else {
-      err_throw(ERR_IMAGE_LOAD, lodepng_error_text(error));
     }
   }
   return result;
@@ -295,7 +302,7 @@ ImageBuffer *load_xpm_image(char **data) {
     result->_image = image;
     cache.add(result);
   } else {
-    err_throw(ERR_IMAGE_LOAD, "Invalid xpm image");
+    err_throw(ERR_IMAGE_LOAD, ERR_XPM_IMAGE);
   }
   return result;
 }

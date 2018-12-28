@@ -3,6 +3,7 @@
 '
 
 st=ticks
+tickspersec=1000
 for i=1 to 1000000:next
 et=ticks
 ? "FOR speed: "; ((et-st)/tickspersec); "sec "; round(1000000/((et-st)/tickspersec));" l/s"

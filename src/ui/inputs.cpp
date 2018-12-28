@@ -21,6 +21,8 @@ extern System *g_system;
 FormList *activeList = NULL;
 FormInput *focusInput = NULL;
 FormEditInput *focusEdit = NULL;
+int background = DEFAULT_BACKGROUND;
+int foreground = DEFAULT_FOREGROUND;
 
 #define LINE_Y (_height - 2)
 #define LINE_W (_width - 2)
@@ -37,6 +39,11 @@ bool form_ui::optionSelected(int index) {
     result = false;
   }
   return result;
+}
+
+void set_input_defaults(int fg, int bg) {
+  foreground = fg;
+  background = bg;
 }
 
 int get_color(var_p_t value, int def) {
@@ -56,7 +63,7 @@ int get_color(var_p_t value, int def) {
     } else if (n[0] == '#' && n[1]) {
       result = strtol(n + 1, NULL, 16);
     } else if (strcasecmp(n, "black") == 0) {
-      result = 0;
+      result = DEFAULT_BACKGROUND;
     } else if (strcasecmp(n, "red") == 0) {
       result = 0x800000;
     } else if (strcasecmp(n, "green") == 0) {
@@ -107,8 +114,8 @@ FormInput::FormInput(int x, int y, int w, int h) :
   _visible(true),
   _noFocus(false),
   _resizable(false),
-  _bg(DEFAULT_BACKGROUND),
-  _fg(DEFAULT_FOREGROUND),
+  _bg(background),
+  _fg(foreground),
   _onclick(0) {
 }
 

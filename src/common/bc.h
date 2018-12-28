@@ -29,6 +29,8 @@ typedef struct {
   bcip_t cp; /**< current position (used by readers not writers) */
   bcip_t size; /**< allocation size (optimization) */
   bcip_t count; /**< current size (used by writers as the current position) */
+  bcip_t eoc_position; /**< position of most recent kwTYPE_EOC or kwTYPE_LINE*/
+  bcip_t line_position; /**< position of most recent kwTYPE_LINE */
 } bc_t;
 
 /**
@@ -77,17 +79,7 @@ void bc_resize(bc_t *bc, uint32_t newsize);
  * @param bc the bc structure
  * @param code the byte
  */
-void bc_add1(bc_t *bc, byte code);
-
-/**
- * @ingroup scan
- *
- * put 1 byte to specified offset
- *
- * @param bc the bc structure
- * @param code the byte
- */
-void bc_store1(bc_t *bc, bcip_t offset, byte code);
+void bc_add1(bc_t *bc, char code);
 
 /**
  * @ingroup scan
@@ -125,6 +117,16 @@ char *bc_store_string(bc_t *bc, char *src);
  * @param bc the bc structure
  */
 void bc_eoc(bc_t *bc);
+
+/**
+ * @ingroup scan
+ *
+ * pops any EOC mark at the current position
+ *
+ * @param bc the bc segment
+ * @return whether kwTYPE_EOC was popped
+ */
+int bc_pop_eoc(bc_t *bc);
 
 /**
  * @ingroup scan

@@ -7,7 +7,10 @@ const char_w = txtw(".")
 const lineSpacing = 2 + char_h
 const idxEdit = 6
 const idxFiles = 7
-const colGrey = rgb(100,100,100)
+const colGrey = rgb(100, 100, 100)
+const colBkGnd = rgb(31, 28, 31)
+const colText = 2
+const colLink = 3
 const menu_gap = -(char_w / 2)
 const is_sdl = instr(sbver, "SDL") != 0
 const onlineUrl = "http://smallbasic.github.io/samples/index.bas"
@@ -43,8 +46,7 @@ func mk_menu(value, lab, x)
   bn.y = ypos * char_h
   bn.value = value
   bn.label = "[" + lab + "]"
-  bn.color = 3
-  bn.backgroundColor = 0
+  bn.color = colLink
   bn.type = "link"
   mk_menu = bn
 end
@@ -58,12 +60,13 @@ func mk_scratch()
     text << "rem Welcome to SmallBASIC"
     text << "rem"
     if (is_sdl) then
-      text << "rem Press F1 for keyword help."
+      text << "rem Press F1 or F2 for keyword help."
       text << "rem Press and hold Ctrl then press 'h' for editor help."
       text << "rem Press and hold Ctrl then press 'r' to RUN this program."
       text << "rem Click the right mouse button for menu options."
     else
       text << "rem Press the 3 vertical dots for menu options."
+      text << "rem Press and drag the line numbers to scroll."
     endif
     try
       tsave scratch_file, text
@@ -78,23 +81,30 @@ func mk_scratch()
   return result
 end
 
-sub do_okay_button()
+sub do_okay_button(bn_extra)
   local frm, button
   button.label = "[Close]"
   button.x = (xmax - txtw(button.label)) / 2
-  button.y = -1
-  button.backgroundColor = 0
-  button.color = 3
+  button.y = ypos * char_h
+  button.color = colLink
   button.type = "link"
+  if (ismap(bn_extra)) then
+    frm.inputs << bn_extra
+  endif
   frm.inputs << button
   frm = form(frm)
   print
   frm.doEvents()
 end
 
+sub clear_screen()
+  color colText, colBkGnd
+  cls
+end
+
 sub do_about()
   cls
-  color 2,0
+  color colText
   if (char_w * 45 < xmax) then
     print "   ____          _______  ___   _____________"
     print "  / ____ _ ___ _/ / / _ )/ _ | / __/  _/ ___/"
@@ -106,29 +116,38 @@ sub do_about()
     print "__)| | |(_||||_)/--\__)|\_"
   endif
   print
-  color 7,0
+  color 7
   print "Version "; sbver
   print
   print "Copyright (c) 2002-2018 Chris Warren-Smith"
   print "Copyright (c) 1999-2006 Nicholas Christopoulos" + chr(10)
-  print "https://smallbasic.sourceforge.io" + chr(10)
-  color colGrey,0
+
+  local bn_home
+  bn_home.x = 2
+  bn_home.y = ypos * char_h
+  bn_home.type = "link"
+  bn_home.isExternal = true
+  bn_home.label = "https://smallbasic.github.io"
+  bn_home.color = colLink
+  print:print
+
+  color colGrey
   print "SmallBASIC comes with ABSOLUTELY NO WARRANTY. ";
   print "This program is free software; you can use it ";
   print "redistribute it and/or modify it under the terms of the ";
   print "GNU General Public License version 2 as published by ";
   print "the Free Software Foundation." + chr(10)
   print
-  color 7,0
+  color 7
   server_info()
-  do_okay_button()
-  cls
+  do_okay_button(bn_home)
+  clear_screen()
 end
 
 sub do_setup()
   local frm
 
-  color 3, 0
+  color 3
   cls
   print boldOn + "Setup web service port number."
   print boldOff
@@ -150,7 +169,7 @@ sub do_setup()
     env("serverToken=" + token)
   endif
 
-  color 3, 0
+  color 3
   cls
   print "Web service port number: " + env("serverSocket")
   print
@@ -174,8 +193,7 @@ sub do_setup()
   local msg = "You must restart SmallBASIC for this change to take effect."
   local wnd = window()
   wnd.alert(msg, "Restart required")
-  color 7, 0
-  cls
+  clear_screen()
 end
 
 sub server_info()
@@ -409,7 +427,7 @@ sub manageFiles()
     bn_files.y = bn_edit.y + char_h + 2
     bn_files.height = ymax - bn_files.y
     bn_files.width = xmax - x1
-    bn_files.color = 2
+    bn_files.color = colText
     bn_files.type = "list"
     bn_files.resizable = TRUE
     bn_files.help = "No .bas files in " + cwd
@@ -495,13 +513,14 @@ sub manageFiles()
     else
       tload selectedFile, buffer
       wnd.graphicsScreen2()
+      color 7
       cls
-      color 7,0
       len_buffer = len(buffer) - 1
       for i = 0 to len_buffer
         print buffer(i)
       next i
-      do_okay_button
+      do_okay_button(nil)
+      clear_screen()
       wnd.graphicsScreen1()
       f.value = selectedFile
     endIf
@@ -636,6 +655,7 @@ sub main
     path = backPath
   end
 
+  clear_screen()
   path = cwd
   frm = makeUI(path, sortDir)
 

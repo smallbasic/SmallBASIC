@@ -782,7 +782,6 @@ int dev_filemtime(var_t *v, char **buffer);
  */
 typedef enum {
   ft_stream,          /**< simple file */
-  ft_random,
   ft_serial_port,     /**< COMx:speed, serial port */
   ft_socket_client,   /**< SCLT:address:port, socket client */
   ft_socket_server,   // SSVR:address:port

@@ -41,7 +41,7 @@ int sgn(var_num_t x) {
  * ROUND(x, digits)
  */
 var_num_t fround(var_num_t x, int dig) {
-  var_num_t result = 0.0;
+  var_num_t result;
   var_num_t m = floor(pow(10.0, dig));
 
   if (x < 0.0) {

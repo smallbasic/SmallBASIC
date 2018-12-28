@@ -342,7 +342,7 @@ void cev_log(void) {
   cev_cmp();                    // R = cev_cmp()
   IF_ERR_RTN;
   while (CODE(IP) == kwTYPE_LOGOPR) {
-    char op;
+    byte op;
     bcip_t shortcut;
     bcip_t shortcut_offs;
 

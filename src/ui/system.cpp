@@ -46,10 +46,10 @@
 #define MENU_SHORTCUT   22
 #define MENU_SHARE      23
 #define MENU_SIZE       24
-#define MENU_COMPETION_0  (MENU_SIZE + 1)
-#define MENU_COMPETION_1  (MENU_SIZE + 2)
-#define MENU_COMPETION_2  (MENU_SIZE + 3)
-#define MENU_COMPETION_3  (MENU_SIZE + 4)
+#define MENU_COMPLETION_0  (MENU_SIZE + 1)
+#define MENU_COMPLETION_1  (MENU_SIZE + 2)
+#define MENU_COMPLETION_2  (MENU_SIZE + 3)
+#define MENU_COMPLETION_3  (MENU_SIZE + 4)
 #define MAX_COMPLETIONS 4
 #define MAX_CACHE 8
 #define CHANGE_WAIT_SLEEP 1000
@@ -377,16 +377,16 @@ void System::handleMenu(MAEvent &event) {
       share(_activeFile.c_str());
     }
     break;
-  case MENU_COMPETION_0:
+  case MENU_COMPLETION_0:
     completeKeyword(0);
     break;
-  case MENU_COMPETION_1:
+  case MENU_COMPLETION_1:
     completeKeyword(1);
     break;
-  case MENU_COMPETION_2:
+  case MENU_COMPLETION_2:
     completeKeyword(2);
     break;
-  case MENU_COMPETION_3:
+  case MENU_COMPLETION_3:
     completeKeyword(3);
     break;
   }
@@ -491,6 +491,13 @@ char *System::loadResource(const char *fileName) {
       opt_file_permitted = 0;
     }
   }
+  if (buffer == NULL) {
+    // remove failed item from history
+    strlib::String *old = _history.peek();
+    if (old && old->equals(fileName)) {
+      delete _history.pop();
+    }
+  }
   return buffer;
 }
 
@@ -530,8 +537,15 @@ char *System::readSource(const char *fileName) {
           buffer = (char *)malloc(len + 1);
           len = read(h, buffer, len);
           buffer[len] = '\0';
-          _activeFile = fileName;
-          _modifiedTime = getModifiedTime();
+          _modifiedTime = st.st_mtime;
+          char fullPath[PATH_MAX + 1];
+          char *path = realpath(fileName, fullPath);
+          if (path != NULL) {
+            // set full path for getModifiedTime()
+            _activeFile = fullPath;
+          } else {
+            _activeFile = fileName;
+          }
         }
         close(h);
       }
@@ -866,7 +880,7 @@ void System::showMenu() {
 #endif
         items->add(new String("Help"));
         for (int i = 0; i < completions; i++) {
-          _systemMenu[index++] = MENU_COMPETION_0 + i;
+          _systemMenu[index++] = MENU_COMPLETION_0 + i;
         }
         _systemMenu[index++] = MENU_UNDO;
         _systemMenu[index++] = MENU_REDO;

@@ -42,8 +42,6 @@ extern "C" {
 /**< simple macro for free() 2 ptrs @ingroup par */
 #define pfree3(a,b,c) { pfree2((a),(b)); pfree((c));  }
 /**< simple macro for free() 3 ptrs @ingroup par */
-#define pfree4(a,b,c,d) { pfree3((a),(b),(c)); pfree((d)); }
-/**< simple macro for free() 4 ptrs @ingroup par */
 
 /**
  * @ingroup exec
@@ -63,14 +61,6 @@ void bc_loop(int isf);
  * @param result the variable to store the result.
  */
 void eval(var_t *result);
-
-/**
- * @ingroup exec
- *
- * sets the data-p. the data-p is used for READ/DATA commands.
- * actually it is points to the next position of which the READ will use.
- */
-void set_dataip(uint16_t label_id);
 
 /**
  * @ingroup exec

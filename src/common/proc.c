@@ -155,10 +155,10 @@ void pv_write_str(char *str, var_t *vp) {
   if (vp->v.p.ptr == NULL) {
     vp->v.p.ptr = malloc(vp->v.p.length + 1);
     vp->v.p.owner = 1;
-    strcpy((char *)vp->v.p.ptr, str);
+    strcpy(vp->v.p.ptr, str);
   } else {
     vp->v.p.ptr = realloc(vp->v.p.ptr, vp->v.p.length + 1);
-    strcat((char *)vp->v.p.ptr, str);
+    strcat(vp->v.p.ptr, str);
   }
 }
 
@@ -203,7 +203,7 @@ void pv_writevar(var_t *var, int method, intptr_t handle) {
     pv_write(tmpsb, method, handle);
     break;
   case V_STR:
-    pv_write((char *)var->v.p.ptr, method, handle);
+    pv_write(var->v.p.ptr, method, handle);
     break;
   case V_ARRAY:
   case V_MAP:
