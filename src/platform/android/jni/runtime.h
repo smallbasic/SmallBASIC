@@ -66,6 +66,7 @@ struct Runtime : public System {
   void share(const char *path) { setString("share", path); }
   void showCursor(CursorType cursorType) {}
   void showKeypad(bool show);
+  void onPaused(bool paused) { if (_graphics != NULL) _graphics->onPaused(paused); }
   void onResize(int w, int h);
   void onUnicodeChar(int ch);
   void loadConfig();

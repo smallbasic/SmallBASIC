@@ -102,6 +102,7 @@ public class MainActivity extends NativeActivity {
     System.loadLibrary("smallbasic");
   }
 
+  public static native void onActivityPaused(boolean paused);
   public static native void onResize(int width, int height);
   public static native void onUnicodeChar(int ch);
   public static native boolean optionSelected(int index);
@@ -598,6 +599,18 @@ public class MainActivity extends NativeActivity {
     processIntent();
     processSettings();
     checkFilePermission();
+  }
+
+  @Override
+  protected void onPause() {
+    super.onPause();
+    onActivityPaused(true);
+  }
+
+  @Override
+  protected void onResume() {
+    super.onResume();
+    onActivityPaused(false);
   }
 
   @Override

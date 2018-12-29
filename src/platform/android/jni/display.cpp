@@ -118,7 +118,8 @@ Graphics::Graphics(android_app *app) : ui::Graphics(),
   _fontBufferB(NULL),
   _app(app),
   _w(0),
-  _h(0) {
+  _h(0),
+  _paused(false) {
 }
 
 Graphics::~Graphics() {
@@ -154,7 +155,7 @@ bool Graphics::construct(int fontId) {
 }
 
 void Graphics::redraw() {
-  if (_app->window != NULL) {
+  if (_app->window != NULL && !_paused) {
     ANativeWindow_Buffer buffer;
     if (ANativeWindow_lock(_app->window, &buffer, NULL) < 0) {
       trace("Unable to lock window buffer");

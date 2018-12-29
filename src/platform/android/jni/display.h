@@ -25,6 +25,7 @@ struct Graphics : ui::Graphics {
   bool construct(int fontId);
   void redraw();
   void resize();
+  void onPaused(bool paused) { _paused=paused; }
   void setSize(int w, int h) { _w = w; _h = h; }
 
 private:
@@ -35,6 +36,7 @@ private:
   FT_Byte *_fontBufferB;
   android_app *_app;
   int _w, _h;
+  bool _paused;
 };
 
 #endif
