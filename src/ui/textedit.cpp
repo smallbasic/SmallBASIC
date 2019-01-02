@@ -1707,7 +1707,7 @@ void TextEditInput::updateScroll() {
 
 int TextEditInput::wordEnd() {
   int i = _state.cursor;
-  while (IS_VAR_CHAR(_buf._buffer[i]) && i < _buf._len) {
+  while (i >= 0 && i < _buf._len && IS_VAR_CHAR(_buf._buffer[i])) {
     i++;
   }
   return i;
@@ -1715,7 +1715,7 @@ int TextEditInput::wordEnd() {
 
 int TextEditInput::wordStart() {
   int cursor = _state.cursor == 0 ? 0 : _state.cursor - 1;
-  return (_buf._buffer[cursor] == '\n' ? _state.cursor :
+  return ((cursor >= 0 && cursor < _buf._len && _buf._buffer[cursor] == '\n') ? _state.cursor :
           is_word_boundary(&_buf, _state.cursor) ? _state.cursor :
           stb_textedit_move_to_word_previous(&_buf, _state.cursor));
 }

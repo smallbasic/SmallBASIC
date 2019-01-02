@@ -130,6 +130,14 @@ int get_sensor_events(int fd, int events, void *data) {
   return 1;
 }
 
+extern "C" JNIEXPORT void JNICALL Java_net_sourceforge_smallbasic_MainActivity_onActivityPaused
+  (JNIEnv *env, jclass jclazz, jboolean paused) {
+  if (runtime != NULL && !runtime->isClosing() && runtime->isActive() && os_graphics) {
+    trace("paused=%d", paused);
+    runtime->onPaused(paused);
+  }
+}
+
 // callback from MainActivity.java
 extern "C" JNIEXPORT jboolean JNICALL Java_net_sourceforge_smallbasic_MainActivity_optionSelected
   (JNIEnv *env, jclass jclazz, jint index) {

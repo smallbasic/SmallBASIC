@@ -1,3 +1,8 @@
+2018-12-28 (0.12.15)
+	Fix crash when using GOTO with a non-existent label
+	Fix crash in editor when double tapping empty document
+	Fix menu display on chromebook and other devices
+
 2018-11-11 (0.12.14)
 	CONSOLE: added support for IMAGE command
 
