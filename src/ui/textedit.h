@@ -162,6 +162,7 @@ protected:
   int  getLineChars(StbTexteditRow *row, int pos);
   char *getSelection(int *start, int *end);
   void gotoNextMarker();
+  void killWord();
   void lineNavigate(bool lineDown);
   char *lineText(int pos);
   int  lineEnd(int pos) { return linePos(pos, true); }

@@ -44,3 +44,9 @@ leak-test: ${bin_PROGRAMS}
 	@for utest in $(UNIT_TESTS); do                             \
     valgrind --leak-check=full ./${bin_PROGRAMS} ${TEST_DIR}/$${utest}.bas 1>/dev/null; \
   done;
+
+fuzz-test: ${bin_PROGRAMS}
+	@for utest in $(UNIT_TESTS); do                             \
+    zzuf valgrind --leak-check=full ./${bin_PROGRAMS} ${TEST_DIR}/$${utest}.bas 1>/dev/null; \
+  done;
+

@@ -24,6 +24,7 @@ Canvas g_canvas;
 uint32_t g_start = 0;
 uint32_t g_maxTime = 2000;
 bool g_graphicText = true;
+bool g_noExecute = false;
 struct MHD_Connection *g_connection;
 StringList g_cookies;
 
@@ -31,6 +32,7 @@ static struct option OPTIONS[] = {
   {"help",           no_argument,       NULL, 'h'},
   {"verbose",        no_argument,       NULL, 'v'},
   {"file-permitted", no_argument,       NULL, 'f'},
+  {"no-execute",     no_argument,       NULL, 'x'},
   {"port",           optional_argument, NULL, 'p'},
   {"run",            optional_argument, NULL, 'r'},
   {"width",          optional_argument, NULL, 'w'},
@@ -177,7 +179,7 @@ MHD_Response *get_response(struct MHD_Connection *connection, const char *path) 
     response = serve_file(path);
   } else if (strstr(path, "..") == NULL) {
     const char *dot = strrchr(path, '.');
-    if (dot && strncasecmp(dot, ".bas", 4) == 0 &&
+    if (dot && !g_noExecute && strncasecmp(dot, ".bas", 4) == 0 &&
         stat(path, &stbuf) != -1 && S_ISREG(stbuf.st_mode)) {
       response = execute(connection, path);
     } else {
@@ -238,7 +240,7 @@ int main(int argc, char **argv) {
 
   while (1) {
     int option_index = 0;
-    int c = getopt_long(argc, argv, "hvfp:t:m::r:w:e:c:g:", OPTIONS, &option_index);
+    int c = getopt_long(argc, argv, "hvfxp:t:m::r:w:e:c:g:", OPTIONS, &option_index);
     if (c == -1) {
       break;
     }
@@ -284,6 +286,9 @@ int main(int argc, char **argv) {
       if (optarg) {
         strcpy(opt_modpath, optarg);
       }
+      break;
+    case 'x':
+      g_noExecute = true;
       break;
     default:
       show_help();

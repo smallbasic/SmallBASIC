@@ -728,6 +728,9 @@ bool TextEditInput::edit(int key, int screenWidth, int charWidth) {
   case SB_KEY_ALT('c'):
     changeCase();
     break;
+  case SB_KEY_ALT('d'):
+    killWord();
+    break;
   case SB_KEY_CTRL('d'):
     stb_textedit_key(&_buf, &_state, STB_TEXTEDIT_K_DELETE);
     break;
@@ -1150,7 +1153,8 @@ void TextEditInput::editDeleteLine() {
   int start = _state.cursor;
   int end = linePos(_state.cursor, true, true);
   if (end > start) {
-    stb_textedit_delete(&_buf, &_state, start, end - start);
+    // delete the entire line when the cursor is at the home position
+    stb_textedit_delete(&_buf, &_state, start, end - start + (_cursorCol == 0 ? 1 : 0));
     _state.cursor = start;
   } else if (start == end) {
     stb_textedit_delete(&_buf, &_state, start, 1);
@@ -1520,6 +1524,18 @@ void TextEditInput::gotoNextMarker() {
     if (g_lineMarker[next] != -1) {
       setCursorRow(g_lineMarker[next] - 1);
     }
+  }
+}
+
+void TextEditInput::killWord() {
+  int start = _state.cursor;
+  int end = wordEnd();
+  if (start == end) {
+    int word = stb_textedit_move_to_word_next(&_buf, _state.cursor);
+    end = stb_textedit_move_to_word_next(&_buf, word) - 1;
+  }
+  if (end > start) {
+    stb_textedit_delete(&_buf, &_state, start, end - start);
   }
 }
 
