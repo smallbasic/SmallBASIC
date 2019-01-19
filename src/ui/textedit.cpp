@@ -1534,6 +1534,11 @@ void TextEditInput::killWord() {
   if (start == end) {
     int word = stb_textedit_move_to_word_next(&_buf, _state.cursor);
     end = stb_textedit_move_to_word_next(&_buf, word) - 1;
+    int bound = lineEnd(start);
+    if (end > bound && bound != start) {
+      // clip to line end when there are characters prior to the line end
+      end = bound;
+    }
   }
   if (end > start) {
     stb_textedit_delete(&_buf, &_state, start, end - start);
