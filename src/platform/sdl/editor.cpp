@@ -77,12 +77,16 @@ struct StatusMessage {
       }
       out->setStatus(message);
       _dirty = dirty;
-      _row = editor->getRow();
-      _col = editor->getCol();
+      resetCursor(editor);
     } else {
       result = false;
     }
     return result;
+  }
+
+  void resetCursor(TextEditInput *editor) {
+    _row = editor->getRow();
+    _col = editor->getCol();
   }
 
   bool _dirty;
@@ -309,8 +313,7 @@ void System::editSource(String loadPath) {
           helpWidget->createMessage();
           helpWidget->show();
           ((Runtime *)this)->debugStart(editWidget, loadPath.c_str());
-          statusMessage._row = editWidget->getRow();
-          statusMessage._col = editWidget->getCol();
+          statusMessage.resetCursor(editWidget);
           break;
         case SB_KEY_F(6):
           ((Runtime *)this)->debugStep(editWidget, helpWidget, false);
@@ -349,6 +352,7 @@ void System::editSource(String loadPath) {
           widget = helpWidget;
           helpWidget->createSearch(false);
           helpWidget->show();
+          statusMessage.resetCursor(editWidget);
           break;
         case SB_KEY_CTRL('n'):
           _output->setStatus("Replace string. Esc=Close");
