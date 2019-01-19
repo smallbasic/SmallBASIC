@@ -153,6 +153,7 @@ const char *helpText =
   "C-end bottom\n"
   "C-5,6,7 macro\n"
   "A-c change case\n"
+  "A-d kill word\n"
   "A-g goto line\n"
   "A-n trim line-endings\n"
   "A-t select theme\n"
