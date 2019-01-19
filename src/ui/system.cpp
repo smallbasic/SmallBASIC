@@ -525,7 +525,7 @@ char *System::readSource(const char *fileName) {
   _activeFile.clear();
   char *buffer;
   if (!_mainBas && _editor != NULL && _loadPath.equals(fileName)) {
-    buffer = _editor->getTextSelection();
+    buffer = _editor->getTextSelection(true);
   } else {
     buffer = loadResource(fileName);
     if (!buffer) {

@@ -157,6 +157,7 @@ const char *helpText =
   "A-g goto line\n"
   "A-n trim line-endings\n"
   "A-t select theme\n"
+  "A-w select word\n"
   "A-. return mode\n"
   "A-<n> recent file\n"
   "A-= count chars\n"
@@ -732,6 +733,9 @@ bool TextEditInput::edit(int key, int screenWidth, int charWidth) {
   case SB_KEY_ALT('d'):
     killWord();
     break;
+  case SB_KEY_ALT('w'):
+    selectWord();
+    break;
   case SB_KEY_CTRL('d'):
     stb_textedit_key(&_buf, &_state, STB_TEXTEDIT_K_DELETE);
     break;
@@ -869,7 +873,7 @@ int TextEditInput::getSelectionRow() {
   return result;
 }
 
-char *TextEditInput::getTextSelection() {
+char *TextEditInput::getTextSelection(bool selectAll) {
   char *result;
   if (_state.select_start != _state.select_end) {
     int start, end;
@@ -881,8 +885,10 @@ char *TextEditInput::getTextSelection() {
       end = _state.select_end;
     }
     result = _buf.textRange(start, end);
-  } else {
+  } else if (selectAll) {
     result = _buf.textRange(0, _buf._len);
+  } else {
+    result = NULL;
   }
   return result;
 }
@@ -1671,6 +1677,16 @@ void TextEditInput::removeTrailingSpaces() {
   setCursorRow(row - 1);
 }
 
+void TextEditInput::selectWord() {
+  if (_state.select_start != _state.select_end) {
+    // advance to next word
+    _state.cursor = stb_textedit_move_to_word_next(&_buf, _state.cursor);
+    _state.select_start = _state.select_end = -1;
+  }
+  _state.select_start = wordStart();
+  _state.select_end = _state.cursor = wordEnd();
+}
+
 void TextEditInput::setColor(SyntaxState &state) {
   switch (state) {
   case kComment:
@@ -2056,10 +2072,19 @@ void TextEditHelpWidget::createOutline() {
 }
 
 void TextEditHelpWidget::createSearch(bool replace) {
-  if (_mode == kSearch) {
-    _editor->find(_buf._buffer, true);
-  } else {
+  if (_mode != kSearch) {
     reset(replace ? kSearchReplace : kSearch);
+  }
+
+  char *text = _editor->getTextSelection(false);
+  if (text != NULL) {
+    // prime search from selected text
+    _buf.clear();
+    _buf.insertChars(0, text, strlen(text));
+    free(text);
+
+    // ensure the selected word is first match
+    _editor->setCursorPos(_editor->getSelectionStart());
   }
 }
 

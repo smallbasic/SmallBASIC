@@ -1,5 +1,7 @@
 2019-01-19 (0.12.15)
-	SDL: added kill-word editor command (alt+d)
+	UI: added kill-word editor command (alt+d)
+	UI: added select-word editor command (alt+w)
+	UI: find command primed from editor selection
 
 2018-12-28 (0.12.15)
 	Fix crash when using GOTO with a non-existent label

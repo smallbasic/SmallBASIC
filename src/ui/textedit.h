@@ -103,9 +103,10 @@ struct TextEditInput : public FormEditInput {
   int  getLines() { return _buf.lineCount(); }
   void getSelectionCounts(int *lines, int *chars);
   int  getSelectionRow();
+  int  getSelectionStart() { return _state.select_start; }
   int  getScroll() const { return _scroll; }
   const char *getText() const { return _buf._buffer; }
-  char *getTextSelection();
+  char *getTextSelection(bool selectAll);
   int  getTextLength() const { return _buf._len; }
   int *getMarkers();
   void gotoLine(const char *buffer);
@@ -172,6 +173,7 @@ protected:
   bool matchStatement(uint32_t hash);
   void pageNavigate(bool pageDown, bool shift);
   void removeTrailingSpaces();
+  void selectWord();
   void setColor(SyntaxState &state);
   void toggleMarker();
   void updateScroll();
