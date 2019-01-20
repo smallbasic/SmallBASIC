@@ -359,6 +359,7 @@ void System::editSource(String loadPath) {
           widget = helpWidget;
           helpWidget->createSearch(true);
           helpWidget->show();
+          statusMessage.resetCursor(editWidget);
           break;
         case SB_KEY_ALT('g'):
           _output->setStatus("Goto line. Esc=Close");

@@ -1685,6 +1685,11 @@ void TextEditInput::selectWord() {
   }
   _state.select_start = wordStart();
   _state.select_end = _state.cursor = wordEnd();
+
+  if (_state.select_start == _state.select_end) {
+    // move to next word
+    _state.cursor = stb_textedit_move_to_word_next(&_buf, _state.cursor);
+  }
 }
 
 void TextEditInput::setColor(SyntaxState &state) {
