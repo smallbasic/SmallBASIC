@@ -193,6 +193,10 @@ int compareIntegers(const void *p1, const void *p2) {
   return i1 < i2 ? -1 : i1 == i2 ? 0 : 1;
 }
 
+const char *find_str(bool allUpper, const char *haystack, const char *needle) {
+  return allUpper ? strstr(haystack, needle) : strcasestr(haystack, needle);
+}
+
 //
 // EditTheme
 //
@@ -807,15 +811,24 @@ bool TextEditInput::edit(int key, int screenWidth, int charWidth) {
 
 bool TextEditInput::find(const char *word, bool next) {
   bool result = false;
+  bool allUpper = true;
+  int len = strlen(word);
+  for (int i = 0; i < len; i++) {
+    if (islower(word[i])) {
+      allUpper = false;
+      break;
+    }
+  }
+  
   if (_buf._buffer != NULL && word != NULL) {
-    const char *found = strcasestr(_buf._buffer + _state.cursor, word);
+    const char *found = find_str(allUpper, _buf._buffer + _state.cursor, word);
     if (next && found != NULL) {
       // skip to next word
-      found = strcasestr(found + strlen(word), word);
+      found = find_str(allUpper, found + strlen(word), word);
     }
     if (found == NULL) {
       // start over
-      found = strcasestr(_buf._buffer, word);
+      found = find_str(allUpper, _buf._buffer, word);
     }
     if (found != NULL) {
       result = true;
