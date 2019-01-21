@@ -1,3 +1,7 @@
+2019-01-21 (0.12.15.1)
+	ANDROID: fix setup screen colour display
+	ANDROID: show link to android page in about
+
 2019-01-19 (0.12.15)
 	UI: added kill-word editor command (alt+d)
 	UI: added select-word editor command (alt+w)
