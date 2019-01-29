@@ -263,7 +263,6 @@ void System::editSource(String loadPath) {
           redraw = false;
           break;
         case SB_KEY_ESCAPE:
-        case SB_KEY_CTRL('g'):
           widget = editWidget;
           helpWidget->hide();
           ((Runtime *)this)->debugStop();
