@@ -156,6 +156,11 @@ function buildSDL() {
      AC_MSG_ERROR([libfreetype6-dev not installed: configure failed.])
    fi
 
+   AC_CHECK_PROG(have_xxd, xxd, [yes], [no])
+   if test "${have_xxd}" = "no" ; then
+     AC_MSG_ERROR([xxd command not installed: configure failed.])
+   fi
+
    case "${host_os}" in
      *mingw* | cygwin*)
      dnl avoid using MSCRT versions of printf for long double

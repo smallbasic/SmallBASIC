@@ -4,7 +4,7 @@ SmallBASIC is a fast and easy to learn BASIC language interpreter ideal for ever
 
 Initial setup on linux
 ```
- $ sudo apt-get install git autotools-dev automake gcc g++ libsdl2-dev libfreetype6-dev libfontconfig1-dev
+ $ sudo apt-get install git autotools-dev automake gcc g++ libsdl2-dev libfreetype6-dev libfontconfig1-dev xxd
  $ git clone https://github.com/smallbasic/SmallBASIC.git
  $ cd SmallBASIC
  $ sh autogen.sh
