@@ -1188,25 +1188,24 @@ void TextEditInput::editEnter() {
 
   if (prevLineStart || _cursorLine == 1) {
     char spaces[LINE_BUFFER_SIZE];
-    int indent = getIndent(spaces, sizeof(spaces), prevLineStart);
-    if (indent) {
-      // check whether the previous line was a comment
-      if (prevLineStart) {
-        char *buf = lineText(prevLineStart);
-        int pos = 0;
-        while (buf && (buf[pos] == ' ' || buf[pos] == '\t')) {
-          pos++;
-        }
-        if ((buf[pos] == '#' || buf[pos] == '\'') && indent + 2 < LINE_BUFFER_SIZE) {
-          spaces[indent] = buf[pos];
-          spaces[++indent] = ' ';
-          spaces[++indent] = '\0';
-        } else if (strncasecmp(buf + pos, "rem", 3) == 0) {
-          indent = strlcat(spaces, "rem ", LINE_BUFFER_SIZE);
-        }
-        free(buf);
-      }
+    int indent = getIndent(spaces, LINE_BUFFER_SIZE, prevLineStart);
 
+    // check whether the previous line was a comment
+    char *buf = lineText(prevLineStart);
+    int pos = 0;
+    while (buf && (buf[pos] == ' ' || buf[pos] == '\t')) {
+      pos++;
+    }
+    if ((buf[pos] == '#' || buf[pos] == '\'') && indent + 2 < LINE_BUFFER_SIZE) {
+      spaces[indent] = buf[pos];
+      spaces[++indent] = ' ';
+      spaces[++indent] = '\0';
+    } else if (strncasecmp(buf + pos, "rem", 3) == 0) {
+      indent = strlcat(spaces, "rem ", LINE_BUFFER_SIZE);
+    }
+    free(buf);
+
+    if (indent) {
       _buf.insertChars(_state.cursor, spaces, indent);
       stb_text_makeundo_insert(&_state, _state.cursor, indent);
       _state.cursor += indent;
