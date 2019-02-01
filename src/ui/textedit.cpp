@@ -819,7 +819,7 @@ bool TextEditInput::find(const char *word, bool next) {
       break;
     }
   }
-  
+
   if (_buf._buffer != NULL && word != NULL) {
     const char *found = find_str(allUpper, _buf._buffer + _state.cursor, word);
     if (next && found != NULL) {
@@ -1190,6 +1190,23 @@ void TextEditInput::editEnter() {
     char spaces[LINE_BUFFER_SIZE];
     int indent = getIndent(spaces, sizeof(spaces), prevLineStart);
     if (indent) {
+      // check whether the previous line was a comment
+      if (prevLineStart) {
+        char *buf = lineText(prevLineStart);
+        int pos = 0;
+        while (buf && (buf[pos] == ' ' || buf[pos] == '\t')) {
+          pos++;
+        }
+        if ((buf[pos] == '#' || buf[pos] == '\'') && indent + 2 < LINE_BUFFER_SIZE) {
+          spaces[indent] = buf[pos];
+          spaces[++indent] = ' ';
+          spaces[++indent] = '\0';
+        } else if (strncasecmp(buf + pos, "rem", 3) == 0) {
+          indent = strlcat(spaces, "rem ", LINE_BUFFER_SIZE);
+        }
+        free(buf);
+      }
+
       _buf.insertChars(_state.cursor, spaces, indent);
       stb_text_makeundo_insert(&_state, _state.cursor, indent);
       _state.cursor += indent;
@@ -1199,7 +1216,6 @@ void TextEditInput::editEnter() {
 
 void TextEditInput::editTab() {
   char spaces[LINE_BUFFER_SIZE];
-  int indent;
 
   // get the desired indent based on the previous line
   int start = lineStart(_state.cursor);
@@ -1210,7 +1226,7 @@ void TextEditInput::editTab() {
     prevLineStart = lineStart(prevLineStart - 1);
   }
   // note - spaces not used in this context
-  indent = (prevLineStart || _cursorLine == 2) ? getIndent(spaces, sizeof(spaces), prevLineStart) : 0;
+  int indent = (prevLineStart || _cursorLine == 2) ? getIndent(spaces, sizeof(spaces), prevLineStart) : 0;
 
   // get the current lines indent
   char *buf = lineText(start);

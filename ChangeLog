@@ -1,3 +1,6 @@
+2019-02-02 (0.12.15)
+	UI: Edit enter now continues prior line comment
+
 2019-01-21 (0.12.15.1)
 	ANDROID: fix setup screen colour display
 	ANDROID: show link to android page in about
