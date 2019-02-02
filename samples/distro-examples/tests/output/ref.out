@@ -1,13 +1,4 @@
 cat=	cat
 dog=	dog
-3=	3
-1=	1
-a=b	a=b
-a<>b	a<>b
-{"name":"kitchen"}
-{"name":"hall"}
-{"fridge":"empty","name":"Kitchen"}
-{"name":"toilet","occupied":1}
-{"fridge":"empty","name":"Kitchen"}
-{"name":"hall"}
-toilet
+10
+20

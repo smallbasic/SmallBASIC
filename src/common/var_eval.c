@@ -21,10 +21,9 @@
 bcip_t get_array_idx(var_t *array) {
   bcip_t idx = 0;
   bcip_t lev = 0;
-  bcip_t m = 0;
-  var_t var;
 
   do {
+    var_t var;
     v_init(&var);
     eval(&var);
 
@@ -34,13 +33,13 @@ bcip_t get_array_idx(var_t *array) {
       err_varnotnum();
       break;
     } else {
-      bcip_t i;
       bcip_t idim = v_getint(&var);
+
       v_free(&var);
       idim = idim - v_lbound(array, lev);
 
-      m = idim;
-      for (i = lev + 1; i < v_maxdim(array); i++) {
+      bcip_t m = idim;
+      for (bcip_t i = lev + 1; i < v_maxdim(array); i++) {
         m = m * (ABS(v_ubound(array, i) - v_lbound(array, i)) + 1);
       }
       idx += m;
@@ -228,13 +227,17 @@ var_t *code_resolve_map(var_t *var_p, int until_parens) {
   return var_p;
 }
 
-var_t *resolve_var_ref(var_t *var_p) {
+var_t *resolve_var_ref(var_t *var_p, int *is_ptr) {
   switch (code_peek()) {
   case kwTYPE_LEVEL_BEGIN:
-    var_p = resolve_var_ref(code_getvarptr_arridx(var_p));
+    if (var_p->type == V_PTR) {
+      *is_ptr = 1;
+    } else {
+      var_p = resolve_var_ref(code_getvarptr_arridx(var_p), is_ptr);
+    }
     break;
   case kwTYPE_UDS_EL:
-    var_p = resolve_var_ref(map_resolve_fields(var_p, NULL));
+    var_p = resolve_var_ref(map_resolve_fields(var_p, NULL), is_ptr);
     break;
   }
   return var_p;
@@ -293,7 +296,12 @@ int code_isvar() {
       var_p = code_resolve_varptr(var_p, 0);
       break;
     case V_REF:
-      var_p = resolve_var_ref(var_p);
+      is_ptr = 0;
+      var_p = resolve_var_ref(var_p, &is_ptr);
+      if (is_ptr) {
+        prog_ip = cur_ip;
+        return 1;
+      }
       break;
     default:
       if (code_peek() == kwTYPE_LEVEL_BEGIN) {

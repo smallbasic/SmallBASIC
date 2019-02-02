@@ -1,44 +1,26 @@
-' reference variable tests
-
-a = "cat"
-b = @a
-
-print "cat=", b
+rem reference variables not supported
 a = "dog"
+b = @a
+a = "cat"
+print "cat=", a
 print "dog=", b
-print "3=", len(b)
-print "1=", not empty(b)
-print "a=b", iFF(a==b, "a=b", "a<>b")
 
-b = "goodbye a"
-print "a<>b", iFF(a==b, "a=b", "a<>b")
-
-dim rooms
-sub addRoom(byref room)
-  rooms << byref room
+rem complex pseudo class method references
+func C
+  func f(j)
+    return j
+  end
+  local r = {}
+  r.f = @f
+  return r
 end
-
-dim kitchen,hall,toilet
-kitchen.name= "kitchen"
-hall.name = "hall"
-toilet.name ="toilet"
-
-addRoom(kitchen)
-addRoom(hall)
-
-print rooms(0)
-print rooms(1)
-
-kitchen.name = "Kitchen"
-kitchen.fridge = "empty"
-print rooms(0)
-
-insert rooms, 0, @toilet
-toilet.occupied = true
-
-print rooms(0)
-print rooms(1)
-print rooms(2)
-
-roomref = byref rooms(0)
-print roomref.name
+func Q
+  local r = {}
+  r.c = C()
+  return r
+end
+c.m = Q()
+j = [1,2,3]
+for n in c.m.c.f(j)
+  print n
+next n
