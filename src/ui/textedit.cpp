@@ -1,6 +1,6 @@
 // This file is part of SmallBASIC
 //
-// Copyright(C) 2001-2018 Chris Warren-Smith.
+// Copyright(C) 2001-2019 Chris Warren-Smith.
 //
 // This program is distributed under the terms of the GPL v2.0 or later
 // Download the GNU Public License (GPL) from www.gnu.org
@@ -26,7 +26,42 @@ void safe_memmove(void *dest, const void *src, size_t n) {
 #define IS_VAR_CHAR(ch) (ch == '_' || ch == '$' || isalpha(ch) || isdigit(ch))
 #define STB_TEXTEDIT_memmove safe_memmove
 #define STB_TEXTEDIT_IMPLEMENTATION
+
+int is_word_border(EditBuffer *_str, int _idx) {
+  return _idx > 0 ? ((STB_TEXTEDIT_IS_SPACE(STB_TEXTEDIT_GETCHAR(_str,_idx-1)) ||
+                      STB_TEXTEDIT_IS_PUNCT(STB_TEXTEDIT_GETCHAR(_str,_idx-1))) &&
+                     !STB_TEXTEDIT_IS_SPACE(STB_TEXTEDIT_GETCHAR(_str, _idx))) : 1;
+}
+
+int textedit_move_to_word_previous(EditBuffer *str, int c) {
+  --c; // always move at least one character
+  while (c >= 0 && !is_word_border(str, c)) {
+    --c;
+  }
+  if (c < 0) {
+    c = 0;
+  }
+  return c;
+}
+
+int textedit_move_to_word_next(EditBuffer *str, int c) {
+  const int len = str->_len;
+  ++c; // always move at least one character
+  while (c < len && !is_word_border(str, c)) {
+    ++c;
+  }
+  if (c > len) {
+    c = len;
+  }
+  return c;
+}
+
+#define STB_TEXTEDIT_MOVEWORDLEFT textedit_move_to_word_previous
+#define STB_TEXTEDIT_MOVEWORDRIGHT textedit_move_to_word_next
+
+#pragma GCC diagnostic ignored "-Wunused-function"
 #include "lib/stb_textedit.h"
+#pragma GCC diagnostic pop
 
 #define GROW_SIZE 128
 #define LINE_BUFFER_SIZE 200
@@ -1566,8 +1601,8 @@ void TextEditInput::killWord() {
   int start = _state.cursor;
   int end = wordEnd();
   if (start == end) {
-    int word = stb_textedit_move_to_word_next(&_buf, _state.cursor);
-    end = stb_textedit_move_to_word_next(&_buf, word) - 1;
+    int word = textedit_move_to_word_next(&_buf, _state.cursor);
+    end = textedit_move_to_word_next(&_buf, word) - 1;
     int bound = lineEnd(start);
     if (end > bound && bound != start) {
       // clip to line end when there are characters prior to the line end
@@ -1708,7 +1743,7 @@ void TextEditInput::removeTrailingSpaces() {
 void TextEditInput::selectWord() {
   if (_state.select_start != _state.select_end) {
     // advance to next word
-    _state.cursor = stb_textedit_move_to_word_next(&_buf, _state.cursor);
+    _state.cursor = textedit_move_to_word_next(&_buf, _state.cursor);
     _state.select_start = _state.select_end = -1;
   }
   _state.select_start = wordStart();
@@ -1716,7 +1751,7 @@ void TextEditInput::selectWord() {
 
   if (_state.select_start == _state.select_end) {
     // move to next word
-    _state.cursor = stb_textedit_move_to_word_next(&_buf, _state.cursor);
+    _state.cursor = textedit_move_to_word_next(&_buf, _state.cursor);
   }
 }
 
@@ -1787,8 +1822,8 @@ int TextEditInput::wordEnd() {
 int TextEditInput::wordStart() {
   int cursor = _state.cursor == 0 ? 0 : _state.cursor - 1;
   return ((cursor >= 0 && cursor < _buf._len && _buf._buffer[cursor] == '\n') ? _state.cursor :
-          is_word_boundary(&_buf, _state.cursor) ? _state.cursor :
-          stb_textedit_move_to_word_previous(&_buf, _state.cursor));
+          is_word_border(&_buf, _state.cursor) ? _state.cursor :
+          textedit_move_to_word_previous(&_buf, _state.cursor));
 }
 
 //
