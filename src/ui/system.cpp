@@ -1125,7 +1125,7 @@ void System::printSource() {
 void System::setExit(bool quit) {
   if (!isClosing()) {
     bool running = isRunning();
-    _state = quit ? kClosingState : kBackState;
+    _state = (quit && _editor == NULL) ? kClosingState : kBackState;
     if (running) {
       brun_break();
     }
