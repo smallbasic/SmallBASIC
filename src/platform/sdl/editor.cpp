@@ -155,7 +155,7 @@ void exportBuffer(AnsiWidget *out, const char *text, String &dest, String &token
   out->setStatus(buffer);
 }
 
-void System::editSource(String loadPath) {
+void System::editSource(String loadPath, bool restoreOnExit) {
   logEntered();
 
   int w = _output->getWidth();
@@ -510,7 +510,7 @@ void System::editSource(String loadPath) {
 
   // deletes editWidget unless it has been removed
   _output->removeInputs();
-  if (!isClosing()) {
+  if (!isClosing() && restoreOnExit) {
     _output->selectScreen(prevScreenId, false);
   }
   logLeaving();

@@ -71,7 +71,7 @@ struct System {
   virtual char *getClipboardText() = 0;
 
 protected:
-  void editSource(strlib::String loadPath);
+  void editSource(strlib::String loadPath, bool restoreOnExit);
   bool execute(const char *bas);
   bool fileExists(strlib::String &path);
   MAEvent getNextEvent() { return processEvents(1); }

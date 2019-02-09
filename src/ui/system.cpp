@@ -581,7 +581,7 @@ void System::runEdit(const char *startupBas) {
   while (true) {
     if (loadSource(_loadPath)) {
       setupPath(_loadPath);
-      editSource(_loadPath);
+      editSource(_loadPath, false);
       if (isBack() || isClosing()) {
         break;
       } else {
@@ -656,7 +656,7 @@ void System::runMain(const char *mainBasPath) {
     }
 
     if (!_mainBas && isEditReady() && loadSource(_loadPath)) {
-      editSource(_loadPath);
+      editSource(_loadPath, true);
       if (isBack()) {
         _loadPath.clear();
         _state = kActiveState;

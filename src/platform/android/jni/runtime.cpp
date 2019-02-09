@@ -934,7 +934,7 @@ void System::completeKeyword(int index) {
   }
 }
 
-void System::editSource(strlib::String loadPath) {
+void System::editSource(strlib::String loadPath, bool restoreOnExit) {
   logEntered();
 
   strlib::String fileName;
@@ -1119,7 +1119,7 @@ void System::editSource(strlib::String loadPath) {
 
   // deletes editWidget unless it has been removed
   _output->removeInputs();
-  if (!isClosing()) {
+  if (!isClosing() && restoreOnExit) {
     _output->selectScreen(prevScreenId);
   }
   logLeaving();
