@@ -1,3 +1,6 @@
+2019-14-02 (0.12.15)
+	ANDROID: fix crash passing negative duration to SOUND command
+
 2019-11-02 (0.12.15)
 	UI: ALT+F4 from edit/run now returns to edit
 	UI: avoid flicker from with ALT+F4 -e edit startup

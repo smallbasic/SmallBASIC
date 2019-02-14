@@ -56,7 +56,7 @@ class Sound {
    * http://stackoverflow.com/questions/2413426/playing-an-arbitrary-tone-with-android
    */
   private byte[] generateTone(int freqOfTone, int durationMillis) {
-    int numSamples = durationMillis * AUDIO_SAMPLE_RATE / 1000;
+    int numSamples = Math.max(1, durationMillis * AUDIO_SAMPLE_RATE / 1000);
     double sample[] = new double[numSamples];
     byte result[] = new byte[2 * numSamples];
 
