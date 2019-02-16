@@ -1227,15 +1227,16 @@ void TextEditInput::editEnter() {
 
     // check whether the previous line was a comment
     char *buf = lineText(prevLineStart);
+    int length = strlen(buf);
     int pos = 0;
     while (buf && (buf[pos] == ' ' || buf[pos] == '\t')) {
       pos++;
     }
-    if ((buf[pos] == '#' || buf[pos] == '\'') && indent + 2 < LINE_BUFFER_SIZE) {
+    if (length > 2 && (buf[pos] == '#' || buf[pos] == '\'') && indent + 2 < LINE_BUFFER_SIZE) {
       spaces[indent] = buf[pos];
       spaces[++indent] = ' ';
       spaces[++indent] = '\0';
-    } else if (strncasecmp(buf + pos, "rem", 3) == 0) {
+    } else if (length > 4 && strncasecmp(buf + pos, "rem", 3) == 0) {
       indent = strlcat(spaces, "rem ", LINE_BUFFER_SIZE);
     }
     free(buf);

@@ -417,17 +417,21 @@ public class MainActivity extends NativeActivity {
     }).start();
   }
 
-  public void playTone(int frq, int dur, int vol) {
+  public void playTone(int frq, int dur, int vol, boolean bgplay) {
     float volume = (vol / 100f);
     final Sound sound = new Sound(frq, dur, volume);
-    _sounds.add(sound);
-    _audioExecutor.execute(new Runnable() {
-      @Override
-      public void run() {
-        sound.play();
-        _sounds.remove(sound);
-      }
-    });
+    if (bgplay) {
+      _sounds.add(sound);
+      _audioExecutor.execute(new Runnable() {
+        @Override
+        public void run() {
+          sound.play();
+          _sounds.remove(sound);
+        }
+      });
+    } else {
+      sound.play();
+    }
   }
 
   public boolean removeLocationUpdates() {

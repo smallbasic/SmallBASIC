@@ -19,18 +19,14 @@ class Sound {
   private final int _dur;
   private boolean _silent;
   
-  public Sound(int frq, int dur, float vol) {
+  Sound(int frq, int dur, float vol) {
     this._sound = generateTone(frq, dur);
     this._volume = vol;
     this._dur = dur;
     this._silent = false;
   }
   
-  public boolean isSilent() {
-    return _silent;
-  }
-
-  public void play() {
+  void play() {
     if (!_silent) {
       try {
         AudioTrack audioTrack = new AudioTrack(AudioManager.STREAM_MUSIC,
@@ -48,7 +44,7 @@ class Sound {
     }
   }
 
-  public void setSilent(boolean silent) {
+  void setSilent(boolean silent) {
     this._silent = silent;
   }
 
