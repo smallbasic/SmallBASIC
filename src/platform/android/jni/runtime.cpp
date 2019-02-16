@@ -1169,7 +1169,9 @@ void osd_audio(const char *path) {
 }
 
 void osd_sound(int frq, int dur, int vol, int bgplay) {
-  runtime->playTone(frq, dur, vol, bgplay);
+  if (dur > 0 && frq > 0) {
+    runtime->playTone(frq, dur, vol, bgplay);
+  }
 }
 
 void osd_clear_sound_queue() {
