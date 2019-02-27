@@ -20,7 +20,7 @@ func Q
   return r
 end
 c.m = Q()
-j = [1,2,3]
+j = [10,20]
 for n in c.m.c.f(j)
   print n
 next n
