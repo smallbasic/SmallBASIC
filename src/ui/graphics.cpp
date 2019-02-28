@@ -297,11 +297,17 @@ void Graphics::drawRGB(const MAPoint2d *dstPoint, const void *src,
             dX <  _drawTarget->w()) {
           // get RGBA components
           uint8_t r,g,b,a;
+#if defined(PIXELFORMAT_RGBA8888)
+          b = image[4 * y * w + 4 * x + 0]; // blue
+          g = image[4 * y * w + 4 * x + 1]; // green
+          r = image[4 * y * w + 4 * x + 2]; // red
+          a = image[4 * y * w + 4 * x + 3]; // alpha
+#else
           r = image[4 * y * w + 4 * x + 0]; // red
           g = image[4 * y * w + 4 * x + 1]; // green
           b = image[4 * y * w + 4 * x + 2]; // blue
           a = image[4 * y * w + 4 * x + 3]; // alpha
-
+#endif
           uint8_t dR, dG, dB;
           GET_RGB(line[dX], dR, dG, dB);
           if (opacity > 0 && opacity < 100 && a > 64) {
