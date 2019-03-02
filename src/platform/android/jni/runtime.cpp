@@ -952,6 +952,7 @@ void System::editSource(strlib::String loadPath, bool restoreOnExit) {
   cleanFile.append(" - ");
   cleanFile.append(fileName);
 
+  bool showStatus = true;
   int w = _output->getWidth();
   int h = _output->getHeight();
   int charWidth = _output->getCharWidth();
@@ -985,6 +986,7 @@ void System::editSource(strlib::String loadPath, bool restoreOnExit) {
     editWidget->setCursorRow(gsb_last_line + editWidget->getSelectionRow() - 1);
     runtime->alert(gsb_last_errmsg);
   }
+
   _srcRendered = false;
   _output->setStatus(cleanFile);
   _output->redraw();
@@ -994,8 +996,20 @@ void System::editSource(strlib::String loadPath, bool restoreOnExit) {
   while (_state == kEditState) {
     MAEvent event = getNextEvent();
     switch (event.type) {
+    case EVENT_TYPE_POINTER_PRESSED:
+      if (!showStatus && event.point.x < editWidget->getMarginWidth()) {
+        _output->setStatus(editWidget->isDirty() ? dirtyFile : cleanFile);
+        showStatus = true;
+      }
+      break;
+    case EVENT_TYPE_POINTER_RELEASED:
+      if (showStatus && event.point.x < editWidget->getMarginWidth() && editWidget->getScroll()) {
+        _output->setStatus("");
+        showStatus = false;
+      }
+      break;
     case EVENT_TYPE_OPTIONS_BOX_BUTTON_CLICKED:
-      if (editWidget->isDirty()) {
+      if (editWidget->isDirty() && !editWidget->getScroll()) {
         _output->setStatus(dirtyFile);
         _output->redraw();
       }
@@ -1068,10 +1082,8 @@ void System::editSource(strlib::String loadPath, bool restoreOnExit) {
           redraw = widget->edit(event.key, sw, charWidth);
           break;
         }
-        if (widget->isDirty() && !dirty) {
-          _output->setStatus(dirtyFile);
-        } else if (!widget->isDirty() && dirty) {
-          _output->setStatus(cleanFile);
+        if (editWidget->isDirty() != dirty && !editWidget->getScroll()) {
+          _output->setStatus(editWidget->isDirty() ? dirtyFile : cleanFile);
         }
         if (redraw) {
           _output->redraw();

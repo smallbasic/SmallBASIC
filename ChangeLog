@@ -1,3 +1,6 @@
+2019-03-02 (0.12.15)
+	ANDROID: In editor, hide status when scrolled
+
 2019-02-26 (0.12.15)
 	ANDROID: Fix POINT returning transposed red + blue
 

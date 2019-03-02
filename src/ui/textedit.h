@@ -101,6 +101,7 @@ struct TextEditInput : public FormEditInput {
   int  getRow() const { return _cursorRow + 1; }
   int  getPageRows() const { return _height / _charHeight; }
   int  getLines() { return _buf.lineCount(); }
+  int  getMarginWidth() { return _marginWidth; }
   void getSelectionCounts(int *lines, int *chars);
   int  getSelectionRow();
   int  getSelectionStart() { return _state.select_start; }

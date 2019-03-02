@@ -23,3 +23,13 @@ apply plugin: "com.github.ben-manes.versions"
 task clean(type: Delete) {
   delete rootProject.buildDir
 }
+
+task test {
+  doLast {
+    exec {
+      commandLine 'sh', '-c', 'adb -a logcat -c && \
+        adb -a shell am start net.sourceforge.smallbasic/net.sourceforge.smallbasic.MainActivity && \
+        adb -a logcat DEBUG:I smallbasic:I AndroidRuntime:E *:S'
+    }
+  }
+}
