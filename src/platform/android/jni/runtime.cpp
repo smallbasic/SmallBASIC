@@ -952,7 +952,6 @@ void System::editSource(strlib::String loadPath, bool restoreOnExit) {
   cleanFile.append(" - ");
   cleanFile.append(fileName);
 
-  bool showStatus = true;
   int w = _output->getWidth();
   int h = _output->getHeight();
   int charWidth = _output->getCharWidth();
@@ -987,8 +986,9 @@ void System::editSource(strlib::String loadPath, bool restoreOnExit) {
     runtime->alert(gsb_last_errmsg);
   }
 
+  bool showStatus = !editWidget->getScroll();
   _srcRendered = false;
-  _output->setStatus(cleanFile);
+  _output->setStatus(showStatus ? cleanFile : "");
   _output->redraw();
   _state = kEditState;
   runtime->showKeypad(true);
@@ -999,12 +999,14 @@ void System::editSource(strlib::String loadPath, bool restoreOnExit) {
     case EVENT_TYPE_POINTER_PRESSED:
       if (!showStatus && event.point.x < editWidget->getMarginWidth()) {
         _output->setStatus(editWidget->isDirty() ? dirtyFile : cleanFile);
+        _output->redraw();
         showStatus = true;
       }
       break;
     case EVENT_TYPE_POINTER_RELEASED:
       if (showStatus && event.point.x < editWidget->getMarginWidth() && editWidget->getScroll()) {
         _output->setStatus("");
+        _output->redraw();
         showStatus = false;
       }
       break;
