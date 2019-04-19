@@ -107,6 +107,7 @@ typedef struct stknode_s {
     struct {
       var_t *var_ptr; /**< 'FOR' variable */
       var_t *arr_ptr; /**< FOR-IN array-variable */
+      var_t *str_ptr; /**< FOR-IN string variable */
       bcip_t to_expr_ip; /**< IP of 'TO' expression */
       bcip_t step_expr_ip; /**< IP of 'STEP' expression (FOR-IN = current element) */
       bcip_t jump_ip; /**< code block IP */

@@ -181,3 +181,11 @@ s= "a\c\e"
 if mid(s, 2, 1) != "\\" then throw s
 if mid(s, 4, 1) != "\\" then throw s
 
+REM FOR character IN string
+s1 = "cats"
+s2 = ""
+for c in s1
+  s2 += c
+next c
+if (s1 <> s2) then throw s2
+
