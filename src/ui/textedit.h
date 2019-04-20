@@ -32,6 +32,7 @@ struct TextEditInput;
 struct EditTheme {
   EditTheme();
   EditTheme(int fg, int bg);
+  void setId(const unsigned themeId);
   void selectTheme(const int theme[]);
 
   int _color;

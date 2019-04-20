@@ -1,6 +1,6 @@
 // This file is part of SmallBASIC
 //
-// Copyright(C) 2001-2014 Chris Warren-Smith.
+// Copyright(C) 2001-2019 Chris Warren-Smith.
 //
 // This program is distributed under the terms of the GPL v2.0 or later
 // Download the GNU Public License (GPL) from www.gnu.org
@@ -28,7 +28,7 @@
  #include <android/log.h>
  #define deviceLog(...) __android_log_print(ANDROID_LOG_INFO, \
                         "smallbasic", __VA_ARGS__)
-#elif defined(_SDL)
+#elif defined(_SDL) || defined(_FLTK)
  void appLog(const char *format, ...);
  #define deviceLog(...) appLog(__VA_ARGS__)
 #endif

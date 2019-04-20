@@ -168,12 +168,12 @@ struct List {
   }
 
   /**
-   * Returns whether string exists in the list of strings
+   * Returns whether list of strings constains the string
    */
   bool contains(const char *s);
 
   /**
-   * Returns whether T exists in the list
+   * Returns whether the list contains t
    */
   bool contains(T t) {
     bool result = false;
@@ -279,6 +279,7 @@ struct Properties : public List<T> {
   }
 
   // for Properties<String *>
+  void get(const char *key, List<String *> *arrayValues);
   void load(const char *s);
   void load(const char *s, int len);
   void put(const char *key, const char *value);
@@ -295,7 +296,8 @@ struct Properties : public List<T> {
 };
 
 // specialisations for String properties
-template<> void strlib::Properties<String *>::load(const char *);
+template<> void Properties<String *>::get(const char *key, List<String *> *arrayValues);
+template<> void Properties<String *>::load(const char *);
 template<> void Properties<String *>::load(const char *s, int slen);
 template<> void Properties<String *>::put(const char *key, const char *value);
 

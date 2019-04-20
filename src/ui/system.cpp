@@ -1,6 +1,6 @@
 // This file is part of SmallBASIC
 //
-// Copyright(C) 2001-2017 Chris Warren-Smith.
+// Copyright(C) 2001-2019 Chris Warren-Smith.
 //
 // This program is distributed under the terms of the GPL v2.0 or later
 // Download the GNU Public License (GPL) from www.gnu.org
@@ -74,10 +74,12 @@ void Cache::add(const char *key, const char *value) {
 }
 
 System::System() :
-  _output(NULL),
-  _state(kInitState),
-  _editor(NULL),
   _cache(MAX_CACHE),
+  _output(NULL),
+  _editor(NULL),
+  _systemMenu(NULL),
+  _programSrc(NULL),
+  _state(kInitState),
   _touchX(-1),
   _touchY(-1),
   _touchCurX(-1),
@@ -85,13 +87,11 @@ System::System() :
   _initialFontSize(0),
   _fontScale(100),
   _userScreenId(-1),
-  _systemMenu(NULL),
+  _modifiedTime(0),
   _mainBas(false),
   _buttonPressed(false),
   _srcRendered(false),
-  _menuActive(false),
-  _programSrc(NULL),
-  _modifiedTime(0) {
+  _menuActive(false) {
   g_system = this;
 }
 
@@ -905,7 +905,7 @@ void System::showMenu() {
         _systemMenu[index++] = MENU_PASTE;
         _systemMenu[index++] = MENU_SELECT_ALL;
       }
-#if defined(_SDL)
+#if defined(_SDL) || defined(_FLTK)
       items->add(new String("Back"));
       _systemMenu[index++] = MENU_BACK;
 #else
@@ -927,7 +927,7 @@ void System::showMenu() {
         items->add(new String("Restart"));
         _systemMenu[index++] = MENU_RESTART;
       }
-#if !defined(_SDL)
+#if !defined(_SDL) && !defined(_FLTK)
       items->add(new String("Show keypad"));
       _systemMenu[index++] = MENU_KEYPAD;
 #endif
@@ -944,7 +944,7 @@ void System::showMenu() {
         items->add(new String(buffer));
         _systemMenu[index++] = MENU_EDITMODE;
       }
-#if !defined(_SDL)
+#if !defined(_SDL) && !defined(_FLTK)
       if (!_mainBas && !_activeFile.empty()) {
         items->add(new String("Desktop Shortcut"));
         items->add(new String("Share"));
@@ -955,7 +955,7 @@ void System::showMenu() {
       sprintf(buffer, "Audio [%s]", (opt_mute_audio ? "OFF" : "ON"));
       items->add(new String(buffer));
       _systemMenu[index++] = MENU_AUDIO;
-#if defined(_SDL)
+#if defined(_SDL) || defined(_FLTK)
       items->add(new String("Back"));
       _systemMenu[index++] = MENU_BACK;
 #endif
@@ -1258,11 +1258,13 @@ int osd_textwidth(const char *str) {
   return EXTENT_X(textSize);
 }
 
+#if !defined(_FLTK)
 void osd_write(const char *str) {
   if (!g_system->isClosing()) {
     g_system->getOutput()->print(str);
   }
 }
+#endif
 
 void lwrite(const char *str) {
   if (!(str[0] == '\n' && str[1] == '\0') && !g_system->isClosing()) {
@@ -1285,12 +1287,6 @@ char *dev_read(const char *fileName) {
 
 int maGetMilliSecondCount(void) {
   return dev_get_millisecond_count();
-}
-
-void create_func(var_p_t map, const char *name, method cb) {
-  var_p_t v_func = map_add_var(map, name, 0);
-  v_func->type = V_FUNC;
-  v_func->v.fn.cb = cb;
 }
 
 void dev_log_stack(const char *keyword, int type, int line) {

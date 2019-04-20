@@ -16,6 +16,8 @@
 
 #include "common/sys.h"
 
+#define KEYWORD_PADDING 4
+
 #if defined(__cplusplus)
 extern "C" {
 #endif
@@ -83,7 +85,7 @@ struct proc_keyword_s {
  * External procedure (Modules)
  */
 typedef struct {
-  char name[SB_KEYWORD_SIZE + 1]; /**< keyword name */
+  char name[SB_KEYWORD_SIZE + KEYWORD_PADDING]; /**< keyword name */
   int  lib_id; /**< library id */
   bid_t pcode; /**< keyword code */
   int symbol_index; /**< symbol index on symbol-table */
@@ -96,7 +98,7 @@ typedef struct {
  * External functions (Modules)
  */
 typedef struct {
-  char name[SB_KEYWORD_SIZE + 1]; /**< keyword name */
+  char name[SB_KEYWORD_SIZE + KEYWORD_PADDING]; /**< keyword name */
   int lib_id; /**< library id */
   bid_t fcode; /**< keyword code */
   int symbol_index; /**< symbol index on symbol-table */
@@ -126,7 +128,7 @@ typedef struct comp_var_s comp_var_t;
  * compiler's label node
  */
 struct comp_label_s {
-  char name[SB_KEYWORD_SIZE + 1]; /**< label name    @ingroup scan */
+  char name[SB_KEYWORD_SIZE + KEYWORD_PADDING]; /**< label name    @ingroup scan */
   bcip_t ip; /**< address in BC @ingroup scan */
   bid_t block_id; /**< block_id (FOR-NEXT,IF-FI,etc) used for GOTOs @ingroup scan */
   bcip_t dp; /**< data pointer @ingroup scan */
@@ -165,7 +167,7 @@ typedef struct comp_proc_s comp_udp_t;
  * compiler's pass-2 stack node
  */
 struct comp_pass_node_s {
-  char sec[SB_KEYWORD_SIZE + 1]; /**< section-name (PalmOS) @ingroup scan */
+  char sec[SB_KEYWORD_SIZE + KEYWORD_PADDING]; /**< section-name (PalmOS) @ingroup scan */
   bcip_t pos; /**< address in BC         @ingroup scan */
   int line; /**< source code line number @ingroup scan */
   bid_t block_id; /**< block ID          @ingroup scan */

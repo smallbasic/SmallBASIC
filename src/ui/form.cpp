@@ -302,9 +302,9 @@ extern "C" void v_create_form(var_p_t var) {
     }
     out->setDirty();
     v_zerostr(map_add_var(var, FORM_VALUE, 0));
-    create_func(var, "doEvents", cmd_form_do_events);
-    create_func(var, "close", cmd_form_close);
-    create_func(var, "refresh", cmd_form_refresh);
+    v_create_func(var, "doEvents", cmd_form_do_events);
+    v_create_func(var, "close", cmd_form_close);
+    v_create_func(var, "refresh", cmd_form_refresh);
   } else {
     err_form_input();
   }

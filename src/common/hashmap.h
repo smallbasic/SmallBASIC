@@ -5,7 +5,7 @@
 // This program is distributed under the terms of the GPL v2.0 or later
 // Download the GNU Public License (GPL) from www.gnu.org
 //
-// Copyright(C) 2007-2016 Chris Warren-Smith.
+// Copyright(C) 2007-2019 Chris Warren-Smith.
 
 #ifndef _HASHMAP_H_
 #define _HASHMAP_H_
@@ -16,12 +16,12 @@
  * Callback structure for hashmap_foreach
  */
 typedef struct hashmap_cb {
+  var_p_t var;
+  var_p_t parent;
+  char *buffer;
   int count;
   int index;
   int start;
-  char *buffer;
-  var_p_t var;
-  var_p_t parent;
 } hashmap_cb;
 
 typedef int (*hashmap_foreach_func)(hashmap_cb *cb, var_p_t k, var_p_t v);

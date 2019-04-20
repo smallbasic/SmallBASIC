@@ -1,7 +1,7 @@
 dnl
 dnl Configure script for SmallBASIC
 dnl
-dnl Copyright(C) 2001-2018 Chris Warren-Smith.
+dnl Copyright(C) 2001-2019 Chris Warren-Smith.
 dnl
 dnl This program is distributed under the terms of the GPL v2.0
 dnl Download the GNU Public License (GPL) from www.gnu.org
@@ -38,6 +38,11 @@ AC_ARG_ENABLE(web,
   AS_HELP_STRING([--enable-web],[build Web server version(default=no)]),
   [ac_build_web="yes"],
   [ac_build_web="no"])
+
+AC_ARG_ENABLE(fltk,
+  AS_HELP_STRING([--enable-fltk],[build fltk version(default=no)]),
+  [ac_build_fltk="yes"],
+  [ac_build_fltk="no"])
 
 AC_ARG_ENABLE(dist,
   AS_HELP_STRING([--enable-dist],[prepare to run make dist(default=no)]),
@@ -211,15 +216,13 @@ function buildSDL() {
    dnl preconfigured values for SDL build
    AC_DEFINE(_SDL, 1, [Defined when building SDL version])
    AC_DEFINE(_UnixOS, 1, [Building under Unix like systems.])
-   AC_DEFINE(IMPL_DEV_DELAY, 1, [Driver implements dev_delay()])
-   AC_DEFINE(IMPL_LOG_WRITE, 1, [Driver implements lwrite()])
    AC_DEFINE(IMPL_DEV_READ, 1, [Implement dev_read()])
+   AC_DEFINE(IMPL_DEV_DELAY, 1, [Driver implements dev_delay()])
    AC_DEFINE(IMPL_LOG_WRITE, 1, [Driver implements lwrite()])
 
    BUILD_SUBDIRS="src/common src/platform/sdl"
    AC_SUBST(BUILD_SUBDIRS)
    (cd src/platform/android/app/src/main/assets && xxd -i main.bas > ../../../../../../../src/platform/sdl/main_bas.h)
-   (cd documentation && g++ -o build_kwp build_kwp.cpp && ./build_kwp > ../src/ui/kwp.h)
 }
 
 function buildAndroid() {
@@ -238,8 +241,6 @@ function buildAndroid() {
 
    TEST_DIR="src/platform/android"
    AC_SUBST(TEST_DIR)
-
-   (cd documentation && g++ -o build_kwp build_kwp.cpp && ./build_kwp > ../src/ui/kwp.h)
 }
 
 function buildConsole() {
@@ -299,8 +300,6 @@ function buildConsole() {
    fi
 
    AC_SUBST(BUILD_SUBDIRS)
-
-   (cd documentation && g++ -o build_kwp build_kwp.cpp && ./build_kwp > ../src/ui/kwp.h)
 }
 
 function buildWeb() {
@@ -326,15 +325,73 @@ function buildWeb() {
    AC_SUBST(BUILD_SUBDIRS)
 }
 
+function buildFLTK() {
+   TARGET="Building FLTK version."
+
+   dnl Checks for FLTK 1.x
+   AC_CHECK_PROG(have_fltk, fltk-config, [yes], [no])
+
+   AC_CHECK_PROG(have_xxd, xxd, [yes], [no])
+   if test "${have_xxd}" = "no" ; then
+     AC_MSG_ERROR([xxd command not installed: configure failed.])
+   fi
+
+   dnl avoid using MSCRT versions of printf for long double
+   case "${host_os}" in
+     *mingw* | cygwin*)
+     PACKAGE_CFLAGS="${PACKAGE_CFLAGS} -D__USE_MINGW_ANSI_STDIO"
+   esac
+
+   FLTK_CXXFLAGS="${PACKAGE_CFLAGS} `fltk-config --cxxflags`"
+   FLTK_CXXFLAGS="${FLTK_CXXFLAGS} -fno-exceptions -fno-rtti -std=c++11 -Wno-unknown-pragmas"
+   PACKAGE_LIBS="${PACKAGE_LIBS} `fltk-config --ldstaticflags --use-images`"
+
+   dnl do not depend on cygwin.dll under cygwin build
+   case "${host_os}" in
+     *mingw* | cygwin*)
+     FLTK_CXXFLAGS="${FLTK_CXXFLAGS} -mms-bitfields"
+     PACKAGE_LIBS="-Wl,-Bstatic ${PACKAGE_LIBS} -lwsock32 -lws2_32 -static-libgcc -static-libstdc++"
+     AC_DEFINE(_Win32, 1, [Windows build])
+     ;;
+
+     *)
+     (cd images && xxd -i sb-desktop-128x128.png > ../src/platform/fltk/icon.h)
+     xxd
+   esac
+
+   defaultConditionals
+
+   dnl preconfigured values for FLTK build
+   AC_DEFINE(_UnixOS, 1, [Building under Unix like systems.])
+   AC_DEFINE(_FLTK, 1, [Defined for FLTK build.])
+   AC_DEFINE(IMPL_DEV_READ, 1, [Implement dev_read()])
+   AC_DEFINE(IMPL_DEV_DELAY, 1, [Driver implements dev_delay()])
+   AC_DEFINE(IMPL_LOG_WRITE, 1, [Driver implements lwrite()])
+
+   BUILD_SUBDIRS="src/common src/platform/fltk"
+   AC_SUBST(BUILD_SUBDIRS)
+   AC_SUBST(FLTK_CXXFLAGS)
+
+   desktopentrydir='$(datarootdir)'/applications
+   AC_SUBST(desktopentrydir)
+
+   dnl generate kwp.h
+   (cd src/platform/fltk && g++ -o build_kwp build_kwp.cxx && ./build_kwp)
+}
+
 if test x$ac_build_sdl = xyes; then
    buildSDL
 elif test x$ac_build_android = xyes; then
    buildAndroid
 elif test x$ac_build_web = xyes; then
    buildWeb
+elif test x$ac_build_fltk = xyes; then
+   buildFLTK
 else
    buildConsole
 fi
+
+(cd documentation && g++ -o build_kwp build_kwp.cpp && ./build_kwp > ../src/ui/kwp.h)
 
 checkPCRE
 checkTermios
@@ -368,6 +425,7 @@ src/platform/android/Makefile
 src/platform/console/Makefile
 src/platform/sdl/Makefile
 src/platform/web/Makefile
+src/platform/fltk/Makefile
 ])
 AC_OUTPUT
 

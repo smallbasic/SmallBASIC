@@ -467,6 +467,13 @@ int v_strlen(const var_t *v);
  */
 #define v_is_type(v, t) (v != NULL && v->type == t)
 
+/**
+ * @ingroup var
+ *
+ * setup a method on the map using the given name
+ */
+void v_create_func(var_p_t map, const char *name, method cb);
+
 #if defined(__cplusplus)
 }
 #endif

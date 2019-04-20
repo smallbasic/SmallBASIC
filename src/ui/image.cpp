@@ -5,7 +5,7 @@
 // This program is distributed under the terms of the GPL v2.0 or later
 // Download the GNU Public License (GPL) from www.gnu.org
 //
-// Copyright(C) 2002-2015 Chris Warren-Smith.
+// Copyright(C) 2002-2019 Chris Warren-Smith.
 
 #include "common/sys.h"
 #include "common/messages.h"
@@ -14,7 +14,7 @@
 #include "lib/maapi.h"
 #include "ui/image.h"
 #include "ui/system.h"
-#include "ui/graphics.h"
+#include "ui/rgb.h"
 
 #if !defined(LODEPNG_NO_COMPILE_CPP)
   #define LODEPNG_NO_COMPILE_CPP
@@ -129,7 +129,7 @@ uint8_t *get_image_data(int x, int y, int w, int h) {
   uint8_t *result = (uint8_t *)malloc(size);
   if (result != NULL) {
     g_system->getOutput()->redraw();
-    maGetImageData(HANDLE_SCREEN, result, &rc, w);
+    maGetImageData(HANDLE_SCREEN, result, &rc, w * 4);
   }
   return result;
 }
@@ -429,9 +429,9 @@ void create_image(var_p_t var, ImageBuffer *image) {
   map_add_var(var, IMG_WIDTH, image->_width);
   map_add_var(var, IMG_HEIGHT, image->_height);
   map_add_var(var, IMG_BID, image->_bid);
-  create_func(var, "show", cmd_image_show);
-  create_func(var, "hide", cmd_image_hide);
-  create_func(var, "save", cmd_image_save);
+  v_create_func(var, "show", cmd_image_show);
+  v_create_func(var, "hide", cmd_image_hide);
+  v_create_func(var, "save", cmd_image_save);
 }
 
 // loads an image for the form image input type
@@ -489,7 +489,10 @@ void screen_dump() {
       }
       if (access(file, R_OK) != 0) {
         g_system->systemPrint("Saving screen to %s\n", file);
-        lodepng_encode32_file(file, image, width, height);
+        unsigned error = lodepng_encode32_file(file, image, width, height);
+        if (error) {
+          g_system->systemPrint("Error: %s\n", lodepng_error_text(error));
+        }
         break;
       }
     }

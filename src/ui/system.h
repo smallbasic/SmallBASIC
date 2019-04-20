@@ -1,6 +1,6 @@
 // This file is part of SmallBASIC
 //
-// Copyright(C) 2001-2017 Chris Warren-Smith.
+// Copyright(C) 2001-2019 Chris Warren-Smith.
 //
 // This program is distributed under the terms of the GPL v2.0 or later
 // Download the GNU Public License (GPL) from www.gnu.org
@@ -14,7 +14,6 @@
 #include "ui/ansiwidget.h"
 #include "ui/textedit.h"
 
-void create_func(var_p_t form, const char *name, method cb);
 void reset_image_cache();
 
 struct Cache : public strlib::Properties<String *> {
@@ -101,11 +100,18 @@ protected:
   void showSystemScreen(bool showSrc);
   void waitForBack();
   void waitForChange(bool error);
-  AnsiWidget *_output;
 
   // platform static virtual
   bool getPen3();
   void completeKeyword(int index);
+
+  strlib::Stack<String *> _history;
+  StackTrace _stackTrace;
+  Cache _cache;
+  AnsiWidget *_output;
+  TextEditInput *_editor;
+  int *_systemMenu;
+  char *_programSrc;
 
   enum {
     kInitState = 0,// thread not active
@@ -121,12 +127,6 @@ protected:
     kDoneState     // thread has terminated
   } _state;
 
-  strlib::Stack<String *> _history;
-  strlib::String _loadPath;
-  strlib::String _activeFile;
-  StackTrace _stackTrace;
-  TextEditInput *_editor;
-  Cache _cache;
   int _touchX;
   int _touchY;
   int _touchCurX;
@@ -134,13 +134,13 @@ protected:
   int _initialFontSize;
   int _fontScale;
   int _userScreenId;
-  int *_systemMenu;
+  uint32_t _modifiedTime;
   bool _mainBas;
   bool _buttonPressed;
   bool _srcRendered;
   bool _menuActive;
-  char *_programSrc;
-  uint32_t _modifiedTime;
+  strlib::String _loadPath;
+  strlib::String _activeFile;
 };
 
 #endif

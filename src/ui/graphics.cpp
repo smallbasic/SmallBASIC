@@ -389,7 +389,7 @@ void Graphics::getImageData(Canvas *canvas, uint8_t *image,
   for (int dy = 0, y = srcRect->top; y < y_end; y += scale, dy++) {
     if (y >= canvas->y() && y < canvas->h()) {
       pixel_t *line = canvas->getLine(y);
-      int yoffs = (dy * bytesPerLine * 4);
+      int yoffs = (dy * bytesPerLine);
       for (int dx = 0, x = srcRect->left; x < x_end; x += scale, dx++) {
         if (x >= canvas->x() && x < canvas->w()) {
           uint8_t r, g, b;
@@ -679,7 +679,7 @@ MAHandle maFontLoadDefault(int type, int style, int size) {
 
 MAHandle maFontSetCurrent(MAHandle maHandle) {
   if (graphics) {
-    graphics->setFont((Font *) maHandle);
+    graphics->setFont((Font *)maHandle);
   }
   return maHandle;
 }

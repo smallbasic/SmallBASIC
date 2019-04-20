@@ -1,6 +1,6 @@
 // This file is part of SmallBASIC
 //
-// Copyright(C) 2001-2014 Chris Warren-Smith.
+// Copyright(C) 2001-2019 Chris Warren-Smith.
 //
 // This program is distributed under the terms of the GPL v2.0 or later
 // Download the GNU Public License (GPL) from www.gnu.org
@@ -203,10 +203,14 @@ void Screen::drawOverlay(bool vscroll) {
 
   drawLabel();
 
+#if defined(_FLTK)
+  drawMenu();
+#else
   if ((!_inputs.empty() || !_label.empty()) && isFullScreen()) {
     // draw the menu widget when in UI mode
     drawMenu();
   }
+#endif
 }
 
 void Screen::drawInto(bool background) {

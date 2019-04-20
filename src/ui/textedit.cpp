@@ -262,6 +262,14 @@ EditTheme::EditTheme(int fg, int bg) :
   _row_marker(fg) {
 }
 
+void EditTheme::setId(const unsigned themeId) {
+  if (themeId >= (sizeof(themes) / sizeof(themes[0]))) {
+    selectTheme(themes[0]);
+  } else {
+    selectTheme(themes[themeId]);
+  }
+}
+
 void EditTheme::selectTheme(const int theme[]) {
   _color = theme[0];
   _selection_color = theme[1];

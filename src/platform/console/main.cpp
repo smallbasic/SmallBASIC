@@ -50,7 +50,7 @@ void show_help() {
             OPTIONS[i].val, OPTIONS[i].name);
     i++;
   }
-  fprintf(stdout, "\nhttps://smallbasic.sourceforge.io\n\n");
+  fprintf(stdout, "\nhttps://smallbasic.github.io\n\n");
 }
 
 void show_brief_help() {

@@ -347,4 +347,18 @@ template<> void Properties<String *>::put(const char *key, const char *value) {
   }
 }
 
-
+template<> void Properties<String *>::get(const char *key, List<String *> *arrayValues) {
+  for (int i = 0; i < _count; i++) {
+    String *nextKey = (String *)_head[i++];
+    if (nextKey == NULL || i == _count) {
+      break;
+    }
+    String *nextValue = (String *)_head[i];
+    if (nextValue == NULL) {
+      break;
+    }
+    if (nextKey->equals(key)) {
+      arrayValues->add(new String(*nextValue));
+    }
+  }
+}

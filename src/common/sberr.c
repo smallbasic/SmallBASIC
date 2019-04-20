@@ -94,7 +94,7 @@ void sc_raise(const char *format, ...) {
  * run-time error
  */
 void rt_raise(const char *format, ...) {
-  if (!gsb_last_error && !prog_error && prog_source) {
+  if (!gsb_last_error && ctask && !prog_error && prog_source) {
     prog_error = errRuntime;
 
     va_list args;

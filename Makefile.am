@@ -20,7 +20,7 @@ fuzz-test:
 	(cd src/platform/console && make fuzz-test)
 
 cppcheck:
-	(cppcheck --quiet --enable=all src/common src/ui src/platform/android/jni src/platform/sdl)
+	(cppcheck --quiet --enable=all src/common src/ui src/platform/android/jni src/platform/sdl src/platform/fltk)
 
 covcheck:
 	(make clean -s && \

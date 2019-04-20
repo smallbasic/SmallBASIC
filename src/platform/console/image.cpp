@@ -70,12 +70,6 @@ ImageBuffer::~ImageBuffer() {
   _image = NULL;
 }
 
-void create_function(var_p_t map, const char *name, method cb) {
-  var_p_t v_func = map_add_var(map, name, 0);
-  v_func->type = V_FUNC;
-  v_func->v.fn.cb = cb;
-}
-
 dev_file_t *get_file() {
   dev_file_t *result = NULL;
   code_skipnext();
@@ -434,10 +428,10 @@ void create_image(var_p_t var, ImageBuffer *image) {
     var_p_t value = map_add_var(var, IMG_NAME, 0);
     v_setstr(value, image->_filename);
   }
-  create_function(var, "clip", cmd_image_clip);
-  create_function(var, "filter", cmd_image_filter);
-  create_function(var, "paste", cmd_image_paste);
-  create_function(var, "save", cmd_image_save);
+  v_create_func(var, "clip", cmd_image_clip);
+  v_create_func(var, "filter", cmd_image_filter);
+  v_create_func(var, "paste", cmd_image_paste);
+  v_create_func(var, "save", cmd_image_save);
 }
 
 //
