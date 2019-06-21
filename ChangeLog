@@ -1,3 +1,6 @@
+2019-06-22 (0.12.15)
+	FLTK: reactivated the FLTK port using FLTK v1.4
+
 2019-03-02 (0.12.15)
 	COMMON: Implemented - FOR character IN string
 

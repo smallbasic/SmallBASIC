@@ -117,6 +117,25 @@ Useful adb commands for debugging:
 adb shell dumpsys cpuinfo
 adb shell top -m 10
 
+### Building the FLTK version
+
+1. Install and build FLTK 1.4
+
+```
+$ cd ~/github
+$ git clone https://github.com/fltk/fltk.git
+$ sudo make install
+
+```
+
+2. Build
+
+```
+$ cd ~/github/SmallBASIC
+$ ./configure --enable-fltk
+$ make -s
+```
+
 ### .indent.pro settings
 ```
  -brf -nbap -br -brs -cdb -cdw -ce -cli0 -fca -i2 -l110 -lc110 -lp
