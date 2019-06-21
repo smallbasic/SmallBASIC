@@ -1,6 +1,6 @@
 // This file is part of SmallBASIC
 //
-// Copyright(C) 2001-2015 Chris Warren-Smith.
+// Copyright(C) 2001-2019 Chris Warren-Smith.
 //
 // This program is distributed under the terms of the GPL v2.0 or later
 // Download the GNU Public License (GPL) from www.gnu.org
@@ -32,6 +32,7 @@ struct TextEditInput;
 struct EditTheme {
   EditTheme();
   EditTheme(int fg, int bg);
+  void setId(const unsigned themeId);
   void selectTheme(const int theme[]);
 
   int _color;
@@ -101,11 +102,13 @@ struct TextEditInput : public FormEditInput {
   int  getRow() const { return _cursorRow + 1; }
   int  getPageRows() const { return _height / _charHeight; }
   int  getLines() { return _buf.lineCount(); }
+  int  getMarginWidth() { return _marginWidth; }
   void getSelectionCounts(int *lines, int *chars);
   int  getSelectionRow();
+  int  getSelectionStart() { return _state.select_start; }
   int  getScroll() const { return _scroll; }
   const char *getText() const { return _buf._buffer; }
-  char *getTextSelection();
+  char *getTextSelection(bool selectAll);
   int  getTextLength() const { return _buf._len; }
   int *getMarkers();
   void gotoLine(const char *buffer);
@@ -162,6 +165,7 @@ protected:
   int  getLineChars(StbTexteditRow *row, int pos);
   char *getSelection(int *start, int *end);
   void gotoNextMarker();
+  void killWord();
   void lineNavigate(bool lineDown);
   char *lineText(int pos);
   int  lineEnd(int pos) { return linePos(pos, true); }
@@ -171,6 +175,7 @@ protected:
   bool matchStatement(uint32_t hash);
   void pageNavigate(bool pageDown, bool shift);
   void removeTrailingSpaces();
+  void selectWord();
   void setColor(SyntaxState &state);
   void toggleMarker();
   void updateScroll();

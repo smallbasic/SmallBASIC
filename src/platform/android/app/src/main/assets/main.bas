@@ -119,7 +119,7 @@ sub do_about()
   color 7
   print "Version "; sbver
   print
-  print "Copyright (c) 2002-2018 Chris Warren-Smith"
+  print "Copyright (c) 2002-2019 Chris Warren-Smith"
   print "Copyright (c) 1999-2006 Nicholas Christopoulos" + chr(10)
 
   local bn_home
@@ -127,7 +127,11 @@ sub do_about()
   bn_home.y = ypos * char_h
   bn_home.type = "link"
   bn_home.isExternal = true
-  bn_home.label = "https://smallbasic.github.io"
+  if (is_sdl) then
+    bn_home.label = "https://smallbasic.github.io"
+  else
+    bn_home.label = "https://smallbasic.github.io/pages/android.html"
+  endif
   bn_home.color = colLink
   print:print
 
@@ -147,7 +151,7 @@ end
 sub do_setup()
   local frm
 
-  color 3
+  color 3, colBkGnd
   cls
   print boldOn + "Setup web service port number."
   print boldOff
@@ -169,7 +173,7 @@ sub do_setup()
     env("serverToken=" + token)
   endif
 
-  color 3
+  color 3, colBkGnd
   cls
   print "Web service port number: " + env("serverSocket")
   print

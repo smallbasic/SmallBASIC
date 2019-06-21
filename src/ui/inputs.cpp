@@ -1193,8 +1193,8 @@ void FormImage::draw(int x, int y, int w, int h, int chw) {
 MenuButton::MenuButton(int index, int &selectedIndex,
                            const char *caption, int x, int y, int w, int h) :
   FormButton(caption, x, y, w, h),
-  _index(index),
-  _selectedIndex(selectedIndex) {
+  _selectedIndex(selectedIndex),
+  _index(index) {
 }
 
 void MenuButton::clicked(int x, int y, bool pressed) {

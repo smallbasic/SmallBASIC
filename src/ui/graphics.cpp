@@ -297,11 +297,17 @@ void Graphics::drawRGB(const MAPoint2d *dstPoint, const void *src,
             dX <  _drawTarget->w()) {
           // get RGBA components
           uint8_t r,g,b,a;
+#if defined(PIXELFORMAT_RGBA8888)
+          b = image[4 * y * w + 4 * x + 0]; // blue
+          g = image[4 * y * w + 4 * x + 1]; // green
+          r = image[4 * y * w + 4 * x + 2]; // red
+          a = image[4 * y * w + 4 * x + 3]; // alpha
+#else
           r = image[4 * y * w + 4 * x + 0]; // red
           g = image[4 * y * w + 4 * x + 1]; // green
           b = image[4 * y * w + 4 * x + 2]; // blue
           a = image[4 * y * w + 4 * x + 3]; // alpha
-
+#endif
           uint8_t dR, dG, dB;
           GET_RGB(line[dX], dR, dG, dB);
           if (opacity > 0 && opacity < 100 && a > 64) {
@@ -383,7 +389,7 @@ void Graphics::getImageData(Canvas *canvas, uint8_t *image,
   for (int dy = 0, y = srcRect->top; y < y_end; y += scale, dy++) {
     if (y >= canvas->y() && y < canvas->h()) {
       pixel_t *line = canvas->getLine(y);
-      int yoffs = (dy * bytesPerLine * 4);
+      int yoffs = (dy * bytesPerLine);
       for (int dx = 0, x = srcRect->left; x < x_end; x += scale, dx++) {
         if (x >= canvas->x() && x < canvas->w()) {
           uint8_t r, g, b;
@@ -673,7 +679,7 @@ MAHandle maFontLoadDefault(int type, int style, int size) {
 
 MAHandle maFontSetCurrent(MAHandle maHandle) {
   if (graphics) {
-    graphics->setFont((Font *) maHandle);
+    graphics->setFont((Font *)maHandle);
   }
   return maHandle;
 }

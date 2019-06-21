@@ -1559,6 +1559,7 @@ void cmd_for_in(bcip_t true_ip, bcip_t false_ip, var_p_t var_p) {
   node.x.vfor.var_ptr = var_p;
   node.x.vfor.to_expr_ip = prog_ip;
   node.x.vfor.flags = 0;
+  node.x.vfor.str_ptr = NULL;
 
   if (code_isvar()) {
     // array variable
@@ -1571,19 +1572,28 @@ void cmd_for_in(bcip_t true_ip, bcip_t false_ip, var_p_t var_p) {
       v_detach(new_var);
       return;
     }
-    if (new_var->type != V_ARRAY) {
+
+    switch (new_var->type) {
+    case V_MAP:
+    case V_ARRAY:
+    case V_STR:
+      break;
+
+    default:
       v_free(new_var);
       v_detach(new_var);
       err_typemismatch();
       return;
     }
 
-    node.x.vfor.flags = 1;    // allocated here
+    // allocated here
+    node.x.vfor.flags = 1;
     node.x.vfor.arr_ptr = array_p = new_var;
   }
 
   if (!prog_error) {
-    node.x.vfor.step_expr_ip = 0; // element-index
+    // element-index
+    node.x.vfor.step_expr_ip = 0;
 
     var_p_t var_elem_ptr = 0;
     switch (array_p->type) {
@@ -1595,6 +1605,13 @@ void cmd_for_in(bcip_t true_ip, bcip_t false_ip, var_p_t var_p) {
       if (v_asize(array_p) > 0) {
         var_elem_ptr = v_elem(array_p, 0);
       }
+      break;
+
+    case V_STR:
+      var_elem_ptr = node.x.vfor.str_ptr = v_new();
+      v_init_str(var_elem_ptr, 1);
+      var_elem_ptr->v.p.ptr[0] = array_p->v.p.ptr[0];
+      var_elem_ptr->v.p.ptr[1] = '\0';
       break;
 
     default:
@@ -1789,6 +1806,130 @@ void cmd_until() {
   v_free(&var);
 }
 
+//
+// FOR chr in str
+//
+var_t *cmd_next_for_in_str(stknode_t *node) {
+  var_t *result = NULL;
+  var_t *array_p = node->x.vfor.arr_ptr;
+  int index = ++node->x.vfor.step_expr_ip;
+  if (index < v_strlen(array_p)) {
+    result = node->x.vfor.str_ptr;
+    result->v.p.ptr[0] = array_p->v.p.ptr[index];
+  }
+  return result;
+}
+
+//
+// FOR [EACH] v1 IN v2
+//
+void cmd_next_for_in(stknode_t *node, bcip_t next_ip) {
+  var_t *array_p = node->x.vfor.arr_ptr;
+  var_t *var_elem_ptr = NULL;
+
+  bcip_t jump_ip = node->x.vfor.jump_ip;
+  var_t *var_p = node->x.vfor.var_ptr;
+
+  switch (array_p->type) {
+  case V_STR:
+    var_elem_ptr = cmd_next_for_in_str(node);
+    break;
+
+  case V_MAP:
+    var_elem_ptr = map_elem_key(array_p, ++node->x.vfor.step_expr_ip);
+    break;
+
+  case V_ARRAY:
+    if (v_asize(array_p) > (int) ++node->x.vfor.step_expr_ip) {
+      var_elem_ptr = v_elem(array_p, node->x.vfor.step_expr_ip);
+    }
+    break;
+
+  default:
+    break;
+  }
+
+  if (var_elem_ptr) {
+    v_set(var_p, var_elem_ptr);
+    stknode_t *stknode = code_push(kwFOR);
+    stknode->x.vfor = node->x.vfor;
+    code_jump(jump_ip);
+  } else {
+    // end of iteration
+    if (node->x.vfor.flags & 1) {
+      // allocated in for
+      v_free(node->x.vfor.arr_ptr);
+      v_detach(node->x.vfor.arr_ptr);
+    }
+    if (node->x.vfor.str_ptr) {
+      v_free(node->x.vfor.str_ptr);
+      v_detach(node->x.vfor.str_ptr);
+      node->x.vfor.str_ptr = NULL;
+    }
+    code_jump(next_ip);
+  }
+}
+
+//
+// FOR v=exp1 TO exp2 [STEP exp3]
+//
+void cmd_next_for_to(stknode_t *node, bcip_t next_ip) {
+  int check = 0;
+  var_t var_to;
+
+  bcip_t jump_ip = node->x.vfor.jump_ip;
+  var_t *var_p = node->x.vfor.var_ptr;
+
+  prog_ip = node->x.vfor.to_expr_ip;
+  v_init(&var_to);
+  eval(&var_to);
+
+  if (!prog_error && (var_to.type == V_INT || var_to.type == V_NUM)) {
+    // get step val
+    var_t var_step;
+    var_step.const_flag = 0;
+    var_step.type = V_INT;
+    var_step.v.i = 1;
+
+    if (node->x.vfor.step_expr_ip != INVALID_ADDR) {
+      prog_ip = node->x.vfor.step_expr_ip;
+      eval(&var_step);
+    }
+
+    if (!prog_error && (var_step.type == V_INT || var_step.type == V_NUM)) {
+      v_inc(var_p, &var_step);
+      if (v_sign(&var_step) < 0) {
+        check = (v_compare(var_p, &var_to) >= 0);
+      } else {
+        check = (v_compare(var_p, &var_to) <= 0);
+      }
+    } else {
+      if (!prog_error) {
+        err_typemismatch();
+      }
+    }
+    v_free(&var_step);
+  } else {
+    if (!prog_error) {
+      rt_raise("FOR-TO: TO v IS NOT A NUMBER");
+    }
+  }
+
+  //
+  // run
+  //
+  if (!prog_error) {
+    if (check) {
+      stknode_t *stknode = code_push(kwFOR);
+      stknode->x.vfor = node->x.vfor;
+      code_jump(jump_ip);
+    } else {
+      code_jump(next_ip);
+    }
+  }
+  v_free(&var_to);
+}
+
 /**
  * NEXT
  */
@@ -1813,108 +1954,11 @@ void cmd_next() {
     return;
   }
 
-  bcip_t jump_ip = node.x.vfor.jump_ip;
-  var_t *var_p = node.x.vfor.var_ptr;
 
   if (node.x.vfor.subtype == kwTO) {
-    //
-    // FOR v=exp1 TO exp2 [STEP exp3]
-    //
-    int check = 0;
-    var_t var_to;
-
-    prog_ip = node.x.vfor.to_expr_ip;
-    v_init(&var_to);
-    eval(&var_to);
-
-    if (!prog_error && (var_to.type == V_INT || var_to.type == V_NUM)) {
-      // get step val
-      var_t var_step;
-      var_step.const_flag = 0;
-      var_step.type = V_INT;
-      var_step.v.i = 1;
-
-      if (node.x.vfor.step_expr_ip != INVALID_ADDR) {
-        prog_ip = node.x.vfor.step_expr_ip;
-        eval(&var_step);
-      }
-
-      if (!prog_error && (var_step.type == V_INT || var_step.type == V_NUM)) {
-        v_inc(var_p, &var_step);
-        if (v_sign(&var_step) < 0) {
-          check = (v_compare(var_p, &var_to) >= 0);
-        } else {
-          check = (v_compare(var_p, &var_to) <= 0);
-        }
-      } else {
-        if (!prog_error) {
-          err_typemismatch();
-        }
-      }
-      v_free(&var_step);
-    } else {
-      if (!prog_error) {
-        rt_raise("FOR-TO: TO v IS NOT A NUMBER");
-      }
-    }
-
-    //
-    // RUN
-    //
-    if (!prog_error) {
-      if (check) {
-        stknode_t *stknode = code_push(kwFOR);
-        stknode->x.vfor = node.x.vfor;
-        code_jump(jump_ip);
-      } else {
-        code_jump(next_ip);
-      }
-    }
-    v_free(&var_to);
+    cmd_next_for_to(&node, next_ip);
   } else {
-    //
-    // FOR [EACH] v1 IN v2
-    //
-    var_t *array_p = node.x.vfor.arr_ptr;
-    var_t *var_elem_ptr = 0;
-
-    switch (array_p->type) {
-    case V_MAP:
-      node.x.vfor.step_expr_ip++; // element-index
-      var_elem_ptr = map_elem_key(array_p, node.x.vfor.step_expr_ip);
-      break;
-
-    case V_ARRAY:
-      node.x.vfor.step_expr_ip++; // element-index
-
-      if (v_asize(array_p) > (int) node.x.vfor.step_expr_ip) {
-        var_elem_ptr = v_elem(array_p, node.x.vfor.step_expr_ip);
-      } else {
-        if (node.x.vfor.flags & 1) {
-          // allocated in for
-          v_free(node.x.vfor.arr_ptr);
-          v_detach(node.x.vfor.arr_ptr);
-        }
-      }
-      break;
-
-    default:
-      if (node.x.vfor.flags & 1) {
-        // allocated in for
-        v_free(node.x.vfor.arr_ptr);
-        v_detach(node.x.vfor.arr_ptr);
-      }
-      break;
-    }
-
-    if (var_elem_ptr) {
-      v_set(var_p, var_elem_ptr);
-      stknode_t *stknode = code_push(kwFOR);
-      stknode->x.vfor = node.x.vfor;
-      code_jump(jump_ip);
-    } else {
-      code_jump(next_ip);
-    }
+    cmd_next_for_in(&node, next_ip);
   }
 }
 

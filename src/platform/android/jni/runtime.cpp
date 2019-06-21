@@ -738,8 +738,8 @@ void Runtime::playTone(int frq, int dur, int vol, bool bgplay) {
   JNIEnv *env;
   _app->activity->vm->AttachCurrentThread(&env, NULL);
   jclass clazz = env->GetObjectClass(_app->activity->clazz);
-  jmethodID methodId = env->GetMethodID(clazz, "playTone", "(III)V");
-  env->CallVoidMethod(_app->activity->clazz, methodId, frq, dur, vol);
+  jmethodID methodId = env->GetMethodID(clazz, "playTone", "(IIIZ)V");
+  env->CallVoidMethod(_app->activity->clazz, methodId, frq, dur, vol, bgplay);
   env->DeleteLocalRef(clazz);
   _app->activity->vm->DetachCurrentThread();
 }
@@ -934,7 +934,7 @@ void System::completeKeyword(int index) {
   }
 }
 
-void System::editSource(strlib::String loadPath) {
+void System::editSource(strlib::String loadPath, bool restoreOnExit) {
   logEntered();
 
   strlib::String fileName;
@@ -985,8 +985,10 @@ void System::editSource(strlib::String loadPath) {
     editWidget->setCursorRow(gsb_last_line + editWidget->getSelectionRow() - 1);
     runtime->alert(gsb_last_errmsg);
   }
+
+  bool showStatus = !editWidget->getScroll();
   _srcRendered = false;
-  _output->setStatus(cleanFile);
+  _output->setStatus(showStatus ? cleanFile : "");
   _output->redraw();
   _state = kEditState;
   runtime->showKeypad(true);
@@ -994,8 +996,22 @@ void System::editSource(strlib::String loadPath) {
   while (_state == kEditState) {
     MAEvent event = getNextEvent();
     switch (event.type) {
+    case EVENT_TYPE_POINTER_PRESSED:
+      if (!showStatus && event.point.x < editWidget->getMarginWidth()) {
+        _output->setStatus(editWidget->isDirty() ? dirtyFile : cleanFile);
+        _output->redraw();
+        showStatus = true;
+      }
+      break;
+    case EVENT_TYPE_POINTER_RELEASED:
+      if (showStatus && event.point.x < editWidget->getMarginWidth() && editWidget->getScroll()) {
+        _output->setStatus("");
+        _output->redraw();
+        showStatus = false;
+      }
+      break;
     case EVENT_TYPE_OPTIONS_BOX_BUTTON_CLICKED:
-      if (editWidget->isDirty()) {
+      if (editWidget->isDirty() && !editWidget->getScroll()) {
         _output->setStatus(dirtyFile);
         _output->redraw();
       }
@@ -1068,10 +1084,8 @@ void System::editSource(strlib::String loadPath) {
           redraw = widget->edit(event.key, sw, charWidth);
           break;
         }
-        if (widget->isDirty() && !dirty) {
-          _output->setStatus(dirtyFile);
-        } else if (!widget->isDirty() && dirty) {
-          _output->setStatus(cleanFile);
+        if (editWidget->isDirty() != dirty && !editWidget->getScroll()) {
+          _output->setStatus(editWidget->isDirty() ? dirtyFile : cleanFile);
         }
         if (redraw) {
           _output->redraw();
@@ -1119,7 +1133,7 @@ void System::editSource(strlib::String loadPath) {
 
   // deletes editWidget unless it has been removed
   _output->removeInputs();
-  if (!isClosing()) {
+  if (!isClosing() && restoreOnExit) {
     _output->selectScreen(prevScreenId);
   }
   logLeaving();
@@ -1169,7 +1183,9 @@ void osd_audio(const char *path) {
 }
 
 void osd_sound(int frq, int dur, int vol, int bgplay) {
-  runtime->playTone(frq, dur, vol, bgplay);
+  if (dur > 0 && frq > 0) {
+    runtime->playTone(frq, dur, vol, bgplay);
+  }
 }
 
 void osd_clear_sound_queue() {

@@ -146,6 +146,7 @@ struct FormInput : public Shape {
   bool _pressed;
 
 protected:
+  bool __padding[3];
   int  _id;
   bool _exit;
   bool _visible;
@@ -318,8 +319,8 @@ struct MenuButton : public FormButton {
   void clicked(int x, int y, bool pressed);
   void draw(int x, int y, int w, int h, int chw);
 
-  int _index;
   int &_selectedIndex;
+  int _index;
 };
 
 FormEditInput *get_focus_edit();

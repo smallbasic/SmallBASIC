@@ -1,6 +1,6 @@
 // This file is part of SmallBASIC
 //
-// Copyright(C) 2001-2018 Chris Warren-Smith.
+// Copyright(C) 2001-2019 Chris Warren-Smith.
 //
 // This program is distributed under the terms of the GPL v2.0 or later
 // Download the GNU Public License (GPL) from www.gnu.org
@@ -26,7 +26,42 @@ void safe_memmove(void *dest, const void *src, size_t n) {
 #define IS_VAR_CHAR(ch) (ch == '_' || ch == '$' || isalpha(ch) || isdigit(ch))
 #define STB_TEXTEDIT_memmove safe_memmove
 #define STB_TEXTEDIT_IMPLEMENTATION
+
+int is_word_border(EditBuffer *_str, int _idx) {
+  return _idx > 0 ? ((STB_TEXTEDIT_IS_SPACE(STB_TEXTEDIT_GETCHAR(_str,_idx-1)) ||
+                      STB_TEXTEDIT_IS_PUNCT(STB_TEXTEDIT_GETCHAR(_str,_idx-1))) &&
+                     !STB_TEXTEDIT_IS_SPACE(STB_TEXTEDIT_GETCHAR(_str, _idx))) : 1;
+}
+
+int textedit_move_to_word_previous(EditBuffer *str, int c) {
+  --c; // always move at least one character
+  while (c >= 0 && !is_word_border(str, c)) {
+    --c;
+  }
+  if (c < 0) {
+    c = 0;
+  }
+  return c;
+}
+
+int textedit_move_to_word_next(EditBuffer *str, int c) {
+  const int len = str->_len;
+  ++c; // always move at least one character
+  while (c < len && !is_word_border(str, c)) {
+    ++c;
+  }
+  if (c > len) {
+    c = len;
+  }
+  return c;
+}
+
+#define STB_TEXTEDIT_MOVEWORDLEFT textedit_move_to_word_previous
+#define STB_TEXTEDIT_MOVEWORDRIGHT textedit_move_to_word_next
+
+#pragma GCC diagnostic ignored "-Wunused-function"
 #include "lib/stb_textedit.h"
+#pragma GCC diagnostic pop
 
 #define GROW_SIZE 128
 #define LINE_BUFFER_SIZE 200
@@ -153,9 +188,11 @@ const char *helpText =
   "C-end bottom\n"
   "C-5,6,7 macro\n"
   "A-c change case\n"
+  "A-d kill word\n"
   "A-g goto line\n"
   "A-n trim line-endings\n"
   "A-t select theme\n"
+  "A-w select word\n"
   "A-. return mode\n"
   "A-<n> recent file\n"
   "A-= count chars\n"
@@ -191,6 +228,10 @@ int compareIntegers(const void *p1, const void *p2) {
   return i1 < i2 ? -1 : i1 == i2 ? 0 : 1;
 }
 
+const char *find_str(bool allUpper, const char *haystack, const char *needle) {
+  return allUpper ? strstr(haystack, needle) : strcasestr(haystack, needle);
+}
+
 //
 // EditTheme
 //
@@ -219,6 +260,14 @@ EditTheme::EditTheme(int fg, int bg) :
   _syntax_statement(fg),
   _syntax_digit(fg),
   _row_marker(fg) {
+}
+
+void EditTheme::setId(const unsigned themeId) {
+  if (themeId >= (sizeof(themes) / sizeof(themes[0]))) {
+    selectTheme(themes[0]);
+  } else {
+    selectTheme(themes[themeId]);
+  }
 }
 
 void EditTheme::selectTheme(const int theme[]) {
@@ -728,6 +777,12 @@ bool TextEditInput::edit(int key, int screenWidth, int charWidth) {
   case SB_KEY_ALT('c'):
     changeCase();
     break;
+  case SB_KEY_ALT('d'):
+    killWord();
+    break;
+  case SB_KEY_ALT('w'):
+    selectWord();
+    break;
   case SB_KEY_CTRL('d'):
     stb_textedit_key(&_buf, &_state, STB_TEXTEDIT_K_DELETE);
     break;
@@ -799,15 +854,24 @@ bool TextEditInput::edit(int key, int screenWidth, int charWidth) {
 
 bool TextEditInput::find(const char *word, bool next) {
   bool result = false;
+  bool allUpper = true;
+  int len = strlen(word);
+  for (int i = 0; i < len; i++) {
+    if (islower(word[i])) {
+      allUpper = false;
+      break;
+    }
+  }
+
   if (_buf._buffer != NULL && word != NULL) {
-    const char *found = strcasestr(_buf._buffer + _state.cursor, word);
+    const char *found = find_str(allUpper, _buf._buffer + _state.cursor, word);
     if (next && found != NULL) {
       // skip to next word
-      found = strcasestr(found + strlen(word), word);
+      found = find_str(allUpper, found + strlen(word), word);
     }
     if (found == NULL) {
       // start over
-      found = strcasestr(_buf._buffer, word);
+      found = find_str(allUpper, _buf._buffer, word);
     }
     if (found != NULL) {
       result = true;
@@ -865,7 +929,7 @@ int TextEditInput::getSelectionRow() {
   return result;
 }
 
-char *TextEditInput::getTextSelection() {
+char *TextEditInput::getTextSelection(bool selectAll) {
   char *result;
   if (_state.select_start != _state.select_end) {
     int start, end;
@@ -877,8 +941,10 @@ char *TextEditInput::getTextSelection() {
       end = _state.select_end;
     }
     result = _buf.textRange(start, end);
-  } else {
+  } else if (selectAll) {
     result = _buf.textRange(0, _buf._len);
+  } else {
+    result = NULL;
   }
   return result;
 }
@@ -1150,7 +1216,8 @@ void TextEditInput::editDeleteLine() {
   int start = _state.cursor;
   int end = linePos(_state.cursor, true, true);
   if (end > start) {
-    stb_textedit_delete(&_buf, &_state, start, end - start);
+    // delete the entire line when the cursor is at the home position
+    stb_textedit_delete(&_buf, &_state, start, end - start + (_cursorCol == 0 ? 1 : 0));
     _state.cursor = start;
   } else if (start == end) {
     stb_textedit_delete(&_buf, &_state, start, 1);
@@ -1164,7 +1231,24 @@ void TextEditInput::editEnter() {
 
   if (prevLineStart || _cursorLine == 1) {
     char spaces[LINE_BUFFER_SIZE];
-    int indent = getIndent(spaces, sizeof(spaces), prevLineStart);
+    int indent = getIndent(spaces, LINE_BUFFER_SIZE, prevLineStart);
+
+    // check whether the previous line was a comment
+    char *buf = lineText(prevLineStart);
+    int length = strlen(buf);
+    int pos = 0;
+    while (buf && (buf[pos] == ' ' || buf[pos] == '\t')) {
+      pos++;
+    }
+    if (length > 2 && (buf[pos] == '#' || buf[pos] == '\'') && indent + 2 < LINE_BUFFER_SIZE) {
+      spaces[indent] = buf[pos];
+      spaces[++indent] = ' ';
+      spaces[++indent] = '\0';
+    } else if (length > 4 && strncasecmp(buf + pos, "rem", 3) == 0) {
+      indent = strlcat(spaces, "rem ", LINE_BUFFER_SIZE);
+    }
+    free(buf);
+
     if (indent) {
       _buf.insertChars(_state.cursor, spaces, indent);
       stb_text_makeundo_insert(&_state, _state.cursor, indent);
@@ -1175,7 +1259,6 @@ void TextEditInput::editEnter() {
 
 void TextEditInput::editTab() {
   char spaces[LINE_BUFFER_SIZE];
-  int indent;
 
   // get the desired indent based on the previous line
   int start = lineStart(_state.cursor);
@@ -1186,7 +1269,7 @@ void TextEditInput::editTab() {
     prevLineStart = lineStart(prevLineStart - 1);
   }
   // note - spaces not used in this context
-  indent = (prevLineStart || _cursorLine == 2) ? getIndent(spaces, sizeof(spaces), prevLineStart) : 0;
+  int indent = (prevLineStart || _cursorLine == 2) ? getIndent(spaces, sizeof(spaces), prevLineStart) : 0;
 
   // get the current lines indent
   char *buf = lineText(start);
@@ -1523,6 +1606,23 @@ void TextEditInput::gotoNextMarker() {
   }
 }
 
+void TextEditInput::killWord() {
+  int start = _state.cursor;
+  int end = wordEnd();
+  if (start == end) {
+    int word = textedit_move_to_word_next(&_buf, _state.cursor);
+    end = textedit_move_to_word_next(&_buf, word) - 1;
+    int bound = lineEnd(start);
+    if (end > bound && bound != start) {
+      // clip to line end when there are characters prior to the line end
+      end = bound;
+    }
+  }
+  if (end > start) {
+    stb_textedit_delete(&_buf, &_state, start, end - start);
+  }
+}
+
 void TextEditInput::lineNavigate(bool arrowDown) {
   if (arrowDown) {
     if (!_bottom) {
@@ -1649,6 +1749,21 @@ void TextEditInput::removeTrailingSpaces() {
   setCursorRow(row - 1);
 }
 
+void TextEditInput::selectWord() {
+  if (_state.select_start != _state.select_end) {
+    // advance to next word
+    _state.cursor = textedit_move_to_word_next(&_buf, _state.cursor);
+    _state.select_start = _state.select_end = -1;
+  }
+  _state.select_start = wordStart();
+  _state.select_end = _state.cursor = wordEnd();
+
+  if (_state.select_start == _state.select_end) {
+    // move to next word
+    _state.cursor = textedit_move_to_word_next(&_buf, _state.cursor);
+  }
+}
+
 void TextEditInput::setColor(SyntaxState &state) {
   switch (state) {
   case kComment:
@@ -1716,8 +1831,8 @@ int TextEditInput::wordEnd() {
 int TextEditInput::wordStart() {
   int cursor = _state.cursor == 0 ? 0 : _state.cursor - 1;
   return ((cursor >= 0 && cursor < _buf._len && _buf._buffer[cursor] == '\n') ? _state.cursor :
-          is_word_boundary(&_buf, _state.cursor) ? _state.cursor :
-          stb_textedit_move_to_word_previous(&_buf, _state.cursor));
+          is_word_border(&_buf, _state.cursor) ? _state.cursor :
+          textedit_move_to_word_previous(&_buf, _state.cursor));
 }
 
 //
@@ -2034,10 +2149,19 @@ void TextEditHelpWidget::createOutline() {
 }
 
 void TextEditHelpWidget::createSearch(bool replace) {
-  if (_mode == kSearch) {
-    _editor->find(_buf._buffer, true);
-  } else {
+  if (_mode != kSearch) {
     reset(replace ? kSearchReplace : kSearch);
+  }
+
+  char *text = _editor->getTextSelection(false);
+  if (text != NULL) {
+    // prime search from selected text
+    _buf.clear();
+    _buf.insertChars(0, text, strlen(text));
+    free(text);
+
+    // ensure the selected word is first match
+    _editor->setCursorPos(_editor->getSelectionStart());
   }
 }
 

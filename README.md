@@ -4,7 +4,7 @@ SmallBASIC is a fast and easy to learn BASIC language interpreter ideal for ever
 
 Initial setup on linux
 ```
- $ sudo apt-get install git autotools-dev automake gcc g++ libsdl2-dev libfreetype6-dev libfontconfig1-dev
+ $ sudo apt-get install git autotools-dev automake gcc g++ libsdl2-dev libfreetype6-dev libfontconfig1-dev xxd
  $ git clone https://github.com/smallbasic/SmallBASIC.git
  $ cd SmallBASIC
  $ sh autogen.sh
@@ -116,6 +116,25 @@ $ cd - && cd ide/android/ && ant release install
 Useful adb commands for debugging:
 adb shell dumpsys cpuinfo
 adb shell top -m 10
+
+### Building the FLTK version
+
+1. Install and build FLTK 1.4
+
+```
+$ cd ~/github
+$ git clone https://github.com/fltk/fltk.git
+$ sudo make install
+
+```
+
+2. Build
+
+```
+$ cd ~/github/SmallBASIC
+$ ./configure --enable-fltk
+$ make -s
+```
 
 ### .indent.pro settings
 ```

@@ -74,7 +74,7 @@ struct Runtime : public System {
   bool loadSettings(Properties<String *> &settings);
   void saveConfig();
   void runPath(const char *path);
-  void setClipboardText(const char *s) { setString("setClipboardText", s); }
+  void setClipboardText(const char *s) { if (s) setString("setClipboardText", s); }
   char *getClipboardText();
   void setFocus(bool focus) { _hasFocus = focus; }
   int  getFontId();

@@ -1,3 +1,37 @@
+2019-06-22 (0.12.15)
+	FLTK: reactivated the FLTK port using FLTK v1.4
+
+2019-03-02 (0.12.15)
+	COMMON: Implemented - FOR character IN string
+
+2019-03-02 (0.12.15)
+	ANDROID: In editor, hide status when scrolled
+
+2019-02-26 (0.12.15)
+	ANDROID: Fix POINT returning transposed red + blue
+
+2019-02-23 (0.12.15)
+	ANDROID: Fix crash entering c,v in edit control mode
+
+2019-02-14 (0.12.15)
+	ANDROID: fix crash passing negative duration to SOUND command
+
+2019-02-11 (0.12.15)
+	UI: ALT+F4 from edit/run now returns to edit
+	UI: avoid flicker from with ALT+F4 -e edit startup
+
+2019-02-02 (0.12.15)
+	UI: Edit enter now continues prior line comment
+
+2019-01-21 (0.12.15.1)
+	ANDROID: fix setup screen colour display
+	ANDROID: show link to android page in about
+
+2019-01-19 (0.12.15)
+	UI: added kill-word editor command (alt+d)
+	UI: added select-word editor command (alt+w)
+	UI: find command primed from editor selection
+
 2018-12-28 (0.12.15)
 	Fix crash when using GOTO with a non-existent label
 	Fix crash in editor when double tapping empty document

@@ -62,6 +62,8 @@ AnsiWidget::AnsiWidget(int width, int height) :
   _back(NULL),
   _front(NULL),
   _focus(NULL),
+  _activeButton(NULL),
+  _hoverInput(NULL),
   _width(width),
   _height(height),
   _xTouch(-1),
@@ -70,9 +72,7 @@ AnsiWidget::AnsiWidget(int width, int height) :
   _yMove(-1),
   _touchTime(0),
   _swipeExit(false),
-  _autoflush(true),
-  _activeButton(NULL),
-  _hoverInput(NULL) {
+  _autoflush(true) {
   for (int i = 0; i < MAX_SCREENS; i++) {
     _screens[i] = NULL;
   }
@@ -590,7 +590,7 @@ void AnsiWidget::doSwipe(int start, bool moveDown, int distance, int maxScroll) 
 
 // draws the focus screen's active button
 void AnsiWidget::drawActiveButton() {
-#if defined(_SDL)
+#if defined(_SDL) || defined(_FLTK)
   if (_focus != NULL && !_activeButton->hasHover()) {
     MAHandle currentHandle = maSetDrawTarget(HANDLE_SCREEN);
     _focus->drawShape(_activeButton);
@@ -620,7 +620,7 @@ void AnsiWidget::drawActiveButton() {
 }
 
 bool AnsiWidget::drawHoverLink(MAEvent &event) {
-#if defined(_SDL)
+#if defined(_SDL) || defined(_FLTK)
   if (_front != _screens[MENU_SCREEN]) {
     int dx = _front->_x;
     int dy = _front->_y - _front->_scrollY;

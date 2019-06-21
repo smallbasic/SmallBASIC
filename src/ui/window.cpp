@@ -147,17 +147,17 @@ void cmd_window_message(var_s *self) {
 
 extern "C" void v_create_window(var_p_t var) {
   map_init(var);
-  create_func(var, WINDOW_SCREEN1, cmd_window_select_screen1);
-  create_func(var, WINDOW_SCREEN2, cmd_window_select_screen2);
-  create_func(var, WINDOW_SCREEN3, cmd_window_select_screen3);
-  create_func(var, WINDOW_ALERT, cmd_window_alert);
-  create_func(var, WINDOW_ASK, cmd_window_ask);
-  create_func(var, WINDOW_MESSAGE, cmd_window_message);
-  create_func(var, WINDOW_MENU, cmd_window_menu);
-  create_func(var, WINDOW_VKEYPAD, cmd_window_show_keypad);
-  create_func(var, WINDOW_INSET, cmd_window_inset);
-  create_func(var, WINDOW_SETFONT, cmd_window_set_font);
-  create_func(var, WINDOW_SETSIZE, cmd_window_set_size);
+  v_create_func(var, WINDOW_SCREEN1, cmd_window_select_screen1);
+  v_create_func(var, WINDOW_SCREEN2, cmd_window_select_screen2);
+  v_create_func(var, WINDOW_SCREEN3, cmd_window_select_screen3);
+  v_create_func(var, WINDOW_ALERT, cmd_window_alert);
+  v_create_func(var, WINDOW_ASK, cmd_window_ask);
+  v_create_func(var, WINDOW_MESSAGE, cmd_window_message);
+  v_create_func(var, WINDOW_MENU, cmd_window_menu);
+  v_create_func(var, WINDOW_VKEYPAD, cmd_window_show_keypad);
+  v_create_func(var, WINDOW_INSET, cmd_window_inset);
+  v_create_func(var, WINDOW_SETFONT, cmd_window_set_font);
+  v_create_func(var, WINDOW_SETSIZE, cmd_window_set_size);
 }
 
 extern "C" void dev_show_page() {
