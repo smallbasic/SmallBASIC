@@ -629,7 +629,6 @@ bool EditorWidget::checkSave(bool discard) {
   } else {
     r = fl_choice(msg, "Save", "Cancel", NULL, NULL);
   }
-  fprintf(stderr, "selected %d\n", r);
   if (r == 0) {
     // save selected
     save_file();

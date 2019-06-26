@@ -1446,7 +1446,7 @@ void createDropList(InputNode *node, strlib::List<String *> *options) {
 
 void InputNode::update(strlib::List<NamedInput *> *names, Properties<String *> *env, Attributes *a) {
   Fl_Valuator *valuator;
-  Fl_Input *input;
+  Fl_Input *input = NULL;
   Fl_Color color;
   strlib::String *name = a->getName();
   strlib::String *value = a->getValue();
@@ -1490,7 +1490,6 @@ void InputNode::update(strlib::List<NamedInput *> *names, Properties<String *> *
     }
     break;
   case ID_TEXTBOX:
-    button->box(FL_NO_BOX);
     input = (Fl_Input *)button;
     if (value && value->length()) {
       input->value(value->c_str());
@@ -1523,17 +1522,11 @@ void InputNode::update(strlib::List<NamedInput *> *names, Properties<String *> *
   // set colors
   color = getColor(a->getBgColor(), 0);
   if (color) {
-    button->color(color);       // background
-  } else {
-    button->color(BUTTON_COLOR);
+    button->color(color);
   }
   color = getColor(a->getFgColor(), 0);
   if (color) {
-    button->labelcolor(color);  // foreground
-    button->color(color);
-  } else {
-    button->labelcolor(ANCHOR_COLOR);
-    button->color(ANCHOR_COLOR);
+    button->labelcolor(color);
   }
 
   // set alignment
@@ -1587,6 +1580,10 @@ void InputNode::display(Display *out) {
     button->size(4 + (fl_width("$") * cols), button->h());
     height = 4 + (fl_height() + fl_descent() * rows);
     break;
+  case ID_TEXTBOX:
+    ((Fl_Input *)button)->textfont(out->font);
+    ((Fl_Input *)button)->textsize(out->fontSize);
+    break;
   default:
     break;
   }
@@ -1598,7 +1595,7 @@ void InputNode::display(Display *out) {
   button->labelfont(out->font);
   button->labelsize(out->fontSize);
   if (button->y() + button->h() < out->y2 && button->y() >= 0) {
-    button->clear_visible();
+    button->set_visible();
   } else {
     // draw a fake control in case partially visible
     fl_color(button->color());
@@ -1862,6 +1859,11 @@ void HelpWidget::resize(int x, int y, int w, int h) {
 }
 
 void HelpWidget::draw() {
+  if (damage() == FL_DAMAGE_CHILD) {
+    Fl_Group::draw();
+    return;
+  }
+
   int vscroll = -scrollbar->value();
   Display out;
   out.uline = false;
@@ -2008,7 +2010,7 @@ void HelpWidget::draw() {
   for (int n = 0; n < numchildren; n++) {
     Fl_Widget &w = *child(n);
     if (&w != scrollbar) {
-      update_child(w);
+      draw_child(w);
     }
   }
   fl_pop_clip();
