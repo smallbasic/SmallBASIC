@@ -651,8 +651,8 @@ void EditorWidget::copyText() {
 /**
  * saves the editor buffer to the given file name
  */
-void EditorWidget::doSaveFile(const char *newfile) {
-  if (!_dirty && strcmp(newfile, _filename) == 0) {
+void EditorWidget::doSaveFile(const char *newfile, bool force) {
+  if (!force && !_dirty && strcmp(newfile, _filename) == 0) {
     // neither buffer or filename have changed
     return;
   }

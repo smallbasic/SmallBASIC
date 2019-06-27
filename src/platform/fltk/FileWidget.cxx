@@ -515,7 +515,7 @@ void FileWidget::saveAs() {
       }
       const char *msg = "%s\n\nFile already exists.\nDo you want to replace it?";
       if (access(savepath, 0) != 0 || fl_choice(msg, "Yes", "No", 0, savepath) == 0) {
-        _saveEditorAs->doSaveFile(savepath);
+        _saveEditorAs->doSaveFile(savepath, true);
       }
     }
   }

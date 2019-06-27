@@ -185,7 +185,7 @@ int AnsiWidget::getScreenId(bool back) {
 
 // prints the contents of the given string onto the backbuffer
 void AnsiWidget::print(const char *str) {
-  int len = strlen(str);
+  int len = (str == NULL ? 0 : strlen(str));
   if (len) {
     _back->drawInto();
 
