@@ -368,7 +368,7 @@ void FileWidget::displayPath() {
     html.append("<b>Save ").append(slash ? slash + 1 : path).append(" as:<font size=3><br>")
         .append("<input size=220 type=text value='").append(slash ? slash + 1 : path)
         .append("' name=saveas>&nbsp;<input type=button onclick='")
-        .append(CMD_SAVE_AS).append("' value='Save As'><br><font size=2>");
+        .append(CMD_SAVE_AS).append("' value='Save As'><br><font size=1>");
   }
 
   _recentPaths->sort(stringCompare);

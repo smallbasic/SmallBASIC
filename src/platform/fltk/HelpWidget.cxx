@@ -2372,7 +2372,7 @@ void HelpWidget::compile() {
           } else {
             prop = p.get("size");
             if (prop != NULL) {
-              fontSize = 7 + (prop->toInteger() * 2);
+              fontSize = (int)labelsize() + (prop->toInteger() - 1);
             }
           }
           prop = p.get("face");
