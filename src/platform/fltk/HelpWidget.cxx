@@ -437,6 +437,11 @@ struct BrNode : public BaseNode {
 struct AnchorNode : public BaseNode {
   AnchorNode(Attributes &p) :
     BaseNode(),
+    x1(0),
+    x2(0),
+    y1(0),
+    y2(0),
+    lineHeight(0),
     wrapxy(0),
     pushed(0) {
     p.getName(name);
