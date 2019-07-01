@@ -30,10 +30,6 @@ const char *aboutText =
 const char CMD_LEVEL1_OPEN = '+';
 const char CMD_LEVEL2_OPEN = '!';
 const char CMD_MORE = '^';
-const char LEVEL1_OPEN[]   = "+ ";
-const char LEVEL2_OPEN[]   = "  + ";
-const char LEVEL1_CLOSE[]  = " - ";
-const char LEVEL2_CLOSE[]  = "   - ";
 
 HelpView *helpView;
 

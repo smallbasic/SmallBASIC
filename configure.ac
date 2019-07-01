@@ -205,7 +205,7 @@ function buildSDL() {
      PACKAGE_CFLAGS="${PACKAGE_CFLAGS} ${FONTCONFIG_CFLAGS}"
 
      dnl backlinking support for modules
-     PACKAGE_LIBS="${PACKAGE_LIBS} -ldl"
+     PACKAGE_LIBS="${PACKAGE_LIBS} -ldl -no-pie"
      PACKAGE_LIBS="${PACKAGE_LIBS} ${FONTCONFIG_LIBS}"
      PACKAGE_LIBS="-static-libgcc ${PACKAGE_LIBS} `sdl2-config --static-libs` `freetype-config --libs`"
    esac
@@ -344,7 +344,7 @@ function buildFLTK() {
 
    FLTK_CXXFLAGS="${PACKAGE_CFLAGS} `fltk-config --cxxflags`"
    FLTK_CXXFLAGS="${FLTK_CXXFLAGS} -fno-exceptions -fno-rtti -std=c++11 -Wno-unknown-pragmas"
-   PACKAGE_LIBS="${PACKAGE_LIBS} `fltk-config --ldstaticflags --use-images`"
+   PACKAGE_LIBS="${PACKAGE_LIBS} `fltk-config --ldstaticflags --use-images` -no-pie"
 
    dnl do not depend on cygwin.dll under cygwin build
    case "${host_os}" in

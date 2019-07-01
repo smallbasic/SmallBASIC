@@ -23,7 +23,7 @@ String::String(const char *s) {
 }
 
 String::String(const String &s) {
-  _buffer = strdup(s._buffer);
+  _buffer = s._buffer == NULL ? NULL : strdup(s._buffer);
 }
 
 String::String(const char *s, int len) : _buffer(NULL) {

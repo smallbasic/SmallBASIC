@@ -97,7 +97,7 @@ struct EditorWidget : public Fl_Group, StatusBar {
 
   bool checkSave(bool discard);
   void copyText();
-  void doSaveFile(const char *newfile);
+  void doSaveFile(const char *newfile, bool force=false);
   void fileChanged(bool loadfile);
   bool focusWidget();
   const char *getFilename() { return _filename; }
