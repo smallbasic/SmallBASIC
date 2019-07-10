@@ -855,7 +855,7 @@ bool TextEditInput::edit(int key, int screenWidth, int charWidth) {
 bool TextEditInput::find(const char *word, bool next) {
   bool result = false;
   bool allUpper = true;
-  int len = strlen(word);
+  int len = word == NULL ? 0 : strlen(word);
   for (int i = 0; i < len; i++) {
     if (islower(word[i])) {
       allUpper = false;
@@ -1569,13 +1569,17 @@ char *TextEditInput::getWordBeforeCursor() {
   return result;
 }
 
-bool TextEditInput::replaceNext(const char *buffer) {
+bool TextEditInput::replaceNext(const char *buffer, bool skip) {
   bool changed = false;
   if (_state.select_start != _state.select_end &&
       _buf._buffer != NULL && buffer != NULL) {
     int start, end;
     char *selection = getSelection(&start, &end);
-    stb_textedit_paste(&_buf, &_state, buffer, strlen(buffer));
+    if (!skip) {
+      stb_textedit_paste(&_buf, &_state, buffer, strlen(buffer));
+    } else {
+      _state.cursor++;
+    }
     changed = find(selection, false);
     free(selection);
   }
@@ -1867,22 +1871,35 @@ bool TextEditHelpWidget::edit(int key, int screenWidth, int charWidth) {
     result = TextEditInput::edit(key, screenWidth, charWidth);
     _editor->find(_buf._buffer, key == SB_KEY_ENTER);
     break;
-  case kSearchReplace:
+  case kEnterReplace:
     result = TextEditInput::edit(key, screenWidth, charWidth);
     if (key == SB_KEY_ENTER) {
       _buf.clear();
-      _mode = kReplace;
+      _mode = kEnterReplaceWith;
     } else {
       _editor->find(_buf._buffer, false);
     }
     break;
-  case kReplace:
+  case kEnterReplaceWith:
     if (key == SB_KEY_ENTER) {
-      if (!_editor->replaceNext(_buf._buffer)) {
-        _mode = kReplaceDone;
-      }
+      _mode = kReplace;
     } else {
       result = TextEditInput::edit(key, screenWidth, charWidth);
+    }
+    break;
+  case kReplace:
+    switch (key) {
+    case SB_KEY_ENTER:
+      if (!_editor->replaceNext(_buf._buffer, false)) {
+        _mode = kReplaceDone;
+      }
+      break;
+    case ' ':
+      if (!_editor->replaceNext(_buf._buffer, true)) {
+        // skip to next
+        _mode = kReplaceDone;
+      }
+      break;
     }
     break;
   case kGotoLine:
@@ -2150,7 +2167,7 @@ void TextEditHelpWidget::createOutline() {
 
 void TextEditHelpWidget::createSearch(bool replace) {
   if (_mode != kSearch) {
-    reset(replace ? kSearchReplace : kSearch);
+    reset(replace ? kEnterReplace : kSearch);
   }
 
   char *text = _editor->getTextSelection(false);
@@ -2189,8 +2206,8 @@ void TextEditHelpWidget::createStackTrace(const char *error, int line, StackTrac
 void TextEditHelpWidget::paste(const char *text) {
   switch (_mode) {
   case kSearch:
-  case kSearchReplace:
-  case kReplace:
+  case kEnterReplace:
+  case kEnterReplaceWith:
   case kLineEdit:
     TextEditInput::paste(text);
     break;

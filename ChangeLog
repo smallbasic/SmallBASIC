@@ -1,3 +1,6 @@
+2019-07-10 (0.12.15)
+	SDL: update editor find and replace
+
 2019-06-27 (0.12.15)
 	FLTK: file file save as
 	UI: fix reported crash in android printing null
