@@ -86,7 +86,7 @@ protected:
   void runEdit(const char *startupBas);
   void runLive(const char *startupBas);
   void runMain(const char *mainBasPath);
-  void runOnce(const char *startupBas);
+  void runOnce(const char *startupBas, bool runWait);
   void saveFile(TextEditInput *edit, strlib::String &path);
   void setupPath(String &loadpath);
   bool setParentPath();

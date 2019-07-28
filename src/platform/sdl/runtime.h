@@ -47,7 +47,7 @@ struct Runtime : public System {
   void setWindowTitle(const char *title);
   void share(const char *path) {}
   void showCursor(CursorType cursorType);
-  int runShell(const char *startupBas, int fontScale, int debugPort);
+  int runShell(const char *startupBas, bool once, int fontScale, int debugPort);
   char *loadResource(const char *fileName);
   void logStack(int line, bool subOrFunc);
   void optionsBox(StringList *items);

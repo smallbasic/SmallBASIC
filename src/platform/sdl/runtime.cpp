@@ -312,7 +312,7 @@ MAEvent *Runtime::popEvent() {
   return _eventQueue->pop();
 }
 
-int Runtime::runShell(const char *startupBas, int fontScale, int debugPort) {
+int Runtime::runShell(const char *startupBas, bool runWait, int fontScale, int debugPort) {
   logEntered();
 
   os_graphics = 1;
@@ -359,14 +359,14 @@ int Runtime::runShell(const char *startupBas, int fontScale, int debugPort) {
     } else if (opt_ide == IDE_EXTERNAL) {
       runLive(bas.c_str());
     } else {
-      runOnce(bas.c_str());
+      runOnce(bas.c_str(), runWait);
     }
     while (_state == kRestartState) {
       _state = kActiveState;
       if (!_loadPath.empty()) {
         bas = _loadPath;
       }
-      runOnce(bas.c_str());
+      runOnce(bas.c_str(), runWait);
     }
   } else {
     runMain(MAIN_BAS);

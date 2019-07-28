@@ -48,6 +48,7 @@ static struct option OPTIONS[] = {
   {"font",      optional_argument, NULL, 'f'},
   {"run",       optional_argument, NULL, 'r'},
   {"run-live",  optional_argument, NULL, 'x'},
+  {"run-n-wait",optional_argument, NULL, 'n'},
   {"module",    optional_argument, NULL, 'm'},
   {"edit",      optional_argument, NULL, 'e'},
   {"debug",     optional_argument, NULL, 'd'},
@@ -291,13 +292,14 @@ int main(int argc, char* argv[]) {
   char *fontFamily = NULL;
   char *runFile = NULL;
   bool debug = false;
+  bool runWait = true;
   int fontScale;
   int ide_option = -1;
   SDL_Rect rect;
 
   while (1) {
     int option_index = 0;
-    int c = getopt_long(argc, argv, "hvkc:f:r:x:m:e:d:p:", OPTIONS, &option_index);
+    int c = getopt_long(argc, argv, "hvkc:f:r:x:n:m:e:d:p:", OPTIONS, &option_index);
     if (c == -1) {
       // no more options
       if (!option_index) {
@@ -338,6 +340,11 @@ int main(int argc, char* argv[]) {
       fontFamily = strdup(optarg);
       break;
     case 'r':
+      runFile = strdup(optarg);
+      ide_option = IDE_NONE;
+      break;
+    case 'n':
+      runWait = false;
       runFile = strdup(optarg);
       ide_option = IDE_NONE;
       break;
@@ -404,7 +411,7 @@ int main(int argc, char* argv[]) {
       loadIcon(window);
       Runtime *runtime = new Runtime(window);
       runtime->construct(font.c_str(), fontBold.c_str());
-      fontScale = runtime->runShell(runFile, fontScale, debug ? g_debugPort : 0);
+      fontScale = runtime->runShell(runFile, runWait, fontScale, debug ? g_debugPort : 0);
       rect = runtime->getWindowRect();
       delete runtime;
     } else {

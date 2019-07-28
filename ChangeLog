@@ -1,3 +1,6 @@
+2019-07-27 (0.12.15)
+	SDL: added -n command line option to run then not pause for back key
+
 2019-07-10 (0.12.15)
 	SDL: update editor find and replace
 

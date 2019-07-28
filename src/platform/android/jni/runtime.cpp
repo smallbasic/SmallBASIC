@@ -485,7 +485,7 @@ void Runtime::runShell() {
     if (getBoolean("getUntrusted")) {
       opt_file_permitted = 0;
     }
-    runOnce(startupBas.c_str());
+    runOnce(startupBas.c_str(), true);
   } else {
     runMain(MAIN_BAS);
   }
