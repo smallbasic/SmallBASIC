@@ -1,6 +1,7 @@
 2019-08-19 (0.12.15)
-	ANDROID: fix issue with crash on minimise with googleos
-	ANDROID: update to androidx
+	ANDROID: fix issue with crash on minimise with ChromeOS
+	ANDROID: fix permission issue with share command
+	ANDROID: (internal) update to androidx
 
 2019-07-27 (0.12.15)
 	SDL: added -n command line option to run then not pause for back key
