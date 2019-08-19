@@ -2,7 +2,7 @@ apply plugin: 'com.android.application'
 
 android {
   // app can use the API features included in this API level and lower.
-  compileSdkVersion 27
+  compileSdkVersion 28
 
   // can override some attributes in main/AndroidManifest.xml
   defaultConfig {
@@ -47,6 +47,6 @@ android {
 }
 
 dependencies {
-  implementation 'com.android.support:support-compat:27.1.1'
+  implementation 'androidx.core:core:1.0.0'
   testImplementation 'junit:junit:4.12'
 }
