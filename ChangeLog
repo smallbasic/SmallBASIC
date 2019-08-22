@@ -1,3 +1,6 @@
+2019-08-23 (0.12.15)
+	ANDROID: fix ChromeOS crash when restarting over existing instance
+
 2019-08-19 (0.12.15)
 	ANDROID: fix issue with crash on minimise with ChromeOS
 	ANDROID: fix permission issue with share command

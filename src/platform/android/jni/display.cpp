@@ -167,12 +167,6 @@ void Graphics::redraw() {
         locked = ANativeWindow_lock(_app->window, &buffer, NULL) == 0;
         trace("Restore format %d", locked);
       }
-      if (buffer.format != AHARDWAREBUFFER_FORMAT_R8G8B8A8_UNORM) {
-        ANativeWindow_unlockAndPost(_app->window);
-        ANativeWindow_setBuffersGeometry(_app->window, 0, 0, AHARDWAREBUFFER_FORMAT_R8G8B8A8_UNORM);
-        locked = false;
-        trace("Restore format failed");
-      }
       if (locked) {
         void *pixels = buffer.bits;
         int width = MIN(_w, MIN(buffer.width, _screen->_w));
