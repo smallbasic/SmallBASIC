@@ -37,7 +37,7 @@
 #define GBOARD_KEY_QUESTION 274
 #define EVENT_TYPE_EXIT 100
 
-Runtime *runtime;
+Runtime *runtime = NULL;
 
 MAEvent *getMotionEvent(int type, AInputEvent *event) {
   MAEvent *result = new MAEvent();
@@ -203,6 +203,10 @@ Runtime::Runtime(android_app *app) :
   _app->onAppCmd = handleCommand;
   _app->onInputEvent = handleInput;
   _app->inputPollSource.process = process_input;
+  if (runtime != NULL) {
+    trace("another instance is still active");
+    _state = kClosingState;
+  }
   runtime = this;
   pthread_mutex_init(&_mutex, NULL);
   _looper = ALooper_forThread();
@@ -485,7 +489,7 @@ void Runtime::runShell() {
     if (getBoolean("getUntrusted")) {
       opt_file_permitted = 0;
     }
-    runOnce(startupBas.c_str());
+    runOnce(startupBas.c_str(), true);
   } else {
     runMain(MAIN_BAS);
   }

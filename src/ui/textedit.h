@@ -135,7 +135,7 @@ struct TextEditInput : public FormEditInput {
   void layout(int w, int h) { _width = w; _height = h; }
   const char *getNodeId();
   char *getWordBeforeCursor();
-  bool replaceNext(const char *text);
+  bool replaceNext(const char *text, bool skip);
   int  getCompletions(StringList *list, int max);
   void selectNavigate(bool up);
 
@@ -211,7 +211,8 @@ struct TextEditHelpWidget : public TextEditInput {
     kCompletion,
     kOutline,
     kSearch,
-    kSearchReplace,
+    kEnterReplace,
+    kEnterReplaceWith,
     kReplace,
     kReplaceDone,
     kGotoLine,
@@ -235,10 +236,13 @@ struct TextEditHelpWidget : public TextEditInput {
   bool isDrawTop() { return true; }
   void layout(int w, int h) { _x = w - _width; _height = h; }
   void reset(HelpMode mode);
+  void cancelMode() { _mode = kNone; }
   bool closeOnEnter() const;
+  bool searchMode() const { return _mode >= kSearch && _mode <= kReplaceDone; }
   bool lineEditMode() const { return _mode == kLineEdit; }
   bool messageMode() const { return _mode == kMessage; }
   bool replaceMode() const { return _mode == kReplace; }
+  bool replaceModeWith() const { return _mode == kEnterReplaceWith; }
   bool replaceDoneMode() const { return _mode == kReplaceDone; }
   bool selected(MAPoint2d pt, int scrollX, int scrollY, bool &redraw);
   void toggleKeyword();

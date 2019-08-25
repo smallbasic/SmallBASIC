@@ -24,9 +24,6 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
-import android.support.annotation.NonNull;
-import android.support.v4.app.ActivityCompat;
-import android.support.v4.content.ContextCompat;
 import android.util.Base64;
 import android.util.DisplayMetrics;
 import android.util.Log;
@@ -46,11 +43,15 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.Inet4Address;
 import java.net.InetAddress;
@@ -71,6 +72,11 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Semaphore;
 import java.util.zip.GZIPInputStream;
+
+import androidx.annotation.NonNull;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
+import androidx.core.content.FileProvider;
 
 /**
  * Extends NativeActivity to provide interface methods for runtime.cpp
@@ -539,7 +545,8 @@ public class MainActivity extends NativeActivity {
       Intent sendIntent = new Intent();
       sendIntent.setAction(Intent.ACTION_SEND);
       sendIntent.putExtra(Intent.EXTRA_TEXT, buffer);
-      sendIntent.putExtra(Intent.EXTRA_STREAM, Uri.fromFile(file));
+      sendIntent.putExtra(Intent.EXTRA_STREAM, getSharedFile(file));
+      sendIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
       sendIntent.putExtra(Intent.EXTRA_SUBJECT, file.getName());
       sendIntent.setType("text/plain");
       startActivity(Intent.createChooser(sendIntent, "Share"));
@@ -669,6 +676,24 @@ public class MainActivity extends NativeActivity {
     });
   }
 
+  private void copy(File src, File dst) throws IOException {
+    InputStream in = new FileInputStream(src);
+    try {
+      OutputStream out = new FileOutputStream(dst);
+      try {
+        byte[] buf = new byte[1024];
+        int len;
+        while ((len = in.read(buf)) > 0) {
+          out.write(buf, 0, len);
+        }
+      } finally {
+        out.close();
+      }
+    } finally {
+      in.close();
+    }
+  }
+
   private String execBuffer(final String buffer, final String name, boolean run) throws IOException {
     File outputFile = getApplication().getFileStreamPath(name);
     BufferedWriter output = new BufferedWriter(new FileWriter(outputFile));
@@ -769,6 +794,23 @@ public class MainActivity extends NativeActivity {
         String value = URLDecoder.decode(nextField.substring(eq + 1), "utf-8");
         result.put(key, value);
       }
+    }
+    return result;
+  }
+
+  private Uri getSharedFile(File file) {
+    Uri result;
+    try {
+      File sharesPath = new File(getExternalFilesDir(null), "shares");
+      if (sharesPath.mkdirs()) {
+        Log.i(TAG, "created folder: " + sharesPath.toString());
+      }
+      File shareFile = new File(sharesPath, file.getName());
+      copy(file, sharesPath);
+      result = FileProvider.getUriForFile(this, "net.sourceforge.smallbasic.provider", shareFile);
+    } catch (Exception e) {
+      result = null;
+      Log.e(TAG, "failed to create shared file", e);
     }
     return result;
   }

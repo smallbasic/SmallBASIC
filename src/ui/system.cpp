@@ -694,7 +694,7 @@ void System::runMain(const char *mainBasPath) {
   }
 }
 
-void System::runOnce(const char *startupBas) {
+void System::runOnce(const char *startupBas, bool runWait) {
   // startupBas must not be _loadPath.c_str()
   logEntered();
   _mainBas = false;
@@ -705,7 +705,9 @@ void System::runOnce(const char *startupBas) {
     if (_state == kActiveState) {
       showCompletion(success);
     }
-    waitForBack();
+    if (runWait) {
+      waitForBack();
+    }
     restart = isRestart();
   }
 }

@@ -89,6 +89,10 @@ struct StatusMessage {
     _col = editor->getCol();
   }
 
+  void setDirty(TextEditInput *editor) {
+    _dirty = !editor->isDirty();
+  }
+
   bool _dirty;
   int _row;
   int _col;
@@ -265,6 +269,8 @@ void System::editSource(String loadPath, bool restoreOnExit) {
         case SB_KEY_ESCAPE:
           widget = editWidget;
           helpWidget->hide();
+          helpWidget->cancelMode();
+          statusMessage.setDirty(editWidget);
           ((Runtime *)this)->debugStop();
           break;
         case SB_KEY_CTRL('s'):
@@ -442,8 +448,10 @@ void System::editSource(String loadPath, bool restoreOnExit) {
           g_macro[g_macro_size++] = event.key;
         }
         if (event.key == SB_KEY_ENTER) {
-          if (helpWidget->replaceMode()) {
+          if (helpWidget->replaceModeWith()) {
             _output->setStatus("Replace string with. Esc=Close");
+          } else if (helpWidget->replaceMode()) {
+            _output->setStatus("Replace string. Enter=replace, Space=skip, Esc=Close");
           } else if (helpWidget->lineEditMode() && helpWidget->getTextLength()) {
             switch (inputMode) {
             case kExportAddr:
@@ -472,13 +480,23 @@ void System::editSource(String loadPath, bool restoreOnExit) {
             statusMessage._dirty = !widget->isDirty();
             widget = editWidget;
             helpWidget->hide();
+            helpWidget->cancelMode();
           }
           redraw = true;
+        } else if (helpWidget->replaceDoneMode()) {
+          statusMessage._dirty = !widget->isDirty();
+          widget = editWidget;
+          helpWidget->hide();
+          helpWidget->cancelMode();
         }
 
         helpWidget->setFocus(widget == helpWidget);
         editWidget->setFocus(widget == editWidget);
-        redraw |= statusMessage.update(editWidget, _output);
+        if (helpWidget->searchMode()) {
+          redraw = true;
+        } else {
+          redraw |= statusMessage.update(editWidget, _output);
+        }
         if (redraw) {
           _output->redraw();
         }

@@ -143,7 +143,7 @@ bool Graphics::construct(int fontId) {
     if (_screen && _screen->create(_w, _h)) {
       _drawTarget = _screen;
       maSetColor(DEFAULT_BACKGROUND);
-      ANativeWindow_setBuffersGeometry(_app->window, 0, 0, WINDOW_FORMAT_RGBA_8888);
+      ANativeWindow_setBuffersGeometry(_app->window, 0, 0, AHARDWAREBUFFER_FORMAT_R8G8B8A8_UNORM);
       result = true;
     } else {
       trace("Failed to create canvas");
@@ -157,18 +157,27 @@ bool Graphics::construct(int fontId) {
 void Graphics::redraw() {
   if (_app->window != NULL && !_paused) {
     ANativeWindow_Buffer buffer;
-    if (ANativeWindow_lock(_app->window, &buffer, NULL) < 0) {
+    bool locked = ANativeWindow_lock(_app->window, &buffer, NULL) == 0;
+    if (!locked) {
       trace("Unable to lock window buffer");
     } else {
-      void *pixels = buffer.bits;
-      int width = MIN(_w, MIN(buffer.width, _screen->_w));
-      int height = MIN(_h, MIN(buffer.height, _screen->_h));
-      for (int y = 0; y < height; y++) {
-        pixel_t *line = _screen->getLine(y);
-        memcpy((pixel_t *)pixels, line, width * sizeof(pixel_t));
-        pixels = (pixel_t*)pixels + buffer.stride;
+      if (buffer.format != AHARDWAREBUFFER_FORMAT_R8G8B8A8_UNORM) {
+        ANativeWindow_unlockAndPost(_app->window);
+        ANativeWindow_setBuffersGeometry(_app->window, 0, 0, AHARDWAREBUFFER_FORMAT_R8G8B8A8_UNORM);
+        locked = ANativeWindow_lock(_app->window, &buffer, NULL) == 0;
+        trace("Restore format %d", locked);
       }
-      ANativeWindow_unlockAndPost(_app->window);
+      if (locked) {
+        void *pixels = buffer.bits;
+        int width = MIN(_w, MIN(buffer.width, _screen->_w));
+        int height = MIN(_h, MIN(buffer.height, _screen->_h));
+        for (int y = 0; y < height; y++) {
+          pixel_t *line = _screen->getLine(y);
+          memcpy((pixel_t *)pixels, line, width * sizeof(pixel_t));
+          pixels = (pixel_t*)pixels + buffer.stride;
+        }
+        ANativeWindow_unlockAndPost(_app->window);
+      }
     }
   }
 }
