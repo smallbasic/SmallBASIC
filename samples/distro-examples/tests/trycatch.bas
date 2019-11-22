@@ -213,7 +213,11 @@ if 1 == 1 then
 fi
 end
 
-stack_test
+try
+  stack_test
+catch e
+  print "Error: " + e
+end try
 
 sub manageFiles()
   sub renameFile()
@@ -229,7 +233,6 @@ sub manageFiles()
   viewFile()
 end
 
-
 try
   try
     throw "!!!error!!!"
@@ -244,3 +247,21 @@ if (inner == "!!!error!!!") then
   throw "inner still in scope"
 endif
 
+rem test for select case <udf>
+func num(n)
+  return n
+end
+select case num(10)
+case 10
+  rem success!
+case else
+  throw "fail"
+end select
+select case round(pi)
+case 3
+  rem "success!"
+case else
+  throw "fail"
+end select
+
+print "End of test"
