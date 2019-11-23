@@ -16,7 +16,6 @@ LOCAL_CFLAGS     := -DHAVE_CONFIG_H=1 -DLODEPNG_NO_COMPILE_CPP
 LOCAL_SRC_FILES  :=    \
     $(COMMON)/../lib/matrix.c    \
     $(COMMON)/../lib/match.c     \
-    $(COMMON)/../lib/jsmn.c      \
     $(COMMON)/../lib/lodepng.c   \
     $(COMMON)/../lib/xpm.c       \
     $(COMMON)/../lib/str.c       \

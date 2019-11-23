@@ -6,17 +6,19 @@
 // This program is distributed under the terms of the GPL v2.0 or later
 // Download the GNU Public License (GPL) from www.gnu.org
 //
-// Copyright(C) 2010-2014 Chris Warren-Smith. [http://tinyurl.com/ja2ss]
+// Copyright(C) 2010-2019 Chris Warren-Smith. [http://tinyurl.com/ja2ss]
 
 #include "common/sys.h"
 #include "common/pproc.h"
 #include "common/hashmap.h"
 #include "include/var_map.h"
-#include "lib/jsmn.h"
 
 #define BUFFER_GROW_SIZE 64
 #define BUFFER_PADDING   10
 #define TOKEN_GROW_SIZE  16
+#define JSMN_STATIC
+
+#include "lib/jsmn.h"
 
 /**
  * Container for map_from_str
