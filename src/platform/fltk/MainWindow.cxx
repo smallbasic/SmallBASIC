@@ -113,20 +113,22 @@ bool MainWindow::basicMain(EditorWidget *editWidget,
   Fl_Group *oldOutputGroup = _outputGroup;
   int old_w = _out->w();
   int old_h = _out->h();
+  int old_x = _out->x();
+  int old_y = _out->y();
   int interactive = opt_interactive;
 
   if (!toolExec) {
     if (opt_ide == IDE_NONE) {
       // run in a separate window with the ide hidden
-      fullScreen = new BaseWindow(w(), h());
-      _profile->restoreAppPosition(fullScreen);
-
+      fullScreen = new BaseWindow(w(), h(), _system);
+      fullScreen->resizable(fullScreen);
       fullScreen->callback(quit_cb);
       fullScreen->add(_out);
-      fullScreen->resizable(fullScreen);
+      fullScreen->take_focus();
       setTitle(fullScreen, filename);
+      _profile->restoreAppPosition(fullScreen);
       _outputGroup = fullScreen;
-      resizeDisplay(w(), h());
+      resizeDisplay(0, 0, w(), h());
       hide();
     } else {
       setTitle(this, filename);
@@ -154,7 +156,8 @@ bool MainWindow::basicMain(EditorWidget *editWidget,
 
     _outputGroup = oldOutputGroup;
     _outputGroup->add(_out);
-    resizeDisplay(old_w, old_h);
+    resizeDisplay(old_x, old_y, old_w, old_h);
+    take_focus();
     show();
   } else {
     copy_label("SmallBASIC");
@@ -1359,9 +1362,12 @@ void MainWindow::resize(int x, int y, int w, int h) {
   _system->resize(_out->w(), _out->h());
 }
 
-void MainWindow::resizeDisplay(int w, int h) {
-  _out->resize(_out->x(), _out->y(), w, h - 1);
-  _system->resize(w, h - 1);
+void MainWindow::resizeDisplay(int x, int y, int w, int h) {
+  // resize the graphics widget (output tab child)
+  _out->resize(x, y, w, h);
+
+  // resize the runtime platforn
+  _system->resize(w, h);
 }
 
 /**
@@ -1465,6 +1471,9 @@ int BaseWindow::handle(int e) {
         return 1;
       }
       break;
+    }
+    if (_mainSystem != NULL) {
+      _mainSystem->handle(e);
     }
     break;
 

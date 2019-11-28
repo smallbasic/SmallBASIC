@@ -53,10 +53,12 @@ extern ExecState runMode;
   }
 
 struct BaseWindow : public Fl_Double_Window {
-  BaseWindow(int w, int h) : Fl_Double_Window(w, h, "SmallBASIC") {}
+  BaseWindow(int w, int h, Runtime *mainSystem = NULL)
+    : Fl_Double_Window(w, h, "SmallBASIC"), _mainSystem(mainSystem) {}
   virtual ~BaseWindow() {};
   int handle(int e);
   bool handleKeyEvent();
+  private: Runtime *_mainSystem; // for hidden ide mode
 };
 
 struct MainWindow : public BaseWindow {
@@ -77,7 +79,7 @@ struct MainWindow : public BaseWindow {
   void loadIcon();
   void pathMessage(const char *file);
   void resize(int x, int y, int w, int h);
-  void resizeDisplay(int w, int h);
+  void resizeDisplay(int x, int y, int w, int h);
   void saveEditConfig(EditorWidget *editWidget);
   void scanPlugIns(Fl_Menu_Bar *menu);
   void scanRecentFiles(Fl_Menu_Bar *menu);

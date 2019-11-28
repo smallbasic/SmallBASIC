@@ -1,4 +1,11 @@
-2019-08-23 (0.12.15)
+2019-11-23 (0.12.17)
+	FLTK: fix color display
+
+2019-11-23 (0.12.17)
+	COMMON: Fix select case by func. Closes #83
+	COMMON: update dependencies
+
+2019-08-23 (0.12.16)
 	ANDROID: fix ChromeOS crash when restarting over existing instance
 
 2019-08-19 (0.12.15)

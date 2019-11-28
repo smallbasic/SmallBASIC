@@ -585,8 +585,8 @@ void GraphicScreen::drawEllipse(int xc, int yc, int rx, int ry, int fill) {
 }
 
 void GraphicScreen::drawInto(bool background) {
-  Screen::drawInto(background);
   maSetDrawTarget(_image);
+  Screen::drawInto(background);
 }
 
 void GraphicScreen::drawLine(int x1, int y1, int x2, int y2) {

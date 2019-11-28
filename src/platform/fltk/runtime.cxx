@@ -17,6 +17,7 @@
 extern MainWindow *wnd;
 extern System *g_system;
 
+#define MIN_WINDOW_SIZE 10
 #define OPTIONS_BOX_WIDTH_EXTRA 4
 #define WAIT_INTERVAL_MILLIS 5
 #define WAIT_INTERVAL (WAIT_INTERVAL_MILLIS/1000)
@@ -299,15 +300,21 @@ int osd_devinit() {
   if ((opt_pref_width || opt_pref_height) && wnd->isIdeHidden()) {
     int delta_x = wnd->w() - g_system->getOutput()->getWidth();
     int delta_y = wnd->h() - g_system->getOutput()->getHeight();
-    if (opt_pref_width < 10) {
-      opt_pref_width = 10;
+    if (opt_pref_width < MIN_WINDOW_SIZE) {
+      opt_pref_width = MIN_WINDOW_SIZE;
     }
-    if (opt_pref_height < 10) {
-      opt_pref_height = 10;
+    if (opt_pref_height < MIN_WINDOW_SIZE) {
+      opt_pref_height = MIN_WINDOW_SIZE;
     }
+
+    int x = wnd->_outputGroup->x();
+    int y = wnd->_outputGroup->y();
     int w = opt_pref_width + delta_x;
     int h = opt_pref_height + delta_y;
-    wnd->_outputGroup->resize(0, 0, w, h);
+
+    wnd->resizeDisplay(0, 0, w, h);
+    wnd->_outputGroup->resize(x, y, w, h);
+    wnd->_outputGroup->show();
   }
 
   // show the output-group in case it's the full-screen container.
