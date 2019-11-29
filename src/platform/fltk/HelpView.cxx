@@ -148,7 +148,7 @@ void HelpView::helpIndex() {
         .append(keyword_help[_openKeyword].help)
         .append("<br><u><a href=")
         .append(CMD_MORE)
-        .append(">More</a></u>");
+        .append(">Online...</a></u>");
   }
 
   html.append("<br><br>");

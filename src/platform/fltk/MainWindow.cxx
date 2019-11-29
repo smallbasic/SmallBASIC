@@ -209,6 +209,7 @@ void MainWindow::close_tab(Fl_Widget *w, void *eventData) {
       }
       _tabGroup->remove(group);
       delete group;
+      redraw();
     }
   }
 }
@@ -233,6 +234,7 @@ void MainWindow::close_other_tabs(Fl_Widget *w, void *eventData) {
       delete items[c];
     }
   }
+  redraw();
 }
 
 void MainWindow::restart_run(Fl_Widget *w, void *eventData) {
