@@ -149,10 +149,10 @@ void Runtime::optionsBox(StringList *items) {
   if (menuY + height >= maxHeight) {
     menuY = maxHeight - height;
   } else {
-    menuY -= wnd->_out->y();
+    menuY -= wnd->y();
   }
 
-  Fl_Menu_Button popup(menuX, menuY, width, height, "@popup");
+  Fl_Menu_Button popup(menuX, menuY, width, height);
   popup.menu(menu);
 
   const Fl_Menu_Item *result = popup.popup();

@@ -121,9 +121,10 @@ bool MainWindow::basicMain(EditorWidget *editWidget,
     if (opt_ide == IDE_NONE) {
       // run in a separate window with the ide hidden
       fullScreen = new BaseWindow(w(), h(), _system);
-      fullScreen->resizable(fullScreen);
+      fullScreen->box(FL_NO_BOX);
       fullScreen->callback(quit_cb);
       fullScreen->add(_out);
+      fullScreen->end();
       fullScreen->take_focus();
       setTitle(fullScreen, filename);
       _profile->restoreAppPosition(fullScreen);
