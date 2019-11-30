@@ -816,7 +816,7 @@ void dirwalk(char *dir, char *wc, bcip_t use_ip, int depth) {
 
   DIR *dfd = opendir(dir);
   if (dfd == NULL) {
-    log_printf("DIRWALK: can't open %s", dir);
+    log_printf(ERR_DIRWALK_CANT_OPEN, dir);
     return;
   }
 

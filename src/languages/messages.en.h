@@ -226,3 +226,4 @@
 #define ERR_FILE_NOT_OPEN       "IOError: File not open for reading"
 #define ERR_DIRWALK_NAME        "DIRWALK: name %s/%s too long"
 #define ERR_DIRWALK_MISSING_USE "DIRWALK: missing USE statement"
+#define ERR_DIRWALK_CANT_OPEN   "DIRWALK: can't open %s"
