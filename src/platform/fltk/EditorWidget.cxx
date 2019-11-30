@@ -402,6 +402,13 @@ void EditorWidget::find(Fl_Widget *w, void *eventData) {
 }
 
 /**
+ * clears the console
+ */
+void EditorWidget::clear_console(Fl_Widget *w, void *eventData) {
+  _tty->clearScreen();
+}
+
+/**
  * performs the current command
  */
 void EditorWidget::command(Fl_Widget *w, void *eventData) {

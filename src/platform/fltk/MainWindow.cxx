@@ -944,7 +944,7 @@ MainWindow::MainWindow(int w, int h) :
   m->add("&File/&Open File", FL_CTRL + 'o', open_file_cb);
   scanRecentFiles(m);
   m->add("&File/&Close", FL_CTRL + FL_F+4, close_tab_cb);
-  m->add("&File/_&Close Others", 0, close_other_tabs_cb);
+  m->add("&File/_Close Others", 0, close_other_tabs_cb);
   m->add("&File/&Save File", FL_CTRL + 's', EditorWidget::save_file_cb);
   m->add("&File/_Save File &As", FL_CTRL + FL_SHIFT + 'S', save_file_as_cb);
   addPlugin(m, "&File/Publish Online", "publish.bas");
@@ -955,12 +955,13 @@ MainWindow::MainWindow(int w, int h) :
   m->add("&Edit/&Copy", FL_CTRL + 'c', copy_text_cb);
   m->add("&Edit/_&Paste", FL_CTRL + 'v', EditorWidget::paste_text_cb);
   m->add("&Edit/_&Select All", FL_CTRL + 'a', EditorWidget::select_all_cb);
-  m->add("&Edit/&Change Case", FL_ALT + 'c', EditorWidget::change_case_cb);
+  m->add("&Edit/Ch&ange Case", FL_ALT + 'c', EditorWidget::change_case_cb);
   m->add("&Edit/&Expand Word", FL_ALT + '/', EditorWidget::expand_word_cb);
   m->add("&Edit/_&Rename Word", FL_CTRL + FL_SHIFT + 'r', EditorWidget::rename_word_cb);
   m->add("&Edit/&Find", FL_CTRL + 'f', EditorWidget::find_cb);
-  m->add("&Edit/&Replace", FL_CTRL + 'r', EditorWidget::show_replace_cb);
+  m->add("&Edit/Replace", FL_CTRL + 'r', EditorWidget::show_replace_cb);
   m->add("&Edit/_&Goto Line", FL_CTRL + 'g', EditorWidget::goto_line_cb);
+  m->add("&Edit/Clear Console", FL_CTRL + '-', EditorWidget::clear_console_cb);
   m->add("&View/&Next Tab", FL_F+6, next_tab_cb);
   m->add("&View/_&Prev Tab", FL_CTRL + FL_F+6, prev_tab_cb);
   m->add("&View/Theme/&Solarized Dark", 0, set_theme_cb, (void *)(intptr_t)0);

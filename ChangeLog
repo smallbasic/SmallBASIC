@@ -1,5 +1,7 @@
-2019-11-23 (0.12.17)
+2019-11-30 (0.12.17)
 	FLTK: fix color display
+	FLTK: add clear console command
+	COMMON: fix dirwalk error handling
 
 2019-11-23 (0.12.17)
 	COMMON: Fix select case by func. Closes #83
