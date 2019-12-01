@@ -77,6 +77,7 @@ import androidx.annotation.NonNull;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.core.content.FileProvider;
+import dalvik.system.BaseDexClassLoader;
 
 /**
  * Extends NativeActivity to provide interface methods for runtime.cpp
@@ -300,6 +301,20 @@ public class MainActivity extends NativeActivity {
     }
     result.append("}");
     return result.toString();
+  }
+
+  public String getModulePath() {
+    String result;
+    if (getClassLoader() instanceof BaseDexClassLoader) {
+      result = ((BaseDexClassLoader) getClassLoader()).findLibrary("smallbasic");
+      int lastSlash = result.lastIndexOf('/');
+      if (lastSlash != -1) {
+        result = result.substring(0, lastSlash);
+      }
+    } else {
+      result = "";
+    }
+    return result;
   }
 
   public String getStartupBas() {
@@ -607,7 +622,6 @@ public class MainActivity extends NativeActivity {
   @Override
   protected void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
-    processIntent();
     processSettings();
     checkFilePermission();
   }

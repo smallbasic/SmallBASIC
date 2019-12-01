@@ -1,4 +1,8 @@
 2019-11-30 (0.12.17)
+	ANDROID: fix module access in newer android versions.
+	UI: code cleanup
+
+2019-11-30 (0.12.17)
 	FLTK: fix color display
 	FLTK: add clear console command
 	COMMON: fix dirwalk error handling

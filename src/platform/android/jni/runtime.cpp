@@ -474,11 +474,11 @@ void Runtime::runShell() {
   os_color_depth = 16;
   opt_mute_audio = 0;
   opt_loadmod = 0;
-  strcpy(opt_modpath, "/data/data/net.sourceforge.smallbasic/lib");
 
   _app->activity->callbacks->onContentRectChanged = onContentRectChanged;
   loadConfig();
 
+  strcpy(opt_modpath, getString("getModulePath"));
   String ipAddress = getString("getIpAddress");
   if (!ipAddress.empty()) {
     setenv("IP_ADDR", ipAddress.c_str(), 1);
