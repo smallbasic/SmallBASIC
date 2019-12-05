@@ -841,7 +841,7 @@ bool initialise(int argc, char **argv) {
   opt_interactive = true;
   opt_file_permitted = 1;
   os_graphics = 1;
-  opt_mute_audio = 1;
+  opt_mute_audio = 0;
 
   int i = 0;
   if (Fl::args(argc, argv, i, arg_cb) < argc) {

@@ -27,6 +27,7 @@ sbasici_SOURCES =                 \
   ../../ui/image.cpp              \
   ../../ui/strlib.cpp             \
   ../../ui/textedit.cpp           \
+  ../../ui/audio.cpp              \
   display.cxx display.h           \
   runtime.cxx runtime.h           \
   HelpWidget.cxx HelpWidget.h     \

@@ -108,6 +108,7 @@ struct MainWindow : public BaseWindow {
   bool logPrint();
   FILE *openConfig(const char *fileName, const char *flags = "w");
   TtyWidget *tty();
+  void exit(int code) { delete this; ::exit(code); }
 
   CALLBACK_METHOD(close_tab);
   CALLBACK_METHOD(close_other_tabs);

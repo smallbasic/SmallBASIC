@@ -11,6 +11,7 @@
 #include "lib/maapi.h"
 #include "platform/fltk/MainWindow.h"
 #include "platform/fltk/runtime.h"
+#include "ui/audio.h"
 #include <FL/fl_ask.H>
 #include <FL/Fl_Menu_Button.H>
 
@@ -44,10 +45,11 @@ Runtime::Runtime(int w, int h, int defsize) : System() {
   _output->construct();
   _output->setTextColor(DEFAULT_FOREGROUND, DEFAULT_BACKGROUND);
   _output->setFontSize(defsize);
+  open_audio();
 }
 
 Runtime::~Runtime() {
-  // empty
+  close_audio();
 }
 
 void Runtime::alert(const char *title, const char *message) {
@@ -338,18 +340,6 @@ int osd_devrestore() {
   return 1;
 }
 
-void osd_beep() {
-  fl_beep();
-}
-
-void osd_sound(int frq, int ms, int vol, int bgplay) {
-#if defined(WIN32)
-  if (!bgplay) {
-    ::Beep(frq, ms);
-  }
-#endif
-}
-
 //
 // utils
 //
@@ -380,11 +370,3 @@ void appLog(const char *format, ...) {
     free(buf);
   }
 }
-
-//
-// not implemented
-//
-void open_audio() {}
-void close_audio() {}
-void osd_audio(const char *path) {}
-void osd_clear_sound_queue() {}

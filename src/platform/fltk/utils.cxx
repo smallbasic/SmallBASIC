@@ -7,7 +7,6 @@
 //
 
 #include <config.h>
-#include <sys/socket.h>
 #include <stdint.h>
 #include "lib/str.h"
 #include "utils.h"

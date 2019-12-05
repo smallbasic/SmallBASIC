@@ -352,6 +352,8 @@ function buildFLTK() {
      FLTK_CXXFLAGS="${FLTK_CXXFLAGS} -mms-bitfields"
      PACKAGE_LIBS="-Wl,-Bstatic ${PACKAGE_LIBS} -lwsock32 -lws2_32 -static-libgcc -static-libstdc++"
      AC_DEFINE(_Win32, 1, [Windows build])
+     AC_DEFINE(_USE_MATH_DEFINES, 1, [for M_PI in math.h])
+     AC_DEFINE(realpath(F, R), _fullpath(R, F, PATH_MAX), [add missing realpath for system.cpp])
      ;;
 
      *darwin*)

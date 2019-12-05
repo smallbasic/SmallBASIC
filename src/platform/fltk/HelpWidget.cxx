@@ -25,6 +25,7 @@
 #include <FL/Fl_Slider.H>
 #include <FL/Fl_Value_Input.H>
 #include <FL/Fl_Window.H>
+#include <FL/filename.H>
 
 #define Fl_HELP_WIDGET_RESOURCES
 #include "platform/fltk/HelpWidget.h"
@@ -3043,24 +3044,6 @@ Fl_Image *loadImage(const char *imgSrc) {
   return image != 0 ? image : &brokenImage;
 }
 
-#if defined(WIN32)
-#include <windows.h>
-#include <FL/Fl_Window.h>
-#include <FL/Fl_win32.h>
-#endif
-
 void browseFile(const char *url) {
-#if defined(WIN32)
-  ShellExecute(xid(Window::first()), "open", url, 0, 0, SW_SHOWNORMAL);
-#else
-  if (fork() == 0) {
-    fclose(stderr);
-    fclose(stdin);
-    fclose(stdout);
-    execlp("htmlview", "htmlview", url, NULL);
-    execlp("firefox", "firefox", url, NULL);
-    execlp("mozilla", "mozilla", url, NULL);
-    ::exit(0);                  // in case exec failed
-  }
-#endif
+  fl_open_uri(url);
 }

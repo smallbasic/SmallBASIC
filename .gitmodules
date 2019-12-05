@@ -1,0 +1,3 @@
+[submodule "src/lib/miniaudio"]
+	path = src/lib/miniaudio
+	url = https://github.com/dr-soft/miniaudio.git
