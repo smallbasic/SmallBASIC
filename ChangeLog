@@ -1,4 +1,8 @@
 2019-11-30 (0.12.17)
+	FLTK: fix memory leaks
+	FLTK: implement audio
+
+2019-11-30 (0.12.17)
 	ANDROID: fix module access in newer android versions.
 	UI: code cleanup
 

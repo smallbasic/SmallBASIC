@@ -16,6 +16,7 @@
 
 struct Font {
   Font(Fl_Font font, Fl_Fontsize size) :  _font(font),  _size(size) {}
+  virtual ~Font() {}
   void setCurrent() { fl_font(_font, _size); }
 
 private:

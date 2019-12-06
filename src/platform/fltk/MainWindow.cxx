@@ -120,7 +120,7 @@ bool MainWindow::basicMain(EditorWidget *editWidget,
   if (!toolExec) {
     if (opt_ide == IDE_NONE) {
       // run in a separate window with the ide hidden
-      fullScreen = new BaseWindow(w(), h(), _system);
+      fullScreen = new BaseWindow(w(), h(), _runtime);
       fullScreen->box(FL_NO_BOX);
       fullScreen->callback(quit_cb);
       fullScreen->add(_out);
@@ -143,7 +143,7 @@ bool MainWindow::basicMain(EditorWidget *editWidget,
     restart = false;
     runMode = run_state;
     chdir(path);
-    success = _system->run(filename);
+    success = _runtime->run(filename);
   }
   while (restart);
 
@@ -454,7 +454,7 @@ void MainWindow::font_size_incr(Fl_Widget *w, void *eventData) {
     if (size < MAX_FONT_SIZE) {
       editWidget->setFontSize(size + 1);
       updateConfig(editWidget);
-      _system->setFontSize(size + 1);
+      _runtime->setFontSize(size + 1);
     }
   } else {
     handle(EVENT_INCREASE_FONT);
@@ -468,7 +468,7 @@ void MainWindow::font_size_decr(Fl_Widget *w, void *eventData) {
     if (size > MIN_FONT_SIZE) {
       editWidget->setFontSize(size - 1);
       updateConfig(editWidget);
-      _system->setFontSize(size - 1);
+      _runtime->setFontSize(size - 1);
     }
   } else {
     handle(EVENT_DECREASE_FONT);
@@ -908,19 +908,11 @@ bool initialise(int argc, char **argv) {
 }
 
 /**
- * save application state at program exit
- */
-void save_profile(void) {
-  wnd->_profile->save(wnd);
-}
-
-/**
  * application entry point
  */
 int main(int argc, char **argv) {
   int result;
   if (initialise(argc, argv)) {
-    atexit(save_profile);
     Fl::run();
     result = 0;
   } else {
@@ -1012,7 +1004,7 @@ MainWindow::MainWindow(int w, int h) :
   _outputGroup->labelfont(FL_HELVETICA);
   _outputGroup->user_data((void *)gw_output);
   _out = new GraphicsWidget(x1, y1 + 1, x2, y2 -1);
-  _system = new Runtime(x2, y2 - 1, DEF_FONT_SIZE);
+  _runtime = new Runtime(x2, y2 - 1, DEF_FONT_SIZE);
   _outputGroup->resizable(_out);
   _outputGroup->end();
   _tabGroup->resizable(_outputGroup);
@@ -1023,7 +1015,9 @@ MainWindow::MainWindow(int w, int h) :
 }
 
 MainWindow::~MainWindow() {
-  delete _system;
+  _profile->save(this);
+  delete _profile;
+  delete _runtime;
 }
 
 Fl_Group *MainWindow::createTab(GroupWidgetEnum groupWidgetEnum, const char *label) {
@@ -1341,7 +1335,7 @@ void MainWindow::setTitle(Fl_Window *widget, const char *filename) {
 }
 
 void MainWindow::setBreak() {
-  _system->setExit(false);
+  _runtime->setExit(false);
   runMode = break_state;
 }
 
@@ -1363,7 +1357,7 @@ bool MainWindow::isIdeHidden() {
 
 void MainWindow::resize(int x, int y, int w, int h) {
   BaseWindow::resize(x, y, w, h);
-  _system->resize(_out->w(), _out->h());
+  _runtime->resize(_out->w(), _out->h());
 }
 
 void MainWindow::resizeDisplay(int x, int y, int w, int h) {
@@ -1371,7 +1365,7 @@ void MainWindow::resizeDisplay(int x, int y, int w, int h) {
   _out->resize(x, y, w, h);
 
   // resize the runtime platforn
-  _system->resize(w, h);
+  _runtime->resize(w, h);
 }
 
 /**
@@ -1398,7 +1392,7 @@ bool MainWindow::logPrint() {
 
 int MainWindow::handle(int e) {
   int result;
-  if (getSelectedTab() == _outputGroup && _system->handle(e)) {
+  if (getSelectedTab() == _outputGroup && _runtime->handle(e)) {
     result = 1;
   } else {
     result = BaseWindow::handle(e);

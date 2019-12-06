@@ -45,11 +45,12 @@ Runtime::Runtime(int w, int h, int defsize) : System() {
   _output->construct();
   _output->setTextColor(DEFAULT_FOREGROUND, DEFAULT_BACKGROUND);
   _output->setFontSize(defsize);
-  open_audio();
+  audio_open();
 }
 
 Runtime::~Runtime() {
-  close_audio();
+  delete _output;
+  audio_close();
 }
 
 void Runtime::alert(const char *title, const char *message) {

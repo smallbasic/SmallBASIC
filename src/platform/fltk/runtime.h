@@ -14,7 +14,7 @@
 
 struct Runtime : public System {
   Runtime(int w, int h, int defSize);
-  ~Runtime();
+  virtual ~Runtime();
 
   void addShortcut(const char *) {}
   void alert(const char *title, const char *message);

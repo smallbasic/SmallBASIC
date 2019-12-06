@@ -7,6 +7,9 @@
 //
 
 #include <config.h>
+#if !defined(_Win32)
+#include <sys/socket.h>
+#endif
 #include <stdint.h>
 #include "lib/str.h"
 #include "utils.h"

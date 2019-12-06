@@ -149,7 +149,7 @@ struct MainWindow : public BaseWindow {
 
   // display system
   GraphicsWidget *_out;
-  Runtime *_system;
+  Runtime *_runtime;
 
   // main output
   Fl_Group *_outputGroup;

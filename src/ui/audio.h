@@ -6,5 +6,5 @@
 // Download the GNU Public License (GPL) from www.gnu.org
 //
 
-bool open_audio();
-void close_audio();
+bool audio_open();
+void audio_close();
