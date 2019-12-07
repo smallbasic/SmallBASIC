@@ -1407,7 +1407,10 @@ int TextEditInput::getCompletions(StringList *list, int max) {
   if (len > 0) {
     for (int i = 0; i < keyword_help_len && count < max; i++) {
       if (strncasecmp(selection, keyword_help[i].keyword, len) == 0) {
-        list->add(keyword_help[i].keyword);
+        String *s = new String();
+        s->append(" ");
+        s->append(keyword_help[i].keyword);
+        list->add(s);
         count++;
       }
     }
