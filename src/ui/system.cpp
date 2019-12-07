@@ -58,31 +58,37 @@
 #define FONT_MIN 20
 #define FONT_MAX 200
 
-#define MENU_STR_AUDIO   "Audio [%s]"
-#define MENU_STR_BACK    "Back ^b"
-#define MENU_STR_CONSOLE "Console"
-#define MENU_STR_CONTROL "Control Mode [%s]"
-#define MENU_STR_COPY    "Copy ^c"
-#define MENU_STR_CUT     "Cut ^x"
-#define MENU_STR_DEBUG   "Debug"
-#define MENU_STR_EDITOR  "Editor [%s]"
-#define MENU_STR_FONT    "Font Size %d%%"
-#define MENU_STR_HELP    "Help"
-#define MENU_STR_KEYPAD  "Show Keypad"
+#if defined(_SDL)
+#define MK_MENU(l, a) " " l " " a " "
+#else
+#define MK_MENU(l, a) " " l
+#endif
+
+#define MENU_STR_BACK    MK_MENU("Back",  "^b")
+#define MENU_STR_COPY    MK_MENU("Copy",  "^c")
+#define MENU_STR_CUT     MK_MENU("Cut",   "^x")
+#define MENU_STR_PASTE   MK_MENU("Paste", "^v")
+#define MENU_STR_REDO    MK_MENU("Redo",  "^y")
+#define MENU_STR_RUN     MK_MENU("Run",   "^r")
+#define MENU_STR_SAVE    MK_MENU("Save",  "^s")
+#define MENU_STR_UNDO    MK_MENU("Undo",  "^z")
+#define MENU_STR_SCREEN  MK_MENU("Screenshot", "^p")
+#define MENU_STR_SELECT  MK_MENU("Select All", "^a")
 #define MENU_STR_OFF     "OFF"
 #define MENU_STR_ON      "ON"
-#define MENU_STR_OUTPUT  "Show Output"
-#define MENU_STR_PASTE   "Paste ^v"
-#define MENU_STR_REDO    "Redo ^y"
-#define MENU_STR_RESTART "Restart"
-#define MENU_STR_RUN     "Run ^r"
-#define MENU_STR_SAVE    "Save ^s"
-#define MENU_STR_SCREEN  "Screenshot ^p"
-#define MENU_STR_SELECT  "Select All ^a"
-#define MENU_STR_SHARE   "Share"
-#define MENU_STR_SHORT   "Desktop Shortcut"
-#define MENU_STR_SOURCE  "View Source"
-#define MENU_STR_UNDO    "Undo ^z"
+#define MENU_STR_AUDIO   " Audio  [%s] "
+#define MENU_STR_EDITOR  " Editor [%s] "
+#define MENU_STR_CONSOLE " Console "
+#define MENU_STR_CONTROL " Control Mode [%s] "
+#define MENU_STR_DEBUG   " Debug "
+#define MENU_STR_FONT    " Font Size %d%% "
+#define MENU_STR_HELP    " Help "
+#define MENU_STR_KEYPAD  " Show Keypad "
+#define MENU_STR_OUTPUT  " Show Output "
+#define MENU_STR_RESTART " Restart "
+#define MENU_STR_SHARE   " Share "
+#define MENU_STR_SHORT   " Desktop Shortcut "
+#define MENU_STR_SOURCE  " View Source "
 
 System *g_system;
 
@@ -989,8 +995,6 @@ void System::showMenu() {
       items->add(new String(MENU_STR_KEYPAD));
       _systemMenu[index++] = MENU_KEYPAD;
 #endif
-      items->add(new String(MENU_STR_SCREEN));
-      _systemMenu[index++] = MENU_SCREENSHOT;
       if (_mainBas) {
         sprintf(buffer, MENU_STR_FONT, _fontScale - FONT_SCALE_INTERVAL);
         items->add(new String(buffer));
@@ -1002,6 +1006,9 @@ void System::showMenu() {
         items->add(new String(buffer));
         _systemMenu[index++] = MENU_EDITMODE;
       }
+      sprintf(buffer, MENU_STR_AUDIO, (opt_mute_audio ? MENU_STR_OFF : MENU_STR_ON));
+      items->add(new String(buffer));
+      _systemMenu[index++] = MENU_AUDIO;
 #if !defined(_SDL) && !defined(_FLTK)
       if (!_mainBas && !_activeFile.empty()) {
         items->add(new String(MENU_STR_SHORT));
@@ -1010,9 +1017,8 @@ void System::showMenu() {
         _systemMenu[index++] = MENU_SHARE;
       }
 #endif
-      sprintf(buffer, MENU_STR_AUDIO, (opt_mute_audio ? MENU_STR_OFF : MENU_STR_ON));
-      items->add(new String(buffer));
-      _systemMenu[index++] = MENU_AUDIO;
+      items->add(new String(MENU_STR_SCREEN));
+      _systemMenu[index++] = MENU_SCREENSHOT;
 #if defined(_SDL) || defined(_FLTK)
       items->add(new String(MENU_STR_BACK));
       _systemMenu[index++] = MENU_BACK;
