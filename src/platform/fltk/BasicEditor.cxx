@@ -177,10 +177,10 @@ void BasicEditor::styleParse(const char *text, char *style, int length) {
   const char *temp;
   int searchLen = strlen(_search);
 
-  for (; length > 0; length--, text++) {
+  for (int index = 0; length > 0; length--, text++, index++) {
     if (current == PLAIN) {
       // check for directives, comments, strings, and keywords
-      if ((*text == '#' && (*(text - 1) == 0 || *(text - 1) == 10)) ||
+      if ((*text == '#' && (index == 0 || *(text - 1) == 0 || *(text - 1) == 10)) ||
           (strncasecmp(text, "rem", 3) == 0 && text[3] == ' ') || *text == '\'') {
         // basic comment
         current = COMMENTS;
