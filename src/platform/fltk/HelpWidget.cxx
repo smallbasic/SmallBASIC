@@ -3045,5 +3045,5 @@ Fl_Image *loadImage(const char *imgSrc) {
 }
 
 void browseFile(const char *url) {
-  fl_open_uri(url);
+  fl_open_uri(url, nullptr, 0);
 }

@@ -73,6 +73,7 @@ protected:
   void editSource(strlib::String loadPath, bool restoreOnExit);
   bool execute(const char *bas);
   bool fileExists(strlib::String &path);
+  void formatOptions(StringList *items);
   MAEvent getNextEvent() { return processEvents(1); }
   uint32_t getModifiedTime();
   void handleEvent(MAEvent &event);

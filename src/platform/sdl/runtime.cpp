@@ -34,7 +34,7 @@
 #define MAIN_BAS "__main_bas__"
 #define AMPLITUDE 22000
 #define FREQUENCY 44100
-#define OPTIONS_BOX_WIDTH_EXTRA 4
+#define OPTIONS_BOX_WIDTH_EXTRA 1
 #define OPTIONS_BOX_BG 0xd2d1d0
 #define OPTIONS_BOX_FG 0x3e3f3e
 #define EVENT_TYPE_RESTART 101
@@ -971,8 +971,9 @@ int osd_devrestore(void) {
     }
   }
 
-  // delete the cached sounds
+  // delete the sounds
   g_soundCache.removeAll();
+  g_sounds.removeAll();
 
   SDL_UnlockAudio();
 
