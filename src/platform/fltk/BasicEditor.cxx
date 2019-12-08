@@ -39,7 +39,8 @@ Fl_Text_Display::Style_Table_Entry styletable[] = {
   { defaultColor[7], FL_COURIER_ITALIC, 12}, // H - Italic Comments
   { defaultColor[8], FL_COURIER, 12},        // I - Numbers
   { defaultColor[9], FL_COURIER, 12},        // J - Operators
-  { FL_WHITE,        FL_COURIER, 12},        // K - Background
+  { FL_BLUE,         FL_COURIER, 12},        // K - Selection Background
+  { FL_WHITE,        FL_COURIER, 12},        // L - Background
 };
 
 #define PLAIN      'A'

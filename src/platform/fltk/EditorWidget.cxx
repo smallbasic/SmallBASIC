@@ -1014,7 +1014,7 @@ void EditorWidget::setTheme(EditTheme *theme) {
   _editor->linenumber_bgcolor(get_color(theme->_background));
   _editor->linenumber_fgcolor(get_color(theme->_number_color));
   _editor->cursor_color(get_color(theme->_cursor_color));
-  _editor->selection_color(get_color(theme->_selection_color));
+  _editor->selection_color(get_color(theme->_selection_background));
   _funcList->color(fl_color_average(get_color(theme->_background), get_color(theme->_color), .92f));
   _funcList->item_labelfgcolor(get_color(theme->_color));
   _tty->color(_editor->color());

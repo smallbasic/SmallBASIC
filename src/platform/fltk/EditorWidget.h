@@ -55,6 +55,7 @@ enum StyleField {
   st_icomments,
   st_numbers,
   st_operators,
+  st_selection,
   st_background
 };
 

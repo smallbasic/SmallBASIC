@@ -987,10 +987,12 @@ void System::showMenu() {
       items->add(new String(MENU_STR_SOURCE));
       _systemMenu[index++] = MENU_CONSOLE;
       _systemMenu[index++] = MENU_SOURCE;
+#if !defined(_FLTK)
       if (!isEditing()) {
         items->add(new String(MENU_STR_RESTART));
         _systemMenu[index++] = MENU_RESTART;
       }
+#endif
 #if !defined(_SDL) && !defined(_FLTK)
       items->add(new String(MENU_STR_KEYPAD));
       _systemMenu[index++] = MENU_KEYPAD;
