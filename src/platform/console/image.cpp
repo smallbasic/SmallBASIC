@@ -22,9 +22,9 @@
 #include "common/fs_socket_client.h"
 #include "ui/strlib.h"
 #include "ui/rgb.h"
+#include "lib/lodepng/lodepng.h"
 
 extern "C" {
-#include "lib/lodepng.h"
   int xpm_decode32(uint8_t **image, unsigned *width, unsigned *height, const char *const *xpm);
 }
 

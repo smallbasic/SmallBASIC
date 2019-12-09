@@ -10,6 +10,7 @@ AM_CPPFLAGS = -I$(top_builddir)/src -I. @PACKAGE_CFLAGS@
 bin_PROGRAMS = sbasic
 
 sbasic_SOURCES =    \
+  ../../lib/lodepng/lodepng.cpp ../../lib/lodepng/lodepng.h \
   ../console/main.cpp	\
   ../console/device.cpp \
   ../console/image.cpp \
