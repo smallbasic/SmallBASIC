@@ -60,7 +60,7 @@ int textedit_move_to_word_next(EditBuffer *str, int c) {
 #define STB_TEXTEDIT_MOVEWORDRIGHT textedit_move_to_word_next
 
 #pragma GCC diagnostic ignored "-Wunused-function"
-#include "lib/stb_textedit.h"
+#include "lib/stb/stb_textedit.h"
 #pragma GCC diagnostic pop
 
 #define GROW_SIZE 128

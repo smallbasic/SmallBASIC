@@ -8,9 +8,9 @@
 
 #include "config.h"
 
+#include "include/osd.h"
 #include "common/sys.h"
 #include "common/smbas.h"
-#include "common/osd.h"
 #include "common/device.h"
 #include "common/keymap.h"
 #include "common/inet.h"

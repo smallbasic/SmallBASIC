@@ -12,16 +12,10 @@
 #include "common/pproc.h"
 #include "common/fs_socket_client.h"
 #include "lib/maapi.h"
+#include "lib/lodepng/lodepng.h"
 #include "ui/image.h"
 #include "ui/system.h"
 #include "ui/rgb.h"
-
-#if !defined(LODEPNG_NO_COMPILE_CPP)
-  #define LODEPNG_NO_COMPILE_CPP
-#endif
-extern "C" {
-  #include "lib/lodepng.h"
-}
 
 #define IMG_X "x"
 #define IMG_Y "y"

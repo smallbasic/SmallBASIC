@@ -11,13 +11,16 @@
 
 #include "config.h"
 #include <stdio.h>
-#include "common/osd.h"
-#include "common/device.h"
-#include "common/sberr.h"
+#include "include/osd.h"
 #include "ui/strlib.h"
 #include "ui/audio.h"
 #include "lib/miniaudio/extras/dr_wav.h"
 #include "lib/miniaudio/miniaudio.h"
+
+extern "C" {
+  uint32_t dev_get_millisecond_count();
+  void err_throw(const char *fmt, ...);
+}
 
 #define DEFAULT_FORMAT ma_format_f32
 #define DEFAULT_SAMPLE_RATE  44100

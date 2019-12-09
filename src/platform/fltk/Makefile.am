@@ -18,6 +18,7 @@ EXTRA_DIST =                      \
 bin_PROGRAMS = sbasici
 
 sbasici_SOURCES =                 \
+  ../../lib/lodepng/lodepng.cpp ../../lib/lodepng/lodepng.h \
   ../../ui/ansiwidget.cpp         \
   ../../ui/system.cpp             \
   ../../ui/window.cpp             \

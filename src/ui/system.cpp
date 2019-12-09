@@ -13,8 +13,8 @@
 #include <stdio.h>
 #include <errno.h>
 
+#include "include/osd.h"
 #include "common/sbapp.h"
-#include "common/osd.h"
 #include "common/device.h"
 #include "common/fs_socket_client.h"
 #include "common/keymap.h"

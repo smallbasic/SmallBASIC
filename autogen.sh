@@ -8,6 +8,8 @@
 
 ln -sf README.md README
 
+git submodule update --
+
 pkg-config --version > /dev/null || echo "Please install pkg-config"
 
 rm -f acinclude.m4

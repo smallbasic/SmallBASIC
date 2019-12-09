@@ -18,7 +18,7 @@
 #define TOKEN_GROW_SIZE  16
 #define JSMN_STATIC
 
-#include "lib/jsmn.h"
+#include "lib/jsmn/jsmn.h"
 
 /**
  * Container for map_from_str

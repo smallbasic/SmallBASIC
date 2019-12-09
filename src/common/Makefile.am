@@ -39,7 +39,6 @@ noinst_LIBRARIES = libsb_common.a
 
 libsb_common_a_SOURCES =                  \
     ../lib/match.c ../lib/match.h         \
-    ../lib/lodepng.c ../lib/lodepng.h     \
     ../lib/str.c ../lib/str.h             \
     ../lib/matrix.c                       \
     ../lib/xpm.c                          \

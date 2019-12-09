@@ -9,9 +9,9 @@
 
 #define DEVICE_MODULE
 
+#include "include/osd.h"
 #include "common/device.h"
 #include "common/messages.h"
-#include "common/osd.h"
 #include "common/sberr.h"
 #include "common/blib.h"
 

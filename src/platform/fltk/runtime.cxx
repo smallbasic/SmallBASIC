@@ -7,7 +7,7 @@
 //
 
 #include <config.h>
-#include "common/osd.h"
+#include "include/osd.h"
 #include "lib/maapi.h"
 #include "platform/fltk/MainWindow.h"
 #include "platform/fltk/runtime.h"
