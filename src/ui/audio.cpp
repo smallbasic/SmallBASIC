@@ -114,7 +114,10 @@ static void setup_format(ma_format format, ma_uint32 channels, ma_uint32 sampleR
       config.sampleRate != sampleRate) {
     audio_close();
     setup_config(format, channels, sampleRate);
-    ma_device_init(nullptr, &config, &device);
+    ma_result result = ma_device_init(nullptr, &config, &device);
+    if (result != MA_SUCCESS) {
+      err_throw("Failed to prepare sound device [%d]", result);
+    }
   }
 }
 
@@ -149,7 +152,10 @@ void osd_audio(const char *path) {
       cache.put(path, sound);
       ma_mutex_unlock(&device.lock);
       if (queue.size() == 1) {
-        ma_device_start(&device);
+        result = ma_device_start(&device);
+        if (result != MA_SUCCESS) {
+          err_throw("Failed to start audio [%d]", result);
+        }
       }
     }
   }
