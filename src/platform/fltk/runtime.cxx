@@ -17,6 +17,7 @@
 
 extern MainWindow *wnd;
 extern System *g_system;
+static auto *onlineUrl = "http://smallbasic.github.io/samples/index.bas";
 
 #define MIN_WINDOW_SIZE 10
 #define OPTIONS_BOX_WIDTH_EXTRA 4
@@ -60,9 +61,9 @@ void Runtime::alert(const char *title, const char *message) {
 int Runtime::ask(const char *title, const char *prompt, bool cancel) {
   int result;
   if (cancel) {
-    result = fl_choice(prompt, "Yes", "No", "Cancel", NULL);
+    result = fl_choice(prompt, "Yes", "No", "Cancel", nullptr);
   } else {
-    result = fl_choice(prompt, "Yes", "No", 0, NULL);
+    result = fl_choice(prompt, "Yes", "No", 0, nullptr);
   }
   return result;
 }
@@ -76,7 +77,7 @@ void Runtime::enableCursor(bool enabled) {
 }
 
 char *Runtime::getClipboardText() {
-  return NULL;
+  return nullptr;
 }
 
 int Runtime::handle(int e) {
@@ -126,7 +127,7 @@ void Runtime::optionsBox(StringList *items) {
     menu[index].labelfont_ = FL_HELVETICA;
     menu[index].labelsize_ = FL_NORMAL_SIZE;
     menu[index].labelcolor_ = FL_FOREGROUND_COLOR;
-    menu[index].measure(&h, NULL);
+    menu[index].measure(&h, nullptr);
 
     height += h + 1;
     w = (strlen(str) * charWidth);
@@ -137,7 +138,7 @@ void Runtime::optionsBox(StringList *items) {
   }
 
   menu[index].flags = 0;
-  menu[index].text = NULL;
+  menu[index].text = nullptr;
   width += (charWidth * OPTIONS_BOX_WIDTH_EXTRA);
 
   int menuX = event_x();
@@ -201,8 +202,33 @@ void Runtime::resize(int w, int h) {
   }
 }
 
+void Runtime::runSamples() {
+  logEntered();
+  _loadPath = onlineUrl;
+  _mainBas = true;
+
+  String activePath = _loadPath;
+  bool started = execute(onlineUrl);
+
+  while (started && !wnd->isBreakExec()) {
+    if (isBreak() && (activePath.equals(onlineUrl) || activePath.equals(_loadPath))) {
+      // break from index page OR break with same _loadPath
+      break;
+    }
+    if (_loadPath.empty()) {
+      // return to index page
+      _loadPath = onlineUrl;
+    }
+    activePath = _loadPath;
+    started = execute(_loadPath);
+  }
+  _mainBas = false;
+  showCompletion(started);
+  _output->redraw();
+}
+
 void Runtime::setClipboardText(const char *text) {
-  Fl::copy(text, strlen(text), true);
+  Fl::copy(text, strlen(text), 1);
 }
 
 void Runtime::setFontSize(int size) {
@@ -347,7 +373,7 @@ int osd_devrestore() {
 void appLog(const char *format, ...) {
   va_list args;
   va_start(args, format);
-  unsigned size = vsnprintf(NULL, 0, format, args);
+  unsigned size = vsnprintf(nullptr, 0, format, args);
   va_end(args);
 
   if (size) {

@@ -26,6 +26,7 @@ struct Runtime : public System {
   void optionsBox(StringList *items);
   MAEvent processEvents(int waitFlag);
   bool run(const char *bas) { return execute(bas); }
+  void runSamples();
   void resize(int w, int h);
   void setClipboardText(const char *text);
   void setFontSize(int size);

@@ -1,3 +1,6 @@
+2019-12-13 (0.12.17)
+	FLTK: add online samples command
+
 2019-12-07 (0.12.17)
 	FLTK: fix memory leaks
 	FLTK: implement audio

@@ -134,6 +134,7 @@ struct MainWindow : public BaseWindow {
   CALLBACK_METHOD(quit);
   CALLBACK_METHOD(restart_run);
   CALLBACK_METHOD(run);
+  CALLBACK_METHOD(run_samples);
   CALLBACK_METHOD(run_break);
   CALLBACK_METHOD(run_selection);
   CALLBACK_METHOD(save_file_as);

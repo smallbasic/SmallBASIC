@@ -510,6 +510,19 @@ void MainWindow::run_break(Fl_Widget *w, void *eventData) {
 }
 
 /**
+ * run the online samples program
+ */
+void MainWindow::run_samples(Fl_Widget *w, void *eventData) {
+  if (runMode == edit_state) {
+    runMode = run_state;
+    _runtime->runSamples();
+    runMode = edit_state;
+  } else {
+    busyMessage();
+  }
+}
+
+/**
  * run the selected text as the main program
  */
 void MainWindow::run_selection(Fl_Widget *w, void *eventData) {
@@ -981,6 +994,7 @@ MainWindow::MainWindow(int w, int h) :
   m->add("&Program/&Break", FL_CTRL + 'b', run_break_cb);
   m->add("&Program/_&Restart", FL_CTRL + 'r', restart_run_cb);
   m->add("&Program/&Command", FL_F+10, set_options_cb);
+  m->add("&Program/Online Samples", 0, run_samples_cb);
   m->add("&Help/&Help Contents", FL_F+1, help_contents_cb);
   m->add("&Help/_&Context Help", FL_F+2, help_contents_brief_cb);
   m->add("&Help/&Program Help", FL_F+11, help_app_cb);
