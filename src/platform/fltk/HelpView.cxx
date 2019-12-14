@@ -59,8 +59,8 @@ static void helpViewClick_cb(Fl_Widget *w, void *v) {
   Fl::add_check(helpViewClick_event);
 }
 
-HelpView::HelpView(Fl_Widget *rect) :
-  HelpWidget(rect),
+HelpView::HelpView(Fl_Widget *rect, int fontSize) :
+  HelpWidget(rect, fontSize),
   _openKeyword(-1),
   _openPackage(0) {
 }

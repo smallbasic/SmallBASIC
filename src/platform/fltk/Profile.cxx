@@ -38,7 +38,7 @@ Profile::Profile() :
   _loaded(false),
   _createBackups(true),
   _lineNumbers(true),
-  _fontSize(12),
+  _fontSize(DEF_FONT_SIZE),
   _indentLevel(2),
   _helpThemeId(0) {
   loadEditTheme(0);
@@ -111,6 +111,7 @@ void Profile::restore(MainWindow *wnd) {
     }
 
     restoreTabs(wnd, &profile);
+    wnd->_runtime->setFontSize(_fontSize);
   }
   _loaded = true;
 }

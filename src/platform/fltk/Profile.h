@@ -23,6 +23,7 @@ struct Profile {
   Profile();
 
   bool createBackups() const { return _createBackups; }
+  int  getFontSize() const { return _fontSize; }
   void loadConfig(EditorWidget *editor);
   void loadEditTheme(int themeId);
   void restore(MainWindow *wnd);

@@ -14,7 +14,7 @@
 #include "platform/fltk/EditorWidget.h"
 
 struct FileWidget : public HelpWidget {
-  FileWidget(Fl_Widget *rect);
+  FileWidget(Fl_Widget *rect, int fontSize);
   ~FileWidget();
 
   static const char *forwardSlash(char *filename);

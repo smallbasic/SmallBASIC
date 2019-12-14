@@ -14,7 +14,7 @@
 const char *getBriefHelp(const char *selection);
 
 struct HelpView : public HelpWidget {
-  HelpView(Fl_Widget *rect);
+  HelpView(Fl_Widget *rect, int fontSize);
   ~HelpView();
 
   void about();

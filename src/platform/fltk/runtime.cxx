@@ -205,7 +205,6 @@ void Runtime::resize(int w, int h) {
 void Runtime::runSamples() {
   logEntered();
   _loadPath = onlineUrl;
-  _mainBas = true;
 
   String activePath = _loadPath;
   bool started = execute(onlineUrl);
@@ -222,7 +221,7 @@ void Runtime::runSamples() {
     activePath = _loadPath;
     started = execute(_loadPath);
   }
-  _mainBas = false;
+
   showCompletion(started);
   _output->redraw();
 }

@@ -448,30 +448,18 @@ void MainWindow::copy_text(Fl_Widget *w, void *eventData) {
 }
 
 void MainWindow::font_size_incr(Fl_Widget *w, void *eventData) {
-  EditorWidget *editWidget = getEditor();
-  if (editWidget) {
-    int size = editWidget->getFontSize();
-    if (size < MAX_FONT_SIZE) {
-      editWidget->setFontSize(size + 1);
-      updateConfig(editWidget);
-      _runtime->setFontSize(size + 1);
-    }
-  } else {
-    handle(EVENT_INCREASE_FONT);
+  int size = _runtime->getFontSize();
+  if (size < MAX_FONT_SIZE) {
+    _runtime->setFontSize(size + 1);
+    resizeTabs(size + 1);
   }
 }
 
 void MainWindow::font_size_decr(Fl_Widget *w, void *eventData) {
-  EditorWidget *editWidget = getEditor();
-  if (editWidget) {
-    int size = editWidget->getFontSize();
-    if (size > MIN_FONT_SIZE) {
-      editWidget->setFontSize(size - 1);
-      updateConfig(editWidget);
-      _runtime->setFontSize(size - 1);
-    }
-  } else {
-    handle(EVENT_DECREASE_FONT);
+  int size = _runtime->getFontSize();
+  if (size > MIN_FONT_SIZE) {
+    _runtime->setFontSize(size - 1);
+    resizeTabs(size - 1);
   }
 }
 
@@ -1086,7 +1074,7 @@ void MainWindow::open_file(Fl_Widget *w, void *eventData) {
   Fl_Group *openFileGroup = findTab(gw_file);
   if (!openFileGroup) {
     openFileGroup = createTab(gw_file, fileTabName);
-    fileWidget = new FileWidget(_out);
+    fileWidget = new FileWidget(_out, _runtime->getFontSize());
     openFileGroup->resizable(fileWidget);
     openFileGroup->end();
     _tabGroup->end();
@@ -1142,7 +1130,7 @@ HelpView *MainWindow::getHelp() {
   Fl_Group *helpGroup = findTab(gw_help);
   if (!helpGroup) {
     helpGroup = createTab(gw_help, helpTabName);
-    help = new HelpView(_out);
+    help = new HelpView(_out, _runtime->getFontSize());
     help->callback(help_contents_anchor_cb);
     helpGroup->resizable(help);
     _profile->setHelpTheme(help);
@@ -1380,6 +1368,27 @@ void MainWindow::resizeDisplay(int x, int y, int w, int h) {
 
   // resize the runtime platforn
   _runtime->resize(w, h);
+}
+
+void MainWindow::resizeTabs(int fontSize) {
+  int n = _tabGroup->children();
+  for (int c = 0; c < n; c++) {
+    Fl_Group *group = (Fl_Group *)_tabGroup->child(c);
+    GroupWidgetEnum gw = getGroupWidget(group);
+    switch (gw) {
+    case gw_editor:
+      ((EditorWidget *)group->child(0))->setFontSize(fontSize);
+      break;
+    case gw_help:
+      ((HelpWidget *)group->child(0))->setFontSize(fontSize);
+      break;
+    case gw_file:
+      ((FileWidget *)group->child(0))->setFontSize(fontSize);
+      break;
+    default:
+      break;
+    }
+  }
 }
 
 /**

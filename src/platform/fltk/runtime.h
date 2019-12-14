@@ -13,7 +13,7 @@
 #include "ui/system.h"
 
 struct Runtime : public System {
-  Runtime(int w, int h, int defSize);
+  Runtime(int w, int h, int fontSize);
   virtual ~Runtime();
 
   void addShortcut(const char *) {}
@@ -21,6 +21,7 @@ struct Runtime : public System {
   int ask(const char *title, const char *prompt, bool cancel=true);
   void browseFile(const char *url);
   char *getClipboardText();
+  int  getFontSize() { return _output->getFontSize(); }
   void enableCursor(bool enabled);
   int handle(int event);
   void optionsBox(StringList *items);

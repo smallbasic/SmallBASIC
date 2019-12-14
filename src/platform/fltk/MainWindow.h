@@ -80,6 +80,7 @@ struct MainWindow : public BaseWindow {
   void pathMessage(const char *file);
   void resize(int x, int y, int w, int h);
   void resizeDisplay(int x, int y, int w, int h);
+  void resizeTabs(int fontSize);
   void saveEditConfig(EditorWidget *editWidget);
   void scanPlugIns(Fl_Menu_Bar *menu);
   void scanRecentFiles(Fl_Menu_Bar *menu);

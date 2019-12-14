@@ -1644,7 +1644,7 @@ static void anchor_callback(Fl_Widget *helpWidget, void *target) {
   ((HelpWidget *)helpWidget)->navigateTo((const char *)target);
 }
 
-HelpWidget::HelpWidget(Fl_Widget *rect, int defsize) :
+HelpWidget::HelpWidget(Fl_Widget *rect, int fontSize) :
   Fl_Group(rect->x(), rect->y(), rect->w(), rect->h()),
   background(BACKGROUND_COLOR),
   foreground(FOREGROUND_COLOR),
@@ -1675,7 +1675,7 @@ HelpWidget::HelpWidget(Fl_Widget *rect, int defsize) :
   callback(anchor_callback);    // default callback
   init();
   docHome.clear();
-  labelsize(defsize);
+  labelsize(fontSize);
 }
 
 HelpWidget::~HelpWidget() {
@@ -2657,18 +2657,6 @@ int HelpWidget::handle(int event) {
   }
 
   switch (event) {
-  case EVENT_INCREASE_FONT:
-    if (getFontSize() < MAX_FONT_SIZE) {
-      setFontSize(getFontSize() + 1);
-    }
-    return 1;
-
-  case EVENT_DECREASE_FONT:
-    if (getFontSize() > MIN_FONT_SIZE) {
-      setFontSize(getFontSize() - 1);
-    }
-    return 1;
-
   case EVENT_COPY_TEXT:
     copySelection();
     return 1;
