@@ -396,7 +396,7 @@ int main(int argc, char* argv[]) {
     opt_ide = ide_option;
   }
 
-  SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS | SDL_INIT_AUDIO);
+  SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS);
   SDL_Window *window = SDL_CreateWindow("SmallBASIC",
                                         rect.x, rect.y, rect.w, rect.h,
                                         SDL_WINDOW_SHOWN |

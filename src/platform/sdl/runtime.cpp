@@ -17,15 +17,17 @@
 #include "common/pproc.h"
 #include "lib/maapi.h"
 #include "ui/utils.h"
+#include "ui/audio.h"
 #include "platform/sdl/runtime.h"
 #include "platform/sdl/syswm.h"
 #include "platform/sdl/keymap.h"
 #include "platform/sdl/main_bas.h"
 
-#include <SDL_audio.h>
 #include <SDL_clipboard.h>
 #include <SDL_events.h>
 #include <SDL_messagebox.h>
+#include <SDL_mutex.h>
+#include <SDL_thread.h>
 #include <SDL_timer.h>
 #include <math.h>
 #include <wchar.h>
@@ -53,51 +55,6 @@ strlib::List<int*> g_breakPoints;
 socket_t g_debugee = -1;
 extern int g_debugPort;
 
-struct SoundObject {
-  SoundObject(double freq, int duration) :
-    _v(0),
-    _freq(freq),
-    _samplesLeft(0),
-    _buffer(NULL),
-    _index(0),
-    _cached(false) {
-    _samplesLeft = _samples = duration * FREQUENCY / 1000;
-  }
-
-  SoundObject(Uint8 *buffer, Uint32 length) :
-    _v(0),
-    _freq(0),
-    _samplesLeft(length),
-    _samples(length),
-    _buffer(buffer),
-    _index(0),
-    _cached(true) {
-  }
-
-  virtual ~SoundObject() {
-    if (_buffer) {
-      SDL_FreeWAV(_buffer);
-      _buffer = NULL;
-    }
-  }
-
-  void reset() {
-    _index = 0;
-    _samplesLeft = _samples;
-  }
-
-  double _v;
-  double _freq;
-  Uint32 _samplesLeft;
-  Uint32 _samples;
-  Uint8 *_buffer;
-  Uint32 _index;
-  bool _cached;
-};
-
-strlib::Queue<SoundObject *> g_sounds;
-strlib::Properties<SoundObject *> g_soundCache;
-void audio_callback(void *data, Uint8 *stream8, int length);
 int debugThread(void *data);
 
 MAEvent *getMotionEvent(int type, SDL_Event *event) {
@@ -333,15 +290,8 @@ int Runtime::runShell(const char *startupBas, bool runWait, int fontScale, int d
     _output->setFontSize(fontSize);
   }
 
-  SDL_AudioSpec desiredSpec;
-  desiredSpec.freq = FREQUENCY;
-  desiredSpec.format = AUDIO_S16SYS;
-  desiredSpec.channels = 1;
-  desiredSpec.samples = 2048;
-  desiredSpec.callback = audio_callback;
 
-  SDL_AudioSpec obtainedSpec;
-  SDL_OpenAudio(&desiredSpec, &obtainedSpec);
+  audio_open();
   net_init();
 
   if (debugPort > 0) {
@@ -382,7 +332,7 @@ int Runtime::runShell(const char *startupBas, bool runWait, int fontScale, int d
 
   debugStop();
   net_close();
-  SDL_CloseAudio();
+  audio_close();
   _state = kDoneState;
   logLeaving();
   return _fontScale;
@@ -890,69 +840,6 @@ void maWait(int timeout) {
 }
 
 //
-// audio
-//
-void audio_callback(void *data, Uint8 *stream8, int length) {
-  Sint16 *stream = (Sint16 *)stream8;
-  // two bytes per sample
-  Uint32 samples = length / 2;
-  Uint32 i = 0;
-  while (i < samples) {
-    if (g_sounds.empty()) {
-      while (i < samples) {
-        stream[i] = 0;
-        i++;
-      }
-      SDL_PauseAudio(1);
-      return;
-    }
-    SoundObject *sound = g_sounds.front();
-    if (sound->_buffer != NULL) {
-      Uint32 len = MIN(sound->_samplesLeft, (Uint32)length);
-      sound->_samplesLeft -= len;
-      memcpy(stream8, sound->_buffer + sound->_index, len);
-      sound->_index += len;
-      i += len;
-    } else {
-      // copy a generated tone onto the stream
-      Uint32 samplesToDo = MIN(i + sound->_samplesLeft, samples);
-      sound->_samplesLeft -= samplesToDo - i;
-      while (i < samplesToDo) {
-        stream[i++] = AMPLITUDE * sin(sound->_v * 2 * M_PI / FREQUENCY);
-        sound->_v += sound->_freq;
-      }
-    }
-    if (!sound->_samplesLeft) {
-      g_sounds.pop(!sound->_cached);
-    }
-  }
-}
-
-void create_sound(double freq, int duration) {
-  SDL_LockAudio();
-  g_sounds.push(new SoundObject(freq, duration));
-  SDL_UnlockAudio();
-}
-
-void flush_queue() {
-  int size;
-  int last_size = 0;
-  int unplayed = 0;
-
-  do {
-    SDL_Delay(20);
-    SDL_LockAudio();
-    size = g_sounds.size();
-    if (size != last_size) {
-      unplayed++;
-    } else {
-      last_size = size;
-    }
-    SDL_UnlockAudio();
-  } while (size > 0 && unplayed < 50);
-}
-
-//
 // sbasic implementation
 //
 int osd_devinit(void) {
@@ -961,87 +848,8 @@ int osd_devinit(void) {
 }
 
 int osd_devrestore(void) {
-  SDL_PauseAudio(1);
-  SDL_LockAudio();
-
-  // remove any cached sounds from the queue
-  List_each(SoundObject *, it, g_sounds) {
-    SoundObject *next = *it;
-    if (next != NULL && next->_cached) {
-      g_sounds.remove(it);
-      it--;
-    }
-  }
-
-  // delete the sounds
-  g_soundCache.removeAll();
-  g_sounds.removeAll();
-
-  SDL_UnlockAudio();
-
   runtime->setRunning(false);
   return 0;
-}
-
-void osd_beep() {
-  create_sound(1000, 30);
-  create_sound(500, 30);
-  SDL_PauseAudio(0);
-  flush_queue();
-}
-
-void osd_audio(const char *path) {
-  SDL_AudioSpec desiredSpec;
-  desiredSpec.freq = FREQUENCY;
-  desiredSpec.format = AUDIO_S16SYS;
-  desiredSpec.channels = 1;
-  desiredSpec.samples = 2048;
-  Uint8 *buffer;
-  Uint32 length;
-
-  SoundObject *cachedSound = g_soundCache.get(path);
-  if (cachedSound) {
-    SDL_LockAudio();
-    cachedSound->reset();
-    g_sounds.push(cachedSound);
-    SDL_UnlockAudio();
-    SDL_PauseAudio(0);
-  } else {
-    SDL_AudioSpec *obtainedSpec = SDL_LoadWAV(path, &desiredSpec, &buffer, &length);
-    if (obtainedSpec != NULL) {
-      if (obtainedSpec->freq != FREQUENCY) {
-        err_throw("Failed to open wav file: invalid frequency %d", obtainedSpec->freq);
-      } else if (obtainedSpec->channels != 1) {
-        err_throw("Failed to open wav file: invalid channels %d", obtainedSpec->channels);
-      } else if (obtainedSpec->format != AUDIO_S16SYS) {
-        err_throw("Failed to open wav file: invalid format %d", obtainedSpec->format);
-      } else {
-        SDL_LockAudio();
-        SoundObject *cachedSound = new SoundObject(buffer, length);
-        g_sounds.push(cachedSound);
-        g_soundCache.put(path, cachedSound);
-        SDL_UnlockAudio();
-        SDL_PauseAudio(0);
-      }
-    } else {
-      err_throw("Failed to open wav file: %s", SDL_GetError());
-    }
-  }
-}
-
-void osd_sound(int frq, int ms, int vol, int bgplay) {
-  create_sound(frq, ms);
-  SDL_PauseAudio(0);
-  if (!bgplay) {
-    flush_queue();
-  }
-}
-
-void osd_clear_sound_queue() {
-  SDL_PauseAudio(1);
-  SDL_LockAudio();
-  g_sounds.removeAll();
-  SDL_UnlockAudio();
 }
 
 //

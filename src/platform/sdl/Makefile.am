@@ -23,6 +23,7 @@ sbasicg_SOURCES =           \
   ../../ui/textedit.cpp     \
   ../../ui/image.cpp        \
   ../../ui/strlib.cpp       \
+  ../../ui/audio.cpp        \
   main.cpp                  \
   display.cpp               \
   runtime.cpp               \
