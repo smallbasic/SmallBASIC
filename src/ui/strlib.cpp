@@ -1,6 +1,6 @@
 // This file is part of SmallBASIC
 //
-// Copyright(C) 2001-2014 Chris Warren-Smith.
+// Copyright(C) 2001-2019 Chris Warren-Smith.
 //
 // This program is distributed under the terms of the GPL v2.0 or later
 // Download the GNU Public License (GPL) from www.gnu.org
@@ -15,29 +15,29 @@ using namespace strlib;
 
 //--String----------------------------------------------------------------------
 
-String::String() : _buffer(NULL) {
+String::String() : _buffer(nullptr) {
 }
 
 String::String(const char *s) {
-  _buffer = (s == NULL ? NULL : strdup(s));
+  _buffer = (s == nullptr ? nullptr : strdup(s));
 }
 
 String::String(const String &s) {
-  _buffer = s._buffer == NULL ? NULL : strdup(s._buffer);
+  _buffer = s._buffer == nullptr ? nullptr : strdup(s._buffer);
 }
 
-String::String(const char *s, int len) : _buffer(NULL) {
+String::String(const char *s, int len) : _buffer(nullptr) {
   append(s, len);
 }
 
 String::~String() {
   free(_buffer);
-  _buffer = NULL;
+  _buffer = nullptr;
 }
 
 const String &String::operator=(const String &s) {
   clear();
-  if (_buffer != s._buffer && s._buffer != NULL) {
+  if (_buffer != s._buffer && s._buffer != nullptr) {
     _buffer = strdup(s._buffer);
   }
   return *this;
@@ -85,7 +85,7 @@ String &String::append(char c) {
 }
 
 String &String::append(const char *s) {
-  if (s != NULL && s[0]) {
+  if (s != nullptr && s[0]) {
     int len = length();
     _buffer = (char *)realloc(_buffer, len + strlen(s) + 1);
     strcpy(_buffer + len, s);
@@ -94,7 +94,7 @@ String &String::append(const char *s) {
 }
 
 String &String::append(const char *s, int numCopy) {
-  if (s != NULL && numCopy) {
+  if (s != nullptr && numCopy) {
     int len = strlen(s);
     if (numCopy > len) {
       numCopy = len;
@@ -117,14 +117,14 @@ String &String::append(FILE *fp, long filelen) {
 
 void String::clear() {
   free(_buffer);
-  _buffer = NULL;
+  _buffer = nullptr;
 }
 
 bool String::equals(const String &s, bool ignoreCase) const {
   bool result;
   if (_buffer == s._buffer) {
     result = true;
-  } else if (_buffer == NULL || s._buffer == NULL) {
+  } else if (_buffer == nullptr || s._buffer == nullptr) {
     result = _buffer == s._buffer;
   } else if (ignoreCase) {
     result = strcasecmp(_buffer, s._buffer) == 0;
@@ -135,22 +135,24 @@ bool String::equals(const String &s, bool ignoreCase) const {
 }
 
 bool String::equals(const char *s, bool ignoreCase) const {
-  return (_buffer == 0 ? s == 0 : ignoreCase ?
+  return (_buffer == nullptr ? s == nullptr :
+          s == nullptr ? _buffer == nullptr : ignoreCase ?
           strcasecmp(_buffer, s) == 0 : strcmp(_buffer, s) == 0);
 }
 
 int String::indexOf(const char *s, int fromIndex) const {
+  int result;
   int len = length();
-  if (fromIndex >= len) {
-    return -1;
-  }
-  if (strlen(s) == 1) {
+  if (fromIndex >= len || _buffer == nullptr) {
+    result = -1;
+  } else if (strlen(s) == 1) {
     char *c = strchr(_buffer + fromIndex, s[0]);
-    return (c == NULL ? -1 : (c - _buffer));
+    result = (c == nullptr ? -1 : (c - _buffer));
   } else {
     char *c = strstr(_buffer + fromIndex, s);
-    return (c == NULL ? -1 : (c - _buffer));
+    result = (c == nullptr ? -1 : (c - _buffer));
   }
+  return result;
 }
 
 int String::indexOf(char chr, int fromIndex) const {
@@ -159,7 +161,7 @@ int String::indexOf(char chr, int fromIndex) const {
     return -1;
   }
   char *c = strchr(_buffer + fromIndex, chr);
-  return (c == NULL ? -1 : (c - _buffer));
+  return (c == nullptr ? -1 : (c - _buffer));
 }
 
 int String::lastIndexOf(char chr, int untilIndex) const {
@@ -168,7 +170,7 @@ int String::lastIndexOf(char chr, int untilIndex) const {
     return -1;
   }
   char *c = strrchr(_buffer + untilIndex, chr);
-  return (c == NULL ? -1 : (c - _buffer));
+  return (c == nullptr ? -1 : (c - _buffer));
 }
 
 String String::leftOf(char ch) const {
@@ -350,11 +352,11 @@ template<> void Properties<String *>::put(const char *key, const char *value) {
 template<> void Properties<String *>::get(const char *key, List<String *> *arrayValues) {
   for (int i = 0; i < _count; i++) {
     String *nextKey = (String *)_head[i++];
-    if (nextKey == NULL || i == _count) {
+    if (nextKey == nullptr || i == _count) {
       break;
     }
     String *nextValue = (String *)_head[i];
-    if (nextValue == NULL) {
+    if (nextValue == nullptr) {
       break;
     }
     if (nextKey->equals(key)) {
@@ -362,3 +364,28 @@ template<> void Properties<String *>::get(const char *key, List<String *> *array
     }
   }
 }
+
+// g++ -DUNIT_TESTS=1 -I. ui/strlib.cpp && ./a.out
+#if defined(UNIT_TESTS)
+#include <stdio.h>
+void assertEq(int a, int b) {
+  if (a != b) {
+    fprintf(stderr, "FAIL: %d != %d\n", a, b);
+  }
+}
+int main() {
+  String s1 = "test string is here x";
+  String s2;
+  String s3 = "cats";
+  assertEq(0, s1.indexOf("t", 0));
+  assertEq(20, s1.indexOf("x", 20));
+  assertEq(5, s1.indexOf("string", 4));
+  assertEq(-1, s1.indexOf("not", 10));
+  assertEq(-1, s2.indexOf("not", 10));
+  assertEq(0, s3.equals(nullptr, true));
+  assertEq(1, s3.equals("CATS", true));
+  assertEq(0, s3.equals("CATS", false));
+  assertEq(1, s3.equals("cats", false));
+  return 0;
+}
+#endif

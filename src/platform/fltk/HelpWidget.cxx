@@ -671,11 +671,10 @@ void ImageNode::display(Display *out) {
       int x = out->x1 - 1;
       int y = fixed ? 0 : out->y1 - fl_height();
       int y1 = y;
-      int x1 = x;
       int numHorz = out->tabW / w.value;
       int numVert = out->tabH / h.value;
       for (int iy = 0; iy <= numVert; iy++) {
-        x1 = x;
+        int x1 = x;
         for (int ix = 0; ix <= numHorz; ix++) {
           if (x1 + w.value > x + out->tabW) {
             iw = out->tabW - (x1 - x);
@@ -2048,7 +2047,6 @@ void HelpWidget::compile() {
 
   const char *text = htmlStr.c_str();
   const char *tagBegin = text;
-  const char *tagEnd = text;
   const char *tag;
   const char *tagPair = 0;
 
@@ -2064,7 +2062,7 @@ void HelpWidget::compile() {
     while (*tagBegin != 0 && *tagBegin != '<') {
       tagBegin++;
     }
-    tagEnd = tagBegin;
+    const char *tagEnd = tagBegin;
     while (*tagEnd != 0 && *tagEnd != '>') {
       tagEnd++;
     }
@@ -2522,7 +2520,6 @@ int HelpWidget::onMove(int event) {
           scroll = -scrollHeight;       // too far down
         }
         if (scroll != vscroll) {
-          vscroll = scroll;
           damage(FL_DAMAGE_EXPOSE);
         }
       }
@@ -2825,7 +2822,7 @@ void HelpWidget::loadFile(const char *f, bool useDocHome) {
     } else {
       docHome.append("./");
     }
-    if (docHome[docHome.length() - 1] != '/') {
+    if (docHome.length() > 0 && docHome[docHome.length() - 1] != '/') {
       docHome.append("/");
     }
   }

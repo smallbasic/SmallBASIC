@@ -11,6 +11,7 @@
 
 #include "config.h"
 #include <stdio.h>
+#include <unistd.h>
 #include "include/osd.h"
 #include "ui/strlib.h"
 #include "ui/audio.h"

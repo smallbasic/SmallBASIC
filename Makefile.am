@@ -36,6 +36,16 @@ covcheck-android:
 
 clangcheck:
 	(make clean -s && \
+   scan-build ./configure && \
+   scan-build -o scan make -s)
+
+clangcheck-fltk:
+	(make clean -s && \
+   scan-build ./configure --enable-fltk && \
+   scan-build -o scan make -s)
+
+clangcheck-sdl:
+	(make clean -s && \
    scan-build ./configure --enable-sdl && \
    scan-build -o scan make -s)
 

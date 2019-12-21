@@ -15,9 +15,9 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "include/osd.h"
 #include "common/sbapp.h"
 #include "common/device.h"
-#include "common/osd.h"
 #include "platform/web/canvas.h"
 
 Canvas g_canvas;
