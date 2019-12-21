@@ -1,6 +1,6 @@
 // This file is part of SmallBASIC
 //
-// Copyright(C) 2001-2015 Chris Warren-Smith.
+// Copyright(C) 2001-2019 Chris Warren-Smith.
 //
 // This program is distributed under the terms of the GPL v2.0 or later
 // Download the GNU Public License (GPL) from www.gnu.org
@@ -22,8 +22,11 @@
 #include "platform/sdl/keymap.h"
 #include "platform/sdl/main_bas.h"
 
-#include <SDL_clipboard.h>
 #include <SDL_audio.h>
+#include <SDL_clipboard.h>
+#include <SDL_events.h>
+#include <SDL_messagebox.h>
+#include <SDL_timer.h>
 #include <math.h>
 #include <wchar.h>
 
@@ -483,9 +486,9 @@ void Runtime::pause(int timeout) {
 void Runtime::pollEvents(bool blocking) {
   if (isActive() && !isRestart()) {
     SDL_Event ev;
-    SDL_Keymod mod;
     if (blocking ? SDL_WaitEvent(&ev) : SDL_PollEvent(&ev)) {
       MAEvent *maEvent = NULL;
+      SDL_Keymod mod;
       switch (ev.type) {
       case SDL_TEXTINPUT:
         // pre-transformed/composted text
@@ -590,7 +593,6 @@ void Runtime::pollEvents(bool blocking) {
       case SDL_WINDOWEVENT:
         switch (ev.window.event) {
         case SDL_WINDOWEVENT_FOCUS_GAINED:
-          SDL_SetModState(KMOD_NONE);
           break;
         case SDL_WINDOWEVENT_RESIZED:
           onResize(ev.window.data1, ev.window.data2);

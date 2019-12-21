@@ -1,3 +1,6 @@
+2019-12-21 (0.12.17)
+	SDL: fix issue #81 - numlock handling
+
 2019-12-15 (0.12.17)
 	FLTK: add online samples command
 	FLTK: fix tab resizing
