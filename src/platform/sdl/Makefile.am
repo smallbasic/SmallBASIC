@@ -12,6 +12,7 @@ EXTRA_DIST = $(desktopentry_DATA)
 bin_PROGRAMS = sbasicg
 
 sbasicg_SOURCES =           \
+  ../../lib/lodepng/lodepng.cpp ../../lib/lodepng/lodepng.h \
   ../../ui/graphics.cpp     \
   ../../ui/ansiwidget.cpp   \
   ../../ui/window.cpp       \
@@ -22,6 +23,7 @@ sbasicg_SOURCES =           \
   ../../ui/textedit.cpp     \
   ../../ui/image.cpp        \
   ../../ui/strlib.cpp       \
+  ../../ui/audio.cpp        \
   main.cpp                  \
   display.cpp               \
   runtime.cpp               \

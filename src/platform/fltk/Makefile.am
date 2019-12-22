@@ -18,6 +18,7 @@ EXTRA_DIST =                      \
 bin_PROGRAMS = sbasici
 
 sbasici_SOURCES =                 \
+  ../../lib/lodepng/lodepng.cpp ../../lib/lodepng/lodepng.h \
   ../../ui/ansiwidget.cpp         \
   ../../ui/system.cpp             \
   ../../ui/window.cpp             \
@@ -27,6 +28,7 @@ sbasici_SOURCES =                 \
   ../../ui/image.cpp              \
   ../../ui/strlib.cpp             \
   ../../ui/textedit.cpp           \
+  ../../ui/audio.cpp              \
   display.cxx display.h           \
   runtime.cxx runtime.h           \
   HelpWidget.cxx HelpWidget.h     \

@@ -7,9 +7,10 @@
 // Download the GNU Public License (GPL) from www.gnu.org
 //
 
+#include "config.h"
+#include "include/osd.h"
 #include "common/device.h"
 #include "common/extlib.h"
-#include "common/osd.h"
 #include "common/smbas.h"
 
 typedef void (*settextcolor_fn)(long fg, long bg);

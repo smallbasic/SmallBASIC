@@ -55,6 +55,7 @@ enum StyleField {
   st_icomments,
   st_numbers,
   st_operators,
+  st_selection,
   st_background
 };
 
@@ -90,6 +91,7 @@ struct EditorWidget : public Fl_Group, StatusBar {
   CALLBACK_METHOD(show_replace);
   CALLBACK_METHOD(undo);
   CALLBACK_METHOD(un_select);
+  CALLBACK_METHOD(clear_console);
 
   static void changed_cb(int, int inserted, int deleted, int, const char *, void *v) {
     ((EditorWidget *) v)->doChange(inserted, deleted);

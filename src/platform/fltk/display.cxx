@@ -269,6 +269,7 @@ MAHandle GraphicsWidget::setDrawTarget(MAHandle maHandle) {
   if (maHandle == (MAHandle) HANDLE_SCREEN ||
       maHandle == (MAHandle) HANDLE_SCREEN_BUFFER) {
     _drawTarget = _screen;
+
   } else {
     _drawTarget = (Canvas *)maHandle;
   }

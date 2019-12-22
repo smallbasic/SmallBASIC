@@ -38,7 +38,7 @@ Profile::Profile() :
   _loaded(false),
   _createBackups(true),
   _lineNumbers(true),
-  _fontSize(12),
+  _fontSize(DEF_FONT_SIZE),
   _indentLevel(2),
   _helpThemeId(0) {
   loadEditTheme(0);
@@ -72,7 +72,8 @@ void Profile::loadEditTheme(int themeId) {
   styletable[7].color = get_color(_theme._syntax_comments); // H - comments
   styletable[8].color = get_color(_theme._syntax_digit); // I - numbers
   styletable[9].color = get_color(_theme._syntax_command); // J - operators
-  styletable[10].color = get_color(_theme._background); // Background
+  styletable[10].color = get_color(_theme._selection_background); // K Selection Background
+  styletable[11].color = get_color(_theme._background); // L Background
 }
 
 //
@@ -110,6 +111,7 @@ void Profile::restore(MainWindow *wnd) {
     }
 
     restoreTabs(wnd, &profile);
+    wnd->_runtime->setFontSize(_fontSize);
   }
   _loaded = true;
 }
@@ -182,7 +184,8 @@ void Profile::updateTheme() {
   _theme._syntax_comments = styletable[7].color >> 8;
   _theme._syntax_digit = styletable[8].color >> 8;
   _theme._syntax_command = styletable[9].color >> 8;
-  _theme._background = styletable[10].color >> 8;
+  _theme._selection_background = styletable[10].color >> 8;
+  _theme._background = styletable[11].color >> 8;
 }
 
 //

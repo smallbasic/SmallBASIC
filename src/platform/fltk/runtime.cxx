@@ -7,16 +7,19 @@
 //
 
 #include <config.h>
-#include "common/osd.h"
+#include "include/osd.h"
 #include "lib/maapi.h"
 #include "platform/fltk/MainWindow.h"
 #include "platform/fltk/runtime.h"
+#include "ui/audio.h"
 #include <FL/fl_ask.H>
 #include <FL/Fl_Menu_Button.H>
 
 extern MainWindow *wnd;
 extern System *g_system;
+static auto *onlineUrl = "http://smallbasic.github.io/samples/index.bas";
 
+#define MIN_WINDOW_SIZE 10
 #define OPTIONS_BOX_WIDTH_EXTRA 4
 #define WAIT_INTERVAL_MILLIS 5
 #define WAIT_INTERVAL (WAIT_INTERVAL_MILLIS/1000)
@@ -43,10 +46,12 @@ Runtime::Runtime(int w, int h, int defsize) : System() {
   _output->construct();
   _output->setTextColor(DEFAULT_FOREGROUND, DEFAULT_BACKGROUND);
   _output->setFontSize(defsize);
+  audio_open();
 }
 
 Runtime::~Runtime() {
-  // empty
+  delete _output;
+  audio_close();
 }
 
 void Runtime::alert(const char *title, const char *message) {
@@ -56,9 +61,9 @@ void Runtime::alert(const char *title, const char *message) {
 int Runtime::ask(const char *title, const char *prompt, bool cancel) {
   int result;
   if (cancel) {
-    result = fl_choice(prompt, "Yes", "No", "Cancel", NULL);
+    result = fl_choice(prompt, "Yes", "No", "Cancel", nullptr);
   } else {
-    result = fl_choice(prompt, "Yes", "No", 0, NULL);
+    result = fl_choice(prompt, "Yes", "No", 0, nullptr);
   }
   return result;
 }
@@ -72,7 +77,7 @@ void Runtime::enableCursor(bool enabled) {
 }
 
 char *Runtime::getClipboardText() {
-  return NULL;
+  return nullptr;
 }
 
 int Runtime::handle(int e) {
@@ -122,7 +127,7 @@ void Runtime::optionsBox(StringList *items) {
     menu[index].labelfont_ = FL_HELVETICA;
     menu[index].labelsize_ = FL_NORMAL_SIZE;
     menu[index].labelcolor_ = FL_FOREGROUND_COLOR;
-    menu[index].measure(&h, NULL);
+    menu[index].measure(&h, nullptr);
 
     height += h + 1;
     w = (strlen(str) * charWidth);
@@ -133,7 +138,7 @@ void Runtime::optionsBox(StringList *items) {
   }
 
   menu[index].flags = 0;
-  menu[index].text = NULL;
+  menu[index].text = nullptr;
   width += (charWidth * OPTIONS_BOX_WIDTH_EXTRA);
 
   int menuX = event_x();
@@ -148,10 +153,10 @@ void Runtime::optionsBox(StringList *items) {
   if (menuY + height >= maxHeight) {
     menuY = maxHeight - height;
   } else {
-    menuY -= wnd->_out->y();
+    menuY -= wnd->y();
   }
 
-  Fl_Menu_Button popup(menuX, menuY, width, height, "@popup");
+  Fl_Menu_Button popup(menuX, menuY, width, height);
   popup.menu(menu);
 
   const Fl_Menu_Item *result = popup.popup();
@@ -197,8 +202,32 @@ void Runtime::resize(int w, int h) {
   }
 }
 
+void Runtime::runSamples() {
+  logEntered();
+  _loadPath = onlineUrl;
+
+  String activePath = _loadPath;
+  bool started = execute(onlineUrl);
+
+  while (started && !wnd->isBreakExec()) {
+    if (isBreak() && (activePath.equals(onlineUrl) || activePath.equals(_loadPath))) {
+      // break from index page OR break with same _loadPath
+      break;
+    }
+    if (_loadPath.empty()) {
+      // return to index page
+      _loadPath = onlineUrl;
+    }
+    activePath = _loadPath;
+    started = execute(_loadPath);
+  }
+
+  showCompletion(started);
+  _output->redraw();
+}
+
 void Runtime::setClipboardText(const char *text) {
-  Fl::copy(text, strlen(text), true);
+  Fl::copy(text, strlen(text), 1);
 }
 
 void Runtime::setFontSize(int size) {
@@ -299,15 +328,21 @@ int osd_devinit() {
   if ((opt_pref_width || opt_pref_height) && wnd->isIdeHidden()) {
     int delta_x = wnd->w() - g_system->getOutput()->getWidth();
     int delta_y = wnd->h() - g_system->getOutput()->getHeight();
-    if (opt_pref_width < 10) {
-      opt_pref_width = 10;
+    if (opt_pref_width < MIN_WINDOW_SIZE) {
+      opt_pref_width = MIN_WINDOW_SIZE;
     }
-    if (opt_pref_height < 10) {
-      opt_pref_height = 10;
+    if (opt_pref_height < MIN_WINDOW_SIZE) {
+      opt_pref_height = MIN_WINDOW_SIZE;
     }
+
+    int x = wnd->_outputGroup->x();
+    int y = wnd->_outputGroup->y();
     int w = opt_pref_width + delta_x;
     int h = opt_pref_height + delta_y;
-    wnd->_outputGroup->resize(0, 0, w, h);
+
+    wnd->resizeDisplay(0, 0, w, h);
+    wnd->_outputGroup->resize(x, y, w, h);
+    wnd->_outputGroup->show();
   }
 
   // show the output-group in case it's the full-screen container.
@@ -331,25 +366,13 @@ int osd_devrestore() {
   return 1;
 }
 
-void osd_beep() {
-  fl_beep();
-}
-
-void osd_sound(int frq, int ms, int vol, int bgplay) {
-#if defined(WIN32)
-  if (!bgplay) {
-    ::Beep(frq, ms);
-  }
-#endif
-}
-
 //
 // utils
 //
 void appLog(const char *format, ...) {
   va_list args;
   va_start(args, format);
-  unsigned size = vsnprintf(NULL, 0, format, args);
+  unsigned size = vsnprintf(nullptr, 0, format, args);
   va_end(args);
 
   if (size) {
@@ -373,11 +396,3 @@ void appLog(const char *format, ...) {
     free(buf);
   }
 }
-
-//
-// not implemented
-//
-void open_audio() {}
-void close_audio() {}
-void osd_audio(const char *path) {}
-void osd_clear_sound_queue() {}

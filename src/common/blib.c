@@ -175,12 +175,9 @@ uint8_t get_dimensions(int32_t **lbound, int32_t **ubound) {
  *  DIM var([lower TO] uppper [, ...])
  */
 void cmd_dim(int preserve) {
-  int exitf = 0;
-
   do {
     byte code = code_peek();
     if (code == kwTYPE_LINE || code == kwTYPE_EOC) {
-      exitf = 1;
       break;
     }
     if (code_peek() == kwTYPE_SEP) {
@@ -227,7 +224,7 @@ void cmd_dim(int preserve) {
     }
     free(lbound);
     free(ubound);
-  } while (!exitf && !prog_error);
+  } while (!prog_error);
 }
 
 /**
@@ -487,8 +484,6 @@ void cmd_erase() {
     if (prog_error) {
       break;
     }
-    byte code = code_peek();
-
     if (code_isvar()) {
       var_p = code_getvarptr();
     } else {
@@ -504,7 +499,7 @@ void cmd_erase() {
     }
 
     // next
-    code = code_peek();
+    byte code = code_peek();
     if (code == kwTYPE_SEP) {
       par_getcomma();
     } else {
@@ -518,7 +513,6 @@ void cmd_erase() {
  */
 void cmd_print(int output) {
   byte last_op = 0;
-  byte exitf = 0;
   byte use_format = 0;
   intptr_t handle = 0;
   var_t var;
@@ -603,7 +597,7 @@ void cmd_print(int output) {
   }
 
   // PRINT
-  do {
+  while (!prog_error) {
     code = code_peek();
     if (code == kwTYPE_SEP) {
       code_skipnext();
@@ -615,7 +609,6 @@ void cmd_print(int output) {
       }
     } else {
       if (kw_check_evexit(code) || code == kwTYPE_LEVEL_END) {
-        exitf = 1;
         break;
       }
 
@@ -643,11 +636,10 @@ void cmd_print(int output) {
       }
       v_free(&var);
     };
-
     if (prog_error) {
       return;
     }
-  } while (exitf == 0);
+  };
 
   if (last_op == 0) {
     pv_write("\n", output, handle);

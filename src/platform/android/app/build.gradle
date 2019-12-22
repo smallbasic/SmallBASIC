@@ -9,8 +9,8 @@ android {
     applicationId 'net.sourceforge.smallbasic'
     minSdkVersion 16
     targetSdkVersion 28
-    versionCode 38
-    versionName "0.12.16"
+    versionCode 39
+    versionName "0.12.17"
     resConfigs "en"
   }
 

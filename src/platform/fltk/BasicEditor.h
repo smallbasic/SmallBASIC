@@ -22,7 +22,7 @@ struct StatusBar {
 
 struct BasicEditor : public Fl_Text_Editor {
   BasicEditor(int x, int y, int w, int h, StatusBar *status);
-  ~BasicEditor();
+  virtual ~BasicEditor();
 
   bool findText(const char *find, bool forward, bool updatePos);
   int handle(int e);

@@ -16,10 +16,10 @@
 #include "lib/maapi.h"
 #include "ui/utils.h"
 #include "languages/messages.en.h"
+#include "include/osd.h"
 #include "common/sbapp.h"
 #include "common/sys.h"
 #include "common/smbas.h"
-#include "common/osd.h"
 #include "common/device.h"
 #include "common/fs_socket_client.h"
 #include "common/keymap.h"
@@ -37,10 +37,10 @@
 #define GBOARD_KEY_QUESTION 274
 #define EVENT_TYPE_EXIT 100
 
-Runtime *runtime = NULL;
+Runtime *runtime = nullptr;
 
 MAEvent *getMotionEvent(int type, AInputEvent *event) {
-  MAEvent *result = new MAEvent();
+  auto *result = new MAEvent();
   result->type = type;
   result->point.x = AMotionEvent_getX(event, 0);
   result->point.y = AMotionEvent_getY(event, 0);
@@ -50,7 +50,7 @@ MAEvent *getMotionEvent(int type, AInputEvent *event) {
 int32_t handleInput(android_app *app, AInputEvent *event) {
   int32_t result = 0;
   if (runtime->isActive()) {
-    MAEvent *maEvent = NULL;
+    MAEvent *maEvent = nullptr;
     switch (AInputEvent_getType(event)) {
     case AINPUT_EVENT_TYPE_MOTION:
       switch (AKeyEvent_getAction(event) & AMOTION_EVENT_ACTION_MASK) {
@@ -74,7 +74,7 @@ int32_t handleInput(android_app *app, AInputEvent *event) {
       }
       break;
     }
-    if (maEvent != NULL) {
+    if (maEvent != nullptr) {
       result = 1;
       runtime->pushEvent(maEvent);
     }
@@ -105,7 +105,7 @@ void handleCommand(android_app *app, int32_t cmd) {
 
 // see http://stackoverflow.com/questions/15913080
 static void process_input(android_app *app, android_poll_source *source) {
-  AInputEvent* event = NULL;
+  AInputEvent* event = nullptr;
   while (AInputQueue_getEvent(app->inputQueue, &event) >= 0) {
     if (AInputEvent_getType(event) == AINPUT_EVENT_TYPE_KEY &&
         AKeyEvent_getKeyCode(event) == AKEYCODE_BACK) {
@@ -113,7 +113,7 @@ static void process_input(android_app *app, android_poll_source *source) {
       // the keypad here to avoid a crash in android 4.2 + 4.3.
       if (AKeyEvent_getAction(event) == AKEY_EVENT_ACTION_DOWN &&
           runtime->isActive()) {
-        MAEvent *maEvent = new MAEvent();
+        auto *maEvent = new MAEvent();
         maEvent->nativeKey = AKEYCODE_BACK;
         maEvent->type = EVENT_TYPE_KEY_PRESSED;
         runtime->pushEvent(maEvent);
@@ -132,7 +132,7 @@ int get_sensor_events(int fd, int events, void *data) {
 
 extern "C" JNIEXPORT void JNICALL Java_net_sourceforge_smallbasic_MainActivity_onActivityPaused
   (JNIEnv *env, jclass jclazz, jboolean paused) {
-  if (runtime != NULL && !runtime->isClosing() && runtime->isActive() && os_graphics) {
+  if (runtime != nullptr && !runtime->isClosing() && runtime->isActive() && os_graphics) {
     trace("paused=%d", paused);
     runtime->onPaused(paused);
   }
@@ -141,7 +141,7 @@ extern "C" JNIEXPORT void JNICALL Java_net_sourceforge_smallbasic_MainActivity_o
 // callback from MainActivity.java
 extern "C" JNIEXPORT jboolean JNICALL Java_net_sourceforge_smallbasic_MainActivity_optionSelected
   (JNIEnv *env, jclass jclazz, jint index) {
-  MAEvent *maEvent = new MAEvent();
+  auto *maEvent = new MAEvent();
   maEvent->type = EVENT_TYPE_OPTIONS_BOX_BUTTON_CLICKED;
   maEvent->optionsBoxButtonIndex = index;
   runtime->pushEvent(maEvent);
@@ -166,14 +166,14 @@ extern "C" JNIEXPORT void JNICALL Java_net_sourceforge_smallbasic_MainActivity_s
 
 extern "C" JNIEXPORT void JNICALL Java_net_sourceforge_smallbasic_MainActivity_onResize
   (JNIEnv *env, jclass jclazz, jint width, jint height) {
-  if (runtime != NULL && !runtime->isClosing() && runtime->isActive() && os_graphics) {
+  if (runtime != nullptr && !runtime->isClosing() && runtime->isActive() && os_graphics) {
     runtime->onResize(width, height);
   }
 }
 
 extern "C" JNIEXPORT void JNICALL Java_net_sourceforge_smallbasic_MainActivity_onUnicodeChar
   (JNIEnv *env, jclass jclazz, jint ch) {
-  if (runtime != NULL && !runtime->isClosing() && runtime->isActive() && os_graphics) {
+  if (runtime != nullptr && !runtime->isClosing() && runtime->isActive() && os_graphics) {
     runtime->onUnicodeChar(ch);
   }
 }
@@ -194,21 +194,21 @@ Runtime::Runtime(android_app *app) :
   System(),
   _keypadActive(false),
   _hasFocus(false),
-  _graphics(NULL),
+  _graphics(nullptr),
   _app(app),
-  _eventQueue(NULL),
-  _sensor(NULL),
-  _sensorEventQueue(NULL) {
-  _app->userData = NULL;
+  _eventQueue(nullptr),
+  _sensor(nullptr),
+  _sensorEventQueue(nullptr) {
+  _app->userData = nullptr;
   _app->onAppCmd = handleCommand;
   _app->onInputEvent = handleInput;
   _app->inputPollSource.process = process_input;
-  if (runtime != NULL) {
+  if (runtime != nullptr) {
     trace("another instance is still active");
     _state = kClosingState;
   }
   runtime = this;
-  pthread_mutex_init(&_mutex, NULL);
+  pthread_mutex_init(&_mutex, nullptr);
   _looper = ALooper_forThread();
   _sensorManager = ASensorManager_getInstance();
   memset(&_sensorEvent, 0, sizeof(_sensorEvent));
@@ -219,10 +219,10 @@ Runtime::~Runtime() {
   delete _output;
   delete _eventQueue;
   delete _graphics;
-  runtime = NULL;
-  _output = NULL;
-  _eventQueue = NULL;
-  _graphics = NULL;
+  runtime = nullptr;
+  _output = nullptr;
+  _eventQueue = nullptr;
+  _graphics = nullptr;
   pthread_mutex_destroy(&_mutex);
   disableSensor();
 }
@@ -231,7 +231,7 @@ void Runtime::alert(const char *title, const char *message) {
   logEntered();
 
   JNIEnv *env;
-  _app->activity->vm->AttachCurrentThread(&env, NULL);
+  _app->activity->vm->AttachCurrentThread(&env, nullptr);
   jbyteArray titleByteArray = newByteArray(env, title);
   jbyteArray messageByteArray = newByteArray(env, message);
   jclass clazz = env->GetObjectClass(_app->activity->clazz);
@@ -245,7 +245,7 @@ void Runtime::alert(const char *title, const char *message) {
 
 int Runtime::ask(const char *title, const char *prompt, bool cancel) {
   JNIEnv *env;
-  _app->activity->vm->AttachCurrentThread(&env, NULL);
+  _app->activity->vm->AttachCurrentThread(&env, nullptr);
   jclass clazz = env->GetObjectClass(_app->activity->clazz);
   jbyteArray titleByteArray = newByteArray(env, title);
   jbyteArray promptByteArray = newByteArray(env, prompt);
@@ -261,7 +261,7 @@ int Runtime::ask(const char *title, const char *prompt, bool cancel) {
 
 void Runtime::clearSoundQueue() {
   JNIEnv *env;
-  _app->activity->vm->AttachCurrentThread(&env, NULL);
+  _app->activity->vm->AttachCurrentThread(&env, nullptr);
   jclass clazz = env->GetObjectClass(_app->activity->clazz);
   jmethodID methodId = env->GetMethodID(clazz, "clearSoundQueue", "()V");
   env->CallVoidMethod(_app->activity->clazz, methodId);
@@ -294,8 +294,8 @@ void Runtime::disableSensor() {
     }
     ASensorManager_destroyEventQueue(_sensorManager, _sensorEventQueue);
   }
-  _sensorEventQueue = NULL;
-  _sensor = NULL;
+  _sensorEventQueue = nullptr;
+  _sensor = nullptr;
 }
 
 bool Runtime::enableSensor(int sensorType) {
@@ -303,7 +303,7 @@ bool Runtime::enableSensor(int sensorType) {
   if (!_sensorEventQueue) {
     _sensorEventQueue =
       ASensorManager_createEventQueue(_sensorManager, _looper, ALOOPER_POLL_CALLBACK,
-                                      get_sensor_events, NULL);
+                                      get_sensor_events, nullptr);
   } else if (_sensor) {
     ASensorEventQueue_disableSensor(_sensorEventQueue, _sensor);
   }
@@ -320,10 +320,10 @@ bool Runtime::enableSensor(int sensorType) {
 
 bool Runtime::getBoolean(const char *methodName) {
   JNIEnv *env;
-  _app->activity->vm->AttachCurrentThread(&env, NULL);
+  _app->activity->vm->AttachCurrentThread(&env, nullptr);
   jclass clazz = env->GetObjectClass(_app->activity->clazz);
   jmethodID methodId = env->GetMethodID(clazz, methodName, "()Z");
-  jboolean result = (jboolean) env->CallBooleanMethod(_app->activity->clazz, methodId);
+  auto result = (jboolean) env->CallBooleanMethod(_app->activity->clazz, methodId);
   env->DeleteLocalRef(clazz);
   _app->activity->vm->DetachCurrentThread();
   return result;
@@ -331,10 +331,10 @@ bool Runtime::getBoolean(const char *methodName) {
 
 String Runtime::getString(const char *methodName) {
   JNIEnv *env;
-  _app->activity->vm->AttachCurrentThread(&env, NULL);
+  _app->activity->vm->AttachCurrentThread(&env, nullptr);
   jclass clazz = env->GetObjectClass(_app->activity->clazz);
   jmethodID methodId = env->GetMethodID(clazz, methodName, "()Ljava/lang/String;");
-  jstring resultObj = (jstring)env->CallObjectMethod(_app->activity->clazz, methodId);
+  auto resultObj = (jstring)env->CallObjectMethod(_app->activity->clazz, methodId);
   const char *resultStr = env->GetStringUTFChars(resultObj, JNI_FALSE);
   String result = resultStr;
   env->ReleaseStringUTFChars(resultObj, resultStr);
@@ -345,14 +345,14 @@ String Runtime::getString(const char *methodName) {
 
 String Runtime::getStringBytes(const char *methodName) {
   JNIEnv *env;
-  _app->activity->vm->AttachCurrentThread(&env, NULL);
+  _app->activity->vm->AttachCurrentThread(&env, nullptr);
   jclass clazz = env->GetObjectClass(_app->activity->clazz);
   jmethodID methodId = env->GetMethodID(clazz, methodName, "()[B");
-  jbyteArray valueByteArray = (jbyteArray)env->CallObjectMethod(_app->activity->clazz, methodId);
+  auto valueByteArray = (jbyteArray)env->CallObjectMethod(_app->activity->clazz, methodId);
   jsize len = env->GetArrayLength(valueByteArray);
   String result;
   if (len) {
-    jbyte *buffer = new jbyte[len + 1];
+    auto *buffer = new jbyte[len + 1];
     env->GetByteArrayRegion(valueByteArray, 0, len, buffer);
     buffer[len] = '\0';
     result = (const char *)buffer;
@@ -366,7 +366,7 @@ String Runtime::getStringBytes(const char *methodName) {
 
 int Runtime::getInteger(const char *methodName) {
   JNIEnv *env;
-  _app->activity->vm->AttachCurrentThread(&env, NULL);
+  _app->activity->vm->AttachCurrentThread(&env, nullptr);
   jclass clazz = env->GetObjectClass(_app->activity->clazz);
   jmethodID methodId = env->GetMethodID(clazz, methodName, "()I");
   jint result = env->CallIntMethod(_app->activity->clazz, methodId);
@@ -377,7 +377,7 @@ int Runtime::getInteger(const char *methodName) {
 
 int Runtime::getUnicodeChar(int keyCode, int metaState) {
   JNIEnv *env;
-  _app->activity->vm->AttachCurrentThread(&env, NULL);
+  _app->activity->vm->AttachCurrentThread(&env, nullptr);
   jclass clazz = env->GetObjectClass(_app->activity->clazz);
   jmethodID methodId = env->GetMethodID(clazz, "getUnicodeChar", "(II)I");
   jint result = env->CallIntMethod(_app->activity->clazz, methodId, keyCode, metaState);
@@ -388,7 +388,7 @@ int Runtime::getUnicodeChar(int keyCode, int metaState) {
 
 char *Runtime::loadResource(const char *fileName) {
   char *buffer = System::loadResource(fileName);
-  if (buffer == NULL && strcmp(fileName, MAIN_BAS) == 0) {
+  if (buffer == nullptr && strcmp(fileName, MAIN_BAS) == 0) {
     AAssetManager *assetManager = _app->activity->assetManager;
     AAsset *mainBasFile = AAssetManager_open(assetManager, "main.bas", AASSET_MODE_BUFFER);
     off_t len = AAsset_getLength(mainBasFile);
@@ -422,7 +422,7 @@ void Runtime::readSensorEvents() {
 
 void Runtime::setFloat(const char *methodName, float value) {
   JNIEnv *env;
-  _app->activity->vm->AttachCurrentThread(&env, NULL);
+  _app->activity->vm->AttachCurrentThread(&env, nullptr);
   jclass clazz = env->GetObjectClass(_app->activity->clazz);
   jmethodID methodId = env->GetMethodID(clazz, methodName, "(F)V");
   env->CallVoidMethod(_app->activity->clazz, methodId, value);
@@ -438,7 +438,7 @@ void Runtime::setLocationData(var_t *retval) {
 void Runtime::setSensorData(var_t *retval) {
   v_init(retval);
   map_init(retval);
-  if (_sensor != NULL) {
+  if (_sensor != nullptr) {
     v_setstr(map_add_var(retval, "name", 0), ASensor_getName(_sensor));
     switch (_sensorEvent.type) {
     case ASENSOR_TYPE_ACCELEROMETER:
@@ -464,21 +464,21 @@ void Runtime::runShell() {
   logEntered();
 
   opt_ide = IDE_NONE;
-  opt_graphics = true;
-  opt_nosave = true;
-  opt_verbose = false;
-  opt_quiet = true;
+  opt_graphics = 1;
+  opt_nosave = 1;
+  opt_verbose = 0;
+  opt_quiet = 1;
   opt_command[0] = 0;
   opt_file_permitted = 1;
   os_graphics = 1;
   os_color_depth = 16;
   opt_mute_audio = 0;
   opt_loadmod = 0;
-  strcpy(opt_modpath, "/data/data/net.sourceforge.smallbasic/lib");
 
   _app->activity->callbacks->onContentRectChanged = onContentRectChanged;
   loadConfig();
 
+  strcpy(opt_modpath, getString("getModulePath"));
   String ipAddress = getString("getIpAddress");
   if (!ipAddress.empty()) {
     setenv("IP_ADDR", ipAddress.c_str(), 1);
@@ -522,7 +522,7 @@ void Runtime::loadConfig() {
       _fontScale = s->toInteger();
       trace("_fontScale = %d", _fontScale);
       if (_fontScale != 100) {
-        int fontSize = (_initialFontSize * _fontScale / 100);
+        fontSize = (_initialFontSize * _fontScale / 100);
         _output->setFontSize(fontSize);
       }
     }
@@ -584,17 +584,17 @@ void Runtime::saveConfig() {
   path.append(CONFIG_FILE);
   FILE *fp = fopen(path.c_str(), "w");
   if (fp) {
-    char path[FILENAME_MAX + 1];
-    getcwd(path, FILENAME_MAX);
-    fprintf(fp, "%s='%s'\n", PATH_KEY, path);
+    char buffer[FILENAME_MAX + 1];
+    getcwd(buffer, FILENAME_MAX);
+    fprintf(fp, "%s='%s'\n", PATH_KEY, buffer);
     fprintf(fp, "%s=%d\n", FONT_SCALE_KEY, _fontScale);
     fprintf(fp, "%s=%d\n", MUTE_AUDIO_KEY, opt_mute_audio);
     fprintf(fp, "%s=%d\n", OPT_IDE_KEY, opt_ide);
-    for (int i = 0; environ[i] != NULL; i++) {
+    for (int i = 0; environ[i] != nullptr; i++) {
       char *env = environ[i];
-      if (strstr(env, SERVER_SOCKET_KEY) != NULL ||
-          strstr(env, SERVER_TOKEN_KEY) != NULL ||
-          strstr(env, FONT_ID_KEY) != NULL) {
+      if (strstr(env, SERVER_SOCKET_KEY) != nullptr ||
+          strstr(env, SERVER_TOKEN_KEY) != nullptr ||
+          strstr(env, FONT_ID_KEY) != nullptr) {
         fprintf(fp, "%s\n", env);
       }
     }
@@ -605,7 +605,7 @@ void Runtime::saveConfig() {
 void Runtime::runPath(const char *path) {
   pthread_mutex_lock(&_mutex);
   setLoadPath(path);
-  MAEvent *event = new MAEvent();
+  auto *event = new MAEvent();
   event->type = EVENT_TYPE_EXIT;
   _eventQueue->push(event);
   ALooper_wake(_looper);
@@ -616,7 +616,7 @@ void Runtime::handleKeyEvent(MAEvent &event) {
   switch (event.nativeKey) {
   case AKEYCODE_ENDCALL:
     delete [] _systemMenu;
-    _systemMenu = NULL;
+    _systemMenu = nullptr;
     break;
   case AKEYCODE_BACK:
     if (_keypadActive) {
@@ -716,7 +716,7 @@ void Runtime::optionsBox(StringList *items) {
   logEntered();
 
   JNIEnv *env;
-  _app->activity->vm->AttachCurrentThread(&env, NULL);
+  _app->activity->vm->AttachCurrentThread(&env, nullptr);
 
   jstring elem = env->NewStringUTF(items->get(0)->c_str());
   jclass stringClass = env->GetObjectClass(elem);
@@ -740,7 +740,7 @@ void Runtime::optionsBox(StringList *items) {
 
 void Runtime::playTone(int frq, int dur, int vol, bool bgplay) {
   JNIEnv *env;
-  _app->activity->vm->AttachCurrentThread(&env, NULL);
+  _app->activity->vm->AttachCurrentThread(&env, nullptr);
   jclass clazz = env->GetObjectClass(_app->activity->clazz);
   jmethodID methodId = env->GetMethodID(clazz, "playTone", "(IIIZ)V");
   env->CallVoidMethod(_app->activity->clazz, methodId, frq, dur, vol, bgplay);
@@ -779,8 +779,8 @@ void Runtime::pause(int timeout) {
 void Runtime::pollEvents(bool blocking) {
   int events;
   android_poll_source *source;
-  ALooper_pollAll(blocking || !_hasFocus ? -1 : 0, NULL, &events, (void **)&source);
-  if (source != NULL) {
+  ALooper_pollAll(blocking || !_hasFocus ? -1 : 0, nullptr, &events, (void **)&source);
+  if (source != nullptr) {
     source->process(_app, source);
   }
   if (_app->destroyRequested != 0) {
@@ -836,7 +836,7 @@ void Runtime::processEvent(MAEvent &event) {
 
 void Runtime::setString(const char *methodName, const char *value) {
   JNIEnv *env;
-  _app->activity->vm->AttachCurrentThread(&env, NULL);
+  _app->activity->vm->AttachCurrentThread(&env, nullptr);
   jclass clazz = env->GetObjectClass(_app->activity->clazz);
   jbyteArray valueByteArray = newByteArray(env, value);
   jmethodID methodId = env->GetMethodID(clazz, methodName, "([B)V");
@@ -851,7 +851,7 @@ void Runtime::showKeypad(bool show) {
   _keypadActive = show;
 
   JNIEnv *env;
-  _app->activity->vm->AttachCurrentThread(&env, NULL);
+  _app->activity->vm->AttachCurrentThread(&env, nullptr);
   jclass clazz = env->GetObjectClass(_app->activity->clazz);
   jmethodID methodId = env->GetMethodID(clazz, "showKeypad", "(Z)V");
   env->CallVoidMethod(_app->activity->clazz, methodId, show);
@@ -861,14 +861,14 @@ void Runtime::showKeypad(bool show) {
 
 void Runtime::onResize(int width, int height) {
   logEntered();
-  if (_graphics != NULL) {
+  if (_graphics != nullptr) {
     int w = _graphics->getWidth();
     int h = _graphics->getHeight();
     if (w != width || h != height) {
       trace("Resized from %d %d to %d %d", w, h, width, height);
       ALooper_acquire(_app->looper);
       _graphics->setSize(width, height);
-      MAEvent *maEvent = new MAEvent();
+      auto *maEvent = new MAEvent();
       maEvent->type = EVENT_TYPE_SCREEN_CHANGED;
       runtime->pushEvent(maEvent);
       ALooper_wake(_app->looper);
@@ -878,7 +878,7 @@ void Runtime::onResize(int width, int height) {
 }
 
 void Runtime::onUnicodeChar(int ch) {
-  MAEvent *maEvent = new MAEvent();
+  auto *maEvent = new MAEvent();
   maEvent->type = EVENT_TYPE_KEY_PRESSED;
   maEvent->nativeKey = ch;
   maEvent->key = ch;
@@ -894,7 +894,7 @@ char *Runtime::getClipboardText() {
   if (!text.empty()) {
     result = strdup(text.c_str());
   } else {
-    result = NULL;
+    result = nullptr;
   }
   return result;
 }
@@ -962,17 +962,17 @@ void System::editSource(strlib::String loadPath, bool restoreOnExit) {
   int charHeight = _output->getCharHeight();
   int prevScreenId = _output->selectScreen(SOURCE_SCREEN);
   TextEditInput *editWidget;
-  if (_editor != NULL) {
+  if (_editor != nullptr) {
     editWidget = _editor;
     editWidget->_width = w;
     editWidget->_height = h;
   } else {
     editWidget = new TextEditInput(_programSrc, charWidth, charHeight, 0, 0, w, h);
   }
-  TextEditHelpWidget *helpWidget = new TextEditHelpWidget(editWidget, charWidth, charHeight, false);
-  TextEditInput *widget = editWidget;
+  auto *helpWidget = new TextEditHelpWidget(editWidget, charWidth, charHeight, false);
+  auto *widget = editWidget;
   _modifiedTime = getModifiedTime();
-  editWidget->updateUI(NULL, NULL);
+  editWidget->updateUI(nullptr, nullptr);
   editWidget->setLineNumbers();
   editWidget->setFocus(true);
 
@@ -1001,7 +1001,7 @@ void System::editSource(strlib::String loadPath, bool restoreOnExit) {
     MAEvent event = getNextEvent();
     switch (event.type) {
     case EVENT_TYPE_POINTER_PRESSED:
-      if (!showStatus && event.point.x < editWidget->getMarginWidth()) {
+      if (!showStatus && widget == editWidget && event.point.x < editWidget->getMarginWidth()) {
         _output->setStatus(editWidget->isDirty() ? dirtyFile : cleanFile);
         _output->redraw();
         showStatus = true;
@@ -1051,6 +1051,7 @@ void System::editSource(strlib::String loadPath, bool restoreOnExit) {
           helpWidget->show();
           helpWidget->setFocus(true);
           runtime->showKeypad(false);
+          showStatus = false;
           break;
         case SB_KEY_F(9):
           _state = kRunState;
@@ -1132,7 +1133,7 @@ void System::editSource(strlib::String loadPath, bool restoreOnExit) {
     _editor = editWidget;
     _editor->setFocus(false);
   } else {
-    _editor = NULL;
+    _editor = nullptr;
   }
 
   // deletes editWidget unless it has been removed

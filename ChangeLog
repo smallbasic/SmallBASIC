@@ -1,4 +1,29 @@
-2019-08-23 (0.12.15)
+2019-12-21 (0.12.17)
+	SDL: fix issue #81 - numlock handling
+
+2019-12-15 (0.12.17)
+	FLTK: add online samples command
+	FLTK: fix tab resizing
+
+2019-12-07 (0.12.17)
+	FLTK: fix memory leaks
+	FLTK: implement audio
+	UI: add menu control key indicators
+
+2019-11-30 (0.12.17)
+	ANDROID: fix module access in newer android versions.
+	UI: code cleanup
+
+2019-11-30 (0.12.17)
+	FLTK: fix color display
+	FLTK: add clear console command
+	COMMON: fix dirwalk error handling
+
+2019-11-23 (0.12.17)
+	COMMON: Fix select case by func. Closes #83
+	COMMON: update dependencies
+
+2019-08-23 (0.12.16)
 	ANDROID: fix ChromeOS crash when restarting over existing instance
 
 2019-08-19 (0.12.15)

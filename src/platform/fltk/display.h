@@ -16,6 +16,7 @@
 
 struct Font {
   Font(Fl_Font font, Fl_Fontsize size) :  _font(font),  _size(size) {}
+  virtual ~Font() {}
   void setCurrent() { fl_font(_font, _size); }
 
 private:
@@ -68,6 +69,7 @@ public:
   MAExtent getTextSize(const char *str);
   void layout();
   void resize(int x, int y, int w, int h);
+  void setColor(Fl_Color color);
   MAHandle setDrawTarget(MAHandle maHandle);
   void setFont(Font *font) { _font = font; }
 

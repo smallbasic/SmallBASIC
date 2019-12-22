@@ -113,20 +113,23 @@ bool MainWindow::basicMain(EditorWidget *editWidget,
   Fl_Group *oldOutputGroup = _outputGroup;
   int old_w = _out->w();
   int old_h = _out->h();
+  int old_x = _out->x();
+  int old_y = _out->y();
   int interactive = opt_interactive;
 
   if (!toolExec) {
     if (opt_ide == IDE_NONE) {
       // run in a separate window with the ide hidden
-      fullScreen = new BaseWindow(w(), h());
-      _profile->restoreAppPosition(fullScreen);
-
+      fullScreen = new BaseWindow(w(), h(), _runtime);
+      fullScreen->box(FL_NO_BOX);
       fullScreen->callback(quit_cb);
       fullScreen->add(_out);
-      fullScreen->resizable(fullScreen);
+      fullScreen->end();
+      fullScreen->take_focus();
       setTitle(fullScreen, filename);
+      _profile->restoreAppPosition(fullScreen);
       _outputGroup = fullScreen;
-      resizeDisplay(w(), h());
+      resizeDisplay(0, 0, w(), h());
       hide();
     } else {
       setTitle(this, filename);
@@ -140,7 +143,7 @@ bool MainWindow::basicMain(EditorWidget *editWidget,
     restart = false;
     runMode = run_state;
     chdir(path);
-    success = _system->run(filename);
+    success = _runtime->run(filename);
   }
   while (restart);
 
@@ -154,7 +157,8 @@ bool MainWindow::basicMain(EditorWidget *editWidget,
 
     _outputGroup = oldOutputGroup;
     _outputGroup->add(_out);
-    resizeDisplay(old_w, old_h);
+    resizeDisplay(old_x, old_y, old_w, old_h);
+    take_focus();
     show();
   } else {
     copy_label("SmallBASIC");
@@ -205,6 +209,7 @@ void MainWindow::close_tab(Fl_Widget *w, void *eventData) {
       }
       _tabGroup->remove(group);
       delete group;
+      redraw();
     }
   }
 }
@@ -229,6 +234,7 @@ void MainWindow::close_other_tabs(Fl_Widget *w, void *eventData) {
       delete items[c];
     }
   }
+  redraw();
 }
 
 void MainWindow::restart_run(Fl_Widget *w, void *eventData) {
@@ -442,30 +448,18 @@ void MainWindow::copy_text(Fl_Widget *w, void *eventData) {
 }
 
 void MainWindow::font_size_incr(Fl_Widget *w, void *eventData) {
-  EditorWidget *editWidget = getEditor();
-  if (editWidget) {
-    int size = editWidget->getFontSize();
-    if (size < MAX_FONT_SIZE) {
-      editWidget->setFontSize(size + 1);
-      updateConfig(editWidget);
-      _system->setFontSize(size + 1);
-    }
-  } else {
-    handle(EVENT_INCREASE_FONT);
+  int size = _runtime->getFontSize();
+  if (size < MAX_FONT_SIZE) {
+    _runtime->setFontSize(size + 1);
+    resizeTabs(size + 1);
   }
 }
 
 void MainWindow::font_size_decr(Fl_Widget *w, void *eventData) {
-  EditorWidget *editWidget = getEditor();
-  if (editWidget) {
-    int size = editWidget->getFontSize();
-    if (size > MIN_FONT_SIZE) {
-      editWidget->setFontSize(size - 1);
-      updateConfig(editWidget);
-      _system->setFontSize(size - 1);
-    }
-  } else {
-    handle(EVENT_DECREASE_FONT);
+  int size = _runtime->getFontSize();
+  if (size > MIN_FONT_SIZE) {
+    _runtime->setFontSize(size - 1);
+    resizeTabs(size - 1);
   }
 }
 
@@ -500,6 +494,19 @@ void MainWindow::run_break(Fl_Widget *w, void *eventData) {
     runMode = edit_state;
   } else if (runMode == run_state || runMode == modal_state) {
     setBreak();
+  }
+}
+
+/**
+ * run the online samples program
+ */
+void MainWindow::run_samples(Fl_Widget *w, void *eventData) {
+  if (runMode == edit_state) {
+    runMode = run_state;
+    _runtime->runSamples();
+    runMode = edit_state;
+  } else {
+    busyMessage();
   }
 }
 
@@ -835,7 +842,7 @@ bool initialise(int argc, char **argv) {
   opt_interactive = true;
   opt_file_permitted = 1;
   os_graphics = 1;
-  opt_mute_audio = 1;
+  opt_mute_audio = 0;
 
   int i = 0;
   if (Fl::args(argc, argv, i, arg_cb) < argc) {
@@ -902,19 +909,11 @@ bool initialise(int argc, char **argv) {
 }
 
 /**
- * save application state at program exit
- */
-void save_profile(void) {
-  wnd->_profile->save(wnd);
-}
-
-/**
  * application entry point
  */
 int main(int argc, char **argv) {
   int result;
   if (initialise(argc, argv)) {
-    atexit(save_profile);
     Fl::run();
     result = 0;
   } else {
@@ -938,7 +937,7 @@ MainWindow::MainWindow(int w, int h) :
   m->add("&File/&Open File", FL_CTRL + 'o', open_file_cb);
   scanRecentFiles(m);
   m->add("&File/&Close", FL_CTRL + FL_F+4, close_tab_cb);
-  m->add("&File/_&Close Others", 0, close_other_tabs_cb);
+  m->add("&File/_Close Others", 0, close_other_tabs_cb);
   m->add("&File/&Save File", FL_CTRL + 's', EditorWidget::save_file_cb);
   m->add("&File/_Save File &As", FL_CTRL + FL_SHIFT + 'S', save_file_as_cb);
   addPlugin(m, "&File/Publish Online", "publish.bas");
@@ -949,12 +948,13 @@ MainWindow::MainWindow(int w, int h) :
   m->add("&Edit/&Copy", FL_CTRL + 'c', copy_text_cb);
   m->add("&Edit/_&Paste", FL_CTRL + 'v', EditorWidget::paste_text_cb);
   m->add("&Edit/_&Select All", FL_CTRL + 'a', EditorWidget::select_all_cb);
-  m->add("&Edit/&Change Case", FL_ALT + 'c', EditorWidget::change_case_cb);
+  m->add("&Edit/Ch&ange Case", FL_ALT + 'c', EditorWidget::change_case_cb);
   m->add("&Edit/&Expand Word", FL_ALT + '/', EditorWidget::expand_word_cb);
   m->add("&Edit/_&Rename Word", FL_CTRL + FL_SHIFT + 'r', EditorWidget::rename_word_cb);
   m->add("&Edit/&Find", FL_CTRL + 'f', EditorWidget::find_cb);
-  m->add("&Edit/&Replace", FL_CTRL + 'r', EditorWidget::show_replace_cb);
+  m->add("&Edit/Replace", FL_CTRL + 'r', EditorWidget::show_replace_cb);
   m->add("&Edit/_&Goto Line", FL_CTRL + 'g', EditorWidget::goto_line_cb);
+  m->add("&Edit/Clear Console", FL_CTRL + '-', EditorWidget::clear_console_cb);
   m->add("&View/&Next Tab", FL_F+6, next_tab_cb);
   m->add("&View/_&Prev Tab", FL_CTRL + FL_F+6, prev_tab_cb);
   m->add("&View/Theme/&Solarized Dark", 0, set_theme_cb, (void *)(intptr_t)0);
@@ -982,6 +982,7 @@ MainWindow::MainWindow(int w, int h) :
   m->add("&Program/&Break", FL_CTRL + 'b', run_break_cb);
   m->add("&Program/_&Restart", FL_CTRL + 'r', restart_run_cb);
   m->add("&Program/&Command", FL_F+10, set_options_cb);
+  m->add("&Program/Online Samples", 0, run_samples_cb);
   m->add("&Help/&Help Contents", FL_F+1, help_contents_cb);
   m->add("&Help/_&Context Help", FL_F+2, help_contents_brief_cb);
   m->add("&Help/&Program Help", FL_F+11, help_app_cb);
@@ -1005,7 +1006,7 @@ MainWindow::MainWindow(int w, int h) :
   _outputGroup->labelfont(FL_HELVETICA);
   _outputGroup->user_data((void *)gw_output);
   _out = new GraphicsWidget(x1, y1 + 1, x2, y2 -1);
-  _system = new Runtime(x2, y2 - 1, DEF_FONT_SIZE);
+  _runtime = new Runtime(x2, y2 - 1, DEF_FONT_SIZE);
   _outputGroup->resizable(_out);
   _outputGroup->end();
   _tabGroup->resizable(_outputGroup);
@@ -1016,7 +1017,9 @@ MainWindow::MainWindow(int w, int h) :
 }
 
 MainWindow::~MainWindow() {
-  delete _system;
+  _profile->save(this);
+  delete _profile;
+  delete _runtime;
 }
 
 Fl_Group *MainWindow::createTab(GroupWidgetEnum groupWidgetEnum, const char *label) {
@@ -1071,7 +1074,7 @@ void MainWindow::open_file(Fl_Widget *w, void *eventData) {
   Fl_Group *openFileGroup = findTab(gw_file);
   if (!openFileGroup) {
     openFileGroup = createTab(gw_file, fileTabName);
-    fileWidget = new FileWidget(_out);
+    fileWidget = new FileWidget(_out, _runtime->getFontSize());
     openFileGroup->resizable(fileWidget);
     openFileGroup->end();
     _tabGroup->end();
@@ -1127,7 +1130,7 @@ HelpView *MainWindow::getHelp() {
   Fl_Group *helpGroup = findTab(gw_help);
   if (!helpGroup) {
     helpGroup = createTab(gw_help, helpTabName);
-    help = new HelpView(_out);
+    help = new HelpView(_out, _runtime->getFontSize());
     help->callback(help_contents_anchor_cb);
     helpGroup->resizable(help);
     _profile->setHelpTheme(help);
@@ -1334,7 +1337,7 @@ void MainWindow::setTitle(Fl_Window *widget, const char *filename) {
 }
 
 void MainWindow::setBreak() {
-  _system->setExit(false);
+  _runtime->setExit(false);
   runMode = break_state;
 }
 
@@ -1356,12 +1359,36 @@ bool MainWindow::isIdeHidden() {
 
 void MainWindow::resize(int x, int y, int w, int h) {
   BaseWindow::resize(x, y, w, h);
-  _system->resize(_out->w(), _out->h());
+  _runtime->resize(_out->w(), _out->h());
 }
 
-void MainWindow::resizeDisplay(int w, int h) {
-  _out->resize(_out->x(), _out->y(), w, h - 1);
-  _system->resize(w, h - 1);
+void MainWindow::resizeDisplay(int x, int y, int w, int h) {
+  // resize the graphics widget (output tab child)
+  _out->resize(x, y, w, h);
+
+  // resize the runtime platforn
+  _runtime->resize(w, h);
+}
+
+void MainWindow::resizeTabs(int fontSize) {
+  int n = _tabGroup->children();
+  for (int c = 0; c < n; c++) {
+    Fl_Group *group = (Fl_Group *)_tabGroup->child(c);
+    GroupWidgetEnum gw = getGroupWidget(group);
+    switch (gw) {
+    case gw_editor:
+      ((EditorWidget *)group->child(0))->setFontSize(fontSize);
+      break;
+    case gw_help:
+      ((HelpWidget *)group->child(0))->setFontSize(fontSize);
+      break;
+    case gw_file:
+      ((FileWidget *)group->child(0))->setFontSize(fontSize);
+      break;
+    default:
+      break;
+    }
+  }
 }
 
 /**
@@ -1388,7 +1415,7 @@ bool MainWindow::logPrint() {
 
 int MainWindow::handle(int e) {
   int result;
-  if (getSelectedTab() == _outputGroup && _system->handle(e)) {
+  if (getSelectedTab() == _outputGroup && _runtime->handle(e)) {
     result = 1;
   } else {
     result = BaseWindow::handle(e);
@@ -1465,6 +1492,9 @@ int BaseWindow::handle(int e) {
         return 1;
       }
       break;
+    }
+    if (_mainSystem != NULL) {
+      _mainSystem->handle(e);
     }
     break;
 

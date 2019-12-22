@@ -1,0 +1,13 @@
+[submodule "src/lib/miniaudio"]
+	path = src/lib/miniaudio
+	url = https://github.com/dr-soft/miniaudio.git
+[submodule "src/lib/stb"]
+	path = src/lib/stb
+	url = https://github.com/nothings/stb.git
+[submodule "src/lib/lodepng"]
+	path = src/lib/lodepng
+	url = https://github.com/lvandeve/lodepng.git
+	ignore = untracked
+[submodule "src/lib/jsmn"]
+	path = src/lib/jsmn
+	url = https://github.com/zserge/jsmn.git

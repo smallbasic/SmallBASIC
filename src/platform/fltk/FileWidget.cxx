@@ -101,8 +101,8 @@ static void anchorClick_cb(Fl_Widget *w, void *v) {
   }
 }
 
-FileWidget::FileWidget(Fl_Widget *rect) :
-  HelpWidget(rect),
+FileWidget::FileWidget(Fl_Widget *rect, int fontSize) :
+  HelpWidget(rect, fontSize),
   _saveEditorAs(0),
   _recentPaths(NULL) {
   callback(anchorClick_cb);

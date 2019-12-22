@@ -1,13 +1,12 @@
 // This file is part of SmallBASIC
 //
-// Copyright(C) 2001-2014 Chris Warren-Smith.
+// Copyright(C) 2001-2019 Chris Warren-Smith.
 //
 // This program is distributed under the terms of the GPL v2.0 or later
 // Download the GNU Public License (GPL) from www.gnu.org
 //
 
 #include "config.h"
-#include <SDL.h>
 #include <getopt.h>
 #include <locale.h>
 
@@ -397,7 +396,7 @@ int main(int argc, char* argv[]) {
     opt_ide = ide_option;
   }
 
-  SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS | SDL_INIT_AUDIO);
+  SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS);
   SDL_Window *window = SDL_CreateWindow("SmallBASIC",
                                         rect.x, rect.y, rect.w, rect.h,
                                         SDL_WINDOW_SHOWN |

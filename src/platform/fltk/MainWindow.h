@@ -53,10 +53,12 @@ extern ExecState runMode;
   }
 
 struct BaseWindow : public Fl_Double_Window {
-  BaseWindow(int w, int h) : Fl_Double_Window(w, h, "SmallBASIC") {}
+  BaseWindow(int w, int h, Runtime *mainSystem = NULL)
+    : Fl_Double_Window(w, h, "SmallBASIC"), _mainSystem(mainSystem) {}
   virtual ~BaseWindow() {};
   int handle(int e);
   bool handleKeyEvent();
+  private: Runtime *_mainSystem; // for hidden ide mode
 };
 
 struct MainWindow : public BaseWindow {
@@ -77,7 +79,8 @@ struct MainWindow : public BaseWindow {
   void loadIcon();
   void pathMessage(const char *file);
   void resize(int x, int y, int w, int h);
-  void resizeDisplay(int w, int h);
+  void resizeDisplay(int x, int y, int w, int h);
+  void resizeTabs(int fontSize);
   void saveEditConfig(EditorWidget *editWidget);
   void scanPlugIns(Fl_Menu_Bar *menu);
   void scanRecentFiles(Fl_Menu_Bar *menu);
@@ -106,6 +109,7 @@ struct MainWindow : public BaseWindow {
   bool logPrint();
   FILE *openConfig(const char *fileName, const char *flags = "w");
   TtyWidget *tty();
+  void exit(int code) { delete this; ::exit(code); }
 
   CALLBACK_METHOD(close_tab);
   CALLBACK_METHOD(close_other_tabs);
@@ -131,6 +135,7 @@ struct MainWindow : public BaseWindow {
   CALLBACK_METHOD(quit);
   CALLBACK_METHOD(restart_run);
   CALLBACK_METHOD(run);
+  CALLBACK_METHOD(run_samples);
   CALLBACK_METHOD(run_break);
   CALLBACK_METHOD(run_selection);
   CALLBACK_METHOD(save_file_as);
@@ -146,7 +151,7 @@ struct MainWindow : public BaseWindow {
 
   // display system
   GraphicsWidget *_out;
-  Runtime *_system;
+  Runtime *_runtime;
 
   // main output
   Fl_Group *_outputGroup;

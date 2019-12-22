@@ -951,7 +951,7 @@ int par_getpartable(par_t **ptable_pp, const char *valid_sep) {
       if (!prog_error) {
         // push parameter
         ptable[pcount].var = par;
-        ptable[pcount].flags |= PAR_BYVAL;
+        ptable[pcount].flags = PAR_BYVAL;
         if (++pcount == MAX_PARAM) {
           par_freepartable(ptable_pp, pcount);
           err_parfmt(__FILE__);
@@ -1086,48 +1086,49 @@ int par_massget(const char *fmt, ...) {
       case 's':
         // optional string
         if (!opt) {
-          s = va_arg(ap, char**);
+          // advance ap to next position
+          va_arg(ap, char **);
           break;
         }
       case 'S':
         // string
-        s = va_arg(ap, char**);
+        s = va_arg(ap, char **);
         *s = strdup(v_getstr(ptable[curpar].var));
         curpar++;
         break;
       case 'i':
         // optional integer
         if (!opt) {
-          i = va_arg(ap, var_int_t*);
+          va_arg(ap, var_int_t *);
           break;
         }
       case 'I':
         // integer
-        i = va_arg(ap, var_int_t*);
+        i = va_arg(ap, var_int_t *);
         *i = v_getint(ptable[curpar].var);
         curpar++;
         break;
       case 'f':
         // optional real (var_num_t)
         if (!opt) {
-          f = va_arg(ap, var_num_t*);
+          va_arg(ap, var_num_t *);
           break;
         }
       case 'F':
         // real (var_num_t)
-        f = va_arg(ap, var_num_t*);
+        f = va_arg(ap, var_num_t *);
         *f = v_getreal(ptable[curpar].var);
         curpar++;
         break;
       case 'p':
         // optional variable
         if (!opt) {
-          vt = va_arg(ap, var_t**);
+          va_arg(ap, var_t **);
           break;
         }
       case 'P':
         // variable
-        vt = va_arg(ap, var_t**);
+        vt = va_arg(ap, var_t **);
         if (ptable[curpar].flags == 0)// byref
           *vt = ptable[curpar].var;
         else {

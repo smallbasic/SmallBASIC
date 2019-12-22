@@ -57,11 +57,11 @@ typedef struct {
 } slib_t;
 
 static slib_t slib_table[MAX_SLIBS];
-static int slib_count;
-static int extprocsize;
-static int extproccount;
-static int extfuncsize;
-static int extfunccount;
+static uint32_t slib_count;
+static uint32_t extprocsize;
+static uint32_t extproccount;
+static uint32_t extfuncsize;
+static uint32_t extfunccount;
 static ext_func_node_t *extfunctable;
 static ext_proc_node_t *extproctable;
 
@@ -159,7 +159,7 @@ int slib_add_external_proc(const char *proc_name, int lib_id) {
 /**
  * Add an external function to the list
  */
-int slib_add_external_func(const char *func_name, int lib_id) {
+int slib_add_external_func(const char *func_name, uint32_t lib_id) {
   // scan for conflicts
   for (int i = 0; i < extfunccount; i++) {
     if (strcmp(extfunctable[i].name, func_name) == 0) {

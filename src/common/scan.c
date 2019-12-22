@@ -3567,9 +3567,9 @@ void comp_pass2_scan() {
       break;
 
     case kwSELECT:
-      // next instruction should be CASE
+      // next instruction should be CASE (or UDF)
       false_ip = comp_next_bc_peek(i + 1);
-      if (false_ip != kwCASE && false_ip != kwCASE_ELSE) {
+      if (false_ip != kwCASE && false_ip != kwCASE_ELSE && false_ip != kwTYPE_CALL_UDF) {
         sc_raise(MSG_MISSING_CASE);
         print_pass2_stack(i, kwCASE, node->level);
         return;

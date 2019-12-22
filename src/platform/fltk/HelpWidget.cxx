@@ -25,6 +25,7 @@
 #include <FL/Fl_Slider.H>
 #include <FL/Fl_Value_Input.H>
 #include <FL/Fl_Window.H>
+#include <FL/filename.H>
 
 #define Fl_HELP_WIDGET_RESOURCES
 #include "platform/fltk/HelpWidget.h"
@@ -670,11 +671,10 @@ void ImageNode::display(Display *out) {
       int x = out->x1 - 1;
       int y = fixed ? 0 : out->y1 - fl_height();
       int y1 = y;
-      int x1 = x;
       int numHorz = out->tabW / w.value;
       int numVert = out->tabH / h.value;
       for (int iy = 0; iy <= numVert; iy++) {
-        x1 = x;
+        int x1 = x;
         for (int ix = 0; ix <= numHorz; ix++) {
           if (x1 + w.value > x + out->tabW) {
             iw = out->tabW - (x1 - x);
@@ -1643,7 +1643,7 @@ static void anchor_callback(Fl_Widget *helpWidget, void *target) {
   ((HelpWidget *)helpWidget)->navigateTo((const char *)target);
 }
 
-HelpWidget::HelpWidget(Fl_Widget *rect, int defsize) :
+HelpWidget::HelpWidget(Fl_Widget *rect, int fontSize) :
   Fl_Group(rect->x(), rect->y(), rect->w(), rect->h()),
   background(BACKGROUND_COLOR),
   foreground(FOREGROUND_COLOR),
@@ -1674,7 +1674,7 @@ HelpWidget::HelpWidget(Fl_Widget *rect, int defsize) :
   callback(anchor_callback);    // default callback
   init();
   docHome.clear();
-  labelsize(defsize);
+  labelsize(fontSize);
 }
 
 HelpWidget::~HelpWidget() {
@@ -2047,7 +2047,6 @@ void HelpWidget::compile() {
 
   const char *text = htmlStr.c_str();
   const char *tagBegin = text;
-  const char *tagEnd = text;
   const char *tag;
   const char *tagPair = 0;
 
@@ -2063,7 +2062,7 @@ void HelpWidget::compile() {
     while (*tagBegin != 0 && *tagBegin != '<') {
       tagBegin++;
     }
-    tagEnd = tagBegin;
+    const char *tagEnd = tagBegin;
     while (*tagEnd != 0 && *tagEnd != '>') {
       tagEnd++;
     }
@@ -2521,7 +2520,6 @@ int HelpWidget::onMove(int event) {
           scroll = -scrollHeight;       // too far down
         }
         if (scroll != vscroll) {
-          vscroll = scroll;
           damage(FL_DAMAGE_EXPOSE);
         }
       }
@@ -2656,18 +2654,6 @@ int HelpWidget::handle(int event) {
   }
 
   switch (event) {
-  case EVENT_INCREASE_FONT:
-    if (getFontSize() < MAX_FONT_SIZE) {
-      setFontSize(getFontSize() + 1);
-    }
-    return 1;
-
-  case EVENT_DECREASE_FONT:
-    if (getFontSize() > MIN_FONT_SIZE) {
-      setFontSize(getFontSize() - 1);
-    }
-    return 1;
-
   case EVENT_COPY_TEXT:
     copySelection();
     return 1;
@@ -2836,7 +2822,7 @@ void HelpWidget::loadFile(const char *f, bool useDocHome) {
     } else {
       docHome.append("./");
     }
-    if (docHome[docHome.length() - 1] != '/') {
+    if (docHome.length() > 0 && docHome[docHome.length() - 1] != '/') {
       docHome.append("/");
     }
   }
@@ -3043,24 +3029,6 @@ Fl_Image *loadImage(const char *imgSrc) {
   return image != 0 ? image : &brokenImage;
 }
 
-#if defined(WIN32)
-#include <windows.h>
-#include <FL/Fl_Window.h>
-#include <FL/Fl_win32.h>
-#endif
-
 void browseFile(const char *url) {
-#if defined(WIN32)
-  ShellExecute(xid(Window::first()), "open", url, 0, 0, SW_SHOWNORMAL);
-#else
-  if (fork() == 0) {
-    fclose(stderr);
-    fclose(stdin);
-    fclose(stdout);
-    execlp("htmlview", "htmlview", url, NULL);
-    execlp("firefox", "firefox", url, NULL);
-    execlp("mozilla", "mozilla", url, NULL);
-    ::exit(0);                  // in case exec failed
-  }
-#endif
+  fl_open_uri(url, nullptr, 0);
 }

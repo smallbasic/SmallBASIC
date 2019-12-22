@@ -33,8 +33,6 @@
 
 #define MIN_FONT_SIZE 11
 #define MAX_FONT_SIZE 22
-#define EVENT_INCREASE_FONT 100
-#define EVENT_DECREASE_FONT 101
 #define EVENT_COPY_TEXT     102
 #define EVENT_SEL_ALL_TEXT  103
 #define EVENT_FIND          104
@@ -52,7 +50,7 @@ struct ImageNode;
 
 class HelpWidget : public Fl_Group {
 public:
-  HelpWidget(Fl_Widget *rect, int defsize = MIN_FONT_SIZE);
+  HelpWidget(Fl_Widget *rect, int fontSize);
   virtual ~HelpWidget();
 
   void loadBuffer(const char *buffer);

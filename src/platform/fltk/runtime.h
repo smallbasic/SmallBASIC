@@ -13,19 +13,21 @@
 #include "ui/system.h"
 
 struct Runtime : public System {
-  Runtime(int w, int h, int defSize);
-  ~Runtime();
+  Runtime(int w, int h, int fontSize);
+  virtual ~Runtime();
 
   void addShortcut(const char *) {}
   void alert(const char *title, const char *message);
   int ask(const char *title, const char *prompt, bool cancel=true);
   void browseFile(const char *url);
   char *getClipboardText();
+  int  getFontSize() { return _output->getFontSize(); }
   void enableCursor(bool enabled);
   int handle(int event);
   void optionsBox(StringList *items);
   MAEvent processEvents(int waitFlag);
   bool run(const char *bas) { return execute(bas); }
+  void runSamples();
   void resize(int w, int h);
   void setClipboardText(const char *text);
   void setFontSize(int size);

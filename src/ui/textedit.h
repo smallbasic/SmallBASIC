@@ -18,7 +18,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
-#include "lib/stb_textedit.h"
+#include "lib/stb/stb_textedit.h"
 #include "ui/inputs.h"
 #include "common/smbas.h"
 #include "common/keymap.h"

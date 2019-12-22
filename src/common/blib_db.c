@@ -806,14 +806,17 @@ void dirwalk(char *dir, char *wc, bcip_t use_ip, int depth) {
     join_path(path, ++dir);
     dir = path;
   } else if (dir[0] == '~') {
-    strlcpy(path, getenv("HOME"), sizeof(path));
-    join_path(path, ++dir);
-    dir = path;
+    const char *home = getenv("HOME");
+    if (home != NULL) {
+      strlcpy(path, home, sizeof(path));
+      join_path(path, ++dir);
+      dir = path;
+    }
   }
 
   DIR *dfd = opendir(dir);
   if (dfd == NULL) {
-    log_printf("DIRWALK: can't open %s", dir);
+    log_printf(ERR_DIRWALK_CANT_OPEN, dir);
     return;
   }
 
@@ -827,7 +830,7 @@ void dirwalk(char *dir, char *wc, bcip_t use_ip, int depth) {
       continue;
     }
     if (strlen(dir) + strlen(dp->d_name) + 2 > OS_PATHNAME_SIZE) {
-      rt_raise("DIRWALK: name %s/%s too long", dir, dp->d_name);
+      rt_raise(ERR_DIRWALK_NAME, dir, dp->d_name);
     } else {
       // check filename
       int callusr;
@@ -835,6 +838,10 @@ void dirwalk(char *dir, char *wc, bcip_t use_ip, int depth) {
       struct stat st;
 
       if (!wc) {
+        if (code_peek() == kwTYPE_EOC) {
+          rt_raise(ERR_DIRWALK_MISSING_USE);
+          break;
+        }
         callusr = 1;
       } else {
         callusr = wc_match(wc, dp->d_name);

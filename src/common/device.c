@@ -7,11 +7,13 @@
 //
 // Copyright(C) 2000 Nicholas Christopoulos
 
+#include "config.h"
+
+#include "include/osd.h"
 #include "common/device.h"
 #include "common/smbas.h"
 #include "common/messages.h"
 #include "common/keymap.h"
-#include "common/osd.h"
 #include "common/inet.h"
 
 #ifdef __MINGW32__

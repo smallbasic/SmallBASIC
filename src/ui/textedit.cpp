@@ -16,7 +16,7 @@
 #include "ui/kwp.h"
 
 void safe_memmove(void *dest, const void *src, size_t n) {
-  if (n > 0 && dest != NULL && src != NULL) {
+  if (n > 0 && dest != nullptr && src != nullptr) {
     memmove(dest, src, n);
   }
 }
@@ -60,7 +60,7 @@ int textedit_move_to_word_next(EditBuffer *str, int c) {
 #define STB_TEXTEDIT_MOVEWORDRIGHT textedit_move_to_word_next
 
 #pragma GCC diagnostic ignored "-Wunused-function"
-#include "lib/stb_textedit.h"
+#include "lib/stb/stb_textedit.h"
 #pragma GCC diagnostic pop
 
 #define GROW_SIZE 128
@@ -294,12 +294,12 @@ void EditTheme::selectTheme(const int theme[]) {
 // EditBuffer
 //
 EditBuffer::EditBuffer(TextEditInput *in, const char *text) :
-  _buffer(NULL),
+  _buffer(nullptr),
   _len(0),
   _size(0),
   _lines(-1),
   _in(in) {
-  if (text != NULL && text[0]) {
+  if (text != nullptr && text[0]) {
     _len = strlen(text);
     _size = _len + 1;
     _buffer = (char *)malloc(_size);
@@ -314,7 +314,7 @@ EditBuffer::~EditBuffer() {
 
 void EditBuffer::clear() {
   free(_buffer);
-  _buffer = NULL;
+  _buffer = nullptr;
   _len = _size = 0;
   _lines = -1;
 }
@@ -351,7 +351,7 @@ int EditBuffer::deleteChars(int pos, int num) {
 
 char EditBuffer::getChar(int pos) {
   char result;
-  if (_buffer != NULL && pos >= 0 && pos < _len) {
+  if (_buffer != nullptr && pos >= 0 && pos < _len) {
     result = _buffer[pos];
   } else {
     result = '\0';
@@ -442,7 +442,7 @@ TextEditInput::TextEditInput(const char *text, int chW, int chH,
                              int x, int y, int w, int h) :
   FormEditInput(x, y, w, h),
   _buf(this, text),
-  _theme(NULL),
+  _theme(nullptr),
   _charWidth(chW),
   _charHeight(chH),
   _marginWidth(0),
@@ -461,7 +461,7 @@ TextEditInput::TextEditInput(const char *text, int chW, int chH,
 
 TextEditInput::~TextEditInput() {
   delete _theme;
-  _theme = NULL;
+  _theme = nullptr;
 }
 
 void TextEditInput::completeWord(const char *word) {
@@ -482,9 +482,9 @@ void TextEditInput::completeWord(const char *word) {
 }
 
 const char *TextEditInput::completeKeyword(int index) {
-  const char *help = NULL;
+  const char *help = nullptr;
   char *selection = getWordBeforeCursor();
-  if (selection != NULL) {
+  if (selection != nullptr) {
     int len = strlen(selection);
     int count = 0;
     for (int i = 0; i < keyword_help_len; i++) {
@@ -855,7 +855,7 @@ bool TextEditInput::edit(int key, int screenWidth, int charWidth) {
 bool TextEditInput::find(const char *word, bool next) {
   bool result = false;
   bool allUpper = true;
-  int len = word == NULL ? 0 : strlen(word);
+  int len = word == nullptr ? 0 : strlen(word);
   for (int i = 0; i < len; i++) {
     if (islower(word[i])) {
       allUpper = false;
@@ -863,17 +863,17 @@ bool TextEditInput::find(const char *word, bool next) {
     }
   }
 
-  if (_buf._buffer != NULL && word != NULL) {
+  if (_buf._buffer != nullptr && word != nullptr) {
     const char *found = find_str(allUpper, _buf._buffer + _state.cursor, word);
-    if (next && found != NULL) {
+    if (next && found != nullptr) {
       // skip to next word
       found = find_str(allUpper, found + strlen(word), word);
     }
-    if (found == NULL) {
+    if (found == nullptr) {
       // start over
       found = find_str(allUpper, _buf._buffer, word);
     }
-    if (found != NULL) {
+    if (found != nullptr) {
       result = true;
       _state.cursor = found - _buf._buffer;
       _state.select_start = _state.cursor;
@@ -944,7 +944,7 @@ char *TextEditInput::getTextSelection(bool selectAll) {
   } else if (selectAll) {
     result = _buf.textRange(0, _buf._len);
   } else {
-    result = NULL;
+    result = nullptr;
   }
   return result;
 }
@@ -954,7 +954,7 @@ int *TextEditInput::getMarkers() {
 }
 
 void TextEditInput::gotoLine(const char *buffer) {
-  if (_buf._buffer != NULL && buffer != NULL) {
+  if (_buf._buffer != nullptr && buffer != nullptr) {
     setCursorRow(atoi(buffer) - 1);
   }
 }
@@ -963,7 +963,7 @@ void TextEditInput::reload(const char *text) {
   _scroll = 0;
   _cursorRow = 0;
   _buf.clear();
-  if (text != NULL) {
+  if (text != nullptr) {
     _buf.insertChars(0, text, strlen(text));
   }
   stb_textedit_initialize_state(&_state, false);
@@ -1033,9 +1033,9 @@ void TextEditInput::clicked(int x, int y, bool pressed) {
 
 void TextEditInput::updateField(var_p_t form) {
   var_p_t field = getField(form);
-  if (field != NULL) {
+  if (field != nullptr) {
     var_p_t value = map_get(field, FORM_INPUT_VALUE);
-    if (value != NULL) {
+    if (value != nullptr) {
       v_setstrn(value, _buf._buffer, _buf._len);
     }
   }
@@ -1083,13 +1083,13 @@ char *TextEditInput::copy(bool cut) {
     }
     _state.select_start = _state.select_end;
   } else {
-    result = NULL;
+    result = nullptr;
   }
   return result;
 }
 
 void TextEditInput::paste(const char *text) {
-  if (text != NULL) {
+  if (text != nullptr) {
     int lines = _buf._lines;
     stb_textedit_paste(&_buf, &_state, text, strlen(text));
     if (lines != _buf._lines) {
@@ -1403,11 +1403,14 @@ void TextEditInput::findMatchingBrace() {
 int TextEditInput::getCompletions(StringList *list, int max) {
   int count = 0;
   char *selection = getWordBeforeCursor();
-  unsigned len = selection != NULL ? strlen(selection) : 0;
+  unsigned len = selection != nullptr ? strlen(selection) : 0;
   if (len > 0) {
     for (int i = 0; i < keyword_help_len && count < max; i++) {
       if (strncasecmp(selection, keyword_help[i].keyword, len) == 0) {
-        list->add(keyword_help[i].keyword);
+        String *s = new String();
+        s->append(" ");
+        s->append(keyword_help[i].keyword);
+        list->add(s);
         count++;
       }
     }
@@ -1468,7 +1471,7 @@ int TextEditInput::getIndent(char *spaces, int len, int pos) {
   // count the indent level and find the start of text
   char *buf = lineText(pos);
   int i = 0;
-  while (buf && i < len && (buf[i] == ' ' || buf[i] == '\t')) {
+  while (i < len && (buf[i] == ' ' || buf[i] == '\t')) {
     spaces[i] = buf[i];
     i++;
   }
@@ -1545,8 +1548,8 @@ char *TextEditInput::getSelection(int *start, int *end) {
 
 const char *TextEditInput::getNodeId() {
   char *selection = getWordBeforeCursor();
-  const char *result = NULL;
-  int len = selection != NULL ? strlen(selection) : 0;
+  const char *result = nullptr;
+  int len = selection != nullptr ? strlen(selection) : 0;
   if (len > 0) {
     for (int i = 0; i < keyword_help_len && !result; i++) {
       if (strcasecmp(selection, keyword_help[i].keyword) == 0) {
@@ -1564,7 +1567,7 @@ char *TextEditInput::getWordBeforeCursor() {
     int start, end;
     result = getSelection(&start, &end);
   } else {
-    result = NULL;
+    result = nullptr;
   }
   return result;
 }
@@ -1572,7 +1575,7 @@ char *TextEditInput::getWordBeforeCursor() {
 bool TextEditInput::replaceNext(const char *buffer, bool skip) {
   bool changed = false;
   if (_state.select_start != _state.select_end &&
-      _buf._buffer != NULL && buffer != NULL) {
+      _buf._buffer != nullptr && buffer != nullptr) {
     int start, end;
     char *selection = getSelection(&start, &end);
     if (!skip) {
@@ -1843,10 +1846,10 @@ int TextEditInput::wordStart() {
 // TextEditHelpWidget
 //
 TextEditHelpWidget::TextEditHelpWidget(TextEditInput *editor, int chW, int chH, bool overlay) :
-  TextEditInput(NULL, chW, chH, editor->_x, editor->_y, editor->_width, editor->_height),
+  TextEditInput(nullptr, chW, chH, editor->_x, editor->_y, editor->_width, editor->_height),
   _mode(kNone),
   _editor(editor),
-  _openPackage(NULL),
+  _openPackage(nullptr),
   _openKeyword(-1) {
   _theme = new EditTheme(HELP_BG, HELP_FG);
   hide();
@@ -1996,7 +1999,7 @@ void TextEditHelpWidget::createCompletionHelp() {
   reset(kCompletion);
 
   char *selection = _editor->getWordBeforeCursor();
-  int len = selection != NULL ? strlen(selection) : 0;
+  int len = selection != nullptr ? strlen(selection) : 0;
   if (len > 0) {
     StringList words;
     for (int i = 0; i < keyword_help_len; i++) {
@@ -2008,7 +2011,7 @@ void TextEditHelpWidget::createCompletionHelp() {
     }
     const char *text = _editor->getText();
     const char *found = strcasestr(text, selection);
-    while (found != NULL) {
+    while (found != nullptr) {
       const char *end = found;
       const char pre = found > text ? *(found - 1) : ' ';
       while (IS_VAR_CHAR(*end) && *end != '\0') {
@@ -2026,9 +2029,9 @@ void TextEditHelpWidget::createCompletionHelp() {
       found = strcasestr(end, selection);
     }
   } else {
-    const char *package = NULL;
+    const char *package = nullptr;
     for (int i = 0; i < keyword_help_len; i++) {
-      if (package == NULL || strcasecmp(package, keyword_help[i].package) != 0) {
+      if (package == nullptr || strcasecmp(package, keyword_help[i].package) != 0) {
         // next package
         package = keyword_help[i].package;
         _buf.append("[");
@@ -2063,7 +2066,7 @@ void TextEditHelpWidget::createKeywordIndex() {
   reset(kHelpKeyword);
 
   bool keywordFound = false;
-  if (keyword != NULL) {
+  if (keyword != nullptr) {
     for (int i = 0; i < keyword_help_len && !keywordFound; i++) {
       if (strcasecmp(keyword, keyword_help[i].keyword) == 0) {
         _buf.append(TWISTY2_OPEN, TWISTY2_LEN);
@@ -2078,9 +2081,9 @@ void TextEditHelpWidget::createKeywordIndex() {
   }
 
   if (!keywordFound) {
-    const char *package = NULL;
+    const char *package = nullptr;
     for (int i = 0; i < keyword_help_len; i++) {
-      if (package == NULL || strcasecmp(package, keyword_help[i].package) != 0) {
+      if (package == nullptr || strcasecmp(package, keyword_help[i].package) != 0) {
         package = keyword_help[i].package;
         _buf.append(TWISTY1_OPEN, TWISTY1_LEN);
         _buf.append(package);
@@ -2171,7 +2174,7 @@ void TextEditHelpWidget::createSearch(bool replace) {
   }
 
   char *text = _editor->getTextSelection(false);
-  if (text != NULL) {
+  if (text != nullptr) {
     // prime search from selected text
     _buf.clear();
     _buf.insertChars(0, text, strlen(text));
@@ -2241,8 +2244,8 @@ void TextEditHelpWidget::toggleKeyword() {
   bool close2 = strncmp(line, TWISTY2_CLOSE, TWISTY2_LEN) == 0;
   if (open1 || open2 || close1 || close2) {
     const char *nextLine = line + TWISTY1_LEN;
-    const char *package = (open2 || close2) && _openPackage != NULL ? _openPackage : nextLine;
-    const char *nextPackage = NULL;
+    const char *package = (open2 || close2) && _openPackage != nullptr ? _openPackage : nextLine;
+    const char *nextPackage = nullptr;
     int pageRows = _height / _charHeight;
     int open1Count = 0;
     int open2Count = 0;
@@ -2252,7 +2255,7 @@ void TextEditHelpWidget::toggleKeyword() {
     _state.select_start = _state.select_end = 0;
 
     for (int i = 0; i < keyword_help_len; i++) {
-      if (nextPackage == NULL || strcasecmp(nextPackage, keyword_help[i].package) != 0) {
+      if (nextPackage == nullptr || strcasecmp(nextPackage, keyword_help[i].package) != 0) {
         nextPackage = keyword_help[i].package;
         if (strcasecmp(package, nextPackage) == 0) {
           // selected item

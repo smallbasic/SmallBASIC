@@ -1,6 +1,6 @@
 // This file is part of SmallBASIC
 //
-// Copyright(C) 2001-2014 Chris Warren-Smith.
+// Copyright(C) 2001-2019 Chris Warren-Smith.
 //
 // This program is distributed under the terms of the GPL v2.0 or later
 // Download the GNU Public License (GPL) from www.gnu.org
@@ -10,7 +10,9 @@
 #define RUNTIME_H
 
 #include "config.h"
-#include <SDL.h>
+
+#include <SDL_keycode.h>
+#include <SDL_mouse.h>
 
 #include "lib/maapi.h"
 #include "ui/ansiwidget.h"

@@ -39,7 +39,8 @@ Fl_Text_Display::Style_Table_Entry styletable[] = {
   { defaultColor[7], FL_COURIER_ITALIC, 12}, // H - Italic Comments
   { defaultColor[8], FL_COURIER, 12},        // I - Numbers
   { defaultColor[9], FL_COURIER, 12},        // J - Operators
-  { FL_WHITE,        FL_COURIER, 12},        // K - Background
+  { FL_BLUE,         FL_COURIER, 12},        // K - Selection Background
+  { FL_WHITE,        FL_COURIER, 12},        // L - Background
 };
 
 #define PLAIN      'A'
@@ -161,6 +162,8 @@ BasicEditor::BasicEditor(int x, int y, int w, int h, StatusBar *status) :
 }
 
 BasicEditor::~BasicEditor() {
+  buffer(nullptr);
+  delete _textbuf;
   delete _stylebuf;
 }
 
@@ -175,10 +178,10 @@ void BasicEditor::styleParse(const char *text, char *style, int length) {
   const char *temp;
   int searchLen = strlen(_search);
 
-  for (; length > 0; length--, text++) {
+  for (int index = 0; length > 0; length--, text++, index++) {
     if (current == PLAIN) {
       // check for directives, comments, strings, and keywords
-      if ((*text == '#' && (*(text - 1) == 0 || *(text - 1) == 10)) ||
+      if ((*text == '#' && (index == 0 || *(text - 1) == 0 || *(text - 1) == 10)) ||
           (strncasecmp(text, "rem", 3) == 0 && text[3] == ' ') || *text == '\'') {
         // basic comment
         current = COMMENTS;
