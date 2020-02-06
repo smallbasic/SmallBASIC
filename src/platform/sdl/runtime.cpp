@@ -363,7 +363,7 @@ void Runtime::handleKeyEvent(MAEvent &event) {
     } else if (event.key == SDLK_KP_4) {
       event.key = event.nativeKey == KMOD_NUM ? '4' : SB_KEY_LEFT;
     } else if (event.key == SDLK_KP_5) {
-      event.key = '5';
+      event.key = event.nativeKey == KMOD_NUM ? '5' : SB_KEY_CTRL(SB_KEY_HOME);
     } else if (event.key == SDLK_KP_6) {
       event.key = event.nativeKey == KMOD_NUM ? '6' : SB_KEY_RIGHT;
     } else if (event.key == SDLK_KP_7) {
@@ -372,6 +372,8 @@ void Runtime::handleKeyEvent(MAEvent &event) {
       event.key = event.nativeKey == KMOD_NUM ? '8' : SB_KEY_UP;
     } else if (event.key == SDLK_KP_9) {
       event.key = event.nativeKey == KMOD_NUM ? '9' : SB_KEY_PGUP;
+    } else if (event.key == SDLK_KP_0) {
+      event.key = event.nativeKey == KMOD_NUM ? '0' : SB_KEY_INSERT;
     }
   }
 
@@ -443,7 +445,7 @@ void Runtime::pollEvents(bool blocking) {
       case SDL_TEXTINPUT:
         // pre-transformed/composted text
         mod = SDL_GetModState();
-        if (!mod || (mod & (KMOD_SHIFT|KMOD_CAPS))) {
+        if (!mod || (mod & (KMOD_SHIFT | KMOD_CAPS | KMOD_NUM))) {
           // ALT + CTRL keys handled in SDL_KEYDOWN
           if (ev.text.text[0] < 0) {
             wchar_t keycode;
@@ -510,7 +512,9 @@ void Runtime::pollEvents(bool blocking) {
             }
           }
           if (maEvent == NULL &&
-              ((ev.key.keysym.sym >= SDLK_KP_1 && ev.key.keysym.sym <= SDLK_KP_9) ||
+              // Non-numeric-keypad, Control and Alt keys
+              (((ev.key.keysym.sym >= SDLK_KP_1 && ev.key.keysym.sym <= SDLK_KP_0) &&
+                ev.key.keysym.mod != KMOD_NUM) ||
                ((ev.key.keysym.mod & KMOD_CTRL) &&
                 ev.key.keysym.sym != SDLK_LSHIFT &&
                 ev.key.keysym.sym != SDLK_RSHIFT &&

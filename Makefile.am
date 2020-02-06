@@ -64,3 +64,6 @@ release:
 ndk-stack:
 	adb logcat | ${NDK}/ndk-stack -sym src/platform/android/obj/local/armeabi
 
+appImage:
+	~/apps/linuxdeploy-x86_64.AppImage --appdir=AppDir --executable=./src/platform/fltk/sbasici && \
+	~/apps/appimagetool-x86_64.AppImage AppDir
