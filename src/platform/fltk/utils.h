@@ -56,5 +56,6 @@ Fl_Font get_font(const char *name);
 void getHomeDir(char *fileName, size_t size, bool appendSlash = true);
 bool cacheLink(dev_file_t *df, char *localFile, size_t size);
 void vsncat(char *buffer, size_t size, ...);
+void launchExec(const char *file);
 
 #endif

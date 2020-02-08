@@ -65,6 +65,14 @@ MAEvent *getMotionEvent(int type, SDL_Event *event) {
   return result;
 }
 
+MAEvent *getKeyPressedEvent(int keycode, int nativeKey) {
+  MAEvent *result = new MAEvent();
+  result->type = EVENT_TYPE_KEY_PRESSED;
+  result->key = keycode;
+  result->nativeKey = nativeKey;
+  return result;
+}
+
 Runtime::Runtime(SDL_Window *window) :
   System(),
   _menuX(0),
@@ -450,19 +458,10 @@ void Runtime::pollEvents(bool blocking) {
           if (ev.text.text[0] < 0) {
             wchar_t keycode;
             mbstowcs(&keycode, ev.text.text, 1);
-
-            MAEvent *keyEvent = new MAEvent();
-            keyEvent->type = EVENT_TYPE_KEY_PRESSED;
-            keyEvent->key = (int)keycode;
-            keyEvent->nativeKey = 0;
-            pushEvent(keyEvent);
+            pushEvent(getKeyPressedEvent((int)keycode, 0));
           } else {
             for (int i = 0; ev.text.text[i] != 0; i++) {
-              MAEvent *keyEvent = new MAEvent();
-              keyEvent->type = EVENT_TYPE_KEY_PRESSED;
-              keyEvent->key = ev.text.text[i];
-              keyEvent->nativeKey = 0;
-              pushEvent(keyEvent);
+              pushEvent(getKeyPressedEvent(ev.text.text[i], 0));
             }
           }
         }
@@ -502,12 +501,17 @@ void Runtime::pollEvents(bool blocking) {
           }
         } else {
           int lenMap = sizeof(keymap) / sizeof(keymap[0]);
+          if (ev.key.keysym.sym == SDLK_KP_PERIOD) {
+            if (ev.key.keysym.mod == KMOD_NUM) {
+              // '.' character sent as SDL_TEXTINPUT
+            } else {
+              pushEvent(getKeyPressedEvent(SB_KEY_DELETE, 0));
+            }
+            lenMap = 0;
+          }
           for (int i = 0; i < lenMap; i++) {
             if (ev.key.keysym.sym == keymap[i][0]) {
-              maEvent = new MAEvent();
-              maEvent->type = EVENT_TYPE_KEY_PRESSED;
-              maEvent->key = keymap[i][1];
-              maEvent->nativeKey = ev.key.keysym.mod;
+              pushEvent(getKeyPressedEvent(keymap[i][1], ev.key.keysym.mod));
               break;
             }
           }
@@ -521,10 +525,7 @@ void Runtime::pollEvents(bool blocking) {
                 ev.key.keysym.sym != SDLK_LCTRL &&
                 ev.key.keysym.sym != SDLK_RCTRL) ||
                (ev.key.keysym.mod & KMOD_ALT))) {
-            maEvent = new MAEvent();
-            maEvent->type = EVENT_TYPE_KEY_PRESSED;
-            maEvent->key = ev.key.keysym.sym;
-            maEvent->nativeKey = ev.key.keysym.mod;
+            maEvent = getKeyPressedEvent(ev.key.keysym.sym, ev.key.keysym.mod);
           }
         }
         break;

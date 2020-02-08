@@ -1,14 +1,18 @@
 // This file is part of SmallBASIC
 //
-// Copyright(C) 2001-2019 Chris Warren-Smith.
+// Copyright(C) 2001-2020 Chris Warren-Smith.
 //
 // This program is distributed under the terms of the GPL v2.0 or later
 // Download the GNU Public License (GPL) from www.gnu.org
 //
 
 #include <config.h>
-#if !defined(_Win32)
+#if defined(_Win32)
+#include <shellapi.h>
+#else
 #include <sys/socket.h>
+#include <unistd.h>
+#include <errno.h>
 #endif
 #include <stdint.h>
 #include "lib/str.h"
@@ -232,3 +236,38 @@ void vsncat(char *buffer, size_t size, ...) {
   }
   va_end(args);
 }
+
+
+#if defined(_Win32)
+void launchExec(const char *file) {
+  STARTUPINFO info = {sizeof(info)};
+  PROCESS_INFORMATION processInfo;
+  char cmd[1024];
+  auto app = "./sbasicg.exe";
+  sprintf(cmd, "%s -x %s", app, file);
+  if (!CreateProcess(app, cmd, NULL, NULL, TRUE, 0, NULL, NULL, &info, &processInfo)) {
+    appLog("failed to start %d %s %s\n", GetLastError(), app, cmd);
+  }
+}
+#else
+void launchExec(const char *file) {
+  pid_t pid = fork();
+  auto app = "/usr/bin/sbasicg";
+
+  switch (pid) {
+  case -1:
+    // failed
+    break;
+  case 0:
+    // child process
+    if (execl(app, app, "-x", file, (char *)0) == -1) {
+      fprintf(stderr, "exec failed [%s] %s\n", strerror(errno), app);
+      exit(1);
+    }
+    break;
+  default:
+    // parent process - continue
+    break;
+  }
+}
+#endif

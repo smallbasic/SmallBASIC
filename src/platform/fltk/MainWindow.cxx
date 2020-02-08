@@ -1,6 +1,6 @@
 // This file is part of SmallBASIC
 //
-// Copyright(C) 2001-2019 Chris Warren-Smith.
+// Copyright(C) 2001-2020 Chris Warren-Smith.
 //
 // This program is distributed under the terms of the GPL v2.0 or later
 // Download the GNU Public License (GPL) from www.gnu.org
@@ -9,6 +9,7 @@
 #include <config.h>
 #include <FL/fl_ask.H>
 #include <FL/Fl_PNG_Image.H>
+#include <FL/fl_utf8.h>
 #include "platform/fltk/MainWindow.h"
 #include "platform/fltk/EditorWidget.h"
 #include "platform/fltk/HelpView.h"
@@ -525,6 +526,16 @@ void MainWindow::run_selection(Fl_Widget *w, void *eventData) {
 }
 
 /**
+ * run the active program in sbasicg
+ */
+void MainWindow::run_live(Fl_Widget *w, void *eventData) {
+  EditorWidget *editWidget = getEditor();
+  if (editWidget) {
+    launchExec(editWidget->getFilename());
+  }
+}
+
+/**
  * callback for editor-plug-in plug-ins. we assume the target
  * program will be changing the contents of the editor buffer
  */
@@ -978,7 +989,8 @@ MainWindow::MainWindow(int w, int h) :
   scanPlugIns(m);
 
   m->add("&Program/&Run", FL_F+9, run_cb);
-  m->add("&Program/_&Run Selection", FL_F+8, run_selection_cb);
+  m->add("&Program/Run &Live Editing", FL_F+8, run_live_cb);
+  m->add("&Program/_Run &Selection", FL_F+7, run_selection_cb);
   m->add("&Program/&Break", FL_CTRL + 'b', run_break_cb);
   m->add("&Program/_&Restart", FL_CTRL + 'r', restart_run_cb);
   m->add("&Program/&Command", FL_F+10, set_options_cb);

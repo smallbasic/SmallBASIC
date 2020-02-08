@@ -63,7 +63,7 @@ struct StatusMessage {
         .append(editor->getCol())
         .append(") ");
       if (!_insert) {
-        message.append(" Ovwrt ");
+        message.append("Ovwrt");
       }
       int digits = snprintf(NULL, 0, "%d%d",
                             editor->getRow(), editor->getCol());

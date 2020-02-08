@@ -1,3 +1,8 @@
+2020-02-08 (0.12.18)
+	SDL: fix issue #81 - numlock handling
+	FLTK: added live editing menu item
+	COMMON: increase stack size to 1024
+
 2019-12-21 (0.12.17)
 	SDL: fix issue #81 - numlock handling
 
