@@ -272,10 +272,14 @@ void exec_setup_predefined_variables() {
   if (getenv("HOME_DIR")) {
     strlcpy(homedir, getenv("HOME_DIR"), sizeof(homedir));
   }
-#else
-#if defined(_Win32)
+#elif defined(_Win32)
   if (getenv("HOMEPATH")) {
-    strlcpy(homedir, getenv("HOMEPATH"), sizeof(homedir));
+    if (getenv("HOMEDRIVE")) {
+      strlcpy(homedir, getenv("HOMEDRIVE"), sizeof(homedir));
+      strlcat(homedir, getenv("HOMEPATH"), sizeof(homedir));
+    } else {
+      strlcpy(homedir, getenv("HOMEPATH"), sizeof(homedir));
+    }
   } else {
     GetModuleFileName(NULL, homedir, sizeof(homedir) - 1);
     char *p = strrchr(homedir, '\\');
@@ -295,12 +299,11 @@ void exec_setup_predefined_variables() {
     strcpy(homedir, "/tmp/");
   }
 #endif
+  // don't end with trailing slash
   int l = strlen(homedir);
-  if (homedir[l - 1] != OS_DIRSEP) {
-    homedir[l] = OS_DIRSEP;
-    homedir[l + 1] = '\0';
+  if (homedir[l - 1] == OS_DIRSEP) {
+    homedir[l - 1] = '\0';
   }
-#endif
   setsysvar_str(SYSVAR_HOME, homedir);
 }
 

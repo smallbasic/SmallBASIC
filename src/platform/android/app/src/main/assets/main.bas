@@ -73,7 +73,8 @@ func mk_scratch()
       result = true
     catch e
       local wnd = window()
-      wnd.alert("Failed to create scratch file: " + e)
+      logprint e
+      wnd.alert("Failed to create: " + scratch_file)
     end try
   else
     result = true
