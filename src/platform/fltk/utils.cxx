@@ -6,8 +6,10 @@
 // Download the GNU Public License (GPL) from www.gnu.org
 //
 
-#include <config.h>
+#include "config.h"
+
 #if defined(_Win32)
+#include <windows.h>
 #include <shellapi.h>
 #else
 #include <sys/socket.h>
@@ -16,7 +18,8 @@
 #endif
 #include <stdint.h>
 #include "lib/str.h"
-#include "utils.h"
+#include "platform/fltk/utils.h"
+#include "ui/utils.h"
 
 #define RX_BUFFER_SIZE 1024
 
