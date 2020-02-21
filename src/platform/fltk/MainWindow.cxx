@@ -988,13 +988,13 @@ MainWindow::MainWindow(int w, int h) :
 
   scanPlugIns(m);
 
-  m->add("&Program/&Run", FL_F+9, run_cb);
-  m->add("&Program/Run &Live Editing", FL_F+8, run_live_cb);
-  m->add("&Program/_Run &Selection", FL_F+7, run_selection_cb);
-  m->add("&Program/&Break", FL_CTRL + 'b', run_break_cb);
-  m->add("&Program/_&Restart", FL_CTRL + 'r', restart_run_cb);
-  m->add("&Program/&Command", FL_F+10, set_options_cb);
-  m->add("&Program/Online Samples", 0, run_samples_cb);
+  m->add("&Run/&Run", FL_F+9, run_cb);
+  m->add("&Run/&Live Editing", FL_F+8, run_live_cb);
+  m->add("&Run/_&Selection", FL_F+7, run_selection_cb);
+  m->add("&Run/&Break", FL_CTRL + 'b', run_break_cb);
+  m->add("&Run/_&Restart", FL_CTRL + 'r', restart_run_cb);
+  m->add("&Run/&Command", FL_F+10, set_options_cb);
+  m->add("&Run/Online Samples", 0, run_samples_cb);
   m->add("&Help/&Help Contents", FL_F+1, help_contents_cb);
   m->add("&Help/_&Context Help", FL_F+2, help_contents_brief_cb);
   m->add("&Help/&Program Help", FL_F+11, help_app_cb);
