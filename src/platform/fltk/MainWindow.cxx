@@ -882,6 +882,7 @@ bool initialise(int argc, char **argv) {
   char path[PATH_MAX];
   getHomeDir(path, sizeof(path), false);
   dev_setenv("BAS_HOME", path);
+  setAppName(argv[0]);
 
   wnd = new MainWindow(800, 650);
 

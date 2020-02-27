@@ -22,6 +22,9 @@
 #include "ui/utils.h"
 
 #define RX_BUFFER_SIZE 1024
+#if defined(_Win32)
+static char appName[OS_PATHNAME_SIZE + 1];
+#endif
 
 Fl_Color get_color(int argb) {
   // Fl_Color => 0xrrggbbii
@@ -240,16 +243,38 @@ void vsncat(char *buffer, size_t size, ...) {
   va_end(args);
 }
 
+void setAppName(const char *path) {
+#if defined(_Win32)
+  appName[0] = '\0';
+  if (path[0] == '/' ||
+      (path[1] == ':' && ((path[2] == '\\') || path[2] == '/'))) {
+    // full path or C:/
+    strlcpy(appName, path, sizeof(appName));
+  } else {
+    // relative path
+    char cwd[OS_PATHNAME_SIZE + 1];
+    cwd[0] = '\0';
+    getcwd(cwd, sizeof(cwd) - 1);
+    strlcpy(appName, cwd, sizeof(appName));
+    strlcat(appName, "/", sizeof(appName));
+    strlcat(appName, path, sizeof(appName));
+  }
+  const auto file = "sbasici.exe";
+  char *exe = strstr(appName, file);
+  if (exe) {
+    strcpy(exe, "sbasicg.exe");
+  }
+#endif
+}
 
 #if defined(_Win32)
 void launchExec(const char *file) {
   STARTUPINFO info = {sizeof(info)};
   PROCESS_INFORMATION processInfo;
   char cmd[1024];
-  auto app = "./sbasicg.exe";
-  sprintf(cmd, "%s -x %s", app, file);
-  if (!CreateProcess(app, cmd, NULL, NULL, TRUE, 0, NULL, NULL, &info, &processInfo)) {
-    appLog("failed to start %d %s %s\n", GetLastError(), app, cmd);
+  sprintf(cmd, " -x %s", file);
+  if (!CreateProcess(appName, cmd, NULL, NULL, TRUE, 0, NULL, NULL, &info, &processInfo)) {
+    appLog("failed to start %d %s %s\n", GetLastError(), appName, cmd);
   }
 }
 #else
