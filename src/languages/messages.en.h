@@ -173,7 +173,7 @@
 #define ERR_MISSING_LP          "Missing '('"
 #define ERR_PARFMT              "Parameters count/format error (%s)"
 #define ERR_BYREF               "Parameter %d cannot BYREF"
-#define ERR_BAD_FILE_HANDLE     "VFS: Bad file number (Use OPEN)"
+#define ERR_BAD_FILE_HANDLE     "Invalid file number (Use OPEN)"
 #define ERR_SEP_FMT             "No separator found (missing %s)"
 #define ERR_POLY                "Parsing polyline: type mismatch (element: %d, info: %d)"
 #define ERR_CRITICAL_MISSING_FUNC  "Unsupported built-in function call %ld, please report this bug"

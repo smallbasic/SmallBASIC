@@ -271,9 +271,10 @@ void setAppName(const char *path) {
 void launchExec(const char *file) {
   STARTUPINFO info = {sizeof(info)};
   PROCESS_INFORMATION processInfo;
-  char cmd[1024];
-  sprintf(cmd, " -x %s", file);
-  if (!CreateProcess(appName, cmd, NULL, NULL, TRUE, 0, NULL, NULL, &info, &processInfo)) {
+  char cmd[MAX_PATH];
+  sprintf(cmd, "\"%s\" -x \"%s\"", appName, file);
+  appLog(cmd);
+  if (!CreateProcess(NULL, cmd, NULL, NULL, TRUE, 0, NULL, NULL, &info, &processInfo)) {
     appLog("failed to start %d %s %s\n", GetLastError(), appName, cmd);
   }
 }
