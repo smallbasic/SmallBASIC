@@ -17,7 +17,7 @@
 const char *aboutText =
   "<b>About SmallBASIC...</b><br><br>"
   "Version " SB_STR_VER "<br>"
-  "Copyright (c) 2002-2019 Chris Warren-Smith.<br><br>"
+  "Copyright (c) 2002-2020 Chris Warren-Smith.<br><br>"
   "Copyright (c) 2000-2006 Nicholas Christopoulos.<br><br>"
   "<a href=https://smallbasic.github.io>"
   "https://smallbasic.github.io</a><br><br>"
