@@ -78,7 +78,7 @@ extern "C" {
 #define SB_KEYWORD_SIZE     128
 #define SB_SOURCELINE_SIZE  65536 // compiler
 #define SB_TEXTLINE_SIZE    8192  // RTL
-#define SB_EXEC_STACK_SIZE  512   // executor's stack size
+#define SB_EXEC_STACK_SIZE  1024  // executor's stack size
 #define SB_EVAL_STACK_SIZE  16    // evaluation stack size
 #define SB_KW_NONE_STR "Nil"
 

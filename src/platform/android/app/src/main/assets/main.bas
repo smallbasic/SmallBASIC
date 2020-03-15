@@ -73,7 +73,8 @@ func mk_scratch()
       result = true
     catch e
       local wnd = window()
-      wnd.alert("Failed to create scratch file: " + e)
+      logprint e
+      wnd.alert("Failed to create: " + scratch_file)
     end try
   else
     result = true
@@ -119,7 +120,7 @@ sub do_about()
   color 7
   print "Version "; sbver
   print
-  print "Copyright (c) 2002-2019 Chris Warren-Smith"
+  print "Copyright (c) 2002-2020 Chris Warren-Smith"
   print "Copyright (c) 1999-2006 Nicholas Christopoulos" + chr(10)
 
   local bn_home

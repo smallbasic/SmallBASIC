@@ -65,6 +65,14 @@ MAEvent *getMotionEvent(int type, SDL_Event *event) {
   return result;
 }
 
+MAEvent *getKeyPressedEvent(int keycode, int nativeKey) {
+  MAEvent *result = new MAEvent();
+  result->type = EVENT_TYPE_KEY_PRESSED;
+  result->key = keycode;
+  result->nativeKey = nativeKey;
+  return result;
+}
+
 Runtime::Runtime(SDL_Window *window) :
   System(),
   _menuX(0),
@@ -363,7 +371,7 @@ void Runtime::handleKeyEvent(MAEvent &event) {
     } else if (event.key == SDLK_KP_4) {
       event.key = event.nativeKey == KMOD_NUM ? '4' : SB_KEY_LEFT;
     } else if (event.key == SDLK_KP_5) {
-      event.key = '5';
+      event.key = event.nativeKey == KMOD_NUM ? '5' : SB_KEY_CTRL(SB_KEY_HOME);
     } else if (event.key == SDLK_KP_6) {
       event.key = event.nativeKey == KMOD_NUM ? '6' : SB_KEY_RIGHT;
     } else if (event.key == SDLK_KP_7) {
@@ -372,6 +380,8 @@ void Runtime::handleKeyEvent(MAEvent &event) {
       event.key = event.nativeKey == KMOD_NUM ? '8' : SB_KEY_UP;
     } else if (event.key == SDLK_KP_9) {
       event.key = event.nativeKey == KMOD_NUM ? '9' : SB_KEY_PGUP;
+    } else if (event.key == SDLK_KP_0) {
+      event.key = event.nativeKey == KMOD_NUM ? '0' : SB_KEY_INSERT;
     }
   }
 
@@ -443,24 +453,15 @@ void Runtime::pollEvents(bool blocking) {
       case SDL_TEXTINPUT:
         // pre-transformed/composted text
         mod = SDL_GetModState();
-        if (!mod || (mod & (KMOD_SHIFT|KMOD_CAPS))) {
+        if (!mod || (mod & (KMOD_SHIFT | KMOD_CAPS | KMOD_NUM))) {
           // ALT + CTRL keys handled in SDL_KEYDOWN
           if (ev.text.text[0] < 0) {
             wchar_t keycode;
             mbstowcs(&keycode, ev.text.text, 1);
-
-            MAEvent *keyEvent = new MAEvent();
-            keyEvent->type = EVENT_TYPE_KEY_PRESSED;
-            keyEvent->key = (int)keycode;
-            keyEvent->nativeKey = 0;
-            pushEvent(keyEvent);
+            pushEvent(getKeyPressedEvent((int)keycode, 0));
           } else {
             for (int i = 0; ev.text.text[i] != 0; i++) {
-              MAEvent *keyEvent = new MAEvent();
-              keyEvent->type = EVENT_TYPE_KEY_PRESSED;
-              keyEvent->key = ev.text.text[i];
-              keyEvent->nativeKey = 0;
-              pushEvent(keyEvent);
+              pushEvent(getKeyPressedEvent(ev.text.text[i], 0));
             }
           }
         }
@@ -500,27 +501,31 @@ void Runtime::pollEvents(bool blocking) {
           }
         } else {
           int lenMap = sizeof(keymap) / sizeof(keymap[0]);
+          if (ev.key.keysym.sym == SDLK_KP_PERIOD) {
+            if (ev.key.keysym.mod == KMOD_NUM) {
+              // '.' character sent as SDL_TEXTINPUT
+            } else {
+              pushEvent(getKeyPressedEvent(SB_KEY_DELETE, 0));
+            }
+            lenMap = 0;
+          }
           for (int i = 0; i < lenMap; i++) {
             if (ev.key.keysym.sym == keymap[i][0]) {
-              maEvent = new MAEvent();
-              maEvent->type = EVENT_TYPE_KEY_PRESSED;
-              maEvent->key = keymap[i][1];
-              maEvent->nativeKey = ev.key.keysym.mod;
+              pushEvent(getKeyPressedEvent(keymap[i][1], ev.key.keysym.mod));
               break;
             }
           }
           if (maEvent == NULL &&
-              ((ev.key.keysym.sym >= SDLK_KP_1 && ev.key.keysym.sym <= SDLK_KP_9) ||
+              // Non-numeric-keypad, Control and Alt keys
+              (((ev.key.keysym.sym >= SDLK_KP_1 && ev.key.keysym.sym <= SDLK_KP_0) &&
+                ev.key.keysym.mod != KMOD_NUM) ||
                ((ev.key.keysym.mod & KMOD_CTRL) &&
                 ev.key.keysym.sym != SDLK_LSHIFT &&
                 ev.key.keysym.sym != SDLK_RSHIFT &&
                 ev.key.keysym.sym != SDLK_LCTRL &&
                 ev.key.keysym.sym != SDLK_RCTRL) ||
                (ev.key.keysym.mod & KMOD_ALT))) {
-            maEvent = new MAEvent();
-            maEvent->type = EVENT_TYPE_KEY_PRESSED;
-            maEvent->key = ev.key.keysym.sym;
-            maEvent->nativeKey = ev.key.keysym.mod;
+            maEvent = getKeyPressedEvent(ev.key.keysym.sym, ev.key.keysym.mod);
           }
         }
         break;

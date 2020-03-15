@@ -1,6 +1,6 @@
 // This file is part of SmallBASIC
 //
-// Copyright(C) 2001-2019 Chris Warren-Smith.
+// Copyright(C) 2001-2020 Chris Warren-Smith.
 //
 // This program is distributed under the terms of the GPL v2.0 or later
 // Download the GNU Public License (GPL) from www.gnu.org
@@ -138,6 +138,7 @@ struct MainWindow : public BaseWindow {
   CALLBACK_METHOD(run_samples);
   CALLBACK_METHOD(run_break);
   CALLBACK_METHOD(run_selection);
+  CALLBACK_METHOD(run_live);
   CALLBACK_METHOD(save_file_as);
   CALLBACK_METHOD(set_options);
   CALLBACK_METHOD(set_theme);

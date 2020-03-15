@@ -67,7 +67,8 @@ int sys_search_path(const char *path, const char *file, char *retbuf) {
       if (getenv("HOME")) {
         strlcpy(cur_path, getenv("HOME"), sizeof(cur_path));
       } else {
-        strlcpy(cur_path, getenv("HOMEPATH"), sizeof(cur_path));
+        strlcpy(cur_path, getenv("HOMEDRIVE"), sizeof(cur_path));
+        strlcat(cur_path, getenv("HOMEPATH"), sizeof(cur_path));
       }
       strlcat(cur_path, "/", sizeof(cur_path));
       strlcat(cur_path, old_path, sizeof(cur_path));

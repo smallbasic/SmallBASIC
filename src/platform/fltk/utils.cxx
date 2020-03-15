@@ -1,20 +1,30 @@
 // This file is part of SmallBASIC
 //
-// Copyright(C) 2001-2019 Chris Warren-Smith.
+// Copyright(C) 2001-2020 Chris Warren-Smith.
 //
 // This program is distributed under the terms of the GPL v2.0 or later
 // Download the GNU Public License (GPL) from www.gnu.org
 //
 
-#include <config.h>
-#if !defined(_Win32)
+#include "config.h"
+
+#if defined(_Win32)
+#include <windows.h>
+#include <shellapi.h>
+#else
 #include <sys/socket.h>
+#include <unistd.h>
+#include <errno.h>
 #endif
 #include <stdint.h>
 #include "lib/str.h"
-#include "utils.h"
+#include "platform/fltk/utils.h"
+#include "ui/utils.h"
 
 #define RX_BUFFER_SIZE 1024
+#if defined(_Win32)
+static char appName[OS_PATHNAME_SIZE + 1];
+#endif
 
 Fl_Color get_color(int argb) {
   // Fl_Color => 0xrrggbbii
@@ -232,3 +242,61 @@ void vsncat(char *buffer, size_t size, ...) {
   }
   va_end(args);
 }
+
+void setAppName(const char *path) {
+#if defined(_Win32)
+  appName[0] = '\0';
+  if (path[0] == '/' ||
+      (path[1] == ':' && ((path[2] == '\\') || path[2] == '/'))) {
+    // full path or C:/
+    strlcpy(appName, path, sizeof(appName));
+  } else {
+    // relative path
+    char cwd[OS_PATHNAME_SIZE + 1];
+    cwd[0] = '\0';
+    getcwd(cwd, sizeof(cwd) - 1);
+    strlcpy(appName, cwd, sizeof(appName));
+    strlcat(appName, "/", sizeof(appName));
+    strlcat(appName, path, sizeof(appName));
+  }
+  const auto file = "sbasici.exe";
+  char *exe = strstr(appName, file);
+  if (exe) {
+    strcpy(exe, "sbasicg.exe");
+  }
+#endif
+}
+
+#if defined(_Win32)
+void launchExec(const char *file) {
+  STARTUPINFO info = {sizeof(info)};
+  PROCESS_INFORMATION processInfo;
+  char cmd[MAX_PATH];
+  sprintf(cmd, "\"%s\" -x \"%s\"", appName, file);
+  appLog(cmd);
+  if (!CreateProcess(NULL, cmd, NULL, NULL, TRUE, 0, NULL, NULL, &info, &processInfo)) {
+    appLog("failed to start %d %s %s\n", GetLastError(), appName, cmd);
+  }
+}
+#else
+void launchExec(const char *file) {
+  pid_t pid = fork();
+  auto app = "/usr/bin/sbasicg";
+
+  switch (pid) {
+  case -1:
+    // failed
+    break;
+  case 0:
+    // child process
+    if (execl(app, app, "-x", file, (char *)0) == -1) {
+      fprintf(stderr, "exec failed [%s] %s\n", strerror(errno), app);
+      exit(1);
+    }
+    break;
+  default:
+    // parent process - continue
+    break;
+  }
+}
+#endif

@@ -28,6 +28,7 @@ bool g_returnToLine;
 struct StatusMessage {
   explicit StatusMessage(TextEditInput *editor) :
     _dirty(editor->isDirty()),
+    _insert(true),
     _row(editor->getRow()),
     _col(editor->getCol()) {
   }
@@ -61,6 +62,9 @@ struct StatusMessage {
         .append(",")
         .append(editor->getCol())
         .append(") ");
+      if (!_insert) {
+        message.append("Ovwrt");
+      }
       int digits = snprintf(NULL, 0, "%d%d",
                             editor->getRow(), editor->getCol());
       int spaces = 6 - digits;
@@ -93,7 +97,12 @@ struct StatusMessage {
     _dirty = !editor->isDirty();
   }
 
+  void setInsert() {
+    _insert = !_insert;
+  }
+
   bool _dirty;
+  bool _insert;
   int _row;
   int _col;
   String _fileName;
@@ -378,6 +387,12 @@ void System::editSource(String loadPath, bool restoreOnExit) {
           widget = helpWidget;
           helpWidget->createCompletionHelp();
           helpWidget->show();
+          break;
+        case SB_KEY_INSERT:
+          statusMessage.setInsert();
+          widget->edit(event.key, sw, charWidth);
+          statusMessage.update(editWidget, _output, true);
+          redraw = true;
           break;
         case SB_KEY_CTRL('v'):
         case SB_KEY_SHIFT(SB_KEY_INSERT):
