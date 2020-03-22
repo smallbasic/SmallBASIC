@@ -1,4 +1,4 @@
-SmallBASIC is a fast and easy to learn BASIC language interpreter ideal for everyday calculations, scripts and prototypes. SmallBASIC includes trigonometric, matrices and algebra functions, a built in IDE, a powerful string library, system, sound, and graphic commands along with structured programming syntax
+SmallBASIC is a fast and easy to learn BASIC language interpreter ideal for everyday calculations, scripts and prototypes. SmallBASIC includes trigonometric, matrices and algebra functions, a built in IDE, a powerful string library, system, sound, and graphic commands along with structured programming syntax.
 
 ### Initialise dependencies
 
@@ -26,7 +26,7 @@ Build the debian package
  $ make deb
 ```
 On windows, install tools:
- http://www.gtk.org/download/win32.php
+ https://www.gtk.org/download/windows.php
 ```
  $ ./configure --host=i686-w64-mingw32 --enable-sdl
  $ make
