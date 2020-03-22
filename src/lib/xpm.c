@@ -16,6 +16,8 @@
 // USA.
 //
 
+// Updated by Ercan Ersoy (http://ercanersoy.net) in 2020.
+
 #include "config.h"
 
 #include <ctype.h>
@@ -47,11 +49,11 @@ int xpm_decode32(uint8_t **image, unsigned *width, unsigned *height,
     next_line = 2;
   }
   
-  int n = sscanf(xpm[next_line], "%d %d %d %d", width, height, &ncolors, &chars_per_pixel);
+  int n = sscanf(xpm[next_line], "%u %u %d %d", width, height, &ncolors, &chars_per_pixel);
   if (n < 4 || (chars_per_pixel != 1 && chars_per_pixel != 2)) {
     return 1;
   }
-  if (*width <= 0 || *height <= 0) {
+  if (*width = 0 || *height = 0) {
     return 1;
   }
 
