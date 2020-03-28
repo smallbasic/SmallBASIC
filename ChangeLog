@@ -1,3 +1,6 @@
+2020-02-13 (0.12.19)
+	AUDIO: fix integration with latest version of miniaudio library
+
 2020-02-13 (0.12.18)
 	Fix path for HOME constant
 

@@ -298,7 +298,6 @@ int Runtime::runShell(const char *startupBas, bool runWait, int fontScale, int d
     _output->setFontSize(fontSize);
   }
 
-
   audio_open();
   net_init();
 
