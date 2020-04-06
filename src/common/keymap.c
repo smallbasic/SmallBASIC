@@ -30,7 +30,7 @@ struct key_map_s {
   int key;         // key definition
 };
 
-key_map_s* keymap = 0;
+key_map_s *keymap = 0;
 
 /**
  * Prepare task_t exec.keymap for keymap handling at program init
@@ -42,7 +42,7 @@ void keymap_init() {
 /**
  * Handler for keymap_free()
  */
-void keymap_delete(key_map_s* km) {
+void keymap_delete(key_map_s *km) {
   if (km) {
     keymap_delete(km->next);
     free(km);
@@ -61,13 +61,13 @@ void keymap_free() {
  * DEFINEKEY command handler to add a keymap 
  */
 void keymap_add(uint32_t key, bcip_t ip) {
-  key_map_s* km = (key_map_s*) malloc(sizeof (key_map_s));
+  key_map_s *km = (key_map_s *)malloc(sizeof(key_map_s));
   km->next = 0;
   km->ip = ip;
   km->key = key;
 
   // add the new mapping onto the linked list
-  key_map_s* head = keymap;
+  key_map_s *head = keymap;
   if (!head) {
     keymap = km;
   } else {
@@ -79,11 +79,43 @@ void keymap_add(uint32_t key, bcip_t ip) {
 }
 
 /**
+ * DEFINEKEY key, 0
+ */
+void keymap_remove(uint32_t key, int level) {
+  key_map_s *head = keymap;
+  key_map_s *prev = head;
+  int size = 0;
+
+  while (head) {
+    if (head->key == key) {
+      key_map_s *current = head;
+      prev->next = head->next;
+      head = head->next;
+      free(current);
+      if (current == prev) {
+        prev = head;
+      }
+      if (current == keymap) {
+        keymap = head;
+      }
+    } else {
+      prev = head;
+      head = head->next;
+      size++;
+    }
+  }
+  if (!size) {
+    keymap = 0;
+  }
+}
+
+
+/**
  * invokes the handler for the given key
  */
 int keymap_invoke(uint32_t key) {
   int result = 0;
-  key_map_s* head = keymap;
+  key_map_s *head = keymap;
   while (head) {
     if (head->key == key) {
       bcip_t ip = prog_ip; // store current ip
@@ -175,7 +207,7 @@ void timer_free(timer_s *timer) {
 }
 
 void timer_add(var_num_t interval, bcip_t ip) {
-  timer_s* timer = (timer_s*) malloc(sizeof (timer_s));
+  timer_s *timer = (timer_s *)malloc(sizeof (timer_s));
   timer->next = NULL;
   timer->ip = ip;
   timer->interval = interval;
@@ -195,7 +227,7 @@ void timer_add(var_num_t interval, bcip_t ip) {
 }
 
 void timer_run(uint32_t now) {
-  timer_s* timer = prog_timer;
+  timer_s *timer = prog_timer;
   while (timer) {
     if (timer->value == 0) {
       // start timer
