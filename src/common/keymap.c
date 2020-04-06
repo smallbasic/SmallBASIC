@@ -84,7 +84,6 @@ void keymap_add(uint32_t key, bcip_t ip) {
 void keymap_remove(uint32_t key, int level) {
   key_map_s *head = keymap;
   key_map_s *prev = head;
-  int size = 0;
 
   while (head) {
     if (head->key == key) {
@@ -101,14 +100,9 @@ void keymap_remove(uint32_t key, int level) {
     } else {
       prev = head;
       head = head->next;
-      size++;
     }
   }
-  if (!size) {
-    keymap = 0;
-  }
 }
-
 
 /**
  * invokes the handler for the given key
