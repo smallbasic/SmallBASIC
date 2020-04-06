@@ -87,6 +87,7 @@ extern "C" {
 void keymap_init();
 void keymap_free();
 void keymap_add(uint32_t key, bcip_t ip);
+void keymap_remove(uint32_t key, int level);
 int keymap_invoke(uint32_t key);
 int keymap_kbhit();
 int keymap_kbpeek();

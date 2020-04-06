@@ -2835,14 +2835,20 @@ void cmd_definekey(void) {
 
   if (!prog_error) {
     par_getcomma();
-
-    if (code_peek() != kwTYPE_CALL_UDF) {
-      err_syntax(kwDEFINEKEY, "%I,%G");
-    } else {
+    switch (code_peek()) {
+    case kwTYPE_INT:
+      prog_ip++;
+      keymap_remove(key, code_getint());
+      break;
+    case kwTYPE_CALL_UDF:
       keymap_add(key, prog_ip);
 
       // skip ahead to avoid immediate call
       prog_ip += BC_CTRLSZ + 1;
+      break;
+    default:
+      err_syntax(kwDEFINEKEY, "%I,%G");
+      break;
     }
   }
   v_free(&var);
