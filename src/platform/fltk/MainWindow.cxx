@@ -974,6 +974,7 @@ MainWindow::MainWindow(int w, int h) :
   m->add("&View/Theme/&Shian", 0, set_theme_cb, (void *)(intptr_t)2);
   m->add("&View/Theme/&Atom 1", 0, set_theme_cb, (void *)(intptr_t)3);
   m->add("&View/Theme/&Atom 2", 0, set_theme_cb, (void *)(intptr_t)4);
+  m->add("&View/Theme/&R157", 0, set_theme_cb, (void *)(intptr_t)5);
   m->add("&View/Text Color/_Background", 0, EditorWidget::set_color_cb, (void *)st_background);
   m->add("&View/Text Color/Text", 0, EditorWidget::set_color_cb, (void *)st_text);
   m->add("&View/Text Color/Comments", 0, EditorWidget::set_color_cb, (void *)st_comments);
