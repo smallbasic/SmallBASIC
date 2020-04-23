@@ -441,6 +441,13 @@ echo ${TARGET}
 echo "CFLAGS=${CFLAGS}"
 echo "CXXFLAGS=${CXXFLAGS}"
 echo "PACKAGE_LIBS=${PACKAGE_LIBS}"
+
+if test x$ac_build_sdl = xyes; then
+   echo
+   echo "sdl2: `sdl2-config --version`"
+   echo "freetype: `pkg-config --version freetype2`"
+fi
+
 echo
 
 if test x$ac_build_dist = xyes; then
