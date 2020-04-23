@@ -1,5 +1,6 @@
 2020-03-07 (0.12.19)
 	COMMON: implement DEFINEKEY undo #92
+	UI: added R157 colour theme #94
 
 2020-02-13 (0.12.19)
 	AUDIO: fix integration with latest version of miniaudio library
