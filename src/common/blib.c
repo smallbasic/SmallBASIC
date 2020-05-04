@@ -751,7 +751,7 @@ void cmd_input(int input) {
         inps = malloc(SB_TEXTLINE_SIZE + 1);
         if (prompt.v.p.ptr) {
           // prime output buffer with prompt text
-          int prompt_len = strlen(prompt.v.p.ptr);
+          int prompt_len = v_strlen(&prompt);
           int len = prompt_len < SB_TEXTLINE_SIZE ? prompt_len : SB_TEXTLINE_SIZE;
           strncpy(inps, prompt.v.p.ptr, len);
           inps[len] = 0;

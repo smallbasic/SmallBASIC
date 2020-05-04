@@ -32,3 +32,4 @@ if (instr(sbver, "SDL") <> 0) then
   wend
 endif
 
+print "done"
