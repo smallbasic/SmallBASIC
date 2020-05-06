@@ -1,6 +1,9 @@
+2020-05-07 (0.12.19)
+	COMMON: Fix image.save() to array destination
+
 2020-05-04 (0.12.19)
-	INPUT crash #99
-	Fix compile warning with updated gcc
+	COMMON: INPUT crash #99
+	COMMON: Fix compile warning with updated gcc
 
 2020-03-07 (0.12.19)
 	COMMON: implement DEFINEKEY undo #92
