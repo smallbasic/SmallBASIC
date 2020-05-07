@@ -618,12 +618,12 @@ char *System::readSource(const char *fileName) {
   }
   if (buffer != nullptr) {
     delete [] _programSrc;
-    int len = strlen(buffer);
-    _programSrc = new char[len + 1];
-    strncpy(_programSrc, buffer, len);
-    _programSrc[len] = '\0';
+    int len = strlen(buffer) + 1;
+    _programSrc = new char[len];
+    memcpy(_programSrc, buffer, len);
+    _programSrc[len - 1] = '\0';
     _srcRendered = false;
-    systemPrint("Opened: %s %d bytes\n", fileName, len);
+    systemPrint("Opened: %s %d bytes\n", fileName, len - 1);
   }
   return buffer;
 }
