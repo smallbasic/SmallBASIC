@@ -156,10 +156,10 @@ function buildSDL() {
      AC_MSG_ERROR([libsdl2-dev not installed: configure failed.])
    fi
 
-   AC_CHECK_PROG(have_freetype2, freetype-config, [yes], [no])
-   if test "${have_freetype2}" = "no" ; then
-     AC_MSG_ERROR([libfreetype6-dev not installed: configure failed.])
-   fi
+   SAVED_CPPFLAGS="$CPPFLAGS"
+   CPPFLAGS="$CPPFLAGS `pkg-config freetype2 --cflags`"
+   AC_CHECK_HEADERS([ft2build.h], [], [AC_MSG_ERROR([libfreetype6-dev not installed: configure failed.])])
+   CPPFLAGS="$SAVED_CPPFLAGS"
 
    AC_CHECK_PROG(have_xxd, xxd, [yes], [no])
    if test "${have_xxd}" = "no" ; then
@@ -178,7 +178,7 @@ function buildSDL() {
      PACKAGE_CFLAGS="${PACKAGE_CFLAGS} -mms-bitfields"
      PACKAGE_LIBS="${PACKAGE_LIBS} -lwsock32 -lws2_32 -static-libgcc -static-libstdc++"
      PACKAGE_LIBS="${PACKAGE_LIBS} -Wl,-Bstatic -Wl,-Map=output.map"
-     PACKAGE_LIBS="${PACKAGE_LIBS} `sdl2-config --static-libs` `freetype-config --libs`"
+     PACKAGE_LIBS="${PACKAGE_LIBS} `sdl2-config --static-libs` `pkg-config freetype2 --libs`"
      AC_DEFINE(_Win32, 1, [Windows build])
      ;;
 
@@ -193,7 +193,7 @@ function buildSDL() {
      dnl backlinking support for modules
      PACKAGE_LIBS="${PACKAGE_LIBS} -ldl"
      PACKAGE_LIBS="${PACKAGE_LIBS} ${FONTCONFIG_LIBS}"
-     PACKAGE_LIBS="${PACKAGE_LIBS} `sdl2-config --libs` `freetype-config --libs`"
+     PACKAGE_LIBS="${PACKAGE_LIBS} `sdl2-config --libs` `pkg-config freetype2 --libs`"
      ;;
 
      *)
@@ -207,10 +207,10 @@ function buildSDL() {
      dnl backlinking support for modules
      PACKAGE_LIBS="${PACKAGE_LIBS} -ldl -no-pie"
      PACKAGE_LIBS="${PACKAGE_LIBS} ${FONTCONFIG_LIBS}"
-     PACKAGE_LIBS="-static-libgcc ${PACKAGE_LIBS} `sdl2-config --static-libs` `freetype-config --libs`"
+     PACKAGE_LIBS="-static-libgcc ${PACKAGE_LIBS} `sdl2-config --static-libs` `pkg-config freetype2 --libs`"
    esac
 
-   PACKAGE_CFLAGS="${PACKAGE_CFLAGS} `sdl2-config --cflags` `freetype-config --cflags` -fno-exceptions"
+   PACKAGE_CFLAGS="${PACKAGE_CFLAGS} `sdl2-config --cflags` `pkg-config freetype2 --cflags` -fno-exceptions"
    CXXFLAGS="${CXXFLAGS} -fno-rtti -std=c++11"
 
    dnl preconfigured values for SDL build
