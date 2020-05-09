@@ -884,36 +884,35 @@ void cmd_chart_fstr(var_num_t v, char *buf) {
 }
 
 /*
- *   draw a chart
+ * draw a chart
  *
- *   x1,y1-x2,y2 = the area to draw
- *   vals = the values
- *   count = the number of the values
- *   xvals, xcount = for ruler the xvalues (use NULL for default)
- *   chart = chart type (1=line chart, 0=bar chart, 5=points)
- *   marks = marks type (2 & ruler, 1 & marks)
+ * x1,y1-x2,y2 = the area to draw
+ * vals = the values
+ * count = the number of the values
+ * xvals, xcount = for ruler the xvalues (use NULL for default)
+ * chart = chart type (1=line chart, 0=bar chart, 5=points)
+ * marks = marks type (2 & ruler, 1 & marks)
  */
-void chart_draw(int x1, int y1, int x2, int y2, var_num_t *vals, int count, var_num_t *xvals, int xcount,
-                int chart, int marks) {
-  int *pts;
-  int rx1, dx, dy, i;
-  var_num_t vmin, vmax, lx, ly;
+void chart_draw(int x1, int y1, int x2, int y2, var_num_t *vals, int count,
+                var_num_t *xvals, int xcount, int chart, int marks) {
+  var_num_t lx, ly;
   char buf[32];
   int32_t color = 0;
-
-  rx1 = x1;
+  int rx1 = x1;
 
   // ready
   dev_settextcolor(0, 15);
-  pts = (int *) malloc(sizeof(int) * count * 2);
+  int *pts = (int *) malloc(sizeof(int) * count * 2);
 
-  if (marks & 0x2) {            // ruler
+  if (marks & 0x2) {
+    // ruler
     x1 += dev_textwidth("00000") + 1;
     y2 -= (dev_textheight("0") + 1);
   }
 
   if (marks & 0x1) {
-    if (chart == 1) {           // line
+    if (chart == 1) {
+      // line
       x1 += 2;
       x2 -= 2;
       y1 += 2;
@@ -921,12 +920,13 @@ void chart_draw(int x1, int y1, int x2, int y2, var_num_t *vals, int count, var_
     }
   }
 
-  dx = (x2 - x1);
-  dy = (y2 - y1);
+  int dx = (x2 - x1);
+  int dy = (y2 - y1);
 
   // limits
-  vmin = vmax = vals[0];
-  for (i = 1; i < count; i++) {
+  var_num_t vmin = vals[0];
+  var_num_t vmax = vals[0];
+  for (int i = 1; i < count; i++) {
     if (vmin > vals[i]) {
       vmin = vals[i];
     }
@@ -944,22 +944,22 @@ void chart_draw(int x1, int y1, int x2, int y2, var_num_t *vals, int count, var_
   ly = ((var_num_t) dy) / (vmax - vmin);
 
   // calc points
-  for (i = 0; i < count; i++) {
-    pts[i * 2] = x1 + i * lx;
-    pts[i * 2 + 1] = y1 + (dy - ((vals[i] - vmin) * ly));
+  for (int i = 0; i < count; i++) {
+    int x = x1 + i * lx;
+    int y = y1 + (dy - ((vals[i] - vmin) * ly));
+    pts[i * 2] = x > 0 ? x : 0;
+    pts[i * 2 + 1] = y > 0 ? y : 0;
   }
 
   // draw ruler
   if (marks & 0x2) {
-    int fh, fw, n, y, x;
-    var_num_t v;
-
     // vertical
-    fh = dev_textheight("0");
-    n = dy / (fh * 1.5);
+    int fh = dev_textheight("0");
+    int n = dy / (fh * 1.5);
 
     if ((n - 1) > 0) {
-      for (i = 0; i <= n; i++) {
+      for (int i = 0; i <= n; i++) {
+        var_num_t v;
         if (i == 0) {
           v = vmin;
         }
@@ -970,8 +970,7 @@ void chart_draw(int x1, int y1, int x2, int y2, var_num_t *vals, int count, var_
         }
         cmd_chart_fstr(v, buf);
 
-        y = y1 + (dy - ((v - vmin) * ly));
-
+        int y = y1 + (dy - ((v - vmin) * ly));
         if (i != 0) {
           dev_setxy(rx1 + 1, y + 1, 0);
         } else {
@@ -983,7 +982,7 @@ void chart_draw(int x1, int y1, int x2, int y2, var_num_t *vals, int count, var_
     }
 
     // horizontal
-    fw = dev_textwidth("000");
+    int fw = dev_textwidth("000");
     n = -1;
     if (count <= 24) {
       if (count * (fw * 1.34) < dx) {
@@ -995,7 +994,8 @@ void chart_draw(int x1, int y1, int x2, int y2, var_num_t *vals, int count, var_
       n = dx / (fw * 1.5);
     }
     if ((n - 1) > 0) {
-      for (i = 0; i < n; i++) {
+      for (int i = 0; i < n; i++) {
+        var_num_t v;
         if (i == 0) {
           v = 0;
         } else {
@@ -1003,12 +1003,10 @@ void chart_draw(int x1, int y1, int x2, int y2, var_num_t *vals, int count, var_
         }
         if (xvals) {
           // I have xvals
-          var_num_t x, dx;
-          var_num_t xmin, xmax;
-
-          xmin = xvals[0];
-          xmax = xvals[xcount - 1];
-          dx = xmax - xmin;
+          var_num_t x;
+          var_num_t xmin = xvals[0];
+          var_num_t xmax = xvals[xcount - 1];
+          var_num_t dx = xmax - xmin;
           if (i == 0) {
             x = xmin;
           } else if (i == n) {
@@ -1022,12 +1020,10 @@ void chart_draw(int x1, int y1, int x2, int y2, var_num_t *vals, int count, var_
           ftostr(i + 1, buf);
         }
 
-        //
         buf[3] = '\0';
         fw = dev_textwidth(buf);
 
-        x = x1 + v * lx;
-
+        int x = x1 + v * lx;
         if (chart == 1 || chart == 5) {
           dev_setxy(x - fw, y2 + 1, 0);
         } else {
@@ -1052,32 +1048,29 @@ void chart_draw(int x1, int y1, int x2, int y2, var_num_t *vals, int count, var_
 
   // draw
   switch (chart) {
-
-  case 1:                      // line chart
-  case 5:                      // points
+  case 1:
+  case 5:
+    // line chart
+    // points
     if (chart == 5) {
-      for (i = 0; i < count; i++) {
+      for (int i = 0; i < count; i++) {
         dev_setpixel(pts[i * 2], pts[i * 2 + 1]);
       }
     } else {
-      for (i = 1; i < count; i++) {
+      for (int i = 1; i < count; i++) {
         dev_line(pts[(i - 1) * 2], pts[(i - 1) * 2 + 1], pts[i * 2], pts[i * 2 + 1]);
       }
     }
 
     // draw marks
     if (marks & 0x1) {
-      for (i = 0; i < count; i++) {
-        int mx, my;
-        int fh, fw;
-
+      for (int i = 0; i < count; i++) {
         cmd_chart_fstr(vals[i], buf);
 
-        fw = dev_textwidth(buf);
-        fh = dev_textheight(buf);
-
-        mx = pts[i * 2] - fw / 2;
-        my = pts[i * 2 + 1];
+        int fw = dev_textwidth(buf);
+        int fh = dev_textheight(buf);
+        int mx = pts[i * 2] - fw / 2;
+        int my = pts[i * 2 + 1];
 
         if (my > (y1 + (y2 - y1) / 2)) {
           my -= fh;
@@ -1090,15 +1083,17 @@ void chart_draw(int x1, int y1, int x2, int y2, var_num_t *vals, int count, var_
         }
         dev_setxy(mx, my, 0);
         dev_print(buf);
-        dev_rect(pts[i * 2] - 2, pts[i * 2 + 1] - 2, pts[i * 2] + 2, pts[i * 2 + 1] + 2, 1);
+        dev_rect(pts[i * 2] - 2, pts[i * 2 + 1] - 2,
+                 pts[i * 2] + 2, pts[i * 2 + 1] + 2, 1);
       }
     }
     break;
 
-  case 2:                      // bar chart
+  case 2:
+    // bar chart
     // draw rect
     color = 0;
-    for (i = 1; i < count; i++) {
+    for (int i = 1; i < count; i++) {
       if (os_color_depth > 2) {
         dev_setcolor(color);
         color++;
@@ -1112,22 +1107,19 @@ void chart_draw(int x1, int y1, int x2, int y2, var_num_t *vals, int count, var_
     if (os_color_depth > 2) {
       dev_setcolor(color);
     }
-    dev_rect(pts[(count - 1) * 2], pts[(count - 1) * 2 + 1], pts[(count - 1) * 2] + lx - 1, y2, 1);
+    dev_rect(pts[(count - 1) * 2], pts[(count - 1) * 2 + 1],
+             pts[(count - 1) * 2] + lx - 1, y2, 1);
 
     // draw marks
     if (marks & 0x1) {
       color = 0;
-      for (i = 0; i < count; i++) {
-        int mx, my;
-        int fh, fw;
-
+      for (int i = 0; i < count; i++) {
         cmd_chart_fstr(vals[i], buf);
 
-        fw = dev_textwidth(buf);
-        fh = dev_textheight(buf);
-
-        mx = pts[i * 2] + lx / 2 - fw / 2;
-        my = pts[i * 2 + 1];
+        int fw = dev_textwidth(buf);
+        int fh = dev_textheight(buf);
+        int mx = pts[i * 2] + lx / 2 - fw / 2;
+        int my = pts[i * 2 + 1];
 
         if (os_color_depth > 2) {
           if (my - fh >= y1) {
@@ -1162,7 +1154,6 @@ void chart_draw(int x1, int y1, int x2, int y2, var_num_t *vals, int count, var_
     break;
   };
 
-  //
   free(pts);
 }
 
@@ -1170,79 +1161,54 @@ void chart_draw(int x1, int y1, int x2, int y2, var_num_t *vals, int count, var_
 //  CHART
 //
 void cmd_chart() {
-  var_t *var_p, *elem_p;
-  int i, count;
-  var_num_t *vals;
   int32_t prev_fgcolor = dev_fgcolor;
   int32_t prev_bgcolor = dev_bgcolor;
-
-  // parameters
-  int chart;
-  int marks = 0;
-  int x1 = 0, y1 = 0, x2 = os_graf_mx, y2 = os_graf_my;
+  int x1 = 0;
+  int y1 = 0;
+  int x2 = os_graf_mx;
+  int y2 = os_graf_my;
 
   // chart type
-  chart = par_getint();
-  if (prog_error)
-    return;
-
-  par_getcomma();
-  if (prog_error)
-    return;
+  int chart = par_getint(); IF_PROG_ERR_RTN;
+  par_getcomma();           IF_PROG_ERR_RTN;
 
   // array
-  var_p = par_getvarray();
-  if (prog_error)
+  var_t *var_p = par_getvarray(); IF_PROG_ERR_RTN;
+  if (!var_p || var_p->type != V_ARRAY) {
+    err_varisnotarray();
     return;
-  count = v_asize(var_p);
+  }
 
   // optional labels-flag
+  int marks;
   if (code_peek() == kwTYPE_SEP) {
-    par_getcomma();
-    if (prog_error)
-      return;
-    marks = par_getint();
-    if (prog_error)
-      return;
+    par_getcomma();         IF_PROG_ERR_RTN;
+    marks = par_getint();   IF_PROG_ERR_RTN;
 
     // optional x1,y1,x2,y2
     if (code_peek() == kwTYPE_SEP) {
-      par_getcomma();
-      if (prog_error)
-        return;
-      x1 = par_getint();
-      if (prog_error)
-        return;
-      par_getcomma();
-      if (prog_error)
-        return;
-      y1 = par_getint();
-      if (prog_error)
-        return;
-      par_getcomma();
-      if (prog_error)
-        return;
-      x2 = par_getint();
-      if (prog_error)
-        return;
-      par_getcomma();
-      if (prog_error)
-        return;
-      y2 = par_getint();
-      if (prog_error)
-        return;
+      par_getcomma();       IF_PROG_ERR_RTN;
+      x1 = par_getint();    IF_PROG_ERR_RTN;
+      par_getcomma();       IF_PROG_ERR_RTN;
+      y1 = par_getint();    IF_PROG_ERR_RTN;
+      par_getcomma();       IF_PROG_ERR_RTN;
+      x2 = par_getint();    IF_PROG_ERR_RTN;
+      par_getcomma();       IF_PROG_ERR_RTN;
+      y2 = par_getint();    IF_PROG_ERR_RTN;
     }
+  } else {
+    marks = 0;
   }
 
   // get array's values
-  vals = (var_num_t *) malloc(sizeof(var_num_t) * count);
-  for (i = 0; i < count; i++) {
-    elem_p = v_elem(var_p, i);
+  int count = v_asize(var_p);
+  var_num_t *vals = (var_num_t *) malloc(sizeof(var_num_t) * count);
+  for (int i = 0; i < count; i++) {
+    var_t *elem_p = v_elem(var_p, i);
     if (prog_error) {
       free(vals);
       return;
     }
-
     switch (elem_p->type) {
     case V_INT:
       vals[i] = elem_p->v.i;
@@ -1260,10 +1226,8 @@ void cmd_chart() {
     }
   }
 
-  //
   chart_draw(x1, y1, x2, y2, vals, count, NULL, 0, chart, marks);
 
-  //
   free(vals);
   dev_settextcolor(prev_fgcolor, prev_bgcolor);
 }

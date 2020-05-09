@@ -623,7 +623,7 @@ char *System::readSource(const char *fileName) {
     memcpy(_programSrc, buffer, len);
     _programSrc[len - 1] = '\0';
     _srcRendered = false;
-    systemPrint("Opened: %s %d bytes\n", fileName, len - 1);
+    systemPrint("Opened: %s %d bytes\n", fileName, len);
   }
   return buffer;
 }
