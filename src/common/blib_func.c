@@ -122,19 +122,20 @@ void dar_next(long funcCode, var_t *r, var_t *elem_p) {
       v_set(r, elem_p);
     }
     break;
-  default:                     // numeric
+  default:
+    // numeric
     n = v_getval(elem_p);
 
     switch (funcCode) {
     case kwABSMIN:
       n = fabsl(n);
-      if (r->v.n < n) {
+      if (n < r->v.n) {
         r->v.n = n;
       }
       break;
     case kwABSMAX:
       n = fabsl(n);
-      if (r->v.n > n) {
+      if (n > r->v.n) {
         r->v.n = n;
       }
       break;
@@ -145,8 +146,8 @@ void dar_next(long funcCode, var_t *r, var_t *elem_p) {
     case kwSUMSV:
       r->v.n += (n * n);
       break;
-    }                         // sw2
-  }                           // sw1
+    }
+  }
 }
 
 /*
