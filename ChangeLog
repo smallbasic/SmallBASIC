@@ -1,5 +1,8 @@
+2020-05-11 (0.12.19)
+	FLTK: Fix compile warnings with updated gcc
+
 2020-05-10 (0.12.19)
-	Fix ABSMIN/ABSMAX transposed #96
+	COMMON: Fix ABSMIN/ABSMAX transposed #96
 
 2020-05-09 (0.12.19)
 	COMMON: Fix crash when passing non-array to CHART
@@ -10,7 +13,7 @@
 
 2020-05-04 (0.12.19)
 	COMMON: INPUT crash #99
-	COMMON: Fix compile warning with updated gcc
+	COMMON: Fix compile warnings with updated gcc
 
 2020-03-07 (0.12.19)
 	COMMON: implement DEFINEKEY undo #92
