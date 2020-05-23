@@ -37,17 +37,17 @@ void reset_image_cache() {
 }
 
 ImageBuffer::ImageBuffer() :
-  _bid(0),
   _filename(nullptr),
   _image(nullptr),
+  _bid(0),
   _width(0),
   _height(0) {
 }
 
 ImageBuffer::ImageBuffer(ImageBuffer &o) :
-  _bid(o._bid),
   _filename(o._filename),
   _image(o._image),
+  _bid(o._bid),
   _width(o._width),
   _height(o._height) {
 }

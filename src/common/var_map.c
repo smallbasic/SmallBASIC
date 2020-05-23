@@ -90,7 +90,7 @@ int map_length(const var_p_t var_p) {
 
 var_p_t map_get(var_p_t base, const char *name) {
   var_p_t result;
-  if (base->type == V_MAP) {
+  if (base != NULL && base->type == V_MAP) {
     result = hashmap_get(base, name);
   } else {
     result = NULL;
