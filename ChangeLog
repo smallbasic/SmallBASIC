@@ -1,4 +1,8 @@
 2020-05-11 (0.12.19)
+	ANDROID: complain when samsung keyboard detected
+	COMMON: fix compile warnings
+
+2020-05-11 (0.12.19)
 	FLTK: Fix compile warnings with updated gcc
 
 2020-05-10 (0.12.19)

@@ -594,7 +594,7 @@ char *System::readSource(const char *fileName) {
   } else {
     buffer = loadResource(fileName);
     if (!buffer) {
-      int h = open(fileName, O_BINARY | O_RDONLY, 0644);
+      int h = open(fileName, O_BINARY | O_RDONLY);
       if (h != -1) {
         struct stat st;
         if (fstat(h, &st) == 0) {

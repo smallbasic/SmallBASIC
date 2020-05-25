@@ -24,6 +24,7 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
+import android.provider.Settings;
 import android.util.Base64;
 import android.util.DisplayMetrics;
 import android.util.Log;
@@ -82,7 +83,7 @@ import dalvik.system.BaseDexClassLoader;
 /**
  * Extends NativeActivity to provide interface methods for runtime.cpp
  *
- * @author chrisws
+ * @author Chris Warren-Smith
  */
 public class MainActivity extends NativeActivity {
   private static final String TAG = "smallbasic";
@@ -586,11 +587,17 @@ public class MainActivity extends NativeActivity {
   public void showKeypad(final boolean show) {
     Log.i(TAG, "showKeypad: " + show);
     final View view = getWindow().getDecorView();
+    final Activity activity = this;
     runOnUiThread(new Runnable() {
       public void run() {
         InputMethodManager imm = (InputMethodManager)getSystemService(Context.INPUT_METHOD_SERVICE);
         if (imm != null) {
           if (show) {
+            String id = Settings.Secure.getString(activity.getContentResolver(), Settings.Secure.DEFAULT_INPUT_METHOD);
+            if ("com.sec.android.inputmethod/.SamsungKeypad".equals(id)) {
+              String message = getResources().getString(R.string.samsung_keyboard);
+              Toast.makeText(activity, message, Toast.LENGTH_LONG).show();
+            }
             imm.showSoftInput(view, InputMethodManager.SHOW_IMPLICIT);
           } else {
             imm.hideSoftInputFromWindow(view.getWindowToken(), InputMethodManager.HIDE_NOT_ALWAYS);
