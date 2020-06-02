@@ -21,7 +21,7 @@ typedef int  (*getx_fn)();
 typedef int  (*gety_fn)();
 typedef void (*setxy_fn)(int x, int y);
 typedef void (*write_fn)(const char *str);
-typedef int  (*events_fn)(int);
+typedef int  (*events_fn)(int, int*, int*);
 typedef void (*setcolor_fn)(long color);
 typedef void (*line_fn)(int x1, int y1, int x2, int y2);
 typedef void (*ellipse_fn)(int xc, int yc, int xr, int yr, int fill);
@@ -117,19 +117,14 @@ int osd_devinit() {
   init_fn devinit = (init_fn)slib_get_func("sblib_devinit");
   if (devinit) {
     devinit(prog_file, opt_pref_width, opt_pref_height);
-    os_graf_mx = opt_pref_width;
-    os_graf_my = opt_pref_height;
-  } else {
-    os_graf_mx = 80;
-    os_graf_my = 25;
   }
+  os_graf_mx = opt_pref_width;
+  os_graf_my = opt_pref_height;
 
   if (p_write == NULL) {
     p_write = default_write;
   }
 
-  os_color_depth = 1;
-  osd_cls();
   return 1;
 }
 
@@ -209,7 +204,17 @@ void osd_write(const char *str) {
 int osd_events(int wait_flag) {
   int result = 0;
   if (p_events) {
-    result = p_events(wait_flag);
+    int x = os_graf_mx;
+    int y = os_graf_my;
+    result = p_events(wait_flag, &x, &y);
+    if (x != os_graf_mx || y != os_graf_my) {
+      os_graf_mx = x;
+      os_graf_my = y;
+      dev_viewport(0, 0, 0, 0);
+      dev_window(0, 0, 0, 0);
+      setsysvar_int(SYSVAR_XMAX, os_graf_mx);
+      setsysvar_int(SYSVAR_YMAX, os_graf_my);
+    }
   }
   return result;
 }

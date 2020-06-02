@@ -11,10 +11,10 @@ bin_PROGRAMS = sbasic
 
 sbasic_SOURCES =    \
   ../../lib/lodepng/lodepng.cpp ../../lib/lodepng/lodepng.h \
-  ../console/main.cpp	\
-  ../console/device.cpp \
-  ../console/image.cpp \
-  ../console/decomp.c
+  main.cpp	\
+  device.cpp \
+  image.cpp \
+  decomp.c
 
 sbasic_LDADD = -L$(top_srcdir)/src/common -lsb_common @PACKAGE_LIBS@
 
