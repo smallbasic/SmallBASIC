@@ -19,17 +19,17 @@
 #define IP           prog_ip
 #define CODE(x)      prog_source[(x)]
 #define CODE_PEEK()  CODE(IP)
-#define V_FREE(v)                       \
-  if ((v) && ((v)->type == V_STR ||     \
-              (v)->type == V_MAP ||     \
-              (v)->type == V_ARRAY)) {  \
-    v_free((v));                        \
+#define V_FREE(v)                               \
+  if ((v) && ((v)->type == V_STR ||             \
+              (v)->type == V_MAP ||             \
+              (v)->type == V_ARRAY)) {          \
+    v_free((v));                                \
   }
-#define V_FREE2(v)               \
-  if (((v)->type == V_STR ||     \
-       (v)->type == V_MAP ||     \
-       (v)->type == V_ARRAY)) {  \
-    v_free((v));                 \
+#define V_FREE2(v)                              \
+  if (((v)->type == V_STR ||                    \
+       (v)->type == V_MAP ||                    \
+       (v)->type == V_ARRAY)) {                 \
+    v_free((v));                                \
   }
 
 /**
@@ -379,7 +379,7 @@ static inline void oper_mul(var_t *r, var_t *left) {
         } else {
           err_matop();
         }
-     } else if (op == '*') {
+      } else if (op == '*') {
         mat_mul(left, r);
       } else {
         err_matop();
@@ -1245,23 +1245,6 @@ void eval(var_t *r) {
       r->v.n = code_getreal();
       break;
 
-    case kwTYPE_STR:
-      // string - constant
-      IP++;
-      V_FREE(r);
-      v_eval_str(r);
-      break;
-
-    case kwTYPE_LOGOPR:
-      IP++;
-      oper_log(r, left);
-      break;
-
-    case kwTYPE_CMPOPR:
-      IP++;
-      oper_cmp(r, left);
-      break;
-
     case kwTYPE_ADDOPR:
       IP++;
       oper_add(r, left);
@@ -1270,17 +1253,6 @@ void eval(var_t *r) {
     case kwTYPE_MULOPR:
       IP++;
       oper_mul(r, left);
-      break;
-
-    case kwTYPE_POWOPR:
-      IP++;
-      oper_powr(r, left);
-      break;
-
-    case kwTYPE_UNROPR:
-      // unary
-      IP++;
-      oper_unary(r);
       break;
 
     case kwTYPE_VAR:
@@ -1317,15 +1289,10 @@ void eval(var_t *r) {
       IP++;
       if (!eval_sp) {
         err_syntax_unknown();
-      } else {
-        eval_sp--;
-        left = &eval_stk[eval_sp];
+        return;
       }
-      break;
-
-    case kwTYPE_EVAL_SC:
-      IP++;
-      eval_shortc(r);
+      eval_sp--;
+      left = &eval_stk[eval_sp];
       break;
 
     case kwTYPE_CALLF:
@@ -1334,48 +1301,80 @@ void eval(var_t *r) {
       eval_callf(r);
       break;
 
+    case kwTYPE_STR:
+      // string - constant
+      IP++;
+      V_FREE(r);
+      v_eval_str(r);
+      break;
+
+    case kwTYPE_LOGOPR:
+      IP++;
+      oper_log(r, left);
+      break;
+
+    case kwTYPE_CMPOPR:
+      IP++;
+      oper_cmp(r, left);
+      break;
+
+    case kwTYPE_POWOPR:
+      IP++;
+      oper_powr(r, left);
+      break;
+
+    case kwTYPE_UNROPR:
+      // unary
+      IP++;
+      oper_unary(r);
+      break;
+
+    case kwTYPE_EVAL_SC:
+      IP++;
+      eval_shortc(r);
+      break;
+
     case kwTYPE_CALL_UDF:
       eval_call_udf(r);
       break;
 
-    default:
-      // less used codes
-      switch (code) {
-      case kwTYPE_CALLEXTF:
-        // [lib][index] external functions
-        IP++;
-        eval_extf(r);
-        break;
+    case kwTYPE_CALLEXTF:
+      // [lib][index] external functions
+      IP++;
+      eval_extf(r);
+      break;
 
-      case kwTYPE_PTR:
-        // UDF pointer - constant
-        IP++;
-        eval_ptr(r);
-        break;
+    case kwTYPE_PTR:
+      // UDF pointer - constant
+      IP++;
+      eval_ptr(r);
+      break;
 
-      case kwBYREF:
-        // unexpected code
-        err_evsyntax();
-        break;
+    case kwBYREF:
+      // unexpected code
+      err_evsyntax();
+      return;
 
-      default: {
-        if (code == kwTYPE_EOC ||
-            code == kwTYPE_SEP ||
-            code == kwTO ||
-            kw_check_evexit(code)) {
-          // restore stack pointer
-          eval_sp = eval_pos;
+    default: {
+      if (code == kwTYPE_LINE ||
+          code == kwTYPE_SEP ||
+          code == kwTO ||
+          code == kwTHEN ||
+          code == kwSTEP ||
+          kw_check_evexit(code)) {
+        // restore stack pointer
+        eval_sp = eval_pos;
 
-          // normal exit
-          return;
-        }
-        rt_raise("UNKNOWN ERROR. IP:%d=0x%02X", IP, code);
-        if (!opt_quiet) {
-          hex_dump(prog_source, prog_length);
-        }
-      }};
-    }
+        // normal exit
+        return;
+      }
+      rt_raise("UNKNOWN ERROR. IP:%d=0x%02X", IP, code);
+      if (!opt_quiet) {
+        hex_dump(prog_source, prog_length);
+      }
+    }};
   }
+
   // restore stack pointer
   eval_sp = eval_pos;
 }
