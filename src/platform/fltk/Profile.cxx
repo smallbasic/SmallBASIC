@@ -29,6 +29,8 @@ const char *helpThemeIdKey = "helpThemeId";
 // in BasicEditor.cxx
 extern Fl_Text_Display::Style_Table_Entry styletable[];
 
+static StyleField lastStyle = st_lineNumbers;
+
 //
 // Profile constructor
 //
@@ -74,6 +76,7 @@ void Profile::loadEditTheme(int themeId) {
   styletable[9].color = get_color(_theme._syntax_command); // J - operators
   styletable[10].color = get_color(_theme._selection_background); // K Selection Background
   styletable[11].color = get_color(_theme._background); // L Background
+  styletable[12].color = get_color(_theme._number_color); // M Line numbers
 }
 
 //
@@ -186,6 +189,7 @@ void Profile::updateTheme() {
   _theme._syntax_command = styletable[9].color >> 8;
   _theme._selection_background = styletable[10].color >> 8;
   _theme._background = styletable[11].color >> 8;
+  _theme._number_color = styletable[12].color >> 8;
 }
 
 //
@@ -236,7 +240,7 @@ void Profile::restoreStyles(Properties<String *> *profile) {
     _font = get_font(fontName->c_str());
   }
 
-  for (int i = 0; i <= st_background; i++) {
+  for (int i = 0; i <= lastStyle; i++) {
     char buffer[4];
     sprintf(buffer, "%02d", i);
     String *color = profile->get(buffer);
@@ -244,12 +248,10 @@ void Profile::restoreStyles(Properties<String *> *profile) {
       Fl_Color c = get_color(color->c_str(), NO_COLOR);
       if (c != (Fl_Color)NO_COLOR) {
         styletable[i].color = c;
-        if (i == st_background) {
-          _theme._background = c >> 8;
-        }
       }
     }
   }
+  updateTheme();
 }
 
 //
@@ -347,7 +349,7 @@ void Profile::saveStyles(FILE *fp) {
   saveValue(fp, fontSizeKey, (int)styletable[0].size);
   saveValue(fp, fontNameKey, styletable[0].font);
 
-  for (int i = 0; i <= st_background; i++) {
+  for (int i = 0; i <= lastStyle; i++) {
     Fl::get_color(styletable[i].color, r, g, b);
     fprintf(fp, "%02d=#%02x%02x%02x\n", i, r, g, b);
   }

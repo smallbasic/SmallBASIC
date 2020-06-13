@@ -213,7 +213,7 @@ function buildSDL() {
    esac
 
    PACKAGE_CFLAGS="${PACKAGE_CFLAGS} `sdl2-config --cflags` `pkg-config freetype2 --cflags` -fno-exceptions"
-   CXXFLAGS="${CXXFLAGS} -fno-rtti -std=c++11"
+   CXXFLAGS="${CXXFLAGS} -fno-rtti -std=c++14"
 
    dnl preconfigured values for SDL build
    AC_DEFINE(_SDL, 1, [Defined when building SDL version])
@@ -345,7 +345,7 @@ function buildFLTK() {
    esac
 
    FLTK_CXXFLAGS="${PACKAGE_CFLAGS} `fltk-config --cxxflags`"
-   FLTK_CXXFLAGS="${FLTK_CXXFLAGS} -fno-exceptions -fno-rtti -std=c++11 -Wno-unknown-pragmas"
+   FLTK_CXXFLAGS="${FLTK_CXXFLAGS} -fno-exceptions -fno-rtti -std=c++14 -Wno-unknown-pragmas"
    PACKAGE_LIBS="${PACKAGE_LIBS} `fltk-config --ldstaticflags --use-images`"
 
    dnl do not depend on cygwin.dll under cygwin build

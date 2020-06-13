@@ -973,7 +973,8 @@ MainWindow::MainWindow(int w, int h) :
   m->add("&View/Text Color/_Subs", 0, EditorWidget::set_color_cb, (void *)st_subs);
   m->add("&View/Text Color/Numbers", 0, EditorWidget::set_color_cb, (void *)st_numbers);
   m->add("&View/Text Color/Operators", 0, EditorWidget::set_color_cb, (void *)st_operators);
-  m->add("&View/Text Color/Find Matches", 0, EditorWidget::set_color_cb, (void *)st_findMatches);
+  m->add("&View/Text Color/_Find Matches", 0, EditorWidget::set_color_cb, (void *)st_findMatches);
+  m->add("&View/Text Color/Line Numbers", 0, EditorWidget::set_color_cb, (void *)st_lineNumbers);
   m->add("&View/Text Size/&Increase", FL_CTRL + ']', font_size_incr_cb);
   m->add("&View/Text Size/&Decrease", FL_CTRL + '[', font_size_decr_cb);
 

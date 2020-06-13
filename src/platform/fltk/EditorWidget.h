@@ -56,7 +56,8 @@ enum StyleField {
   st_numbers,
   st_operators,
   st_selection,
-  st_background
+  st_background,
+  st_lineNumbers
 };
 
 enum CommandOpt {
