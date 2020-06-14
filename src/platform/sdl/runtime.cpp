@@ -804,6 +804,17 @@ char *Runtime::getClipboardText() {
   return result;
 }
 
+void Runtime::setActive(bool active) {
+  setRunning(active);
+  if (active) {
+    setWindowRect(_saveRect);
+  } else {
+    SDL_SetWindowPosition(_window, _saveRect.x, _saveRect.y);
+    SDL_SetWindowSize(_window, _saveRect.w, _saveRect.h);
+    setWindowSize(_saveRect.w, _saveRect.h);
+  }
+}
+
 //
 // System platform methods
 //
@@ -847,12 +858,12 @@ void maWait(int timeout) {
 // sbasic implementation
 //
 int osd_devinit(void) {
-  runtime->setRunning(true);
+  runtime->setActive(true);
   return 1;
 }
 
 int osd_devrestore(void) {
-  runtime->setRunning(false);
+  runtime->setActive(false);
   return 0;
 }
 

@@ -1,5 +1,6 @@
 2020-06-14 (0.12.19)
 	FLTK: line numbers colours #93
+	SDL: restore window size #95
 
 2020-06-06 (0.12.19)
 	COMMON: minor performance tweak

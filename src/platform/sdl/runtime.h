@@ -58,11 +58,13 @@ struct Runtime : public System {
   char *getClipboardText();
   void setWindowRect(SDL_Rect &rect);
   SDL_Rect getWindowRect();
+  void setActive(bool running);
 
 private:
   int _menuX, _menuY;
   bool _fullscreen;
   SDL_Rect _windowRect;
+  SDL_Rect _saveRect;
   Graphics *_graphics;
   Stack<MAEvent *> *_eventQueue;
   SDL_Window *_window;
