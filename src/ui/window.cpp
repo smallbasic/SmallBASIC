@@ -11,6 +11,7 @@
 #include "common/pproc.h"
 #include "lib/maapi.h"
 #include "ui/system.h"
+#include "ui/textedit.h"
 
 extern System *g_system;
 
@@ -26,6 +27,7 @@ extern System *g_system;
 #define WINDOW_INSET    "insetTextScreen"
 #define WINDOW_SETFONT  "setFont"
 #define WINDOW_SETSIZE  "setSize"
+#define WINDOW_THEME    "theme"
 
 // returns the next set of string variable arguments as a String list
 StringList *get_items() {
@@ -107,6 +109,20 @@ void cmd_window_set_size(var_s *self) {
   g_system->setWindowSize(width, height);
 }
 
+void cmd_window_get_theme(var_s *self) {
+  EditTheme theme;
+  theme.setId(g_themeId);
+  v_init(self);
+  map_init(self);
+  map_set_int(self, "background", -theme._background);
+  map_set_int(self, "text1", -theme._color);
+  map_set_int(self, "text2", -theme._syntax_text);
+  map_set_int(self, "text3", -theme._syntax_comments);
+  map_set_int(self, "text4", -theme._syntax_command);
+  map_set_int(self, "text5", -theme._syntax_statement);
+  map_set_int(self, "text6", -theme._syntax_digit);
+}
+
 void cmd_window_alert(var_s *self) {
   StringList *items = get_items();
   if (!prog_error && items->size() > 0) {
@@ -158,6 +174,7 @@ extern "C" void v_create_window(var_p_t var) {
   v_create_func(var, WINDOW_INSET, cmd_window_inset);
   v_create_func(var, WINDOW_SETFONT, cmd_window_set_font);
   v_create_func(var, WINDOW_SETSIZE, cmd_window_set_size);
+  v_create_func(var, WINDOW_THEME, cmd_window_get_theme);
 }
 
 extern "C" void dev_show_page() {
