@@ -67,7 +67,6 @@ int textedit_move_to_word_next(EditBuffer *str, int c) {
 #define LINE_BUFFER_SIZE 200
 #define INDENT_LEVEL 2
 #define HELP_WIDTH 22
-#define NUM_THEMES 6
 #define TWISTY1_OPEN  "> "
 #define TWISTY1_CLOSE "< "
 #define TWISTY2_OPEN  "  > "
@@ -89,6 +88,18 @@ unsigned g_themeId = 0;
 int g_lineMarker[MAX_MARKERS] = {
   -1, -1, -1, -1, -1, -1, -1, -1, -1, -1
 };
+
+const char *themeName() {
+  switch (g_themeId) {
+  case 0: return "Dark";
+  case 1: return "Light";
+  case 2: return "Shian";
+  case 3: return "ATOM 1";
+  case 4: return "ATOM 2";
+  case 5: return "R157";
+  default: return "";
+  }
+}
 
 // see: http://ethanschoonover.com/solarized#features
 #define sol_base03  0x002b36

@@ -11,7 +11,7 @@
 #include "common/pproc.h"
 #include "lib/maapi.h"
 #include "ui/system.h"
-#include "ui/textedit.h"
+#include "ui/theme.h"
 
 extern System *g_system;
 

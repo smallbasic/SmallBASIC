@@ -20,6 +20,7 @@
 #include "common/keymap.h"
 #include "ui/system.h"
 #include "ui/inputs.h"
+#include "ui/theme.h"
 
 #define MENU_CONSOLE    0
 #define MENU_SOURCE     1
@@ -45,7 +46,8 @@
 #define MENU_HELP       21
 #define MENU_SHORTCUT   22
 #define MENU_SHARE      23
-#define MENU_SIZE       24
+#define MENU_THEME      24
+#define MENU_SIZE       25
 #define MENU_COMPLETION_0  (MENU_SIZE + 1)
 #define MENU_COMPLETION_1  (MENU_SIZE + 2)
 #define MENU_COMPLETION_2  (MENU_SIZE + 3)
@@ -78,6 +80,7 @@
 #define MENU_STR_ON      "ON"
 #define MENU_STR_AUDIO   " Audio  [%s] "
 #define MENU_STR_EDITOR  " Editor [%s] "
+#define MENU_STR_THEME   " Theme  [%s] "
 #define MENU_STR_CONSOLE " Console "
 #define MENU_STR_CONTROL " Control Mode [%s] "
 #define MENU_STR_DEBUG   " Debug "
@@ -397,6 +400,10 @@ void System::handleMenu(MAEvent &event) {
     break;
   case MENU_EDITMODE:
     opt_ide = (opt_ide == IDE_NONE ? IDE_INTERNAL : IDE_NONE);
+    break;
+  case MENU_THEME:
+    g_themeId = (g_themeId + 1) % NUM_THEMES;
+    setRestart();
     break;
   case MENU_AUDIO:
     opt_mute_audio = !opt_mute_audio;
@@ -1007,6 +1014,9 @@ void System::showMenu() {
         sprintf(buffer, MENU_STR_EDITOR, opt_ide == IDE_NONE ? MENU_STR_OFF : MENU_STR_ON);
         items->add(new String(buffer));
         _systemMenu[index++] = MENU_EDITMODE;
+        sprintf(buffer, MENU_STR_THEME, themeName());
+        items->add(new String(buffer));
+        _systemMenu[index++] = MENU_THEME;
       }
       sprintf(buffer, MENU_STR_AUDIO, (opt_mute_audio ? MENU_STR_OFF : MENU_STR_ON));
       items->add(new String(buffer));

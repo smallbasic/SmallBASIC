@@ -809,7 +809,6 @@ void Runtime::setActive(bool active) {
   if (active) {
     setWindowRect(_saveRect);
   } else {
-    SDL_SetWindowPosition(_window, _saveRect.x, _saveRect.y);
     SDL_SetWindowSize(_window, _saveRect.w, _saveRect.h);
     setWindowSize(_saveRect.w, _saveRect.h);
   }
