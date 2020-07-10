@@ -45,6 +45,8 @@ struct Runtime : public System {
   MAEvent processEvents(int waitFlag);
   void processEvent(MAEvent &event);
   void pushEvent(MAEvent *event);
+  void restoreWindowRect();
+  void saveWindowRect();
   void setWindowSize(int width, int height);
   void setWindowTitle(const char *title);
   void share(const char *path) {}
@@ -58,7 +60,6 @@ struct Runtime : public System {
   char *getClipboardText();
   void setWindowRect(SDL_Rect &rect);
   SDL_Rect getWindowRect();
-  void setActive(bool running);
 
 private:
   int _menuX, _menuY;

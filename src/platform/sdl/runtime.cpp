@@ -804,14 +804,14 @@ char *Runtime::getClipboardText() {
   return result;
 }
 
-void Runtime::setActive(bool active) {
-  setRunning(active);
-  if (active) {
-    setWindowRect(_saveRect);
-  } else {
-    SDL_SetWindowSize(_window, _saveRect.w, _saveRect.h);
-    setWindowSize(_saveRect.w, _saveRect.h);
-  }
+void Runtime::restoreWindowRect() {
+  SDL_SetWindowPosition(_window, _saveRect.x, _saveRect.y);
+  SDL_SetWindowSize(_window, _saveRect.w, _saveRect.h);
+  setWindowSize(_saveRect.w, _saveRect.h);
+}
+
+void Runtime::saveWindowRect() {
+  setWindowRect(_saveRect);
 }
 
 //
@@ -857,12 +857,12 @@ void maWait(int timeout) {
 // sbasic implementation
 //
 int osd_devinit(void) {
-  runtime->setActive(true);
+  runtime->setRunning(true);
   return 1;
 }
 
 int osd_devrestore(void) {
-  runtime->setActive(false);
+  runtime->setRunning(false);
   return 0;
 }
 

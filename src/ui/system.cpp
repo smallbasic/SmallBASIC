@@ -158,6 +158,8 @@ bool System::execute(const char *bas) {
   _state = kRunState;
   setWindowTitle(bas);
   showCursor(kArrow);
+  saveWindowRect();
+
   int result = ::sbasic_main(bas);
   if (isRunning()) {
     _state = kActiveState;
@@ -165,6 +167,10 @@ bool System::execute(const char *bas) {
 
   if (_editor == nullptr) {
     opt_command[0] = '\0';
+  }
+
+  if (!_mainBas) {
+    restoreWindowRect();
   }
   enableCursor(true);
   opt_file_permitted = 1;
