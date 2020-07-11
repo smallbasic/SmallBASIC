@@ -18,9 +18,9 @@
 
 extern System *g_system;
 
-FormList *activeList = NULL;
-FormInput *focusInput = NULL;
-FormEditInput *focusEdit = NULL;
+FormList *activeList = nullptr;
+FormInput *focusInput = nullptr;
+FormEditInput *focusEdit = nullptr;
 int background = DEFAULT_BACKGROUND;
 int foreground = DEFAULT_FOREGROUND;
 
@@ -33,9 +33,9 @@ FormEditInput *get_focus_edit() {
 
 bool form_ui::optionSelected(int index) {
   bool result = false;
-  if (activeList != NULL) {
+  if (activeList != nullptr) {
     activeList->optionSelected(index);
-    activeList = NULL;
+    activeList = nullptr;
     result = false;
   }
   return result;
@@ -48,20 +48,20 @@ void set_input_defaults(int fg, int bg) {
 
 int get_color(var_p_t value, int def) {
   int result = def;
-  if (value != NULL && value->type == V_INT) {
+  if (value != nullptr && value->type == V_INT) {
     result = value->v.i;
     if (result < 0) {
       result = -result;
     } else if (result < 16) {
       result = colors[result];
     }
-  } else if (value != NULL && value->type == V_STR &&
+  } else if (value != nullptr && value->type == V_STR &&
              value->v.p.length) {
     const char *n = value->v.p.ptr;
     if (n[0] == '0' && n[1] == 'x' && n[2]) {
-      result = strtol(n + 2, NULL, 16);
+      result = strtol(n + 2, nullptr, 16);
     } else if (n[0] == '#' && n[1]) {
-      result = strtol(n + 1, NULL, 16);
+      result = strtol(n + 1, nullptr, 16);
     } else if (strcasecmp(n, "black") == 0) {
       result = DEFAULT_BACKGROUND;
     } else if (strcasecmp(n, "red") == 0) {
@@ -121,7 +121,7 @@ FormInput::FormInput(int x, int y, int w, int h) :
 
 FormInput::~FormInput() {
   if (focusInput == this) {
-    focusInput = NULL;
+    focusInput = nullptr;
   }
 }
 
@@ -133,23 +133,23 @@ void FormInput::construct(var_p_t form, var_p_t field, int id) {
   _id = id;
 
   var_p_t v_id = map_get(field, FORM_INPUT_ID);
-  if (v_id == NULL) {
+  if (v_id == nullptr) {
     map_add_var(field, FORM_INPUT_ID, _id);
   } else {
     v_setint(v_id, _id);
   }
 
   var_p_t v_onclick = map_get(field, FORM_INPUT_ONCLICK);
-  if (v_onclick != NULL && v_onclick->type == V_PTR) {
+  if (v_onclick != nullptr && v_onclick->type == V_PTR) {
     _onclick = v_onclick->v.ap.p;
   }
 
   const char *caption = getText();
-  MAExtent extent = maGetTextSize(caption != NULL && caption[0] ? caption : "Z");
+  MAExtent extent = maGetTextSize(caption != nullptr && caption[0] ? caption : "Z");
   int textW = EXTENT_X(extent);
   int textH = EXTENT_Y(extent);
 
-  if (_width <= 0 && caption != NULL) {
+  if (_width <= 0 && caption != nullptr) {
     _width = textW + padding(false);
   }
 
@@ -238,25 +238,23 @@ void FormInput::drawLink(const char *caption, int dx, int dy, int sw, int chw) {
 }
 
 void FormInput::drawText(const char *caption, int dx, int dy, int sw, int chw) {
-  int strWidth = chw * (caption == NULL ? 0 : strlen(caption));
-  int width = sw - dx;
-  if (width > _width) {
-    width = _width;
-  }
-  if (caption == NULL) {
-    // nothing to draw
-  } else if (strWidth > width) {
-    int len = width / chw;
-    if (len > 0) {
-      char *buffer = new char[len + 1];
-      strncpy(buffer, caption, len - 1);
-      buffer[len - 1] = '~';
-      buffer[len] = 0;
-      maDrawText(dx, dy, buffer, len);
-      delete [] buffer;
+  if (caption != nullptr) {
+    unsigned strWidth = chw * strlen(caption);
+    int width = sw - dx;
+    if (width > _width) {
+      width = _width;
     }
-  } else if (strWidth) {
-    maDrawText(dx, dy, caption, strlen(caption));
+    if (strWidth > width) {
+      int len = width / chw;
+      if (len > 0) {
+        maDrawText(dx, dy, caption, len - 1);
+        if (caption[len - 1] != ' ') {
+          maDrawText(dx + ((len - 1) * chw), dy, "~", 1);
+        }
+      }
+    } else if (strWidth) {
+      maDrawText(dx, dy, caption, strlen(caption));
+    }
   }
 }
 
@@ -282,10 +280,10 @@ void FormInput::setHelpTextColor() {
 
 // returns the field var attached to the field
 var_p_t FormInput::getField(var_p_t form) {
-  var_p_t result = NULL;
+  var_p_t result = nullptr;
   if (form->type == V_MAP) {
     var_p_t inputs = map_get(form, FORM_INPUTS);
-    if (inputs != NULL && inputs->type == V_ARRAY) {
+    if (inputs != nullptr && inputs->type == V_ARRAY) {
       for (unsigned i = 0; i < v_asize(inputs) && !result; i++) {
         var_p_t elem = v_elem(inputs, i);
         if (elem->type == V_MAP && (_id == map_get_int(elem, FORM_INPUT_ID, -1))) {
@@ -302,19 +300,19 @@ bool FormInput::updateUI(var_p_t form, var_p_t field) {
   bool updated = false;
 
   var_p_t var = map_get(field, FORM_INPUT_LABEL);
-  if (var == NULL) {
+  if (var == nullptr) {
     var = map_get(form, FORM_INPUT_LABEL);
   }
-  if (var != NULL) {
+  if (var != nullptr) {
     setText(v_getstr(var));
     updated = true;
   }
 
   var_p_t v_bg = map_get(field, FORM_INPUT_BG);
-  if (v_bg == NULL) {
+  if (v_bg == nullptr) {
     v_bg = map_get(form, FORM_INPUT_BG);
   }
-  if (v_bg != NULL) {
+  if (v_bg != nullptr) {
     int bg = get_color(v_bg, _bg);
     if (bg != _bg) {
       updated = true;
@@ -323,10 +321,10 @@ bool FormInput::updateUI(var_p_t form, var_p_t field) {
   }
 
   var_p_t v_fg = map_get(field, FORM_INPUT_FG);
-  if (v_fg == NULL) {
+  if (v_fg == nullptr) {
     v_fg = map_get(form, FORM_INPUT_FG);
   }
-  if (v_fg != NULL) {
+  if (v_fg != nullptr) {
     int fg = get_color(v_fg, _fg);
     if (fg != _fg) {
       updated = true;
@@ -361,10 +359,10 @@ bool FormInput::edit(int key, int screenWidth, int charWidth) {
 // set the widget value onto the form value
 void FormInput::updateForm(var_p_t form) {
   var_p_t field = getField(form);
-  if (field != NULL) {
+  if (field != nullptr) {
     var_p_t inputValue = map_get(field, FORM_INPUT_VALUE);
     var_p_t value = map_get(form, FORM_VALUE);
-    if (value != NULL && inputValue != NULL) {
+    if (value != nullptr && inputValue != nullptr) {
       v_set(value, inputValue);
     }
   }
@@ -375,9 +373,9 @@ bool FormInput::hasFocus() const {
 }
 
 void FormInput::setFocus(bool focus) {
-  focusEdit = NULL;
+  focusEdit = nullptr;
   if (!_noFocus && focus == (focusInput != this)) {
-    focusInput = focus ? this : NULL;
+    focusInput = focus ? this : nullptr;
     g_system->getOutput()->setDirty();
   }
 }
@@ -401,7 +399,7 @@ FormLabel::FormLabel(const char *caption, int x, int y, int w, int h) :
 bool FormLabel::updateUI(var_p_t form, var_p_t field) {
   bool updated = FormInput::updateUI(form, field);
   var_p_t var = map_get(field, FORM_INPUT_LABEL);
-  if (var != NULL && var->type == V_STR && !_label.equals(var->v.p.ptr)) {
+  if (var != nullptr && var->type == V_STR && !_label.equals(var->v.p.ptr)) {
     _label = var->v.p.ptr;
     updated = true;
   }
@@ -409,14 +407,8 @@ bool FormLabel::updateUI(var_p_t form, var_p_t field) {
 }
 
 void FormLabel::draw(int x, int y, int w, int h, int chw) {
-  int len = _label.length();
-  if (len > 0) {
-    if (len * chw >= _width) {
-      len = _width / chw;
-    }
-    maSetColor(_fg);
-    maDrawText(x, y, _label.c_str(), len);
-  }
+  maSetColor(_fg);
+  drawText(_label.c_str(), x, y, w, chw);
 }
 
 //
@@ -446,7 +438,7 @@ FormEditInput::FormEditInput(int x, int y, int w, int h) :
 
 FormEditInput::~FormEditInput() {
   if (focusEdit == this) {
-    focusEdit = NULL;
+    focusEdit = nullptr;
   }
 }
 
@@ -488,8 +480,8 @@ int FormEditInput::getControlKey(int key) {
 
 void FormEditInput::setFocus(bool focus) {
   if (!_noFocus && focus == (focusInput != this)) {
-    focusInput = focus ? this : NULL;
-    focusEdit = focus ? this : NULL;
+    focusInput = focus ? this : nullptr;
+    focusEdit = focus ? this : nullptr;
     g_system->getOutput()->setDirty();
   }
 }
@@ -501,7 +493,7 @@ FormLineInput::FormLineInput(const char *value, const char *help, int size, bool
                              int x, int y, int w, int h) :
   FormEditInput(x, y, w, h),
   _help(help),
-  _buffer(NULL),
+  _buffer(nullptr),
   _size(size),
   _scroll(0),
   _mark(-1),
@@ -509,7 +501,7 @@ FormLineInput::FormLineInput(const char *value, const char *help, int size, bool
   _grow(grow) {
   _buffer = new char[_size + 1];
   _buffer[0] = '\0';
-  if (value != NULL && value[0]) {
+  if (value != nullptr && value[0]) {
     int len = MIN(strlen(value), (unsigned)_size);
     memcpy(_buffer, value, len);
     _buffer[len] = '\0';
@@ -519,7 +511,7 @@ FormLineInput::FormLineInput(const char *value, const char *help, int size, bool
 
 FormLineInput::~FormLineInput() {
   delete [] _buffer;
-  _buffer = NULL;
+  _buffer = nullptr;
 }
 
 void FormLineInput::clicked(int x, int y, bool pressed) {
@@ -583,7 +575,7 @@ void FormLineInput::draw(int x, int y, int w, int h, int chw) {
 
 bool FormLineInput::edit(int key, int screenWidth, int charWidth) {
   int wChars;
-  int len = _buffer == NULL ? 0 : strlen(_buffer);
+  int len = _buffer == nullptr ? 0 : strlen(_buffer);
 
   key = getControlKey(key);
   switch (key) {
@@ -694,14 +686,14 @@ bool FormLineInput::edit(int key, int screenWidth, int charWidth) {
 
 void FormLineInput::selectAll() {
   _point = 0;
-  _mark = _buffer == NULL ? -0 : strlen(_buffer);
+  _mark = _buffer == nullptr ? -0 : strlen(_buffer);
 }
 
 void FormLineInput::updateField(var_p_t form) {
   var_p_t field = getField(form);
-  if (field != NULL) {
+  if (field != nullptr) {
     var_p_t value = map_get(field, FORM_INPUT_VALUE);
-    if (value != NULL) {
+    if (value != nullptr) {
       v_setstr(value, _buffer);
     }
   }
@@ -710,7 +702,7 @@ void FormLineInput::updateField(var_p_t form) {
 bool FormLineInput::updateUI(var_p_t form, var_p_t field) {
   bool updated = FormInput::updateUI(form, field);
   var_p_t var = map_get(field, FORM_INPUT_VALUE);
-  if (var != NULL) {
+  if (var != nullptr) {
     const char *value = v_getstr(var);
     if (value && strcmp(value, _buffer) != 0) {
       int len = MIN(strlen(value), (unsigned)_size);
@@ -724,7 +716,7 @@ bool FormLineInput::updateUI(var_p_t form, var_p_t field) {
 }
 
 char *FormLineInput::copy(bool cut) {
-  char *result = NULL;
+  char *result = nullptr;
   int len = strlen(_buffer);
   int start = MIN(_mark, _point);
   if (_mark != -1 && start < len) {
@@ -759,7 +751,7 @@ void FormLineInput::cut() {
 void FormLineInput::paste(const char *text) {
   int len = strlen(_buffer);
   int avail = _size - (len + 1);
-  if (text != NULL && avail > 0) {
+  if (text != nullptr && avail > 0) {
     int index = _scroll + _point;
     int count = strlen(text);
     if (count > avail) {
@@ -881,10 +873,10 @@ FormList::FormList(ListModel *model, int x, int y, int w, int h) :
 
 FormList::~FormList() {
   if (activeList == this) {
-    activeList = NULL;
+    activeList = nullptr;
   }
   delete _model;
-  _model = NULL;
+  _model = nullptr;
 }
 
 void FormList::optionSelected(int index) {
@@ -912,7 +904,7 @@ void FormList::selectIndex(int index) {
 bool FormList::updateUI(var_p_t form, var_p_t field) {
   bool updated = FormInput::updateUI(form, field);
   var_p_t var = map_get(field, FORM_INPUT_VALUE);
-  if (var != NULL && (var->type == V_ARRAY || var->type == V_STR)) {
+  if (var != nullptr && (var->type == V_ARRAY || var->type == V_STR)) {
     // update list control with new array or string variable
     _model->clear();
     _model->create(var);
@@ -921,7 +913,7 @@ bool FormList::updateUI(var_p_t form, var_p_t field) {
 
   // set the selectedIndex
   var = map_get(field, FORM_INPUT_INDEX);
-  if (var != NULL) {
+  if (var != nullptr) {
     selectIndex(v_getint(var));
     updated = true;
   }
@@ -934,7 +926,7 @@ void FormList::updateForm(var_p_t form) {
 
   // set the form value
   var_p_t value = map_get(form, FORM_VALUE);
-  if (value == NULL) {
+  if (value == nullptr) {
     value = map_add_var(form, FORM_VALUE, 0);
   }
   if (selected) {
@@ -945,9 +937,9 @@ void FormList::updateForm(var_p_t form) {
 
   // set the selectedIndex
   var_p_t field = getField(form);
-  if (field != NULL) {
+  if (field != nullptr) {
     value = map_get(field, FORM_INPUT_INDEX);
-    if (value != NULL) {
+    if (value != nullptr) {
       v_setint(value, _model->selected());
     }
   }
@@ -1062,7 +1054,7 @@ bool FormListBox::selected(MAPoint2d pt, int offsX, int offsY, bool &redraw) {
     _topIndex++;
     redraw = true;
   } else {
-    activeList = NULL;
+    activeList = nullptr;
   }
   return result;
 }
