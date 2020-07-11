@@ -47,7 +47,7 @@ extern "C" {
 #endif
 
 struct var_s;
-typedef void (*method) (struct var_s *self);
+typedef void (*method) (struct var_s *self, struct var_s *retval);
 
 typedef struct var_s {
   union {

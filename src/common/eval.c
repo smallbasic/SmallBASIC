@@ -748,6 +748,7 @@ static inline void eval_var(var_t *r, var_t *var_p) {
   if (prog_error) {
     return;
   }
+
   switch (var_p->type) {
   case V_INT:
     r->type = V_INT;
@@ -770,7 +771,7 @@ static inline void eval_var(var_t *r, var_t *var_p) {
     v_set(r, var_p);
     break;
   case V_FUNC:
-    var_p->v.fn.cb(r);
+    var_p->v.fn.cb(var_p, r);
     break;
   case V_NIL:
     r->type = V_NIL;

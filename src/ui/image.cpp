@@ -301,7 +301,7 @@ ImageBuffer *load_xpm_image(char **data) {
   return result;
 }
 
-void cmd_image_show(var_s *self) {
+void cmd_image_show(var_s *self, var_s *) {
   ImageDisplay image;
   image._bid = map_get_int(self, IMG_BID, -1);
 
@@ -351,12 +351,12 @@ void cmd_image_show(var_s *self) {
   }
 }
 
-void cmd_image_hide(var_s *self) {
+void cmd_image_hide(var_s *self, var_s *) {
   int id = map_get_int(self, IMG_ID, -1);
   g_system->getOutput()->removeImage(id);
 }
 
-void cmd_image_save(var_s *self) {
+void cmd_image_save(var_s *self, var_s *) {
   unsigned id = map_get_int(self, IMG_BID, -1);
   ImageBuffer *image = nullptr;
   List_each(ImageBuffer *, it, cache) {

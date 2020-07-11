@@ -2908,7 +2908,7 @@ void cmd_call_vfunc() {
     if (code_peek() == kwTYPE_LEVEL_BEGIN) {
       code_skipnext();
     }
-    v_func->v.fn.cb(map);
+    v_func->v.fn.cb(map, NULL);
     if (code_peek() == kwTYPE_LEVEL_END) {
       code_skipnext();
     }
