@@ -239,7 +239,7 @@ void FormInput::drawLink(const char *caption, int dx, int dy, int sw, int chw) {
 
 void FormInput::drawText(const char *caption, int dx, int dy, int sw, int chw) {
   if (caption != nullptr) {
-    unsigned strWidth = chw * strlen(caption);
+    int strWidth = chw * strlen(caption);
     int width = sw - dx;
     if (width > _width) {
       width = _width;

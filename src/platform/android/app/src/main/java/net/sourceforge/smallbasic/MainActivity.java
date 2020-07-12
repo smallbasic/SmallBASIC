@@ -21,6 +21,7 @@ import android.location.LocationManager;
 import android.media.AudioManager;
 import android.media.MediaPlayer;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
@@ -784,6 +785,10 @@ public class MainActivity extends NativeActivity {
       } else {
         result = path;
       }
+    } else if (android.os.Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+      // https://commonsware.com/blog/2019/06/07/death-external-storage-end-saga.html
+      File[] dirs = getExternalMediaDirs();
+      result = dirs[0].getAbsolutePath();
     } else {
       result = getInternalStorage();
     }

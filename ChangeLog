@@ -1,5 +1,7 @@
-2020-06-14 (12.19)
+2020-07-12 (12.19)
 	ANDROID: fix layout issue with samsung mobiles
+	ANDROID: save and restore the selected theme
+	ANDROID: fix access to external storage
 
 2020-06-14 (12.19)
 	UI: Use theme colours in main display #94

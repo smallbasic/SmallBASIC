@@ -7,11 +7,11 @@ const lineSpacing = 2 + char_h
 const wnd = window()
 const theme = wnd.theme
 const colBkGnd = theme.background
-const colText  = theme.text1
+const colText  = theme.text5
 const colFile  = theme.text2
 const colDir   = theme.text3
 const colText2 = theme.text4
-const colNav   = theme.text5
+const colNav   = theme.text1
 const colNav2  = theme.text6
 const menu_gap = -(char_w / 2)
 const is_sdl = instr(sbver, "SDL") != 0

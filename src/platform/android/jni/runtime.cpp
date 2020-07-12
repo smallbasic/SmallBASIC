@@ -15,6 +15,7 @@
 #include "platform/android/jni/runtime.h"
 #include "lib/maapi.h"
 #include "ui/utils.h"
+#include "ui/theme.h"
 #include "languages/messages.en.h"
 #include "include/osd.h"
 #include "common/sbapp.h"
@@ -33,6 +34,7 @@
 #define SERVER_SOCKET_KEY "serverSocket"
 #define SERVER_TOKEN_KEY "serverToken"
 #define MUTE_AUDIO_KEY "muteAudio"
+#define THEME_KEY "theme"
 #define OPT_IDE_KEY "optIde"
 #define GBOARD_KEY_QUESTION 274
 #define EVENT_TYPE_EXIT 100
@@ -545,6 +547,13 @@ void Runtime::loadConfig() {
     if (s) {
       opt_ide = s->toInteger();
     }
+    s = settings.get(THEME_KEY);
+    if (s) {
+      int id = s->toInteger();
+      if (id > -1 && id < NUM_THEMES) {
+        g_themeId = id;
+      }
+    }
     loadEnvConfig(settings, SERVER_SOCKET_KEY);
     loadEnvConfig(settings, SERVER_TOKEN_KEY);
     loadEnvConfig(settings, FONT_ID_KEY);
@@ -596,6 +605,7 @@ void Runtime::saveConfig() {
     fprintf(fp, "%s=%d\n", FONT_SCALE_KEY, _fontScale);
     fprintf(fp, "%s=%d\n", MUTE_AUDIO_KEY, opt_mute_audio);
     fprintf(fp, "%s=%d\n", OPT_IDE_KEY, opt_ide);
+    fprintf(fp, "%s=%d\n", THEME_KEY, g_themeId);
     for (int i = 0; environ[i] != nullptr; i++) {
       char *env = environ[i];
       if (strstr(env, SERVER_SOCKET_KEY) != nullptr ||
