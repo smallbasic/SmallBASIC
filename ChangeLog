@@ -1,4 +1,7 @@
 2020-06-14 (12.19)
+	ANDROID: fix layout issue with samsung mobiles
+
+2020-06-14 (12.19)
 	UI: Use theme colours in main display #94
 	UI: Added theme menu
 

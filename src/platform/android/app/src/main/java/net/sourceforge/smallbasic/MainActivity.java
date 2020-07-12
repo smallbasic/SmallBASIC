@@ -343,6 +343,12 @@ public class MainActivity extends NativeActivity {
     return this._untrusted;
   }
 
+  public int getWindowHeight() {
+    Rect rect = new Rect();
+    findViewById(android.R.id.content).getWindowVisibleDisplayFrame(rect);
+    return rect.height();
+  }
+
   @Override
   public void onGlobalLayout() {
     super.onGlobalLayout();

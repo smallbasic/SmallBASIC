@@ -504,6 +504,12 @@ void Runtime::loadConfig() {
   int fontSize = getInteger("getStartupFontSize");
   trace("fontSize = %d", fontSize);
 
+  int height = getInteger("getWindowHeight");
+  if (height !=  _graphics->getHeight()) {
+    // height adjustment for bottom virtual navigation bar
+    onResize(_graphics->getWidth(), height);
+  }
+
   _output->setTextColor(DEFAULT_FOREGROUND, DEFAULT_BACKGROUND);
   _output->setFontSize(fontSize);
   _initialFontSize = _output->getFontSize();
