@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
   <string name="app_name">SmallBASIC</string>
+  <string name="samsung_keyboard">Samsung keyboard not supported. Please use an alternative keyboard.</string>
   <style name="SBTheme" parent="android:Theme.Holo.Light">
     <item name="android:windowActionBar">false</item>
     <item name="android:windowNoTitle">true</item>

@@ -340,7 +340,6 @@ int main(int argc, char *argv[]) {
   opt_autolocal = 0;
   opt_command[0] = '\0';
   opt_file_permitted = 1;
-  opt_graphics = 0;
   opt_ide = 0;
   opt_loadmod = 0;
   opt_modpath[0] = 0;
@@ -349,6 +348,9 @@ int main(int argc, char *argv[]) {
   opt_pref_width = 0;
   opt_quiet = 1;
   opt_verbose = 0;
+  opt_graphics = 1;
+  os_graphics = 1;
+  os_color_depth = 16;
 
   console_init();
 

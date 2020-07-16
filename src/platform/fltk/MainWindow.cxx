@@ -544,18 +544,19 @@ void MainWindow::editor_plugin(Fl_Widget *w, void *eventData) {
   if (editWidget) {
     Fl_Text_Editor *editor = editWidget->getEditor();
     char filename[PATH_MAX];
-    char path[PATH_MAX];
-    strcpy(filename, editWidget->getFilename());
+    strlcpy(filename, editWidget->getFilename(), PATH_MAX);
 
     if (runMode == edit_state) {
       if (editWidget->checkSave(false) && filename[0]) {
+        char path[PATH_MAX];
         int pos = editor->insert_position();
         int row, col, s1r, s1c, s2r, s2c;
         editWidget->getRowCol(&row, &col);
         editWidget->getSelStartRowCol(&s1r, &s1c);
         editWidget->getSelEndRowCol(&s2r, &s2c);
-        snprintf(opt_command, sizeof(opt_command), "%s|%d|%d|%d|%d|%d|%d",
-                 filename, row - 1, col, s1r - 1, s1c, s2r - 1, s2c);
+        strlcpy(opt_command, filename, PATH_MAX);
+        snprintf(path, sizeof(path), "|%d|%d|%d|%d|%d|%d", row - 1, col, s1r - 1, s1c, s2r - 1, s2c);
+        strlcat(opt_command, path, PATH_MAX);
         runMode = run_state;
         editWidget->runState(rs_run);
         snprintf(path, sizeof(path), "%s/%s", packageHome, (const char *)eventData);
@@ -625,17 +626,6 @@ void MainWindow::load_file(Fl_Widget *w, void *eventData) {
 }
 
 //--Startup functions-----------------------------------------------------------
-
-/**
- *Adds a plug-in to the menu
- */
-void MainWindow::addPlugin(Fl_Menu_Bar *menu, const char *label, const char *filename) {
-  char path[PATH_MAX];
-  snprintf(path, PATH_MAX, "%s/%s", pluginHome, filename);
-  if (access(path, R_OK) == 0) {
-    menu->add(label, 0, editor_plugin_cb, strdup(path));
-  }
-}
 
 /**
  * scan for recent files
@@ -952,7 +942,6 @@ MainWindow::MainWindow(int w, int h) :
   m->add("&File/_Close Others", 0, close_other_tabs_cb);
   m->add("&File/&Save File", FL_CTRL + 's', EditorWidget::save_file_cb);
   m->add("&File/_Save File &As", FL_CTRL + FL_SHIFT + 'S', save_file_as_cb);
-  addPlugin(m, "&File/Publish Online", "publish.bas");
   m->add("&File/_Export", FL_CTRL + FL_F+9, export_file_cb);
   m->add("&File/E&xit", FL_CTRL + 'q', quit_cb);
   m->add("&Edit/_&Undo", FL_CTRL + 'z', EditorWidget::undo_cb);
@@ -974,6 +963,7 @@ MainWindow::MainWindow(int w, int h) :
   m->add("&View/Theme/&Shian", 0, set_theme_cb, (void *)(intptr_t)2);
   m->add("&View/Theme/&Atom 1", 0, set_theme_cb, (void *)(intptr_t)3);
   m->add("&View/Theme/&Atom 2", 0, set_theme_cb, (void *)(intptr_t)4);
+  m->add("&View/Theme/&R157", 0, set_theme_cb, (void *)(intptr_t)5);
   m->add("&View/Text Color/_Background", 0, EditorWidget::set_color_cb, (void *)st_background);
   m->add("&View/Text Color/Text", 0, EditorWidget::set_color_cb, (void *)st_text);
   m->add("&View/Text Color/Comments", 0, EditorWidget::set_color_cb, (void *)st_comments);
@@ -983,7 +973,8 @@ MainWindow::MainWindow(int w, int h) :
   m->add("&View/Text Color/_Subs", 0, EditorWidget::set_color_cb, (void *)st_subs);
   m->add("&View/Text Color/Numbers", 0, EditorWidget::set_color_cb, (void *)st_numbers);
   m->add("&View/Text Color/Operators", 0, EditorWidget::set_color_cb, (void *)st_operators);
-  m->add("&View/Text Color/Find Matches", 0, EditorWidget::set_color_cb, (void *)st_findMatches);
+  m->add("&View/Text Color/_Find Matches", 0, EditorWidget::set_color_cb, (void *)st_findMatches);
+  m->add("&View/Text Color/Line Numbers", 0, EditorWidget::set_color_cb, (void *)st_lineNumbers);
   m->add("&View/Text Size/&Increase", FL_CTRL + ']', font_size_incr_cb);
   m->add("&View/Text Size/&Decrease", FL_CTRL + '[', font_size_decr_cb);
 

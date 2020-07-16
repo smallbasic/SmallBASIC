@@ -116,7 +116,7 @@ void FormLink::clicked(int x, int y, bool pressed) {
   }
 }
 
-void cmd_form_close(var_s *self) {
+void cmd_form_close(var_s *self, var_s *) {
   g_system->getOutput()->removeInputs();
   g_system->getOutput()->resetScroll();
 
@@ -129,7 +129,7 @@ void cmd_form_close(var_s *self) {
   v_free(&arg);
 }
 
-void cmd_form_refresh(var_s *self) {
+void cmd_form_refresh(var_s *self, var_s *) {
   var_t arg;
   v_init(&arg);
   eval(&arg);
@@ -138,7 +138,7 @@ void cmd_form_refresh(var_s *self) {
   g_system->getOutput()->updateInputs(self, setVars);
 }
 
-void cmd_form_do_events(var_s *self) {
+void cmd_form_do_events(var_s *self, var_s *) {
   // apply any variable changes onto attached widgets
   if (g_system->isRunning()) {
     AnsiWidget *out = g_system->getOutput();

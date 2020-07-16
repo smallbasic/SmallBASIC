@@ -352,7 +352,7 @@ void cmd_chain(void) {
   if (var.type == V_STR) {
     if (access(var.v.p.ptr, R_OK) == 0) {
       // argument is a file name
-      int h = open(var.v.p.ptr, O_BINARY | O_RDONLY, 0644);
+      int h = open(var.v.p.ptr, O_BINARY | O_RDONLY);
       if (h != -1) {
         struct stat st;
         if (fstat(h, &st) == 0) {
@@ -1144,7 +1144,7 @@ int brun_create_task(const char *filename, byte *preloaded_bc, int libf) {
       return search_task(fname);
     }
     // open & load
-    int h = open(fname, O_RDWR | O_BINARY, 0660);
+    int h = open(fname, O_RDWR | O_BINARY);
     if (h == -1) {
       panic("File '%s' not found", fname);
     }

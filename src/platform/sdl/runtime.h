@@ -45,6 +45,8 @@ struct Runtime : public System {
   MAEvent processEvents(int waitFlag);
   void processEvent(MAEvent &event);
   void pushEvent(MAEvent *event);
+  void restoreWindowRect();
+  void saveWindowRect();
   void setWindowSize(int width, int height);
   void setWindowTitle(const char *title);
   void share(const char *path) {}
@@ -63,6 +65,7 @@ private:
   int _menuX, _menuY;
   bool _fullscreen;
   SDL_Rect _windowRect;
+  SDL_Rect _saveRect;
   Graphics *_graphics;
   Stack<MAEvent *> *_eventQueue;
   SDL_Window *_window;

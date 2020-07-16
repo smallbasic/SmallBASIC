@@ -54,7 +54,7 @@ void sblib_close(void);
  *
  * plugin based event handling
  */
-int sblib_events(int wait_flag);
+int sblib_events(int wait_flag, int *w, int *h);
 
 /**
  * @ingroup modlib
@@ -130,7 +130,6 @@ int sblib_func_exec(int index, int param_count, slib_par_t *params, var_t *retva
  *
  * overrides for osd_xx functions
  */
-int  sblib_events(int);
 int  sblib_getpen(int code);
 int  sblib_getx();
 int  sblib_gety();

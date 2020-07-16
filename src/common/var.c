@@ -767,15 +767,15 @@ void v_zerostr(var_t *r) {
 void v_input2var(const char *str, var_t *var) {
   v_free(var);
 
-  if (strlen(str) == 0) {
+  if (!str || str[0] == '\0') {
     // no data
     v_setstr(var, str);
   } else {
-    char buf[INT_STR_LEN];
     int type;
     var_int_t lv;
     var_num_t dv;
 
+    char *buf = strdup(str);
     char *sb = strdup(str);
     char *np = get_numexpr(sb, buf, &type, &lv, &dv);
 
@@ -787,6 +787,7 @@ void v_input2var(const char *str, var_t *var) {
       v_setstr(var, str);
     }
     free(sb);
+    free(buf);
   }
 }
 

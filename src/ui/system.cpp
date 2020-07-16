@@ -20,6 +20,7 @@
 #include "common/keymap.h"
 #include "ui/system.h"
 #include "ui/inputs.h"
+#include "ui/theme.h"
 
 #define MENU_CONSOLE    0
 #define MENU_SOURCE     1
@@ -45,7 +46,8 @@
 #define MENU_HELP       21
 #define MENU_SHORTCUT   22
 #define MENU_SHARE      23
-#define MENU_SIZE       24
+#define MENU_THEME      24
+#define MENU_SIZE       25
 #define MENU_COMPLETION_0  (MENU_SIZE + 1)
 #define MENU_COMPLETION_1  (MENU_SIZE + 2)
 #define MENU_COMPLETION_2  (MENU_SIZE + 3)
@@ -78,6 +80,7 @@
 #define MENU_STR_ON      "ON"
 #define MENU_STR_AUDIO   " Audio  [%s] "
 #define MENU_STR_EDITOR  " Editor [%s] "
+#define MENU_STR_THEME   " Theme  [%s] "
 #define MENU_STR_CONSOLE " Console "
 #define MENU_STR_CONTROL " Control Mode [%s] "
 #define MENU_STR_DEBUG   " Debug "
@@ -155,6 +158,8 @@ bool System::execute(const char *bas) {
   _state = kRunState;
   setWindowTitle(bas);
   showCursor(kArrow);
+  saveWindowRect();
+
   int result = ::sbasic_main(bas);
   if (isRunning()) {
     _state = kActiveState;
@@ -162,6 +167,10 @@ bool System::execute(const char *bas) {
 
   if (_editor == nullptr) {
     opt_command[0] = '\0';
+  }
+
+  if (!_mainBas) {
+    restoreWindowRect();
   }
   enableCursor(true);
   opt_file_permitted = 1;
@@ -398,6 +407,10 @@ void System::handleMenu(MAEvent &event) {
   case MENU_EDITMODE:
     opt_ide = (opt_ide == IDE_NONE ? IDE_INTERNAL : IDE_NONE);
     break;
+  case MENU_THEME:
+    g_themeId = (g_themeId + 1) % NUM_THEMES;
+    setRestart();
+    break;
   case MENU_AUDIO:
     opt_mute_audio = !opt_mute_audio;
     break;
@@ -594,7 +607,7 @@ char *System::readSource(const char *fileName) {
   } else {
     buffer = loadResource(fileName);
     if (!buffer) {
-      int h = open(fileName, O_BINARY | O_RDONLY, 0644);
+      int h = open(fileName, O_BINARY | O_RDONLY);
       if (h != -1) {
         struct stat st;
         if (fstat(h, &st) == 0) {
@@ -618,10 +631,10 @@ char *System::readSource(const char *fileName) {
   }
   if (buffer != nullptr) {
     delete [] _programSrc;
-    int len = strlen(buffer);
-    _programSrc = new char[len + 1];
-    strncpy(_programSrc, buffer, len);
-    _programSrc[len] = '\0';
+    int len = strlen(buffer) + 1;
+    _programSrc = new char[len];
+    memcpy(_programSrc, buffer, len);
+    _programSrc[len - 1] = '\0';
     _srcRendered = false;
     systemPrint("Opened: %s %d bytes\n", fileName, len);
   }
@@ -1007,6 +1020,9 @@ void System::showMenu() {
         sprintf(buffer, MENU_STR_EDITOR, opt_ide == IDE_NONE ? MENU_STR_OFF : MENU_STR_ON);
         items->add(new String(buffer));
         _systemMenu[index++] = MENU_EDITMODE;
+        sprintf(buffer, MENU_STR_THEME, themeName());
+        items->add(new String(buffer));
+        _systemMenu[index++] = MENU_THEME;
       }
       sprintf(buffer, MENU_STR_AUDIO, (opt_mute_audio ? MENU_STR_OFF : MENU_STR_ON));
       items->add(new String(buffer));

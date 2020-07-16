@@ -147,7 +147,7 @@ int open_unit(const char *file) {
   }
 
   // open unit
-  h = open(unitname, O_RDWR | O_BINARY, 0660);
+  h = open(unitname, O_RDWR | O_BINARY);
   if (h == -1) {
     return -1;
   }
@@ -218,18 +218,15 @@ int close_unit(int uid) {
  * @return 0 on success
  */
 int import_unit(int uid) {
-  char buf[SB_KEYWORD_SIZE + 1];int i;
-
   if (uid >= 0) {
     unit_t *u = &units[uid];
     if (u->status == unit_loaded) {
-      for (i = 0; i < u->hdr.sym_count; i++) {
-        // build the name
-        // with any path component removed from the name
+      for (int i = 0; i < u->hdr.sym_count; i++) {
+        // build the name with any path component removed from the name
+        char buf[SB_KEYWORD_SIZE + SB_KEYWORD_SIZE + 1];
         char *dir_sep = strrchr(u->hdr.base, OS_DIRSEP);
         sprintf(buf, "%s.%s",
-            dir_sep ? dir_sep + 1 : u->hdr.base, u->symbols[i].symbol);
-
+                dir_sep ? dir_sep + 1 : u->hdr.base, u->symbols[i].symbol);
         switch (u->symbols[i].type) {
         case stt_function:
           comp_add_external_func(buf, uid | UID_UNIT_BIT);
@@ -242,12 +239,10 @@ int import_unit(int uid) {
           break;
         };
       }
-    }
-    else {
+    } else {
       return -2;
     }
-  }
-  else {
+  } else {
     return -1;
   }
 

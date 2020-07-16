@@ -67,7 +67,6 @@ int textedit_move_to_word_next(EditBuffer *str, int c) {
 #define LINE_BUFFER_SIZE 200
 #define INDENT_LEVEL 2
 #define HELP_WIDTH 22
-#define NUM_THEMES 6
 #define TWISTY1_OPEN  "> "
 #define TWISTY1_CLOSE "< "
 #define TWISTY2_OPEN  "  > "
@@ -89,6 +88,18 @@ unsigned g_themeId = 0;
 int g_lineMarker[MAX_MARKERS] = {
   -1, -1, -1, -1, -1, -1, -1, -1, -1, -1
 };
+
+const char *themeName() {
+  switch (g_themeId) {
+  case 0: return "Dark";
+  case 1: return "Light";
+  case 2: return "Shian";
+  case 3: return "ATOM 1";
+  case 4: return "ATOM 2";
+  case 5: return "R157";
+  default: return "";
+  }
+}
 
 // see: http://ethanschoonover.com/solarized#features
 #define sol_base03  0x002b36
@@ -156,6 +167,12 @@ const int atom2[] = {
   0x0083f8, 0xff9d00, 0x31ccac, 0xc679dd, 0x0083f8
 };
 
+const int r157[] = {
+  0x80dfff, 0xa7aebc, 0xffffff, 0xa7aebc, 0xa7aebc, 0xd0d6e1,
+  0x2e3436, 0x888a85, 0x000000, 0x4d483b, 0x000000, 0x576375,
+  0xffffff, 0xffc466, 0xffcce0, 0xffff66, 0x0083f8
+};
+
 int g_user_theme[] = {
   0xc8cedb, 0xa7aebc, 0x484f5f, 0xa7aebc, 0xa7aebc, 0x00bb00,
   0x2e3436, 0x888a85, 0x000000, 0x4d483b, 0x000000, 0x2b313a,
@@ -163,7 +180,7 @@ int g_user_theme[] = {
 };
 
 const int* themes[] = {
-  solarized_dark, solarized_light, shian, atom1, atom2, g_user_theme
+  solarized_dark, solarized_light, shian, atom1, atom2, r157, g_user_theme
 };
 
 const char *helpText =

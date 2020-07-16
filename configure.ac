@@ -7,7 +7,7 @@ dnl This program is distributed under the terms of the GPL v2.0
 dnl Download the GNU Public License (GPL) from www.gnu.org
 dnl
 
-AC_INIT([smallbasic], [0.12.18])
+AC_INIT([smallbasic], [12.19])
 AC_CONFIG_SRCDIR([configure.ac])
 
 AC_CANONICAL_TARGET
@@ -74,8 +74,8 @@ function checkDebugMode() {
    AC_MSG_RESULT([$with_debug])
    if test "$with_debug" = "yes" || test "$with_debug" = "full"
    then
-     CFLAGS="${CFLAGS} -g -O0"
-     CXXFLAGS="${CXXFLAGS} -g -O0"
+     CFLAGS="${CFLAGS} -g -O0 -fstack-protector-all"
+     CXXFLAGS="${CXXFLAGS} -g -O0 -fstack-protector-all"
      AC_DEFINE(_DEBUG, 1, [debugging build enabled])
    fi
    AC_SUBST(CFLAGS)
@@ -204,6 +204,8 @@ function buildSDL() {
 
      PACKAGE_CFLAGS="${PACKAGE_CFLAGS} ${FONTCONFIG_CFLAGS}"
 
+     (cd images && xxd -i sb-desktop-128x128.png > ../src/platform/sdl/icon.h)
+
      dnl backlinking support for modules
      PACKAGE_LIBS="${PACKAGE_LIBS} -ldl -no-pie"
      PACKAGE_LIBS="${PACKAGE_LIBS} ${FONTCONFIG_LIBS}"
@@ -211,7 +213,7 @@ function buildSDL() {
    esac
 
    PACKAGE_CFLAGS="${PACKAGE_CFLAGS} `sdl2-config --cflags` `pkg-config freetype2 --cflags` -fno-exceptions"
-   CXXFLAGS="${CXXFLAGS} -fno-rtti -std=c++11"
+   CXXFLAGS="${CXXFLAGS} -fno-rtti -std=c++14"
 
    dnl preconfigured values for SDL build
    AC_DEFINE(_SDL, 1, [Defined when building SDL version])
@@ -343,7 +345,7 @@ function buildFLTK() {
    esac
 
    FLTK_CXXFLAGS="${PACKAGE_CFLAGS} `fltk-config --cxxflags`"
-   FLTK_CXXFLAGS="${FLTK_CXXFLAGS} -fno-exceptions -fno-rtti -std=c++11 -Wno-unknown-pragmas"
+   FLTK_CXXFLAGS="${FLTK_CXXFLAGS} -fno-exceptions -fno-rtti -std=c++14 -Wno-unknown-pragmas"
    PACKAGE_LIBS="${PACKAGE_LIBS} `fltk-config --ldstaticflags --use-images`"
 
    dnl do not depend on cygwin.dll under cygwin build
@@ -441,6 +443,13 @@ echo ${TARGET}
 echo "CFLAGS=${CFLAGS}"
 echo "CXXFLAGS=${CXXFLAGS}"
 echo "PACKAGE_LIBS=${PACKAGE_LIBS}"
+
+if test x$ac_build_sdl = xyes; then
+   echo
+   echo "sdl2: `sdl2-config --version`"
+   echo "freetype: `pkg-config --version freetype2`"
+fi
+
 echo
 
 if test x$ac_build_dist = xyes; then

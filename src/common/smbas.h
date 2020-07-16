@@ -133,6 +133,9 @@ EXTERN char gsb_last_errmsg[SB_ERRMSG_SIZE + 1]; /**< last error message     */
 #include "common/units.h"
 #include "common/tasks.h"
 
+#define IF_PROG_ERR_RTN if (ctask->error) { return; }
+#define IF_PROG_ERR_BRK if (ctask->error) { break; }
+
 // emulation
 #define prog_line           ctask->line
 #define comp_line           ctask->line

@@ -1,11 +1,11 @@
 package net.sourceforge.smallbasic;
 
-import java.util.Locale;
-
 import android.content.Context;
 import android.speech.tts.TextToSpeech;
 import android.speech.tts.TextToSpeech.OnInitListener;
 import android.util.Log;
+
+import java.util.Locale;
 
 class TextToSpeechAdapter implements OnInitListener {
   private static final String TAG = "smallbasic";

@@ -253,7 +253,7 @@ ImageBuffer *load_xpm_image(char **data) {
 //
 // png.clip(10, 10, 10, 10)
 //
-void cmd_image_clip(var_s *self) {
+void cmd_image_clip(var_s *self, var_s *) {
   var_int_t left, top, right, bottom;
   ImageBuffer *image = load_image(self);
   if (par_massget("iiii", &left, &top, &right, &bottom) == 4) {
@@ -298,7 +298,7 @@ void cmd_image_clip(var_s *self) {
 // end
 // png.filter(use colorToAlpha(x))
 //
-void cmd_image_filter(var_s *self) {
+void cmd_image_filter(var_s *self, var_s *) {
   ImageBuffer *image_buffer = load_image(self);
   if (code_peek() == kwUSE && image_buffer != NULL) {
     code_skipnext();
@@ -340,7 +340,7 @@ void cmd_image_filter(var_s *self) {
 // png2 = image(w, h)
 // png2.paste(png1, 0, 0)
 //
-void cmd_image_paste(var_s *self) {
+void cmd_image_paste(var_s *self, var_s *) {
   var_int_t x, y;
   var_t *var;
   ImageBuffer *image = load_image(self);
@@ -384,7 +384,7 @@ void cmd_image_paste(var_s *self) {
 // png.save("horse1.png")
 // png.save(#1)
 //
-void cmd_image_save(var_s *self) {
+void cmd_image_save(var_s *self, var_s *) {
   ImageBuffer *image = load_image(self);
   dev_file_t *filep = NULL;
   byte code = code_peek();

@@ -1,6 +1,6 @@
 // This file is part of SmallBASIC
 //
-// Copyright(C) 2001-2016 Chris Warren-Smith.
+// Copyright(C) 2001-2020 Chris Warren-Smith.
 //
 // This program is distributed under the terms of the GPL v2.0 or later
 // Download the GNU Public License (GPL) from www.gnu.org
@@ -61,6 +61,8 @@ struct Runtime : public System {
   void runShell();
   char *loadResource(const char *fileName);
   void optionsBox(StringList *items);
+  void restoreWindowRect() {}
+  void saveWindowRect() {}
   void setWindowSize(int width, int height) {};
   void setWindowTitle(const char *title) {}
   void share(const char *path) { setString("share", path); }

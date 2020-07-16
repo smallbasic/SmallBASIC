@@ -815,11 +815,7 @@ void EditorWidget::getInput(char *result, int size) {
   if (wnd->isBreakExec()) {
     brun_break();
   } else {
-    const char *value = _commandText->value();
-    int valueLen = strlen(value);
-    int len = (valueLen < size) ? valueLen : size;
-    strncpy(result, value, len);
-    result[len] = 0;
+    strlcpy(result, _commandText->value(), size);
   }
   setCommand(cmd_find);
 }

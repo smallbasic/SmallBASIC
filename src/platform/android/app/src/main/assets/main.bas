@@ -1,19 +1,23 @@
-const app = "main.bas?"
-const boldOn = chr(27) + "[1m"
-const boldOff = chr(27) + "[21m"
-const scrollHome = chr(27) + "m"
+const boldOn = "\033[1m"
+const boldOff = "\033[21m"
+const scrollHome = "\033m"
 const char_h = txth("Q")
 const char_w = txtw(".")
 const lineSpacing = 2 + char_h
-const idxEdit = 6
-const idxFiles = 7
-const colGrey = rgb(100, 100, 100)
-const colBkGnd = rgb(31, 28, 31)
-const colText = 2
-const colLink = 3
+const wnd = window()
+const theme = wnd.theme
+const colBkGnd = theme.background
+const colText  = theme.text5
+const colFile  = theme.text2
+const colDir   = theme.text3
+const colText2 = theme.text4
+const colNav   = theme.text1
+const colNav2  = theme.text6
 const menu_gap = -(char_w / 2)
 const is_sdl = instr(sbver, "SDL") != 0
 const onlineUrl = "http://smallbasic.github.io/samples/index.bas"
+const idxEdit = 6
+const idxFiles = 7
 const saveasId = "__bn_saveas__"
 const renameId = "__bn_rename__"
 const deleteId = "__bn_delete__"
@@ -37,7 +41,7 @@ func mk_bn(value, lab, fg)
   bn.value = value
   bn.label = lab
   bn.color = fg
-  mk_bn = bn
+  return bn
 end
 
 func mk_menu(value, lab, x)
@@ -46,9 +50,9 @@ func mk_menu(value, lab, x)
   bn.y = ypos * char_h
   bn.value = value
   bn.label = "[" + lab + "]"
-  bn.color = colLink
+  bn.color = colNav
   bn.type = "link"
-  mk_menu = bn
+  return bn
 end
 
 func mk_scratch()
@@ -72,7 +76,6 @@ func mk_scratch()
       tsave scratch_file, text
       result = true
     catch e
-      local wnd = window()
       logprint e
       wnd.alert("Failed to create: " + scratch_file)
     end try
@@ -87,7 +90,7 @@ sub do_okay_button(bn_extra)
   button.label = "[Close]"
   button.x = (xmax - txtw(button.label)) / 2
   button.y = ypos * char_h
-  button.color = colLink
+  button.color = colNav
   button.type = "link"
   if (ismap(bn_extra)) then
     frm.inputs << bn_extra
@@ -117,7 +120,7 @@ sub do_about()
     print "__)| | |(_||||_)/--\__)|\_"
   endif
   print
-  color 7
+  color colText
   print "Version "; sbver
   print
   print "Copyright (c) 2002-2020 Chris Warren-Smith"
@@ -133,17 +136,17 @@ sub do_about()
   else
     bn_home.label = "https://smallbasic.github.io/pages/android.html"
   endif
-  bn_home.color = colLink
+  bn_home.color = colNav
   print:print
 
-  color colGrey
+  color colText2
   print "SmallBASIC comes with ABSOLUTELY NO WARRANTY. ";
   print "This program is free software; you can use it ";
   print "redistribute it and/or modify it under the terms of the ";
   print "GNU General Public License version 2 as published by ";
   print "the Free Software Foundation." + chr(10)
   print
-  color 7
+  color colText
   server_info()
   do_okay_button(bn_home)
   clear_screen()
@@ -152,7 +155,7 @@ end
 sub do_setup()
   local frm
 
-  color 3, colBkGnd
+  color colText, colBkGnd
   cls
   print boldOn + "Setup web service port number."
   print boldOff
@@ -161,7 +164,7 @@ sub do_setup()
   print "this screen without making any changes."
   print "The current setting is: " + env("serverSocket")
   print
-  color 15, 3
+  color colText, colBkGnd
   input socket
 
   if (len(socket) > 0) then
@@ -174,7 +177,7 @@ sub do_setup()
     env("serverToken=" + token)
   endif
 
-  color 3, colBkGnd
+  color colText, colBkGnd
   cls
   print "Web service port number: " + env("serverSocket")
   print
@@ -196,7 +199,6 @@ sub do_setup()
   env("fontId=" + frm.inputs(0).selectedIndex)
 
   local msg = "You must restart SmallBASIC for this change to take effect."
-  local wnd = window()
   wnd.alert(msg, "Restart required")
   clear_screen()
 end
@@ -293,9 +295,9 @@ end
 
 sub listFiles(byref frm, path, sortDir, byref basList)
   local lastItem, bn, abbr, gap, n, lab, name, txtcol, i
-  local name_col = 3
-  local size_col = 3
-  local date_col = 3
+  local name_col = colNav
+  local size_col = colNav
+  local date_col = colNav
 
   if (right(path, 1) != "/") then
     path += "/"
@@ -307,28 +309,28 @@ sub listFiles(byref frm, path, sortDir, byref basList)
     sort basList use filecmpfunc0(x,y)
   case 1
     sort basList use filecmpfunc1(x,y)
-    name_col = 6
+    name_col = colNav2
   case 2
     sort basList use filecmpfunc2(x,y)
-    size_col = 5
+    size_col = colNav2
   case 3
     sort basList use filecmpfunc3(x,y)
-    size_col = 6
+    size_col = colNav2
   case 4
     sort basList use filecmpfunc4(x,y)
-    date_col = 5
+    date_col = colNav2
   case 5
     sort basList use filecmpfunc5(x,y)
-    date_col = 6
+    date_col = colNav2
   end select
 
-  bn = mk_bn(0, "Files in " + path, 7)
+  bn = mk_bn(0, "Files in " + path, colText)
   bn.type = "label"
   bn.x = 0
   bn.y = -lineSpacing
   frm.inputs << bn
 
-  bn = mk_bn(backId, "[Go up]", 3)
+  bn = mk_bn(backId, "[Go up]", colNav)
   bn.type = "link"
   bn.x = 0
   bn.y = -linespacing
@@ -358,7 +360,7 @@ sub listFiles(byref frm, path, sortDir, byref basList)
   lastItem = len(basList) - 1
   for i = 0 to lastItem
     node = basList(i)
-    txtcol = iff(node.dir, 3, 2)
+    txtcol = iff(node.dir, colDir, colFile)
     name = node.name
     if (abbr) then
       bn = mk_bn(path + name, name, txtcol)
@@ -377,7 +379,7 @@ sub listFiles(byref frm, path, sortDir, byref basList)
 
       gap = 12 - len(str(node.size))
       n = iff(gap > 1, gap, 1)
-      bn = mk_bn(0, node.size + space(n) + timestamp(node.mtime), colGrey)
+      bn = mk_bn(0, node.size + space(n) + timestamp(node.mtime), colText)
       bn.type = "label"
       bn.y = -1
       gap = 29 - len(name)
@@ -388,7 +390,7 @@ sub listFiles(byref frm, path, sortDir, byref basList)
 end
 
 sub manageFiles()
-  local f, wnd, bn_edit, bn_files, selectedFile
+  local f, bn_edit, bn_files, selectedFile
 
   func fileCmpFunc(l, r)
     local f1 = lower(l)
@@ -425,7 +427,7 @@ sub manageFiles()
     bn_edit.y = char_h + 4
     bn_edit.width = xmax
     bn_edit.type = "text"
-    bn_edit.color = "white"
+    bn_edit.color = colText2
     bn_edit.resizable = TRUE
     bn_edit.help = "Enter file name, and then click New."
     bn_files.x = x1
@@ -518,7 +520,7 @@ sub manageFiles()
     else
       tload selectedFile, buffer
       wnd.graphicsScreen2()
-      color 7
+      color colText
       cls
       len_buffer = len(buffer) - 1
       for i = 0 to len_buffer
@@ -569,7 +571,6 @@ sub manageFiles()
 
   createUI()
   reloadList(0)
-  wnd = window()
   wnd.showKeypad()
 
   while 1
@@ -606,7 +607,6 @@ func changeDir(s)
     chdir s
     return true
   catch e
-    local wnd = window()
     wnd.alert(e)
     return false
   end try
@@ -695,17 +695,17 @@ sub main
     elif (frm.value == sortNameId) then
       cls
       sortDir = iff(sortDir==0,1,0)
-      env("sortDir="+sortDir)
+      env("sortDir=" + sortDir)
       frm = makeUI(path, sortDir)
     elif (frm.value == sortSizeId) then
       cls
       sortDir = iff(sortDir==3,2,3)
-      env("sortDir="+sortDir)
+      env("sortDir=" + sortDir)
       frm = makeUI(path, sortDir)
     elif (frm.value == sortDateId) then
       cls
       sortDir = iff(sortDir==5,4,5)
-      env("sortDir="+sortDir)
+      env("sortDir=" + sortDir)
       frm = makeUI(path, sortDir)
     fi
   wend

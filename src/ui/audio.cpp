@@ -1,6 +1,6 @@
 // This file is part of SmallBASIC
 //
-// Copyright(C) 2001-2019 Chris Warren-Smith.
+// Copyright(C) 2001-2020 Chris Warren-Smith.
 //
 // This program is distributed under the terms of the GPL v2.0 or later
 // Download the GNU Public License (GPL) from www.gnu.org
@@ -32,7 +32,7 @@ struct Sound;
 static ma_device device;
 static ma_device_config config;
 static strlib::Queue<Sound *> queue;
-static strlib::Properties<Sound *> cache;
+static int queuePos = 0;
 
 struct Sound {
   Sound(int frequency, int millis, int volume);
@@ -41,7 +41,7 @@ struct Sound {
 
   ma_result construct(const char *path);
 
-  ma_sine_wave *_tone;
+  ma_waveform *_tone;
   ma_decoder *_decoder;
   uint32_t _start;
   uint32_t _duration;
@@ -59,8 +59,11 @@ Sound::Sound(int frequency, int millis, int volume) :
   _decoder(nullptr),
   _start(0),
   _duration(millis) {
-  _tone = (ma_sine_wave *)malloc(sizeof(ma_sine_wave));
-  ma_sine_wave_init(volume / 100.0, frequency, DEFAULT_SAMPLE_RATE, _tone);
+  _tone = (ma_waveform *)malloc(sizeof(ma_waveform));
+  ma_waveform_config config =
+    ma_waveform_config_init(DEFAULT_FORMAT, DEFAULT_CHANNELS, DEFAULT_SAMPLE_RATE,
+                            ma_waveform_type_sine, volume / 100.0, frequency);
+  ma_waveform_init(&config, _tone);
 }
 
 Sound::~Sound() {
@@ -82,20 +85,25 @@ static void data_callback(ma_device *device, void *output, const void *input, ma
   if (queue.empty()) {
     usleep(MILLIS_TO_MICROS(10));
   } else {
-    Sound *sound = queue.front();
+    queuePos = (queuePos + 1) % queue.size();
+    Sound *sound = queue[queuePos];
     if (sound->_decoder != nullptr) {
       // play audio track
-      ma_decoder_read_pcm_frames(sound->_decoder, output, frameCount);
+      ma_uint64 framesRead = ma_decoder_read_pcm_frames(sound->_decoder, output, frameCount);
+      if (framesRead == 0) {
+        // finished playing
+        queue.pop(false);
+      }
     } else if (sound->_start == 0) {
       // start new sound
       sound->_start = dev_get_millisecond_count();
-      ma_sine_wave_read_f32(sound->_tone, frameCount, (float*)output);
+      ma_waveform_read_pcm_frames(sound->_tone, (float *)output, frameCount);
     } else if (dev_get_millisecond_count() - sound->_start > sound->_duration) {
       // sound has timed out
-      queue.pop(sound->_decoder == nullptr);
+      queue.pop(false);
     } else {
       // continue sound
-      ma_sine_wave_read_f32(sound->_tone, frameCount, (float*)output);
+      ma_waveform_read_pcm_frames(sound->_tone, (float *)output, frameCount);
     }
   }
 }
@@ -122,8 +130,18 @@ static void setup_format(ma_format format, ma_uint32 channels, ma_uint32 sampleR
   }
 }
 
+static void device_start() {
+  if (ma_device__get_state(&device) != MA_STATE_STARTED) {
+    ma_result result = ma_device_start(&device);
+    if (result != MA_SUCCESS) {
+      err_throw("Failed to start audio [%d]", result);
+    }
+  }
+}
+
 bool audio_open() {
   setup_config(DEFAULT_FORMAT, DEFAULT_CHANNELS, DEFAULT_SAMPLE_RATE);
+  queuePos = 0;
   return (ma_device_init(nullptr, &config, &device) == MA_SUCCESS);
 }
 
@@ -133,32 +151,19 @@ void audio_close() {
 }
 
 void osd_audio(const char *path) {
-  Sound *sound = cache.get(path);
-  if (sound) {
+  Sound *sound = new Sound();
+  ma_result result = sound->construct(path);
+  if (result != MA_SUCCESS) {
+    delete sound;
+    err_throw("Failed to open sound file [%d]", result);
+  } else {
+    setup_format(sound->_decoder->outputFormat,
+                 sound->_decoder->outputChannels,
+                 sound->_decoder->outputSampleRate);
     ma_mutex_lock(&device.lock);
     queue.push(sound);
     ma_mutex_unlock(&device.lock);
-  } else {
-    sound = new Sound();
-    ma_result result = sound->construct(path);
-    if (result != MA_SUCCESS) {
-      delete sound;
-      err_throw("Failed to open sound file [%d]", result);
-    } else {
-      setup_format(sound->_decoder->outputFormat,
-                   sound->_decoder->outputChannels,
-                   sound->_decoder->outputSampleRate);
-      ma_mutex_lock(&device.lock);
-      queue.push(sound);
-      cache.put(path, sound);
-      ma_mutex_unlock(&device.lock);
-      if (queue.size() == 1) {
-        result = ma_device_start(&device);
-        if (result != MA_SUCCESS) {
-          err_throw("Failed to start audio [%d]", result);
-        }
-      }
-    }
+    device_start();
   }
 }
 
@@ -180,7 +185,7 @@ void osd_clear_sound_queue() {
   }
 
   queue.removeAll();
-  cache.removeAll();
+  queuePos = 0;
 }
 
 void osd_sound(int frequency, int millis, int volume, int background) {
@@ -190,13 +195,13 @@ void osd_sound(int frequency, int millis, int volume, int background) {
   ma_mutex_unlock(&device.lock);
 
   if (!background) {
-    ma_device_start(&device);
+    device_start();
     usleep(MILLIS_TO_MICROS(millis));
     ma_device_stop(&device);
     ma_mutex_lock(&device.lock);
     queue.pop();
     ma_mutex_unlock(&device.lock);
   } else  if (queue.size() == 1) {
-    ma_device_start(&device);
+    device_start();
   }
 }

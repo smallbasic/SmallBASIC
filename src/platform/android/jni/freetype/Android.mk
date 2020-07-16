@@ -27,6 +27,7 @@ LOCAL_SRC_FILES:=                               \
   $(FREETYPE_HOME)/src/pcf/pcf.c                \
   $(FREETYPE_HOME)/src/psaux/psaux.c            \
   $(FREETYPE_HOME)/src/bdf/bdf.c                \
+  $(FREETYPE_HOME)/src/base/ftdebug.c           \
   $(FREETYPE_HOME)/src/base/ftbbox.c            \
   $(FREETYPE_HOME)/src/base/ftbitmap.c          \
   $(FREETYPE_HOME)/src/base/ftglyph.c           \

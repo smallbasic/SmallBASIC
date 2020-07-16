@@ -298,7 +298,6 @@ int Runtime::runShell(const char *startupBas, bool runWait, int fontScale, int d
     _output->setFontSize(fontSize);
   }
 
-
   audio_open();
   net_init();
 
@@ -803,6 +802,16 @@ char *Runtime::getClipboardText() {
     result = NULL;
   }
   return result;
+}
+
+void Runtime::restoreWindowRect() {
+  SDL_SetWindowPosition(_window, _saveRect.x, _saveRect.y);
+  SDL_SetWindowSize(_window, _saveRect.w, _saveRect.h);
+  setWindowSize(_saveRect.w, _saveRect.h);
+}
+
+void Runtime::saveWindowRect() {
+  setWindowRect(_saveRect);
 }
 
 //

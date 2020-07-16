@@ -80,9 +80,24 @@ void browseFile(SDL_Window *window, const char *url) {
 #else
 #include <unistd.h>
 #include <errno.h>
+#include "icon.h"
+#include "lib/lodepng/lodepng.h"
 
 void loadIcon(SDL_Window *window) {
-  // handled via smallbasic.desktop
+  unsigned w, h;
+  unsigned char *image;
+  if (!lodepng_decode32(&image, &w, &h, sb_desktop_128x128_png, sb_desktop_128x128_png_len)) {
+    SDL_Surface *surf =
+      SDL_CreateRGBSurfaceFrom(image, w, h,
+                               32, w * 4,
+                               0x000000ff,
+                               0x0000ff00,
+                               0x00ff0000,
+                               0xff000000);
+    SDL_SetWindowIcon(window, surf);
+    SDL_FreeSurface(surf);
+    free(image);
+  }
 }
 
 int getStartupFontSize(SDL_Window *window) {

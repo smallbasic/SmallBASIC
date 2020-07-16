@@ -11,32 +11,6 @@
 #include "common/scan.h"
 
 /*
- * valid exit codes from eval
- */
-code_t kw_eval_validexit[] = {
-  kwTYPE_EOC,
-  kwTYPE_LINE,
-  kwTYPE_SEP,
-  kwFILLED,
-  kwCOLOR,
-  kwUSE,
-  kwTO,
-  kwIN,
-  kwSTEP,
-  kwFORSEP,
-  kwINPUTSEP,
-  kwINPUT,
-  kwOUTPUTSEP,
-  kwAPPENDSEP,
-  kwAS,
-  kwUSING,
-  kwTHEN,
-  kwDO,
-  kwBACKG,
-  0
-};
-
-/*
  * functions without parameters
  */
 bid_t kw_noarg_func_table[] = {
@@ -53,31 +27,41 @@ bid_t kw_noarg_func_table[] = {
   0
 };
 
-//
-int kw_check(code_t *table, code_t code) {
-  register int i;
-
-  for (i = 0; table[i] != 0; i++) {
-    if (code == table[i]) {
-      return 1;
-    }
-  }
-  return 0;
-}
-
-//
-int kw_check_evexit(code_t code) {
-  return kw_check(kw_eval_validexit, code);
-}
-
 /*
+ * valid exit codes from eval
  */
+int kw_check_evexit(code_t code) {
+  switch (code) {
+  case kwTYPE_EOC:
+  case kwTYPE_LINE:
+  case kwTYPE_SEP:
+  case kwFILLED:
+  case kwCOLOR:
+  case kwUSE:
+  case kwTO:
+  case kwIN:
+  case kwSTEP:
+  case kwFORSEP:
+  case kwINPUTSEP:
+  case kwINPUT:
+  case kwOUTPUTSEP:
+  case kwAPPENDSEP:
+  case kwAS:
+  case kwUSING:
+  case kwTHEN:
+  case kwDO:
+  case kwBACKG:
+    return 1;
+  default:
+    return 0;
+  }
+}
+
 int kw_getcmdname(code_t code, char *dest) {
-  int i;
   int found = 0;
 
   *dest = '\0';
-  for (i = 0; keyword_table[i].name[0] != '\0'; i++) {
+  for (int i = 0; keyword_table[i].name[0] != '\0'; i++) {
     if (code == keyword_table[i].code) {
       strcpy(dest, keyword_table[i].name);
       found++;
@@ -90,14 +74,11 @@ int kw_getcmdname(code_t code, char *dest) {
   return found;
 }
 
-/*
- */
 int kw_getfuncname(bid_t code, char *dest) {
-  int i;
   int found = 0;
 
   *dest = '\0';
-  for (i = 0; func_table[i].name[0] != '\0'; i++) {
+  for (int i = 0; func_table[i].name[0] != '\0'; i++) {
     if (code == func_table[i].fcode) {
       strcpy(dest, func_table[i].name);
       found++;
@@ -110,14 +91,11 @@ int kw_getfuncname(bid_t code, char *dest) {
   return found;
 }
 
-/*
- */
 int kw_getprocname(bid_t code, char *dest) {
-  int i;
   int found = 0;
 
   *dest = '\0';
-  for (i = 0; proc_table[i].name[0] != '\0'; i++) {
+  for (int i = 0; proc_table[i].name[0] != '\0'; i++) {
     if (code == proc_table[i].pcode) {
       strcpy(dest, proc_table[i].name);
       found++;
@@ -130,12 +108,8 @@ int kw_getprocname(bid_t code, char *dest) {
   return found;
 }
 
-/*
- */
 int kw_noarg_func(bid_t code) {
-  int i;
-
-  for (i = 0; kw_noarg_func_table[i] != 0; i++) {
+  for (int i = 0; kw_noarg_func_table[i] != 0; i++) {
     if (kw_noarg_func_table[i] == code) {
       return 1;
     }

@@ -54,8 +54,10 @@ extern "C" {
 
 #if defined(_Win32)
  #define SB_VERSYS "Win"
+ #define OS_LINESEPARATOR  "\r\n"
 #else
  #define SB_VERSYS "Unix"
+ #define OS_LINESEPARATOR  "\r\n"
 #endif
 
 #if UINTPTR_MAX == 0xffffffff

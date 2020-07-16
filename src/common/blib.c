@@ -530,7 +530,7 @@ void cmd_print(int output) {
     if (code_peek() == kwTYPE_EOC || code_peek() == kwTYPE_LINE) {
       // There are no parameters
       if (dev_fstatus(handle)) {
-        dev_fwrite(handle, (byte *) "\n", 1);
+        dev_fwrite(handle, (byte *)OS_LINESEPARATOR, sizeof(OS_LINESEPARATOR));
       } else {
         err_fopen();
       }
@@ -642,7 +642,7 @@ void cmd_print(int output) {
   };
 
   if (last_op == 0) {
-    pv_write("\n", output, handle);
+    pv_write(output == PV_FILE ? OS_LINESEPARATOR : "\n", output, handle);
   }
 }
 
@@ -751,7 +751,7 @@ void cmd_input(int input) {
         inps = malloc(SB_TEXTLINE_SIZE + 1);
         if (prompt.v.p.ptr) {
           // prime output buffer with prompt text
-          int prompt_len = strlen(prompt.v.p.ptr);
+          int prompt_len = v_strlen(&prompt);
           int len = prompt_len < SB_TEXTLINE_SIZE ? prompt_len : SB_TEXTLINE_SIZE;
           strncpy(inps, prompt.v.p.ptr, len);
           inps[len] = 0;
@@ -2835,14 +2835,20 @@ void cmd_definekey(void) {
 
   if (!prog_error) {
     par_getcomma();
-
-    if (code_peek() != kwTYPE_CALL_UDF) {
-      err_syntax(kwDEFINEKEY, "%I,%G");
-    } else {
+    switch (code_peek()) {
+    case kwTYPE_INT:
+      prog_ip++;
+      keymap_remove(key, code_getint());
+      break;
+    case kwTYPE_CALL_UDF:
       keymap_add(key, prog_ip);
 
       // skip ahead to avoid immediate call
       prog_ip += BC_CTRLSZ + 1;
+      break;
+    default:
+      err_syntax(kwDEFINEKEY, "%I,%G");
+      break;
     }
   }
   v_free(&var);
@@ -2902,7 +2908,7 @@ void cmd_call_vfunc() {
     if (code_peek() == kwTYPE_LEVEL_BEGIN) {
       code_skipnext();
     }
-    v_func->v.fn.cb(map);
+    v_func->v.fn.cb(map, NULL);
     if (code_peek() == kwTYPE_LEVEL_END) {
       code_skipnext();
     }

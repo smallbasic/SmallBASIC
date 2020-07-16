@@ -17,9 +17,9 @@ struct ImageBuffer {
   ImageBuffer(ImageBuffer &imageBuffer);
   virtual ~ImageBuffer();
 
-  unsigned _bid;
   char *_filename;
   unsigned char *_image;
+  unsigned _bid;
   int _width;
   int _height;
 };
