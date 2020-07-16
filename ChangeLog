@@ -1,3 +1,6 @@
+2020-07-16 (12.19)
+	COMMON: Fix 'Print #' on Windows to use Windows line endings
+
 2020-07-12 (12.19)
 	ANDROID: fix layout issue with samsung mobiles
 	ANDROID: save and restore the selected theme

@@ -530,7 +530,7 @@ void cmd_print(int output) {
     if (code_peek() == kwTYPE_EOC || code_peek() == kwTYPE_LINE) {
       // There are no parameters
       if (dev_fstatus(handle)) {
-        dev_fwrite(handle, (byte *) "\n", 1);
+        dev_fwrite(handle, (byte *)OS_LINESEPARATOR, sizeof(OS_LINESEPARATOR));
       } else {
         err_fopen();
       }
@@ -642,7 +642,7 @@ void cmd_print(int output) {
   };
 
   if (last_op == 0) {
-    pv_write("\n", output, handle);
+    pv_write(output == PV_FILE ? OS_LINESEPARATOR : "\n", output, handle);
   }
 }
 

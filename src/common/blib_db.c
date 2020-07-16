@@ -725,7 +725,7 @@ void cmd_fsaveln() {
     for (int i = 0; i < v_asize(array_p); i++) {
       var_p = v_elem(array_p, i);
       fprint_var(handle, var_p);
-      dev_fwrite(handle, (byte *)"\n", 1);
+      dev_fwrite(handle, (byte *)OS_LINESEPARATOR, sizeof(OS_LINESEPARATOR));
     }
   } else {
     // parameter is an string
