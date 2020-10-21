@@ -57,7 +57,7 @@ extern "C" {
  #define OS_LINESEPARATOR  "\r\n"
 #else
  #define SB_VERSYS "Unix"
- #define OS_LINESEPARATOR  "\r\n"
+ #define OS_LINESEPARATOR  "\n"
 #endif
 
 #if UINTPTR_MAX == 0xffffffff

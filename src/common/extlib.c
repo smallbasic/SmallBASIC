@@ -243,7 +243,7 @@ void slib_import_routines(slib_t *lib, int comp) {
     for (int i = 0; i < count; i++) {
       if (fgetname(i, buf)) {
         strupper(buf);
-        if (slib_add_external_proc(buf, lib->id) == -1) {
+        if (!lib->imported && slib_add_external_proc(buf, lib->id) == -1) {
           break;
         } else if (comp) {
           char name[NAME_SIZE];
@@ -265,7 +265,7 @@ void slib_import_routines(slib_t *lib, int comp) {
     for (int i = 0; i < count; i++) {
       if (fgetname(i, buf)) {
         strupper(buf);
-        if (slib_add_external_func(buf, lib->id) == -1) {
+        if (!lib->imported && slib_add_external_func(buf, lib->id) == -1) {
           break;
         } else if (comp) {
           char name[NAME_SIZE];
@@ -295,7 +295,7 @@ slib_t *get_lib(int lib_id) {
  */
 void slib_import(int lib_id, int comp) {
   slib_t *lib = get_lib(lib_id);
-  if (lib && !lib->imported) {
+  if (lib) {
     slib_import_routines(lib, comp);
     lib->imported = 1;
   }
