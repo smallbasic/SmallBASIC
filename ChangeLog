@@ -1,3 +1,6 @@
+2020-07-16 (12.20)
+	COMMON: Fix to allow c-modules to be called from units
+
 2020-07-16 (12.19)
 	COMMON: Fix 'Print #' on Windows to use Windows line endings
 

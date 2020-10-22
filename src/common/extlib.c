@@ -51,8 +51,6 @@ typedef struct {
   sblib_exec_fn sblib_func_exec;
   uint32_t id;
   uint32_t flags;
-  uint32_t first_proc;
-  uint32_t first_func;
   uint8_t  imported;
 } slib_t;
 
@@ -230,8 +228,6 @@ void slib_import_routines(slib_t *lib, int comp) {
   int (*fgetname) (int, char *);
   int (*fcount) (void);
 
-  lib->first_proc = extproccount;
-  lib->first_func = extfunccount;
   lib->sblib_func_exec = slib_getoptptr(lib, "sblib_func_exec");
   lib->sblib_proc_exec = slib_getoptptr(lib, "sblib_proc_exec");
 
@@ -295,7 +291,7 @@ slib_t *get_lib(int lib_id) {
  */
 void slib_import(int lib_id, int comp) {
   slib_t *lib = get_lib(lib_id);
-  if (lib) {
+  if (lib && (comp || !lib->imported)) {
     slib_import_routines(lib, comp);
     lib->imported = 1;
   }
@@ -566,9 +562,9 @@ int slib_exec(slib_t *lib, var_t *ret, int index, int proc) {
   int success;
   v_init(ret);
   if (proc) {
-    success = lib->sblib_proc_exec(index - lib->first_proc, pcount, ptable, ret);
+    success = lib->sblib_proc_exec(index, pcount, ptable, ret);
   } else {
-    success = lib->sblib_func_exec(index - lib->first_func, pcount, ptable, ret);
+    success = lib->sblib_func_exec(index, pcount, ptable, ret);
   }
 
   // error
@@ -597,6 +593,7 @@ int slib_procexec(int lib_id, int index) {
   slib_t *lib = get_lib(lib_id);
   if (lib && lib->sblib_proc_exec) {
     var_t ret;
+    v_init(&ret);
     result = slib_exec(lib, &ret, index, 1);
     v_free(&ret);
   } else {
