@@ -50,6 +50,7 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.FileWriter;
+import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -62,6 +63,9 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
 import java.net.URLDecoder;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Date;
 import java.util.Enumeration;
 import java.util.HashMap;
@@ -868,6 +872,28 @@ public class MainActivity extends NativeActivity {
     return result;
   }
 
+  private void migrateFiles(File fromDir, File toDir) {
+    FilenameFilter filter = new FilenameFilter() {
+      @Override
+      public boolean accept(File dir, String name) {
+        return name != null && name.endsWith(".bas");
+      }
+    };
+    File[] toFiles = toDir.listFiles(filter);
+    File[] fromFiles = fromDir.listFiles(filter);
+    if ((toFiles == null || toFiles.length == 0) && Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+      // only attempt file copy into a clean destination folder
+      for (File file : fromFiles) {
+        try {
+          Path to = toDir.toPath().resolve(file.getName());
+          Files.copy(file.toPath(), to);
+        } catch (IOException e) {
+          Log.d(TAG, "failed to copy: ", e);
+        }
+      }
+    }
+  }
+
   private boolean permitted(String permission) {
     return (ContextCompat.checkSelfPermission(this, permission) == PackageManager.PERMISSION_GRANTED);
   }
@@ -1005,7 +1031,17 @@ public class MainActivity extends NativeActivity {
   private void setupStorageEnvironment(boolean external) {
     setenv("INTERNAL_DIR", getInternalStorage());
     if (external) {
-      setenv("EXTERNAL_DIR", getExternalStorage());
+      String externalDir = getExternalStorage();
+      File files = getExternalFilesDir(null);
+      if (files != null) {
+        String externalFiles = files.getAbsolutePath();
+        if (!externalDir.equals(externalFiles) && isPublicStorage(externalFiles)) {
+          migrateFiles(new File(externalDir), files);
+          setenv("LEGACY_DIR", externalDir);
+          externalDir = externalFiles;
+        }
+      }
+      setenv("EXTERNAL_DIR", externalDir);
     }
   }
 
