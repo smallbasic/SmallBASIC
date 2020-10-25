@@ -606,7 +606,7 @@ end
 func selectDir(s)
   local result = s
   if (is_android && s != env("EXTERNAL_DIR") && (s == env("LEGACY_DIR") || s == env("INTERNAL_DIR"))) then
-    wnd.ask("Would you like to navigate to the SmallBASIC folder?", "Temporary file location")
+    wnd.ask("Would you like to navigate to the SmallBASIC folder instead?", "Temporary file location")
     if (wnd.answer == 0) then
       result = env("EXTERNAL_DIR")
     endif
