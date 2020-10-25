@@ -14,6 +14,7 @@ const colText2 = theme.text4
 const colNav   = theme.text1
 const colNav2  = theme.text6
 const menu_gap = -(char_w / 2)
+const is_android = instr(sbver, "Android") != 0
 const is_sdl = instr(sbver, "SDL") != 0
 const onlineUrl = "http://smallbasic.github.io/samples/index.bas"
 const idxEdit = 6
@@ -273,7 +274,7 @@ sub loadFileList(path, byref basList)
   end
   dirwalk path, "", use walker(x)
 
-  if (path = "/" && !is_sdl) then
+  if (path = "/" && is_android) then
      ext_storage = env("EXTERNAL_DIR")
      if (len(ext_storage) > 0) then
        emptyNode.name = mid(ext_storage, 2)
@@ -602,6 +603,17 @@ sub manageFiles()
   cls
 end
 
+func selectDir(s)
+  local result = s
+  if (is_android && s != env("EXTERNAL_DIR") && (s == env("LEGACY_DIR") || s == env("INTERNAL_DIR"))) then
+    wnd.ask("Would you like to navigate to the SmallBASIC folder?", "Temporary file location")
+    if (wnd.answer == 0) then
+      result = env("EXTERNAL_DIR")
+    endif
+  endif
+  return result
+end
+
 func changeDir(s)
   try
     chdir s
@@ -669,6 +681,7 @@ sub main
 
     if (isdir(frm.value)) then
       cls
+      frm.value = selectDir(frm.value)
       if (changeDir(frm.value)) then
         path = frm.value
       endif

@@ -1,4 +1,7 @@
-2020-07-16 (12.20)
+2020-10-21 (12.20)
+	ANDROID: upgrade to target android 29
+
+2020-10-21 (12.20)
 	COMMON: Fix to allow c-modules to be called from units
 
 2020-07-16 (12.19)
