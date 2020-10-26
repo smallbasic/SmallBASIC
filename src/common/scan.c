@@ -47,6 +47,7 @@ const int LEN_ANTIALIAS  = STRLEN(LCN_ANTIALIAS);
 const int LEN_LDMODULES  = STRLEN(LCN_LOAD_MODULES);
 const int LEN_AUTOLOCAL  = STRLEN(LCN_AUTOLOCAL);
 const int LEN_AS_WRS     = STRLEN(LCN_AS_WRS);
+const int LEN_CONST      = STRLEN(LCN_CONST);
 
 #define KW_TYPE_LINE_BYTES 5
 
@@ -1914,19 +1915,11 @@ void comp_cmd_option(char *src) {
 /**
  * stores export symbols (in pass2 will be checked again)
  */
-void bc_store_exports(const char *slist) {
+void bc_store_exports(char *slist) {
   char_p_t pars[MAX_PARAMS];
-  int count = 0, i;
-  char *newlist;
-
-  newlist = (char *)malloc(strlen(slist) + 3);
-  strcpy(newlist, "(");
-  strcat(newlist, slist);
-  strcat(newlist, ")");
-
-  comp_getlist_insep(newlist, pars, "()", MAX_PARAMS, &count);
-
+  int count = comp_getlist(slist, pars, MAX_PARAMS);
   int offset;
+
   if (comp_exptable.count) {
     offset = comp_exptable.count;
     comp_exptable.count += count;
@@ -1938,14 +1931,24 @@ void bc_store_exports(const char *slist) {
     comp_exptable.elem = (unit_sym_t **)malloc(comp_exptable.count * sizeof(unit_sym_t *));
   }
 
-  for (i = 0; i < count; i++) {
+  for (int i = 0; i < count; i++) {
     unit_sym_t *sym = (unit_sym_t *)malloc(sizeof(unit_sym_t));
     memset(sym, 0, sizeof(unit_sym_t));
-    strlcpy(sym->symbol, pars[i], sizeof(sym->symbol));
-    comp_exptable.elem[offset + i] = sym;
-  }
 
-  free(newlist);
+    char var_name[SB_KEYWORD_SIZE + 1];
+    comp_prepare_name(var_name, pars[i], SB_KEYWORD_SIZE);
+    if (strncmp(LCN_CONST, var_name, LEN_CONST) == 0) {
+      char *next = pars[i] + LEN_CONST;
+      comp_prepare_name(var_name, next, SB_KEYWORD_SIZE);
+    }
+    strlcpy(sym->symbol, var_name, sizeof(sym->symbol));
+    comp_exptable.elem[offset + i] = sym;
+
+    if (strlen(var_name) != strlen(pars[i])) {
+      // handle same line variable assignment, eg export blah = foo
+      comp_text_line(pars[i], 1);
+    }
+  }
 }
 
 void comp_get_unary(const char *p, int *ladd, int *linc, int *ldec, int *leqop) {

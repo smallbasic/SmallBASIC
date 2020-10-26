@@ -3,9 +3,13 @@ Import TauChild
 
 Export expvar, foof, foop
 export addRoom,calcRoomSize
-export print_expvar, ta, build_ta, cerr
+export print_expvar, ta, build_ta,   cerr
 
 expvar = "Tau's exported variable"
+
+export const LIGHTGRAY  = rgb(200, 200, 200)
+export const GRAY       = rgb(130, 130, 130)
+export const DARKGRAY   = rgb(80, 80, 80), const YELLOW     = rgb(253, 249, 0)
 
 func fooF(x)
 	foof = "Tau's fooF("+x+") is here"
