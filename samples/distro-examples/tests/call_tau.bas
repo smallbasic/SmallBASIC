@@ -40,3 +40,10 @@ sub addRoom(the_thing, d)
 end
 
 addRoom(foyer,x)
+
+if (Tau.LIGHTGRAY != rgb(200, 200, 200)) then
+  print "Error importing inline assigned export variable"
+endif
+if (Tau.YELLOW != rgb(253, 249, 0)) then
+  print "Error importing inline assigned export variable"
+endif

@@ -1,4 +1,7 @@
 2020-10-21 (12.20)
+	COMMON: add support for inline assignment of export variables
+
+2020-10-21 (12.20)
 	ANDROID: upgrade to target android 29
 
 2020-10-21 (12.20)
