@@ -114,9 +114,10 @@ int find_unit(const char *name, char *file);
  * open unit
  *
  * @param file is the filename
+ * @param alias alternative unit name
  * @return the unit handle or -1 on error
  */
-int open_unit(const char *file);
+int open_unit(const char *file, const char *alias);
 
 /**
  * @ingroup exec
