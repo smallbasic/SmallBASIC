@@ -410,7 +410,7 @@ void panic(const char *fmt, ...) {
   va_list argp;
 	va_start(argp, fmt);
   vfprintf(stderr, fmt, argp);
-  dev_print("Fatal error");
+  dev_print("\nFatal error\n");
 	va_end(argp);
   exit(EXIT_FAILURE);
 }

@@ -143,11 +143,12 @@ bc_symbol_rec_t *add_imptable_rec(const char *proc_name, int lib_id, int symbol_
 }
 
 // store lib-record
-void add_libtable_rec(const char *lib, int uid, int type) {
+void add_libtable_rec(const char *lib, const char *alias, int uid, int type) {
   bc_lib_rec_t *imlib = (bc_lib_rec_t *)malloc(sizeof(bc_lib_rec_t));
   memset(imlib, 0, sizeof(bc_lib_rec_t));
 
   strlcpy(imlib->lib, lib, sizeof(imlib->lib));
+  strlcpy(imlib->alias, alias, sizeof(imlib->alias));
   imlib->id = uid;
   imlib->type = type;
 
@@ -594,8 +595,8 @@ int comp_check_lib(const char *name) {
       bc_lib_rec_t *lib = comp_libtable.elem[i];
 
       // remove any file path component from the name
-      char *dir_sep = strrchr(lib->lib, OS_DIRSEP);
-      char *lib_name = dir_sep ? dir_sep + 1 : lib->lib;
+      char *dir_sep = strrchr(lib->alias, OS_DIRSEP);
+      char *lib_name = dir_sep ? dir_sep + 1 : lib->alias;
 
       if (strcasecmp(lib_name, tmp) == 0) {
         return 1;
@@ -637,9 +638,7 @@ int comp_create_var(const char *name) {
  * add external variable
  */
 int comp_add_external_var(const char *name, int lib_id) {
-  int idx;
-
-  idx = comp_create_var(name);
+  int idx = comp_create_var(name);
   comp_vartable[idx].lib_id = lib_id;
 
   if (lib_id & UID_UNIT_BIT) {
@@ -4300,9 +4299,9 @@ void comp_preproc_import(const char *slist) {
     if (uid != -1) {
       // store C module lib-record
       slib_import(uid, 1);
-      add_libtable_rec(alias, uid, 0);
+      add_libtable_rec(alias, alias, uid, 0);
     } else {
-      uid = open_unit(buf);
+      uid = open_unit(buf, alias);
       if (uid < 0) {
         sc_raise(MSG_UNIT_NOT_FOUND, buf);
         return;
@@ -4313,7 +4312,7 @@ void comp_preproc_import(const char *slist) {
         return;
       }
       // store lib-record
-      add_libtable_rec(buf, uid, 1);
+      add_libtable_rec(buf, alias, uid, 1);
 
       // clean up
       close_unit(uid);
@@ -4353,17 +4352,15 @@ void comp_preproc_unit(char *name) {
 
   SKIP_SPACES(p);
 
-  if (!is_alpha(*p)) {
+  if (is_alpha(*p)) {
+    p = get_unit_name(p, comp_unit_name);
+    comp_unit_flag = 1;
+    SKIP_SPACES(p);
+    if (*p != '\n' && *p != ':') {
+      sc_raise(MSG_UNIT_ALREADY_DEFINED);
+    }
+  } else {
     sc_raise(MSG_INVALID_UNIT_NAME);
-  }
-
-  p = get_unit_name(p, comp_unit_name);
-  comp_unit_flag = 1;
-
-  SKIP_SPACES(p);
-
-  if (*p != '\n' && *p != ':') {
-    sc_raise(MSG_UNIT_ALREADY_DEFINED);
   }
 }
 

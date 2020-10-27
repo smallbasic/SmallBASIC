@@ -99,7 +99,7 @@ int find_unit(const char *name, char *file) {
  * @param file is the filename
  * @return the unit handle or -1 on error
  */
-int open_unit(const char *file) {
+int open_unit(const char *file, const char *alias) {
   int h;
   unit_t u;
   int uid = -1;
@@ -169,6 +169,7 @@ int open_unit(const char *file) {
 
   // setup the rest
   strcpy(u.name, unitname);
+  strcpy(u.hdr.base, alias);
   u.status = unit_loaded;
 
   // add unit
