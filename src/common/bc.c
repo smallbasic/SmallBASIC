@@ -9,6 +9,36 @@
 
 #include "common/bc.h"
 #include "common/smbas.h"
+#include "common/str.h"
+
+/*
+ * string escape codes
+ */
+const char escapes[][2] = {
+  {'a', 0x07},
+  {'b', 0x08},
+  {'e', 0x1b},
+  {'f', 0x0c},
+  {'n', 0x0a},
+  {'r', 0x0d},
+  {'t', 0x09},
+  {'v', 0x0b},
+};
+
+/*
+ * whether the character is an escape
+ */
+int bc_is_escape(char c, char *value) {
+  int len = sizeof(escapes) / sizeof(escapes[0]);
+  int result = 0;
+  for (int i = 0; i < len && !result; i++) {
+    if (escapes[i][0] == c) {
+      *value = escapes[i][1];
+      result = 1;
+    }
+  }
+  return result;
+}
 
 /*
  * Create a bytecode segment
@@ -182,23 +212,18 @@ void bc_add_strn(bc_t *bc, const char *str, int len) {
  * returns a pointer of src to the next "element"
  */
 char *bc_store_string(bc_t *bc, char *src) {
-  char *p = src;
-  char *np = NULL;
-  char *base = src + 1;
-  int len = 0;
-
   // skip past opening quotes
-  p++;
+  char *p = src + 1;
+  char *base = src + 1;
+  char escape = 0;
+  cstr cs;
+  cstr_init(&cs, 5);
+
   while (*p) {
     if ((*p == '\\' && ((*(p + 1) == '\"') || *(p + 1) == '\\'))
         || *p == V_JOIN_LINE) {
       // escaped quote " or escaped escape
-      int seglen = p - base;
-      np = np ? realloc(np, len + seglen + 1) : malloc(seglen + 1);
-      strncpy(np + len, base, seglen);
-      // add next segment
-      len += seglen;
-      np[len] = 0;
+      cstr_append_i(&cs, base, p - base);
 
       if (*p == V_JOIN_LINE) {
         // skip null newline
@@ -211,6 +236,11 @@ char *bc_store_string(bc_t *bc, char *src) {
 
       // include " (or \ ) in next segment
       base = ++p;
+    } else if (*p == '\\' && bc_is_escape(*(p + 1), &escape)) {
+      char code[] = {escape, '\0'};
+      cstr_append_i(&cs, base, p - base);
+      cstr_append_i(&cs, code, 1);
+      base = (++p) + 1;
     } else if (*p == V_QUOTE) {
       // revert hidden quote
       *p = '\"';
@@ -220,17 +250,14 @@ char *bc_store_string(bc_t *bc, char *src) {
       *p = '\n';
     } else if (*p == '\"') {
       // end of string detected
-      int seglen = p - base;
-      np = np ? realloc(np, len + seglen + 1) : malloc(seglen + 1);
-      memcpy(np + len, base, seglen);
-      bc_add_strn(bc, np, len + seglen);
-      free(np);
+      cstr_append_i(&cs, base, p - base);
+      bc_add_strn(bc, cs.buf, cs.length);
       p++;
-      return p;
+      break;
     }
     p++;
   }
-  free(np);
+  free(cs.buf);
   return p;
 }
 

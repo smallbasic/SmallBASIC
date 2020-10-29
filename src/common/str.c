@@ -1092,17 +1092,23 @@ void hex_dump(const unsigned char *block, int size) {
 
 void cstr_init(cstr *cs, int size) {
   cs->length = 0;
-  cs->size = size;
+  cs->size = size < 1 ? 1 : size;
   cs->buf = malloc(size);
   cs->buf[0] = '\0';
 }
 
 void cstr_append(cstr *cs, const char *str) {
-  int len = strlen(str);
-  if (cs->size - cs->length < len + 1) {
-    cs->size += len + 1;
-    cs->buf = realloc(cs->buf, cs->size);
+  cstr_append_i(cs, str, strlen(str));
+}
+
+void cstr_append_i(cstr *cs, const char *str, int len) {
+  if (len > 0) {
+    if (cs->size - cs->length < len + 1) {
+      cs->size += len + 1;
+      cs->buf = realloc(cs->buf, cs->size);
+    }
+    strlcat(cs->buf, str, cs->size);
+    cs->length += len;
+    cs->buf[cs->length] = '\0';
   }
-  strcat(cs->buf, str);
-  cs->length += len;
 }
