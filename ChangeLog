@@ -1,3 +1,6 @@
+2020-10-29 (12.20)
+	COMMON: Implemented c-styles escape sequences
+
 2020-10-27 (12.20)
 	COMMON: add support for inline assignment of export variables
 	COMMON: add support for unit alias names
