@@ -284,6 +284,7 @@ void System::editSource(String loadPath, bool restoreOnExit) {
           break;
         case SB_KEY_CTRL('s'):
           saveFile(editWidget, loadPath);
+          saveRecentPosition(loadPath, editWidget->getCursorPos());
           break;
         case SB_KEY_CTRL('c'):
         case SB_KEY_CTRL('x'):
@@ -314,6 +315,7 @@ void System::editSource(String loadPath, bool restoreOnExit) {
         case SB_KEY_F(3):
           if (editWidget->getTextLength()) {
             saveFile(editWidget, loadPath);
+            saveRecentPosition(loadPath, editWidget->getCursorPos());
             _output->setStatus("Export to mobile SmallBASIC. Enter <IP>:<Port>");
             widget = helpWidget;
             helpWidget->createLineEdit(g_exportAddr);
@@ -323,6 +325,7 @@ void System::editSource(String loadPath, bool restoreOnExit) {
           break;
         case SB_KEY_F(5):
           saveFile(editWidget, loadPath);
+          saveRecentPosition(loadPath, editWidget->getCursorPos());
           _output->setStatus("Debug. F6=Step, F7=Continue, Esc=Close");
           widget = helpWidget;
           helpWidget->createMessage();
@@ -437,7 +440,9 @@ void System::editSource(String loadPath, bool restoreOnExit) {
           }
           if (getRecentFile(recentFile, event.key - SB_KEY_ALT('1'))) {
             if (loadSource(recentFile.c_str())) {
+              saveRecentPosition(loadPath, editWidget->getCursorPos());
               editWidget->reload(_programSrc);
+              editWidget->setCursorPos(getRecentPosition(recentFile));
               statusMessage.setFilename(recentFile);
               statusMessage.update(editWidget, _output, true);
               setLoadPath(recentFile);
@@ -523,6 +528,7 @@ void System::editSource(String loadPath, bool restoreOnExit) {
       int choice = ask("Save changes?", message, isBack());
       if (choice == 0) {
         saveFile(editWidget, loadPath);
+        saveRecentPosition(loadPath, editWidget->getCursorPos());
       } else if (choice == 2) {
         // cancel
         _state = kEditState;

@@ -179,6 +179,12 @@ void restoreSettings(SDL_Rect &rect, int &fontScale, bool debug, bool restoreDir
       if (len > 1) {
         recentPath[i].clear();
         recentPath[i].append(fp, len);
+
+        int indexColon = recentPath[i].indexOf(':', 0);
+        if (indexColon != -1) {
+          recentPosition[i] = recentPath[i].substring(indexColon + 1).toInteger();
+          recentPath[i] = recentPath[i].substring(0, indexColon);
+        }
       } else {
         break;
       }
@@ -243,7 +249,7 @@ void saveSettings(SDL_Rect &rect, int fontScale, bool debug) {
     // save the recent editor paths
     for (int i = 0; i < NUM_RECENT_ITEMS; i++) {
       if (!recentPath[i].empty()) {
-        fprintf(fp, "%s\n", recentPath[i].c_str());
+        fprintf(fp, "%s:%d\n", recentPath[i].c_str(), recentPosition[i]);
       }
     }
     fclose(fp);
@@ -284,6 +290,26 @@ void getRecentFileList(String &fileList, String &current) {
       }
       fileList.append(i + 1).append(" ");
       fileList.append(recentPath[i]).append("\n\n");
+    }
+  }
+}
+
+int getRecentPosition(const char *fileName) {
+  int result = 0;
+  for (int i = 0; i < NUM_RECENT_ITEMS; i++) {
+    if (recentPath[i].equals(fileName, false)) {
+      result = recentPosition[i];
+      break;
+    }
+  }
+  return result;
+}
+
+void saveRecentPosition(const char *fileName, unsigned cursorPos) {
+  for (int i = 0; i < NUM_RECENT_ITEMS; i++) {
+    if (recentPath[i].equals(fileName, false)) {
+      recentPosition[i] = cursorPos;
+      break;
     }
   }
 }

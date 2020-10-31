@@ -408,9 +408,9 @@ void lwrite(const char *buf) {
  */
 void panic(const char *fmt, ...) {
   va_list argp;
-	va_start(argp, fmt);
+  va_start(argp, fmt);
   vfprintf(stderr, fmt, argp);
   dev_print("\nFatal error\n");
-	va_end(argp);
+  va_end(argp);
   exit(EXIT_FAILURE);
 }
