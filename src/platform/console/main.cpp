@@ -9,6 +9,7 @@
 
 #include "config.h"
 #include <getopt.h>
+#include <errno.h>
 #include "common/sbapp.h"
 #include "ui/kwp.h"
 
@@ -54,7 +55,12 @@ void show_help() {
 }
 
 void show_brief_help() {
-  fprintf(stdout, "SmallBASIC version %s - use -h for help\n",  SB_STR_VER);
+  if (opt_command[0] != '\0') {
+    access(opt_command, R_OK);
+    fprintf(stdout, "sbasic: can't open file '%s': [Errno %d] %s\n", opt_command, errno, strerror(errno));
+  } else {
+    fprintf(stdout, "SmallBASIC version %s - use -h for help\n", SB_STR_VER);
+  }
 }
 
 void command_help(const char *selection) {
