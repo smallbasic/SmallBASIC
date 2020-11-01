@@ -1,3 +1,6 @@
+2020-11-01 (12.20)
+	CONSOLE: give error when file not found
+
 2020-10-31 (12.20)
 	SDL: implemented restoring the cursor position
 
