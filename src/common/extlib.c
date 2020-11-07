@@ -16,17 +16,14 @@
  #include <sys/cygwin.h>
  #define WIN_EXTLIB
  #define LIB_EXT ".dll"
- #define DEFAULT_PATH "c:/sbasic/lib"
 #elif defined(__MINGW32__)
  #include <windows.h>
  #define WIN_EXTLIB
  #define LIB_EXT ".dll"
- #define DEFAULT_PATH "c:/sbasic/lib"
 #elif (defined(__linux__) || defined(__midipix__) || defined(__MACH__)) && defined(_UnixOS)
  #include <dlfcn.h>
  #define LNX_EXTLIB
  #define LIB_EXT ".so"
- #define DEFAULT_PATH "/usr/lib/sbasic/modules:/usr/local/lib/sbasic/modules"
 #endif
 
 #if defined(LNX_EXTLIB) || defined(WIN_EXTLIB)
@@ -85,27 +82,14 @@ int slib_llclose(slib_t *lib) {
   return 1;
 }
 
-#else // WIN_EXTLIB
-#if defined(__CYGWIN__)
-int slib_llopen(slib_t *lib) {
-  char win32Path[PATH_SIZE];
-  cygwin_conv_path(CCP_POSIX_TO_WIN_A, lib->fullname, win32Path, sizeof(win32Path));
-  lib->handle = LoadLibrary(win32Path);
-  if (lib->handle == NULL) {
-    sc_raise("LIB: error on loading %s\n", win32Path);
-  }
-  return (lib->handle != NULL);
-}
-
 #elif defined(WIN_EXTLIB)
 int slib_llopen(slib_t *lib) {
-  lib->handle = LoadLibrary(lib->fullname);
+  lib->handle = LoadLibraryA(lib->fullname);
   if (lib->handle == NULL) {
-    sc_raise("LIB: error on loading %s\n", lib->name);
+    sc_raise("LIB: error [%d] loading %s [%s]\n", GetLastError(), lib->fullname, lib->name);
   }
   return (lib->handle != NULL);
 }
-#endif
 
 void *slib_getoptptr(slib_t *lib, const char *name) {
   return GetProcAddress((HMODULE) lib->handle, name);
@@ -428,10 +412,6 @@ void slib_init() {
       if (modpath != NULL) {
         strlcpy(opt_modpath, modpath, OPT_MOD_SZ);
       }
-    }
-
-    if (opt_modpath[0] == '\0') {
-      strcpy(opt_modpath, DEFAULT_PATH);
     }
 
     slib_init_path();

@@ -203,15 +203,6 @@ void v_init_pool(void);
 void v_pool_free(var_t *var);
 
 /**
- * @ingroup var
- *
- * creates a new variable
- *
- * @return a newly created var_t object
- */
-var_t *v_new(void);
-
-/**
  * < returns the integer value of variable v
  * @ingroup var
  */

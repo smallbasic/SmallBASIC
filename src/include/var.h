@@ -121,6 +121,15 @@ typedef var_t *var_p_t;
 /**
  * @ingroup var
  *
+ * creates a new variable
+ *
+ * @return a newly created var_t object
+ */
+var_t *v_new(void);
+
+/**
+ * @ingroup var
+ *
  * creates a new variable array
  *
  * @return a newly created var_t array of the given size

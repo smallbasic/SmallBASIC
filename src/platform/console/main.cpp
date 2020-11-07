@@ -28,7 +28,7 @@ static struct option OPTIONS[] = {
   {"keywords",       no_argument,       NULL, 'k'},
   {"no-file-perm",   no_argument,       NULL, 'f'},
   {"gen-sbx",        no_argument,       NULL, 'x'},
-  {"module",         optional_argument, NULL, 'm'},
+  {"module-path",    optional_argument, NULL, 'm'},
   {"decompile",      optional_argument, NULL, 's'},
   {"option",         optional_argument, NULL, 'o'},
   {"cmd",            optional_argument, NULL, 'c'},
