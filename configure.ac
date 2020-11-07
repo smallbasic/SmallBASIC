@@ -59,8 +59,6 @@ function checkForWindows() {
      *darwin*)
      ;;
      *)
-     dnl backlinking support for modules
-     LDFLAGS="${LDFLAGS} -export-dynamic"
    esac
    AM_CONDITIONAL(WITH_WIN32, test x"$win32" = "xyes")
 }
@@ -287,7 +285,7 @@ function buildConsole() {
          TARGET="Building Cygwin MinGW console version."
          AC_DEFINE(__MINGW32__, 1, [as above])
          AC_DEFINE(_UnixOS, 1, [Building under Unix like systems.])
-         PACKAGE_LIBS="${PACKAGE_LIBS} -Wl,-Bstatic -mconsole -lmingw32 -lwsock32 -lws2_32 -static-libgcc"
+         PACKAGE_LIBS="${PACKAGE_LIBS} -Wl,-Bstatic -mconsole -lwsock32 -lws2_32 -static-libgcc"
          BUILD_SUBDIRS="src/common src/platform/console"
       fi
       AC_DEFINE(_Win32, 1, [Windows build])
