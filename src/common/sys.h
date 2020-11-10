@@ -44,7 +44,7 @@ extern "C" {
 
 #define VAR_MAX_INT     LONG_MAX
 #define VAR_NUM_FMT     "%f"
-#define VAR_INT_FMT     "%ld"
+#define VAR_INT_FMT     "%lld"
 #define VAR_INT_NUM_FMT "%.0f"
 
 #define OS_PATHNAME_SIZE    1024

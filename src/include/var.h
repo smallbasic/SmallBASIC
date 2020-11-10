@@ -15,7 +15,7 @@
 // https://en.wikipedia.org/wiki/Dependency_inversion_principle
 
 typedef double var_num_t;
-typedef long int var_int_t;
+typedef long long int var_int_t;
 
 #define MAXDIM 6
 #define OS_INTSZ  sizeof(var_int_t)
@@ -32,7 +32,7 @@ typedef long int var_int_t;
 /*
  * Variable - types
  */
-#define V_INT       0 /**< variable type, 32bit integer                @ingroup var */
+#define V_INT       0 /**< variable type, 64bit integer                @ingroup var */
 #define V_NUM       1 /**< variable type, 64bit float (same as V_NUM)  @ingroup var */
 #define V_STR       2 /**< variable type, string                       @ingroup var */
 #define V_ARRAY     3 /**< variable type, array of variables           @ingroup var */
