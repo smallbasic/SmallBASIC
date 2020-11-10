@@ -295,7 +295,7 @@ sub loadFileList(path, byref basList)
 end
 
 sub listFiles(byref frm, path, sortDir, byref basList)
-  local lastItem, bn, abbr, gap, n, lab, name, txtcol, i
+  local lastItem, bn, abbr, gap, n, lab, name, txtcol, i, pathx
   local name_col = colNav
   local size_col = colNav
   local date_col = colNav
@@ -325,7 +325,18 @@ sub listFiles(byref frm, path, sortDir, byref basList)
     date_col = colNav2
   end select
 
-  bn = mk_bn(0, "Files in " + path, colText)
+  if (is_android) then
+    pathx = mid(path, 1, len(path) - 1)
+    if (pathx == env("LEGACY_DIR") || pathx == env("INTERNAL_DIR")) then
+      bn = mk_bn(0, "Temporary files", colText2)
+    elseif (pathx == env("EXTERNAL_DIR")) then
+      bn = mk_bn(0, "SmallBASIC project files", colText)
+    else
+      bn = mk_bn(0, "Files in " + path, colText)
+    endif
+  else
+    bn = mk_bn(0, "Files in " + path, colText)
+  endif
   bn.type = "label"
   bn.x = 0
   bn.y = -lineSpacing
