@@ -248,7 +248,8 @@ bool process_options(int argc, char *argv[], char **runFile, bool *tmpFile) {
         const char *s = argv[i];
         int len = strlen(s);
         if (*runFile == NULL &&
-            (strcasecmp(s + len - 4, ".bas") == 0 && access(s, 0) == 0)) {
+            ((strcasecmp(s + len - 4, ".bas") == 0 ||
+              strcasecmp(s + len - 4, ".sbx") == 0) && access(s, 0) == 0)) {
           *runFile = strdup(s);
         } else {
           if (opt_command[0]) {
