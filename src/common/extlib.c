@@ -11,16 +11,11 @@
 #include <config.h>
 #endif
 
-#if defined(__CYGWIN__)
- #include <w32api/windows.h>
- #include <sys/cygwin.h>
- #define WIN_EXTLIB
- #define LIB_EXT ".dll"
-#elif defined(__MINGW32__)
+#if defined(__MINGW32__)
  #include <windows.h>
  #define WIN_EXTLIB
  #define LIB_EXT ".dll"
-#elif (defined(__linux__) || defined(__midipix__) || defined(__MACH__)) && defined(_UnixOS)
+#elif defined(_UnixOS)
  #include <dlfcn.h>
  #define LNX_EXTLIB
  #define LIB_EXT ".so"
@@ -333,16 +328,27 @@ void slib_open(const char *fullname, const char *name) {
   }
 }
 
+/**
+ * whether name ends with LIB_EXT and does not contain '-', eg libstdc++-6.dll
+ */
+int slib_is_module(const char *name) {
+  int result = 0;
+  if (name && name[0] != '\0') {
+    int offs = strlen(name) - (sizeof(LIB_EXT) - 1);
+    result = offs > 0 && strchr(name, '-') == NULL && strcasecmp(name + offs, LIB_EXT) == 0;
+  }
+  return result;
+}
+
 void slib_open_path(const char *path, const char *name) {
-  char *p;
-  if (((p = strstr(name, LIB_EXT)) != NULL) && strcmp(p, LIB_EXT) == 0) {
+  if (slib_is_module(name)) {
     // ends with LIB_EXT
     char full[PATH_SIZE];
     char libname[NAME_SIZE];
 
     // copy name without extension
     strlcpy(libname, name, sizeof(libname));
-    p = strchr(libname, '.');
+    char *p = strchr(libname, '.');
     *p = '\0';
 
     // copy full path to name
