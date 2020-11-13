@@ -327,7 +327,9 @@ sub listFiles(byref frm, path, sortDir, byref basList)
 
   if (is_android) then
     pathx = mid(path, 1, len(path) - 1)
-    if (pathx == env("LEGACY_DIR") || pathx == env("INTERNAL_DIR")) then
+    if (pathx == env("LEGACY_DIR")) then
+      bn = mk_bn(0, "SmallBASIC legacy project files", colText2)
+    elseif (pathx == env("INTERNAL_DIR")) then
       bn = mk_bn(0, "Temporary files", colText2)
     elseif (pathx == env("EXTERNAL_DIR")) then
       bn = mk_bn(0, "SmallBASIC project files", colText)
