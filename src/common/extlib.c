@@ -13,6 +13,7 @@
 
 #if defined(__MINGW32__)
  #include <windows.h>
+ #include <error.h>
  #define WIN_EXTLIB
  #define LIB_EXT ".dll"
 #elif defined(_UnixOS)
@@ -81,7 +82,18 @@ int slib_llclose(slib_t *lib) {
 int slib_llopen(slib_t *lib) {
   lib->handle = LoadLibraryA(lib->fullname);
   if (lib->handle == NULL) {
-    sc_raise("LIB: error [%d] loading %s [%s]\n", GetLastError(), lib->fullname, lib->name);
+    int error = GetLastError();
+    switch (error) {
+    case ERROR_MOD_NOT_FOUND:
+      sc_raise("LIB: DLL dependency error [%d] loading %s [%s]\n", error, lib->fullname, lib->name);
+      break;
+    case ERROR_DYNLINK_FROM_INVALID_RING:
+      sc_raise("LIB: DLL build error [%d] loading %s [%s]\n", error, lib->fullname, lib->name);
+      break;
+    default:
+      sc_raise("LIB: error [%d] loading %s [%s]\n", error, lib->fullname, lib->name);
+      break;
+    }
   }
   return (lib->handle != NULL);
 }
