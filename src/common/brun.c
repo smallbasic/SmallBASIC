@@ -1094,6 +1094,63 @@ void dump_stack() {
   } while (1);
 }
 
+// load libraries - each library is loaded on new task
+void brun_load_libraries(int tid) {
+  // reset symbol mapping
+  for (int i = 0; i < prog_symcount; i++) {
+    prog_symtable[i].task_id = prog_symtable[i].exp_idx = -1;
+  }
+  // for each library
+  for (int i = 0; i < prog_libcount; i++) {
+    if (prog_libtable[i].type == 1) {
+      // === SB Unit ===
+      // create task
+      int lib_tid = brun_create_task(prog_libtable[i].lib, 0, 1);
+      activate_task(tid);
+
+      // update lib-table's task-id field (in this code; not in lib's code)
+      prog_libtable[i].tid = lib_tid;
+
+      // update lib-symbols's task-id field (in this code; not in lib's code)
+      for (int j = 0; j < prog_symcount; j++) {
+        char *pname = strrchr(prog_symtable[j].symbol, '.') + 1;
+        // the name without the 'class'
+        if ((prog_symtable[j].lib_id & (~UID_UNIT_BIT)) == prog_libtable[i].id) {
+          // find symbol by name (for sure) and update it
+          // this is required because lib may be newer than
+          // parent
+          for (int k = 0; k < taskinfo(lib_tid)->sbe.exec.expcount; k++) {
+            if (strcmp(pname, taskinfo(lib_tid)->sbe.exec.exptable[k].symbol) == 0) {
+              prog_symtable[j].exp_idx = k;
+              // adjust sid (sid is <-> exp_idx in lib)
+              prog_symtable[j].task_id = lib_tid;
+              // connect the library
+              break;
+            }
+          }
+        }
+      }
+    } else {
+      // === C Module ===
+      // update lib-table's task-id field (in this code; not in lib's code)
+      prog_libtable[i].tid = -1;  // not a task
+      int lib_id = prog_libtable[i].id;
+      slib_import(lib_id, 0);
+
+      // update lib-symbols's task-id field (in this code; not in lib's code)
+      for (int j = 0; j < prog_symcount; j++) {
+        if (prog_symtable[j].lib_id == lib_id) {
+          prog_symtable[j].exp_idx = slib_get_kid(lib_id, prog_symtable[j].symbol);
+          prog_symtable[j].task_id = -1;
+        }
+      }
+    }
+
+    // return
+    activate_task(tid);
+  }
+}
+
 /*
  * RUN byte-code
  *
@@ -1254,62 +1311,10 @@ int brun_create_task(const char *filename, byte *preloaded_bc, int libf) {
   prog_ip = 0;
 
   exec_setup_predefined_variables();
-
-  // load libraries - each library is loaded on new task
   if (prog_libcount) {
-    // reset symbol mapping
-    for (int i = 0; i < prog_symcount; i++) {
-      prog_symtable[i].task_id = prog_symtable[i].exp_idx = -1;
-    }
-    // for each library
-    for (int i = 0; i < prog_libcount; i++) {
-      if (prog_libtable[i].type == 1) {
-        // === SB Unit ===
-        // create task
-        int lib_tid = brun_create_task(prog_libtable[i].lib, 0, 1);
-        activate_task(tid);
-
-        // update lib-table's task-id field (in this code; not in lib's code)
-        prog_libtable[i].tid = lib_tid;
-
-        // update lib-symbols's task-id field (in this code; not in lib's code)
-        for (int j = 0; j < prog_symcount; j++) {
-          char *pname = strrchr(prog_symtable[j].symbol, '.') + 1;
-          // the name without the 'class'
-          if ((prog_symtable[j].lib_id & (~UID_UNIT_BIT)) == prog_libtable[i].id) {
-            // find symbol by name (for sure) and update it
-            // this is required because lib may be newer than
-            // parent
-            for (int k = 0; k < taskinfo(lib_tid)->sbe.exec.expcount; k++) {
-              if (strcmp(pname, taskinfo(lib_tid)->sbe.exec.exptable[k].symbol) == 0) {
-                prog_symtable[j].exp_idx = k;
-                // adjust sid (sid is <-> exp_idx in lib)
-                prog_symtable[j].task_id = lib_tid;
-                // connect the library
-                break;
-              }
-            }
-          }
-        }
-      } else {
-        // === C Module ===
-        // update lib-table's task-id field (in this code; not in lib's code)
-        prog_libtable[i].tid = -1;  // not a task
-        int lib_id = prog_libtable[i].id;
-        slib_import(lib_id, 0);
-
-        // update lib-symbols's task-id field (in this code; not in lib's code)
-        for (int j = 0; j < prog_symcount; j++) {
-          prog_symtable[j].exp_idx = slib_get_kid(lib_id, prog_symtable[j].symbol);
-          // adjust sid (sid is <-> exp_idx in lib)
-          prog_symtable[j].task_id = -1;  // connect the library
-        }
-      }
-
-      // return
-      activate_task(tid);
-    }
+    brun_load_libraries(tid);
   }
+
   return tid;
 }
 
