@@ -37,8 +37,7 @@
 typedef int (*sblib_exec_fn)(int, int, slib_par_t *, var_t *);
 typedef int (*sblib_getname_fn) (int, char *);
 typedef int (*sblib_count_fn) (void);
-typedef const char *(*sblib_get_module_name_fn) (void);
-typedef int (*sblib_init_fn) (void);
+typedef int (*sblib_init_fn) (const char *);
 typedef void (*sblib_close_fn) (void);
 
 typedef struct {
@@ -278,13 +277,18 @@ void slib_import(int lib_id, int comp) {
     slib_import_routines(lib, comp);
     lib->imported = 1;
   }
+  if (lib && !comp) {
+    sblib_init_fn minit = slib_getoptptr(lib, "sblib_init");
+    if (minit && !minit(gsb_last_file)) {
+      rt_raise("LIB: %s->sblib_init(), failed", lib->name);
+    }
+  }
 }
 
 /**
- * opens the library and invokes the init function
+ * opens the library
  */
 void slib_open(const char *fullname, const char *name) {
-  int success = 0;
   int name_index = 0;
 
   if (strncmp(name, "lib", 3) == 0) {
@@ -303,30 +307,12 @@ void slib_open(const char *fullname, const char *name) {
     log_printf("LIB: importing %s", fullname);
   }
   if (slib_llopen(lib)) {
-    success = 1;
-
-    // init
-    sblib_init_fn minit = slib_getoptptr(lib, "sblib_init");
-    if (minit) {
-      if (!minit()) {
-        sc_raise("LIB: %s->sblib_init(), failed", lib->name);
-        success = 0;
-      }
-    }
-
-    // override default name
-    sblib_get_module_name_fn get_module_name = slib_getoptptr(lib, "sblib_get_module_name");
-    if (get_module_name) {
-      strlcpy(lib->name, get_module_name(), NAME_SIZE);
-    }
-  } else {
-    sc_raise("LIB: can't open %s", fullname);
-  }
-  if (success) {
     slib_count++;
     if (!opt_quiet) {
       log_printf("... done\n");
     }
+  } else {
+    sc_raise("LIB: can't open %s", fullname);
   }
 }
 

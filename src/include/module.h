@@ -31,16 +31,7 @@ typedef struct {
  *
  * @return non-zero on success
  */
-int sblib_init(void);
-
-/**
- * @ingroup modlib
- *
- * returns the module name
- *
- * @return module name
- */
-const char *sblib_get_module_name();
+int sblib_init(const char *sourceFile);
 
 /**
  * @ingroup modstd

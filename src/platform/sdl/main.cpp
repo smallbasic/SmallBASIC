@@ -40,18 +40,18 @@ const char *FONTS[] = {
 };
 
 static struct option OPTIONS[] = {
-  {"help",      no_argument,       NULL, 'h'},
-  {"verbose",   no_argument,       NULL, 'v'},
-  {"keywords",  no_argument,       NULL, 'k'},
-  {"command",   optional_argument, NULL, 'c'},
-  {"font",      optional_argument, NULL, 'f'},
-  {"run",       optional_argument, NULL, 'r'},
-  {"run-live",  optional_argument, NULL, 'x'},
-  {"run-n-wait",optional_argument, NULL, 'n'},
-  {"module",    optional_argument, NULL, 'm'},
-  {"edit",      optional_argument, NULL, 'e'},
-  {"debug",     optional_argument, NULL, 'd'},
-  {"debugPort", optional_argument, NULL, 'p'},
+  {"help",        no_argument,       NULL, 'h'},
+  {"verbose",     no_argument,       NULL, 'v'},
+  {"keywords",    no_argument,       NULL, 'k'},
+  {"command",     optional_argument, NULL, 'c'},
+  {"font",        optional_argument, NULL, 'f'},
+  {"run",         optional_argument, NULL, 'r'},
+  {"run-live",    optional_argument, NULL, 'x'},
+  {"run-n-wait",  optional_argument, NULL, 'n'},
+  {"module-path", optional_argument, NULL, 'm'},
+  {"edit",        optional_argument, NULL, 'e'},
+  {"debug",       optional_argument, NULL, 'd'},
+  {"debugPort",   optional_argument, NULL, 'p'},
   {0, 0, 0, 0}
 };
 
