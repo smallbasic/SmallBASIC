@@ -582,7 +582,7 @@ int comp_check_labels() {
 }
 
 /*
- * returns true if 'name' is a unit or c-module
+ * returns 1 if 'name' is a unit, 2 if 'name' c-module otherwise 0
  */
 int comp_check_lib(const char *name) {
   char tmp[SB_KEYWORD_SIZE + 1];
@@ -599,7 +599,7 @@ int comp_check_lib(const char *name) {
       char *lib_name = dir_sep ? dir_sep + 1 : lib->alias;
 
       if (strcasecmp(lib_name, tmp) == 0) {
-        return 1;
+        return lib->type == 0 ? 2 : 1;
       }
     }
   }
@@ -678,15 +678,22 @@ bid_t comp_var_getID(const char *var_name) {
   //
   // If the name is not found in comp_libtable then it
   // is treated as a structure reference
-  if (dot != NULL && comp_check_lib(tmp)) {
-    for (i = 0; i < comp_varcount; i++) {
-      if (strcasecmp(comp_vartable[i].name, tmp) == 0) {
-        return i;
+  if (dot != NULL) {
+    int module_type = comp_check_lib(tmp);
+    if (module_type) {
+      for (i = 0; i < comp_varcount; i++) {
+        if (strcasecmp(comp_vartable[i].name, tmp) == 0) {
+          return i;
+        }
       }
+      if (module_type == 2) {
+        *dot = '\0';
+        sc_raise(MSG_MODULE_NO_MEMBER, tmp, dot + 1);
+      } else {
+        sc_raise(MSG_MEMBER_DOES_NOT_EXIST, tmp);
+      }
+      return 0;
     }
-
-    sc_raise(MSG_MEMBER_DOES_NOT_EXIST, tmp);
-    return 0;
   }
   //
   // search in global name-space
@@ -4707,7 +4714,11 @@ int comp_pass1(const char *section, const char *text) {
         comp_line = comp_udptable[i].pline;
         char *dot = strchr(comp_udptable[i].name, '.');
         if (dot) {
-          sc_raise(MSG_UNDEFINED_MAP, comp_udptable[i].name);
+          if (comp_check_lib(comp_udptable[i].name) == 2) {
+            sc_raise(MSG_MODULE_NO_RETURN, comp_udptable[i].name);
+          } else {
+            sc_raise(MSG_UNDEFINED_MAP, comp_udptable[i].name);
+          }
         } else {
           if (comp_is_func(comp_udptable[i].name) != -1) {
             sc_raise(MSG_FUNC_NOT_ASSIGNED, comp_udptable[i].name);
