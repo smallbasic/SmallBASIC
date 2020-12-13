@@ -524,6 +524,7 @@ void v_set(var_t *dest, const var_t *src) {
     break;
   case V_FUNC:
     dest->v.fn.cb = src->v.fn.cb;
+    dest->v.fn.id = src->v.fn.id;
     break;
   case V_NIL:
     dest->type = V_NIL;
@@ -563,12 +564,14 @@ void v_move(var_t *dest, const var_t *src) {
     dest->v.m.map = src->v.m.map;
     dest->v.m.count = src->v.m.count;
     dest->v.m.size = src->v.m.size;
+    dest->v.m.id = src->v.m.id;
     break;
   case V_REF:
     dest->v.ref = src->v.ref;
     break;
   case V_FUNC:
     dest->v.fn.cb = src->v.fn.cb;
+    dest->v.fn.id = src->v.fn.id;
     break;
   case V_NIL:
     dest->type = V_NIL;
@@ -795,4 +798,5 @@ void v_create_func(var_p_t map, const char *name, method cb) {
   var_p_t v_func = map_add_var(map, name, 0);
   v_func->type = V_FUNC;
   v_func->v.fn.cb = cb;
+  v_func->v.fn.id = 0;
 }
