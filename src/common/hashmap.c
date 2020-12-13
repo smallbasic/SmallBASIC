@@ -125,6 +125,7 @@ void hashmap_create(var_p_t map, int size) {
   v_free(map);
   map->type = V_MAP;
   map->v.m.count = 0;
+  map->v.m.id = -1;
   if (size == 0) {
     map->v.m.size = MAP_SIZE;
   } else {

@@ -39,9 +39,9 @@ static struct option OPTIONS[] = {
 
 void show_help() {
   fprintf(stdout,
-          "SmallBASIC version %s - kw:%d, pc:%d, fc:%d, ae:%d I=%d N=%d\n\n",
+          "SmallBASIC version %s - kw:%d, pc:%d, fc:%d, V:%d I=%d N=%d\n\n",
           SB_STR_VER, kwNULL, (kwNULLPROC - kwCLS) + 1,
-          (kwNULLFUNC - kwASC) + 1, (int)(65536 / sizeof(var_t)),
+          (kwNULLFUNC - kwASC) + 1, (int)(sizeof(var_t)),
           (int)sizeof(var_int_t), (int)sizeof(var_num_t));
   fprintf(stdout, "usage: sbasic [options]...\n");
   int i = 0;
@@ -349,7 +349,6 @@ int main(int argc, char *argv[]) {
   opt_file_permitted = 1;
   opt_ide = 0;
   opt_loadmod = 0;
-  opt_modpath[0] = 0;
   opt_nosave = 1;
   opt_pref_height = 0;
   opt_pref_width = 0;
@@ -359,6 +358,7 @@ int main(int argc, char *argv[]) {
   os_graphics = 1;
   os_color_depth = 16;
 
+  strcpy(opt_modpath, ".");
   console_init();
 
   char *file = NULL;

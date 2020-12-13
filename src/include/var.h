@@ -71,6 +71,7 @@ typedef struct var_s {
       void *map;
       uint32_t count;
       uint32_t size;
+      uint32_t id;
     } m;
 
     // reference variable
@@ -79,6 +80,7 @@ typedef struct var_s {
     // object method
     struct {
       method cb;
+      uint32_t id;
     } fn;
 
     // generic ptr (string)
