@@ -219,6 +219,7 @@ int slib_get_module_id(const char *name, const char *alias) {
 }
 
 void slib_import_routines(slib_t *lib, int comp) {
+  int total = 0;
   char buf[SB_KEYWORD_SIZE];
 
   lib->sblib_func_exec = slib_getoptptr(lib, "sblib_func_exec");
@@ -228,6 +229,7 @@ void slib_import_routines(slib_t *lib, int comp) {
 
   if (fcount && fgetname) {
     int count = fcount();
+    total += count;
     for (int i = 0; i < count; i++) {
       if (fgetname(i, buf)) {
         strupper(buf);
@@ -250,6 +252,7 @@ void slib_import_routines(slib_t *lib, int comp) {
 
   if (fcount && fgetname) {
     int count = fcount();
+    total += count;
     for (int i = 0; i < count; i++) {
       if (fgetname(i, buf)) {
         strupper(buf);
@@ -265,6 +268,10 @@ void slib_import_routines(slib_t *lib, int comp) {
         }
       }
     }
+  }
+
+  if (!total) {
+    log_printf("LIB: module has no exports...\n");
   }
 }
 

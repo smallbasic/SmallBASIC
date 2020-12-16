@@ -346,6 +346,7 @@ bool process_options(int argc, char *argv[], char **runFile, bool *tmpFile) {
 int main(int argc, char *argv[]) {
   opt_autolocal = 0;
   opt_command[0] = '\0';
+  opt_modpath[0] = '\0';
   opt_file_permitted = 1;
   opt_ide = 0;
   opt_loadmod = 0;
@@ -358,7 +359,6 @@ int main(int argc, char *argv[]) {
   os_graphics = 1;
   os_color_depth = 16;
 
-  strcpy(opt_modpath, ".");
   console_init();
 
   char *file = NULL;

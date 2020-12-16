@@ -148,7 +148,7 @@ bool System::execute(const char *bas) {
   // reset program controlled options
   opt_antialias = 1;
   opt_show_page = 0;
-  opt_quiet = 1;
+
   opt_pref_width = _output->getWidth();
   opt_pref_height = _output->getHeight();
   opt_base = 0;

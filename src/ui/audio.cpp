@@ -11,6 +11,7 @@
 
 #include "config.h"
 #include <stdio.h>
+#include <stdint.h>
 #include <unistd.h>
 #include "include/osd.h"
 #include "ui/strlib.h"
@@ -131,7 +132,7 @@ static void setup_format(ma_format format, ma_uint32 channels, ma_uint32 sampleR
 }
 
 static void device_start() {
-  if (ma_device__get_state(&device) != MA_STATE_STARTED) {
+  if (ma_device_get_state(&device) != MA_STATE_STARTED) {
     ma_result result = ma_device_start(&device);
     if (result != MA_SUCCESS) {
       err_throw("Failed to start audio [%d]", result);
