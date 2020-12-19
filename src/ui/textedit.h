@@ -110,6 +110,7 @@ struct TextEditInput : public FormEditInput {
   bool replaceNext(const char *text, bool skip);
   int  getCompletions(StringList *list, int max);
   void selectNavigate(bool up);
+  EditTheme *getTheme() { return _theme; }
 
 protected:
   enum SyntaxState {
@@ -203,6 +204,7 @@ struct TextEditHelpWidget : public TextEditInput {
   void createOutline();
   void createSearch(bool replace);
   void createStackTrace(const char *error, int line, StackTrace &trace);
+  void draw(int x, int y, int w, int h, int chw);
   bool edit(int key, int screenWidth, int charWidth);
   void paste(const char *text);
   bool isDrawTop() { return true; }
@@ -217,6 +219,8 @@ struct TextEditHelpWidget : public TextEditInput {
   bool replaceModeWith() const { return _mode == kEnterReplaceWith; }
   bool replaceDoneMode() const { return _mode == kReplaceDone; }
   bool selected(MAPoint2d pt, int scrollX, int scrollY, bool &redraw);
+  void showPopup(int cols, int rows);
+  void showSidebar();
   void toggleKeyword();
 
 private:

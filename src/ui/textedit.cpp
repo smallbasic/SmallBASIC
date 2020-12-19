@@ -73,8 +73,8 @@ int textedit_move_to_word_next(EditBuffer *str, int c) {
 #define TWISTY2_CLOSE "  < "
 #define TWISTY1_LEN 2
 #define TWISTY2_LEN 4
-#define HELP_BG 0x73c990
-#define HELP_FG 0x20242a
+#define HELP_BG 0x20242a
+#define HELP_FG 0x73c990
 #define DOUBLE_CLICK_MS 200
 
 #if defined(_Win32)
@@ -249,6 +249,19 @@ const char *find_str(bool allUpper, const char *haystack, const char *needle) {
   return allUpper ? strstr(haystack, needle) : strcasestr(haystack, needle);
 }
 
+int shade(int c, float weight) {
+  uint8_t r = ((uint8_t)(c >> 16));
+  uint8_t g = ((uint8_t)(c >> 8));
+  uint8_t b = ((uint8_t)(c));
+  r = (r * weight);
+  g = (g * weight);
+  b = (b * weight);
+  r = r < 255 ? r : 255;
+  g = g < 255 ? g : 255;
+  b = b < 255 ? b : 255;
+  return (r << 16) + (g << 8) + (b);
+}
+
 //
 // EditTheme
 //
@@ -305,6 +318,28 @@ void EditTheme::selectTheme(const int theme[]) {
   _syntax_statement = theme[14];
   _syntax_digit = theme[15];
   _row_marker = theme[16];
+}
+
+void EditTheme::contrast(EditTheme *other) {
+  int fg = shade(other->_color, .65);
+  int bg = shade(other->_background, .65);
+  _color = fg;
+  _background = bg;
+  _selection_color = bg;
+  _selection_background = shade(bg, .65);
+  _number_color = fg;
+  _number_selection_color = fg;
+  _number_selection_background = bg;
+  _cursor_color = bg;
+  _cursor_background = fg;
+  _match_background = fg;
+  _row_cursor = bg;
+  _syntax_comments = bg;
+  _syntax_text = fg;
+  _syntax_command = fg;
+  _syntax_statement = fg;
+  _syntax_digit = fg;
+  _row_marker = fg;
 }
 
 //
@@ -1868,7 +1903,7 @@ TextEditHelpWidget::TextEditHelpWidget(TextEditInput *editor, int chW, int chH, 
   _editor(editor),
   _openPackage(nullptr),
   _openKeyword(-1) {
-  _theme = new EditTheme(HELP_BG, HELP_FG);
+  _theme = new EditTheme(HELP_FG, HELP_BG);
   hide();
   if (overlay) {
     _x = editor->_width - (chW * HELP_WIDTH);
@@ -2331,4 +2366,48 @@ void TextEditHelpWidget::toggleKeyword() {
     }
   }
   free(line);
+}
+
+void TextEditHelpWidget::showPopup(int cols, int rows) {
+  if (cols < 0 && rows < 0) {
+    _width = _editor->_width - (_charWidth * -cols);
+    _height = _editor->_height - (_charHeight * -rows);
+  } else {
+    _width = _charWidth * cols;
+    _height = _charHeight * rows;
+  }
+  if (_width > _editor->_width) {
+    _width = _editor->_width;
+  }
+  if (_height > _editor->_height) {
+    _height = _editor->_height;
+  }
+  _x = (_editor->_width - _width) / 2;
+  if (rows == 1) {
+    _y = _editor->_height - (_charHeight * 3);
+  } else {
+    _y = (_editor->_height - _height) / 2;
+  }
+  _theme->contrast(_editor->getTheme());
+  show();
+}
+
+void TextEditHelpWidget::showSidebar() {
+  int border = _charWidth * 2;
+  _width = _charWidth * 30;
+  _height = _editor->_height - (border * 2);
+  _x = _editor->_width - (_width + border);
+  _y = border;
+  _theme->contrast(_editor->getTheme());
+  show();
+}
+
+void TextEditHelpWidget::draw(int x, int y, int w, int h, int chw) {
+  TextEditInput::draw(x, y, w, h, chw);
+  int shadowW = _charWidth / 3;
+  int shadowH = _charWidth / 3;
+
+  maSetColor(_theme->_selection_background);
+  maFillRect(x + _width, y + shadowH, shadowW, _height);
+  maFillRect(x + shadowW, y + _height, _width, shadowH);
 }
