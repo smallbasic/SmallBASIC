@@ -30,6 +30,7 @@ extern "C" {
 #define MILLIS_TO_MICROS(n) (n * 1000)
 
 struct Sound;
+static ma_context context;
 static ma_device device;
 static ma_device_config config;
 static strlib::Queue<Sound *> queue;
@@ -124,7 +125,7 @@ static void setup_format(ma_format format, ma_uint32 channels, ma_uint32 sampleR
       config.sampleRate != sampleRate) {
     audio_close();
     setup_config(format, channels, sampleRate);
-    ma_result result = ma_device_init(nullptr, &config, &device);
+    ma_result result = ma_device_init(&context, &config, &device);
     if (result != MA_SUCCESS) {
       err_throw("Failed to prepare sound device [%d]", result);
     }
@@ -141,14 +142,29 @@ static void device_start() {
 }
 
 bool audio_open() {
-  setup_config(DEFAULT_FORMAT, DEFAULT_CHANNELS, DEFAULT_SAMPLE_RATE);
-  queuePos = 0;
-  return (ma_device_init(nullptr, &config, &device) == MA_SUCCESS);
+  bool result;
+  ma_backend backends[] = {
+    // uncomment for audio in linux
+    //ma_backend_alsa,
+    //ma_backend_jack,
+    //ma_backend_pulseaudio,
+    ma_backend_wasapi,
+    ma_backend_dsound
+  };
+  if (ma_context_init(backends, sizeof(backends)/sizeof(backends[0]), NULL, &context) != MA_SUCCESS) {
+    result = false;
+  } else {
+    queuePos = 0;
+    setup_config(DEFAULT_FORMAT, DEFAULT_CHANNELS, DEFAULT_SAMPLE_RATE);
+    result = (ma_device_init(&context, &config, &device) == MA_SUCCESS);
+  }
+  return result;
 }
 
 void audio_close() {
   osd_clear_sound_queue();
   ma_device_uninit(&device);
+  ma_context_uninit(&context);
 }
 
 void osd_audio(const char *path) {

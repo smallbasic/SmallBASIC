@@ -58,13 +58,13 @@ void launchDebug(const char *file) {
   }
 }
 
-void launchExec(const char *file) {
+void launch(const char *command, const char *file) {
   STARTUPINFO info = {sizeof(info)};
   PROCESS_INFORMATION processInfo;
   char cmd[1024];
-  sprintf(cmd, "%s -x %s", g_appPath, file);
-  if (!CreateProcess(g_appPath, cmd, NULL, NULL, TRUE, 0, NULL, NULL, &info, &processInfo)) {
-    appLog("failed to start %d %s %s\n", GetLastError(), g_appPath, cmd);
+  sprintf(cmd, "%s -x %s", command, file);
+  if (!CreateProcess(command, cmd, NULL, NULL, TRUE, 0, NULL, NULL, &info, &processInfo)) {
+    appLog("failed to start %d %s %s\n", GetLastError(), command, cmd);
   }
 }
 
@@ -126,7 +126,7 @@ void launchDebug(const char *file) {
   }
 }
 
-void launchExec(const char *file) {
+void launch(const char *command, const char *file) {
   pid_t pid = fork();
 
   switch (pid) {
@@ -135,8 +135,8 @@ void launchExec(const char *file) {
     break;
   case 0:
     // child process
-    if (execl(g_appPath, g_appPath, "-x", file, (char *)0) == -1) {
-      fprintf(stderr, "exec failed [%s] %s\n", strerror(errno), g_appPath);
+    if (execl(command, command, "-x", file, (char *)0) == -1) {
+      fprintf(stderr, "exec failed [%s] %s\n", strerror(errno), command);
       exit(1);
     }
     break;
@@ -166,3 +166,7 @@ void browseFile(SDL_Window *window, const char *url) {
 }
 
 #endif
+
+void launchExec(const char *file) {
+  launch(g_appPath, file);
+}

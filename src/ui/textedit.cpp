@@ -2384,7 +2384,7 @@ void TextEditHelpWidget::showPopup(int cols, int rows) {
   }
   _x = (_editor->_width - _width) / 2;
   if (rows == 1) {
-    _y = _editor->_height - (_charHeight * 3);
+    _y = _editor->_height - (_charHeight * 2.5);
   } else {
     _y = (_editor->_height - _height) / 2;
   }
