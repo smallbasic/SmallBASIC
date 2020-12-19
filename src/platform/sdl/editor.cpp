@@ -13,6 +13,7 @@
 #include "ui/textedit.h"
 #include "platform/sdl/runtime.h"
 #include "platform/sdl/settings.h"
+#include "platform/sdl/syswm.h"
 
 using namespace strlib;
 
@@ -120,11 +121,11 @@ void onlineHelp(Runtime *runtime, TextEditInput *widget) {
 }
 
 void showHelpPopup(TextEditHelpWidget *helpWidget) {
-  helpWidget->showPopup(-20, -8);
+  helpWidget->showPopup(-12, -4);
 }
 
-void showHelpLineInput(TextEditHelpWidget *helpWidget) {
-  helpWidget->showPopup(40, 1);
+void showHelpLineInput(TextEditHelpWidget *helpWidget, int width = 35) {
+  helpWidget->showPopup(width, 1);
 }
 
 void showHelpSideabar(TextEditHelpWidget *helpWidget) {
@@ -319,7 +320,10 @@ void System::editSource(String loadPath, bool restoreOnExit) {
           onlineHelp((Runtime *)this, editWidget);
           break;
         case SB_KEY_F(4):
-          if (editWidget->getTextLength() && !g_exportAddr.empty() && !g_exportToken.empty()) {
+          if (editWidget->getTextLength() && !g_exportAddr.empty() && g_exportAddr.indexOf("sbasic", 0) != -1) {
+            launch(g_exportAddr, loadPath);
+            break;
+          } else if (editWidget->getTextLength() && !g_exportAddr.empty() && !g_exportToken.empty()) {
             exportBuffer(_output, editWidget->getText(), g_exportAddr, g_exportToken);
             break;
           }
@@ -331,7 +335,7 @@ void System::editSource(String loadPath, bool restoreOnExit) {
             _output->setStatus("Export to SmallBASIC. Enter <IP>:<Port> | <sbasic command>");
             widget = helpWidget;
             helpWidget->createLineEdit(g_exportAddr);
-            showHelpLineInput(helpWidget);
+            showHelpLineInput(helpWidget, 60);
             inputMode = kExportAddr;
           }
           break;
@@ -395,7 +399,7 @@ void System::editSource(String loadPath, bool restoreOnExit) {
           _output->setStatus("Goto line. Esc=Close");
           widget = helpWidget;
           helpWidget->createGotoLine();
-          showHelpLineInput(helpWidget);
+          showHelpLineInput(helpWidget, 5);
           break;
         case SB_KEY_CTRL(' '):
           _output->setStatus("Auto-complete. Esc=Close");
@@ -488,9 +492,16 @@ void System::editSource(String loadPath, bool restoreOnExit) {
             switch (inputMode) {
             case kExportAddr:
               g_exportAddr = helpWidget->getText();
-              inputMode = kExportToken;
-              helpWidget->createLineEdit(g_exportToken);
-              _output->setStatus("Enter token. Esc=Close");
+              if (g_exportAddr.indexOf("sbasic", 0) == -1) {
+                inputMode = kExportToken;
+                helpWidget->createLineEdit(g_exportToken);
+                _output->setStatus("Enter token. Esc=Close");
+              } else {
+                inputMode = kInit;
+                widget = editWidget;
+                helpWidget->hide();
+                launch(g_exportAddr, loadPath);
+              }
               break;
             case kExportToken:
               g_exportToken = helpWidget->getText();
@@ -501,6 +512,7 @@ void System::editSource(String loadPath, bool restoreOnExit) {
               break;
             case kCommand:
               strlcpy(opt_command, helpWidget->getText(), sizeof(opt_command));
+              statusMessage._dirty = !editWidget->isDirty();
               inputMode = kInit;
               widget = editWidget;
               helpWidget->hide();
@@ -509,11 +521,11 @@ void System::editSource(String loadPath, bool restoreOnExit) {
               break;
             }
           } else if (helpWidget->closeOnEnter() && helpWidget->isVisible()) {
+            statusMessage._dirty = !editWidget->isDirty();
             widget = editWidget;
             helpWidget->hide();
             helpWidget->cancelMode();
           }
-          statusMessage._dirty = !editWidget->isDirty();
           redraw = true;
         } else if (helpWidget->replaceDoneMode()) {
           statusMessage._dirty = !editWidget->isDirty();

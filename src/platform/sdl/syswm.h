@@ -15,6 +15,7 @@ void loadIcon(SDL_Window *window);
 int getStartupFontSize(SDL_Window *window);
 void launchDebug(const char *file);
 void launchExec(const char *file);
+void launch(const char *command, const char *file);
 void browseFile(SDL_Window *window, const char *url);
 
 #endif

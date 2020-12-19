@@ -779,6 +779,12 @@ SDL_Rect Runtime::getWindowRect() {
     result = _windowRect;
   } else {
     setWindowRect(result);
+#if defined(__linux__)
+    int top, left,bottom, right;
+    SDL_GetWindowBordersSize(_window, &top, &left, &bottom, &right);
+    // subtract the X11 border
+    result.y -= top;
+#endif
   }
   return result;
 }
