@@ -509,11 +509,11 @@ void System::editSource(String loadPath, bool restoreOnExit) {
               break;
             }
           } else if (helpWidget->closeOnEnter() && helpWidget->isVisible()) {
-            statusMessage._dirty = !editWidget->isDirty();
             widget = editWidget;
             helpWidget->hide();
             helpWidget->cancelMode();
           }
+          statusMessage._dirty = !editWidget->isDirty();
           redraw = true;
         } else if (helpWidget->replaceDoneMode()) {
           statusMessage._dirty = !editWidget->isDirty();
@@ -521,7 +521,6 @@ void System::editSource(String loadPath, bool restoreOnExit) {
           helpWidget->hide();
           helpWidget->cancelMode();
         }
-
         helpWidget->setFocus(widget == helpWidget);
         editWidget->setFocus(widget == editWidget);
         if (helpWidget->searchMode()) {
