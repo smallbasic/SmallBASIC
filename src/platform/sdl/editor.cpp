@@ -332,7 +332,7 @@ void System::editSource(String loadPath, bool restoreOnExit) {
           if (editWidget->getTextLength()) {
             saveFile(editWidget, loadPath);
             saveRecentPosition(loadPath, editWidget->getCursorPos());
-            _output->setStatus("Export to SmallBASIC. Enter <IP>:<Port> | <sbasic command>");
+            _output->setStatus("Export to SmallBASIC. Enter <IP>:<Port> | <sbasic>");
             widget = helpWidget;
             helpWidget->createLineEdit(g_exportAddr);
             showHelpLineInput(helpWidget, 60);

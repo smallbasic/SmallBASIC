@@ -2369,11 +2369,14 @@ void TextEditHelpWidget::toggleKeyword() {
 }
 
 void TextEditHelpWidget::showPopup(int cols, int rows) {
-  if (cols < 0 && rows < 0) {
+  if (cols < 0) {
     _width = _editor->_width - (_charWidth * -cols);
-    _height = _editor->_height - (_charHeight * -rows);
   } else {
     _width = _charWidth * cols;
+  }
+  if (rows < 0) {
+    _height = _editor->_height - (_charHeight * -rows);
+  } else {
     _height = _charHeight * rows;
   }
   if (_width > _editor->_width) {
