@@ -412,6 +412,9 @@ char EditBuffer::getChar(int pos) {
 }
 
 int EditBuffer::insertChars(int pos, const char *text, int num) {
+  if (num == 1 && *text < 0) {
+    return 0;
+  }
   int required = _len + num + 1;
   if (required >= _size) {
     _size += (required + GROW_SIZE);
