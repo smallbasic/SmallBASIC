@@ -34,6 +34,15 @@ typedef struct {
 int sblib_init(const char *sourceFile);
 
 /**
+ * @ingroup modlib
+ *
+ * returns the module name
+ *
+ * @return module name
+ */
+const char *sblib_get_module_name();
+
+/**
  * @ingroup modstd
  *
  * Closes the library. Called by module manager on unload.
