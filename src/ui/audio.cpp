@@ -144,10 +144,9 @@ static void device_start() {
 bool audio_open() {
   bool result;
   ma_backend backends[] = {
-    // uncomment for audio in linux
     ma_backend_alsa,
     ma_backend_jack,
-    //ma_backend_pulseaudio,
+    ma_backend_pulseaudio,
     ma_backend_wasapi,
     ma_backend_dsound
   };
