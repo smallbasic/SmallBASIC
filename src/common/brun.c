@@ -266,7 +266,7 @@ void exec_setup_predefined_variables() {
   setsysvar_str(SYSVAR_COMMAND, opt_command);
   setsysvar_int(SYSVAR_SELF, 0);
   setsysvar_var(SYSVAR_NONE, 0, V_NIL);
-  setsysvar_num(SYSVAR_MAXINT, VAR_MAX_INT);
+  setsysvar_int(SYSVAR_MAXINT, VAR_MAX_INT);
 
 #if defined(_ANDROID)
   if (getenv("HOME_DIR")) {
