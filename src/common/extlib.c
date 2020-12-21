@@ -39,6 +39,7 @@ typedef int (*sblib_getname_fn) (int, char *);
 typedef int (*sblib_count_fn) (void);
 typedef int (*sblib_init_fn) (const char *);
 typedef void (*sblib_close_fn) (void);
+typedef const char *(*sblib_get_module_name_fn) (void);
 
 typedef struct {
   char name[NAME_SIZE];
@@ -317,6 +318,11 @@ void slib_open(const char *fullname, const char *name) {
     slib_count++;
     if (!opt_quiet) {
       log_printf("... done\n");
+    }
+    // override default name
+    sblib_get_module_name_fn get_module_name = slib_getoptptr(lib, "sblib_get_module_name");
+    if (get_module_name) {
+      strlcpy(lib->name, get_module_name(), NAME_SIZE);
     }
   } else {
     sc_raise("LIB: can't open %s", fullname);
