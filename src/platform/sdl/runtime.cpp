@@ -34,7 +34,7 @@
 
 #define WAIT_INTERVAL 5
 #define COND_WAIT_TIME 250
-#define PAUSE_DEBUG_LAUNCH 250
+#define PAUSE_DEBUG_LAUNCH 750
 #define PAUSE_DEBUG_STEP 50
 #define MAIN_BAS "__main_bas__"
 #define AMPLITUDE 22000

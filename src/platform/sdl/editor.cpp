@@ -181,6 +181,20 @@ void exportBuffer(AnsiWidget *out, const char *text, String &dest, String &token
   out->setStatus(buffer);
 }
 
+bool externalExec(AnsiWidget *out, TextEditInput *editWidget, String &loadPath) {
+  bool result;
+  if (editWidget->getTextLength() && !g_exportAddr.empty() && g_exportAddr.indexOf("sbasic", 0) != -1) {
+    launch(g_exportAddr, loadPath);
+    result = true;
+  } else if (editWidget->getTextLength() && !g_exportAddr.empty() && !g_exportToken.empty()) {
+    exportBuffer(out, editWidget->getText(), g_exportAddr, g_exportToken);
+    result = true;
+  } else {
+    result = false;
+  }
+  return result;
+}
+
 void System::editSource(String loadPath, bool restoreOnExit) {
   logEntered();
 
@@ -320,11 +334,7 @@ void System::editSource(String loadPath, bool restoreOnExit) {
           onlineHelp((Runtime *)this, editWidget);
           break;
         case SB_KEY_F(4):
-          if (editWidget->getTextLength() && !g_exportAddr.empty() && g_exportAddr.indexOf("sbasic", 0) != -1) {
-            launch(g_exportAddr, loadPath);
-            break;
-          } else if (editWidget->getTextLength() && !g_exportAddr.empty() && !g_exportToken.empty()) {
-            exportBuffer(_output, editWidget->getText(), g_exportAddr, g_exportToken);
+          if (externalExec(_output, editWidget, loadPath)) {
             break;
           }
           // else fallthru to F3 handler
