@@ -605,11 +605,13 @@ public class MainActivity extends NativeActivity {
         if (imm != null) {
           if (show) {
             String id = Settings.Secure.getString(activity.getContentResolver(), Settings.Secure.DEFAULT_INPUT_METHOD);
-            if ("com.sec.android.inputmethod/.SamsungKeypad".equals(id)) {
+            if (id != null && id.toLowerCase().contains("samsung")) {
+              imm.showInputMethodPicker();
               String message = getResources().getString(R.string.samsung_keyboard);
               Toast.makeText(activity, message, Toast.LENGTH_LONG).show();
+            } else {
+              imm.showSoftInput(view, InputMethodManager.SHOW_IMPLICIT);
             }
-            imm.showSoftInput(view, InputMethodManager.SHOW_IMPLICIT);
           } else {
             imm.hideSoftInputFromWindow(view.getWindowToken(), InputMethodManager.HIDE_NOT_ALWAYS);
           }
