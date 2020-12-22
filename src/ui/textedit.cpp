@@ -1072,6 +1072,7 @@ void TextEditInput::setCursorRow(int row) {
 }
 
 void TextEditInput::clicked(int x, int y, bool pressed) {
+  FormEditInput::clicked(x, y, pressed);
   if (x < _marginWidth) {
     _ptY = -1;
   } else if (pressed) {
@@ -1080,7 +1081,7 @@ void TextEditInput::clicked(int x, int y, bool pressed) {
       _state.select_start = wordStart();
       _state.select_end = wordEnd();
     } else  {
-      stb_textedit_click(&_buf, &_state, x - _marginWidth, y + (_scroll * _charHeight));
+      stb_textedit_click(&_buf, &_state, (x - _x) - _marginWidth, (y - _y) + (_scroll * _charHeight));
     }
     _pressTick = tick;
   }
@@ -1106,17 +1107,17 @@ bool TextEditInput::updateUI(var_p_t form, var_p_t field) {
 }
 
 bool TextEditInput::selected(MAPoint2d pt, int scrollX, int scrollY, bool &redraw) {
-  bool focus = hasFocus();
-  if (focus) {
+  bool result = FormEditInput::selected(pt, scrollX, scrollY, redraw);
+  if (hasFocus()) {
     if (pt.x < _marginWidth) {
       dragPage(pt.y, redraw);
     } else {
-      stb_textedit_drag(&_buf, &_state, pt.x - _marginWidth,
-                        pt.y + scrollY + (_scroll * _charHeight));
+      stb_textedit_drag(&_buf, &_state, (pt.x - _x) - _marginWidth,
+                        (pt.y - _y) + scrollY + (_scroll * _charHeight));
       redraw = true;
     }
   }
-  return focus;
+  return result;
 }
 
 void TextEditInput::selectNavigate(bool up) {
@@ -2043,8 +2044,8 @@ void TextEditHelpWidget::completeWord(int pos) {
 void TextEditHelpWidget::clicked(int x, int y, bool pressed) {
   _ptY = -1;
   if (pressed) {
-    stb_textedit_click(&_buf, &_state, 0, y + (_scroll * _charHeight));
-    if (_mode == kHelpKeyword && x - _x <= _charWidth * 3) {
+    stb_textedit_click(&_buf, &_state, 0, (y - _y) + (_scroll * _charHeight));
+    if (_mode == kHelpKeyword && (x - _x) <= _charWidth * 3) {
       toggleKeyword();
     }
   }

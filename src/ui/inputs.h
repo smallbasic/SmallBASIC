@@ -213,6 +213,7 @@ struct FormEditInput : public FormInput {
   virtual const char *completeKeyword(int index) = 0;
   virtual int getCompletions(StringList *list, int max) = 0;
 
+  void clicked(int x, int y, bool pressed);
   void setFocus(bool focus);
   int  getControlKey(int key);
   bool getControlMode() const { return _controlMode; }
