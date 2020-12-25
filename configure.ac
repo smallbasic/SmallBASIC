@@ -217,7 +217,6 @@ function buildSDL() {
    AC_DEFINE(_SDL, 1, [Defined when building SDL version])
    AC_DEFINE(_UnixOS, 1, [Building under Unix like systems.])
    AC_DEFINE(IMPL_DEV_READ, 1, [Implement dev_read()])
-   AC_DEFINE(IMPL_DEV_DELAY, 1, [Driver implements dev_delay()])
    AC_DEFINE(IMPL_LOG_WRITE, 1, [Driver implements lwrite()])
 
    BUILD_SUBDIRS="src/common src/platform/sdl"
@@ -233,7 +232,6 @@ function buildAndroid() {
    AC_DEFINE(_UnixOS, 1, [Building under Unix like systems.])
    AC_DEFINE(_ANDROID, 1, [Defined for Android build.])
    AC_DEFINE(IMPL_DEV_READ, 1, [Implement dev_read()])
-   AC_DEFINE(IMPL_DEV_DELAY, 1, [Driver implements dev_delay()])
    AC_DEFINE(IMPL_LOG_WRITE, 1, [Driver implements lwrite()])
 
    BUILD_SUBDIRS="src/platform/android"
@@ -258,7 +256,6 @@ function buildConsole() {
    )
 
    AM_CONDITIONAL(WITH_CYGWIN_CONSOLE, test $win32 = yes)
-   AC_DEFINE(BUILD_CONSOLE, 1, [Building a console based system.])
 
    if test $win32 = yes; then
       dnl test whether to build using mingw
@@ -318,7 +315,6 @@ function buildWeb() {
    BUILD_SUBDIRS="src/common src/platform/web"
    AM_CONDITIONAL(WITH_CYGWIN_CONSOLE, false)
    AC_DEFINE(_UnixOS, 1, [Building under Unix like systems.])
-   AC_DEFINE(IMPL_DEV_DELAY, 1, [Driver implements dev_delay()])
    AC_DEFINE(IMPL_LOG_WRITE, 1, [Driver implements lwrite()])
    AC_DEFINE(USE_TERM_IO, 0, [dont use the termios library.])
    AC_DEFINE(IMPL_DEV_ENV, 1, [Driver implements dev_env funcs])
@@ -372,7 +368,6 @@ function buildFLTK() {
    AC_DEFINE(_UnixOS, 1, [Building under Unix like systems.])
    AC_DEFINE(_FLTK, 1, [Defined for FLTK build.])
    AC_DEFINE(IMPL_DEV_READ, 1, [Implement dev_read()])
-   AC_DEFINE(IMPL_DEV_DELAY, 1, [Driver implements dev_delay()])
    AC_DEFINE(IMPL_LOG_WRITE, 1, [Driver implements lwrite()])
 
    BUILD_SUBDIRS="src/common src/platform/fltk"
