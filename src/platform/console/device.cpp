@@ -338,7 +338,7 @@ void dev_delay(uint32_t timeout) {
   uint32_t slept = 0;
   uint32_t now = dev_get_millisecond_count();
   while (1) {
-    if (osd_events(0) == -2) {
+    if (osd_events(0) < 0) {
       break;
     }
     if (dev_get_millisecond_count() - now > timeout) {
