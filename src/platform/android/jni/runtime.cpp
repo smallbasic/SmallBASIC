@@ -1071,7 +1071,7 @@ void System::editSource(strlib::String loadPath, bool restoreOnExit) {
         case SB_KEY_F(1):
           widget = helpWidget;
           helpWidget->createKeywordIndex();
-          helpWidget->show();
+          helpWidget->showPopup(-4, -2);
           helpWidget->setFocus(true);
           runtime->showKeypad(false);
           showStatus = false;

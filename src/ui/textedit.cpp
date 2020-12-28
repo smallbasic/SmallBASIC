@@ -76,6 +76,7 @@ int textedit_move_to_word_next(EditBuffer *str, int c) {
 #define HELP_BG 0x20242a
 #define HELP_FG 0x73c990
 #define DOUBLE_CLICK_MS 200
+#define SIDE_BAR_WIDTH 30
 
 #if defined(_Win32)
 #include <shlwapi.h>
@@ -509,9 +510,12 @@ TextEditInput::TextEditInput(const char *text, int chW, int chH,
   _matchingBrace(-1),
   _ptY(-1),
   _pressTick(0),
+  _xmargin(0),
+  _ymargin(0),
   _bottom(false),
   _dirty(false) {
   stb_textedit_initialize_state(&_state, false);
+  _resizable = true;
 }
 
 TextEditInput::~TextEditInput() {
@@ -1107,8 +1111,8 @@ bool TextEditInput::updateUI(var_p_t form, var_p_t field) {
 }
 
 bool TextEditInput::selected(MAPoint2d pt, int scrollX, int scrollY, bool &redraw) {
-  bool result = FormEditInput::selected(pt, scrollX, scrollY, redraw);
-  if (hasFocus()) {
+  bool result = hasFocus() && FormEditInput::selected(pt, scrollX, scrollY, redraw);
+  if (result) {
     if (pt.x < _marginWidth) {
       dragPage(pt.y, redraw);
     } else {
@@ -1189,12 +1193,34 @@ void TextEditInput::layout(StbTexteditRow *row, int start) const {
   row->ymax = row->baseline_y_delta = _charHeight;
 }
 
+void TextEditInput::layout(int w, int h) {
+  if (_resizable) {
+    if (_height == _charHeight) {
+      _x = (w - _width) / 2;
+      _y = h - (_charHeight * 2.5);
+    } else if (_width == _charWidth * SIDE_BAR_WIDTH) {
+      int border = _charWidth * 2;
+      _height = h - (border * 2);
+      _x = w - (_width + border);
+    } else {
+      _width = w - (_x + _xmargin);
+      _height = h - (_y + _ymargin);
+    }
+  }
+}
+
 int TextEditInput::charWidth(int k, int i) const {
   int result = 0;
   if (k + i < _buf._len && _buf._buffer[k + i] != '\n') {
     result = _charWidth;
   }
   return result;
+}
+
+void TextEditInput::calcMargin() {
+  MAExtent screenSize = maGetScrSize();
+  _xmargin = EXTENT_X(screenSize) - (_x + _width);
+  _ymargin = EXTENT_Y(screenSize) - (_y + _height);
 }
 
 void TextEditInput::changeCase() {
@@ -2396,16 +2422,18 @@ void TextEditHelpWidget::showPopup(int cols, int rows) {
     _y = (_editor->_height - _height) / 2;
   }
   _theme->contrast(_editor->getTheme());
+  calcMargin();
   show();
 }
 
 void TextEditHelpWidget::showSidebar() {
   int border = _charWidth * 2;
-  _width = _charWidth * 30;
+  _width = _charWidth * SIDE_BAR_WIDTH;
   _height = _editor->_height - (border * 2);
   _x = _editor->_width - (_width + border);
   _y = border;
   _theme->contrast(_editor->getTheme());
+  calcMargin();
   show();
 }
 
