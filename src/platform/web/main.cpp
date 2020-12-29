@@ -101,9 +101,7 @@ void log(const char *format, ...) {
 }
 
 // allow or deny access
-int accept_cb(void *cls,
-              const struct sockaddr *addr,
-              socklen_t addrlen) {
+MHD_Result accept_cb(void *cls, const struct sockaddr *addr, socklen_t addrlen) {
   return MHD_YES;
 }
 
@@ -191,14 +189,14 @@ MHD_Response *get_response(struct MHD_Connection *connection, const char *path) 
 
 // server callback
 // see: /usr/share/doc/libmicrohttpd-dev/examples
-int access_cb(void *cls,
-              struct MHD_Connection *connection,
-              const char *url,
-              const char *method,
-              const char *version,
-              const char *upload_data,
-              size_t *upload_data_size,
-              void **ptr) {
+MHD_Result access_cb(void *cls,
+                     struct MHD_Connection *connection,
+                     const char *url,
+                     const char *method,
+                     const char *version,
+                     const char *upload_data,
+                     size_t *upload_data_size,
+                     void **ptr) {
   static int dummy;
   if (&dummy != *ptr) {
     // The first time only the headers are valid,
@@ -217,7 +215,7 @@ int access_cb(void *cls,
     strncpy(opt_command, upload_data, size);
   }
 
-  int result;
+  MHD_Result result;
   struct MHD_Response *response = get_response(connection, url + 1);
   if (response != NULL) {
     result = MHD_queue_response(connection, MHD_HTTP_OK, response);
@@ -397,10 +395,9 @@ struct ValueIteratorClosure {
   int _element;
 };
 
-int valueIterator(void *cls, enum MHD_ValueKind kind,
-                  const char *key, const char *value) {
+MHD_Result valueIterator(void *cls, enum MHD_ValueKind kind, const char *key, const char *value) {
   ValueIteratorClosure *closure = (ValueIteratorClosure *)cls;
-  int result;
+  MHD_Result result;
   if (closure->_count++ == closure->_element) {
     closure->_result = value;
     result = MHD_NO;
@@ -410,8 +407,7 @@ int valueIterator(void *cls, enum MHD_ValueKind kind,
   return result;
 }
 
-int countIterator(void *cls, enum MHD_ValueKind kind,
-                 const char *key, const char *value) {
+MHD_Result countIterator(void *cls, enum MHD_ValueKind kind, const char *key, const char *value) {
   return MHD_YES;
 }
 
