@@ -121,7 +121,7 @@ void onlineHelp(Runtime *runtime, TextEditInput *widget) {
 }
 
 void showHelpPopup(TextEditHelpWidget *helpWidget) {
-  helpWidget->showPopup(-12, -4);
+  helpWidget->showPopup(-8, -2);
 }
 
 void showHelpLineInput(TextEditHelpWidget *helpWidget, int width = 35) {
