@@ -394,6 +394,7 @@ void slib_init_path() {
       // null terminate the current path
       *sep = '\0';
       slib_scan_path(path);
+      *sep = ':';
       path = sep + 1;
     } else {
       slib_scan_path(path);

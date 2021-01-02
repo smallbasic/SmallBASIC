@@ -45,7 +45,7 @@ void show_help() {
           (int)sizeof(var_int_t), (int)sizeof(var_num_t));
   fprintf(stdout, "usage: sbasic [options]...\n");
   int i = 0;
-  while (OPTIONS[i].name != NULL) {
+  while (OPTIONS[i].name != nullptr) {
     fprintf(stdout, OPTIONS[i].has_arg ?
             "  -%c, --%s='<argument>'\n" : "  -%c, --%s\n",
             OPTIONS[i].val, OPTIONS[i].name);
@@ -82,9 +82,9 @@ void command_help(const char *selection) {
     }
   }
   if (!found) {
-    const char *last_package = NULL;
+    const char *last_package = nullptr;
     for (int i = 0; i < keyword_help_len; i++) {
-      if (last_package == NULL || strcmp(last_package, keyword_help[i].package) != 0) {
+      if (last_package == nullptr || strcmp(last_package, keyword_help[i].package) != 0) {
         fprintf(stdout, "%s\n", keyword_help[i].package);
         last_package = keyword_help[i].package;
       }
@@ -160,7 +160,7 @@ bool setup_command_program(const char *program, char **runFile) {
   FILE *fp = fopen(file, "wb");
   bool result;
   if (fp) {
-    if (program != NULL) {
+    if (program != nullptr) {
       fputs(program, fp);
     } else {
       // read from stdin
@@ -247,7 +247,7 @@ bool process_options(int argc, char *argv[], char **runFile, bool *tmpFile) {
       for (int i = 1; i < argc; i++) {
         const char *s = argv[i];
         int len = strlen(s);
-        if (*runFile == NULL &&
+        if (*runFile == nullptr &&
             ((strcasecmp(s + len - 4, ".bas") == 0 ||
               strcasecmp(s + len - 4, ".sbx") == 0) && access(s, 0) == 0)) {
           *runFile = strdup(s);
@@ -264,7 +264,7 @@ bool process_options(int argc, char *argv[], char **runFile, bool *tmpFile) {
     case 'h':
       if (optarg) {
         command_help(optarg);
-      } else if (argv[optind] != NULL && argv[optind][0] != '-') {
+      } else if (argv[optind] != nullptr && argv[optind][0] != '-') {
         command_help(argv[optind]);
       } else {
         show_help();
@@ -317,15 +317,15 @@ bool process_options(int argc, char *argv[], char **runFile, bool *tmpFile) {
     }
   }
 
-  if (getenv("SBASICPATH") != NULL) {
+  if (getenv("SBASICPATH") != nullptr) {
     opt_loadmod = 1;
   }
 
   if (strcmp("--", argv[argc - 1]) == 0) {
-    if (*runFile != NULL) {
+    if (*runFile != nullptr) {
       // run file already set
       result = false;
-    } else if (setup_command_program(NULL, runFile)) {
+    } else if (setup_command_program(nullptr, runFile)) {
       *tmpFile = true;
     } else {
       // failed to read from stdin
@@ -333,14 +333,29 @@ bool process_options(int argc, char *argv[], char **runFile, bool *tmpFile) {
     }
   }
 
-  if (*runFile == NULL && result) {
+  if (*runFile == nullptr && result) {
     show_brief_help();
     result = false;
   }
 
-  if (opt_modpath[0] != '\0' && access(opt_modpath, R_OK) != 0) {
-    fprintf(stdout, "sbasic: can't open path '%s': [Errno %d] %s\n", opt_modpath, errno, strerror(errno));
-    result = false;
+  if (opt_modpath[0] != '\0') {
+    char *path = opt_modpath;
+    while (result && path && path[0] != '\0') {
+      char *sep = strchr(path, ':');
+      if (sep) {
+        *sep = '\0';
+      }
+      if (access(path, R_OK) != 0) {
+        fprintf(stdout, "sbasic: can't open path '%s': [Errno %d] %s\n", path, errno, strerror(errno));
+        result = false;
+      }
+      if (sep) {
+        *sep = ':';
+        path = sep + 1;
+      } else {
+        path = nullptr;
+      }
+    }
   }
 
   return result;
@@ -367,7 +382,7 @@ int main(int argc, char *argv[]) {
 
   console_init();
 
-  char *file = NULL;
+  char *file = nullptr;
   bool tmpFile = false;
   if (process_options(argc, argv, &file, &tmpFile)) {
     char prev_cwd[OS_PATHNAME_SIZE + 1];
