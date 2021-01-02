@@ -26,7 +26,7 @@ void console_init();
 static struct option OPTIONS[] = {
   {"verbose",        no_argument,       NULL, 'v'},
   {"keywords",       no_argument,       NULL, 'k'},
-  {"no-file-perm",   no_argument,       NULL, 'f'},
+  {"no-file-access", no_argument,       NULL, 'f'},
   {"gen-sbx",        no_argument,       NULL, 'x'},
   {"module-path",    optional_argument, NULL, 'm'},
   {"decompile",      optional_argument, NULL, 's'},
@@ -241,7 +241,7 @@ bool process_options(int argc, char *argv[], char **runFile, bool *tmpFile) {
   bool result = true;
   while (result) {
     int option_index = 0;
-    int c = getopt_long(argc, argv, "vkfxm::s::o:c:h::", OPTIONS, &option_index);
+    int c = getopt_long(argc, argv, "vkfxm:s:o:c:h::", OPTIONS, &option_index);
     if (c == -1 && !option_index) {
       // no more options
       for (int i = 1; i < argc; i++) {
@@ -337,6 +337,12 @@ bool process_options(int argc, char *argv[], char **runFile, bool *tmpFile) {
     show_brief_help();
     result = false;
   }
+
+  if (opt_modpath[0] != '\0' && access(opt_modpath, R_OK) != 0) {
+    fprintf(stdout, "sbasic: can't open path '%s': [Errno %d] %s\n", opt_modpath, errno, strerror(errno));
+    result = false;
+  }
+
   return result;
 }
 

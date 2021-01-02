@@ -187,18 +187,20 @@ int slib_add_external_func(const char *func_name, uint32_t lib_id) {
  */
 int slib_get_kid(int lib_id, const char *name) {
   slib_t *lib = get_lib(lib_id);
-  const char *dot = strchr(name, '.');
-  const char *field = (dot != NULL ? dot + 1 : name);
-  for (int i = 0; i < lib->proc_count; i++) {
-    if (lib->proc_list[i].lib_id == lib_id &&
-        strcmp(lib->proc_list[i].name, field) == 0) {
-      return i;
+  if (lib != NULL) {
+    const char *dot = strchr(name, '.');
+    const char *field = (dot != NULL ? dot + 1 : name);
+    for (int i = 0; i < lib->proc_count; i++) {
+      if (lib->proc_list[i].lib_id == lib_id &&
+          strcmp(lib->proc_list[i].name, field) == 0) {
+        return i;
+      }
     }
-  }
-  for (int i = 0; i < lib->func_count; i++) {
-    if (lib->func_list[i].lib_id == lib_id &&
-        strcmp(lib->func_list[i].name, field) == 0) {
-      return i;
+    for (int i = 0; i < lib->func_count; i++) {
+      if (lib->func_list[i].lib_id == lib_id &&
+          strcmp(lib->func_list[i].name, field) == 0) {
+        return i;
+      }
     }
   }
   return -1;
@@ -272,7 +274,7 @@ void slib_import_routines(slib_t *lib, int comp) {
   }
 
   if (!total) {
-    log_printf("LIB: module has no exports...\n");
+    log_printf("LIB: module '%s' has no exports\n", lib->name);
   }
 }
 
@@ -312,13 +314,10 @@ void slib_open(const char *fullname, const char *name) {
   lib->imported = 0;
 
   if (!opt_quiet) {
-    log_printf("LIB: importing %s", fullname);
+    log_printf("LIB: registering '%s'", fullname);
   }
   if (slib_llopen(lib)) {
     slib_count++;
-    if (!opt_quiet) {
-      log_printf("... done\n");
-    }
     // override default name
     sblib_get_module_name_fn get_module_name = slib_getoptptr(lib, "sblib_get_module_name");
     if (get_module_name) {
@@ -383,7 +382,7 @@ void slib_scan_path(const char *path) {
       }
     }
   } else if (!opt_quiet) {
-    log_printf("LIB: module path %s not found.\n", path);
+    log_printf("LIB: module path '%s' not found.\n", path);
   }
 }
 
@@ -410,17 +409,15 @@ void slib_init() {
   slib_count = 0;
 
   if (!prog_error && opt_loadmod) {
-    if (!opt_quiet) {
-      log_printf("LIB: scanning for modules...\n");
-    }
-
     if (opt_modpath[0] == '\0') {
       const char *modpath = getenv("SBASICPATH");
       if (modpath != NULL) {
         strlcpy(opt_modpath, modpath, OPT_MOD_SZ);
       }
     }
-
+    if (!opt_quiet) {
+      log_printf("LIB: scanning for modules in '%s'\n", opt_modpath);
+    }
     slib_init_path();
   }
 }
