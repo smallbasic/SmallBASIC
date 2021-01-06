@@ -240,7 +240,7 @@ void System::editSource(String loadPath, bool restoreOnExit) {
       helpWidget->setText(gsb_last_errmsg);
       helpWidget->createStackTrace(gsb_last_errmsg, gsb_last_line, _stackTrace);
       widget = helpWidget;
-      showHelpPopup(helpWidget);
+      showHelpSideabar(helpWidget);
       _output->setStatus("Error. Esc=Close, Up/Down=Caller");
     } else {
       _output->setStatus(!gsb_last_errmsg[0] ? "Error" : gsb_last_errmsg);

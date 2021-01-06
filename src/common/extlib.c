@@ -11,6 +11,8 @@
 #include <config.h>
 #endif
 
+#include "common/smbas.h"
+
 #if defined(__MINGW32__)
  #include <windows.h>
  #include <error.h>
@@ -23,7 +25,6 @@
 #endif
 
 #if defined(LNX_EXTLIB) || defined(WIN_EXTLIB)
-#include "common/smbas.h"
 #include "common/extlib.h"
 #include "common/pproc.h"
 #include <dirent.h>
@@ -615,8 +616,7 @@ int slib_procexec(int lib_id, int index) { return 0; }
 int slib_get_kid(int lib_id, const char *name) { return -1; }
 int slib_get_module_id(const char *name, const char *alias) { return -1; }
 void slib_close() {}
-int slib_events(int wait_flag) { return 0; }
 void slib_init(int mcount, const char *mlist) {}
-void slib_setup_comp(int lib_id) {}
-void *slib_get_func(const char *name) {}
+void *slib_get_func(const char *name) { return 0; }
+void slib_import(int lib_id, int comp) {}
 #endif
