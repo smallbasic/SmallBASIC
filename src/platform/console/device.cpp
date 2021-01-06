@@ -122,6 +122,8 @@ int osd_devinit() {
   }
   os_graf_mx = opt_pref_width;
   os_graf_my = opt_pref_height;
+  setsysvar_int(SYSVAR_XMAX, os_graf_mx);
+  setsysvar_int(SYSVAR_YMAX, os_graf_my);
 
   if (p_write == NULL) {
     p_write = default_write;
