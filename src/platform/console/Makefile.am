@@ -12,6 +12,7 @@ bin_PROGRAMS = sbasic
 sbasic_SOURCES =    \
   ../../lib/lodepng/lodepng.cpp ../../lib/lodepng/lodepng.h \
   main.cpp	\
+  input.cpp \
   device.cpp \
   image.cpp \
   decomp.c

@@ -7,7 +7,7 @@ dnl This program is distributed under the terms of the GPL v2.0
 dnl Download the GNU Public License (GPL) from www.gnu.org
 dnl
 
-AC_INIT([smallbasic], [12.19])
+AC_INIT([smallbasic], [12.20])
 AC_CONFIG_SRCDIR([configure.ac])
 
 AC_CANONICAL_TARGET
@@ -59,8 +59,6 @@ function checkForWindows() {
      *darwin*)
      ;;
      *)
-     dnl backlinking support for modules
-     LDFLAGS="${LDFLAGS} -export-dynamic"
    esac
    AM_CONDITIONAL(WITH_WIN32, test x"$win32" = "xyes")
 }
@@ -219,7 +217,6 @@ function buildSDL() {
    AC_DEFINE(_SDL, 1, [Defined when building SDL version])
    AC_DEFINE(_UnixOS, 1, [Building under Unix like systems.])
    AC_DEFINE(IMPL_DEV_READ, 1, [Implement dev_read()])
-   AC_DEFINE(IMPL_DEV_DELAY, 1, [Driver implements dev_delay()])
    AC_DEFINE(IMPL_LOG_WRITE, 1, [Driver implements lwrite()])
 
    BUILD_SUBDIRS="src/common src/platform/sdl"
@@ -235,7 +232,6 @@ function buildAndroid() {
    AC_DEFINE(_UnixOS, 1, [Building under Unix like systems.])
    AC_DEFINE(_ANDROID, 1, [Defined for Android build.])
    AC_DEFINE(IMPL_DEV_READ, 1, [Implement dev_read()])
-   AC_DEFINE(IMPL_DEV_DELAY, 1, [Driver implements dev_delay()])
    AC_DEFINE(IMPL_LOG_WRITE, 1, [Driver implements lwrite()])
 
    BUILD_SUBDIRS="src/platform/android"
@@ -260,7 +256,6 @@ function buildConsole() {
    )
 
    AM_CONDITIONAL(WITH_CYGWIN_CONSOLE, test $win32 = yes)
-   AC_DEFINE(BUILD_CONSOLE, 1, [Building a console based system.])
 
    if test $win32 = yes; then
       dnl test whether to build using mingw
@@ -287,7 +282,7 @@ function buildConsole() {
          TARGET="Building Cygwin MinGW console version."
          AC_DEFINE(__MINGW32__, 1, [as above])
          AC_DEFINE(_UnixOS, 1, [Building under Unix like systems.])
-         PACKAGE_LIBS="${PACKAGE_LIBS} -Wl,-Bstatic -mconsole -lmingw32 -lwsock32 -lws2_32 -static-libgcc"
+         PACKAGE_LIBS="${PACKAGE_LIBS} -Wl,-Bstatic -mconsole -lwsock32 -lws2_32 -static-libgcc"
          BUILD_SUBDIRS="src/common src/platform/console"
       fi
       AC_DEFINE(_Win32, 1, [Windows build])
@@ -320,7 +315,6 @@ function buildWeb() {
    BUILD_SUBDIRS="src/common src/platform/web"
    AM_CONDITIONAL(WITH_CYGWIN_CONSOLE, false)
    AC_DEFINE(_UnixOS, 1, [Building under Unix like systems.])
-   AC_DEFINE(IMPL_DEV_DELAY, 1, [Driver implements dev_delay()])
    AC_DEFINE(IMPL_LOG_WRITE, 1, [Driver implements lwrite()])
    AC_DEFINE(USE_TERM_IO, 0, [dont use the termios library.])
    AC_DEFINE(IMPL_DEV_ENV, 1, [Driver implements dev_env funcs])
@@ -374,7 +368,6 @@ function buildFLTK() {
    AC_DEFINE(_UnixOS, 1, [Building under Unix like systems.])
    AC_DEFINE(_FLTK, 1, [Defined for FLTK build.])
    AC_DEFINE(IMPL_DEV_READ, 1, [Implement dev_read()])
-   AC_DEFINE(IMPL_DEV_DELAY, 1, [Driver implements dev_delay()])
    AC_DEFINE(IMPL_LOG_WRITE, 1, [Driver implements lwrite()])
 
    BUILD_SUBDIRS="src/common src/platform/fltk"

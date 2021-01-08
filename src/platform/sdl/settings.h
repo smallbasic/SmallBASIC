@@ -12,11 +12,13 @@
 #include <SDL.h>
 
 void restoreSettings(SDL_Rect &rect, int &fontScale, bool debug, bool restoreDir);
+void saveRecentPosition(const char *fileName, unsigned cursorPos);
 void saveSettings(SDL_Rect &rect, int fontScale, bool debug);
 String saveGist(const char *buffer, const char *fileName, const char *description);
 void setRecentFile(const char *path);
 bool getRecentFile(strlib::String &path, unsigned position);
 void getRecentFileList(strlib::String &fileList, strlib::String &current);
+int  getRecentPosition(const char *fileName);
 
 #endif
 

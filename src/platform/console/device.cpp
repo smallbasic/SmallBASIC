@@ -13,6 +13,8 @@
 #include "common/extlib.h"
 #include "common/smbas.h"
 
+#define WAIT_INTERVAL 5
+
 typedef void (*settextcolor_fn)(long fg, long bg);
 typedef void (*setpenmode_fn)(int enable);
 typedef int  (*getpen_fn)(int code);
@@ -120,6 +122,8 @@ int osd_devinit() {
   }
   os_graf_mx = opt_pref_width;
   os_graf_my = opt_pref_height;
+  setsysvar_int(SYSVAR_XMAX, os_graf_mx);
+  setsysvar_int(SYSVAR_YMAX, os_graf_my);
 
   if (p_write == NULL) {
     p_write = default_write;
@@ -331,5 +335,27 @@ int osd_textheight(const char *str) {
   return result;
 }
 
+// delay while pumping events
+void dev_delay(uint32_t timeout) {
+  uint32_t slept = 0;
+  uint32_t now = dev_get_millisecond_count();
+  while (1) {
+    if (osd_events(0) < 0) {
+      break;
+    }
+    if (dev_get_millisecond_count() - now > timeout) {
+      break;
+    }
+    usleep(WAIT_INTERVAL * 1000);
+    slept += WAIT_INTERVAL;
+    if (timeout > 0 && slept > timeout) {
+      break;
+    }
+  }
+}
+
 // unused
 void dev_log_stack(const char *keyword, int type, int line) {}
+void v_create_form(var_p_t var) {}
+void v_create_window(var_p_t var) {}
+void dev_show_page() {}

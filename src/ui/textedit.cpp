@@ -73,9 +73,10 @@ int textedit_move_to_word_next(EditBuffer *str, int c) {
 #define TWISTY2_CLOSE "  < "
 #define TWISTY1_LEN 2
 #define TWISTY2_LEN 4
-#define HELP_BG 0x73c990
-#define HELP_FG 0x20242a
+#define HELP_BG 0x20242a
+#define HELP_FG 0x73c990
 #define DOUBLE_CLICK_MS 200
+#define SIDE_BAR_WIDTH 30
 
 #if defined(_Win32)
 #include <shlwapi.h>
@@ -249,6 +250,19 @@ const char *find_str(bool allUpper, const char *haystack, const char *needle) {
   return allUpper ? strstr(haystack, needle) : strcasestr(haystack, needle);
 }
 
+int shade(int c, float weight) {
+  uint8_t r = ((uint8_t)(c >> 16));
+  uint8_t g = ((uint8_t)(c >> 8));
+  uint8_t b = ((uint8_t)(c));
+  r = (r * weight);
+  g = (g * weight);
+  b = (b * weight);
+  r = r < 255 ? r : 255;
+  g = g < 255 ? g : 255;
+  b = b < 255 ? b : 255;
+  return (r << 16) + (g << 8) + (b);
+}
+
 //
 // EditTheme
 //
@@ -305,6 +319,28 @@ void EditTheme::selectTheme(const int theme[]) {
   _syntax_statement = theme[14];
   _syntax_digit = theme[15];
   _row_marker = theme[16];
+}
+
+void EditTheme::contrast(EditTheme *other) {
+  int fg = shade(other->_color, .65);
+  int bg = shade(other->_background, .65);
+  _color = fg;
+  _background = bg;
+  _selection_color = bg;
+  _selection_background = shade(bg, .65);
+  _number_color = fg;
+  _number_selection_color = fg;
+  _number_selection_background = bg;
+  _cursor_color = bg;
+  _cursor_background = fg;
+  _match_background = fg;
+  _row_cursor = bg;
+  _syntax_comments = bg;
+  _syntax_text = fg;
+  _syntax_command = fg;
+  _syntax_statement = fg;
+  _syntax_digit = fg;
+  _row_marker = fg;
 }
 
 //
@@ -377,6 +413,9 @@ char EditBuffer::getChar(int pos) {
 }
 
 int EditBuffer::insertChars(int pos, const char *text, int num) {
+  if (num == 1 && *text < 0) {
+    return 0;
+  }
   int required = _len + num + 1;
   if (required >= _size) {
     _size += (required + GROW_SIZE);
@@ -471,9 +510,12 @@ TextEditInput::TextEditInput(const char *text, int chW, int chH,
   _matchingBrace(-1),
   _ptY(-1),
   _pressTick(0),
+  _xmargin(0),
+  _ymargin(0),
   _bottom(false),
   _dirty(false) {
   stb_textedit_initialize_state(&_state, false);
+  _resizable = true;
 }
 
 TextEditInput::~TextEditInput() {
@@ -1034,6 +1076,7 @@ void TextEditInput::setCursorRow(int row) {
 }
 
 void TextEditInput::clicked(int x, int y, bool pressed) {
+  FormEditInput::clicked(x, y, pressed);
   if (x < _marginWidth) {
     _ptY = -1;
   } else if (pressed) {
@@ -1042,7 +1085,7 @@ void TextEditInput::clicked(int x, int y, bool pressed) {
       _state.select_start = wordStart();
       _state.select_end = wordEnd();
     } else  {
-      stb_textedit_click(&_buf, &_state, x - _marginWidth, y + (_scroll * _charHeight));
+      stb_textedit_click(&_buf, &_state, (x - _x) - _marginWidth, (y - _y) + (_scroll * _charHeight));
     }
     _pressTick = tick;
   }
@@ -1068,17 +1111,17 @@ bool TextEditInput::updateUI(var_p_t form, var_p_t field) {
 }
 
 bool TextEditInput::selected(MAPoint2d pt, int scrollX, int scrollY, bool &redraw) {
-  bool focus = hasFocus();
-  if (focus) {
+  bool result = hasFocus() && FormEditInput::selected(pt, scrollX, scrollY, redraw);
+  if (result) {
     if (pt.x < _marginWidth) {
       dragPage(pt.y, redraw);
     } else {
-      stb_textedit_drag(&_buf, &_state, pt.x - _marginWidth,
-                        pt.y + scrollY + (_scroll * _charHeight));
+      stb_textedit_drag(&_buf, &_state, (pt.x - _x) - _marginWidth,
+                        (pt.y - _y) + scrollY + (_scroll * _charHeight));
       redraw = true;
     }
   }
-  return focus;
+  return result;
 }
 
 void TextEditInput::selectNavigate(bool up) {
@@ -1150,12 +1193,34 @@ void TextEditInput::layout(StbTexteditRow *row, int start) const {
   row->ymax = row->baseline_y_delta = _charHeight;
 }
 
+void TextEditInput::layout(int w, int h) {
+  if (_resizable) {
+    if (_height == _charHeight) {
+      _x = (w - _width) / 2;
+      _y = h - (_charHeight * 2.5);
+    } else if (_width == _charWidth * SIDE_BAR_WIDTH) {
+      int border = _charWidth * 2;
+      _height = h - (border * 2);
+      _x = w - (_width + border);
+    } else {
+      _width = w - (_x + _xmargin);
+      _height = h - (_y + _ymargin);
+    }
+  }
+}
+
 int TextEditInput::charWidth(int k, int i) const {
   int result = 0;
   if (k + i < _buf._len && _buf._buffer[k + i] != '\n') {
     result = _charWidth;
   }
   return result;
+}
+
+void TextEditInput::calcMargin() {
+  MAExtent screenSize = maGetScrSize();
+  _xmargin = EXTENT_X(screenSize) - (_x + _width);
+  _ymargin = EXTENT_Y(screenSize) - (_y + _height);
 }
 
 void TextEditInput::changeCase() {
@@ -1868,7 +1933,7 @@ TextEditHelpWidget::TextEditHelpWidget(TextEditInput *editor, int chW, int chH, 
   _editor(editor),
   _openPackage(nullptr),
   _openKeyword(-1) {
-  _theme = new EditTheme(HELP_BG, HELP_FG);
+  _theme = new EditTheme(HELP_FG, HELP_BG);
   hide();
   if (overlay) {
     _x = editor->_width - (chW * HELP_WIDTH);
@@ -2005,8 +2070,8 @@ void TextEditHelpWidget::completeWord(int pos) {
 void TextEditHelpWidget::clicked(int x, int y, bool pressed) {
   _ptY = -1;
   if (pressed) {
-    stb_textedit_click(&_buf, &_state, 0, y + (_scroll * _charHeight));
-    if (_mode == kHelpKeyword && x - _x <= _charWidth * 3) {
+    stb_textedit_click(&_buf, &_state, 0, (y - _y) + (_scroll * _charHeight));
+    if (_mode == kHelpKeyword && (x - _x) <= _charWidth * 3) {
       toggleKeyword();
     }
   }
@@ -2331,4 +2396,53 @@ void TextEditHelpWidget::toggleKeyword() {
     }
   }
   free(line);
+}
+
+void TextEditHelpWidget::showPopup(int cols, int rows) {
+  if (cols < 0) {
+    _width = _editor->_width - (_charWidth * -cols);
+  } else {
+    _width = _charWidth * cols;
+  }
+  if (rows < 0) {
+    _height = _editor->_height - (_charHeight * -rows);
+  } else {
+    _height = _charHeight * rows;
+  }
+  if (_width > _editor->_width) {
+    _width = _editor->_width;
+  }
+  if (_height > _editor->_height) {
+    _height = _editor->_height;
+  }
+  _x = (_editor->_width - _width) / 2;
+  if (rows == 1) {
+    _y = _editor->_height - (_charHeight * 2.5);
+  } else {
+    _y = (_editor->_height - _height) / 2;
+  }
+  _theme->contrast(_editor->getTheme());
+  calcMargin();
+  show();
+}
+
+void TextEditHelpWidget::showSidebar() {
+  int border = _charWidth * 2;
+  _width = _charWidth * SIDE_BAR_WIDTH;
+  _height = _editor->_height - (border * 2);
+  _x = _editor->_width - (_width + border);
+  _y = border;
+  _theme->contrast(_editor->getTheme());
+  calcMargin();
+  show();
+}
+
+void TextEditHelpWidget::draw(int x, int y, int w, int h, int chw) {
+  TextEditInput::draw(x, y, w, h, chw);
+  int shadowW = _charWidth / 3;
+  int shadowH = _charWidth / 3;
+
+  maSetColor(_theme->_selection_background);
+  maFillRect(x + _width, y + shadowH, shadowW, _height);
+  maFillRect(x + shadowW, y + _height, _width, shadowH);
 }

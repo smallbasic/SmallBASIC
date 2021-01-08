@@ -22,6 +22,7 @@ struct EditTheme {
   EditTheme(int fg, int bg);
   void setId(const unsigned themeId);
   void selectTheme(const int theme[]);
+  void contrast(EditTheme *other);
 
   int _color;
   int _background;

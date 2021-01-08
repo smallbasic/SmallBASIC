@@ -34,11 +34,9 @@
 
 #define WAIT_INTERVAL 5
 #define COND_WAIT_TIME 250
-#define PAUSE_DEBUG_LAUNCH 250
+#define PAUSE_DEBUG_LAUNCH 750
 #define PAUSE_DEBUG_STEP 50
 #define MAIN_BAS "__main_bas__"
-#define AMPLITUDE 22000
-#define FREQUENCY 44100
 #define OPTIONS_BOX_WIDTH_EXTRA 1
 #define OPTIONS_BOX_BG 0xd2d1d0
 #define OPTIONS_BOX_FG 0x3e3f3e
@@ -779,6 +777,12 @@ SDL_Rect Runtime::getWindowRect() {
     result = _windowRect;
   } else {
     setWindowRect(result);
+#if defined(__linux__)
+    int top, left,bottom, right;
+    SDL_GetWindowBordersSize(_window, &top, &left, &bottom, &right);
+    // subtract the X11 border
+    result.y -= top;
+#endif
   }
   return result;
 }

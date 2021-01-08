@@ -1,3 +1,35 @@
+2020-12-19 (12.20)
+	SDL: Update editor popup appearance
+
+2020-11-19 (12.20)
+	COMMON: Fix to allow multiple modules and units within saem program
+
+2020-11-13 (12.20)
+	ANDROID: add option to preserve user data when app uninstalled
+
+2020-11-10 (12.20)
+	ANDROID: change path label when displaying project folder
+	COMMON: ensure INT datatype is always 64 bits
+
+2020-11-01 (12.20)
+	CONSOLE: give error when file not found
+
+2020-10-31 (12.20)
+	SDL: implemented restoring the cursor position
+
+2020-10-29 (12.20)
+	COMMON: Implemented c-styles escape sequences
+
+2020-10-27 (12.20)
+	COMMON: add support for inline assignment of export variables
+	COMMON: add support for unit alias names
+
+2020-10-21 (12.20)
+	ANDROID: upgrade to target android 29
+
+2020-10-21 (12.20)
+	COMMON: Fix to allow c-modules to be called from units
+
 2020-07-16 (12.19)
 	COMMON: Fix 'Print #' on Windows to use Windows line endings
 

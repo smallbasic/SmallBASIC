@@ -170,7 +170,6 @@ void Screen::drawOverlay(bool vscroll) {
   List_each(FormInput *, it, _inputs) {
     FormInput *input = (*it);
     if (input->_y >= _scrollY - _height &&
-        input->_y + input->_height <= _scrollY + _height &&
         input->isVisible()) {
       if (input->isDrawTop()) {
         drawTop = input;
@@ -286,35 +285,7 @@ FormInput *Screen::getNextMenu(FormInput *prev, bool up) {
 void Screen::layoutInputs(int newWidth, int newHeight) {
   List_each(FormInput *, it, _inputs) {
     FormInput *r1 = (*it);
-    if (r1->isResizable()) {
-      bool right = true;
-      bool bottom = true;
-      List_each(FormInput *, subIt, _inputs) {
-        FormInput *r2 = (*subIt);
-        if (r1 != r2) {
-          if (r2->_x >  r1->_x &&
-              r2->_y >= r1->_y &&
-              r2->_y <= r1->_y + _height) {
-            // cant resize over right side sibling
-            right = false;
-          }
-          if (r2->_y >  r1->_y &&
-              r2->_x >= r1->_x &&
-              r2->_x <= r1->_x + _width) {
-            // cant resize over lower side sibling
-            bottom = false;
-          }
-        }
-      }
-      if (right) {
-        r1->_width = newWidth - r1->_x;
-      }
-      if (bottom) {
-        r1->_height = newHeight - r1->_y;
-      }
-    } else {
-      r1->layout(newWidth, newHeight);
-    }
+    r1->layout(newWidth, newHeight);
   }
 }
 

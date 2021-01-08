@@ -53,6 +53,7 @@ typedef struct {
  */
 typedef struct {
   char lib[OS_FILENAME_SIZE + 1]; /**< library name */
+  char alias[OS_FILENAME_SIZE + 1]; /**< library name alias */
   int  type; /**< library type (unit, c-module) */
   int id; /**< lib-id in this byte-code */
   int tid; /**< task id (updated on loading) */

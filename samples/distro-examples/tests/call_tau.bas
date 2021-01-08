@@ -1,19 +1,19 @@
 ' example: using a unit, 0.9
 '
 
-Import Tau, PreDef
+Import Tau as taz, PreDef
 
-? "Tau's exported variable: ", tau.expvar
-? "Function fooF          : ", tau.fooF("Hi")
+? "Tau's exported variable: ", taz.expvar
+? "Function fooF          : ", taz.fooF("Hi")
 ? "Procedure fooP         : "
-tau.fooP "Hi"
+taz.fooP "Hi"
 
 ' reverse var-update 
-tau.expvar = "message from main"
-tau.print_expvar
-? tau.expvar
-tau.build_ta
-? tau.ta
+taz.expvar = "message from main"
+taz.print_expvar
+? taz.expvar
+taz.build_ta
+? taz.ta
 'tau.cerr
 
 rem check system-variables
@@ -31,8 +31,8 @@ foyer.name= "my name is PI"
 ? "end"
 
 for i = 0 to 1000
-  tau.addRoom(foyer,x)
-  jj = tau.calcRoomSize(foyer,x)
+  taz.addRoom(foyer,x)
+  jj = taz.calcRoomSize(foyer,x)
 next i
 
 sub addRoom(the_thing, d)
@@ -40,3 +40,10 @@ sub addRoom(the_thing, d)
 end
 
 addRoom(foyer,x)
+
+if (Taz.LIGHTGRAY != rgb(200, 200, 200)) then
+  print "Error importing inline assigned export variable"
+endif
+if (Taz.YELLOW != rgb(253, 249, 0)) then
+  print "Error importing inline assigned export variable"
+endif

@@ -486,6 +486,14 @@ void FormEditInput::setFocus(bool focus) {
   }
 }
 
+void FormEditInput::clicked(int x, int y, bool pressed) {
+  if (pressed && g_system->isRunning()) {
+    dev_clrkb();
+    setFocus(true);
+    focusEdit = this;
+  }
+}
+
 //
 // FormLineInput
 //
@@ -515,11 +523,9 @@ FormLineInput::~FormLineInput() {
 }
 
 void FormLineInput::clicked(int x, int y, bool pressed) {
+  FormEditInput::clicked(x, y, pressed);
   if (pressed && g_system->isRunning()) {
     AnsiWidget *out = g_system->getOutput();
-    dev_clrkb();
-    setFocus(true);
-    focusEdit = this;
     int charWidth = out->getCharWidth();
     int selected = (x - _x) / charWidth;
     int len = strlen(_buffer);

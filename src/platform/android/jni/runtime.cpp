@@ -536,8 +536,15 @@ void Runtime::loadConfig() {
     }
     s = settings.get(PATH_KEY);
     if (s) {
-      trace("path = %s", s->c_str());
-      chdir(s->c_str());
+      const char *legacy = getenv("LEGACY_DIR");
+      if (storage != nullptr && legacy != nullptr && strcmp(legacy, s->c_str()) == 0) {
+        // don't restore the legacy folder
+        trace("path = %s", storage);
+        chdir(storage);
+      } else {
+        trace("path = %s", s->c_str());
+        chdir(s->c_str());
+      }
     }
     s = settings.get(MUTE_AUDIO_KEY);
     if (s && s->toInteger() == 1) {
@@ -1064,7 +1071,7 @@ void System::editSource(strlib::String loadPath, bool restoreOnExit) {
         case SB_KEY_F(1):
           widget = helpWidget;
           helpWidget->createKeywordIndex();
-          helpWidget->show();
+          helpWidget->showPopup(-4, -2);
           helpWidget->setFocus(true);
           runtime->showKeypad(false);
           showStatus = false;

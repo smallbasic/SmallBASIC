@@ -290,6 +290,7 @@ void map_set(var_p_t dest, const var_p_t src) {
     hashmap_create(dest, src->v.m.count);
     hashmap_foreach(src, map_set_cb, &cb);
     dest->v.m.count = src->v.m.count;
+    dest->v.m.id = src->v.m.id;
   }
 }
 

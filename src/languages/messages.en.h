@@ -86,6 +86,8 @@
 #define MSG_MISSING_FOR         "NEXT: Missing FOR on the same level"
 #define MSG_MISSING_IF          "ENDIF: Missing IF on the same level"
 #define MSG_MEMBER_DOES_NOT_EXIST "Unit has no member named '%s'\n"
+#define MSG_MODULE_NO_MEMBER    "Module '%s' has no member '%s'\n"
+#define MSG_MODULE_NO_RETURN    "Module FUNC '%s' result not assigned\n"
 #define MSG_CANT_OPEN_FILE_AT   "Can't open '%s' at '%s'\n"
 #define MSG_CANT_OPEN_FILE      "Can't open '%s'\n"
 #define MSG_GRMODE_ERR          "GRMODE, usage:<width>x<height>[x<bits-per-pixel>]\nExample: OPTION PREDEF GRMODE=640x480x4\n"

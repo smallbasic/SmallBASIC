@@ -9,6 +9,7 @@
 
 #include "config.h"
 #include <getopt.h>
+#include <errno.h>
 #include "common/sbapp.h"
 #include "ui/kwp.h"
 
@@ -25,9 +26,9 @@ void console_init();
 static struct option OPTIONS[] = {
   {"verbose",        no_argument,       NULL, 'v'},
   {"keywords",       no_argument,       NULL, 'k'},
-  {"no-file-perm",   no_argument,       NULL, 'f'},
+  {"no-file-access", no_argument,       NULL, 'f'},
   {"gen-sbx",        no_argument,       NULL, 'x'},
-  {"module",         optional_argument, NULL, 'm'},
+  {"module-path",    optional_argument, NULL, 'm'},
   {"decompile",      optional_argument, NULL, 's'},
   {"option",         optional_argument, NULL, 'o'},
   {"cmd",            optional_argument, NULL, 'c'},
@@ -38,13 +39,13 @@ static struct option OPTIONS[] = {
 
 void show_help() {
   fprintf(stdout,
-          "SmallBASIC version %s - kw:%d, pc:%d, fc:%d, ae:%d I=%d N=%d\n\n",
+          "SmallBASIC version %s - kw:%d, pc:%d, fc:%d, V:%d I=%d N=%d\n\n",
           SB_STR_VER, kwNULL, (kwNULLPROC - kwCLS) + 1,
-          (kwNULLFUNC - kwASC) + 1, (int)(65536 / sizeof(var_t)),
+          (kwNULLFUNC - kwASC) + 1, (int)(sizeof(var_t)),
           (int)sizeof(var_int_t), (int)sizeof(var_num_t));
   fprintf(stdout, "usage: sbasic [options]...\n");
   int i = 0;
-  while (OPTIONS[i].name != NULL) {
+  while (OPTIONS[i].name != nullptr) {
     fprintf(stdout, OPTIONS[i].has_arg ?
             "  -%c, --%s='<argument>'\n" : "  -%c, --%s\n",
             OPTIONS[i].val, OPTIONS[i].name);
@@ -54,7 +55,12 @@ void show_help() {
 }
 
 void show_brief_help() {
-  fprintf(stdout, "SmallBASIC version %s - use -h for help\n",  SB_STR_VER);
+  if (opt_command[0] != '\0') {
+    access(opt_command, R_OK);
+    fprintf(stdout, "sbasic: can't open file '%s': [Errno %d] %s\n", opt_command, errno, strerror(errno));
+  } else {
+    fprintf(stdout, "SmallBASIC version %s - use -h for help\n", SB_STR_VER);
+  }
 }
 
 void command_help(const char *selection) {
@@ -76,9 +82,9 @@ void command_help(const char *selection) {
     }
   }
   if (!found) {
-    const char *last_package = NULL;
+    const char *last_package = nullptr;
     for (int i = 0; i < keyword_help_len; i++) {
-      if (last_package == NULL || strcmp(last_package, keyword_help[i].package) != 0) {
+      if (last_package == nullptr || strcmp(last_package, keyword_help[i].package) != 0) {
         fprintf(stdout, "%s\n", keyword_help[i].package);
         last_package = keyword_help[i].package;
       }
@@ -154,7 +160,7 @@ bool setup_command_program(const char *program, char **runFile) {
   FILE *fp = fopen(file, "wb");
   bool result;
   if (fp) {
-    if (program != NULL) {
+    if (program != nullptr) {
       fputs(program, fp);
     } else {
       // read from stdin
@@ -235,14 +241,15 @@ bool process_options(int argc, char *argv[], char **runFile, bool *tmpFile) {
   bool result = true;
   while (result) {
     int option_index = 0;
-    int c = getopt_long(argc, argv, "vkfxm::s::o:c:h::", OPTIONS, &option_index);
+    int c = getopt_long(argc, argv, "vkfxm:s:o:c:h::", OPTIONS, &option_index);
     if (c == -1 && !option_index) {
       // no more options
       for (int i = 1; i < argc; i++) {
         const char *s = argv[i];
         int len = strlen(s);
-        if (*runFile == NULL &&
-            (strcasecmp(s + len - 4, ".bas") == 0 && access(s, 0) == 0)) {
+        if (*runFile == nullptr &&
+            ((strcasecmp(s + len - 4, ".bas") == 0 ||
+              strcasecmp(s + len - 4, ".sbx") == 0) && access(s, 0) == 0)) {
           *runFile = strdup(s);
         } else {
           if (opt_command[0]) {
@@ -257,7 +264,7 @@ bool process_options(int argc, char *argv[], char **runFile, bool *tmpFile) {
     case 'h':
       if (optarg) {
         command_help(optarg);
-      } else if (argv[optind] != NULL && argv[optind][0] != '-') {
+      } else if (argv[optind] != nullptr && argv[optind][0] != '-') {
         command_help(argv[optind]);
       } else {
         show_help();
@@ -310,15 +317,15 @@ bool process_options(int argc, char *argv[], char **runFile, bool *tmpFile) {
     }
   }
 
-  if (getenv("SBASICPATH") != NULL) {
+  if (getenv("SBASICPATH") != nullptr) {
     opt_loadmod = 1;
   }
 
   if (strcmp("--", argv[argc - 1]) == 0) {
-    if (*runFile != NULL) {
+    if (*runFile != nullptr) {
       // run file already set
       result = false;
-    } else if (setup_command_program(NULL, runFile)) {
+    } else if (setup_command_program(nullptr, runFile)) {
       *tmpFile = true;
     } else {
       // failed to read from stdin
@@ -326,10 +333,31 @@ bool process_options(int argc, char *argv[], char **runFile, bool *tmpFile) {
     }
   }
 
-  if (*runFile == NULL && result) {
+  if (*runFile == nullptr && result) {
     show_brief_help();
     result = false;
   }
+
+  if (opt_modpath[0] != '\0') {
+    char *path = opt_modpath;
+    while (result && path && path[0] != '\0') {
+      char *sep = strchr(path, ':');
+      if (sep) {
+        *sep = '\0';
+      }
+      if (access(path, R_OK) != 0) {
+        fprintf(stdout, "sbasic: can't open path '%s': [Errno %d] %s\n", path, errno, strerror(errno));
+        result = false;
+      }
+      if (sep) {
+        *sep = ':';
+        path = sep + 1;
+      } else {
+        path = nullptr;
+      }
+    }
+  }
+
   return result;
 }
 
@@ -339,10 +367,10 @@ bool process_options(int argc, char *argv[], char **runFile, bool *tmpFile) {
 int main(int argc, char *argv[]) {
   opt_autolocal = 0;
   opt_command[0] = '\0';
+  opt_modpath[0] = '\0';
   opt_file_permitted = 1;
   opt_ide = 0;
   opt_loadmod = 0;
-  opt_modpath[0] = 0;
   opt_nosave = 1;
   opt_pref_height = 0;
   opt_pref_width = 0;
@@ -354,7 +382,7 @@ int main(int argc, char *argv[]) {
 
   console_init();
 
-  char *file = NULL;
+  char *file = nullptr;
   bool tmpFile = false;
   if (process_options(argc, argv, &file, &tmpFile)) {
     char prev_cwd[OS_PATHNAME_SIZE + 1];

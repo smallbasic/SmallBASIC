@@ -47,6 +47,7 @@ const int LEN_ANTIALIAS  = STRLEN(LCN_ANTIALIAS);
 const int LEN_LDMODULES  = STRLEN(LCN_LOAD_MODULES);
 const int LEN_AUTOLOCAL  = STRLEN(LCN_AUTOLOCAL);
 const int LEN_AS_WRS     = STRLEN(LCN_AS_WRS);
+const int LEN_CONST      = STRLEN(LCN_CONST);
 
 #define KW_TYPE_LINE_BYTES 5
 
@@ -142,11 +143,12 @@ bc_symbol_rec_t *add_imptable_rec(const char *proc_name, int lib_id, int symbol_
 }
 
 // store lib-record
-void add_libtable_rec(const char *lib, int uid, int type) {
+void add_libtable_rec(const char *lib, const char *alias, int uid, int type) {
   bc_lib_rec_t *imlib = (bc_lib_rec_t *)malloc(sizeof(bc_lib_rec_t));
   memset(imlib, 0, sizeof(bc_lib_rec_t));
 
   strlcpy(imlib->lib, lib, sizeof(imlib->lib));
+  strlcpy(imlib->alias, alias, sizeof(imlib->alias));
   imlib->id = uid;
   imlib->type = type;
 
@@ -580,7 +582,7 @@ int comp_check_labels() {
 }
 
 /*
- * returns true if 'name' is a unit or c-module
+ * returns 1 if 'name' is a unit, 2 if 'name' c-module otherwise 0
  */
 int comp_check_lib(const char *name) {
   char tmp[SB_KEYWORD_SIZE + 1];
@@ -593,11 +595,11 @@ int comp_check_lib(const char *name) {
       bc_lib_rec_t *lib = comp_libtable.elem[i];
 
       // remove any file path component from the name
-      char *dir_sep = strrchr(lib->lib, OS_DIRSEP);
-      char *lib_name = dir_sep ? dir_sep + 1 : lib->lib;
+      char *dir_sep = strrchr(lib->alias, OS_DIRSEP);
+      char *lib_name = dir_sep ? dir_sep + 1 : lib->alias;
 
       if (strcasecmp(lib_name, tmp) == 0) {
-        return 1;
+        return lib->type == 0 ? 2 : 1;
       }
     }
   }
@@ -636,9 +638,7 @@ int comp_create_var(const char *name) {
  * add external variable
  */
 int comp_add_external_var(const char *name, int lib_id) {
-  int idx;
-
-  idx = comp_create_var(name);
+  int idx = comp_create_var(name);
   comp_vartable[idx].lib_id = lib_id;
 
   if (lib_id & UID_UNIT_BIT) {
@@ -678,15 +678,22 @@ bid_t comp_var_getID(const char *var_name) {
   //
   // If the name is not found in comp_libtable then it
   // is treated as a structure reference
-  if (dot != NULL && comp_check_lib(tmp)) {
-    for (i = 0; i < comp_varcount; i++) {
-      if (strcasecmp(comp_vartable[i].name, tmp) == 0) {
-        return i;
+  if (dot != NULL) {
+    int module_type = comp_check_lib(tmp);
+    if (module_type) {
+      for (i = 0; i < comp_varcount; i++) {
+        if (strcasecmp(comp_vartable[i].name, tmp) == 0) {
+          return i;
+        }
       }
+      if (module_type == 2) {
+        *dot = '\0';
+        sc_raise(MSG_MODULE_NO_MEMBER, tmp, dot + 1);
+      } else {
+        sc_raise(MSG_MEMBER_DOES_NOT_EXIST, tmp);
+      }
+      return 0;
     }
-
-    sc_raise(MSG_MEMBER_DOES_NOT_EXIST, tmp);
-    return 0;
   }
   //
   // search in global name-space
@@ -1914,19 +1921,11 @@ void comp_cmd_option(char *src) {
 /**
  * stores export symbols (in pass2 will be checked again)
  */
-void bc_store_exports(const char *slist) {
+void bc_store_exports(char *slist) {
   char_p_t pars[MAX_PARAMS];
-  int count = 0, i;
-  char *newlist;
-
-  newlist = (char *)malloc(strlen(slist) + 3);
-  strcpy(newlist, "(");
-  strcat(newlist, slist);
-  strcat(newlist, ")");
-
-  comp_getlist_insep(newlist, pars, "()", MAX_PARAMS, &count);
-
+  int count = comp_getlist(slist, pars, MAX_PARAMS);
   int offset;
+
   if (comp_exptable.count) {
     offset = comp_exptable.count;
     comp_exptable.count += count;
@@ -1938,14 +1937,24 @@ void bc_store_exports(const char *slist) {
     comp_exptable.elem = (unit_sym_t **)malloc(comp_exptable.count * sizeof(unit_sym_t *));
   }
 
-  for (i = 0; i < count; i++) {
+  for (int i = 0; i < count; i++) {
     unit_sym_t *sym = (unit_sym_t *)malloc(sizeof(unit_sym_t));
     memset(sym, 0, sizeof(unit_sym_t));
-    strlcpy(sym->symbol, pars[i], sizeof(sym->symbol));
-    comp_exptable.elem[offset + i] = sym;
-  }
 
-  free(newlist);
+    char var_name[SB_KEYWORD_SIZE + 1];
+    comp_prepare_name(var_name, pars[i], SB_KEYWORD_SIZE);
+    if (strncmp(LCN_CONST, var_name, LEN_CONST) == 0) {
+      char *next = pars[i] + LEN_CONST;
+      comp_prepare_name(var_name, next, SB_KEYWORD_SIZE);
+    }
+    strlcpy(sym->symbol, var_name, sizeof(sym->symbol));
+    comp_exptable.elem[offset + i] = sym;
+
+    if (strlen(var_name) != strlen(pars[i])) {
+      // handle same line variable assignment, eg export blah = foo
+      comp_text_line(pars[i], 1);
+    }
+  }
 }
 
 void comp_get_unary(const char *p, int *ladd, int *linc, int *ldec, int *leqop) {
@@ -4297,9 +4306,9 @@ void comp_preproc_import(const char *slist) {
     if (uid != -1) {
       // store C module lib-record
       slib_import(uid, 1);
-      add_libtable_rec(alias, uid, 0);
+      add_libtable_rec(alias, alias, uid, 0);
     } else {
-      uid = open_unit(buf);
+      uid = open_unit(buf, alias);
       if (uid < 0) {
         sc_raise(MSG_UNIT_NOT_FOUND, buf);
         return;
@@ -4310,7 +4319,7 @@ void comp_preproc_import(const char *slist) {
         return;
       }
       // store lib-record
-      add_libtable_rec(buf, uid, 1);
+      add_libtable_rec(buf, alias, uid, 1);
 
       // clean up
       close_unit(uid);
@@ -4350,17 +4359,15 @@ void comp_preproc_unit(char *name) {
 
   SKIP_SPACES(p);
 
-  if (!is_alpha(*p)) {
+  if (is_alpha(*p)) {
+    p = get_unit_name(p, comp_unit_name);
+    comp_unit_flag = 1;
+    SKIP_SPACES(p);
+    if (*p != '\n' && *p != ':') {
+      sc_raise(MSG_UNIT_ALREADY_DEFINED);
+    }
+  } else {
     sc_raise(MSG_INVALID_UNIT_NAME);
-  }
-
-  p = get_unit_name(p, comp_unit_name);
-  comp_unit_flag = 1;
-
-  SKIP_SPACES(p);
-
-  if (*p != '\n' && *p != ':') {
-    sc_raise(MSG_UNIT_ALREADY_DEFINED);
   }
 }
 
@@ -4707,7 +4714,11 @@ int comp_pass1(const char *section, const char *text) {
         comp_line = comp_udptable[i].pline;
         char *dot = strchr(comp_udptable[i].name, '.');
         if (dot) {
-          sc_raise(MSG_UNDEFINED_MAP, comp_udptable[i].name);
+          if (comp_check_lib(comp_udptable[i].name) == 2) {
+            sc_raise(MSG_MODULE_NO_RETURN, comp_udptable[i].name);
+          } else {
+            sc_raise(MSG_UNDEFINED_MAP, comp_udptable[i].name);
+          }
         } else {
           if (comp_is_func(comp_udptable[i].name) != -1) {
             sc_raise(MSG_FUNC_NOT_ASSIGNED, comp_udptable[i].name);

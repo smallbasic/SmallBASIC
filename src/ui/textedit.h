@@ -104,12 +104,13 @@ struct TextEditInput : public FormEditInput {
   void selectAll();
   bool isDirty() { return _dirty && _state.undostate.undo_point > 0; }
   void setDirty(bool dirty) { _dirty = dirty; }
-  void layout(int w, int h) { _width = w; _height = h; }
+  void layout(int w, int h);
   const char *getNodeId();
   char *getWordBeforeCursor();
   bool replaceNext(const char *text, bool skip);
   int  getCompletions(StringList *list, int max);
   void selectNavigate(bool up);
+  EditTheme *getTheme() { return _theme; }
 
 protected:
   enum SyntaxState {
@@ -123,6 +124,7 @@ protected:
 
   void dragPage(int y, bool &redraw);
   void drawText(int x, int y, const char *str, int length, SyntaxState &state);
+  void calcMargin();
   void changeCase();
   void cycleTheme();
   void drawLineNumber(int x, int y, int row, bool selected);
@@ -168,6 +170,8 @@ protected:
   int _matchingBrace;
   int _ptY;
   int _pressTick;
+  int _xmargin;
+  int _ymargin;
   bool _bottom;
   bool _dirty;
 };
@@ -203,10 +207,10 @@ struct TextEditHelpWidget : public TextEditInput {
   void createOutline();
   void createSearch(bool replace);
   void createStackTrace(const char *error, int line, StackTrace &trace);
+  void draw(int x, int y, int w, int h, int chw);
   bool edit(int key, int screenWidth, int charWidth);
   void paste(const char *text);
   bool isDrawTop() { return true; }
-  void layout(int w, int h) { _x = w - _width; _height = h; }
   void reset(HelpMode mode);
   void cancelMode() { _mode = kNone; }
   bool closeOnEnter() const;
@@ -217,6 +221,8 @@ struct TextEditHelpWidget : public TextEditInput {
   bool replaceModeWith() const { return _mode == kEnterReplaceWith; }
   bool replaceDoneMode() const { return _mode == kReplaceDone; }
   bool selected(MAPoint2d pt, int scrollX, int scrollY, bool &redraw);
+  void showPopup(int cols, int rows);
+  void showSidebar();
   void toggleKeyword();
 
 private:

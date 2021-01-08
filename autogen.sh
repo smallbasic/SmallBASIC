@@ -1,6 +1,6 @@
 # This file is part of SmallBASIC
 #
-# Copyright(C) 2001-2015 Chris Warren-Smith.
+# Copyright(C) 2001-2020 Chris Warren-Smith.
 #
 # This program is distributed under the terms of the GPL v2.0 or later
 # Download the GNU Public License (GPL) from www.gnu.org
@@ -8,7 +8,8 @@
 
 ln -sf README.md README
 
-git submodule update --
+git submodule init
+git submodule update
 
 pkg-config --version > /dev/null || echo "Please install pkg-config"
 

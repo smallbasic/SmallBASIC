@@ -31,7 +31,7 @@ typedef struct {
  *
  * @return non-zero on success
  */
-int sblib_init(void);
+int sblib_init(const char *sourceFile);
 
 /**
  * @ingroup modlib

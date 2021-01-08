@@ -418,6 +418,13 @@ void cstr_init(cstr *cs, int size);
  */
 void cstr_append(cstr *cs, const char *str);
 
+/**
+ * @ingroup str
+ *
+ * append to string buffer
+ */
+void cstr_append_i(cstr *cs, const char *str, int len);
+
 #if defined(__cplusplus)
 }
 #endif

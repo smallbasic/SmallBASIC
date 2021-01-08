@@ -14,6 +14,7 @@ const colText2 = theme.text4
 const colNav   = theme.text1
 const colNav2  = theme.text6
 const menu_gap = -(char_w / 2)
+const is_android = instr(sbver, "Android") != 0
 const is_sdl = instr(sbver, "SDL") != 0
 const onlineUrl = "http://smallbasic.github.io/samples/index.bas"
 const idxEdit = 6
@@ -273,7 +274,7 @@ sub loadFileList(path, byref basList)
   end
   dirwalk path, "", use walker(x)
 
-  if (path = "/" && !is_sdl) then
+  if (path = "/" && is_android) then
      ext_storage = env("EXTERNAL_DIR")
      if (len(ext_storage) > 0) then
        emptyNode.name = mid(ext_storage, 2)
@@ -294,7 +295,7 @@ sub loadFileList(path, byref basList)
 end
 
 sub listFiles(byref frm, path, sortDir, byref basList)
-  local lastItem, bn, abbr, gap, n, lab, name, txtcol, i
+  local lastItem, bn, abbr, gap, n, lab, name, txtcol, i, pathx
   local name_col = colNav
   local size_col = colNav
   local date_col = colNav
@@ -324,7 +325,20 @@ sub listFiles(byref frm, path, sortDir, byref basList)
     date_col = colNav2
   end select
 
-  bn = mk_bn(0, "Files in " + path, colText)
+  if (is_android) then
+    pathx = mid(path, 1, len(path) - 1)
+    if (pathx == env("LEGACY_DIR")) then
+      bn = mk_bn(0, "SmallBASIC legacy project files", colText2)
+    elseif (pathx == env("INTERNAL_DIR")) then
+      bn = mk_bn(0, "Temporary files", colText2)
+    elseif (pathx == env("EXTERNAL_DIR")) then
+      bn = mk_bn(0, "SmallBASIC project files", colText)
+    else
+      bn = mk_bn(0, "Files in " + path, colText)
+    endif
+  else
+    bn = mk_bn(0, "Files in " + path, colText)
+  endif
   bn.type = "label"
   bn.x = 0
   bn.y = -lineSpacing
@@ -602,6 +616,17 @@ sub manageFiles()
   cls
 end
 
+func selectDir(s)
+  local result = s
+  if (is_android && s != env("EXTERNAL_DIR") && (s == env("LEGACY_DIR") || s == env("INTERNAL_DIR"))) then
+    wnd.ask("Would you like to navigate to the SmallBASIC folder instead?", "Temporary file location")
+    if (wnd.answer == 0) then
+      result = env("EXTERNAL_DIR")
+    endif
+  endif
+  return result
+end
+
 func changeDir(s)
   try
     chdir s
@@ -669,6 +694,7 @@ sub main
 
     if (isdir(frm.value)) then
       cls
+      frm.value = selectDir(frm.value)
       if (changeDir(frm.value)) then
         path = frm.value
       endif

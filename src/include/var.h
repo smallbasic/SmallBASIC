@@ -15,7 +15,7 @@
 // https://en.wikipedia.org/wiki/Dependency_inversion_principle
 
 typedef double var_num_t;
-typedef long int var_int_t;
+typedef long long int var_int_t;
 
 #define MAXDIM 6
 #define OS_INTSZ  sizeof(var_int_t)
@@ -32,7 +32,7 @@ typedef long int var_int_t;
 /*
  * Variable - types
  */
-#define V_INT       0 /**< variable type, 32bit integer                @ingroup var */
+#define V_INT       0 /**< variable type, 64bit integer                @ingroup var */
 #define V_NUM       1 /**< variable type, 64bit float (same as V_NUM)  @ingroup var */
 #define V_STR       2 /**< variable type, string                       @ingroup var */
 #define V_ARRAY     3 /**< variable type, array of variables           @ingroup var */
@@ -71,6 +71,7 @@ typedef struct var_s {
       void *map;
       uint32_t count;
       uint32_t size;
+      uint32_t id;
     } m;
 
     // reference variable
@@ -79,6 +80,7 @@ typedef struct var_s {
     // object method
     struct {
       method cb;
+      uint32_t id;
     } fn;
 
     // generic ptr (string)
@@ -117,6 +119,15 @@ typedef struct var_s {
 } var_t;
 
 typedef var_t *var_p_t;
+
+/**
+ * @ingroup var
+ *
+ * creates a new variable
+ *
+ * @return a newly created var_t object
+ */
+var_t *v_new(void);
 
 /**
  * @ingroup var

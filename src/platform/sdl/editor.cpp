@@ -13,6 +13,7 @@
 #include "ui/textedit.h"
 #include "platform/sdl/runtime.h"
 #include "platform/sdl/settings.h"
+#include "platform/sdl/syswm.h"
 
 using namespace strlib;
 
@@ -119,13 +120,25 @@ void onlineHelp(Runtime *runtime, TextEditInput *widget) {
   runtime->browseFile(path);
 }
 
+void showHelpPopup(TextEditHelpWidget *helpWidget) {
+  helpWidget->showPopup(-8, -2);
+}
+
+void showHelpLineInput(TextEditHelpWidget *helpWidget, int width = 35) {
+  helpWidget->showPopup(width, 1);
+}
+
+void showHelpSideabar(TextEditHelpWidget *helpWidget) {
+  helpWidget->showSidebar();
+}
+
 void showRecentFiles(TextEditHelpWidget *helpWidget, String &loadPath) {
   String fileList;
   helpWidget->createMessage();
-  helpWidget->show();
   helpWidget->reload(NULL);
   getRecentFileList(fileList, loadPath);
   helpWidget->setText(fileList);
+  showHelpPopup(helpWidget);
 }
 
 void showSelectionCount(AnsiWidget *out, TextEditInput *widget) {
@@ -166,6 +179,20 @@ void exportBuffer(AnsiWidget *out, const char *text, String &dest, String &token
     sprintf(buffer, "Failed to open: %s", dest.c_str());
   }
   out->setStatus(buffer);
+}
+
+bool externalExec(AnsiWidget *out, TextEditInput *editWidget, String &loadPath) {
+  bool result;
+  if (editWidget->getTextLength() && !g_exportAddr.empty() && g_exportAddr.indexOf("sbasic", 0) != -1) {
+    launch(g_exportAddr, loadPath);
+    result = true;
+  } else if (editWidget->getTextLength() && !g_exportAddr.empty() && !g_exportToken.empty()) {
+    exportBuffer(out, editWidget->getText(), g_exportAddr, g_exportToken);
+    result = true;
+  } else {
+    result = false;
+  }
+  return result;
 }
 
 void System::editSource(String loadPath, bool restoreOnExit) {
@@ -213,7 +240,7 @@ void System::editSource(String loadPath, bool restoreOnExit) {
       helpWidget->setText(gsb_last_errmsg);
       helpWidget->createStackTrace(gsb_last_errmsg, gsb_last_line, _stackTrace);
       widget = helpWidget;
-      helpWidget->show();
+      showHelpSideabar(helpWidget);
       _output->setStatus("Error. Esc=Close, Up/Down=Caller");
     } else {
       _output->setStatus(!gsb_last_errmsg[0] ? "Error" : gsb_last_errmsg);
@@ -284,6 +311,7 @@ void System::editSource(String loadPath, bool restoreOnExit) {
           break;
         case SB_KEY_CTRL('s'):
           saveFile(editWidget, loadPath);
+          saveRecentPosition(loadPath, editWidget->getCursorPos());
           break;
         case SB_KEY_CTRL('c'):
         case SB_KEY_CTRL('x'):
@@ -299,34 +327,35 @@ void System::editSource(String loadPath, bool restoreOnExit) {
           _output->setStatus("Keyword Help. F2=online, Esc=Close");
           widget = helpWidget;
           helpWidget->createKeywordIndex();
-          helpWidget->show();
+          showHelpPopup(helpWidget);
           break;
         case SB_KEY_F(2):
           redraw = false;
           onlineHelp((Runtime *)this, editWidget);
           break;
         case SB_KEY_F(4):
-          if (editWidget->getTextLength() && !g_exportAddr.empty() && !g_exportToken.empty()) {
-            exportBuffer(_output, editWidget->getText(), g_exportAddr, g_exportToken);
+          if (externalExec(_output, editWidget, loadPath)) {
             break;
           }
           // else fallthru to F3 handler
         case SB_KEY_F(3):
           if (editWidget->getTextLength()) {
             saveFile(editWidget, loadPath);
-            _output->setStatus("Export to mobile SmallBASIC. Enter <IP>:<Port>");
+            saveRecentPosition(loadPath, editWidget->getCursorPos());
+            _output->setStatus("Export to SmallBASIC. Enter <IP>:<Port> | <sbasic>");
             widget = helpWidget;
             helpWidget->createLineEdit(g_exportAddr);
-            helpWidget->show();
+            showHelpLineInput(helpWidget, 60);
             inputMode = kExportAddr;
           }
           break;
         case SB_KEY_F(5):
           saveFile(editWidget, loadPath);
+          saveRecentPosition(loadPath, editWidget->getCursorPos());
           _output->setStatus("Debug. F6=Step, F7=Continue, Esc=Close");
           widget = helpWidget;
           helpWidget->createMessage();
-          helpWidget->show();
+          showHelpSideabar(helpWidget);
           ((Runtime *)this)->debugStart(editWidget, loadPath.c_str());
           statusMessage.resetCursor(editWidget);
           break;
@@ -347,46 +376,46 @@ void System::editSource(String loadPath, bool restoreOnExit) {
           _output->setStatus("Enter program command line, Esc=Close");
           widget = helpWidget;
           helpWidget->createLineEdit(opt_command);
-          helpWidget->show();
+          showHelpLineInput(helpWidget);
           inputMode = kCommand;
           break;
         case SB_KEY_CTRL('h'):
           _output->setStatus("Keystroke help. Esc=Close");
           widget = helpWidget;
           helpWidget->createHelp();
-          helpWidget->show();
+          showHelpSideabar(helpWidget);
           break;
         case SB_KEY_CTRL('l'):
           _output->setStatus("Outline. Esc=Close");
           widget = helpWidget;
           helpWidget->createOutline();
-          helpWidget->show();
+          showHelpSideabar(helpWidget);
           break;
         case SB_KEY_CTRL('f'):
           _output->setStatus("Find in buffer. Esc=Close");
           widget = helpWidget;
           helpWidget->createSearch(false);
-          helpWidget->show();
+          showHelpLineInput(helpWidget);
           statusMessage.resetCursor(editWidget);
           break;
         case SB_KEY_CTRL('n'):
           _output->setStatus("Replace string. Esc=Close");
           widget = helpWidget;
           helpWidget->createSearch(true);
-          helpWidget->show();
+          showHelpLineInput(helpWidget);
           statusMessage.resetCursor(editWidget);
           break;
         case SB_KEY_ALT('g'):
           _output->setStatus("Goto line. Esc=Close");
           widget = helpWidget;
           helpWidget->createGotoLine();
-          helpWidget->show();
+          showHelpLineInput(helpWidget, 5);
           break;
         case SB_KEY_CTRL(' '):
           _output->setStatus("Auto-complete. Esc=Close");
           widget = helpWidget;
           helpWidget->createCompletionHelp();
-          helpWidget->show();
+          showHelpSideabar(helpWidget);
           break;
         case SB_KEY_INSERT:
           statusMessage.setInsert();
@@ -437,7 +466,9 @@ void System::editSource(String loadPath, bool restoreOnExit) {
           }
           if (getRecentFile(recentFile, event.key - SB_KEY_ALT('1'))) {
             if (loadSource(recentFile.c_str())) {
+              saveRecentPosition(loadPath, editWidget->getCursorPos());
               editWidget->reload(_programSrc);
+              editWidget->setCursorPos(getRecentPosition(recentFile));
               statusMessage.setFilename(recentFile);
               statusMessage.update(editWidget, _output, true);
               setLoadPath(recentFile);
@@ -471,9 +502,16 @@ void System::editSource(String loadPath, bool restoreOnExit) {
             switch (inputMode) {
             case kExportAddr:
               g_exportAddr = helpWidget->getText();
-              inputMode = kExportToken;
-              helpWidget->createLineEdit(g_exportToken);
-              _output->setStatus("Enter token. Esc=Close");
+              if (g_exportAddr.indexOf("sbasic", 0) == -1) {
+                inputMode = kExportToken;
+                helpWidget->createLineEdit(g_exportToken);
+                _output->setStatus("Enter token. Esc=Close");
+              } else {
+                inputMode = kInit;
+                widget = editWidget;
+                helpWidget->hide();
+                launch(g_exportAddr, loadPath);
+              }
               break;
             case kExportToken:
               g_exportToken = helpWidget->getText();
@@ -484,6 +522,7 @@ void System::editSource(String loadPath, bool restoreOnExit) {
               break;
             case kCommand:
               strlcpy(opt_command, helpWidget->getText(), sizeof(opt_command));
+              statusMessage._dirty = !editWidget->isDirty();
               inputMode = kInit;
               widget = editWidget;
               helpWidget->hide();
@@ -492,19 +531,18 @@ void System::editSource(String loadPath, bool restoreOnExit) {
               break;
             }
           } else if (helpWidget->closeOnEnter() && helpWidget->isVisible()) {
-            statusMessage._dirty = !widget->isDirty();
+            statusMessage._dirty = !editWidget->isDirty();
             widget = editWidget;
             helpWidget->hide();
             helpWidget->cancelMode();
           }
           redraw = true;
         } else if (helpWidget->replaceDoneMode()) {
-          statusMessage._dirty = !widget->isDirty();
+          statusMessage._dirty = !editWidget->isDirty();
           widget = editWidget;
           helpWidget->hide();
           helpWidget->cancelMode();
         }
-
         helpWidget->setFocus(widget == helpWidget);
         editWidget->setFocus(widget == editWidget);
         if (helpWidget->searchMode()) {
@@ -523,6 +561,7 @@ void System::editSource(String loadPath, bool restoreOnExit) {
       int choice = ask("Save changes?", message, isBack());
       if (choice == 0) {
         saveFile(editWidget, loadPath);
+        saveRecentPosition(loadPath, editWidget->getCursorPos());
       } else if (choice == 2) {
         // cancel
         _state = kEditState;
