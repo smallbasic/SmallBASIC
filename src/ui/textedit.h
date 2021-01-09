@@ -215,6 +215,7 @@ struct TextEditHelpWidget : public TextEditInput {
   void cancelMode() { _mode = kNone; }
   bool closeOnEnter() const;
   bool searchMode() const { return _mode >= kSearch && _mode <= kReplaceDone; }
+  void layout(int w, int h);
   bool lineEditMode() const { return _mode == kLineEdit; }
   bool messageMode() const { return _mode == kMessage; }
   bool replaceMode() const { return _mode == kReplace; }
@@ -235,6 +236,11 @@ private:
   TextEditInput *_editor;
   const char *_openPackage;
   int _openKeyword;
+  enum Layout {
+    kLine,
+    kSidebar,
+    kPopup,
+  } _layout;
 };
 
 #define STB_TEXTEDIT_STRING       EditBuffer
