@@ -41,6 +41,27 @@ int bc_is_escape(char c, char *value) {
 }
 
 /*
+ * whether the character is octal escape
+ */
+int bc_is_octal(char *str, char *output) {
+  char *next = str + 1;
+  int result = 0;
+  int digits = 0;
+  int value = 0;
+
+  while (isdigit(*next) && digits < 4) {
+    value = (value << 3) + (*next - '0');
+    digits++;
+    next++;
+  }
+  if (digits == 3 && value < 256) {
+    *output = value;
+    result = 1;
+  }
+  return result;
+}
+
+/*
  * Create a bytecode segment
  */
 void bc_create(bc_t *bc) {
@@ -240,7 +261,15 @@ char *bc_store_string(bc_t *bc, char *src) {
       char code[] = {escape, '\0'};
       cstr_append_i(&cs, base, p - base);
       cstr_append_i(&cs, code, 1);
+      // skip single escape character
       base = (++p) + 1;
+    } else if (*p == '\\' && bc_is_octal(p, &escape)) {
+      char code[] = {escape, '\0'};
+      cstr_append_i(&cs, base, p - base);
+      cstr_append_i(&cs, code, 1);
+      // skip octal digits
+      p += 3;
+      base = p + 1;
     } else if (*p == V_QUOTE) {
       // revert hidden quote
       *p = '\"';

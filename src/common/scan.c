@@ -3942,29 +3942,6 @@ char *comp_load(const char *file_name) {
   return buf;
 }
 
-const char *format_numeric_text(const char *str, char **output) {
-  const char *result = str + 1;
-  int value = 0;
-  int digits = 0;
-
-  while (isdigit(*result)) {
-    value = (value << 3) + (*result - '0');
-    digits++;
-    result++;
-  }
-
-  if (digits == 3 && value > V_JOIN_LINE && value < 256) {
-    **output = value;
-  } else {
-    **output = *str;
-    result = str + 1;
-  }
-
-  (*output)++;
-
-  return result;
-}
-
 /**
  * format source-code text
  *
@@ -4173,9 +4150,6 @@ char *comp_format_text(const char *source) {
         }
         // new line auto-ends the quoted string
         quotes = !quotes;
-      } else if (*p == '\\') {
-        p = format_numeric_text(p, &ps);
-        continue;
       }
       *ps++ = *p++;
     }
