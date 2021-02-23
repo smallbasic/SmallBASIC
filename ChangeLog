@@ -1,4 +1,7 @@
 2021-01-18 (12.21)
+	COMMON: Fix crash when line length limit exceeded
+
+2021-01-18 (12.21)
 	COMMON: Handle octal escapes correctly
 
 2020-12-19 (12.20)

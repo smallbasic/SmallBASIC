@@ -4651,6 +4651,7 @@ int comp_pass1(const char *section, const char *text) {
 
     char *ps = new_text;
     char *p = ps;
+    int line_size = 0;
     while (*p) {
       if (*p == '\n') {
         // proceed
@@ -4669,11 +4670,17 @@ int comp_pass1(const char *section, const char *text) {
           break;
         }
         ps = p + 1;
+        line_size = 0;
       }
       if (comp_error) {
         break;
       }
       p++;
+      if (++line_size >= SB_SOURCELINE_SIZE) {
+        *p = '\0';
+        sc_raise(ERR_LINE_LENGTH, p - 50);
+        break;
+      }
     }
   }
 
