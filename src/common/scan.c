@@ -1331,10 +1331,11 @@ void comp_expression(char *expr, byte no_parser) {
       // string
       ptr = bc_store_string(&bc, ptr);
     } else if (*ptr == '[') {
-      // code-defined array
+      // potential code-defined array
       ptr++;
       level++;
-      if (comp_is_code_array(&bc, ptr)) {
+      // can't be a code array if this is already part of a variable
+      if ((bc.size == 0 || bc.ptr[0] != kwTYPE_VAR) && comp_is_code_array(&bc, ptr)) {
         // otherwise treat as array index
         bc_add_fcode(&bc, kwCODEARRAY);
       }
