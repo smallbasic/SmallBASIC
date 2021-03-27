@@ -1110,6 +1110,10 @@ int comp_is_code_array(bc_t *bc, char *p) {
       }
       p++;
     }
+    if (*p == '.') {
+      // a[1].foo is not a code array
+      result = 0;
+    }
     if (!count) {
       result = 1;
     }

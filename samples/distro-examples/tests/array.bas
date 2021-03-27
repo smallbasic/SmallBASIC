@@ -321,4 +321,9 @@ dim j(0 to 1, 0 to 1)
 j[0, 0].translation = [1,2,3]
 k.framePoses = j
 anims << k
+sub xfunc(argx)
+  local xx=[1,2,3]
+  if xx!=argx then throw "err"
+end
 z=anims[0].framePoses[0, 0].translation
+xfunc(anims[0].framePoses[0, 0].translation)
