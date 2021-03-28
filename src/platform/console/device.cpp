@@ -212,12 +212,7 @@ int osd_events(int wait_flag) {
     int y = os_graf_my;
     result = p_events(wait_flag, &x, &y);
     if (x != os_graf_mx || y != os_graf_my) {
-      os_graf_mx = x;
-      os_graf_my = y;
-      dev_viewport(0, 0, 0, 0);
-      dev_window(0, 0, 0, 0);
-      setsysvar_int(SYSVAR_XMAX, os_graf_mx);
-      setsysvar_int(SYSVAR_YMAX, os_graf_my);
+      dev_resize(x, y);
     }
   }
   return result;

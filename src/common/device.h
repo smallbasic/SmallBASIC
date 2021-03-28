@@ -1069,6 +1069,13 @@ void panic(const char *fmt, ...);
  */
 void lwrite(const char *buf);
 
+/**
+ * @ingroup dev_f
+ *
+ * resize the window coordinate system
+ */
+void dev_resize(int width, int height);
+
 #if defined(__cplusplus)
 }
 #endif

@@ -50,10 +50,10 @@ int32_t dev_Wdy;
 long dev_fgcolor = 0;
 long dev_bgcolor = 15;
 
-/**
- * Returns data from pointing-device
- * (see PEN(x), osd_getpen(x))
- */
+//
+// Returns data from pointing-device
+// (see PEN(x), osd_getpen(x))
+//
 int dev_getpen(int code) {
   int result = 0;
   if (os_graphics) {
@@ -75,33 +75,33 @@ int dev_getpen(int code) {
   return result;
 }
 
-/**
- * enable/disable default pointing device (pen or mouse)
- */
+//
+// enable/disable default pointing device (pen or mouse)
+//
 void dev_setpenmode(int enable) {
   if (os_graphics) {
     osd_setpenmode(enable);
   }
 }
 
-/**
- * returns the x position of cursor (in pixels)
- */
+//
+// returns the x position of cursor (in pixels)
+//
 int dev_getx() {
   return osd_getx();
 }
 
-/**
- * returns the y position of cursor (in pixels)
- */
+//
+// returns the y position of cursor (in pixels)
+//
 int dev_gety() {
   return osd_gety();
 }
 
-/**
- * sets the position of cursor
- * x,y are in pixels
- */
+//
+// sets the position of cursor
+// x,y are in pixels
+//
 void dev_setxy(int x, int y, int transform) {
   if (x < 0 || x > os_graf_mx) {
     return;
@@ -118,15 +118,15 @@ void dev_setxy(int x, int y, int transform) {
   osd_setxy(x, y);
 }
 
-/**
- * sets the currect foreground & background color
- * the background color is used only for texts
- */
+//
+// sets the currect foreground & background color
+// the background color is used only for texts
+//
 void dev_settextcolor(long fg, long bg) {
   if (bg == -1) {
     bg = dev_bgcolor;
   }
-  
+
   if ((fg <= 15) && (bg <= 15) && (fg >= 0) && (bg >= 0)) { // VGA
     if (bg != -1) {
       dev_bgcolor = bg;
@@ -137,44 +137,46 @@ void dev_settextcolor(long fg, long bg) {
   }
 }
 
-/**
- * prints a string
- */
+//
+// prints a string
+//
 void dev_print(const char *str) {
   osd_write(str);
 }
 
-/**
- * clears the screen
- */
+//
+// clears the screen
+//
 void dev_cls() {
   graph_reset();
   osd_cls();
 }
 
-/**
- * returns the width of 'str' in pixels
- */
+//
+// returns the width of 'str' in pixels
+//
 int dev_textwidth(const char *str) {
   if (os_graphics) {
     return osd_textwidth(str);
   }
-  return strlen(str);           // console
+  // console
+  return strlen(str);
 }
 
-/**
- * returns the height of 'str' in pixels
- */
+//
+// returns the height of 'str' in pixels
+//
 int dev_textheight(const char *str) {
   if (os_graphics) {
     return osd_textheight(str);
   }
-  return 1;                     // console
+  // console
+  return 1;
 }
 
-/**
- * changes the current foreground color
- */
+//
+// changes the current foreground color
+//
 void dev_setcolor(long color) {
   if (color <= 15 && color >= 0) {
     osd_setcolor(dev_fgcolor = color);
@@ -183,9 +185,9 @@ void dev_setcolor(long color) {
   }
 }
 
-/**
- * draw a pixel
- */
+//
+// draw a pixel
+//
 void dev_setpixel(int x, int y) {
   x = W2X(x);
   y = W2Y(y);
@@ -196,9 +198,9 @@ void dev_setpixel(int x, int y) {
   }
 }
 
-/**
- * returns the value of a pixel
- */
+//
+// returns the value of a pixel
+//
 long dev_getpixel(int x, int y) {
   x = W2X(x);
   y = W2Y(y);
@@ -209,9 +211,9 @@ long dev_getpixel(int x, int y) {
   return 0;
 }
 
-/**
- * Cohen-Sutherland clipping
- */
+//
+// Cohen-Sutherland clipping
+//
 void dev_clipline(int *x1, int *y1, int *x2, int *y2, int *visible) {
   int done, in1, in2, sw;
   int c1, c2;
@@ -225,7 +227,8 @@ void dev_clipline(int *x1, int *y1, int *x2, int *y2, int *visible) {
     if (in1 && in2) {
       *visible = done = 1;
     } else if ((c1 & c2 & 0x1) || (c1 & c2 & 0x2) || (c1 & c2 & 0x4) || (c1 & c2 & 0x8)) {
-      done = 1;                 // visible = false
+      // visible = false
+      done = 1;
     } else {
       // at least one point is outside
       if (in1) {
@@ -266,9 +269,9 @@ void dev_clipline(int *x1, int *y1, int *x2, int *y2, int *visible) {
   } while (!done);
 }
 
-/**
- * draw line
- */
+//
+// draw line
+//
 void dev_line(int x1, int y1, int x2, int y2) {
   int visible;
 
@@ -282,36 +285,29 @@ void dev_line(int x1, int y1, int x2, int y2) {
 }
 
 void dev_ellipse(int xc, int yc, int xr, int yr, double aspect, int fill) {
-  osd_ellipse(W2X(xc), W2Y(yc), xr, yr * aspect, fill);
+  int windowXR = xr * dev_Vdx / dev_Wdx;
+  int windowYR = (yr * aspect) * dev_Vdx / dev_Wdx;
+  osd_ellipse(W2X(xc), W2Y(yc), windowXR, windowYR, fill);
 }
 
 void dev_arc(int xc, int yc, double r, double start, double end, double aspect) {
   osd_arc(W2X(xc), W2Y(yc), r, start, end, aspect);
 }
 
-/**
- * @ingroup lgraf
- *
- * draw a line using foreground color
- *
- * @param x1 line coordinates
- * @param y1 line coordinates
- * @param x2 line coordinates
- * @param y2 line coordinates
- */
+//
+// draw a line using foreground color
+//
 void osd_line(int x1, int y1, int x2, int y2);
 
-/**
- * draw rectangle (filled or not)
- */
+//
+// draw rectangle (filled or not)
+//
 void dev_rect(int x1, int y1, int x2, int y2, int fill) {
-  int px1, py1, px2, py2;
   int c1, c2, in1, in2;
-
-  px1 = x1;
-  py1 = y1;
-  px2 = x2;
-  py2 = y2;
+  int px1 = x1;
+  int py1 = y1;
+  int px2 = x2;
+  int py2 = y2;
 
   W2D4(x1, y1, x2, y2);
 
@@ -324,25 +320,17 @@ void dev_rect(int x1, int y1, int x2, int y2, int fill) {
     return;
   }
 
-  /*
-   *      check inside
-   */
+  // check inside
   CLIPENCODE(x1, y1, c1);
   CLIPENCODE(x2, y2, c2);
   in1 = CLIPIN(c1);
   in2 = CLIPIN(c2);
   if (in1 && in2) {
-    /*
-     *      its inside
-     */
+    // its inside
     osd_rect(x1, y1, x2, y2, fill);
   } else {
-    /*
-     *      partial inside
-     *      TODO: something fast
-     */
+    // partial inside
     int y;
-
     if (fill) {
       for (y = py1; y <= py2; y++) {
         dev_line(px1, y, px2, y);
@@ -356,9 +344,9 @@ void dev_rect(int x1, int y1, int x2, int y2, int fill) {
   }
 }
 
-/**
- * set viewport
- */
+//
+// set viewport
+//
 void dev_viewport(int x1, int y1, int x2, int y2) {
   if (x1 == x2 || y1 == y2) {
     // reset
@@ -366,7 +354,6 @@ void dev_viewport(int x1, int y1, int x2, int y2) {
     dev_Vy1 = 0;
     dev_Vx2 = os_graf_mx - 1;
     dev_Vy2 = os_graf_my - 1;
-
     dev_Vdx = os_graf_mx - 1;
     dev_Vdy = os_graf_my - 1;
   } else {
@@ -379,7 +366,6 @@ void dev_viewport(int x1, int y1, int x2, int y2) {
     dev_Vy1 = y1;
     dev_Vx2 = x2;
     dev_Vy2 = y2;
-
     dev_Vdx = ABS(x2 - x1);
     dev_Vdy = ABS(y2 - y1);
 
@@ -393,14 +379,13 @@ void dev_viewport(int x1, int y1, int x2, int y2) {
   dev_Wy1 = dev_Vy1;
   dev_Wx2 = dev_Vx2;
   dev_Wy2 = dev_Vy2;
-
   dev_Wdx = dev_Vdx;
   dev_Wdy = dev_Vdy;
 }
 
-/**
- * set window
- */
+//
+// set window
+//
 void dev_window(int x1, int y1, int x2, int y2) {
   if (x1 == x2 || y1 == y2) {
     // reset
@@ -408,7 +393,6 @@ void dev_window(int x1, int y1, int x2, int y2) {
     dev_Wy1 = dev_Vy1;
     dev_Wx2 = dev_Vx2;
     dev_Wy2 = dev_Vy2;
-
     dev_Wdx = dev_Vdx;
     dev_Wdy = dev_Vdy;
   } else {
@@ -416,7 +400,6 @@ void dev_window(int x1, int y1, int x2, int y2) {
     dev_Wy1 = y1;
     dev_Wx2 = x2;
     dev_Wy2 = y2;
-
     dev_Wdx = x2 - x1;
     dev_Wdy = y2 - y1;
 
@@ -424,4 +407,27 @@ void dev_window(int x1, int y1, int x2, int y2) {
       rt_raise(ERR_WIN_ZERO);
     }
   }
+}
+
+void dev_resize(int width, int height) {
+  if (dev_Vx2 == dev_Vdx && dev_Vx2 == os_graf_mx - 1) {
+    // viewport width is full-screen
+    if (dev_Wx2 == dev_Wdx && dev_Wx2 == dev_Vx2) {
+      // virtual window width is full-screen
+      dev_Wx2 = dev_Wdx = width - 1;
+    }
+    dev_Vx2 = dev_Vdx = width - 1;
+  }
+  if (dev_Vy2 == dev_Vdy && dev_Vy2 == os_graf_my - 1) {
+    // viewport height is full-screen
+    if (dev_Wy2 == dev_Wdy && dev_Wy2 == dev_Vy2) {
+      // virtual window height is full-screen
+      dev_Wy2 = dev_Wdy = height - 1;
+    }
+    dev_Vy2 = dev_Vdy = height - 1;
+  }
+  os_graf_mx = width;
+  os_graf_my = height;
+  setsysvar_int(SYSVAR_XMAX, width - 1);
+  setsysvar_int(SYSVAR_YMAX, height - 1);
 }

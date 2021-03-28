@@ -1,3 +1,7 @@
+2021-03-28 (12.21)
+	COMMON: Fix CIRCLE command to ensure radius uses the WINDOW coordinate system
+	COMMON: Fix to ensure the default VIEW is maintained during resizing
+
 2021-03-21 (12.21)
 	COMMON: Fix square bracket field access issue
 
