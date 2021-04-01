@@ -53,8 +53,8 @@ class Sound {
    */
   private byte[] generateTone(int freqOfTone, int durationMillis) {
     int numSamples = Math.max(1, durationMillis * AUDIO_SAMPLE_RATE / 1000);
-    double sample[] = new double[numSamples];
-    byte result[] = new byte[2 * numSamples];
+    double[] sample = new double[numSamples];
+    byte[] result = new byte[2 * numSamples];
 
     for (int i = 0; i < numSamples; ++i) {
       // Fill the sample array

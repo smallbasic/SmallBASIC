@@ -187,14 +187,17 @@ sub do_setup()
   print "Envy Code R:"
   print "  http://damieng.com/envy-code-r"
   print "Inconsolata:"
-  print "  Copyright 2006 The Inconsolata Project Authors"
+  print "  Copyright 2006 The Inconsolata Project"
   print "  http://scripts.sil.org/OFL"
+  print "Ubuntu:"
+  print "  https://ubuntu.com/legal/font-licence"
   print
   dim frm.inputs(1)
   frm.inputs(0).type="list"
-  frm.inputs(0).value="Inconsolata|Envy Code R"
+  frm.inputs(0).value="Inconsolata|Envy Code R|UbuntuMono"
   frm.inputs(0).selectedIndex=env("fontId")
-  frm.inputs(0).height=TXTH("Q")*2+4
+  frm.inputs(0).height=TXTH("Q")*3+4
+  frm.inputs(0).width=TXTW("Q")*12
   frm = form(frm)
   frm.doEvents()
   env("fontId=" + frm.inputs(0).selectedIndex)

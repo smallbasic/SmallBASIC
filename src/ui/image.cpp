@@ -476,12 +476,15 @@ void screen_dump() {
   if (image != nullptr) {
     const char *path = gsb_bas_dir;
 #if defined(_ANDROID)
-    path = getenv("EXTERNAL_STORAGE");
+    path = getenv("EXTERNAL_DIR");
 #endif
     for (int i = 0; i < 1000; i++) {
       String file;
       if (strstr(path, "://") == nullptr) {
         file.append(path);
+      }
+      if (file.lastChar() != '/') {
+        file.append("/");
       }
       file.append("sbasic_dump_");
       file.append(i);

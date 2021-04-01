@@ -65,7 +65,6 @@ import java.net.SocketException;
 import java.net.URLDecoder;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.Date;
 import java.util.Enumeration;
 import java.util.HashMap;
@@ -811,7 +810,7 @@ public class MainActivity extends NativeActivity {
     String nextLine = line;
     while (nextLine != null && nextLine.length() > 0) {
       if (nextLine.toLowerCase(Locale.ENGLISH).startsWith(lengthHeader)) {
-        length = Integer.valueOf(nextLine.substring(lengthHeader.length()));
+        length = Integer.parseInt(nextLine.substring(lengthHeader.length()));
       }
       nextLine = readLine(inputStream);
     }
@@ -919,7 +918,7 @@ public class MainActivity extends NativeActivity {
     try {
       Properties p = new Properties();
       p.load(getApplication().openFileInput("settings.txt"));
-      int socket = Integer.valueOf(p.getProperty("serverSocket", "-1"));
+      int socket = Integer.parseInt(p.getProperty("serverSocket", "-1"));
       String token = p.getProperty("serverToken", new Date().toString());
       if (socket != -1) {
         startServer(socket, token);

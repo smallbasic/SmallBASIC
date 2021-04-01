@@ -50,6 +50,7 @@ struct String {
   int    indexOf(char chr, int fromIndex) const;
   int    indexOf(const char *s, int fromIndex) const;
   bool   empty() const { return _buffer == NULL || _buffer[0] == '\0'; };
+  char   lastChar() const { return (_buffer == NULL || !_buffer[0] ? '\0' : _buffer[strlen(_buffer) - 1]); }
   int    lastIndexOf(char chr, int untilIndex) const;
   int    length() const { return (_buffer == NULL ? 0 : strlen(_buffer)); }
   String leftOf(char ch) const;

@@ -16,6 +16,8 @@
 #define FONT_FACE_BOLD_0    "Inconsolata-Bold.ttf"
 #define FONT_FACE_REGULAR_1 "Envy Code R.ttf"
 #define FONT_FACE_BOLD_1    "Envy Code R Bold.ttf"
+#define FONT_FACE_REGULAR_2 "UbuntuMono-Regular.ttf"
+#define FONT_FACE_BOLD_2    "UbuntuMono-Bold.ttf"
 
 extern ui::Graphics *graphics;
 
@@ -196,6 +198,10 @@ bool Graphics::loadFonts(int fontId) {
   case 1:
     regularName = FONT_FACE_REGULAR_1;
     boldName = FONT_FACE_BOLD_1;
+    break;
+  case 2:
+    regularName = FONT_FACE_REGULAR_2;
+    boldName = FONT_FACE_BOLD_2;
     break;
   default:
     regularName = FONT_FACE_REGULAR_0;
