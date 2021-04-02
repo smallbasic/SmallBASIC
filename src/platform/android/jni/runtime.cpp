@@ -842,8 +842,11 @@ MAEvent Runtime::processEvents(int waitFlag) {
 void Runtime::processEvent(MAEvent &event) {
   switch (event.type) {
   case EVENT_TYPE_SCREEN_CHANGED:
-    _graphics->resize();
-    resize();
+    if (_graphics->resize()) {
+      resize();
+    } else {
+      alert("System error: Failed to resize screen");
+    }
     break;
   case EVENT_TYPE_KEY_PRESSED:
     handleKeyEvent(event);
