@@ -1,3 +1,6 @@
+2021-04-02 (12.21)
+	ANDROID: Added range checking for the web services port
+
 2021-03-28 (12.21)
 	COMMON: Fix CIRCLE command to ensure radius uses the WINDOW coordinate system
 	COMMON: Fix to ensure the default VIEW is maintained during resizing

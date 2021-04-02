@@ -160,9 +160,12 @@ sub do_setup()
   cls
   print boldOn + "Setup web service port number."
   print boldOff
-  print "Enter a port number to allow web browser or desktop IDE access. ";
-  print "Enter -1 to disable this feature, or press <enter> to leave ";
-  print "this screen without making any changes."
+  print "Enter a port number to allow web browser or desktop IDE access. "
+  print
+  print "Values outside the range [1024-65535] will disable this feature."
+  print
+  print "Press <enter> to leave this screen without making any changes."
+  print
   print "The current setting is: " + env("serverSocket")
   print
   color colText, colBkGnd
@@ -211,7 +214,7 @@ sub server_info()
   local serverSocket = env("serverSocket")
   local ipAddr = env("IP_ADDR")
 
-  if (len(serverSocket) > 0 && int(serverSocket) > 0 && len(ipAddr)) then
+  if (len(serverSocket) > 0 && int(serverSocket) > 1023 && int(serverSocket) < 65536 && len(ipAddr)) then
     serverSocket = ipAddr + ":" + serverSocket
     print boldOff + "Web Service: " + boldOn + serverSocket
     print boldOff + "Access token: " + boldOn + env("serverToken")
