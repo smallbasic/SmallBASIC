@@ -45,7 +45,6 @@ LOCAL_SRC_FILES:=                               \
   $(FREETYPE_HOME)/src/psnames/psnames.c        \
   $(FREETYPE_HOME)/src/pshinter/pshinter.c      \
   $(FREETYPE_HOME)/src/gzip/ftgzip.c            \
-  $(FREETYPE_HOME)/src/lzw/ftlzw.c              \
-  $(FREETYPE_HOME)/src/lzw/ftzopen.c
+  $(FREETYPE_HOME)/src/lzw/ftlzw.c
 
 include $(BUILD_STATIC_LIBRARY)
