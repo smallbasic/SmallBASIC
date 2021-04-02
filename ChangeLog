@@ -18,7 +18,7 @@
 	SDL: Update editor popup appearance
 
 2020-11-19 (12.20)
-	COMMON: Fix to allow multiple modules and units within saem program
+	COMMON: Fix to allow multiple modules and units within same program
 
 2020-11-13 (12.20)
 	ANDROID: add option to preserve user data when app uninstalled
