@@ -882,12 +882,11 @@ public class MainActivity extends NativeActivity {
     };
     File[] toFiles = toDir.listFiles(filter);
     File[] fromFiles = fromDir.listFiles(filter);
-    if ((toFiles == null || toFiles.length == 0) && Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+    if (fromFiles != null && (toFiles == null || toFiles.length == 0)) {
       // only attempt file copy into a clean destination folder
       for (File file : fromFiles) {
         try {
-          Path to = toDir.toPath().resolve(file.getName());
-          Files.copy(file.toPath(), to);
+          copy(file, new File(toDir, file.getName()));
         } catch (IOException e) {
           Log.d(TAG, "failed to copy: ", e);
         }

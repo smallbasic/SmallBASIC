@@ -37,7 +37,7 @@ const scratch_file = HOME + "/scratch.bas"
 
 func mk_bn(value, lab, fg)
   local bn
-  bn.x = 2
+  bn.x = 3
   bn.y = -lineSpacing
   bn.value = value
   bn.label = lab
@@ -331,24 +331,26 @@ sub listFiles(byref frm, path, sortDir, byref basList)
     date_col = colNav2
   end select
 
+  sub mk_label(labText, labCol)
+    bn = mk_bn(0, labText, labCol)
+    bn.type = "label"
+    frm.inputs << bn
+  end
+
   if (is_android) then
     pathx = mid(path, 1, len(path) - 1)
     if (pathx == env("LEGACY_DIR")) then
-      bn = mk_bn(0, "SmallBASIC legacy project files", colText2)
+      mk_label("SmallBASIC legacy project files", colText2)
     elseif (pathx == env("INTERNAL_DIR")) then
-      bn = mk_bn(0, "Temporary files", colText2)
+      mk_label("Temporary files", colText2)
     elseif (pathx == env("EXTERNAL_DIR")) then
-      bn = mk_bn(0, "SmallBASIC project files", colText)
+      mk_label("SmallBASIC project files", colText)
     else
-      bn = mk_bn(0, "Files in " + path, colText)
+      mk_label("Files in " + path, colText)
     endif
   else
-    bn = mk_bn(0, "Files in " + path, colText)
+    mk_label("Files in " + path, colText)
   endif
-  bn.type = "label"
-  bn.x = 0
-  bn.y = -lineSpacing
-  frm.inputs << bn
 
   bn = mk_bn(backId, "[Go up]", colNav)
   bn.type = "link"
@@ -373,6 +375,17 @@ sub listFiles(byref frm, path, sortDir, byref basList)
     bn = mk_bn(sortDateId, "[Date]", date_col)
     bn.type = "link"
     bn.x = -(char_w * 6)
+    bn.y = -1
+    frm.inputs << bn
+  endif
+
+  if (is_android && pathx != env("EXTERNAL_DIR")) then
+    bn = mk_bn(env("EXTERNAL_DIR"), "SmallBASIC project files", colDir)
+    bn.type = "link"
+    frm.inputs << bn
+    bn = mk_bn(0, datefmt("YYYY-MM-DD", date), colText)
+    bn.type = "label"
+    bn.x = txtw(" ") * 41
     bn.y = -1
     frm.inputs << bn
   endif
