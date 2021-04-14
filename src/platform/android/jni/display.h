@@ -24,7 +24,7 @@ struct Graphics : ui::Graphics {
 
   bool construct(int fontId);
   void redraw();
-  void resize();
+  bool resize();
   void onPaused(bool paused) { _paused=paused; }
   void setSize(int w, int h) { _w = w; _h = h; }
 

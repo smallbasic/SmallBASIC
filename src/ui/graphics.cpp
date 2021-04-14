@@ -81,9 +81,9 @@ Font::~Font() {
 // Graphics implementation
 //
 Graphics::Graphics() :
-  _screen(NULL),
-  _drawTarget(NULL),
-  _font(NULL) {
+  _screen(nullptr),
+  _drawTarget(nullptr),
+  _font(nullptr) {
   graphics = this;
 }
 
@@ -92,8 +92,8 @@ Graphics::~Graphics() {
 
   FT_Done_FreeType(_fontLibrary);
   delete _screen;
-  graphics = NULL;
-  _screen = NULL;
+  graphics = nullptr;
+  _screen = nullptr;
 }
 
 Font *Graphics::createFont(int style, int size) {
@@ -109,7 +109,7 @@ Font *Graphics::createFont(int style, int size) {
 
 void Graphics::deleteFont(Font *font) {
   if (font == _font) {
-    _font = NULL;
+    _font = nullptr;
   }
   delete font;
 }
@@ -454,7 +454,7 @@ MAHandle Graphics::setDrawTarget(MAHandle maHandle) {
     _drawTarget = (Canvas *)maHandle;
   }
   delete _drawTarget->_clip;
-  _drawTarget->_clip = NULL;
+  _drawTarget->_clip = nullptr;
   return result;
 }
 

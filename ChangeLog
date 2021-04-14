@@ -1,8 +1,24 @@
+2021-04-02 (12.21)
+	ANDROID: Added range checking for the web services port
+
+2021-03-28 (12.21)
+	COMMON: Fix CIRCLE command to ensure radius uses the WINDOW coordinate system
+	COMMON: Fix to ensure the default VIEW is maintained during resizing
+
+2021-03-21 (12.21)
+	COMMON: Fix square bracket field access issue
+
+2021-02-23 (12.21)
+	COMMON: Fix crash when line length limit exceeded
+
+2021-01-18 (12.21)
+	COMMON: Handle octal escapes correctly
+
 2020-12-19 (12.20)
 	SDL: Update editor popup appearance
 
 2020-11-19 (12.20)
-	COMMON: Fix to allow multiple modules and units within saem program
+	COMMON: Fix to allow multiple modules and units within same program
 
 2020-11-13 (12.20)
 	ANDROID: add option to preserve user data when app uninstalled

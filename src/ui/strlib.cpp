@@ -386,6 +386,9 @@ int main() {
   assertEq(1, s3.equals("CATS", true));
   assertEq(0, s3.equals("CATS", false));
   assertEq(1, s3.equals("cats", false));
+  assertEq('x', s1.lastChar());
+  assertEq('\0', s2.lastChar());
+  assertEq('s', s3.lastChar());
   return 0;
 }
 #endif

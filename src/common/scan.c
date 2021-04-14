@@ -1110,6 +1110,10 @@ int comp_is_code_array(bc_t *bc, char *p) {
       }
       p++;
     }
+    if (*p == '.') {
+      // a[1].foo is not a code array
+      result = 0;
+    }
     if (!count) {
       result = 1;
     }
@@ -1331,10 +1335,11 @@ void comp_expression(char *expr, byte no_parser) {
       // string
       ptr = bc_store_string(&bc, ptr);
     } else if (*ptr == '[') {
-      // code-defined array
+      // potential code-defined array
       ptr++;
       level++;
-      if (comp_is_code_array(&bc, ptr)) {
+      // can't be a code array if this is already part of a variable
+      if ((bc.size == 0 || bc.ptr[0] != kwTYPE_VAR) && comp_is_code_array(&bc, ptr)) {
         // otherwise treat as array index
         bc_add_fcode(&bc, kwCODEARRAY);
       }
@@ -3942,29 +3947,6 @@ char *comp_load(const char *file_name) {
   return buf;
 }
 
-const char *format_numeric_text(const char *str, char **output) {
-  const char *result = str + 1;
-  int value = 0;
-  int digits = 0;
-
-  while (isdigit(*result)) {
-    value = (value << 3) + (*result - '0');
-    digits++;
-    result++;
-  }
-
-  if (digits == 3 && value > V_JOIN_LINE && value < 256) {
-    **output = value;
-  } else {
-    **output = *str;
-    result = str + 1;
-  }
-
-  (*output)++;
-
-  return result;
-}
-
 /**
  * format source-code text
  *
@@ -4173,9 +4155,6 @@ char *comp_format_text(const char *source) {
         }
         // new line auto-ends the quoted string
         quotes = !quotes;
-      } else if (*p == '\\') {
-        p = format_numeric_text(p, &ps);
-        continue;
       }
       *ps++ = *p++;
     }
@@ -4677,6 +4656,7 @@ int comp_pass1(const char *section, const char *text) {
 
     char *ps = new_text;
     char *p = ps;
+    int line_size = 0;
     while (*p) {
       if (*p == '\n') {
         // proceed
@@ -4695,11 +4675,17 @@ int comp_pass1(const char *section, const char *text) {
           break;
         }
         ps = p + 1;
+        line_size = 0;
       }
       if (comp_error) {
         break;
       }
       p++;
+      if (++line_size >= SB_SOURCELINE_SIZE) {
+        *p = '\0';
+        sc_raise(ERR_LINE_LENGTH, p - 50);
+        break;
+      }
     }
   }
 

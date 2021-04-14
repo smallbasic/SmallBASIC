@@ -65,7 +65,6 @@ import java.net.SocketException;
 import java.net.URLDecoder;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.Date;
 import java.util.Enumeration;
 import java.util.HashMap;
@@ -199,7 +198,7 @@ public class MainActivity extends NativeActivity {
       Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
       startActivity(browserIntent);
     } catch (Exception e) {
-      Log.i(TAG, "browseFile failed: " + e.toString());
+      Log.i(TAG, "browseFile failed: ", e);
     }
   }
 
@@ -444,7 +443,7 @@ public class MainActivity extends NativeActivity {
           _mediaPlayer.start();
         }
         catch (IOException e) {
-          Log.i(TAG, "Failed: ", e);
+          Log.i(TAG, "playAudio failed: ", e);
         }
       }
     }).start();
@@ -811,7 +810,7 @@ public class MainActivity extends NativeActivity {
     String nextLine = line;
     while (nextLine != null && nextLine.length() > 0) {
       if (nextLine.toLowerCase(Locale.ENGLISH).startsWith(lengthHeader)) {
-        length = Integer.valueOf(nextLine.substring(lengthHeader.length()));
+        length = Integer.parseInt(nextLine.substring(lengthHeader.length()));
       }
       nextLine = readLine(inputStream);
     }
@@ -883,12 +882,11 @@ public class MainActivity extends NativeActivity {
     };
     File[] toFiles = toDir.listFiles(filter);
     File[] fromFiles = fromDir.listFiles(filter);
-    if ((toFiles == null || toFiles.length == 0) && Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+    if (fromFiles != null && (toFiles == null || toFiles.length == 0)) {
       // only attempt file copy into a clean destination folder
       for (File file : fromFiles) {
         try {
-          Path to = toDir.toPath().resolve(file.getName());
-          Files.copy(file.toPath(), to);
+          copy(file, new File(toDir, file.getName()));
         } catch (IOException e) {
           Log.d(TAG, "failed to copy: ", e);
         }
@@ -919,9 +917,9 @@ public class MainActivity extends NativeActivity {
     try {
       Properties p = new Properties();
       p.load(getApplication().openFileInput("settings.txt"));
-      int socket = Integer.valueOf(p.getProperty("serverSocket", "-1"));
+      int socket = Integer.parseInt(p.getProperty("serverSocket", "-1"));
       String token = p.getProperty("serverToken", new Date().toString());
-      if (socket != -1) {
+      if (socket > 1023 && socket < 65536) {
         startServer(socket, token);
       } else {
         Log.i(TAG, "Web service disabled");
@@ -942,9 +940,9 @@ public class MainActivity extends NativeActivity {
       }
       input.close();
     } catch (FileNotFoundException e) {
-      Log.i(TAG, "Failed: " + e.toString());
+      Log.i(TAG, "readBuffer failed: ", e);
     } catch (IOException e) {
-      Log.i(TAG, "Failed: " + e.toString());
+      Log.i(TAG, "readBuffer failed: ", e);
     }
     return result.toString();
   }
@@ -961,10 +959,17 @@ public class MainActivity extends NativeActivity {
   }
 
   private void runServer(final int socketNum, final String token) throws IOException {
-    ServerSocket serverSocket = new ServerSocket(socketNum);
     Log.i(TAG, "Listening :" + socketNum);
     Log.i(TAG, "Token :" + token);
-    while (true) {
+    ServerSocket serverSocket;
+    try {
+      serverSocket = new ServerSocket(socketNum);
+    }
+    catch (IllegalArgumentException e) {
+      Log.i(TAG, "Failed to start server: ", e);
+      serverSocket = null;
+    }
+    while (serverSocket != null) {
       Socket socket = null;
       DataInputStream inputStream = null;
       try {
@@ -1003,7 +1008,8 @@ public class MainActivity extends NativeActivity {
         }
       }
       catch (IOException e) {
-        Log.i(TAG, "Failed: " + e.toString());
+        Log.i(TAG, "Server failed: ", e);
+        break;
       }
       finally {
         Log.i(TAG, "socket cleanup");
@@ -1015,6 +1021,7 @@ public class MainActivity extends NativeActivity {
         }
       }
     }
+    Log.i(TAG, "server stopped");
   }
 
   private void sendResponse(Socket socket, String content) throws IOException {
@@ -1054,7 +1061,7 @@ public class MainActivity extends NativeActivity {
           runServer(socketNum, token);
         }
         catch (IOException e) {
-          Log.i(TAG, "Failed: " + e.toString());
+          Log.i(TAG, "startServer failed: ", e);
         }
       }
     });

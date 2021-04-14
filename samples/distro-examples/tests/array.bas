@@ -314,3 +314,16 @@ m[1,2,3,4,5,6]=999
 if (999 <> m[1,2,3,4,5,6]) then
   throw "e"
 endif
+
+REM test that "[0, 0]" in anims[0].framePoses[0, 0].translation is not scanned as a codearray
+dim amims(0 to 1)
+dim j(0 to 1, 0 to 1)
+j[0, 0].translation = [1,2,3]
+k.framePoses = j
+anims << k
+sub xfunc(argx)
+  local xx=[1,2,3]
+  if xx!=argx then throw "err"
+end
+z=anims[0].framePoses[0, 0].translation
+xfunc(anims[0].framePoses[0, 0].translation)

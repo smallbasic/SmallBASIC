@@ -16,6 +16,8 @@
 #define FONT_FACE_BOLD_0    "Inconsolata-Bold.ttf"
 #define FONT_FACE_REGULAR_1 "Envy Code R.ttf"
 #define FONT_FACE_BOLD_1    "Envy Code R Bold.ttf"
+#define FONT_FACE_REGULAR_2 "UbuntuMono-Regular.ttf"
+#define FONT_FACE_BOLD_2    "UbuntuMono-Bold.ttf"
 
 extern ui::Graphics *graphics;
 
@@ -25,15 +27,15 @@ extern ui::Graphics *graphics;
 Canvas::Canvas() :
   _w(0),
   _h(0),
-  _pixels(NULL),
-  _clip(NULL) {
+  _pixels(nullptr),
+  _clip(nullptr) {
 }
 
 Canvas::~Canvas() {
   delete [] _pixels;
   delete _clip;
-  _pixels = NULL;
-  _clip = NULL;
+  _pixels = nullptr;
+  _clip = nullptr;
 }
 
 bool Canvas::create(int w, int h) {
@@ -106,7 +108,7 @@ void Canvas::setClip(int x, int y, int w, int h) {
     _clip->right = x + w;
     _clip->bottom = y + h;
   } else {
-    _clip = NULL;
+    _clip = nullptr;
   }
 }
 
@@ -114,8 +116,8 @@ void Canvas::setClip(int x, int y, int w, int h) {
 // Graphics implementation
 //
 Graphics::Graphics(android_app *app) : ui::Graphics(),
-  _fontBuffer(NULL),
-  _fontBufferB(NULL),
+  _fontBuffer(nullptr),
+  _fontBufferB(nullptr),
   _app(app),
   _w(0),
   _h(0),
@@ -127,8 +129,8 @@ Graphics::~Graphics() {
 
   delete [] _fontBuffer;
   delete [] _fontBufferB;
-  _fontBuffer = NULL;
-  _fontBufferB = NULL;
+  _fontBuffer = nullptr;
+  _fontBufferB = nullptr;
 }
 
 bool Graphics::construct(int fontId) {
@@ -155,16 +157,16 @@ bool Graphics::construct(int fontId) {
 }
 
 void Graphics::redraw() {
-  if (_app->window != NULL && !_paused) {
+  if (_app->window != nullptr && !_paused) {
     ANativeWindow_Buffer buffer;
-    bool locked = ANativeWindow_lock(_app->window, &buffer, NULL) == 0;
+    bool locked = ANativeWindow_lock(_app->window, &buffer, nullptr) == 0;
     if (!locked) {
       trace("Unable to lock window buffer");
     } else {
       if (buffer.format != AHARDWAREBUFFER_FORMAT_R8G8B8A8_UNORM) {
         ANativeWindow_unlockAndPost(_app->window);
         ANativeWindow_setBuffersGeometry(_app->window, 0, 0, AHARDWAREBUFFER_FORMAT_R8G8B8A8_UNORM);
-        locked = ANativeWindow_lock(_app->window, &buffer, NULL) == 0;
+        locked = ANativeWindow_lock(_app->window, &buffer, nullptr) == 0;
         trace("Restore format %d", locked);
       }
       if (locked) {
@@ -182,11 +184,22 @@ void Graphics::redraw() {
   }
 }
 
-void Graphics::resize() {
-  delete _screen;
-  _screen = new Canvas();
-  _screen->create(_w, _h);
-  _drawTarget = NULL;
+bool Graphics::resize() {
+  bool result;
+  if (_screen == nullptr || _screen->_w != _w || _screen->_h != _h) {
+    Canvas *newScreen = new Canvas();
+    result = newScreen->create(_w, _h);
+    if (result) {
+      delete _screen;
+      _screen = newScreen;
+      _drawTarget = nullptr;
+    } else {
+      trace("Failed to resize canvas");
+    }
+  } else {
+    result = true;
+  }
+  return result;
 }
 
 bool Graphics::loadFonts(int fontId) {
@@ -196,6 +209,10 @@ bool Graphics::loadFonts(int fontId) {
   case 1:
     regularName = FONT_FACE_REGULAR_1;
     boldName = FONT_FACE_BOLD_1;
+    break;
+  case 2:
+    regularName = FONT_FACE_REGULAR_2;
+    boldName = FONT_FACE_BOLD_2;
     break;
   default:
     regularName = FONT_FACE_REGULAR_0;

@@ -37,7 +37,7 @@ const scratch_file = HOME + "/scratch.bas"
 
 func mk_bn(value, lab, fg)
   local bn
-  bn.x = 2
+  bn.x = 3
   bn.y = -lineSpacing
   bn.value = value
   bn.label = lab
@@ -124,7 +124,7 @@ sub do_about()
   color colText
   print "Version "; sbver
   print
-  print "Copyright (c) 2002-2020 Chris Warren-Smith"
+  print "Copyright (c) 2002-2021 Chris Warren-Smith"
   print "Copyright (c) 1999-2006 Nicholas Christopoulos" + chr(10)
 
   local bn_home
@@ -160,9 +160,12 @@ sub do_setup()
   cls
   print boldOn + "Setup web service port number."
   print boldOff
-  print "Enter a port number to allow web browser or desktop IDE access. ";
-  print "Enter -1 to disable this feature, or press <enter> to leave ";
-  print "this screen without making any changes."
+  print "Enter a port number to allow web browser or desktop IDE access. "
+  print
+  print "Values outside the range [1024-65535] will disable this feature."
+  print
+  print "Press <enter> to leave this screen without making any changes."
+  print
   print "The current setting is: " + env("serverSocket")
   print
   color colText, colBkGnd
@@ -187,14 +190,17 @@ sub do_setup()
   print "Envy Code R:"
   print "  http://damieng.com/envy-code-r"
   print "Inconsolata:"
-  print "  Copyright 2006 The Inconsolata Project Authors"
+  print "  Copyright 2006 The Inconsolata Project"
   print "  http://scripts.sil.org/OFL"
+  print "Ubuntu:"
+  print "  https://ubuntu.com/legal/font-licence"
   print
   dim frm.inputs(1)
   frm.inputs(0).type="list"
-  frm.inputs(0).value="Inconsolata|Envy Code R"
+  frm.inputs(0).value="Inconsolata|Envy Code R|UbuntuMono"
   frm.inputs(0).selectedIndex=env("fontId")
-  frm.inputs(0).height=TXTH("Q")*2+4
+  frm.inputs(0).height=TXTH("Q")*3+4
+  frm.inputs(0).width=TXTW("Q")*12
   frm = form(frm)
   frm.doEvents()
   env("fontId=" + frm.inputs(0).selectedIndex)
@@ -208,7 +214,7 @@ sub server_info()
   local serverSocket = env("serverSocket")
   local ipAddr = env("IP_ADDR")
 
-  if (len(serverSocket) > 0 && int(serverSocket) > 0 && len(ipAddr)) then
+  if (len(serverSocket) > 0 && int(serverSocket) > 1023 && int(serverSocket) < 65536 && len(ipAddr)) then
     serverSocket = ipAddr + ":" + serverSocket
     print boldOff + "Web Service: " + boldOn + serverSocket
     print boldOff + "Access token: " + boldOn + env("serverToken")
@@ -325,24 +331,26 @@ sub listFiles(byref frm, path, sortDir, byref basList)
     date_col = colNav2
   end select
 
+  sub mk_label(labText, labCol)
+    bn = mk_bn(0, labText, labCol)
+    bn.type = "label"
+    frm.inputs << bn
+  end
+
   if (is_android) then
     pathx = mid(path, 1, len(path) - 1)
     if (pathx == env("LEGACY_DIR")) then
-      bn = mk_bn(0, "SmallBASIC legacy project files", colText2)
+      mk_label("SmallBASIC legacy project files", colText2)
     elseif (pathx == env("INTERNAL_DIR")) then
-      bn = mk_bn(0, "Temporary files", colText2)
+      mk_label("Temporary files", colText2)
     elseif (pathx == env("EXTERNAL_DIR")) then
-      bn = mk_bn(0, "SmallBASIC project files", colText)
+      mk_label("SmallBASIC project files", colText)
     else
-      bn = mk_bn(0, "Files in " + path, colText)
+      mk_label("Files in " + path, colText)
     endif
   else
-    bn = mk_bn(0, "Files in " + path, colText)
+    mk_label("Files in " + path, colText)
   endif
-  bn.type = "label"
-  bn.x = 0
-  bn.y = -lineSpacing
-  frm.inputs << bn
 
   bn = mk_bn(backId, "[Go up]", colNav)
   bn.type = "link"
@@ -367,6 +375,17 @@ sub listFiles(byref frm, path, sortDir, byref basList)
     bn = mk_bn(sortDateId, "[Date]", date_col)
     bn.type = "link"
     bn.x = -(char_w * 6)
+    bn.y = -1
+    frm.inputs << bn
+  endif
+
+  if (is_android && pathx != env("EXTERNAL_DIR")) then
+    bn = mk_bn(env("EXTERNAL_DIR"), "SmallBASIC project files", colDir)
+    bn.type = "link"
+    frm.inputs << bn
+    bn = mk_bn(0, datefmt("YYYY-MM-DD", date), colText)
+    bn.type = "label"
+    bn.x = txtw(" ") * 41
     bn.y = -1
     frm.inputs << bn
   endif

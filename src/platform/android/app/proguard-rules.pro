@@ -28,3 +28,4 @@
 }
 
 -printmapping build/outputs/mapping/release/mapping.txt
+-keepattributes LineNumberTable,SourceFile

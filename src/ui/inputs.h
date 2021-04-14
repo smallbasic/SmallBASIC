@@ -19,7 +19,7 @@
 #include "ui/utils.h"
 
 const uint32_t colors[] = {
-  DEFAULT_BACKGROUND, // 0 black
+  0x000000, // 0 black
   0x000080, // 1 blue
   0x008000, // 2 green
   0x008080, // 3 cyan
