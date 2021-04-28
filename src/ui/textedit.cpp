@@ -886,6 +886,13 @@ bool TextEditInput::edit(int key, int screenWidth, int charWidth) {
   case SB_KEY_SHIFT_CTRL(SB_KEY_RIGHT):
     selectNavigate(false);
     break;
+  case SB_KEY_ALT(SB_KEY_LEFT):
+  case SB_KEY_ALT(SB_KEY_RIGHT):
+  case SB_KEY_ALT(SB_KEY_UP):
+  case SB_KEY_ALT(SB_KEY_DOWN):
+    // TODO: block move text selections
+    return false;
+    break;
   case -1:
     return false;
     break;

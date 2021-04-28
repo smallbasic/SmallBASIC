@@ -1,3 +1,6 @@
+2021-04-02 (12.22)
+	SDL: Update editor to handle unit errors
+
 2021-04-02 (12.21)
 	ANDROID: Added range checking for the web services port
 
