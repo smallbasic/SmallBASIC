@@ -34,16 +34,8 @@ const aboutId = "_about"
 const backId = "_back"
 const scratchId = "_scratch"
 const scratch_file = HOME + "/scratch.bas"
-
-func mk_bn(value, lab, fg)
-  local bn
-  bn.x = 3
-  bn.y = -lineSpacing
-  bn.value = value
-  bn.label = lab
-  bn.color = fg
-  return bn
-end
+const labelTemp = chr(183) + "Temporary Files" + chr(183)
+const labelProj = chr(183) + "Project Files" + chr(183)
 
 func mk_menu(value, lab, x)
   local bn
@@ -331,63 +323,57 @@ sub listFiles(byref frm, path, sortDir, byref basList)
     date_col = colNav2
   end select
 
-  sub mk_label(labText, labCol)
-    bn = mk_bn(0, labText, labCol)
+  func mk_bn(id, labText, labCol)
+    local bn
+    bn.value = id
+    bn.label = labText
+    bn.color = labCol
+    bn.x = 3
+    bn.y = -lineSpacing
+    return bn
+  end
+
+  sub mk_label(labText, labCol, x, y)
+    local bn = mk_bn(0, labText, labCol)
     bn.type = "label"
+    bn.x = x
+    bn.y = y
+    frm.inputs << bn
+  end
+
+  sub mk_link(id, labText, labCol, x, y)
+    local bn = mk_bn(id, labText, labCol)
+    bn.type = "link"
+    bn.x = x
+    bn.y = y
     frm.inputs << bn
   end
 
   if (is_android) then
     pathx = mid(path, 1, len(path) - 1)
-    if (pathx == env("LEGACY_DIR")) then
-      mk_label("SmallBASIC legacy project files", colText2)
-    elseif (pathx == env("INTERNAL_DIR")) then
-      mk_label("Temporary files", colText2)
+    if (pathx == env("INTERNAL_DIR") || pathx == "/data/data/net.sourceforge.smallbasic/files") then
+      mk_link(env("EXTERNAL_DIR"), "[Project Files]", colDir, 3, -lineSpacing)
+      mk_label(labelTemp, colText, -char_w, -1)
     elseif (pathx == env("EXTERNAL_DIR")) then
-      mk_label("SmallBASIC project files", colText)
+      mk_label(labelProj, colText, 3, -lineSpacing)
+      mk_link(env("INTERNAL_DIR"), "[Temporary Files]", colDir, -char_w, -1)
     else
-      mk_label("Files in " + path, colText)
+      logprint env("EXTERNAL_DIR")
+      logprint pathx
+      mk_link(env("EXTERNAL_DIR"), "[Project Files]", colDir, 3, -lineSpacing)
+      mk_label("Files in " + path, colText, -char_w, -1)
     endif
+    mk_link(sortNameId, "[Name]", name_col, 0, -linespacing)
   else
-    mk_label("Files in " + path, colText)
+    mk_label("Files in " + path, colText, 3, -lineSpacing)
+    mk_link(backId, "[Go up]", colNav, 0, -linespacing)
+    mk_link(sortNameId, "[Name]", name_col, -(char_w * 8), -1)
   endif
-
-  bn = mk_bn(backId, "[Go up]", colNav)
-  bn.type = "link"
-  bn.x = 0
-  bn.y = -linespacing
-  frm.inputs << bn
-
-  bn = mk_bn(sortNameId, "[Name]", name_col)
-  bn.type = "link"
-  bn.x = -(char_w * 8)
-  bn.y = -1
-  frm.inputs << bn
 
   abbr = iff(char_w * 38 > xmax, true, false)
   if (not abbr) then
-    bn = mk_bn(sortSizeId, "[Size]", size_col)
-    bn.type = "link"
-    bn.x = -(char_w * 8)
-    bn.y = -1
-    frm.inputs << bn
-
-    bn = mk_bn(sortDateId, "[Date]", date_col)
-    bn.type = "link"
-    bn.x = -(char_w * 6)
-    bn.y = -1
-    frm.inputs << bn
-  endif
-
-  if (is_android && pathx != env("EXTERNAL_DIR")) then
-    bn = mk_bn(env("EXTERNAL_DIR"), "SmallBASIC project files", colDir)
-    bn.type = "link"
-    frm.inputs << bn
-    bn = mk_bn(0, datefmt("YYYY-MM-DD", date), colText)
-    bn.type = "label"
-    bn.x = txtw(" ") * 41
-    bn.y = -1
-    frm.inputs << bn
+    mk_link(sortSizeId, "[Size]", size_col, -(char_w * iff(is_android, 23, 8)), -1)
+    mk_link(sortDateId, "[Date]", date_col, -(char_w * 6), -1)
   endif
 
   lastItem = len(basList) - 1
@@ -409,7 +395,6 @@ sub listFiles(byref frm, path, sortDir, byref basList)
       bn.type = "link"
       if (!node.dir) then bn.isExit = true
       frm.inputs << bn
-
       gap = 12 - len(str(node.size))
       n = iff(gap > 1, gap, 1)
       bn = mk_bn(0, node.size + space(n) + timestamp(node.mtime), colText)
@@ -428,7 +413,7 @@ sub manageFiles()
   func fileCmpFunc(l, r)
     local f1 = lower(l)
     local f2 = lower(r)
-    return IFF(f1 == f2, 0, IFF(f1 > f2, 1, -1))
+    return iff(f1 == f2, 0, iff(f1 > f2, 1, -1))
   end
 
   func getFiles()
@@ -452,10 +437,10 @@ sub manageFiles()
     local abbr = char_w * num_chars > xmax
     f.inputs << mk_menu(closeId, "<<", 0)
     f.inputs << mk_menu(viewId, "View", menu_gap)
-    f.inputs << mk_menu(renameId, IFF(abbr, "Ren", "Rename"), menu_gap)
+    f.inputs << mk_menu(renameId, iff(abbr, "Ren", "Rename"), menu_gap)
     f.inputs << mk_menu(newId, "New", menu_gap)
-    f.inputs << mk_menu(deleteId, IFF(abbr, "Del", "Delete"), menu_gap)
-    f.inputs << mk_menu(saveasId, IFF(abbr, "SavAs", "Save-As"), menu_gap)
+    f.inputs << mk_menu(deleteId, iff(abbr, "Del", "Delete"), menu_gap)
+    f.inputs << mk_menu(saveasId, iff(abbr, "SavAs", "Save-As"), menu_gap)
     bn_edit.x = 0
     bn_edit.y = char_h + 4
     bn_edit.width = xmax
@@ -635,17 +620,6 @@ sub manageFiles()
   cls
 end
 
-func selectDir(s)
-  local result = s
-  if (is_android && s != env("EXTERNAL_DIR") && (s == env("LEGACY_DIR") || s == env("INTERNAL_DIR"))) then
-    wnd.ask("Would you like to navigate to the SmallBASIC folder instead?", "Temporary file location")
-    if (wnd.answer == 0) then
-      result = env("EXTERNAL_DIR")
-    endif
-  endif
-  return result
-end
-
 func changeDir(s)
   try
     chdir s
@@ -712,12 +686,11 @@ sub main
     frm.doEvents()
 
     if (isdir(frm.value)) then
-      cls
-      frm.value = selectDir(frm.value)
       if (changeDir(frm.value)) then
+        cls
         path = frm.value
+        frm = makeUI(path, sortDir)
       endif
-      frm = makeUI(path, sortDir)
     elif frm.value == aboutId then
       do_about()
       frm = makeUI(path, sortDir)

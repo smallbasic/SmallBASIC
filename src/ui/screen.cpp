@@ -57,7 +57,7 @@ Screen::~Screen() {
 
 // converts ANSI colors to MoSync colors
 int Screen::ansiToMosync(long c) {
-  int result = c;
+  int result;
   if (c < 0) {
     result = -c;
   } else {

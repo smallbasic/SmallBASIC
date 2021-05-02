@@ -245,7 +245,7 @@ bool Graphics::loadFont(const char *name, FT_Face &face, FT_Byte **buffer) {
 //
 // maapi implementation
 //
-void maUpdateScreen(void) {
+void maUpdateScreen() {
   ((Graphics *)graphics)->redraw();
 }
 
