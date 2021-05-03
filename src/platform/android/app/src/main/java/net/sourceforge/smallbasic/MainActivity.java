@@ -729,7 +729,7 @@ public class MainActivity extends NativeActivity {
   }
 
   private String execBuffer(final String buffer, final String name, boolean run) throws IOException {
-    File outputFile = getApplication().getFileStreamPath(name);
+    File outputFile = new File(getInternalStorage(), name);
     BufferedWriter output = new BufferedWriter(new FileWriter(outputFile));
     output.write(buffer);
     output.close();
@@ -767,7 +767,7 @@ public class MainActivity extends NativeActivity {
   }
 
   private void execStream(final String line, DataInputStream inputStream) throws IOException {
-    File outputFile = getApplication().getFileStreamPath(WEB_BAS);
+    File outputFile = new File(getInternalStorage(), WEB_BAS);
     BufferedWriter output = new BufferedWriter(new FileWriter(outputFile));
     Log.i(TAG, "execStream() entered");
     String nextLine = line;
@@ -992,7 +992,7 @@ public class MainActivity extends NativeActivity {
                 execBuffer(buffer, WEB_BAS, postData.get("run") != null);
                 sendResponse(socket, buildRunForm(buffer, token));
               } else {
-                File inputFile = getApplication().getFileStreamPath(WEB_BAS);
+                File inputFile = new File(getInternalStorage(), WEB_BAS);
                 sendResponse(socket, buildRunForm(readBuffer(inputFile), token));
               }
             } else {

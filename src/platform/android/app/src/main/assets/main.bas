@@ -34,8 +34,6 @@ const aboutId = "_about"
 const backId = "_back"
 const scratchId = "_scratch"
 const scratch_file = HOME + "/scratch.bas"
-const labelTemp = chr(183) + "Temporary Files" + chr(183)
-const labelProj = chr(183) + "Project Files" + chr(183)
 
 func mk_menu(value, lab, x)
   local bn
@@ -256,7 +254,7 @@ end
 
 sub loadFileList(path, byref basList)
   erase basList
-  local emptyNode, ext_storage, int_storage
+  local emptyNode
 
   func walker(node)
     if (node.depth==0) then
@@ -270,38 +268,43 @@ sub loadFileList(path, byref basList)
     endif
     return node.depth == 0
   end
-  dirwalk path, "", use walker(x)
 
-  if (path = "/" && is_android) then
-     ext_storage = env("EXTERNAL_DIR")
-     if (len(ext_storage) > 0) then
-       emptyNode.name = mid(ext_storage, 2)
-       emptyNode.dir = true
-       emptyNode.size = ""
-       emptyNode.mtime = 0
-       basList << emptyNode
-     endif
-     int_storage = env("INTERNAL_DIR")
-     if (len(int_storage) > 0 && int_storage != ext_storage) then
-       emptyNode.name = mid(int_storage, 2)
-       emptyNode.dir = true
-       emptyNode.size = ""
-       emptyNode.mtime = 0
-       basList << emptyNode
-     endif
+  func androidWalker(node)
+    if (node.depth == 0 && node.dir == 0 && lower(right(node.name, 4)) == ".bas") then
+      basList << node
+    endif
+    return node.depth == 0
+  end
+
+  if (is_android) then
+    path = env("EXTERNAL_DIR")
+    if (len(path) > 0) then
+      dirwalk path, "", use androidWalker(x)
+    endif
+    path = env("INTERNAL_DIR")
+    if (len(path) > 0) then
+      dirwalk path, "", use androidWalker(x)
+    endif
+    path = env("LEGACY_DIR")
+    if (len(path) > 0) then
+      dirwalk path, "", use androidWalker(x)
+    endif
+  else
+    dirwalk path, "", use walker(x)
   endif
 end
 
 sub listFiles(byref frm, path, sortDir, byref basList)
-  local lastItem, bn, abbr, gap, n, lab, name, txtcol, i, pathx
+  local lastItem, bn, abbr, gap, n, lab, name, txtcol, i
   local name_col = colNav
   local size_col = colNav
   local date_col = colNav
 
-  if (right(path, 1) != "/") then
-    path += "/"
-  endif
+  sub fix_path
+    if (right(path, 1) != "/") then path += "/"
+  end
 
+  fix_path
   loadFileList(path, basList)
   select case sortDir
   case 0
@@ -323,9 +326,9 @@ sub listFiles(byref frm, path, sortDir, byref basList)
     date_col = colNav2
   end select
 
-  func mk_bn(id, labText, labCol)
+  func mk_bn(value, labText, labCol)
     local bn
-    bn.value = id
+    bn.value = value
     bn.label = labText
     bn.color = labCol
     bn.x = 3
@@ -341,8 +344,8 @@ sub listFiles(byref frm, path, sortDir, byref basList)
     frm.inputs << bn
   end
 
-  sub mk_link(id, labText, labCol, x, y)
-    local bn = mk_bn(id, labText, labCol)
+  sub mk_link(value, labText, labCol, x, y)
+    local bn = mk_bn(value, labText, labCol)
     bn.type = "link"
     bn.x = x
     bn.y = y
@@ -350,19 +353,6 @@ sub listFiles(byref frm, path, sortDir, byref basList)
   end
 
   if (is_android) then
-    pathx = mid(path, 1, len(path) - 1)
-    if (pathx == env("INTERNAL_DIR") || pathx == "/data/data/net.sourceforge.smallbasic/files") then
-      mk_link(env("EXTERNAL_DIR"), "[Project Files]", colDir, 3, -lineSpacing)
-      mk_label(labelTemp, colText, -char_w, -1)
-    elseif (pathx == env("EXTERNAL_DIR")) then
-      mk_label(labelProj, colText, 3, -lineSpacing)
-      mk_link(env("INTERNAL_DIR"), "[Temporary Files]", colDir, -char_w, -1)
-    else
-      logprint env("EXTERNAL_DIR")
-      logprint pathx
-      mk_link(env("EXTERNAL_DIR"), "[Project Files]", colDir, 3, -lineSpacing)
-      mk_label("Files in " + path, colText, -char_w, -1)
-    endif
     mk_link(sortNameId, "[Name]", name_col, 0, -linespacing)
   else
     mk_label("Files in " + path, colText, 3, -lineSpacing)
@@ -381,6 +371,10 @@ sub listFiles(byref frm, path, sortDir, byref basList)
     node = basList(i)
     txtcol = iff(node.dir, colDir, colFile)
     name = node.name
+    if (node.path) then
+      path = node.path
+      fix_path
+    endif
     if (abbr) then
       bn = mk_bn(path + name, name, txtcol)
       bn.type = "link"
