@@ -1339,7 +1339,7 @@ void comp_expression(char *expr, byte no_parser) {
       ptr++;
       level++;
       // can't be a code array if this is already part of a variable
-      if ((bc.size == 0 || bc.ptr[0] != kwTYPE_VAR) && comp_is_code_array(&bc, ptr)) {
+      if (comp_is_code_array(&bc, ptr)) {
         // otherwise treat as array index
         bc_add_fcode(&bc, kwCODEARRAY);
       }

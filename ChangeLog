@@ -1,4 +1,7 @@
 2021-05-03 (12.22)
+	COMMON: Fix array access regression
+
+2021-05-03 (12.22)
 	ANDROID: Removes path navigation to show unified view of available folder
 
 2021-04-02 (12.22)
