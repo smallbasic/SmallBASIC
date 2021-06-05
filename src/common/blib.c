@@ -530,7 +530,7 @@ void cmd_print(int output) {
     if (code_peek() == kwTYPE_EOC || code_peek() == kwTYPE_LINE) {
       // There are no parameters
       if (dev_fstatus(handle)) {
-        dev_fwrite(handle, (byte *)OS_LINESEPARATOR, sizeof(OS_LINESEPARATOR));
+        dev_fwrite(handle, (byte *)OS_LINESEPARATOR, OS_LINESEPARATOR_LEN);
       } else {
         err_fopen();
       }

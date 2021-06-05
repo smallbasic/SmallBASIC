@@ -25,7 +25,6 @@ bcip_t comp_search_bc(bcip_t ip, code_t code);
 bcip_t comp_next_bc_cmd(bc_t *bc, bcip_t ip);
 extern void expr_parser(bc_t *bc);
 
-#define STRLEN(s) ((sizeof(s) / sizeof(s[0])) - 1)
 const int LEN_OPTION     = STRLEN(LCN_OPTION);
 const int LEN_IMPORT     = STRLEN(LCN_IMPORT_WRS);
 const int LEN_UNIT       = STRLEN(LCN_UNIT_WRS);

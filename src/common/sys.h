@@ -60,6 +60,9 @@ extern "C" {
  #define OS_LINESEPARATOR  "\n"
 #endif
 
+#define STRLEN(s) ((sizeof(s) / sizeof(s[0])) - 1)
+#define OS_LINESEPARATOR_LEN STRLEN(OS_LINESEPARATOR)
+
 #if UINTPTR_MAX == 0xffffffff
   #define SB_BIT_SZ "_32 "
 #else
