@@ -351,6 +351,10 @@ void err_memory() {
   rt_raise(ERR_MEMORY);
 }
 
+void err_network() {
+  rt_raise(ERR_NETWORK);
+}
+
 /**
  * the DONE message
  */
