@@ -51,7 +51,7 @@ inline void GET_ARGB(pixel_t c, uint8_t &a, uint8_t &r, uint8_t &g, uint8_t &b) 
   #define SET_RGB(r, g, b) ((r << 16) | (g << 8) | (b))
   #define GET_RGB  RGB888_to_RGB
   #define GET_RGB2 RGB888_to_RGB
-#define GET_FROM_RGB888(c) (c)
+  #define GET_FROM_RGB888(c) (c)
 #endif
 
 #endif

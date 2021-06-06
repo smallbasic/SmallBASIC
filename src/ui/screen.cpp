@@ -555,6 +555,11 @@ void GraphicScreen::drawEllipse(int xc, int yc, int rx, int ry, int fill) {
   maEllipse(xc, yc, rx, ry, fill);
 }
 
+void GraphicScreen::drawImage(ImageDisplay &image) {
+  drawInto();
+  image.draw(image._x, image._y, image._width, image._height, 0);
+}
+
 void GraphicScreen::drawInto(bool background) {
   maSetDrawTarget(_image);
   Screen::drawInto(background);

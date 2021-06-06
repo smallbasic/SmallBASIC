@@ -301,14 +301,13 @@ ImageBuffer *load_xpm_image(char **data) {
   return result;
 }
 
-void cmd_image_show(var_s *self, var_s *) {
-  ImageDisplay image;
-  image._bid = map_get_int(self, IMG_BID, -1);
+void get_image_display(var_s *self, ImageDisplay *image) {
+  image->_bid = map_get_int(self, IMG_BID, -1);
 
   List_each(ImageBuffer *, it, cache) {
     ImageBuffer *next = (*it);
-    if (next->_bid == image._bid) {
-      image._buffer = next;
+    if (next->_bid == image->_bid) {
+      image->_buffer = next;
       break;
     }
   }
@@ -316,38 +315,53 @@ void cmd_image_show(var_s *self, var_s *) {
   var_int_t x, y, z, op;
   int count = par_massget("iiii", &x, &y, &z, &op);
 
-  if (prog_error || image._buffer == nullptr || count == 1 || count > 4) {
+  if (prog_error || image->_buffer == nullptr || count == 1 || count > 4) {
     err_throw(ERR_PARAM);
   } else {
     // 0, 2, 3, 4 arguments accepted
     if (count >= 2) {
-      image._x = x;
-      image._y = y;
+      image->_x = x;
+      image->_y = y;
       map_set_int(self, IMG_X, x);
       map_set_int(self, IMG_Y, y);
     } else {
-      image._x = map_get_int(self, IMG_X, -1);
-      image._y = map_get_int(self, IMG_Y, -1);
+      image->_x = map_get_int(self, IMG_X, -1);
+      image->_y = map_get_int(self, IMG_Y, -1);
     }
     if (count >= 3) {
-      image._zIndex = z;
+      image->_zIndex = z;
       map_set_int(self, IMG_ZINDEX, z);
     } else {
-      image._zIndex = map_get_int(self, IMG_ZINDEX, -1);
+      image->_zIndex = map_get_int(self, IMG_ZINDEX, -1);
     }
     if (count == 4) {
-      image._opacity = op;
+      image->_opacity = op;
       map_set_int(self, IMG_OPACITY, op);
     } else {
-      image._opacity = map_get_int(self, IMG_OPACITY, -1);
+      image->_opacity = map_get_int(self, IMG_OPACITY, -1);
     }
 
-    image._offsetLeft = map_get_int(self, IMG_OFFSET_LEFT, -1);
-    image._offsetTop = map_get_int(self, IMG_OFFSET_TOP, -1);
-    image._width = map_get_int(self, IMG_WIDTH, -1);
-    image._height = map_get_int(self, IMG_HEIGHT, -1);
-    image._id = map_get_int(self, IMG_ID, -1);
+    image->_offsetLeft = map_get_int(self, IMG_OFFSET_LEFT, -1);
+    image->_offsetTop = map_get_int(self, IMG_OFFSET_TOP, -1);
+    image->_width = map_get_int(self, IMG_WIDTH, -1);
+    image->_height = map_get_int(self, IMG_HEIGHT, -1);
+    image->_id = map_get_int(self, IMG_ID, -1);
+  }
+}
+
+void cmd_image_show(var_s *self, var_s *) {
+  ImageDisplay image;
+  get_image_display(self, &image);
+  if (!prog_error) {
     g_system->getOutput()->addImage(image);
+  }
+}
+
+void cmd_image_draw(var_s *self, var_s *) {
+  ImageDisplay image;
+  get_image_display(self, &image);
+  if (!prog_error) {
+    g_system->getOutput()->drawImage(image);
   }
 }
 
@@ -397,9 +411,18 @@ void cmd_image_save(var_s *self, var_s *) {
         int yoffs = (4 * y * w);
         for (int x = 0; x < w; x++) {
           int offs = yoffs + (4 * x);
-          uint8_t r = image->_image[offs + 0];
-          uint8_t g = image->_image[offs + 1];
-          uint8_t b = image->_image[offs + 2];
+#if defined(PIXELFORMAT_RGBA8888)
+          int r_offs = offs + 2;
+          int g_offs = offs + 1;
+          int b_offs = offs + 0;
+#else
+          int r_offs = offs + 0;
+          int g_offs = offs + 1;
+          int b_offs = offs + 2;
+#endif
+          uint8_t r = image->_image[r_offs];
+          uint8_t g = image->_image[g_offs];
+          uint8_t b = image->_image[b_offs];
           pixel_t px = SET_RGB(r, g, b);
           int pos = y * w + x;
           var_t *elem = v_elem(array, pos);
@@ -427,9 +450,10 @@ void create_image(var_p_t var, ImageBuffer *image) {
   map_add_var(var, IMG_WIDTH, image->_width);
   map_add_var(var, IMG_HEIGHT, image->_height);
   map_add_var(var, IMG_BID, image->_bid);
-  v_create_func(var, "show", cmd_image_show);
+  v_create_func(var, "draw", cmd_image_draw);
   v_create_func(var, "hide", cmd_image_hide);
   v_create_func(var, "save", cmd_image_save);
+  v_create_func(var, "show", cmd_image_show);
 }
 
 // loads an image for the form image input type

@@ -1,3 +1,6 @@
+2021-06-06 (12.22)
+	UI: implemented image.draw(), fix image.save in andoid #115
+
 2021-06-05 (12.22)
 	COMMON: Fixes 'Socket Client doesn't receive byte with value 13' #112
 	COMMON: Fixes TSAVE of arrays includes extra null character. #119
