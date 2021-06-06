@@ -189,10 +189,21 @@ ImageBuffer *load_image(var_t *var) {
         uint8_t r, g, b;
         GET_RGB2(px, r, g, b);
         int offs = yoffs + (4 * x);
-        image[offs + 0] = r;
-        image[offs + 1] = g;
-        image[offs + 2] = b;
-        image[offs + 3] = 255;
+#if defined(PIXELFORMAT_RGBA8888)
+        int r_offs = offs + 2;
+        int g_offs = offs + 1;
+        int b_offs = offs + 0;
+#else
+        int r_offs = offs + 0;
+        int g_offs = offs + 1;
+        int b_offs = offs + 2;
+#endif
+        int a_offs = offs + 3;
+        int a = (px & 0xff000000) >> 24;
+        image[r_offs] = r;
+        image[g_offs] = g;
+        image[b_offs] = b;
+        image[a_offs] = a;
       }
     }
     result = new ImageBuffer();
@@ -420,10 +431,12 @@ void cmd_image_save(var_s *self, var_s *) {
           int g_offs = offs + 1;
           int b_offs = offs + 2;
 #endif
+          int a_offs = offs + 3;
           uint8_t r = image->_image[r_offs];
           uint8_t g = image->_image[g_offs];
           uint8_t b = image->_image[b_offs];
-          pixel_t px = SET_RGB(r, g, b);
+          uint8_t a = image->_image[a_offs];
+          pixel_t px = (a << 24) | SET_RGB(r, g, b);
           int pos = y * w + x;
           var_t *elem = v_elem(array, pos);
           v_setint(elem, -px);
