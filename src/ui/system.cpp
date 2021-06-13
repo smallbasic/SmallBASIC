@@ -170,8 +170,9 @@ bool System::execute(const char *bas) {
   }
 
   if (!_mainBas) {
-    restoreWindowRect();
+    onRunCompleted();
   }
+
   enableCursor(true);
   opt_file_permitted = 1;
   opt_loadmod = 0;

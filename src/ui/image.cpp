@@ -30,10 +30,10 @@
 
 extern System *g_system;
 unsigned nextId = 0;
-strlib::List<ImageBuffer *> cache;
+strlib::List<ImageBuffer *> buffers;
 
 void reset_image_cache() {
-  cache.removeAll();
+  buffers.removeAll();
 }
 
 ImageBuffer::ImageBuffer() :
@@ -59,7 +59,8 @@ ImageBuffer::~ImageBuffer() {
   _image = nullptr;
 }
 
-ImageDisplay::ImageDisplay() : Shape(0, 0, 0, 0),
+ImageDisplay::ImageDisplay() :
+  Shape(0, 0, 0, 0),
   _offsetLeft(0),
   _offsetTop(0),
   _zIndex(0),
@@ -69,7 +70,8 @@ ImageDisplay::ImageDisplay() : Shape(0, 0, 0, 0),
   _buffer(nullptr) {
 }
 
-ImageDisplay::ImageDisplay(ImageDisplay &o) : Shape(o._x, o._y, o._width, o._height) {
+ImageDisplay::ImageDisplay(ImageDisplay &o) :
+  ImageDisplay() {
   copyImage(o);
 }
 
@@ -78,7 +80,7 @@ void ImageDisplay::copyImage(ImageDisplay &o) {
   _y = o._y;
   _offsetLeft = o._offsetLeft;
   _offsetTop = o._offsetTop;
-  _width =o._width;
+  _width = o._width;
   _height = o._height;
   _zIndex = o._zIndex;
   _opacity = o._opacity;
@@ -88,17 +90,78 @@ void ImageDisplay::copyImage(ImageDisplay &o) {
 }
 
 void ImageDisplay::draw(int x, int y, int w, int h, int cw) {
-  MAPoint2d dstPoint;
-  MARect srcRect;
+  if (_buffer != nullptr) {
+    MAPoint2d dstPoint;
+    MARect srcRect;
 
-  dstPoint.x = x;
-  dstPoint.y = y;
-  srcRect.left = MIN(_buffer->_width, _offsetLeft);
-  srcRect.top = MIN(_buffer->_height, _offsetTop);
-  srcRect.width = MIN(w, MIN(_buffer->_width, _width));
-  srcRect.height = MIN(h, MIN(_buffer->_height, _height));
+    dstPoint.x = x;
+    dstPoint.y = y;
+    srcRect.left = MIN(_buffer->_width, _offsetLeft);
+    srcRect.top = MIN(_buffer->_height, _offsetTop);
+    srcRect.width = MIN(w, MIN(_buffer->_width, _width));
+    srcRect.height = MIN(h, MIN(_buffer->_height, _height));
 
-  maDrawRGB(&dstPoint, _buffer->_image, &srcRect, _opacity, _buffer->_width);
+    maDrawRGB(&dstPoint, _buffer->_image, &srcRect, _opacity, _buffer->_width);
+  }
+}
+
+void argb_to_abgr(unsigned char *image, unsigned w, unsigned h) {
+#if !defined(PIXELFORMAT_ARGB8888)
+  for (unsigned y = 0; y < h; y++) {
+    unsigned yoffs = (4 * y * w);
+    for (unsigned x = 0; x < w; x++) {
+      unsigned offs = yoffs + (4 * x);
+      uint8_t r = image[offs + 2];
+      uint8_t b = image[offs + 0];
+      image[offs + 2] = b;
+      image[offs + 0] = r;
+    }
+  }
+#endif
+}
+
+unsigned decode_png(unsigned char **image, unsigned *w, unsigned *h, const unsigned char *buffer, size_t size) {
+  unsigned error = lodepng_decode32(image, w, h, buffer, size);
+  if (!error) {
+    argb_to_abgr(*image, *w, *h);
+  }
+  return error;
+}
+
+unsigned decode_png_file(unsigned char **image, unsigned *w, unsigned *h, const char *filename) {
+  unsigned error = lodepng_decode32_file(image, w, h, filename);
+  if (!error) {
+    argb_to_abgr(*image, *w, *h);
+  }
+  return error;
+}
+
+unsigned encode_png_file(const char *filename, const unsigned char *image, unsigned w, unsigned h) {
+  unsigned result;
+#if defined(PIXELFORMAT_ARGB8888)
+  result = lodepng_encode32_file(filename, image, w, h);
+#else
+  unsigned size = w * h * 4;
+  auto imageCopy = (uint8_t *)malloc(size);
+  if (!imageCopy) {
+    result = 83;
+  } else {
+    for (unsigned y = 0; y < h; y++) {
+      unsigned yoffs = (4 * y * w);
+      for (unsigned x = 0; x < w; x++) {
+        int offs = yoffs + (x * 4);
+        uint8_t a = image[offs + 3];
+        uint8_t r = image[offs + 2];
+        uint8_t g = image[offs + 1];
+        uint8_t b = image[offs + 0];
+        SET_IMAGE_ARGB(imageCopy, offs, a, r, g, b);
+      }
+    }
+    result = lodepng_encode32_file(filename, imageCopy, w, h);
+    free(imageCopy);
+  }
+#endif
+  return result;
 }
 
 dev_file_t *eval_filep() {
@@ -120,7 +183,7 @@ uint8_t *get_image_data(int x, int y, int w, int h) {
   rc.width = w;
   rc.height = h;
   int size = w * h * 4;
-  uint8_t *result = (uint8_t *)malloc(size);
+  auto result = (uint8_t *)malloc(size);
   if (result != nullptr) {
     g_system->getOutput()->redraw();
     maGetImageData(HANDLE_SCREEN, result, &rc, w * 4);
@@ -155,7 +218,7 @@ ImageBuffer *load_image(var_int_t x) {
       result->_height = h;
       result->_filename = nullptr;
       result->_image = image;
-      cache.add(result);
+      buffers.add(result);
     }
   }
   return result;
@@ -167,7 +230,7 @@ ImageBuffer *load_image(var_t *var) {
   if (var->type == V_MAP) {
     int bid = map_get_int(var, IMG_BID, -1);
     if (bid != -1) {
-      List_each(ImageBuffer *, it, cache) {
+      List_each(ImageBuffer *, it, buffers) {
         ImageBuffer *next = (*it);
         if (next->_bid == (unsigned)bid) {
           result = next;
@@ -179,31 +242,16 @@ ImageBuffer *load_image(var_t *var) {
     int w = ABS(v_lbound(var, 0) - v_ubound(var, 0)) + 1;
     int h = ABS(v_lbound(var, 1) - v_ubound(var, 1)) + 1;
     int size = w * h * 4;
-    unsigned char *image = (unsigned char *)malloc(size);
+    auto image = (unsigned char *)malloc(size);
     for (int y = 0; y < h; y++) {
       int yoffs = (4 * y * w);
       for (int x = 0; x < w; x++) {
         int pos = y * w + x;
         var_t *elem = v_elem(var, pos);
         pixel_t px = -v_getint(elem);
-        uint8_t r, g, b;
-        GET_RGB2(px, r, g, b);
-        int offs = yoffs + (4 * x);
-#if defined(PIXELFORMAT_RGBA8888)
-        int r_offs = offs + 2;
-        int g_offs = offs + 1;
-        int b_offs = offs + 0;
-#else
-        int r_offs = offs + 0;
-        int g_offs = offs + 1;
-        int b_offs = offs + 2;
-#endif
-        int a_offs = offs + 3;
-        int a = (px & 0xff000000) >> 24;
-        image[r_offs] = r;
-        image[g_offs] = g;
-        image[b_offs] = b;
-        image[a_offs] = a;
+        uint8_t a, r, g, b;
+        GET_ARGB(px, a, r, g, b);
+        SET_IMAGE_ARGB(image, yoffs + (x * 4), a, r, g, b);
       }
     }
     result = new ImageBuffer();
@@ -212,18 +260,17 @@ ImageBuffer *load_image(var_t *var) {
     result->_height = h;
     result->_filename = nullptr;
     result->_image = image;
-    cache.add(result);
+    buffers.add(result);
   }
   return result;
 }
 
-ImageBuffer *load_image(const unsigned char* buffer, int32_t size) {
+ImageBuffer *load_image(const unsigned char *buffer, int32_t size) {
   ImageBuffer *result = nullptr;
   unsigned w, h;
   unsigned char *image;
-  unsigned error = 0;
 
-  error = lodepng_decode32(&image, &w, &h, buffer, size);
+  unsigned error = decode_png(&image, &w, &h, buffer, size);
   if (!error) {
     result = new ImageBuffer();
     result->_bid = ++nextId;
@@ -231,7 +278,7 @@ ImageBuffer *load_image(const unsigned char* buffer, int32_t size) {
     result->_height = h;
     result->_filename = nullptr;
     result->_image = image;
-    cache.add(result);
+    buffers.add(result);
   } else {
     err_throw(ERR_IMAGE_LOAD, lodepng_error_text(error));
   }
@@ -240,7 +287,7 @@ ImageBuffer *load_image(const unsigned char* buffer, int32_t size) {
 
 ImageBuffer *load_image(dev_file_t *filep) {
   ImageBuffer *result = nullptr;
-  List_each(ImageBuffer *, it, cache) {
+  List_each(ImageBuffer *, it, buffers) {
     ImageBuffer *next = (*it);
     if (next->_filename != nullptr && strcmp(next->_filename, filep->name) == 0) {
       result = next;
@@ -263,14 +310,13 @@ ImageBuffer *load_image(dev_file_t *filep) {
       } else {
         var_p = v_new();
         http_read(filep, var_p);
-        error = lodepng_decode32(&image, &w, &h, (unsigned char *)var_p->v.p.ptr,
-                                 var_p->v.p.length);
+        error = decode_png(&image, &w, &h, (unsigned char *)var_p->v.p.ptr, var_p->v.p.length);
         v_free(var_p);
         v_detach(var_p);
       }
       break;
     case ft_stream:
-      error = lodepng_decode32_file(&image, &w, &h, filep->name);
+      error = decode_png_file(&image, &w, &h, filep->name);
       break;
     default:
       error = 1;
@@ -287,7 +333,7 @@ ImageBuffer *load_image(dev_file_t *filep) {
       result->_height = h;
       result->_filename = strdup(filep->name);
       result->_image = image;
-      cache.add(result);
+      buffers.add(result);
     }
   }
   return result;
@@ -305,7 +351,7 @@ ImageBuffer *load_xpm_image(char **data) {
     result->_height = h;
     result->_filename = nullptr;
     result->_image = image;
-    cache.add(result);
+    buffers.add(result);
   } else {
     err_throw(ERR_IMAGE_LOAD, ERR_XPM_IMAGE);
   }
@@ -315,7 +361,7 @@ ImageBuffer *load_xpm_image(char **data) {
 void get_image_display(var_s *self, ImageDisplay *image) {
   image->_bid = map_get_int(self, IMG_BID, -1);
 
-  List_each(ImageBuffer *, it, cache) {
+  List_each(ImageBuffer *, it, buffers) {
     ImageBuffer *next = (*it);
     if (next->_bid == image->_bid) {
       image->_buffer = next;
@@ -372,6 +418,7 @@ void cmd_image_draw(var_s *self, var_s *) {
   ImageDisplay image;
   get_image_display(self, &image);
   if (!prog_error) {
+    image._opacity = image._zIndex;
     g_system->getOutput()->drawImage(image);
   }
 }
@@ -384,7 +431,7 @@ void cmd_image_hide(var_s *self, var_s *) {
 void cmd_image_save(var_s *self, var_s *) {
   unsigned id = map_get_int(self, IMG_BID, -1);
   ImageBuffer *image = nullptr;
-  List_each(ImageBuffer *, it, cache) {
+  List_each(ImageBuffer *, it, buffers) {
     ImageBuffer *next = (*it);
     if (next->_bid == id) {
       image = next;
@@ -393,23 +440,19 @@ void cmd_image_save(var_s *self, var_s *) {
   }
 
   var_t *array = nullptr;
-  dev_file_t *filep = nullptr;
-  byte code = code_peek();
-  switch (code) {
-  case kwTYPE_SEP:
-    filep = eval_filep();
-    break;
-  default:
+  dev_file_t *file = nullptr;
+  if (code_peek() == kwTYPE_SEP) {
+    file = eval_filep();
+  } else {
     array = par_getvar_ptr();
-    break;
   }
 
   bool saved = false;
   if (!prog_error && image != nullptr) {
-    int w = image->_width;
-    int h = image->_height;
-    if (filep != nullptr && filep->open_flags == DEV_FILE_OUTPUT) {
-      if (!lodepng_encode32_file(filep->name, image->_image, w, h)) {
+    unsigned w = image->_width;
+    unsigned h = image->_height;
+    if (file != nullptr && file->open_flags == DEV_FILE_OUTPUT) {
+      if (!encode_png_file(file->name, image->_image, w, h)) {
         saved = true;
       }
     } else if (array != nullptr) {
@@ -421,22 +464,9 @@ void cmd_image_save(var_s *self, var_s *) {
       for (int y = 0; y < h; y++) {
         int yoffs = (4 * y * w);
         for (int x = 0; x < w; x++) {
-          int offs = yoffs + (4 * x);
-#if defined(PIXELFORMAT_RGBA8888)
-          int r_offs = offs + 2;
-          int g_offs = offs + 1;
-          int b_offs = offs + 0;
-#else
-          int r_offs = offs + 0;
-          int g_offs = offs + 1;
-          int b_offs = offs + 2;
-#endif
-          int a_offs = offs + 3;
-          uint8_t r = image->_image[r_offs];
-          uint8_t g = image->_image[g_offs];
-          uint8_t b = image->_image[b_offs];
-          uint8_t a = image->_image[a_offs];
-          pixel_t px = (a << 24) | SET_RGB(r, g, b);
+          uint8_t a, r, g, b;
+          GET_IMAGE_ARGB(image->_image, yoffs + (x * 4), a, r, g, b);
+          pixel_t px = GET_ARGB_PX(a, r, g, b);
           int pos = y * w + x;
           var_t *elem = v_elem(array, pos);
           v_setint(elem, -px);
@@ -528,7 +558,7 @@ void screen_dump() {
       file.append(".png");
       if (access(file.c_str(), R_OK) != 0) {
         g_system->systemPrint("Saving screen to %s\n", file.c_str());
-        unsigned error = lodepng_encode32_file(file.c_str(), image, width, height);
+        unsigned error = encode_png_file(file.c_str(), image, width, height);
         if (error) {
           g_system->systemPrint("Error: %s\n", lodepng_error_text(error));
         }

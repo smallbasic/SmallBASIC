@@ -8,7 +8,7 @@
 // Copyright(C) 2002-2018 Chris Warren-Smith.
 
 #define LODEPNG_NO_COMPILE_CPP
-#define PIXELFORMAT_RGBA8888
+#define PIXELFORMAT_ARGB8888
 #define IMG_WIDTH "width"
 #define IMG_HEIGHT "height"
 #define IMG_NAME "name"

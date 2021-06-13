@@ -145,7 +145,7 @@ bool Graphics::construct(int fontId) {
     if (_screen && _screen->create(_w, _h)) {
       _drawTarget = _screen;
       maSetColor(DEFAULT_BACKGROUND);
-      ANativeWindow_setBuffersGeometry(_app->window, 0, 0, AHARDWAREBUFFER_FORMAT_R8G8B8A8_UNORM);
+      ANativeWindow_setBuffersGeometry(_app->window, 0, 0, PIXELFORMAT);
       result = true;
     } else {
       trace("Failed to create canvas");
@@ -163,9 +163,9 @@ void Graphics::redraw() {
     if (!locked) {
       trace("Unable to lock window buffer");
     } else {
-      if (buffer.format != AHARDWAREBUFFER_FORMAT_R8G8B8A8_UNORM) {
+      if (buffer.format != PIXELFORMAT) {
         ANativeWindow_unlockAndPost(_app->window);
-        ANativeWindow_setBuffersGeometry(_app->window, 0, 0, AHARDWAREBUFFER_FORMAT_R8G8B8A8_UNORM);
+        ANativeWindow_setBuffersGeometry(_app->window, 0, 0, PIXELFORMAT);
         locked = ANativeWindow_lock(_app->window, &buffer, nullptr) == 0;
         trace("Restore format %d", locked);
       }

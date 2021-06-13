@@ -516,14 +516,7 @@ void Runtime::loadConfig() {
   _output->setFontSize(fontSize);
   _initialFontSize = _output->getFontSize();
 
-  const char *storage = getenv("EXTERNAL_DIR");
-  if (!storage) {
-    storage = getenv("INTERNAL_DIR");
-  }
-  if (storage) {
-    setenv("HOME_DIR", storage, 1);
-    chdir(storage);
-  }
+  onRunCompleted();
   if (loadSettings(settings)) {
     String *s = settings.get(FONT_SCALE_KEY);
     if (s) {
@@ -533,11 +526,6 @@ void Runtime::loadConfig() {
         fontSize = (_initialFontSize * _fontScale / 100);
         _output->setFontSize(fontSize);
       }
-    }
-    s = settings.get(PATH_KEY);
-    if (s) {
-      trace("path = %s", s->c_str());
-      chdir(s->c_str());
     }
     s = settings.get(MUTE_AUDIO_KEY);
     if (s && s->toInteger() == 1) {
@@ -893,6 +881,17 @@ void Runtime::onResize(int width, int height) {
       ALooper_wake(_app->looper);
       ALooper_release(_app->looper);
     }
+  }
+}
+
+void Runtime::onRunCompleted() {
+  const char *storage = getenv("EXTERNAL_DIR");
+  if (!storage) {
+    storage = getenv("INTERNAL_DIR");
+  }
+  if (storage) {
+    setenv("HOME_DIR", storage, 1);
+    chdir(storage);
   }
 }
 

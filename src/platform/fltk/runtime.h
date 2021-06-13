@@ -25,7 +25,7 @@ struct Runtime : public System {
   void enableCursor(bool enabled);
   int handle(int event);
   void optionsBox(StringList *items);
-  void restoreWindowRect() {}
+  void onRunCompleted() {}
   void saveWindowRect() {}
   MAEvent processEvents(int waitFlag);
   bool run(const char *bas) { return execute(bas); }

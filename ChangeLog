@@ -1,3 +1,9 @@
+2021-06-12 (12.22)
+	UI: Fix potential memory leak using IMAGE
+	UI: Fix RGB handling with IMAGE
+	ANDROID: restore home directory when resuming from run
+	ANDROID: removed samsung keypad warning
+
 2021-06-06 (12.22)
 	UI: implemented image.draw(), fix image.save in andoid #115
 

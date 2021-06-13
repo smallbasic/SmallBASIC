@@ -20,8 +20,8 @@ struct ImageBuffer {
   char *_filename;
   unsigned char *_image;
   unsigned _bid;
-  int _width;
-  int _height;
+  unsigned _width;
+  unsigned _height;
 };
 
 struct ImageDisplay : public Shape {

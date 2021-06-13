@@ -13,8 +13,6 @@
 
 extern ui::Graphics *graphics;
 
-#define PIXELFORMAT SDL_PIXELFORMAT_RGB888
-
 //
 // Canvas implementation
 //
@@ -128,7 +126,7 @@ bool Graphics::construct(const char *font, const char *boldFont) {
     fprintf(stderr, "SDL surface format is null\n");
     result = false;
   } else if (surface->format->format != PIXELFORMAT) {
-    deviceLog("Unexpected window surface format %d", surface->format->format);
+    deviceLog("Unexpected window surface format %x", surface->format->format);
     _surface = surface;
   }
 

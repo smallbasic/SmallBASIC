@@ -38,6 +38,11 @@ import android.view.View;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.Toast;
 
+import androidx.annotation.NonNull;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
+import androidx.core.content.FileProvider;
+
 import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -63,8 +68,6 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
 import java.net.URLDecoder;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.Date;
 import java.util.Enumeration;
 import java.util.HashMap;
@@ -78,10 +81,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Semaphore;
 import java.util.zip.GZIPInputStream;
 
-import androidx.annotation.NonNull;
-import androidx.core.app.ActivityCompat;
-import androidx.core.content.ContextCompat;
-import androidx.core.content.FileProvider;
 import dalvik.system.BaseDexClassLoader;
 
 /**
@@ -471,7 +470,8 @@ public class MainActivity extends NativeActivity {
     if (_locationAdapter != null) {
       LocationManager locationService = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
       if (locationService != null) {
-        locationService.removeUpdates(_locationAdapter);
+        // requires coarse location permission
+        //locationService.removeUpdates(_locationAdapter);
         _locationAdapter = null;
         result = true;
       }
@@ -603,14 +603,7 @@ public class MainActivity extends NativeActivity {
         InputMethodManager imm = (InputMethodManager)getSystemService(Context.INPUT_METHOD_SERVICE);
         if (imm != null) {
           if (show) {
-            String id = Settings.Secure.getString(activity.getContentResolver(), Settings.Secure.DEFAULT_INPUT_METHOD);
-            if (id != null && id.toLowerCase().contains("samsung")) {
-              imm.showInputMethodPicker();
-              String message = getResources().getString(R.string.samsung_keyboard);
-              Toast.makeText(activity, message, Toast.LENGTH_LONG).show();
-            } else {
-              imm.showSoftInput(view, InputMethodManager.SHOW_IMPLICIT);
-            }
+            imm.showSoftInput(view, InputMethodManager.SHOW_IMPLICIT);
           } else {
             imm.hideSoftInputFromWindow(view.getWindowToken(), InputMethodManager.HIDE_NOT_ALWAYS);
           }

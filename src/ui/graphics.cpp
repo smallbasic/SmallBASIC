@@ -296,18 +296,8 @@ void Graphics::drawRGB(const MAPoint2d *dstPoint, const void *src,
         if (dX >= _drawTarget->x() &&
             dX <  _drawTarget->w()) {
           // get RGBA components
-          uint8_t r,g,b,a;
-#if defined(PIXELFORMAT_RGBA8888)
-          b = image[4 * y * w + 4 * x + 0]; // blue
-          g = image[4 * y * w + 4 * x + 1]; // green
-          r = image[4 * y * w + 4 * x + 2]; // red
-          a = image[4 * y * w + 4 * x + 3]; // alpha
-#else
-          r = image[4 * y * w + 4 * x + 0]; // red
-          g = image[4 * y * w + 4 * x + 1]; // green
-          b = image[4 * y * w + 4 * x + 2]; // blue
-          a = image[4 * y * w + 4 * x + 3]; // alpha
-#endif
+          uint8_t a, r, g, b;
+          GET_IMAGE_ARGB(image, (y * w * 4) + (x * 4), a, r, g, b);
           uint8_t dR, dG, dB;
           GET_RGB(line[dX], dR, dG, dB);
           if (opacity > 0 && opacity < 100 && a > 64) {
@@ -320,7 +310,7 @@ void Graphics::drawRGB(const MAPoint2d *dstPoint, const void *src,
             dG = dG + ((g - dG) * a / 255);
             dB = dB + ((b - dB) * a / 255);
           }
-          line[dX] = SET_RGB(dR, dG, dB);
+          line[dX] = GET_RGB_PX(dR, dG, dB);
         }
       }
     }
@@ -354,7 +344,7 @@ void Graphics::drawChar(FT_Bitmap *bitmap, FT_Int x, FT_Int y) {
             dR = dR + ((sR - dR) * a / 255);
             dG = dG + ((sG - dG) * a / 255);
             dB = dB + ((sB - dB) * a / 255);
-            line[i] = SET_RGB(dR, dG, dB);
+            line[i] = GET_RGB_PX(dR, dG, dB);
           }
         }
       }
@@ -393,12 +383,8 @@ void Graphics::getImageData(Canvas *canvas, uint8_t *image,
       for (int dx = 0, x = srcRect->left; x < x_end; x += scale, dx++) {
         if (x >= canvas->x() && x < canvas->w()) {
           uint8_t r, g, b;
-          GET_RGB2(line[x], r, g, b);
-          int offs = yoffs + (dx * 4);
-          image[offs + 0] = r;
-          image[offs + 1] = g;
-          image[offs + 2] = b;
-          image[offs + 3] = 255;
+          GET_RGB(line[x], r, g, b);
+          SET_IMAGE_ARGB(image, yoffs + (dx * 4), 255, r, g, b);
         }
       }
     }
@@ -417,10 +403,10 @@ int Graphics::getPixel(Canvas *canvas, int posX, int posY) {
       && posY < canvas->_h - 1) {
     pixel_t *line = canvas->getLine(posY);
     result = line[posX];
-#if defined(PIXELFORMAT_RGBA8888)
-    uint8_t r,g,b;
-    GET_RGB2(result, r, g, b);
-    result = SET_RGB(r, g, b);
+#if defined(PIXELFORMAT_ARGB8888)
+    uint8_t r, g, b;
+    GET_RGB(result, r, g, b);
+    result = GET_RGB_PX(r, g, b);
 #endif
   }
   return result;
@@ -538,7 +524,7 @@ void Graphics::aaPlot(int posX, int posY, double c) {
     dR = (uint8_t)(sR * c + dR * (1 - c));
     dG = (uint8_t)(sG * c + dG * (1 - c));
     dB = (uint8_t)(sB * c + dB * (1 - c));
-    line[posX] = SET_RGB(dR, dG, dB);
+    line[posX] = GET_RGB_PX(dR, dG, dB);
   }
 }
 

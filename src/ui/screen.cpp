@@ -53,6 +53,7 @@ Screen::~Screen() {
   if (_font) {
     maFontDelete(_font);
   }
+  _images.removeAll();
 }
 
 // converts ANSI colors to MoSync colors
@@ -369,6 +370,7 @@ void Screen::removeImage(unsigned imageId) {
     ImageDisplay *next = (*it);
     if (next->_id == imageId) {
       _images.remove(it);
+      delete next;
       setDirty();
       break;
     }
