@@ -461,13 +461,13 @@ void cmd_image_save(var_s *self, var_s *) {
       // y0  rgba rgba rgba  ypos=0
       // y1  rgba rgba rgba  ypos=12
       //
-      for (int y = 0; y < h; y++) {
-        int yoffs = (4 * y * w);
-        for (int x = 0; x < w; x++) {
+      for (unsigned y = 0; y < h; y++) {
+        unsigned yoffs = (4 * y * w);
+        for (unsigned x = 0; x < w; x++) {
           uint8_t a, r, g, b;
           GET_IMAGE_ARGB(image->_image, yoffs + (x * 4), a, r, g, b);
           pixel_t px = GET_ARGB_PX(a, r, g, b);
-          int pos = y * w + x;
+          unsigned pos = y * w + x;
           var_t *elem = v_elem(array, pos);
           v_setint(elem, -px);
         }
