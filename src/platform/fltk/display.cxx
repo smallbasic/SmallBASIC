@@ -8,7 +8,9 @@
 
 #include "config.h"
 #include <math.h>
+#include <stdint.h>
 #include "ui/utils.h"
+#include "ui/rgb.h"
 #include "platform/fltk/display.h"
 
 GraphicsWidget *graphics;
@@ -112,17 +114,44 @@ void Canvas::drawPixel(int posX, int posY) {
   fl_end_offscreen();
 }
 
-// x, y, w are position and width of scan line in image. copy w
-// pixels from scanline y, starting at pixel x to this buffer.
+struct DrawData {
+  uint8_t *_image;
+  uint8_t *_screen;
+  int _opacity;
+};
+
+// x, y, w are position and width of scan line in image.
+// copy w pixels from scanline y, starting at pixel x to this buffer.
 void drawImage(void *data, int x, int y, int w, uchar *out) {
-  uint8_t *image = (uint8_t *)data;
+  DrawData *drawData = (DrawData *)data;
+  uint8_t *image = drawData->_image;
+  uint8_t *screen = drawData->_screen;
+  int opacity = drawData->_opacity;
   int scanLine = w * 3;
   int offs = y * w * 4;
+  float op = opacity / 100.0f;
+  fprintf(stderr, "op=%f\n", op);
 
   for (int sx = 0; sx < scanLine; sx += 3, offs += 4) {
-    out[sx + 0] = image[offs + 0];
-    out[sx + 1] = image[offs + 1];
-    out[sx + 2] = image[offs + 2];
+    uint8_t a = image[offs + 3];
+    uint8_t r = image[offs + 2];
+    uint8_t g = image[offs + 1];
+    uint8_t b = image[offs + 0];
+    uint8_t dR = screen[offs + 2];
+    uint8_t dG = screen[offs + 1];
+    uint8_t dB = screen[offs + 0];
+    if (opacity > 0 && opacity < 100 && a > 64) {
+      dR = (op * r) + ((1 - op) * dR);
+      dG = (op * g) + ((1 - op) * dG);
+      dB = (op * b) + ((1 - op) * dB);
+    } else {
+      dR = dR + ((r - dR) * a / 255);
+      dG = dG + ((g - dG) * a / 255);
+      dB = dB + ((b - dB) * a / 255);
+    }
+    out[sx + 2] = dR;
+    out[sx + 1] = dG;
+    out[sx + 0] = dB;
   }
 }
 
@@ -131,9 +160,16 @@ void Canvas::drawRGB(const MAPoint2d *dstPoint, const void *src, const MARect *s
   int y = dstPoint->y;
   int w = srcRect->width;
   int h = srcRect->height;
+  DrawData data;
+  data._image = (uint8_t *)src;
+  data._opacity = opacity;
+  data._screen = (uint8_t *)calloc(w * h * 4, 1);
+
   fl_begin_offscreen(_offscreen);
-  fl_draw_image(drawImage, (void *)src, x, y, w, h);
+  fl_read_image(data._screen, x, y, w, h, 1);
+  fl_draw_image(drawImage, (void *)&data, x, y, w, h, 3);
   fl_end_offscreen();
+  free(data._screen);
 }
 
 void Canvas::drawRegion(Canvas *src, const MARect *srcRect, int destX, int destY) {

@@ -281,11 +281,8 @@ void Graphics::drawRGB(const MAPoint2d *dstPoint, const void *src,
   uint8_t *image = (uint8_t *)src;
   size_t scale = 1;
   int w = bytesPerLine;
+  float op = opacity / 100.0f;
 
-  if (opacity > 0 && opacity < 100) {
-    // higher opacity values should make the image less transparent
-    opacity = 100 - opacity;
-  }
   for (int y = srcRect->top; y < srcRect->height; y += scale) {
     int dY = dstPoint->y + y;
     if (dY >= _drawTarget->y() &&
@@ -301,10 +298,9 @@ void Graphics::drawRGB(const MAPoint2d *dstPoint, const void *src,
           uint8_t dR, dG, dB;
           GET_RGB(line[dX], dR, dG, dB);
           if (opacity > 0 && opacity < 100 && a > 64) {
-            float op = opacity / 100.0f;
-            dR = ((1-op) * r) + (op * dR);
-            dG = ((1-op) * g) + (op * dG);
-            dB = ((1-op) * b) + (op * dB);
+            dR = (op * r) + ((1 - op) * dR);
+            dG = (op * g) + ((1 - op) * dG);
+            dB = (op * b) + ((1 - op) * dB);
           } else {
             dR = dR + ((r - dR) * a / 255);
             dG = dG + ((g - dG) * a / 255);
