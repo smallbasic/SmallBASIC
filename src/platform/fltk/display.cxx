@@ -8,9 +8,7 @@
 
 #include "config.h"
 #include <math.h>
-#include <stdint.h>
 #include "ui/utils.h"
-#include "ui/rgb.h"
 #include "platform/fltk/display.h"
 
 GraphicsWidget *graphics;
@@ -130,7 +128,6 @@ void drawImage(void *data, int x, int y, int w, uchar *out) {
   int scanLine = w * 3;
   int offs = y * w * 4;
   float op = opacity / 100.0f;
-  fprintf(stderr, "op=%f\n", op);
 
   for (int sx = 0; sx < scanLine; sx += 3, offs += 4) {
     uint8_t a = image[offs + 3];
@@ -149,6 +146,7 @@ void drawImage(void *data, int x, int y, int w, uchar *out) {
       dG = dG + ((g - dG) * a / 255);
       dB = dB + ((b - dB) * a / 255);
     }
+    out[sx + 3] = a;
     out[sx + 2] = dR;
     out[sx + 1] = dG;
     out[sx + 0] = dB;
@@ -203,23 +201,31 @@ void Canvas::fillRect(int left, int top, int width, int height, Fl_Color color) 
 
 void Canvas::getImageData(uint8_t *image, const MARect *srcRect, int bytesPerLine) {
   fl_begin_offscreen(_offscreen);
-  int x = srcRect->left;
-  int y = srcRect->top;
-  int w = srcRect->width;
-  int h = srcRect->height;
+  unsigned x = srcRect->left;
+  unsigned y = srcRect->top;
+  unsigned w = srcRect->width;
+  unsigned h = srcRect->height;
   fl_read_image(image, x, y, w, h, 1);
   fl_end_offscreen();
 
   if (srcRect->width == 1 && srcRect->height == 1) {
     // compatibility with PSET/POINT
-    uchar r = image[0];
-    uchar g = image[1];
     uchar b = image[2];
-    uchar a = image[3];
-    image[0] = b;
-    image[1] = g;
+    uchar g = image[1];
+    uchar r = image[0];
+    image[3] = 255;
     image[2] = r;
-    image[3] = a;
+    image[1] = g;
+    image[0] = b;
+  } else {
+    // set alpha to 255
+    for (unsigned y = 0; y < h; y++) {
+      unsigned yoffs = (4 * y * w);
+      for (unsigned x = 0; x < w; x++) {
+        int offs = yoffs + (x * 4);
+        image[offs + 3] = 255;
+      }
+    }
   }
 }
 
