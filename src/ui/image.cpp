@@ -191,6 +191,19 @@ uint8_t *get_image_data(int x, int y, int w, int h) {
   return result;
 }
 
+
+ImageBuffer *get_image(unsigned bid) {
+  ImageBuffer *result = nullptr;
+  List_each(ImageBuffer *, it, buffers) {
+    ImageBuffer *next = (*it);
+    if (next->_bid == (unsigned)bid) {
+      result = next;
+      break;
+    }
+  }
+  return result;
+}
+
 ImageBuffer *load_image(var_int_t x) {
   var_int_t y, w, h;
   int count = par_massget("iii", &y, &w, &h);
@@ -230,13 +243,7 @@ ImageBuffer *load_image(var_t *var) {
   if (var->type == V_MAP) {
     int bid = map_get_int(var, IMG_BID, -1);
     if (bid != -1) {
-      List_each(ImageBuffer *, it, buffers) {
-        ImageBuffer *next = (*it);
-        if (next->_bid == (unsigned)bid) {
-          result = next;
-          break;
-        }
-      }
+      result = get_image((unsigned)bid);
     }
   } else if (var->type == V_ARRAY && v_maxdim(var) == 2) {
     int w = ABS(v_lbound(var, 0) - v_ubound(var, 0)) + 1;
@@ -406,6 +413,9 @@ void get_image_display(var_s *self, ImageDisplay *image) {
   }
 }
 
+//
+// png.show(x, y, zindex, opacity)
+//
 void cmd_image_show(var_s *self, var_s *) {
   ImageDisplay image;
   get_image_display(self, &image);
@@ -414,6 +424,9 @@ void cmd_image_show(var_s *self, var_s *) {
   }
 }
 
+//
+// png.draw(x, y, opacity)
+//
 void cmd_image_draw(var_s *self, var_s *) {
   ImageDisplay image;
   get_image_display(self, &image);
@@ -423,22 +436,23 @@ void cmd_image_draw(var_s *self, var_s *) {
   }
 }
 
+//
+// png.hide()
+//
 void cmd_image_hide(var_s *self, var_s *) {
   int id = map_get_int(self, IMG_ID, -1);
   g_system->getOutput()->removeImage(id);
 }
 
+//
+// Output the image to a PNG file
+//
+// png.save("horse1.png")
+// png.save(#1)
+//
 void cmd_image_save(var_s *self, var_s *) {
   unsigned id = map_get_int(self, IMG_BID, -1);
-  ImageBuffer *image = nullptr;
-  List_each(ImageBuffer *, it, buffers) {
-    ImageBuffer *next = (*it);
-    if (next->_bid == id) {
-      image = next;
-      break;
-    }
-  }
-
+  ImageBuffer *image = get_image(id);
   var_t *array = nullptr;
   dev_file_t *file = nullptr;
   if (code_peek() == kwTYPE_SEP) {
@@ -481,13 +495,42 @@ void cmd_image_save(var_s *self, var_s *) {
   }
 }
 
+
+//
+// Reduces the size of the image
+// arguments: left, top, right, bottom
+//
+// png.clip(10, 10, 10, 10)
+//
+void cmd_image_clip(var_s *self, var_s *) {
+  bool updated = false;
+  if (self->type == V_MAP) {
+    int bid = map_get_int(self, IMG_BID, -1);
+    if (bid != -1) {
+      ImageBuffer *image = get_image((unsigned)bid);
+      var_int_t left, top, right, bottom;
+      if (image != nullptr && par_massget("iiii", &left, &top, &right, &bottom) == 4 &&
+          left >= 0 && left < image->_width && top >= 0 && top < image->_height) {
+        map_set_int(self, IMG_OFFSET_LEFT, left);
+        map_set_int(self, IMG_OFFSET_TOP, top);
+        map_set_int(self, IMG_WIDTH, right);
+        map_set_int(self, IMG_HEIGHT, bottom);
+        updated = true;
+      }
+    }
+  }
+  if (!updated) {
+    err_throw(ERR_PARAM);
+  }
+}
+
 void create_image(var_p_t var, ImageBuffer *image) {
   map_init(var);
   map_add_var(var, IMG_X, 0);
   map_add_var(var, IMG_Y, 0);
   map_add_var(var, IMG_OFFSET_TOP, 0);
   map_add_var(var, IMG_OFFSET_LEFT, 0);
-  map_add_var(var, IMG_ZINDEX, 1);
+  map_add_var(var, IMG_ZINDEX, 100);
   map_add_var(var, IMG_OPACITY, 0);
   map_add_var(var, IMG_ID, ++nextId);
   map_add_var(var, IMG_WIDTH, image->_width);
@@ -497,6 +540,7 @@ void create_image(var_p_t var, ImageBuffer *image) {
   v_create_func(var, "hide", cmd_image_hide);
   v_create_func(var, "save", cmd_image_save);
   v_create_func(var, "show", cmd_image_show);
+  v_create_func(var, "clip", cmd_image_clip);
 }
 
 // loads an image for the form image input type

@@ -1,3 +1,6 @@
+2021-06-23 (12.22)
+	FLTK: Implemented image opacity handling
+
 2021-06-12 (12.22)
 	UI: Fix potential memory leak using IMAGE
 	UI: Fix RGB handling with IMAGE
