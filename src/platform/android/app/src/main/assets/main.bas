@@ -270,7 +270,7 @@ sub loadFileList(path, byref basList)
   end
 
   func androidWalker(node)
-    if (node.depth == 0 && node.dir == 0 && lower(right(node.name, 4)) == ".bas") then
+    if (node.dir == 0 && lower(right(node.name, 4)) == ".bas") then
       basList << node
     endif
     return node.depth == 0

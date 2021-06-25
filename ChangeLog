@@ -1,5 +1,9 @@
+2021-06-25 (12.22)
+	ANDROID: Unified file listing includes bas files from sub-folders
+
 2021-06-23 (12.22)
 	FLTK: Implemented image opacity handling
+	UI: Implemented image.clip(left,top,right,bottom)
 
 2021-06-12 (12.22)
 	UI: Fix potential memory leak using IMAGE
