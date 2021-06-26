@@ -101,6 +101,13 @@ void ImageDisplay::draw(int x, int y, int w, int h, int cw) {
     srcRect.width = MIN(w, MIN(_buffer->_width, _width));
     srcRect.height = MIN(h, MIN(_buffer->_height, _height));
 
+    if (unsigned(srcRect.top + srcRect.height) > _buffer->_height) {
+      srcRect.height = _buffer->_height - srcRect.top;
+    }
+    if (unsigned(srcRect.left + srcRect.width) > _buffer->_width) {
+      srcRect.width = _buffer->_width - srcRect.left;
+    }
+
     maDrawRGB(&dstPoint, _buffer->_image, &srcRect, _opacity, _buffer->_width);
   }
 }
@@ -503,24 +510,18 @@ void cmd_image_save(var_s *self, var_s *) {
 // png.clip(10, 10, 10, 10)
 //
 void cmd_image_clip(var_s *self, var_s *) {
-  bool updated = false;
   if (self->type == V_MAP) {
     int bid = map_get_int(self, IMG_BID, -1);
     if (bid != -1) {
       ImageBuffer *image = get_image((unsigned)bid);
       var_int_t left, top, right, bottom;
-      if (image != nullptr && par_massget("iiii", &left, &top, &right, &bottom) == 4 &&
-          left >= 0 && left < image->_width && top >= 0 && top < image->_height) {
+      if (image != nullptr && par_massget("iiii", &left, &top, &right, &bottom)) {
         map_set_int(self, IMG_OFFSET_LEFT, left);
         map_set_int(self, IMG_OFFSET_TOP, top);
         map_set_int(self, IMG_WIDTH, right);
         map_set_int(self, IMG_HEIGHT, bottom);
-        updated = true;
       }
     }
-  }
-  if (!updated) {
-    err_throw(ERR_PARAM);
   }
 }
 
