@@ -253,8 +253,8 @@ ImageBuffer *load_image(var_t *var) {
       result = get_image((unsigned)bid);
     }
   } else if (var->type == V_ARRAY && v_maxdim(var) == 2) {
-    int w = ABS(v_lbound(var, 0) - v_ubound(var, 0)) + 1;
-    int h = ABS(v_lbound(var, 1) - v_ubound(var, 1)) + 1;
+    int h = ABS(v_ubound(var, 0) - v_lbound(var, 0)) + 1;
+    int w = ABS(v_ubound(var, 1) - v_lbound(var, 1)) + 1;
     int size = w * h * 4;
     auto image = (unsigned char *)malloc(size);
     for (int y = 0; y < h; y++) {
@@ -477,7 +477,7 @@ void cmd_image_save(var_s *self, var_s *) {
         saved = true;
       }
     } else if (array != nullptr) {
-      v_tomatrix(array, w, h);
+      v_tomatrix(array, h, w);
       //     x0   x1   x2    (w=3,h=2)
       // y0  rgba rgba rgba  ypos=0
       // y1  rgba rgba rgba  ypos=12
