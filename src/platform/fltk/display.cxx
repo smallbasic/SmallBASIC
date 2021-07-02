@@ -135,12 +135,12 @@ void drawImage(void *data, int x, int y, int w, uchar *out) {
 
   for (int sx = 0; sx < scanLine; sx += 4, i_offs += 4, s_offs += 4) {
     uint8_t a = image[i_offs + 3];
-    uint8_t r = image[i_offs + 2];
+    uint8_t b = image[i_offs + 2];
     uint8_t g = image[i_offs + 1];
-    uint8_t b = image[i_offs + 0];
-    uint8_t sR = screen[s_offs + 2];
+    uint8_t r = image[i_offs + 0];
+    uint8_t sB = screen[s_offs + 2];
     uint8_t sG = screen[s_offs + 1];
-    uint8_t sB = screen[s_offs + 0];
+    uint8_t sR = screen[s_offs + 0];
     if (opacity > 0 && opacity < 100 && a > 64) {
       sR = (op * r) + ((1 - op) * sR);
       sG = (op * g) + ((1 - op) * sG);
@@ -151,9 +151,9 @@ void drawImage(void *data, int x, int y, int w, uchar *out) {
       sB = sB + ((b - sB) * a / 255);
     }
     out[sx + 3] = a;
-    out[sx + 2] = sR;
+    out[sx + 2] = sB;
     out[sx + 1] = sG;
-    out[sx + 0] = sB;
+    out[sx + 0] = sR;
   }
 }
 

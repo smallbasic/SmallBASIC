@@ -26,16 +26,17 @@ inline void v_get_argb(pixel_t c, uint8_t &a, uint8_t &r, uint8_t &g, uint8_t &b
 
 #define v_get_argb_px(a, r, g, b) (a << 24 | (r << 16) | (g << 8) | (b))
 
-#if defined(PIXELFORMAT_ARGB8888)
+#if defined(_SDL)
+// SDL_PACKEDORDER_XRGB
+// A = byte 3
+// R = byte 2
+// G = byte 1
+// B = byte 0
 
 #define GET_RGB_PX(r, g, b) ((0xff000000) | (r << 16) | (g << 8) | (b))
 
-inline pixel_t GET_FROM_RGB888(unsigned c) {
-  uint8_t r = (c & 0xff0000) >> 16;
-  uint8_t g = (c & 0xff00) >> 8;
-  uint8_t b = (c & 0xff);
-  return ((0xff000000) | (b << 16) | (g << 8) | (r));
-}
+// same as internal format
+#define GET_FROM_RGB888(c) (c)
 
 inline void GET_RGB(pixel_t c, uint8_t &r, uint8_t &g, uint8_t &b) {
   r = (c & 0xff0000) >> 16;
@@ -43,7 +44,7 @@ inline void GET_RGB(pixel_t c, uint8_t &r, uint8_t &g, uint8_t &b) {
   b = (c & 0xff);
 }
 
-inline void GET_IMAGE_ARGB(uint8_t *image, unsigned offs, uint8_t &a, uint8_t &r, uint8_t &g, uint8_t &b) {
+inline void GET_IMAGE_ARGB(const uint8_t *image, unsigned offs, uint8_t &a, uint8_t &r, uint8_t &g, uint8_t &b) {
   a = image[offs + 3];
   r = image[offs + 2];
   g = image[offs + 1];
@@ -59,14 +60,14 @@ inline void SET_IMAGE_ARGB(uint8_t *image, unsigned offs, uint8_t a, uint8_t r, 
 
 #else
 
-// A = byte 3
-// B = byte 2
-// G = byte 1
-// R = byte 0
-
 #define GET_RGB_PX(r, g, b) ((0xff000000) | (b << 16) | (g << 8) | (r))
 
-#define GET_FROM_RGB888(c) (c)
+inline pixel_t GET_FROM_RGB888(unsigned c) {
+  uint8_t r = (c & 0xff0000) >> 16;
+  uint8_t g = (c & 0xff00) >> 8;
+  uint8_t b = (c & 0xff);
+  return ((0xff000000) | (b << 16) | (g << 8) | (r));
+}
 
 inline void GET_RGB(pixel_t c, uint8_t &r, uint8_t &g, uint8_t &b) {
   b = (c & 0xff0000) >> 16;
@@ -74,7 +75,7 @@ inline void GET_RGB(pixel_t c, uint8_t &r, uint8_t &g, uint8_t &b) {
   r = (c & 0xff);
 }
 
-inline void GET_IMAGE_ARGB(uint8_t *image, unsigned offs, uint8_t &a, uint8_t &r, uint8_t &g, uint8_t &b) {
+inline void GET_IMAGE_ARGB(const uint8_t *image, unsigned offs, uint8_t &a, uint8_t &r, uint8_t &g, uint8_t &b) {
   a = image[offs + 3];
   b = image[offs + 2];
   g = image[offs + 1];

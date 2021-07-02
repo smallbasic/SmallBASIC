@@ -114,12 +114,13 @@ void ImageDisplay::draw(int x, int y, int w, int h, int cw) {
   }
 }
 
-void argb_to_abgr(unsigned char *image, unsigned w, unsigned h) {
-#if !defined(PIXELFORMAT_ARGB8888)
+void to_argb(unsigned char *image, unsigned w, unsigned h) {
+#if defined(_SDL)
+  // convert from LCT_RGBA to ARGB
   for (unsigned y = 0; y < h; y++) {
-    unsigned yoffs = (4 * y * w);
+    unsigned yoffs = (y * w * 4);
     for (unsigned x = 0; x < w; x++) {
-      unsigned offs = yoffs + (4 * x);
+      unsigned offs = yoffs + (x * 4);
       uint8_t r = image[offs + 2];
       uint8_t b = image[offs + 0];
       image[offs + 2] = b;
@@ -132,7 +133,7 @@ void argb_to_abgr(unsigned char *image, unsigned w, unsigned h) {
 unsigned decode_png(unsigned char **image, unsigned *w, unsigned *h, const unsigned char *buffer, size_t size) {
   unsigned error = lodepng_decode32(image, w, h, buffer, size);
   if (!error) {
-    argb_to_abgr(*image, *w, *h);
+    to_argb(*image, *w, *h);
   }
   return error;
 }
@@ -140,35 +141,38 @@ unsigned decode_png(unsigned char **image, unsigned *w, unsigned *h, const unsig
 unsigned decode_png_file(unsigned char **image, unsigned *w, unsigned *h, const char *filename) {
   unsigned error = lodepng_decode32_file(image, w, h, filename);
   if (!error) {
-    argb_to_abgr(*image, *w, *h);
+    to_argb(*image, *w, *h);
   }
   return error;
 }
 
 unsigned encode_png_file(const char *filename, const unsigned char *image, unsigned w, unsigned h) {
   unsigned result;
-#if defined(PIXELFORMAT_ARGB8888)
-  result = lodepng_encode32_file(filename, image, w, h);
-#else
+#if defined(_SDL)
   unsigned size = w * h * 4;
   auto imageCopy = (uint8_t *)malloc(size);
   if (!imageCopy) {
+    // lodepng memory error code
     result = 83;
   } else {
+    // convert from ARGB to LCT_RGBA
     for (unsigned y = 0; y < h; y++) {
-      unsigned yoffs = (4 * y * w);
+      unsigned yoffs = (y * w * 4);
       for (unsigned x = 0; x < w; x++) {
         int offs = yoffs + (x * 4);
-        uint8_t a = image[offs + 3];
-        uint8_t r = image[offs + 2];
-        uint8_t g = image[offs + 1];
-        uint8_t b = image[offs + 0];
-        SET_IMAGE_ARGB(imageCopy, offs, a, r, g, b);
+        uint8_t a, r, g, b;
+        GET_IMAGE_ARGB(image, offs, a, r, g, b);
+        imageCopy[offs + 3] = a;
+        imageCopy[offs + 2] = b;
+        imageCopy[offs + 1] = g;
+        imageCopy[offs + 0] = r;
       }
     }
     result = lodepng_encode32_file(filename, imageCopy, w, h);
     free(imageCopy);
   }
+#else
+  result = lodepng_encode32_file(filename, image, w, h);
 #endif
   return result;
 }
@@ -199,7 +203,6 @@ uint8_t *get_image_data(int x, int y, int w, int h) {
   }
   return result;
 }
-
 
 ImageBuffer *get_image(unsigned bid) {
   ImageBuffer *result = nullptr;
@@ -260,11 +263,11 @@ ImageBuffer *load_image(var_t *var) {
     int size = w * h * 4;
     auto image = (uint8_t *)malloc(size);
     for (int y = 0; y < h; y++) {
-      int yoffs = (4 * y * w);
+      int yoffs = (y * w * 4);
       for (int x = 0; x < w; x++) {
         int pos = y * w + x;
         uint8_t a, r, g, b;
-        v_get_argb(-v_getint(v_elem(var, pos)), a, r, g, b);
+        v_get_argb(v_getint(v_elem(var, pos)), a, r, g, b);
         SET_IMAGE_ARGB(image, yoffs + (x * 4), a, r, g, b);
       }
     }
@@ -483,14 +486,13 @@ void cmd_image_save(var_s *self, var_s *) {
       // y1  rgba rgba rgba  ypos=12
       //
       for (unsigned y = 0; y < h; y++) {
-        unsigned yoffs = (4 * y * w);
+        unsigned yoffs = (y * w * 4);
         for (unsigned x = 0; x < w; x++) {
           uint8_t a, r, g, b;
           GET_IMAGE_ARGB(image->_image, yoffs + (x * 4), a, r, g, b);
           pixel_t px = v_get_argb_px(a, r, g, b);
           unsigned pos = y * w + x;
-          var_t *elem = v_elem(array, pos);
-          v_setint(elem, -px);
+          v_setint(v_elem(array, pos), px);
         }
       }
       saved = true;
