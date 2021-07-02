@@ -29,10 +29,16 @@
 
 void set_pixels(uint8_t *image, int w, int x, int y, uint32_t c) {
   int offs = y * w * 4 + x * 4;
-  image[offs + 0] = (c >> 24) & 0xff;
-  image[offs + 1] = (c >> 16) & 0xff;
-  image[offs + 2] = (c >> 8) & 0xff;
   image[offs + 3] = (c) & 0xff;
+#if defined(_SDL)
+  image[offs + 2] = (c >> 24) & 0xff;
+  image[offs + 1] = (c >> 16) & 0xff;
+  image[offs + 0] = (c >> 8) & 0xff;
+#else
+  image[offs + 2] = (c >> 8) & 0xff;
+  image[offs + 1] = (c >> 16) & 0xff;
+  image[offs + 0] = (c >> 24) & 0xff;
+#endif
 }
 
 int xpm_decode32(uint8_t **image, unsigned *width, unsigned *height, 

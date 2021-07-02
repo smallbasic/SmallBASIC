@@ -32,6 +32,8 @@ extern System *g_system;
 unsigned nextId = 0;
 strlib::List<ImageBuffer *> buffers;
 
+extern "C" int xpm_decode32(uint8_t **image, unsigned *width, unsigned *height, const char *const *xpm);
+
 void reset_image_cache() {
   buffers.removeAll();
 }
@@ -256,15 +258,13 @@ ImageBuffer *load_image(var_t *var) {
     int h = ABS(v_ubound(var, 0) - v_lbound(var, 0)) + 1;
     int w = ABS(v_ubound(var, 1) - v_lbound(var, 1)) + 1;
     int size = w * h * 4;
-    auto image = (unsigned char *)malloc(size);
+    auto image = (uint8_t *)malloc(size);
     for (int y = 0; y < h; y++) {
       int yoffs = (4 * y * w);
       for (int x = 0; x < w; x++) {
         int pos = y * w + x;
-        var_t *elem = v_elem(var, pos);
-        pixel_t px = -v_getint(elem);
         uint8_t a, r, g, b;
-        GET_ARGB(px, a, r, g, b);
+        v_get_argb(-v_getint(v_elem(var, pos)), a, r, g, b);
         SET_IMAGE_ARGB(image, yoffs + (x * 4), a, r, g, b);
       }
     }
@@ -487,7 +487,7 @@ void cmd_image_save(var_s *self, var_s *) {
         for (unsigned x = 0; x < w; x++) {
           uint8_t a, r, g, b;
           GET_IMAGE_ARGB(image->_image, yoffs + (x * 4), a, r, g, b);
-          pixel_t px = GET_ARGB_PX(a, r, g, b);
+          pixel_t px = v_get_argb_px(a, r, g, b);
           unsigned pos = y * w + x;
           var_t *elem = v_elem(array, pos);
           v_setint(elem, -px);

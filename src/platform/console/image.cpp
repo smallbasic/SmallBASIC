@@ -24,9 +24,7 @@
 #include "ui/rgb.h"
 #include "lib/lodepng/lodepng.h"
 
-extern "C" {
-  int xpm_decode32(uint8_t **image, unsigned *width, unsigned *height, const char *const *xpm);
-}
+extern "C" int xpm_decode32(uint8_t **image, unsigned *width, unsigned *height, const char *const *xpm);
 
 struct ImageBuffer {
   ImageBuffer();
@@ -49,8 +47,8 @@ void reset_image_cache() {
 
 ImageBuffer::ImageBuffer() :
   _bid(0),
-  _filename(NULL),
-  _image(NULL),
+  _filename(nullptr),
+  _image(nullptr),
   _width(0),
   _height(0) {
 }
@@ -66,12 +64,12 @@ ImageBuffer::ImageBuffer(ImageBuffer &o) :
 ImageBuffer::~ImageBuffer() {
   free(_filename);
   free(_image);
-  _filename = NULL;
-  _image = NULL;
+  _filename = nullptr;
+  _image = nullptr;
 }
 
 dev_file_t *get_file() {
-  dev_file_t *result = NULL;
+  dev_file_t *result = nullptr;
   code_skipnext();
   if (code_getnext() == '#') {
     int handle = par_getint();
@@ -83,7 +81,7 @@ dev_file_t *get_file() {
 }
 
 ImageBuffer *load_image(int w) {
-  ImageBuffer *result = NULL;
+  ImageBuffer *result = nullptr;
   if (!par_getsep()) {
     err_throw(ERR_PARAM);
   } else {
@@ -97,7 +95,7 @@ ImageBuffer *load_image(int w) {
       result->_bid = ++nextId;
       result->_width = w;
       result->_height = h;
-      result->_filename = NULL;
+      result->_filename = nullptr;
       result->_image = image;
       cache.add(result);
     }
@@ -107,7 +105,7 @@ ImageBuffer *load_image(int w) {
 
 // share image buffer from another image variable or array
 ImageBuffer *load_image(var_t *var) {
-  ImageBuffer *result = NULL;
+  ImageBuffer *result = nullptr;
   if (var->type == V_MAP) {
     int bid = map_get_int(var, IMG_BID, -1);
     if (bid != -1) {
@@ -120,30 +118,24 @@ ImageBuffer *load_image(var_t *var) {
       }
     }
   } else if (var->type == V_ARRAY && v_maxdim(var) == 2) {
-    int w = ABS(v_lbound(var, 0) - v_ubound(var, 0)) + 1;
-    int h = ABS(v_lbound(var, 1) - v_ubound(var, 1)) + 1;
+    int h = ABS(v_ubound(var, 0) - v_lbound(var, 0)) + 1;
+    int w = ABS(v_ubound(var, 1) - v_lbound(var, 1)) + 1;
     int size = w * h * 4;
-    uint8_t *image = (uint8_t *)malloc(size);
+    auto image = (uint8_t *)malloc(size);
     for (int y = 0; y < h; y++) {
       int yoffs = (4 * y * w);
       for (int x = 0; x < w; x++) {
         int pos = y * w + x;
-        var_t *elem = v_elem(var, pos);
-        pixel_t px = v_getint(elem);
-        uint8_t r, g, b, a;
-        GET_ARGB(px, a, r, g, b);
-        int offs = yoffs + (4 * x);
-        image[offs + 0] = r;
-        image[offs + 1] = g;
-        image[offs + 2] = b;
-        image[offs + 3] = a;
+        uint8_t a, r, g, b;
+        v_get_argb(-v_getint(v_elem(var, pos)), a, r, g, b);
+        SET_IMAGE_ARGB(image, yoffs + (x * 4), a, r, g, b);
       }
     }
     result = new ImageBuffer();
     result->_bid = ++nextId;
     result->_width = w;
     result->_height = h;
-    result->_filename = NULL;
+    result->_filename = nullptr;
     result->_image = image;
     cache.add(result);
   }
@@ -151,7 +143,7 @@ ImageBuffer *load_image(var_t *var) {
 }
 
 ImageBuffer *load_image(const uint8_t* buffer, int32_t size) {
-  ImageBuffer *result = NULL;
+  ImageBuffer *result = nullptr;
   unsigned w, h;
   uint8_t *image;
   unsigned error = 0;
@@ -162,7 +154,7 @@ ImageBuffer *load_image(const uint8_t* buffer, int32_t size) {
     result->_bid = ++nextId;
     result->_width = w;
     result->_height = h;
-    result->_filename = NULL;
+    result->_filename = nullptr;
     result->_image = image;
     cache.add(result);
   } else {
@@ -175,16 +167,16 @@ ImageBuffer *load_image(const uint8_t* buffer, int32_t size) {
 // png = image(#1)
 //
 ImageBuffer *load_image(dev_file_t *filep) {
-  ImageBuffer *result = NULL;
+  ImageBuffer *result = nullptr;
   List_each(ImageBuffer *, it, cache) {
     ImageBuffer *next = (*it);
-    if (next->_filename != NULL && strcmp(next->_filename, filep->name) == 0) {
+    if (next->_filename != nullptr && strcmp(next->_filename, filep->name) == 0) {
       result = next;
       break;
     }
   }
 
-  if (result == NULL) {
+  if (result == nullptr) {
     unsigned w, h;
     uint8_t *image;
     unsigned error = 0;
@@ -232,13 +224,13 @@ ImageBuffer *load_xpm_image(char **data) {
   unsigned w, h;
   uint8_t *image;
   unsigned error = xpm_decode32(&image, &w, &h, data);
-  ImageBuffer *result = NULL;
+  ImageBuffer *result = nullptr;
   if (!error) {
     result = new ImageBuffer();
     result->_bid = ++nextId;
     result->_width = w;
     result->_height = h;
-    result->_filename = NULL;
+    result->_filename = nullptr;
     result->_image = image;
     cache.add(result);
   } else {
@@ -300,32 +292,26 @@ void cmd_image_clip(var_s *self, var_s *) {
 //
 void cmd_image_filter(var_s *self, var_s *) {
   ImageBuffer *image_buffer = load_image(self);
-  if (code_peek() == kwUSE && image_buffer != NULL) {
+  if (code_peek() == kwUSE && image_buffer != nullptr) {
     code_skipnext();
     bcip_t use_ip = code_getaddr();
     bcip_t exit_ip = code_getaddr();
     int w = image_buffer->_width;
     int h = image_buffer->_height;
-    uint8_t *image = image_buffer->_image;
+    auto image = image_buffer->_image;
     var_t var;
     v_init(&var);
     for (int y = 0; y < h; y++) {
       int yoffs = (4 * y * w);
       for (int x = 0; x < w; x++) {
         int offs = yoffs + (4 * x);
-        uint8_t r = image[offs + 0];
-        uint8_t g = image[offs + 1];
-        uint8_t b = image[offs + 2];
-        uint8_t a = image[offs + 3];
-        pixel_t px = SET_ARGB(a, r, g, b);
+        uint8_t a, r, g, b;
+        GET_IMAGE_ARGB(image, offs, a, r, g, b);
+        pixel_t px = v_get_argb_px(a, r, g, b);
         v_setint(&var, px);
         exec_usefunc(&var, use_ip);
-        px = v_getint(&var);
-        GET_ARGB(px, a, r, g, b);
-        image[offs + 0] = r;
-        image[offs + 1] = g;
-        image[offs + 2] = b;
-        image[offs + 3] = a;
+        v_get_argb(v_getint(&var), a, r, g, b);
+        SET_IMAGE_ARGB(image, offs, a, r, g, b);
       }
     }
     code_jump(exit_ip);
@@ -345,9 +331,9 @@ void cmd_image_paste(var_s *self, var_s *) {
   var_t *var;
   ImageBuffer *image = load_image(self);
   int count = par_massget("Piiii", &var, &x, &y);
-  if (image != NULL && (count == 1 || count == 3)) {
+  if (image != nullptr && (count == 1 || count == 3)) {
     ImageBuffer *srcImage = load_image(var);
-    if (srcImage == NULL) {
+    if (srcImage == nullptr) {
       err_throw(ERR_PARAM);
     } else {
       if (count == 1) {
@@ -386,18 +372,18 @@ void cmd_image_paste(var_s *self, var_s *) {
 //
 void cmd_image_save(var_s *self, var_s *) {
   ImageBuffer *image = load_image(self);
-  dev_file_t *filep = NULL;
+  dev_file_t *filep = nullptr;
   byte code = code_peek();
   int error = -1;
   int w = image->_width;
   int h = image->_height;
   var_t var;
 
-  if (!prog_error && image != NULL) {
+  if (!prog_error && image != nullptr) {
     switch (code) {
     case kwTYPE_SEP:
       filep = get_file();
-      if (filep != NULL && filep->open_flags == DEV_FILE_OUTPUT) {
+      if (filep != nullptr && filep->open_flags == DEV_FILE_OUTPUT) {
         error = lodepng_encode32_file(filep->name, image->_image, w, h);
       }
       break;
@@ -424,7 +410,7 @@ void create_image(var_p_t var, ImageBuffer *image) {
   map_add_var(var, IMG_WIDTH, image->_width);
   map_add_var(var, IMG_HEIGHT, image->_height);
   map_add_var(var, IMG_BID, image->_bid);
-  if (image->_filename != NULL) {
+  if (image->_filename != nullptr) {
     var_p_t value = map_add_var(var, IMG_NAME, 0);
     v_setstr(value, image->_filename);
   }
@@ -445,14 +431,14 @@ void create_image(var_p_t var, ImageBuffer *image) {
 //
 extern "C" void v_create_image(var_p_t var) {
   var_t arg;
-  ImageBuffer *image = NULL;
-  dev_file_t *filep = NULL;
+  ImageBuffer *image = nullptr;
+  dev_file_t *filep = nullptr;
 
   byte code = code_peek();
   switch (code) {
   case kwTYPE_SEP:
     filep = get_file();
-    if (filep != NULL) {
+    if (filep != nullptr) {
       image = load_image(filep);
     }
     break;
@@ -500,7 +486,7 @@ extern "C" void v_create_image(var_p_t var) {
     break;
   };
 
-  if (image != NULL) {
+  if (image != nullptr) {
     create_image(var, image);
   } else {
     err_throw(ERR_BAD_FILE_HANDLE);

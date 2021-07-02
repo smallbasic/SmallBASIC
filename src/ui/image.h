@@ -44,7 +44,5 @@ struct ImageDisplay : public Shape {
 ImageDisplay *create_display_image(var_p_t var, const char *name);
 void reset_image_cache();
 void screen_dump();
-extern "C" int xpm_decode32(uint8_t **image, unsigned *width, unsigned *height, 
-                            const char *const *xpm);
 
 #endif
