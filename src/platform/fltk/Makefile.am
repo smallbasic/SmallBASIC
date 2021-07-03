@@ -10,7 +10,7 @@ AM_CPPFLAGS =                                                 \
   -DPACKAGE_PREFIX=\""$(prefix)"\"                            \
   -DPACKAGE_DATA_DIR=\""$(pkgdatadir)"\"                      \
   -DPACKAGE_LOCALE_DIR=\""$(prefix)/$(DATADIRNAME)/locale"\"  \
-  -DPIXELFORMAT_ARGB8888=1                                    \
+  -DPIXELFORMAT_RGBA8888=1                                    \
   @PACKAGE_CFLAGS@ @FLTK_CXXFLAGS@
 
 EXTRA_DIST =                      \

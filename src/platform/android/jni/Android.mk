@@ -15,7 +15,7 @@ LOCAL_PATH := $(JNI_PATH)
 include $(CLEAR_VARS)
 LOCAL_MODULE     := smallbasic
 LOCAL_CFLAGS     := -DHAVE_CONFIG_H=1 -DLODEPNG_NO_COMPILE_CPP \
-	                  -DPIXELFORMAT_ARGB8888 -Wno-unknown-pragmas
+	                  -DPIXELFORMAT_RGBA8888 -Wno-unknown-pragmas
 LOCAL_C_INCLUDES := $(SB_HOME) $(SB_HOME)/src  \
                     $(FREETYPE_HOME)/freetype/include/freetype2   \
                     $(FREETYPE_HOME)/freetype/include/freetype2/freetype

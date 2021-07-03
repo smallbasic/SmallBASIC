@@ -401,10 +401,11 @@ int Graphics::getPixel(Canvas *canvas, int posX, int posY) {
       && posY < canvas->_h - 1) {
     pixel_t *line = canvas->getLine(posY);
     result = line[posX];
-#if defined(PIXELFORMAT_ARGB8888)
+#if defined(PIXELFORMAT_RGBA8888)
+    // compatibility with PSET/POINT
     uint8_t r, g, b;
     GET_RGB(result, r, g, b);
-    result = GET_RGB_PX(r, g, b);
+    result = v_get_argb_px(255, r, g, b);
 #endif
   }
   return result;
