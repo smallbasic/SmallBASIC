@@ -11,11 +11,12 @@
 
 #include <SDL_video.h>
 
-void loadIcon(SDL_Window *window);
-int getStartupFontSize(SDL_Window *window);
+void browseFile(SDL_Window *window, const char *url);
+int  getStartupFontSize(SDL_Window *window);
+void launch(const char *command, const char *file);
 void launchDebug(const char *file);
 void launchExec(const char *file);
-void launch(const char *command, const char *file);
-void browseFile(SDL_Window *window, const char *url);
+void loadIcon(SDL_Window *window);
+void setupAppPath(const char *path);
 
 #endif

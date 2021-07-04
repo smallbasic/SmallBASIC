@@ -8,11 +8,11 @@
 
 #include "config.h"
 #include "platform/sdl/syswm.h"
+#include "lib/str.h"
 
 #define DEFAULT_FONT_SIZE 12
 #define DEFAULT_FONT_SIZE_PTS 11
 
-extern char g_appPath[];
 extern int g_debugPort;
 
 void appLog(const char *format, ...);
@@ -20,6 +20,12 @@ void appLog(const char *format, ...);
 #if defined(_Win32)
 #include <SDL_syswm.h>
 #include <shellapi.h>
+
+WCHAR g_appPath[MAX_PATH + 1];
+
+void setupAppPath(const char *path) {
+  GetModuleFileNameW(NULL, g_appPath, MAX_PATH);
+}
 
 void loadIcon(SDL_Window *window) {
   HINSTANCE handle = ::GetModuleHandle(NULL);
@@ -49,11 +55,11 @@ int getStartupFontSize(SDL_Window *window) {
 }
 
 void launchDebug(const char *file) {
-  STARTUPINFO info = {sizeof(info)};
+  STARTUPINFOW info = {sizeof(info)};
   PROCESS_INFORMATION processInfo;
-  char cmd[1024];
-  sprintf(cmd, "-p %d -d %s", g_debugPort, file);
-  if (!CreateProcess(g_appPath, cmd, NULL, NULL, TRUE, 0, NULL, NULL, &info, &processInfo)) {
+  WCHAR cmd[MAX_PATH + 1];
+  swprintf(cmd, MAX_PATH, L"-p %d -d %s", g_debugPort, file);
+  if (!CreateProcessW(g_appPath, cmd, NULL, NULL, TRUE, 0, NULL, NULL, &info, &processInfo)) {
     appLog("failed to start %d %s %s\n", GetLastError(), g_appPath, cmd);
   }
 }
@@ -61,7 +67,7 @@ void launchDebug(const char *file) {
 void launch(const char *command, const char *file) {
   STARTUPINFO info = {sizeof(info)};
   PROCESS_INFORMATION processInfo;
-  char cmd[1024];
+  char cmd[MAX_PATH + 1];
   sprintf(cmd, "%s -x %s", command, file);
   if (!CreateProcess(command, cmd, NULL, NULL, TRUE, 0, NULL, NULL, &info, &processInfo)) {
     appLog("failed to start %d %s %s\n", GetLastError(), command, cmd);
@@ -77,11 +83,24 @@ void browseFile(SDL_Window *window, const char *url) {
   }
 }
 
+void launchExec(const char *file) {
+  STARTUPINFOW info = {sizeof(info)};
+  PROCESS_INFORMATION processInfo;
+  WCHAR cmd[MAX_PATH + 1];
+  swprintf(cmd, MAX_PATH, L"%s -x %s", g_appPath, file);
+  if (!CreateProcessW(g_appPath, cmd, NULL, NULL, TRUE, 0, NULL, NULL, &info, &processInfo)) {
+    appLog("failed to start %d %s %s\n", GetLastError(), g_appPath, cmd);
+  }
+}
+
 #else
 #include <unistd.h>
 #include <errno.h>
+#include <limits.h>
 #include "icon.h"
 #include "lib/lodepng/lodepng.h"
+
+char g_appPath[PATH_MAX + 1];
 
 void loadIcon(SDL_Window *window) {
   unsigned w, h;
@@ -165,8 +184,35 @@ void browseFile(SDL_Window *window, const char *url) {
   }
 }
 
+void setupAppPath(const char *path) {
+  g_appPath[0] = '\0';
+  if (path[0] == '/' ||
+      (path[1] == ':' && ((path[2] == '\\') || path[2] == '/'))) {
+    // full path or C:/
+    strlcpy(g_appPath, path, sizeof(g_appPath));
+  } else {
+    // relative path
+    char cwd[PATH_MAX + 1];
+    cwd[0] = '\0';
+    getcwd(cwd, sizeof(cwd) - 1);
+    strlcpy(g_appPath, cwd, sizeof(g_appPath));
+    strlcat(g_appPath, "/", sizeof(g_appPath));
+    strlcat(g_appPath, path, sizeof(g_appPath));
+#if defined(__linux__) || defined(__midipix__)
+    if (access(g_appPath, X_OK) != 0) {
+      // launched via PATH, retrieve full path
+      ssize_t len = ::readlink("/proc/self/exe", g_appPath, sizeof(g_appPath));
+      if (len == -1 || len == sizeof(g_appPath)) {
+        len = 0;
+      }
+      g_appPath[len] = '\0';
+    }
 #endif
+  }
+}
 
 void launchExec(const char *file) {
   launch(g_appPath, file);
 }
+
+#endif
