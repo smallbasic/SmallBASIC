@@ -512,7 +512,8 @@ void System::handleEvent(MAEvent &event) {
     _touchCurY = event.point.y;
     _output->pointerMoveEvent(event);
     if (_output->hasHover() ||
-        _output->overMenu(_touchCurX, _touchCurY)) {
+        _output->overMenu(_touchCurX, _touchCurY) ||
+        (_touchX != -1 && _touchY != -1)) {
       showCursor(kHand);
     } else if (_output->hasMenu()) {
       showCursor(kArrow);

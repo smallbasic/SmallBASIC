@@ -1,3 +1,6 @@
+2021-07-04 (12.22)
+	SDL: Fix Live edit when start path contains unicode characters
+
 2021-07-02 (12.22)
 	UI: Fix to make image save and load compatible
 

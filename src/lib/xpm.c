@@ -41,8 +41,7 @@ void set_pixels(uint8_t *image, int w, int x, int y, uint32_t c) {
 #endif
 }
 
-int xpm_decode32(uint8_t **image, unsigned *width, unsigned *height, 
-                 const char *const *xpm) {
+int xpm_decode32(uint8_t **image, unsigned *width, unsigned *height, const char *const *xpm) {
   int ncolors, chars_per_pixel;
   int next_line = 0;
 
@@ -61,20 +60,24 @@ int xpm_decode32(uint8_t **image, unsigned *width, unsigned *height,
     return 1;
   }
 
+  int maxColors = chars_per_pixel == 1 ? NUM_BASE : (NUM_BASE * NUM_BASE);
+  if (ncolors >= maxColors) {
+    return 1;
+  }
+
   // note that this array is unsigned char and skips the first line:
   const uint8_t *const* data = (const uint8_t*const*)(xpm + next_line + 1);
-  int i, x, y;
-  uint32_t colors[chars_per_pixel == 1 ? NUM_BASE : (NUM_BASE * NUM_BASE)];
+  uint32_t colors[maxColors];
 
-  for (i = 0; i < ncolors; i++) {
-    const uint8_t* p = *data++;
+  for (int i = 0; i < ncolors; i++) {
+    const uint8_t *p = *data++;
     int index = (*p++) - FIRSTCHAR;
-    uint32_t *c; // where to store color
     if (chars_per_pixel == 2) {
       int next = (*p++) - FIRSTCHAR;
       index = index * NUM_BASE + next;
     }
-    c = colors + index;
+    // where to store color
+    uint32_t *c = &colors[index];
 
     // look for "c word", or last word if none:
     while (*p && isspace(*p)) {
@@ -98,17 +101,17 @@ int xpm_decode32(uint8_t **image, unsigned *width, unsigned *height,
   *image = malloc((*width) * (*height) * sizeof(uint32_t));
 
   if (chars_per_pixel == 1) {
-    for (y = 0; y <* height; y++) {
+    for (int y = 0; y <* height; y++) {
       const uint8_t *p = data[y];
-      for (x = 0; x < *width; x++) {
+      for (int x = 0; x < *width; x++) {
         int index = *(p++) - FIRSTCHAR;
         set_pixels(*image, *width, x, y, colors[index]);
       }
     }
   } else {
-    for (y = 0; y < *height; y++) {
+    for (int y = 0; y < *height; y++) {
       const uint8_t *p = data[y];
-      for (x = 0; x < *width && *p; x++) {
+      for (int x = 0; x < *width && *p; x++) {
         int index = (*p++) - FIRSTCHAR;
         int next = (*p++) - FIRSTCHAR;
         index = index * NUM_BASE + next;

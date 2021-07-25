@@ -102,6 +102,7 @@ void ImageDisplay::draw(int x, int y, int w, int h, int cw) {
     srcRect.top = MIN(_buffer->_height, _offsetTop);
     srcRect.width = MIN(w, MIN(_buffer->_width, _width));
     srcRect.height = MIN(h, MIN(_buffer->_height, _height));
+    dev_map_point(&dstPoint.x, &dstPoint.y);
 
     if (unsigned(srcRect.top + srcRect.height) > _buffer->_height) {
       srcRect.height = _buffer->_height - srcRect.top;
