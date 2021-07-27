@@ -1,3 +1,6 @@
+2021-07-27 (12.22)
+	FLTK: Fix PSET display of extra pixel
+
 2021-07-04 (12.22)
 	SDL: Fix Live edit when start path contains unicode characters
 

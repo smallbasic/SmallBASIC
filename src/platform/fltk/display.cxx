@@ -108,7 +108,7 @@ void Canvas::drawLine(int startX, int startY, int endX, int endY) {
 void Canvas::drawPixel(int posX, int posY) {
   fl_begin_offscreen(_offscreen);
   fl_color(_drawColor);
-  fl_line(posX, posY, posX + 1, posY + 1);
+  fl_point(posX, posY);
   fl_end_offscreen();
 }
 
