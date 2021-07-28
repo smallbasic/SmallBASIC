@@ -1,3 +1,6 @@
+2021-07-28 (12.22)
+	UI: Allow RGB to be used with image array passed to IMAGE
+
 2021-07-27 (12.22)
 	FLTK: Fix PSET display of extra pixel
 

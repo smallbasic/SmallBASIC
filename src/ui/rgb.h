@@ -17,11 +17,24 @@ typedef uint32_t pixel_t;
 #define PIXELFORMAT AHARDWAREBUFFER_FORMAT_R8G8B8X8_UNORM
 #endif
 
-inline void v_get_argb(pixel_t c, uint8_t &a, uint8_t &r, uint8_t &g, uint8_t &b) {
-  a = (c & 0xff000000) >> 24;
-  r = (c & 0xff0000) >> 16;
-  g = (c & 0xff00) >> 8;
-  b = (c & 0xff);
+inline void v_get_argb(int64_t c, uint8_t &a, uint8_t &r, uint8_t &g, uint8_t &b) {
+  if (c == 0) {
+    a = 0;
+    r = 0;
+    g = 0;
+    b = 0;
+  } if (c < 0) {
+    // from RGB
+    a = 255;
+    r = (-c & 0xff0000) >> 16;
+    g = (-c & 0xff00) >> 8;
+    b = (-c & 0xff);
+  } else {
+    a = (c & 0xff000000) >> 24;
+    r = (c & 0xff0000) >> 16;
+    g = (c & 0xff00) >> 8;
+    b = (c & 0xff);
+  }
 }
 
 #define v_get_argb_px(a, r, g, b) (a << 24 | (r << 16) | (g << 8) | (b))

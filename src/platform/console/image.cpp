@@ -127,7 +127,7 @@ ImageBuffer *load_image(var_t *var) {
       for (int x = 0; x < w; x++) {
         int pos = y * w + x;
         uint8_t a, r, g, b;
-        v_get_argb(-v_getint(v_elem(var, pos)), a, r, g, b);
+        v_get_argb(v_getint(v_elem(var, pos)), a, r, g, b);
         SET_IMAGE_ARGB(image, yoffs + (x * 4), a, r, g, b);
       }
     }
@@ -492,3 +492,4 @@ extern "C" void v_create_image(var_p_t var) {
     err_throw(ERR_BAD_FILE_HANDLE);
   }
 }
+
