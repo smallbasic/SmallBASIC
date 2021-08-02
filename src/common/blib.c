@@ -2051,18 +2051,18 @@ void cmd_restore() {
  * RANDOMIZE [num]
  */
 void cmd_randomize() {
-  long seed;
+  var_int_t seed;
 
   byte code = code_peek();
   switch (code) {
   case kwTYPE_LINE:
   case kwTYPE_EOC:
-    srand(clock());
+    pcg32_srand(clock());
     break;
   default:
     seed = par_getint();
     if (!prog_error) {
-      srand(seed);
+      pcg32_srand(seed);
     }
   };
 }

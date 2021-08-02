@@ -480,7 +480,7 @@ var_num_t cmd_math0(long funcCode) {
     }
     break;
   case kwRND:
-    r = ((var_num_t) rand()) / (RAND_MAX + 1.0);
+    r = pcg32_rand();
     break;
   default:
     rt_raise("Unsupported built-in function call %ld", funcCode);

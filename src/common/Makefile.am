@@ -54,6 +54,7 @@ libsb_common_a_SOURCES =                  \
     device.c device.h                     \
     screen.c                              \
     system.c                              \
+    random.c                              \
     eval.c                                \
     extlib.c extlib.h                     \
     file.c                                \

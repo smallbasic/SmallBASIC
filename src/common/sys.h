@@ -120,6 +120,9 @@ typedef uint32_t bcip_t;
 #include "include/var.h"
 #include "common/str.h"
 
+var_num_t pcg32_rand(void);
+void pcg32_srand(var_int_t seed);
+
 #if !defined(O_BINARY)
 #define O_BINARY 0
 #endif
