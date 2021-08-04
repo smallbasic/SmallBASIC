@@ -1,21 +1,19 @@
 // This file is part of SmallBASIC
 //
-// lowlevel device (OS) I/O
+// random number generator, see:
+// https://en.wikipedia.org/wiki/Permuted_congruential_generator
+// https://www.pcg-random.org/download.html
 //
 // This program is distributed under the terms of the GPL v2.0 or later
 // Download the GNU Public License (GPL) from www.gnu.org
 //
-// Copyright(C) 2000 Nicholas Christopoulos
+// Copyright(C) 2021 Chris Warren-Smith
 
 #include "config.h"
 
 #include "common/sys.h"
 #include <stdint.h>
 #include <limits.h>
-
-// see:
-// https://en.wikipedia.org/wiki/Permuted_congruential_generator
-// https://www.pcg-random.org/download.html
 
 static uint64_t state      = 0x4d595df4d0f33173;
 static uint64_t multiplier = 6364136223846793005u;

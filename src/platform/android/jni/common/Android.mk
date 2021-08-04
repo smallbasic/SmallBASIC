@@ -31,6 +31,7 @@ LOCAL_SRC_FILES  :=    \
     $(COMMON)/device.c           \
     $(COMMON)/screen.c           \
     $(COMMON)/system.c           \
+    $(COMMON)/random.c           \
     $(COMMON)/eval.c             \
     $(COMMON)/extlib.c           \
     $(COMMON)/file.c             \
