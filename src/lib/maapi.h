@@ -292,7 +292,12 @@ int maGetMilliSecondCount(void);
 /**
  * Shows the virtual keyboard.
  */
-int maShowVirtualKeyboard(void);
+void maShowVirtualKeyboard(void);
+
+/**
+ * Hides the virtual keyboard.
+ */
+void maHideVirtualKeyboard(void);
 
 /**
  * There is a FIFO buffer that contains up to #EVENT_BUFFER_SIZE events.
@@ -317,7 +322,7 @@ int maShowVirtualKeyboard(void);
  *
  * \returns \> 0 on success, or zero if the buffer is empty.
  */
-int maGetEvent(MAEvent* event);
+int maGetEvent(MAEvent *event);
 
 /**
  * Suspends execution until there is an event in the buffer,

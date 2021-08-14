@@ -191,6 +191,10 @@ void maUpdateScreen(void) {
   ((::Graphics *)graphics)->redraw();
 }
 
-int maShowVirtualKeyboard(void) {
-  return 0;
+void maShowVirtualKeyboard(void) {
+  // not implemented
+}
+
+void maHideVirtualKeyboard(void) {
+  // not implemented
 }

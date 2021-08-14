@@ -1148,6 +1148,7 @@ void System::editSource(strlib::String loadPath, bool restoreOnExit) {
     if (!_output->removeInput(editWidget)) {
       trace("Failed to remove editor input");
     }
+    runtime->showKeypad(false);
     _editor = editWidget;
     _editor->setFocus(false);
   } else {
@@ -1183,9 +1184,12 @@ void maWait(int timeout) {
   runtime->pause(timeout);
 }
 
-int maShowVirtualKeyboard(void) {
+void maShowVirtualKeyboard(void) {
   runtime->showKeypad(true);
-  return 0;
+}
+
+void maHideVirtualKeyboard(void) {
+  runtime->showKeypad(false);
 }
 
 //

@@ -322,6 +322,7 @@ char *System::getText(char *dest, int maxSize) {
     _output->print(dest);
   }
 
+  maHideVirtualKeyboard();
   showCursor(kArrow);
   _output->removeInput(widget);
   delete widget;
