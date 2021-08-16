@@ -23,7 +23,8 @@ extern System *g_system;
 #define WINDOW_ASK_RTN  "answer"
 #define WINDOW_MENU     "menu"
 #define WINDOW_MESSAGE  "message"
-#define WINDOW_VKEYPAD  "showKeypad"
+#define WINDOW_SHOWKPAD "showKeypad"
+#define WINDOW_HIDEKPAD "hideKeypad"
 #define WINDOW_INSET    "insetTextScreen"
 #define WINDOW_SETFONT  "setFont"
 #define WINDOW_SETSIZE  "setSize"
@@ -74,6 +75,10 @@ void cmd_window_select_screen3(var_s *self, var_s *) {
 
 void cmd_window_show_keypad(var_s *self, var_s *) {
   maShowVirtualKeyboard();
+}
+
+void cmd_window_hide_keypad(var_s *self, var_s *) {
+  maHideVirtualKeyboard();
 }
 
 void cmd_window_inset(var_s *self, var_s *) {
@@ -176,7 +181,8 @@ extern "C" void v_create_window(var_p_t var) {
   v_create_func(var, WINDOW_ASK, cmd_window_ask);
   v_create_func(var, WINDOW_MESSAGE, cmd_window_message);
   v_create_func(var, WINDOW_MENU, cmd_window_menu);
-  v_create_func(var, WINDOW_VKEYPAD, cmd_window_show_keypad);
+  v_create_func(var, WINDOW_SHOWKPAD, cmd_window_show_keypad);
+  v_create_func(var, WINDOW_HIDEKPAD, cmd_window_hide_keypad);
   v_create_func(var, WINDOW_INSET, cmd_window_inset);
   v_create_func(var, WINDOW_SETFONT, cmd_window_set_font);
   v_create_func(var, WINDOW_SETSIZE, cmd_window_set_size);

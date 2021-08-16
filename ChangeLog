@@ -1,5 +1,6 @@
 2021-07-28 (12.23)
 	COMMON: Fix array append regression #122
+	UI: added window hideKeypad #125
 
 2021-07-28 (12.23)
 	ANDROID: Hide keypad on run. Show keypad for INPUT, then re-hide on completion.
