@@ -1,3 +1,9 @@
+2021-07-28 (12.23)
+	COMMON: Fix array append regression #122
+
+2021-07-28 (12.23)
+	ANDROID: Hide keypad on run. Show keypad for INPUT, then re-hide on completion.
+
 2021-07-28 (12.22)
 	UI: Allow RGB to be used with image array passed to IMAGE
 

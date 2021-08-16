@@ -258,11 +258,6 @@ void cmd_append() {
 
   // for each argument to append
   do {
-    // get the value to append
-    var_t arg_p;
-    v_init(&arg_p);
-    eval(&arg_p);
-
     // find the array element
     var_t *elem_p;
     if (var_p->type != V_ARRAY) {
@@ -274,7 +269,8 @@ void cmd_append() {
     }
 
     // set the value onto the element
-    v_move(elem_p, &arg_p);
+    v_init(elem_p);
+    eval(elem_p);
 
     // next parameter
     if (code_peek() != kwTYPE_SEP) {
@@ -286,27 +282,6 @@ void cmd_append() {
       }
     }
   } while (1);
-}
-
-void cmd_append_opt() {
-  var_t *v_left = code_getvarptr();
-
-  // skip kwTYPE_SEP + ","
-  code_skipsep();
-
-  // skip kwTYPE_VAR
-  code_skipnext();
-
-  var_t *elem_p;
-  if (v_left->type != V_ARRAY) {
-    v_toarray1(v_left, 1);
-    elem_p = v_elem(v_left, 0);
-  } else {
-    v_resize_array(v_left, v_asize(v_left) + 1);
-    elem_p = v_elem(v_left, v_asize(v_left) - 1);
-  }
-
-  v_set(elem_p, tvar[code_getaddr()]);
 }
 
 /**
