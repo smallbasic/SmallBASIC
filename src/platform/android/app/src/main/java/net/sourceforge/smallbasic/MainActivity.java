@@ -107,6 +107,7 @@ public class MainActivity extends NativeActivity {
   private MediaPlayer _mediaPlayer = null;
   private LocationAdapter _locationAdapter = null;
   private TextToSpeechAdapter _tts;
+  private Handler _keypadHandler = new Handler();
 
   static {
     System.loadLibrary("smallbasic");
@@ -596,19 +597,24 @@ public class MainActivity extends NativeActivity {
   public void showKeypad(final boolean show) {
     Log.i(TAG, "showKeypad: " + show);
     final View view = getWindow().getDecorView();
-    final Activity activity = this;
-    runOnUiThread(new Runnable() {
+    _keypadHandler.removeCallbacksAndMessages(null);
+    _keypadHandler.postDelayed(new Runnable() {
+      @Override
       public void run() {
-        InputMethodManager imm = (InputMethodManager)getSystemService(Context.INPUT_METHOD_SERVICE);
-        if (imm != null) {
-          if (show) {
-            imm.showSoftInput(view, InputMethodManager.SHOW_IMPLICIT);
-          } else {
-            imm.hideSoftInputFromWindow(view.getWindowToken(), InputMethodManager.HIDE_NOT_ALWAYS);
+        runOnUiThread(new Runnable() {
+          public void run() {
+            InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+            if (imm != null) {
+              if (show) {
+                imm.showSoftInput(view, InputMethodManager.SHOW_IMPLICIT);
+              } else {
+                imm.hideSoftInputFromWindow(view.getWindowToken(), InputMethodManager.HIDE_NOT_ALWAYS);
+              }
+            }
           }
-        }
+        });
       }
-    });
+    }, 100);
   }
 
   public void showToast(final byte[] messageBytes) {
