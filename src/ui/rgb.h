@@ -23,7 +23,7 @@ inline void v_get_argb(int64_t c, uint8_t &a, uint8_t &r, uint8_t &g, uint8_t &b
     r = 0;
     g = 0;
     b = 0;
-  } if (c < 0) {
+  } else if (c < 0) {
     // from RGB
     a = 255;
     r = (-c & 0xff0000) >> 16;
