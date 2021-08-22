@@ -1,8 +1,11 @@
-2021-07-28 (12.23)
+2021-08-22 (12.23)
+	SDL: Validate window dimensions on loading to prevent hidden window
+
+2021-08-16 (12.23)
 	COMMON: Fix array append regression #122
 	UI: added window hideKeypad #125
 
-2021-07-28 (12.23)
+2021-08-16 (12.23)
 	ANDROID: Hide keypad on run. Show keypad for INPUT, then re-hide on completion.
 
 2021-07-28 (12.22)
