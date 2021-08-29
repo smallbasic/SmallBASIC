@@ -1,6 +1,6 @@
 [Desktop Entry]
 Name=SmallBASIC
-Exec=sbasicg
+Exec=sbasici
 Icon=sb-desktop-128x128
 Terminal=false
 Type=Application

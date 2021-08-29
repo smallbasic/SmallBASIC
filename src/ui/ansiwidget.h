@@ -41,6 +41,7 @@ struct AnsiWidget {
   void draw();
   void drawArc(int xc, int yc, double r, double start, double end, double aspect);
   void drawEllipse(int xc, int yc, int rx, int ry, int fill);
+  void drawImage(ImageDisplay &image);
   void drawOverlay(bool vscroll) { _back->drawOverlay(vscroll); }
   void drawLine(int x1, int y1, int x2, int y2);
   void drawRect(int x1, int y1, int x2, int y2);

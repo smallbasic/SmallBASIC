@@ -10,6 +10,7 @@ AM_CPPFLAGS =                                                 \
   -DPACKAGE_PREFIX=\""$(prefix)"\"                            \
   -DPACKAGE_DATA_DIR=\""$(pkgdatadir)"\"                      \
   -DPACKAGE_LOCALE_DIR=\""$(prefix)/$(DATADIRNAME)/locale"\"  \
+  -DPIXELFORMAT_RGBA8888=1                                    \
   @PACKAGE_CFLAGS@ @FLTK_CXXFLAGS@
 
 EXTRA_DIST =                      \
@@ -48,7 +49,7 @@ sbasici_DEPENDENCIES = $(top_srcdir)/src/common/libsb_common.a
 iconsdir = $(datadir)/icons/hicolor/128x128/apps
 icons_DATA = ../../../images/sb-desktop-128x128.png
 desktopdir = $(datadir)/applications
-desktop_DATA = ../sdl/smallbasic.desktop
+desktop_DATA = smallbasic.desktop
 
 if WITH_WIN32
 sbasici_LDADD += win.res

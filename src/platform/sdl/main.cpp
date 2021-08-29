@@ -10,21 +10,13 @@
 #include <getopt.h>
 #include <locale.h>
 
-#include "ui/utils.h"
-#include "ui/strlib.h"
 #include "platform/sdl/runtime.h"
 #include "platform/sdl/settings.h"
 #include "platform/sdl/syswm.h"
-#include "common/smbas.h"
-#include "lib/str.h"
 
 #if !defined(_Win32)
 #include <fontconfig/fontconfig.h>
 #endif
-
-extern "C" unsigned
-  lodepng_decode32(unsigned char **out, unsigned *w, unsigned *h,
-                   const unsigned char *in, size_t insize);
 
 using namespace strlib;
 
@@ -55,7 +47,6 @@ static struct option OPTIONS[] = {
   {0, 0, 0, 0}
 };
 
-char g_appPath[OS_PATHNAME_SIZE + 1];
 int g_debugPort = 4000;
 
 void appLog(const char *format, ...) {
@@ -232,33 +223,6 @@ void printKeywords() {
   printf("$$$-procedures\n");
   for (int j = 0; proc_table[j].name[0] != '\0'; j++) {
     printf("%s\n", proc_table[j].name);
-  }
-}
-
-void setupAppPath(const char *path) {
-  g_appPath[0] = '\0';
-  if (path[0] == '/' ||
-      (path[1] == ':' && ((path[2] == '\\') || path[2] == '/'))) {
-    // full path or C:/
-    strlcpy(g_appPath, path, sizeof(g_appPath));
-  } else {
-    // relative path
-    char cwd[OS_PATHNAME_SIZE + 1];
-    cwd[0] = '\0';
-    getcwd(cwd, sizeof(cwd) - 1);
-    strlcpy(g_appPath, cwd, sizeof(g_appPath));
-    strlcat(g_appPath, "/", sizeof(g_appPath));
-    strlcat(g_appPath, path, sizeof(g_appPath));
-#if defined(__linux__) || defined(__midipix__)
-    if (access(g_appPath, X_OK) != 0) {
-      // launched via PATH, retrieve full path
-      ssize_t len = ::readlink("/proc/self/exe", g_appPath, sizeof(g_appPath));
-      if (len == -1 || len == sizeof(g_appPath)) {
-        len = 0;
-      }
-      g_appPath[len] = '\0';
-    }
-#endif
   }
 }
 

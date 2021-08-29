@@ -140,6 +140,21 @@ bool String::equals(const char *s, bool ignoreCase) const {
           strcasecmp(_buffer, s) == 0 : strcmp(_buffer, s) == 0);
 }
 
+bool String::endsWith(const String &needle) const {
+  bool result;
+  int len1 = _buffer == nullptr ? 0 : strlen(_buffer);
+  int len2 = needle._buffer == nullptr ? 0 : strlen(needle._buffer);
+  if ((len1 == 0 || len2 == 0) || len2 > len1) {
+    // "cat" -> "cats"
+    result = false;
+  } else {
+    // "needle" -> "dle"
+    int fromIndex = len1 - len2;
+    result = (strcmp(_buffer + fromIndex, needle._buffer) == 0);
+  }
+  return result;
+}
+
 int String::indexOf(const char *s, int fromIndex) const {
   int result;
   int len = length();
@@ -365,7 +380,7 @@ template<> void Properties<String *>::get(const char *key, List<String *> *array
   }
 }
 
-// g++ -DUNIT_TESTS=1 -I. ui/strlib.cpp && ./a.out
+// g++ -DUNIT_TESTS=1 -I. ui/strlib.cpp && valgrind ./a.out
 #if defined(UNIT_TESTS)
 #include <stdio.h>
 void assertEq(int a, int b) {
@@ -386,6 +401,12 @@ int main() {
   assertEq(1, s3.equals("CATS", true));
   assertEq(0, s3.equals("CATS", false));
   assertEq(1, s3.equals("cats", false));
+  assertEq(1, s3.endsWith("ats"));
+  assertEq(1, s3.endsWith("cats"));
+  assertEq(0, s3.endsWith("morecats"));
+  assertEq(1, s1.endsWith("x"));
+  assertEq(1, s1.endsWith(" is here x"));
+  assertEq(0, s1.endsWith(nullptr));
   assertEq('x', s1.lastChar());
   assertEq('\0', s2.lastChar());
   assertEq('s', s3.lastChar());

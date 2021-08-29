@@ -61,7 +61,6 @@ struct Runtime : public System {
   void runShell();
   char *loadResource(const char *fileName);
   void optionsBox(StringList *items);
-  void restoreWindowRect() {}
   void saveWindowRect() {}
   void setWindowSize(int width, int height) {};
   void setWindowTitle(const char *title) {}
@@ -70,6 +69,7 @@ struct Runtime : public System {
   void showKeypad(bool show);
   void onPaused(bool paused) { if (_graphics != NULL) _graphics->onPaused(paused); }
   void onResize(int w, int h);
+  void onRunCompleted();
   void onUnicodeChar(int ch);
   void loadConfig();
   void loadEnvConfig(Properties<String *> &settings, const char *key);

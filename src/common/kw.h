@@ -151,7 +151,6 @@ enum keyword {
   kwFORSEP,
   kwOUTPUTSEP,
   kwAPPEND,
-  kwAPPEND_OPT,
   kwINSERT,
   kwDELETE,
   kwAPPENDSEP,

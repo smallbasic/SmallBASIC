@@ -882,9 +882,6 @@ void bc_loop(int isf) {
       case kwAPPEND:
         cmd_append();
         break;
-      case kwAPPEND_OPT:
-        cmd_append_opt();
-        break;
       case kwINSERT:
         cmd_lins();
         break;

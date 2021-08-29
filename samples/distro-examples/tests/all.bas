@@ -198,7 +198,7 @@ print "RIGHT:" + RIGHT (s,2)
 print "RIGHTOF:" + RIGHTOF (s1, s2)
 print "RIGHTOFLAST:" + RIGHTOFLAST (s1, s2)
 print "RINSTR:" + RINSTR (2, s1, s2)
-print "RND:" + RND
+print "RND:" + iff(RND>=0 && RND<=1.0,1,0)
 print "ROUND:" + ROUND (x,22)
 print "RTRIM:" + RTRIM (s)
 print "RUN:" '+ RUN cmdstr

@@ -25,7 +25,6 @@ bcip_t comp_search_bc(bcip_t ip, code_t code);
 bcip_t comp_next_bc_cmd(bc_t *bc, bcip_t ip);
 extern void expr_parser(bc_t *bc);
 
-#define STRLEN(s) ((sizeof(s) / sizeof(s[0])) - 1)
 const int LEN_OPTION     = STRLEN(LCN_OPTION);
 const int LEN_IMPORT     = STRLEN(LCN_IMPORT_WRS);
 const int LEN_UNIT       = STRLEN(LCN_UNIT_WRS);
@@ -1339,7 +1338,7 @@ void comp_expression(char *expr, byte no_parser) {
       ptr++;
       level++;
       // can't be a code array if this is already part of a variable
-      if ((bc.size == 0 || bc.ptr[0] != kwTYPE_VAR) && comp_is_code_array(&bc, ptr)) {
+      if (comp_is_code_array(&bc, ptr)) {
         // otherwise treat as array index
         bc_add_fcode(&bc, kwCODEARRAY);
       }
@@ -3741,20 +3740,20 @@ bcip_t comp_optimise_line_goto(bcip_t ip) {
 }
 
 // use simpler LET where possible to avoid eval on the right term
-bcip_t comp_optimise_let(bcip_t ip, byte kw_opr, char sep, byte opt_kw) {
+bcip_t comp_optimise_let(bcip_t ip) {
   bcip_t ip_next = ip + 1;
   if (comp_prog.ptr[ip_next] == kwTYPE_VAR) {
     ip_next += 1 + sizeof(bcip_t);
     while (ip_next < comp_prog.count && comp_prog.ptr[ip_next] != kwTYPE_EOC
            && comp_prog.ptr[ip_next] != kwTYPE_LINE) {
-      if (comp_prog.ptr[ip_next] == kw_opr &&
-          comp_prog.ptr[ip_next + 1] == sep) {
+      if (comp_prog.ptr[ip_next] == kwTYPE_CMPOPR &&
+          comp_prog.ptr[ip_next + 1] == '=') {
         ip_next += 2;
         if (ip_next < comp_prog.count &&
             comp_prog.ptr[ip_next] == kwTYPE_VAR &&
             (comp_prog.ptr[ip_next + 1 + sizeof(bcip_t)] == kwTYPE_EOC ||
              comp_prog.ptr[ip_next + 1 + sizeof(bcip_t)] == kwTYPE_LINE)) {
-          comp_prog.ptr[ip] = opt_kw;
+          comp_prog.ptr[ip] = kwLET_OPT;
           ip = ip_next;
         }
         break;
@@ -3775,10 +3774,7 @@ void comp_optimise() {
       }
       break;
     case kwLET:
-      ip = comp_optimise_let(ip, kwTYPE_CMPOPR, '=', kwLET_OPT);
-      break;
-    case kwAPPEND:
-      ip = comp_optimise_let(ip, kwTYPE_SEP, ',', kwAPPEND_OPT);
+      ip = comp_optimise_let(ip);
       break;
     case kwTYPE_EOC:
       if (!opt_autolocal &&

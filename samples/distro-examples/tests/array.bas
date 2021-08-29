@@ -327,3 +327,12 @@ sub xfunc(argx)
 end
 z=anims[0].framePoses[0, 0].translation
 xfunc(anims[0].framePoses[0, 0].translation)
+
+dim a()
+append a, [1,2],[3,4],[5,6]
+a << [7,8,9]
+if (a[0] != [1,2]) then throw "err1"
+if (a[1] != [3,4]) then throw "err2"
+if (a[2] != [5,6]) then throw "err3"
+if (a[3] != [7,8,9]) then throw "err4"
+

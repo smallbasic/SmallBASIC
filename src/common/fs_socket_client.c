@@ -202,8 +202,16 @@ int sockcl_write(dev_file_t *f, byte *data, uint32_t size) {
  * read from a socket
  */
 int sockcl_read(dev_file_t *f, byte *data, uint32_t size) {
-  f->drv_dw[0] = (uint32_t) net_input((socket_t) (long) f->handle, (char *)data, size, NULL);
-  return (((long) f->drv_dw[0]) <= 0) ? 0 : (long) f->drv_dw[0];
+  int result;
+  if (f->handle != -1) {
+    f->drv_dw[0] = (uint32_t) net_input((socket_t) (long) f->handle, (char *)data, size, NULL);
+    result = (((long) f->drv_dw[0]) <= 0) ? 0 : (long) f->drv_dw[0];
+  } else {
+    err_network();
+    data[0] = 0;
+    result = 0;
+  }
+  return result;
 }
 
 /*

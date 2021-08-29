@@ -87,14 +87,14 @@ FILE *openConfig(bool readMode, Settings settings) {
 //
 // returns the next integer from the file
 //
-int nextInteger(FILE *fp, int def) {
+int nextInteger(FILE *fp, int min, int def) {
   int result = 0;
   for (int c = fgetc(fp); c != EOF && c != ',' && c != '\n'; c = fgetc(fp)) {
     if (c != '\r') {
       result = (result * 10) + (c - '0');
     }
   }
-  if (!result) {
+  if (result < min) {
     result = def;
   }
   return result;
@@ -160,14 +160,14 @@ void restorePath(FILE *fp, bool restoreDir) {
 void restoreSettings(SDL_Rect &rect, int &fontScale, bool debug, bool restoreDir) {
   FILE *fp = openConfig(true, debug ? k_debug : k_window);
   if (fp) {
-    rect.x = nextInteger(fp, SDL_WINDOWPOS_UNDEFINED);
-    rect.y = nextInteger(fp, SDL_WINDOWPOS_UNDEFINED);
-    rect.w = nextInteger(fp, DEFAULT_WIDTH);
-    rect.h = nextInteger(fp, DEFAULT_HEIGHT);
-    fontScale = nextInteger(fp, DEFAULT_SCALE);
-    opt_mute_audio = nextInteger(fp, 0);
-    opt_ide = nextInteger(fp, 0) ? IDE_INTERNAL : IDE_NONE;
-    g_themeId = nextInteger(fp, 0);
+    rect.x = nextInteger(fp, 0, SDL_WINDOWPOS_UNDEFINED);
+    rect.y = nextInteger(fp, 0, SDL_WINDOWPOS_UNDEFINED);
+    rect.w = nextInteger(fp, 100, DEFAULT_WIDTH);
+    rect.h = nextInteger(fp, 100, DEFAULT_HEIGHT);
+    fontScale = nextInteger(fp, 30, DEFAULT_SCALE);
+    opt_mute_audio = nextInteger(fp, 0, 0);
+    opt_ide = nextInteger(fp, 0, 0) ? IDE_INTERNAL : IDE_NONE;
+    g_themeId = nextInteger(fp, 0, 0);
     for (int i = 0; i < THEME_COLOURS; i++) {
       g_user_theme[i] = nextHex(fp, g_user_theme[i]);
     }

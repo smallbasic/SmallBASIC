@@ -277,50 +277,39 @@ void Graphics::drawPixel(int posX, int posY) {
 }
 
 void Graphics::drawRGB(const MAPoint2d *dstPoint, const void *src,
-                       const MARect *srcRect, int opacity, int bytesPerLine) {
+                       const MARect *srcRect, int opacity, int stride) {
   uint8_t *image = (uint8_t *)src;
-  size_t scale = 1;
-  int w = bytesPerLine;
+  float op = opacity / 100.0f;
+  int top = srcRect->top;
+  int left = srcRect->left;
+  int width = srcRect->width;
+  int height = srcRect->height;
 
-  if (opacity > 0 && opacity < 100) {
-    // higher opacity values should make the image less transparent
-    opacity = 100 - opacity;
-  }
-  for (int y = srcRect->top; y < srcRect->height; y += scale) {
+  for (int y = 0; y < height; y += 1) {
     int dY = dstPoint->y + y;
     if (dY >= _drawTarget->y() &&
         dY <  _drawTarget->h()) {
+      int imgPos = (left + ((y + top) * stride)) * 4;
       pixel_t *line = _drawTarget->getLine(dY);
-      for (int x = srcRect->left; x < srcRect->width; x += scale) {
+      for (int x = 0; x < width; x += 1) {
         int dX = dstPoint->x + x;
         if (dX >= _drawTarget->x() &&
             dX <  _drawTarget->w()) {
           // get RGBA components
-          uint8_t r,g,b,a;
-#if defined(PIXELFORMAT_RGBA8888)
-          b = image[4 * y * w + 4 * x + 0]; // blue
-          g = image[4 * y * w + 4 * x + 1]; // green
-          r = image[4 * y * w + 4 * x + 2]; // red
-          a = image[4 * y * w + 4 * x + 3]; // alpha
-#else
-          r = image[4 * y * w + 4 * x + 0]; // red
-          g = image[4 * y * w + 4 * x + 1]; // green
-          b = image[4 * y * w + 4 * x + 2]; // blue
-          a = image[4 * y * w + 4 * x + 3]; // alpha
-#endif
+          uint8_t a, r, g, b;
+          GET_IMAGE_ARGB(image, imgPos + x * 4, a, r, g, b);
           uint8_t dR, dG, dB;
           GET_RGB(line[dX], dR, dG, dB);
           if (opacity > 0 && opacity < 100 && a > 64) {
-            float op = opacity / 100.0f;
-            dR = ((1-op) * r) + (op * dR);
-            dG = ((1-op) * g) + (op * dG);
-            dB = ((1-op) * b) + (op * dB);
+            dR = (op * r) + ((1 - op) * dR);
+            dG = (op * g) + ((1 - op) * dG);
+            dB = (op * b) + ((1 - op) * dB);
           } else {
             dR = dR + ((r - dR) * a / 255);
             dG = dG + ((g - dG) * a / 255);
             dB = dB + ((b - dB) * a / 255);
           }
-          line[dX] = SET_RGB(dR, dG, dB);
+          line[dX] = GET_RGB_PX(dR, dG, dB);
         }
       }
     }
@@ -354,7 +343,7 @@ void Graphics::drawChar(FT_Bitmap *bitmap, FT_Int x, FT_Int y) {
             dR = dR + ((sR - dR) * a / 255);
             dG = dG + ((sG - dG) * a / 255);
             dB = dB + ((sB - dB) * a / 255);
-            line[i] = SET_RGB(dR, dG, dB);
+            line[i] = GET_RGB_PX(dR, dG, dB);
           }
         }
       }
@@ -378,8 +367,7 @@ void Graphics::drawText(int left, int top, const char *str, int len) {
   }
 }
 
-void Graphics::getImageData(Canvas *canvas, uint8_t *image,
-                            const MARect *srcRect, int bytesPerLine) {
+void Graphics::getImageData(Canvas *canvas, uint8_t *image, const MARect *srcRect, int stride) {
   size_t scale = 1;
   int x_end = srcRect->left + srcRect->width;
   int y_end = srcRect->top + srcRect->height;
@@ -389,16 +377,12 @@ void Graphics::getImageData(Canvas *canvas, uint8_t *image,
   for (int dy = 0, y = srcRect->top; y < y_end; y += scale, dy++) {
     if (y >= canvas->y() && y < canvas->h()) {
       pixel_t *line = canvas->getLine(y);
-      int yoffs = (dy * bytesPerLine);
+      int yoffs = (dy * stride);
       for (int dx = 0, x = srcRect->left; x < x_end; x += scale, dx++) {
         if (x >= canvas->x() && x < canvas->w()) {
           uint8_t r, g, b;
-          GET_RGB2(line[x], r, g, b);
-          int offs = yoffs + (dx * 4);
-          image[offs + 0] = r;
-          image[offs + 1] = g;
-          image[offs + 2] = b;
-          image[offs + 3] = 255;
+          GET_RGB(line[x], r, g, b);
+          SET_IMAGE_ARGB(image, yoffs + (dx * 4), 255, r, g, b);
         }
       }
     }
@@ -418,9 +402,10 @@ int Graphics::getPixel(Canvas *canvas, int posX, int posY) {
     pixel_t *line = canvas->getLine(posY);
     result = line[posX];
 #if defined(PIXELFORMAT_RGBA8888)
-    uint8_t r,g,b;
-    GET_RGB2(result, r, g, b);
-    result = SET_RGB(r, g, b);
+    // compatibility with PSET/POINT
+    uint8_t r, g, b;
+    GET_RGB(result, r, g, b);
+    result = v_get_argb_px(255, r, g, b);
 #endif
   }
   return result;
@@ -538,7 +523,7 @@ void Graphics::aaPlot(int posX, int posY, double c) {
     dR = (uint8_t)(sR * c + dR * (1 - c));
     dG = (uint8_t)(sG * c + dG * (1 - c));
     dB = (uint8_t)(sB * c + dB * (1 - c));
-    line[posX] = SET_RGB(dR, dG, dB);
+    line[posX] = GET_RGB_PX(dR, dG, dB);
   }
 }
 
@@ -653,8 +638,8 @@ void maDrawText(int left, int top, const char *str, int length) {
 }
 
 void maDrawRGB(const MAPoint2d *dstPoint, const void *src,
-               const MARect *srcRect, int opacity, int bytesPerLine) {
-  graphics->drawRGB(dstPoint, src, srcRect, opacity, bytesPerLine);
+               const MARect *srcRect, int opacity, int stride) {
+  graphics->drawRGB(dstPoint, src, srcRect, opacity, stride);
 }
 
 MAExtent maGetTextSize(const char *str) {
@@ -699,12 +684,12 @@ void maDestroyPlaceholder(MAHandle maHandle) {
 }
 
 void maGetImageData(MAHandle maHandle, void *dst,
-                    const MARect *srcRect, int bytesPerLine) {
+                    const MARect *srcRect, int stride) {
   Canvas *holder = (Canvas *)maHandle;
   if (srcRect->width == 1 && srcRect->height == 1) {
     *((int *)dst) = graphics->getPixel(holder, srcRect->left, srcRect->top);
   } else {
-    graphics->getImageData(holder, (uint8_t *)dst, srcRect, bytesPerLine);
+    graphics->getImageData(holder, (uint8_t *)dst, srcRect, stride);
   }
 }
 

@@ -37,7 +37,6 @@ void cmd_packed_let();
 void cmd_dim(int);
 void cmd_redim(void);
 void cmd_append(void);
-void cmd_append_opt(void);
 void cmd_lins(void);
 void cmd_ldel(void);
 void cmd_erase(void);

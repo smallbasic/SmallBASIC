@@ -176,9 +176,9 @@ void osd_audio(const char *path) {
     setup_format(sound->_decoder->outputFormat,
                  sound->_decoder->outputChannels,
                  sound->_decoder->outputSampleRate);
-    ma_mutex_lock(&device.lock);
+    ma_mutex_lock(&device.startStopLock);
     queue.push(sound);
-    ma_mutex_unlock(&device.lock);
+    ma_mutex_unlock(&device.startStopLock);
     device_start();
   }
 }
@@ -206,17 +206,17 @@ void osd_clear_sound_queue() {
 
 void osd_sound(int frequency, int millis, int volume, int background) {
   setup_format(DEFAULT_FORMAT, DEFAULT_CHANNELS, DEFAULT_SAMPLE_RATE);
-  ma_mutex_lock(&device.lock);
+  ma_mutex_lock(&device.startStopLock);
   queue.push(new Sound(frequency, millis, volume));
-  ma_mutex_unlock(&device.lock);
+  ma_mutex_unlock(&device.startStopLock);
 
   if (!background) {
     device_start();
     usleep(MILLIS_TO_MICROS(millis));
     ma_device_stop(&device);
-    ma_mutex_lock(&device.lock);
+    ma_mutex_lock(&device.startStopLock);
     queue.pop();
-    ma_mutex_unlock(&device.lock);
+    ma_mutex_unlock(&device.startStopLock);
   } else  if (queue.size() == 1) {
     device_start();
   }

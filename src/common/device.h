@@ -1070,11 +1070,18 @@ void panic(const char *fmt, ...);
 void lwrite(const char *buf);
 
 /**
- * @ingroup dev_f
+ * @ingroup dev
  *
  * resize the window coordinate system
  */
 void dev_resize(int width, int height);
+
+/**
+ * @ingroup dev
+ *
+ * adjust the point to the window coordinate system
+ */
+void dev_map_point(int *x, int *y);
 
 #if defined(__cplusplus)
 }

@@ -53,11 +53,12 @@ Screen::~Screen() {
   if (_font) {
     maFontDelete(_font);
   }
+  _images.removeAll();
 }
 
 // converts ANSI colors to MoSync colors
 int Screen::ansiToMosync(long c) {
-  int result = c;
+  int result;
   if (c < 0) {
     result = -c;
   } else {
@@ -369,6 +370,7 @@ void Screen::removeImage(unsigned imageId) {
     ImageDisplay *next = (*it);
     if (next->_id == imageId) {
       _images.remove(it);
+      delete next;
       setDirty();
       break;
     }
@@ -555,6 +557,11 @@ void GraphicScreen::drawEllipse(int xc, int yc, int rx, int ry, int fill) {
   maEllipse(xc, yc, rx, ry, fill);
 }
 
+void GraphicScreen::drawImage(ImageDisplay &image) {
+  drawInto();
+  image.draw(image._x, image._y, image._width, image._height, 0);
+}
+
 void GraphicScreen::drawInto(bool background) {
   maSetDrawTarget(_image);
   Screen::drawInto(background);
@@ -586,7 +593,6 @@ int GraphicScreen::getPixel(int x, int y) {
   rc.width = 1;
   rc.height = 1;
   int data[1];
-  int result;
 
   if (x < 0 || y < 0) {
     rc.left = x < 0 ? -x : x;
@@ -596,8 +602,7 @@ int GraphicScreen::getPixel(int x, int y) {
   } else {
     maGetImageData(_image, &data, &rc, 1);
   }
-  result = -(data[0] & 0x00FFFFFF);
-  return result;
+  return -(data[0] & 0x00FFFFFF);
 }
 
 // extend the image to allow for additional content on the newline

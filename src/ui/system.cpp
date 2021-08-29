@@ -170,8 +170,9 @@ bool System::execute(const char *bas) {
   }
 
   if (!_mainBas) {
-    restoreWindowRect();
+    onRunCompleted();
   }
+
   enableCursor(true);
   opt_file_permitted = 1;
   opt_loadmod = 0;
@@ -321,6 +322,7 @@ char *System::getText(char *dest, int maxSize) {
     _output->print(dest);
   }
 
+  maHideVirtualKeyboard();
   showCursor(kArrow);
   _output->removeInput(widget);
   delete widget;
@@ -511,7 +513,8 @@ void System::handleEvent(MAEvent &event) {
     _touchCurY = event.point.y;
     _output->pointerMoveEvent(event);
     if (_output->hasHover() ||
-        _output->overMenu(_touchCurX, _touchCurY)) {
+        _output->overMenu(_touchCurX, _touchCurY) ||
+        (_touchX != -1 && _touchY != -1)) {
       showCursor(kHand);
     } else if (_output->hasMenu()) {
       showCursor(kArrow);

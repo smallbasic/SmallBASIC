@@ -10,10 +10,10 @@
 #define UTILS_H
 
 #ifndef MAX
- #define MAX(a,b) ((a<b) ? (b) : (a))
+#define MAX(a,b) (((int)a<(int)b) ? (b) : (a))
 #endif
 #ifndef MIN
- #define MIN(a,b) ((a>b) ? (b) : (a))
+#define MIN(a,b) (((int)a>(int)b) ? (b) : (a))
 #endif
 
 #define DEFAULT_FOREGROUND 0xa1a1a1

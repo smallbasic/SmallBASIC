@@ -59,11 +59,11 @@
 extern "C" void dev_beep(void);
 
 AnsiWidget::AnsiWidget(int width, int height) :
-  _back(NULL),
-  _front(NULL),
-  _focus(NULL),
-  _activeButton(NULL),
-  _hoverInput(NULL),
+  _back(nullptr),
+  _front(nullptr),
+  _focus(nullptr),
+  _activeButton(nullptr),
+  _hoverInput(nullptr),
   _width(width),
   _height(height),
   _xTouch(-1),
@@ -74,15 +74,15 @@ AnsiWidget::AnsiWidget(int width, int height) :
   _swipeExit(false),
   _autoflush(true) {
   for (int i = 0; i < MAX_SCREENS; i++) {
-    _screens[i] = NULL;
+    _screens[i] = nullptr;
   }
   _fontSize = MIN(width, height) / FONT_FACTOR;
   trace("width: %d height: %d fontSize:%d", _width, height, _fontSize);
 }
 
 void AnsiWidget::clearScreen() {
-  _hoverInput = NULL;
-  _activeButton = NULL;
+  _hoverInput = nullptr;
+  _activeButton = nullptr;
   _back->clear();
 }
 
@@ -107,7 +107,7 @@ AnsiWidget::~AnsiWidget() {
 
 Screen *AnsiWidget::createScreen(int screenId) {
   Screen *result = _screens[screenId];
-  if (result == NULL) {
+  if (result == nullptr) {
     if (screenId == TEXT_SCREEN || screenId == MENU_SCREEN) {
       result = new TextScreen(_width, _height, _fontSize);
     } else {
@@ -139,6 +139,11 @@ void AnsiWidget::drawEllipse(int xc, int yc, int rx, int ry, int fill) {
   flush(false, false, MAX_PENDING_GRAPHICS);
 }
 
+void AnsiWidget::drawImage(ImageDisplay &image) {
+  _back->drawImage(image);
+  flush(false, false, MAX_PENDING_GRAPHICS);
+}
+
 // draw a line onto the offscreen buffer
 void AnsiWidget::drawLine(int x1, int y1, int x2, int y2) {
   _back->drawLine(x1, y1, x2, y2);
@@ -159,7 +164,7 @@ void AnsiWidget::drawRectFilled(int x1, int y1, int x2, int y2) {
 
 // display any pending images changed
 void AnsiWidget::flush(bool force, bool vscroll, int maxPending) {
-  if (_front != NULL && _autoflush) {
+  if (_front != nullptr && _autoflush) {
     bool update = false;
     if (force) {
       update = _front->_dirty;
@@ -185,7 +190,7 @@ int AnsiWidget::getScreenId(bool back) {
 
 // prints the contents of the given string onto the backbuffer
 void AnsiWidget::print(const char *str) {
-  int len = (str == NULL ? 0 : strlen(str));
+  int len = (str == nullptr ? 0 : strlen(str));
   if (len) {
     _back->drawInto();
 
@@ -249,8 +254,8 @@ void AnsiWidget::reset() {
   // reset user screens
   delete _screens[USER_SCREEN2];
   delete _screens[TEXT_SCREEN];
-  _screens[USER_SCREEN2] = NULL;
-  _screens[TEXT_SCREEN] = NULL;
+  _screens[USER_SCREEN2] = nullptr;
+  _screens[TEXT_SCREEN] = nullptr;
 
   maFontSetCurrent(_back->_font);
   redraw();
@@ -277,17 +282,17 @@ void AnsiWidget::removeHover() {
     int dx = _front->_x;
     int dy = _front->_y - _front->_scrollY;
     _hoverInput->drawHover(dx, dy, false);
-    _hoverInput = NULL;
+    _hoverInput = nullptr;
   }
 }
 
 void AnsiWidget::removeInputs() {
   List_each(FormInput *, it, _back->_inputs) {
-    FormInput *widget = (FormInput *)(*it);
+    FormInput *widget = *it;
     if (widget == _activeButton) {
-      _activeButton = NULL;
+      _activeButton = nullptr;
     } else if (widget == _hoverInput) {
-      _hoverInput = NULL;
+      _hoverInput = nullptr;
     }
   }
   _back->removeInputs();
@@ -334,7 +339,7 @@ void AnsiWidget::setFont(int size, bool bold, bool italic) {
 void AnsiWidget::setFontSize(int fontSize) {
   this->_fontSize = fontSize;
   for (int i = 0; i < MAX_SCREENS; i++) {
-    if (_screens[i] != NULL) {
+    if (_screens[i] != nullptr) {
       _screens[i]->reset(fontSize);
     }
   }
@@ -408,7 +413,7 @@ bool AnsiWidget::pointerTouchEvent(MAEvent &event) {
   } else {
     // hit test buttons on remaining screens
     for (int i = 0; i < MAX_SCREENS; i++) {
-      if (_screens[i] != NULL && _screens[i] != _front) {
+      if (_screens[i] != nullptr && _screens[i] != _front) {
         if (setActiveButton(event, _screens[i])) {
           _focus = _screens[i];
           break;
@@ -417,7 +422,7 @@ bool AnsiWidget::pointerTouchEvent(MAEvent &event) {
     }
   }
   // paint the pressed button
-  if (_activeButton != NULL) {
+  if (_activeButton != nullptr) {
     _activeButton->clicked(event.point.x, event.point.y, true);
     drawActiveButton();
   }
@@ -436,7 +441,7 @@ bool AnsiWidget::pointerMoveEvent(MAEvent &event) {
   bool result = false;
   if (_front == _screens[MENU_SCREEN]) {
     _activeButton = _front->getMenu(_activeButton, event.point.x, event.point.y);
-  } else if (_activeButton != NULL) {
+  } else if (_activeButton != nullptr) {
     bool redraw = false;
     bool pressed = _activeButton->selected(event.point, _focus->_x,
                                            _focus->_y - _focus->_scrollY, redraw);
@@ -480,9 +485,9 @@ bool AnsiWidget::pointerMoveEvent(MAEvent &event) {
 
 // handler for pointer release events
 void AnsiWidget::pointerReleaseEvent(MAEvent &event) {
-  if (_activeButton != NULL && _front == _screens[MENU_SCREEN]) {
+  if (_activeButton != nullptr && _front == _screens[MENU_SCREEN]) {
     _activeButton->clicked(event.point.x, event.point.y, false);
-  } else if (_activeButton != NULL && _activeButton->_pressed) {
+  } else if (_activeButton != nullptr && _activeButton->_pressed) {
     _activeButton->_pressed = false;
     drawActiveButton();
     _activeButton->clicked(event.point.x, event.point.y, false);
@@ -515,13 +520,13 @@ void AnsiWidget::pointerReleaseEvent(MAEvent &event) {
     int dx = _front->_x;
     int dy = _front->_y - _front->_scrollY;
     _hoverInput->drawHover(dx, dy, false);
-    _hoverInput = NULL;
+    _hoverInput = nullptr;
   }
 
   _xTouch = _xMove = -1;
   _yTouch = _yMove = -1;
-  _activeButton = NULL;
-  _focus = NULL;
+  _activeButton = nullptr;
+  _focus = nullptr;
 }
 
 // handles the characters following the \e[ sequence. Returns whether a further call
@@ -591,7 +596,7 @@ void AnsiWidget::doSwipe(int start, bool moveDown, int distance, int maxScroll) 
 // draws the focus screen's active button
 void AnsiWidget::drawActiveButton() {
 #if defined(_SDL) || defined(_FLTK)
-  if (_focus != NULL && !_activeButton->hasHover()) {
+  if (_focus != nullptr && !_activeButton->hasHover()) {
     MAHandle currentHandle = maSetDrawTarget(HANDLE_SCREEN);
     _focus->drawShape(_activeButton);
     _focus->drawLabel();
@@ -606,7 +611,7 @@ void AnsiWidget::drawActiveButton() {
     int dx = _front->_x;
     int dy = _front->_y - _front->_scrollY;
     _activeButton->drawHover(dx, dy, _activeButton->_pressed);
-  } else if (_focus != NULL) {
+  } else if (_focus != nullptr) {
     MAHandle currentHandle = maSetDrawTarget(HANDLE_SCREEN);
     _focus->drawShape(_activeButton);
     _focus->drawLabel();
@@ -624,10 +629,10 @@ bool AnsiWidget::drawHoverLink(MAEvent &event) {
   if (_front != _screens[MENU_SCREEN]) {
     int dx = _front->_x;
     int dy = _front->_y - _front->_scrollY;
-    FormInput *active = NULL;
+    FormInput *active = nullptr;
     if (_front->overlaps(event.point.x, event.point.y)) {
       List_each(FormInput *, it, _front->_inputs) {
-        FormInput *widget = (FormInput *)(*it);
+        FormInput *widget = *it;
         if (widget->hasHover() &&
             widget->overlaps(event.point, dx, dy)) {
           active = widget;
@@ -646,11 +651,11 @@ bool AnsiWidget::drawHoverLink(MAEvent &event) {
     } else if (!active && _hoverInput) {
       // no new hover, erase old hover
       _hoverInput->drawHover(dx, dy, false);
-      _hoverInput = NULL;
+      _hoverInput = nullptr;
     }
   }
 #endif
-  return _hoverInput != NULL;
+  return _hoverInput != nullptr;
 }
 
 // print() helper
@@ -704,7 +709,7 @@ bool AnsiWidget::setActiveButton(MAEvent &event, Screen *screen) {
   if (_front != _screens[MENU_SCREEN] &&
       screen->overlaps(event.point.x, event.point.y)) {
     List_each(FormInput *, it, screen->_inputs) {
-      FormInput *widget = (FormInput *)(*it);
+      FormInput *widget = *it;
       bool redraw = false;
       if (widget->selected(event.point, screen->_x,
                            screen->_y - screen->_scrollY, redraw)) {
@@ -724,7 +729,7 @@ bool AnsiWidget::setActiveButton(MAEvent &event, Screen *screen) {
 }
 
 void AnsiWidget::selectBackScreen(int screenId) {
-  _hoverInput = NULL;
+  _hoverInput = nullptr;
   _back = createScreen(screenId);
   _back->selectFont();
 }

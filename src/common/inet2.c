@@ -169,10 +169,8 @@ int net_input(socket_t s, char *buf, int size, const char *delim) {
           return count;         // delimiter found
         }
       }
-      if (ch != '\015') {       // ignore it
-        buf[count] = ch;
-        count += bytes;         // actually ++
-      }
+      buf[count] = ch;
+      count += bytes;
     }
   }
 

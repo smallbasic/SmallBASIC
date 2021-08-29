@@ -62,7 +62,7 @@ struct System {
   virtual MAEvent processEvents(int waitFlag) = 0;
   virtual char *loadResource(const char *fileName);
   virtual void optionsBox(StringList *items) = 0;
-  virtual void restoreWindowRect() = 0;
+  virtual void onRunCompleted() = 0;
   virtual void saveWindowRect() = 0;
   virtual void setWindowSize(int width, int height) = 0;
   virtual void setWindowTitle(const char *title) = 0;

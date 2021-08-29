@@ -108,32 +108,73 @@ void Canvas::drawLine(int startX, int startY, int endX, int endY) {
 void Canvas::drawPixel(int posX, int posY) {
   fl_begin_offscreen(_offscreen);
   fl_color(_drawColor);
-  fl_line(posX, posY, posX + 1, posY + 1);
+  fl_point(posX, posY);
   fl_end_offscreen();
 }
 
-// x, y, w are position and width of scan line in image. copy w
-// pixels from scanline y, starting at pixel x to this buffer.
-void drawImage(void *data, int x, int y, int w, uchar *out) {
-  uint8_t *image = (uint8_t *)data;
-  int scanLine = w * 3;
-  int offs = y * w * 4;
+struct DrawData {
+  uint8_t *_image;
+  uint8_t *_screen;
+  int _opacity;
+  int _stride;
+  int _left;
+  int _top;
+};
 
-  for (int sx = 0; sx < scanLine; sx += 3, offs += 4) {
-    out[sx + 0] = image[offs + 0];
-    out[sx + 1] = image[offs + 1];
-    out[sx + 2] = image[offs + 2];
+// x, y, w are position and width of scan line in image.
+// copy w pixels from scanline y, starting at pixel x to this buffer.
+void drawImage(void *data, int x, int y, int w, uchar *out) {
+  DrawData *drawData = (DrawData *)data;
+  uint8_t *image = drawData->_image;
+  uint8_t *screen = drawData->_screen;
+  int opacity = drawData->_opacity;
+  int scanLine = w * 4;
+  int i_offs = (drawData->_left + ((y + drawData->_top) * drawData->_stride)) * 4;
+  int s_offs = y * w * 4;
+  float op = opacity / 100.0f;
+
+  for (int sx = 0; sx < scanLine; sx += 4, i_offs += 4, s_offs += 4) {
+    uint8_t a = image[i_offs + 3];
+    uint8_t b = image[i_offs + 2];
+    uint8_t g = image[i_offs + 1];
+    uint8_t r = image[i_offs + 0];
+    uint8_t sB = screen[s_offs + 2];
+    uint8_t sG = screen[s_offs + 1];
+    uint8_t sR = screen[s_offs + 0];
+    if (opacity > 0 && opacity < 100 && a > 64) {
+      sR = (op * r) + ((1 - op) * sR);
+      sG = (op * g) + ((1 - op) * sG);
+      sB = (op * b) + ((1 - op) * sB);
+    } else {
+      sR = sR + ((r - sR) * a / 255);
+      sG = sG + ((g - sG) * a / 255);
+      sB = sB + ((b - sB) * a / 255);
+    }
+    out[sx + 3] = a;
+    out[sx + 2] = sB;
+    out[sx + 1] = sG;
+    out[sx + 0] = sR;
   }
 }
 
-void Canvas::drawRGB(const MAPoint2d *dstPoint, const void *src, const MARect *srcRect, int opacity, int bytesPerLine) {
+void Canvas::drawRGB(const MAPoint2d *dstPoint, const void *src, const MARect *srcRect, int opacity, int stride) {
   int x = dstPoint->x;
   int y = dstPoint->y;
   int w = srcRect->width;
   int h = srcRect->height;
+  DrawData data;
+  data._image = (uint8_t *)src;
+  data._opacity = opacity;
+  data._screen = (uint8_t *)calloc(w * h * 4, 1);
+  data._stride = stride;
+  data._left = srcRect->left;
+  data._top = srcRect->top;
+
   fl_begin_offscreen(_offscreen);
-  fl_draw_image(drawImage, (void *)src, x, y, w, h);
+  fl_read_image(data._screen, x, y, w, h, 1);
+  fl_draw_image(drawImage, (void *)&data, x, y, w, h, 4);
   fl_end_offscreen();
+  free(data._screen);
 }
 
 void Canvas::drawRegion(Canvas *src, const MARect *srcRect, int destX, int destY) {
@@ -165,25 +206,33 @@ void Canvas::fillRect(int left, int top, int width, int height, Fl_Color color) 
   fl_end_offscreen();
 }
 
-void Canvas::getImageData(uint8_t *image, const MARect *srcRect, int bytesPerLine) {
+void Canvas::getImageData(uint8_t *image, const MARect *srcRect, int stride) {
   fl_begin_offscreen(_offscreen);
-  int x = srcRect->left;
-  int y = srcRect->top;
-  int w = srcRect->width;
-  int h = srcRect->height;
+  unsigned x = srcRect->left;
+  unsigned y = srcRect->top;
+  unsigned w = srcRect->width;
+  unsigned h = srcRect->height;
   fl_read_image(image, x, y, w, h, 1);
   fl_end_offscreen();
 
   if (srcRect->width == 1 && srcRect->height == 1) {
     // compatibility with PSET/POINT
-    uchar r = image[0];
-    uchar g = image[1];
     uchar b = image[2];
-    uchar a = image[3];
-    image[0] = b;
-    image[1] = g;
+    uchar g = image[1];
+    uchar r = image[0];
+    image[3] = 255;
     image[2] = r;
-    image[3] = a;
+    image[1] = g;
+    image[0] = b;
+  } else {
+    // set alpha to 255
+    for (unsigned y = 0; y < h; y++) {
+      unsigned yoffs = (4 * y * w);
+      for (unsigned x = 0; x < w; x++) {
+        int offs = yoffs + (x * 4);
+        image[offs + 3] = 255;
+      }
+    }
   }
 }
 
@@ -349,10 +398,10 @@ void maDrawText(int left, int top, const char *str, int length) {
   }
 }
 
-void maDrawRGB(const MAPoint2d *dstPoint, const void *src, const MARect *srcRect, int opacity, int bytesPerLine) {
+void maDrawRGB(const MAPoint2d *dstPoint, const void *src, const MARect *srcRect, int opacity, int stride) {
   Canvas *canvas = graphics->getDrawTarget();
   if (canvas) {
-    canvas->drawRGB(dstPoint, src, srcRect, opacity, bytesPerLine);
+    canvas->drawRGB(dstPoint, src, srcRect, opacity, stride);
   }
 }
 
@@ -401,12 +450,12 @@ void maDestroyPlaceholder(MAHandle maHandle) {
   delete canvas;
 }
 
-void maGetImageData(MAHandle maHandle, void *dst, const MARect *srcRect, int bytesPerLine) {
+void maGetImageData(MAHandle maHandle, void *dst, const MARect *srcRect, int stride) {
   Canvas *canvas = (Canvas *)maHandle;
   if (canvas == HANDLE_SCREEN) {
     canvas = graphics->getScreen();
   }
-  canvas->getImageData((uint8_t *)dst, srcRect, bytesPerLine);
+  canvas->getImageData((uint8_t *)dst, srcRect, stride);
 }
 
 MAHandle maSetDrawTarget(MAHandle maHandle) {
@@ -429,6 +478,10 @@ void maUpdateScreen(void) {
   ((::GraphicsWidget *)graphics)->redraw();
 }
 
-int maShowVirtualKeyboard(void) {
-  return 0;
+void maShowVirtualKeyboard(void) {
+  // not implemented
+}
+
+void maHideVirtualKeyboard(void) {
+  // not implemented
 }

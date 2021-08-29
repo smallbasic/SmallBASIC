@@ -516,14 +516,7 @@ void Runtime::loadConfig() {
   _output->setFontSize(fontSize);
   _initialFontSize = _output->getFontSize();
 
-  const char *storage = getenv("EXTERNAL_DIR");
-  if (!storage) {
-    storage = getenv("INTERNAL_DIR");
-  }
-  if (storage) {
-    setenv("HOME_DIR", storage, 1);
-    chdir(storage);
-  }
+  onRunCompleted();
   if (loadSettings(settings)) {
     String *s = settings.get(FONT_SCALE_KEY);
     if (s) {
@@ -532,18 +525,6 @@ void Runtime::loadConfig() {
       if (_fontScale != 100) {
         fontSize = (_initialFontSize * _fontScale / 100);
         _output->setFontSize(fontSize);
-      }
-    }
-    s = settings.get(PATH_KEY);
-    if (s) {
-      const char *legacy = getenv("LEGACY_DIR");
-      if (storage != nullptr && legacy != nullptr && strcmp(legacy, s->c_str()) == 0) {
-        // don't restore the legacy folder
-        trace("path = %s", storage);
-        chdir(storage);
-      } else {
-        trace("path = %s", s->c_str());
-        chdir(s->c_str());
       }
     }
     s = settings.get(MUTE_AUDIO_KEY);
@@ -903,6 +884,17 @@ void Runtime::onResize(int width, int height) {
   }
 }
 
+void Runtime::onRunCompleted() {
+  const char *storage = getenv("EXTERNAL_DIR");
+  if (!storage) {
+    storage = getenv("INTERNAL_DIR");
+  }
+  if (storage) {
+    setenv("HOME_DIR", storage, 1);
+    chdir(storage);
+  }
+}
+
 void Runtime::onUnicodeChar(int ch) {
   auto *maEvent = new MAEvent();
   maEvent->type = EVENT_TYPE_KEY_PRESSED;
@@ -1156,6 +1148,7 @@ void System::editSource(strlib::String loadPath, bool restoreOnExit) {
     if (!_output->removeInput(editWidget)) {
       trace("Failed to remove editor input");
     }
+    runtime->showKeypad(false);
     _editor = editWidget;
     _editor->setFocus(false);
   } else {
@@ -1191,9 +1184,12 @@ void maWait(int timeout) {
   runtime->pause(timeout);
 }
 
-int maShowVirtualKeyboard(void) {
+void maShowVirtualKeyboard(void) {
   runtime->showKeypad(true);
-  return 0;
+}
+
+void maHideVirtualKeyboard(void) {
+  runtime->showKeypad(false);
 }
 
 //

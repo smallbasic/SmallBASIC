@@ -47,6 +47,7 @@ struct String {
   void   clear();
   bool   equals(const String &s, bool ignoreCase = true) const;
   bool   equals(const char *s, bool ignoreCase = true) const;
+  bool   endsWith(const String &s) const;
   int    indexOf(char chr, int fromIndex) const;
   int    indexOf(const char *s, int fromIndex) const;
   bool   empty() const { return _buffer == NULL || _buffer[0] == '\0'; };

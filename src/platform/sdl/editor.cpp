@@ -234,16 +234,21 @@ void System::editSource(String loadPath, bool restoreOnExit) {
     editWidget->setCursorRow(gsb_last_line);
     statusMessage.update(editWidget, _output, true);
   } else if (gsb_last_error && !isBack()) {
-    // program stopped with an error
-    editWidget->setCursorRow(gsb_last_line + editWidget->getSelectionRow() - 1);
-    if (_stackTrace.size()) {
-      helpWidget->setText(gsb_last_errmsg);
-      helpWidget->createStackTrace(gsb_last_errmsg, gsb_last_line, _stackTrace);
-      widget = helpWidget;
-      showHelpSideabar(helpWidget);
-      _output->setStatus("Error. Esc=Close, Up/Down=Caller");
+    String lastFile(gsb_last_file);
+    if (lastFile.endsWith(".sbu")) {
+      _output->setStatus(!gsb_last_errmsg[0] ? "Unit error" : gsb_last_errmsg);
     } else {
-      _output->setStatus(!gsb_last_errmsg[0] ? "Error" : gsb_last_errmsg);
+      // program stopped with an error
+      editWidget->setCursorRow(gsb_last_line + editWidget->getSelectionRow() - 1);
+      if (_stackTrace.size()) {
+        helpWidget->setText(gsb_last_errmsg);
+        helpWidget->createStackTrace(gsb_last_errmsg, gsb_last_line, _stackTrace);
+        widget = helpWidget;
+        showHelpSideabar(helpWidget);
+        _output->setStatus("Error. Esc=Close, Up/Down=Caller");
+      } else {
+        _output->setStatus(!gsb_last_errmsg[0] ? "Error" : gsb_last_errmsg);
+      }
     }
   } else {
     statusMessage.update(editWidget, _output, true);

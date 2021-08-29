@@ -34,6 +34,7 @@ struct Screen : public Shape {
   virtual void drawArc(int xc, int yc, double r, double start, double end, double aspect) = 0;
   virtual void drawBase(bool vscroll, bool update=true) = 0;
   virtual void drawEllipse(int xc, int yc, int rx, int ry, int fill) = 0;
+  virtual void drawImage(ImageDisplay &image) = 0;
   virtual void drawInto(bool background=false);
   virtual void drawLine(int x1, int y1, int x2, int y2) = 0;
   virtual void drawRect(int x1, int y1, int x2, int y2) = 0;
@@ -107,6 +108,7 @@ struct GraphicScreen : public Screen {
   void drawArc(int xc, int yc, double r, double start, double end, double aspect);
   void drawBase(bool vscroll, bool update=true);
   void drawEllipse(int xc, int yc, int rx, int ry, int fill);
+  void drawImage(ImageDisplay &image);
   void drawInto(bool background=false);
   void drawLine(int x1, int y1, int x2, int y2);
   void drawRect(int x1, int y1, int x2, int y2);
@@ -326,6 +328,7 @@ struct TextScreen : public Screen {
   void clear();
   void drawArc(int xc, int yc, double r, double start, double end, double aspect) {}
   void drawBase(bool vscroll, bool update=true);
+  void drawImage(ImageDisplay &image) {}
   void drawEllipse(int xc, int yc, int rx, int ry, int fill) {}
   void drawLine(int x1, int y1, int x2, int y2);
   void drawText(const char *text, int len, int x, int lineHeight);

@@ -1,3 +1,54 @@
+2021-08-22 (12.23)
+	SDL: Validate window dimensions on loading to prevent hidden window
+
+2021-08-16 (12.23)
+	COMMON: Fix array append regression #122
+	UI: added window hideKeypad #125
+
+2021-08-16 (12.23)
+	ANDROID: Hide keypad on run. Show keypad for INPUT, then re-hide on completion.
+
+2021-07-28 (12.22)
+	UI: Allow RGB to be used with image array passed to IMAGE
+
+2021-07-27 (12.22)
+	FLTK: Fix PSET display of extra pixel
+
+2021-07-04 (12.22)
+	SDL: Fix Live edit when start path contains unicode characters
+
+2021-07-02 (12.22)
+	UI: Fix to make image save and load compatible
+
+2021-06-25 (12.22)
+	ANDROID: Unified file listing includes bas files from sub-folders
+
+2021-06-23 (12.22)
+	FLTK: Implemented image opacity handling
+	UI: Implemented image.clip(left,top,right,bottom)
+
+2021-06-12 (12.22)
+	UI: Fix potential memory leak using IMAGE
+	UI: Fix RGB handling with IMAGE
+	ANDROID: restore home directory when resuming from run
+	ANDROID: removed samsung keypad warning
+
+2021-06-06 (12.22)
+	UI: implemented image.draw(), fix image.save in andoid #115
+
+2021-06-05 (12.22)
+	COMMON: Fixes 'Socket Client doesn't receive byte with value 13' #112
+	COMMON: Fixes TSAVE of arrays includes extra null character. #119
+
+2021-05-03 (12.22)
+	COMMON: Fix array access regression
+
+2021-05-03 (12.22)
+	ANDROID: Removes path navigation to show unified view of available folder
+
+2021-04-02 (12.22)
+	SDL: Update editor to handle unit errors
+
 2021-04-02 (12.21)
 	ANDROID: Added range checking for the web services port
 

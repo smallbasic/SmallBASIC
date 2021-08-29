@@ -95,7 +95,7 @@ Graphics,command,PSET,621,"PSET [STEP] x,y [, color| COLOR color]","Draw a pixel
 Graphics,command,RECT,622,"RECT [STEP] x,y [,|STEP x2,y2] [, color| COLOR color] [FILLED]","Draws a rectangular parallelogram."
 Graphics,command,SHOWPAGE,1429,"SHOWPAGE","This command is used to display pending graphics operations allowing for smooth animations."
 Graphics,command,VIEW,623,"VIEW [x1,y1,x2,y2 [,color [,border-color]]]","Defines a viewport. The viewport defined by VIEW is disabled by a VIEW command with no parameters."
-Graphics,command,WINDOW,624,"WINDOW [x1,y1,x2,y2]","The WINDOW command allows you to redefine the corners of the display screen as a pair of ""world"" coordinates. WINDOW is also overloaded as a function, returning a system object providing access to the following sub-commands: graphicsScreen1, graphicsScreen2, textScreen, alert, ask, menu, message, showKeypad, insetTextScreen"
+Graphics,command,WINDOW,624,"WINDOW [x1,y2,x2,y1]","The WINDOW command allows you to redefine the corners of the display screen as a pair of ""world"" coordinates. WINDOW is also overloaded as a function, returning a system object providing access to the following sub-commands: graphicsScreen1, graphicsScreen2, textScreen, alert, ask, menu, message, showKeypad, insetTextScreen"
 Graphics,constant,XMAX,1526,"XMAX","Holds the screen width in pixels"
 Graphics,constant,YMAX,1527,"YMAX","Holds the screen height in pixels."
 Graphics,function,PEN,627,"PEN (0..14)","Returns the PEN/MOUSE data."

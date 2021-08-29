@@ -25,7 +25,6 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
-import android.provider.Settings;
 import android.util.Base64;
 import android.util.DisplayMetrics;
 import android.util.Log;
@@ -37,6 +36,11 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.Toast;
+
+import androidx.annotation.NonNull;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
+import androidx.core.content.FileProvider;
 
 import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
@@ -63,8 +67,6 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
 import java.net.URLDecoder;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.Date;
 import java.util.Enumeration;
 import java.util.HashMap;
@@ -78,10 +80,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Semaphore;
 import java.util.zip.GZIPInputStream;
 
-import androidx.annotation.NonNull;
-import androidx.core.app.ActivityCompat;
-import androidx.core.content.ContextCompat;
-import androidx.core.content.FileProvider;
 import dalvik.system.BaseDexClassLoader;
 
 /**
@@ -109,6 +107,7 @@ public class MainActivity extends NativeActivity {
   private MediaPlayer _mediaPlayer = null;
   private LocationAdapter _locationAdapter = null;
   private TextToSpeechAdapter _tts;
+  private Handler _keypadHandler = new Handler();
 
   static {
     System.loadLibrary("smallbasic");
@@ -471,7 +470,8 @@ public class MainActivity extends NativeActivity {
     if (_locationAdapter != null) {
       LocationManager locationService = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
       if (locationService != null) {
-        locationService.removeUpdates(_locationAdapter);
+        // requires coarse location permission
+        //locationService.removeUpdates(_locationAdapter);
         _locationAdapter = null;
         result = true;
       }
@@ -597,26 +597,24 @@ public class MainActivity extends NativeActivity {
   public void showKeypad(final boolean show) {
     Log.i(TAG, "showKeypad: " + show);
     final View view = getWindow().getDecorView();
-    final Activity activity = this;
-    runOnUiThread(new Runnable() {
+    _keypadHandler.removeCallbacksAndMessages(null);
+    _keypadHandler.postDelayed(new Runnable() {
+      @Override
       public void run() {
-        InputMethodManager imm = (InputMethodManager)getSystemService(Context.INPUT_METHOD_SERVICE);
-        if (imm != null) {
-          if (show) {
-            String id = Settings.Secure.getString(activity.getContentResolver(), Settings.Secure.DEFAULT_INPUT_METHOD);
-            if (id != null && id.toLowerCase().contains("samsung")) {
-              imm.showInputMethodPicker();
-              String message = getResources().getString(R.string.samsung_keyboard);
-              Toast.makeText(activity, message, Toast.LENGTH_LONG).show();
-            } else {
-              imm.showSoftInput(view, InputMethodManager.SHOW_IMPLICIT);
+        runOnUiThread(new Runnable() {
+          public void run() {
+            InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+            if (imm != null) {
+              if (show) {
+                imm.showSoftInput(view, InputMethodManager.SHOW_IMPLICIT);
+              } else {
+                imm.hideSoftInputFromWindow(view.getWindowToken(), InputMethodManager.HIDE_NOT_ALWAYS);
+              }
             }
-          } else {
-            imm.hideSoftInputFromWindow(view.getWindowToken(), InputMethodManager.HIDE_NOT_ALWAYS);
           }
-        }
+        });
       }
-    });
+    }, 100);
   }
 
   public void showToast(final byte[] messageBytes) {
@@ -729,7 +727,7 @@ public class MainActivity extends NativeActivity {
   }
 
   private String execBuffer(final String buffer, final String name, boolean run) throws IOException {
-    File outputFile = getApplication().getFileStreamPath(name);
+    File outputFile = new File(getInternalStorage(), name);
     BufferedWriter output = new BufferedWriter(new FileWriter(outputFile));
     output.write(buffer);
     output.close();
@@ -767,7 +765,7 @@ public class MainActivity extends NativeActivity {
   }
 
   private void execStream(final String line, DataInputStream inputStream) throws IOException {
-    File outputFile = getApplication().getFileStreamPath(WEB_BAS);
+    File outputFile = new File(getInternalStorage(), WEB_BAS);
     BufferedWriter output = new BufferedWriter(new FileWriter(outputFile));
     Log.i(TAG, "execStream() entered");
     String nextLine = line;
@@ -992,7 +990,7 @@ public class MainActivity extends NativeActivity {
                 execBuffer(buffer, WEB_BAS, postData.get("run") != null);
                 sendResponse(socket, buildRunForm(buffer, token));
               } else {
-                File inputFile = getApplication().getFileStreamPath(WEB_BAS);
+                File inputFile = new File(getInternalStorage(), WEB_BAS);
                 sendResponse(socket, buildRunForm(readBuffer(inputFile), token));
               }
             } else {

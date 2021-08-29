@@ -431,3 +431,8 @@ void dev_resize(int width, int height) {
   setsysvar_int(SYSVAR_XMAX, width - 1);
   setsysvar_int(SYSVAR_YMAX, height - 1);
 }
+
+void dev_map_point(int *x, int *y) {
+  *x = W2X(*x);
+  *y = W2Y(*y);
+}
