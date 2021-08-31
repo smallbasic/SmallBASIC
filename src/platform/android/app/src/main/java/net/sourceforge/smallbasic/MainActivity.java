@@ -25,6 +25,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
+import android.os.Looper;
 import android.util.Base64;
 import android.util.DisplayMetrics;
 import android.util.Log;
@@ -103,11 +104,11 @@ public class MainActivity extends NativeActivity {
   private boolean _untrusted = false;
   private final ExecutorService _audioExecutor = Executors.newSingleThreadExecutor();
   private final Queue<Sound> _sounds = new ConcurrentLinkedQueue<>();
+  private final Handler _keypadHandler = new Handler(Looper.getMainLooper());
   private String[] _options = null;
   private MediaPlayer _mediaPlayer = null;
   private LocationAdapter _locationAdapter = null;
   private TextToSpeechAdapter _tts;
-  private Handler _keypadHandler = new Handler();
 
   static {
     System.loadLibrary("smallbasic");
