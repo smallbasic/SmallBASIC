@@ -175,7 +175,6 @@ bool System::execute(const char *bas) {
 
   enableCursor(true);
   opt_file_permitted = 1;
-  opt_loadmod = 0;
   _output->selectScreen(USER_SCREEN1);
   _output->resetFont();
   _output->flush(true);

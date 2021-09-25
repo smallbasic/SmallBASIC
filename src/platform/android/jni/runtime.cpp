@@ -475,7 +475,6 @@ void Runtime::runShell() {
   os_graphics = 1;
   os_color_depth = 16;
   opt_mute_audio = 0;
-  opt_loadmod = 0;
 
   _app->activity->callbacks->onContentRectChanged = onContentRectChanged;
   loadConfig();

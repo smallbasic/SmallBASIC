@@ -764,7 +764,6 @@ int arg_cb(int argc, char **argv, int &i) {
         return 1;
 
       case 'm':
-        opt_loadmod = 1;
         strcpy(opt_modpath, argv[i + 1]);
         i += 2;
         return 1;

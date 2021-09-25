@@ -15,7 +15,7 @@
 #include "common/kw.h"
 #include "common/pproc.h"
 #include "common/var.h"
-#include "common/extlib.h"
+#include "common/plugins.h"
 #include "common/units.h"
 
 #if defined(__cplusplus)

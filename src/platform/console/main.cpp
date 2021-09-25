@@ -218,7 +218,7 @@ void decompile(const char *path) {
   opt_nosave = 1;
   init_tasks();
   unit_mgr_init();
-  slib_init();
+  plugin_init();
 
   if (sbasic_compile(path)) {
     int exec_tid = sbasic_exec_prepare(path);
@@ -229,7 +229,7 @@ void decompile(const char *path) {
 
   // cleanup
   unit_mgr_close();
-  slib_close();
+  plugin_close();
   destroy_tasks();
   chdir(prev_cwd);
 }
@@ -286,7 +286,6 @@ bool process_options(int argc, char *argv[], char **runFile, bool *tmpFile) {
       opt_nosave = 0;
       break;
     case 'm':
-      opt_loadmod = 1;
       if (optarg) {
         strcpy(opt_modpath, optarg);
       }
@@ -315,10 +314,6 @@ bool process_options(int argc, char *argv[], char **runFile, bool *tmpFile) {
       result = false;
       break;
     }
-  }
-
-  if (getenv("SBASICPATH") != nullptr) {
-    opt_loadmod = 1;
   }
 
   if (strcmp("--", argv[argc - 1]) == 0) {
@@ -370,7 +365,6 @@ int main(int argc, char *argv[]) {
   opt_modpath[0] = '\0';
   opt_file_permitted = 1;
   opt_ide = 0;
-  opt_loadmod = 0;
   opt_nosave = 1;
   opt_pref_height = 0;
   opt_pref_width = 0;

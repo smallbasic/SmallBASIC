@@ -33,7 +33,7 @@ LOCAL_SRC_FILES  :=    \
     $(COMMON)/system.c           \
     $(COMMON)/random.c           \
     $(COMMON)/eval.c             \
-    $(COMMON)/extlib.c           \
+    $(COMMON)/plugins.c          \
     $(COMMON)/file.c             \
     $(COMMON)/ffill.c            \
     $(COMMON)/fmt.c              \

@@ -322,7 +322,6 @@ int main(int argc, char* argv[]) {
       ide_option = IDE_INTERNAL;
       break;
     case 'm':
-      opt_loadmod = 1;
       if (optarg) {
         strcpy(opt_modpath, optarg);
       }

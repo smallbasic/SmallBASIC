@@ -81,7 +81,7 @@ typedef struct {
   unit_file_t hdr; /**< data from file */
 
   unit_sym_t *symbols; /**< table of symbols */
-}unit_t;
+} unit_t;
 
 /**
  * @ingroup exec

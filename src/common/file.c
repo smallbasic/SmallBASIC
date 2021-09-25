@@ -10,7 +10,6 @@
 #include "common/sys.h"
 #include "common/device.h"
 #include "common/pproc.h"
-#include "common/extlib.h"
 #include "common/messages.h"
 
 #include <errno.h>
@@ -158,7 +157,19 @@ int dev_fopen(int sb_handle, const char *name, int flags) {
   f->handle = -1;
   f->open_flags = flags;
   f->drv_data = NULL;
-  strlcpy(f->name, name, sizeof(f->name));
+
+  if (name[0] == '~') {
+    if (getenv("HOME")) {
+      strlcpy(f->name, getenv("HOME"), sizeof(f->name));
+    } else {
+      strlcpy(f->name, getenv("HOMEDRIVE"), sizeof(f->name));
+      strlcpy(f->name, getenv("HOMEPATH"), sizeof(f->name));
+    }
+    strlcpy(f->name, "/", sizeof(f->name));
+    strlcpy(f->name, name + 1, sizeof(f->name));
+  } else {
+    strlcpy(f->name, name, sizeof(f->name));
+  }
 
   f->type = ft_stream;
 

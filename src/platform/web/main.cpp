@@ -280,7 +280,6 @@ int main(int argc, char **argv) {
       g_maxTime = atoi(optarg);
       break;
     case 'm':
-      opt_loadmod = 1;
       if (optarg) {
         strcpy(opt_modpath, optarg);
       }

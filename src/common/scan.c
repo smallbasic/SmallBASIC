@@ -14,8 +14,8 @@
 #include "common/bc.h"
 #include "common/scan.h"
 #include "common/smbas.h"
+#include "common/plugins.h"
 #include "common/units.h"
-#include "common/extlib.h"
 #include "common/messages.h"
 #include "languages/keywords.en.c"
 
@@ -4277,11 +4277,11 @@ void comp_preproc_import(const char *slist) {
 
     // import name
     strlower(buf);
-    int uid = slib_get_module_id(buf, alias);
+    int uid = plugin_find(buf, alias);
     if (uid != -1) {
       // store C module lib-record
-      slib_import(uid, 1);
-      add_libtable_rec(alias, alias, uid, 0);
+      plugin_import(uid);
+      add_libtable_rec(buf, alias, uid, 0);
     } else {
       uid = open_unit(buf, alias);
       if (uid < 0) {
@@ -4436,12 +4436,8 @@ char *comp_preproc_options(char *p) {
         opt_command[OPT_CMD_SZ - 1] = '\0';
       }
       *pe = lc;
-    } else if (strncmp(LCN_LOAD_MODULES, p, LEN_LDMODULES) == 0 &&
-               opt_modpath[0] != '\0') {
-      if (!opt_loadmod) {
-        opt_loadmod = 1;
-        slib_init();
-      }
+    } else if (strncmp(LCN_LOAD_MODULES, p, LEN_LDMODULES) == 0) {
+      // does nothing - for backwards compatibility
     } else {
       SKIP_SPACES(p);
       char *pe = p;

@@ -13,7 +13,7 @@
 #include "common/kw.h"
 #include "common/blib.h"
 #include "common/device.h"
-#include "common/extlib.h"
+#include "common/plugins.h"
 #include "common/var_eval.h"
 
 #define IP           prog_ip
@@ -826,7 +826,7 @@ static inline void eval_extf(var_t *r) {
   if (lib & UID_UNIT_BIT) {
     unit_exec(lib & (~UID_UNIT_BIT), idx, r);
   } else {
-    slib_funcexec(lib, prog_symtable[idx].exp_idx, r);
+    plugin_funcexec(lib, prog_symtable[idx].exp_idx, r);
   }
 }
 

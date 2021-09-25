@@ -10,7 +10,7 @@
 #include "config.h"
 #include "include/osd.h"
 #include "common/device.h"
-#include "common/extlib.h"
+#include "common/plugins.h"
 #include "common/smbas.h"
 
 #define WAIT_INTERVAL 5
@@ -92,31 +92,31 @@ void console_init() {
 
 // initialize driver
 int osd_devinit() {
-  p_arc = (arc_fn)slib_get_func("sblib_arc");
-  p_audio = (audio_fn)slib_get_func("sblib_audio");
-  p_beep = (beep_fn)slib_get_func("sblib_beep");
-  p_clear_sound_queue = (clear_sound_queue_fn)slib_get_func("sblib_clear_sound_queue");
-  p_cls = (cls_fn)slib_get_func("sblib_cls");
-  p_ellipse = (ellipse_fn)slib_get_func("sblib_ellipse");
-  p_events = (events_fn)slib_get_func("sblib_events");
-  p_getpen = (getpen_fn)slib_get_func("sblib_getpen");
-  p_getpixel = (getpixel_fn)slib_get_func("sblib_getpixel");
-  p_getx = (getx_fn)slib_get_func("sblib_getx");
-  p_gety = (gety_fn)slib_get_func("sblib_gety");
-  p_line = (line_fn)slib_get_func("sblib_line");
-  p_rect = (rect_fn)slib_get_func("sblib_rect");
-  p_refresh = (refresh_fn)slib_get_func("sblib_refresh");
-  p_setcolor = (setcolor_fn)slib_get_func("sblib_setcolor");
-  p_setpenmode = (setpenmode_fn)slib_get_func("sblib_setpenmode");
-  p_setpixel = (setpixel_fn)slib_get_func("sblib_setpixel");
-  p_settextcolor = (settextcolor_fn)slib_get_func("sblib_settextcolor");
-  p_setxy = (setxy_fn)slib_get_func("sblib_setxy");
-  p_sound = (sound_fn)slib_get_func("sblib_sound");
-  p_textheight = (textheight_fn)slib_get_func("sblib_textheight");
-  p_textwidth = (textwidth_fn)slib_get_func("sblib_textwidth");
-  p_write = (write_fn)slib_get_func("sblib_write");
+  p_arc = (arc_fn)plugin_get_func("sblib_arc");
+  p_audio = (audio_fn)plugin_get_func("sblib_audio");
+  p_beep = (beep_fn)plugin_get_func("sblib_beep");
+  p_clear_sound_queue = (clear_sound_queue_fn)plugin_get_func("sblib_clear_sound_queue");
+  p_cls = (cls_fn)plugin_get_func("sblib_cls");
+  p_ellipse = (ellipse_fn)plugin_get_func("sblib_ellipse");
+  p_events = (events_fn)plugin_get_func("sblib_events");
+  p_getpen = (getpen_fn)plugin_get_func("sblib_getpen");
+  p_getpixel = (getpixel_fn)plugin_get_func("sblib_getpixel");
+  p_getx = (getx_fn)plugin_get_func("sblib_getx");
+  p_gety = (gety_fn)plugin_get_func("sblib_gety");
+  p_line = (line_fn)plugin_get_func("sblib_line");
+  p_rect = (rect_fn)plugin_get_func("sblib_rect");
+  p_refresh = (refresh_fn)plugin_get_func("sblib_refresh");
+  p_setcolor = (setcolor_fn)plugin_get_func("sblib_setcolor");
+  p_setpenmode = (setpenmode_fn)plugin_get_func("sblib_setpenmode");
+  p_setpixel = (setpixel_fn)plugin_get_func("sblib_setpixel");
+  p_settextcolor = (settextcolor_fn)plugin_get_func("sblib_settextcolor");
+  p_setxy = (setxy_fn)plugin_get_func("sblib_setxy");
+  p_sound = (sound_fn)plugin_get_func("sblib_sound");
+  p_textheight = (textheight_fn)plugin_get_func("sblib_textheight");
+  p_textwidth = (textwidth_fn)plugin_get_func("sblib_textwidth");
+  p_write = (write_fn)plugin_get_func("sblib_write");
 
-  init_fn devinit = (init_fn)slib_get_func("sblib_devinit");
+  init_fn devinit = (init_fn)plugin_get_func("sblib_devinit");
   if (devinit) {
     devinit(prog_file, opt_pref_width, opt_pref_height);
   }
