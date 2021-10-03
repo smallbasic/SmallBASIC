@@ -4231,6 +4231,16 @@ void comp_preproc_grmode(const char *source) {
  * copy the unit name from the source string to the given buffer
  */
 const char *get_unit_name(const char *p, char *buf_p) {
+  if (*p == '"') {
+    // copy the quoted string
+    *buf_p++ = *p++;
+    while (*p && *p != '"') {
+      *buf_p++ = *p++;
+    }
+    if (*p == '"') {
+      *buf_p++ = *p++;
+    }
+  }
   while (is_alnum(*p) || *p == '_' || *p == '.') {
     if (*p == '.') {
       *buf_p++ = OS_DIRSEP;
@@ -4265,12 +4275,11 @@ const char *get_alias(const char *p, char *alias, const char *def) {
 void comp_preproc_import(const char *slist) {
   char buf[OS_PATHNAME_SIZE + 1];
   char alias[OS_PATHNAME_SIZE + 1];
-
   const char *p = slist;
 
   SKIP_SPACES(p);
 
-  while (is_alpha(*p)) {
+  while (is_alpha(*p) || *p == '"') {
     // get name - "Import other.Foo => "other/Foo"
     p = get_unit_name(p, buf);
     p = get_alias(p, alias, buf);

@@ -14,14 +14,14 @@
 #include "common/smbas.h"
 
 #if defined(__MINGW32__)
- #include <windows.h>
- #include <error.h>
- #define WIN_EXTLIB
- #define LIB_EXT ".dll"
+#include <windows.h>
+#include <error.h>
+#define WIN_EXTLIB
+#define LIB_EXT ".dll"
 #elif defined(_UnixOS)
- #include <dlfcn.h>
- #define LNX_EXTLIB
- #define LIB_EXT ".so"
+#include <dlfcn.h>
+#define LNX_EXTLIB
+#define LIB_EXT ".so"
 #endif
 
 #if defined(LNX_EXTLIB) || defined(WIN_EXTLIB)
@@ -166,7 +166,7 @@ static int slib_add_external_func(const char *func_name, uint32_t lib_id) {
   } else if (lib->_func_list_size <= (lib->_func_count + 1)) {
     lib->_func_list_size += TABLE_GROW_SIZE;
     lib->_func_list = (ext_func_node_t *)
-                   realloc(lib->_func_list, sizeof(ext_func_node_t) * lib->_func_list_size);
+      realloc(lib->_func_list, sizeof(ext_func_node_t) * lib->_func_list_size);
   }
 
   lib->_func_list[lib->_func_count].lib_id = lib_id;
@@ -240,30 +240,26 @@ static void slib_import_routines(slib_t *lib, int comp) {
 }
 
 //
-// whether name ends with LIB_EXT and does not contain '-', eg libstdc++-6.dll
-//
-static int slib_is_module(const char *name) {
-  int result = 0;
-  if (name && name[0] != '\0') {
-    int offs = strlen(name) - (sizeof(LIB_EXT) - 1);
-    result = offs > 0 && strchr(name, '-') == NULL && strcasecmp(name + offs, LIB_EXT) == 0;
-  }
-  return result;
-}
-
-//
 // opens the library
 //
-static void slib_open(const char *fullname, const char *name) {
-  int name_index = 0;
+static void slib_open(const char *path, const char *name, const char *alias, int id) {
+  char fullname[PATH_SIZE];
 
+  // copy full path to name
+  strlcpy(fullname, path, sizeof(fullname));
+  if (path[strlen(path) - 1] != '/') {
+    // add trailing separator
+    strlcat(fullname, "/", sizeof(fullname));
+  }
+  strlcat(fullname, name, sizeof(fullname));
+
+  int name_index = 0;
   if (strncmp(name, "lib", 3) == 0) {
     // libmysql -> store mysql
     name_index = 3;
   }
 
-  int id = 0; // fixme
-  slib_t *lib = plugins[id]; 
+  slib_t *lib = plugins[id];
   memset(lib, 0, sizeof(slib_t));
   strlcpy(lib->_name, name + name_index, NAME_SIZE);
   strlcpy(lib->_fullname, fullname, PATH_SIZE);
@@ -285,28 +281,32 @@ static void slib_open(const char *fullname, const char *name) {
 }
 
 //
+// locate the file int the given path or standard locations
 //
-//
-static void slib_open_path(const char *path, const char *name) {
-  if (slib_is_module(name)) {
-    // ends with LIB_EXT
-    char full[PATH_SIZE];
-    char libname[NAME_SIZE];
-
-    // copy name without extension
-    strlcpy(libname, name, sizeof(libname));
-    char *p = strchr(libname, '.');
-    *p = '\0';
-
-    // copy full path to name
-    strlcpy(full, path, sizeof(full));
-    if (path[strlen(path) - 1] != '/') {
-      // add trailing separator
-      strlcat(full, "/", sizeof(full));
+static int slib_find_path(char *path, int path_size, const char *file) {
+  int result = 0;
+  // find in path
+  if (path[0]) {
+    result = sys_search_path(path, file, NULL);
+  } else {
+    // find in SBASICPATH
+    if (getenv("SBASICPATH")) {
+      result = sys_search_path(getenv("SBASICPATH"), file, path);
     }
-    strlcat(full, name, sizeof(full));
-    slib_open(full, libname);
+    // find in program launch directory
+    if (!result && gsb_bas_dir[0]) {
+      result = sys_search_path(gsb_bas_dir, file, path);
+    }
+    // find in modpath
+    if (!result && opt_modpath[0]) {
+      result = sys_search_path(opt_modpath, file, path);
+    }
+    if (!result) {
+      // find in current directory
+      result = sys_search_path(".", file, path);
+    }
   }
+  return result;
 }
 
 //
@@ -434,38 +434,45 @@ void plugin_init() {
   }
 }
 
-int plugin_find(const char *file, const char *alias) {
-  // TODO fixme
-  //strcpy(file, name);
-  //strcat(file, ".bas");
+int plugin_find(const char *name, const char *alias) {
+  char path[PATH_SIZE];
+  char file[PATH_SIZE];
 
-  // find in SBASICPATH
-  if (getenv("SBASICPATH")) {
-    if (sys_search_path(getenv("SBASICPATH"), file, NULL)) {
-      return 1;
+  if (path[0] == '"') {
+    strlcpy(path + 1, name, sizeof(path));
+    path[strlen(path) - 1] = '\0';
+    filep = slash + 1;
+  } else {
+    path[0] = '\0';
+    filep = name;
+  }
+
+  if (strstr(filep, "lib") != filep) {
+    strlcpy(file, "lib", sizeof(file));
+    strlcat(file, filep, sizeof(file));
+  } else {
+    strlcpy(file, filep, sizeof(file));
+  }
+
+  strlcat(file, LIB_EXT, sizeof(file));
+
+  int result = -1;
+  if (slib_find_path(path, sizeof(path), file)) {
+    for (int i = 0; i < MAX_SLIBS; i++) {
+      if (!plugins[i]) {
+        // found free slot
+        plugins[i] = (slib_t *)calloc(sizeof(slib_t), 1);
+        if (!plugins[i]) {
+          break;
+        }
+        slib_open(path, name, alias, i);
+        result = i;
+        break;
+      }
     }
   }
 
-  // find in program launch directory
-  if (gsb_bas_dir[0] && sys_search_path(gsb_bas_dir, file, NULL)) {
-    return 1;
-  }
-
-  // TODO find in opt_modpath
-  
-  // find in current directory
-  if (sys_search_path(".", file, NULL)) {
-    return 1;
-  }
-
-  // create corresponding sbu path version
-  //strcpy(unitname, bas_file);
-
-  //if (strcmp(comp_file_name, bas_file) == 0) {
-    // unit and program are the same
-  //  return -1;
-  //}
-  return -1;
+  return result;
 }
 
 void plugin_import(int lib_id) {

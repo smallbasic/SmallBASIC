@@ -27,7 +27,7 @@ void plugin_init();
 //
 // locates the plugin at compile time and returns the associated ID
 //
-int plugin_find(const char *file, const char *alias);
+int plugin_find(const char *name, const char *alias);
 
 //
 // imports the plugin keywords into the compiler
