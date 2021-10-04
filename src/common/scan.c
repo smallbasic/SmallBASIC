@@ -4286,10 +4286,9 @@ void comp_preproc_import(const char *slist) {
 
     // import name
     strlower(buf);
-    int uid = plugin_find(buf, alias);
+    int uid = plugin_import(buf, alias);
     if (uid != -1) {
       // store C module lib-record
-      plugin_import(uid);
       add_libtable_rec(buf, alias, uid, 0);
     } else {
       uid = open_unit(buf, alias);

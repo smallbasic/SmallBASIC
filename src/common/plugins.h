@@ -25,14 +25,9 @@ extern "C" {
 void plugin_init();
 
 //
-// locates the plugin at compile time and returns the associated ID
+// locates the plugin, imports the keywords and returns the associated ID
 //
-int plugin_find(const char *name, const char *alias);
-
-//
-// imports the plugin keywords into the compiler
-//
-void plugin_import(int lib_id);
+int plugin_import(const char *name, const char *alias);
 
 //
 // opens the plugin ready for execution. reuses any existing compiler data

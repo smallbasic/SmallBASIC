@@ -128,6 +128,98 @@ static slib_t *get_lib(int lib_id) {
 }
 
 //
+// opens the library
+//
+static int slib_open(const char *path, const char *name, const char *alias, int id) {
+  char fullname[PATH_SIZE];
+
+  strlcpy(fullname, path, sizeof(fullname));
+  if (access(fullname, R_OK) != 0) {
+    if (path[strlen(path) - 1] != '/') {
+      // add trailing separator
+      strlcat(fullname, "/", sizeof(fullname));
+    }
+    strlcat(fullname, name, sizeof(fullname));
+  }
+
+  slib_t *lib = plugins[id];
+  memset(lib, 0, sizeof(slib_t));
+  strlcpy(lib->_name, alias, NAME_SIZE);
+  strlcpy(lib->_fullname, fullname, PATH_SIZE);
+  lib->_id = id;
+  lib->_imported = 0;
+
+  if (!opt_quiet) {
+    log_printf("LIB: registering '%s'", fullname);
+  }
+
+  int result = slib_llopen(lib);
+  if (result) {
+    // override default name
+    sblib_get_module_name_fn get_module_name = slib_getoptptr(lib, "sblib_get_module_name");
+    if (get_module_name) {
+      strlcpy(lib->_name, get_module_name(), NAME_SIZE);
+    }
+  }
+  return result;
+}
+
+//
+// init path and file from the given name
+//
+static void slib_init_path(const char *name, char *path, char *file) {
+  if (name[0] == '"') {
+    // use quoted string to specify full system path
+    strlcpy(path, name + 1, PATH_SIZE);
+    int len = strlen(path);
+    if (len) {
+      path[len - 1] = '\0';
+    }
+    // separate file-name from path
+    char *slash = strrchr(path, '/');
+    if (slash) {
+      strlcpy(file, slash + 1, PATH_SIZE);
+      *slash = '\0';
+    }
+  } else {
+    // non-quoted string to specify portable name
+    path[0] = '\0';
+    strlcpy(file, "lib", PATH_SIZE);
+    strlcat(file, name, PATH_SIZE);
+    strlcat(file, LIB_EXT, PATH_SIZE);
+  }
+}
+
+//
+// locate the file int the given path or standard locations
+//
+static int slib_find_path(char *path, const char *file) {
+  int result = 0;
+  // find in path
+  if (path[0]) {
+    result = sys_search_path(path, file, path);
+  }
+  // find in SBASICPATH
+  if (!result && getenv("SBASICPATH")) {
+    result = sys_search_path(getenv("SBASICPATH"), file, path);
+  }
+  // find in program launch directory
+  if (!result && gsb_bas_dir[0]) {
+    result = sys_search_path(gsb_bas_dir, file, path);
+  }
+  // find in modpath
+  if (!result && opt_modpath[0]) {
+    result = sys_search_path(opt_modpath, file, path);
+  }
+  if (!result) {
+    // find in current directory
+    result = sys_search_path(".", file, path);
+  }
+
+  return result;
+}
+
+//
 // add an external procedure to the list
 //
 static int slib_add_external_proc(const char *proc_name, int lib_id) {
@@ -182,6 +274,9 @@ static int slib_add_external_func(const char *func_name, uint32_t lib_id) {
   return lib->_func_count - 1;
 }
 
+//
+// import functions from the external library
+//
 static void slib_import_routines(slib_t *lib, int comp) {
   int total = 0;
   char buf[SB_KEYWORD_SIZE];
@@ -237,96 +332,6 @@ static void slib_import_routines(slib_t *lib, int comp) {
   if (!total) {
     log_printf("LIB: module '%s' has no exports\n", lib->_name);
   }
-}
-
-//
-// opens the library
-//
-static void slib_open(const char *path, const char *name, const char *alias, int id) {
-  char fullname[PATH_SIZE];
-
-  strlcpy(fullname, path, sizeof(fullname));
-  if (access(fullname, R_OK) != 0) {
-    if (path[strlen(path) - 1] != '/') {
-      // add trailing separator
-      strlcat(fullname, "/", sizeof(fullname));
-    }
-    strlcat(fullname, name, sizeof(fullname));
-  }
-
-  slib_t *lib = plugins[id];
-  memset(lib, 0, sizeof(slib_t));
-  strlcpy(lib->_name, alias, NAME_SIZE);
-  strlcpy(lib->_fullname, fullname, PATH_SIZE);
-  lib->_id = id;
-  lib->_imported = 0;
-
-  if (!opt_quiet) {
-    log_printf("LIB: registering '%s'", fullname);
-  }
-  if (slib_llopen(lib)) {
-    // override default name
-    sblib_get_module_name_fn get_module_name = slib_getoptptr(lib, "sblib_get_module_name");
-    if (get_module_name) {
-      strlcpy(lib->_name, get_module_name(), NAME_SIZE);
-    }
-  } else {
-    sc_raise("LIB: can't open %s", fullname);
-  }
-}
-
-//
-// init path and file from the given name
-//
-static void slib_init_path(const char *name, char *path, char *file) {
-  if (name[0] == '"') {
-    // use quoted string to specify full system path
-    strlcpy(path, name + 1, PATH_SIZE);
-    int len = strlen(path);
-    if (len) {
-      path[len - 1] = '\0';
-    }
-    // separate file-name from path
-    char *slash = strrchr(path, '/');
-    if (slash) {
-      strlcpy(file, slash + 1, PATH_SIZE);
-      *slash = '\0';
-    }
-  } else {
-    // non-quoted string to specify portable name
-    path[0] = '\0';
-    strlcpy(file, "lib", PATH_SIZE);
-    strlcat(file, name, PATH_SIZE);
-    strlcat(file, LIB_EXT, PATH_SIZE);
-  }
-}
-
-//
-// locate the file int the given path or standard locations
-//
-static int slib_find_path(char *path, const char *file) {
-  int result = 0;
-  // find in path
-  if (path[0]) {
-    result = sys_search_path(path, file, path);
-  }
-  // find in SBASICPATH
-  if (!result && getenv("SBASICPATH")) {
-    result = sys_search_path(getenv("SBASICPATH"), file, path);
-  }
-  // find in program launch directory
-  if (!result && gsb_bas_dir[0]) {
-    result = sys_search_path(gsb_bas_dir, file, path);
-  }
-  // find in modpath
-  if (!result && opt_modpath[0]) {
-    result = sys_search_path(opt_modpath, file, path);
-  }
-  if (!result) {
-    // find in current directory
-    result = sys_search_path(".", file, path);
-  }
-  return result;
 }
 
 //
@@ -454,7 +459,7 @@ void plugin_init() {
   }
 }
 
-int plugin_find(const char *name, const char *alias) {
+int plugin_import(const char *name, const char *alias) {
   int result = -1;
   char path[PATH_SIZE];
   char file[PATH_SIZE];
@@ -465,26 +470,23 @@ int plugin_find(const char *name, const char *alias) {
     for (int i = 0; i < MAX_SLIBS; i++) {
       if (!plugins[i]) {
         // found free slot
-        plugins[i] = (slib_t *)calloc(sizeof(slib_t), 1);
-        if (!plugins[i]) {
+        slib_t *lib = plugins[i] = (slib_t *)calloc(sizeof(slib_t), 1);
+        if (!lib) {
+          sc_raise("LIB: plugin_import failed");
           break;
         }
-        slib_open(path, file, alias, i);
+        if (slib_open(path, file, alias, i)) {
+          slib_import_routines(lib, 1);
+          lib->_imported = 1;
+        } else {
+          sc_raise("LIB: plugin_import failed");
+        }
         result = i;
         break;
       }
     }
   }
-
   return result;
-}
-
-void plugin_import(int lib_id) {
-  slib_t *lib = get_lib(lib_id);
-  if (lib && !lib->_imported) {
-    slib_import_routines(lib, 1);
-    lib->_imported = 1;
-  }
 }
 
 void plugin_open(const char *name, int lib_id) {
@@ -495,10 +497,14 @@ void plugin_open(const char *name, int lib_id) {
       char path[PATH_SIZE];
       char file[PATH_SIZE];
       slib_init_path(name, path, file);
-      slib_open(path, file, name, lib_id);
+      if (!slib_find_path(path, file)) {
+        rt_raise("LIB: can't open %s", name);
+      } else if (!slib_open(path, file, file, lib_id)) {
+        rt_raise("LIB: can't open %s", name);
+      }
     }
   }
-  if (lib) {
+  if (lib && !prog_error) {
     if (!lib->_imported) {
       slib_import_routines(lib, 0);
       lib->_imported = 1;
@@ -592,13 +598,12 @@ void plugin_close() {
 
 #else
 // dummy implementations
-int plugin_find(const char *file, char *alias) { return -1; }
-int plugin_funcexec(int lib_id, int index, var_t *ret) { return -1; }
-int plugin_get_kid(int lib_id, const char *keyword) { return -1; }
-int plugin_procexec(int lib_id, int index) { return -1; }
-void *plugin_get_func(const char *name) { return 0; }
-void plugin_close() {}
-void plugin_import(int lib_id) {}
 void plugin_init() {}
-void plugin_open(const char *name, int lib_id) {}
+int plugin_import(const char *name, const char *alias) { return -1; }
+void plugin_open(const char *name, int lib_id) { }
+int plugin_get_kid(int lib_id, const char *keyword) { return -1; }
+void *plugin_get_func(const char *name) { return 0; }
+int plugin_procexec(int lib_id, int index) { return -1; }
+int plugin_funcexec(int lib_id, int index, var_t *ret) { return -1; }
+void plugin_close() {}
 #endif
