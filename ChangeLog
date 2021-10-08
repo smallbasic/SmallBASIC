@@ -1,3 +1,6 @@
+2021-08-22 (12.24)
+	COMMON: Update plugin system to allow loading to be driven by the IMPORT statement
+
 2021-08-22 (12.23)
 	SDL: Validate window dimensions on loading to prevent hidden window
 

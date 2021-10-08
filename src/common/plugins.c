@@ -40,7 +40,6 @@ typedef int (*sblib_getname_fn) (int, char *);
 typedef int (*sblib_count_fn) (void);
 typedef int (*sblib_init_fn) (const char *);
 typedef void (*sblib_close_fn) (void);
-typedef const char *(*sblib_get_module_name_fn) (void);
 
 typedef struct {
   char _fullname[PATH_SIZE];
@@ -153,15 +152,7 @@ static int slib_open(const char *path, const char *name, const char *alias, int 
     log_printf("LIB: registering '%s'", fullname);
   }
 
-  int result = slib_llopen(lib);
-  if (result) {
-    // override default name
-    sblib_get_module_name_fn get_module_name = slib_getoptptr(lib, "sblib_get_module_name");
-    if (get_module_name) {
-      strlcpy(lib->_name, get_module_name(), NAME_SIZE);
-    }
-  }
-  return result;
+  return slib_llopen(lib);
 }
 
 //
@@ -184,8 +175,17 @@ static void slib_init_path(const char *name, char *path, char *file) {
   } else {
     // non-quoted string to specify portable name
     path[0] = '\0';
+    char *slash = strrchr(name, '/');
     strlcpy(file, "lib", PATH_SIZE);
-    strlcat(file, name, PATH_SIZE);
+    if (strcmp(name, "android") == 0) {
+      strlcat(file, "smallbasic", PATH_SIZE);
+    } else if (slash) {
+      *slash = '\0';
+      strlcat(file, slash + 1, PATH_SIZE);
+      strlcpy(path, name, PATH_SIZE);
+    } else {
+      strlcat(file, name, PATH_SIZE);
+    }
     strlcat(file, LIB_EXT, PATH_SIZE);
   }
 }
@@ -202,14 +202,28 @@ static int slib_find_path(char *path, const char *file) {
   // find in SBASICPATH
   if (!result && getenv("SBASICPATH")) {
     result = sys_search_path(getenv("SBASICPATH"), file, path);
-  }
-  // find in program launch directory
-  if (!result && gsb_bas_dir[0]) {
-    result = sys_search_path(gsb_bas_dir, file, path);
+    if (!result && path[0]) {
+      char rel_path[PATH_SIZE];
+      strlcpy(rel_path, getenv("SBASICPATH"), PATH_SIZE);
+      strlcat(rel_path, "/", PATH_SIZE);
+      strlcat(rel_path, path, PATH_SIZE);
+      result = sys_search_path(rel_path, file, path);
+    }
   }
   // find in modpath
   if (!result && opt_modpath[0]) {
     result = sys_search_path(opt_modpath, file, path);
+    if (!result && path[0]) {
+      char rel_path[PATH_SIZE];
+      strlcpy(rel_path, opt_modpath, PATH_SIZE);
+      strlcat(rel_path, "/", PATH_SIZE);
+      strlcat(rel_path, path, PATH_SIZE);
+      result = sys_search_path(rel_path, file, path);
+    }
+  }
+  // find in program launch directory
+  if (!result && gsb_bas_dir[0]) {
+    result = sys_search_path(gsb_bas_dir, file, path);
   }
   if (!result) {
     // find in current directory
@@ -258,7 +272,7 @@ static int slib_add_external_func(const char *func_name, uint32_t lib_id) {
   } else if (lib->_func_list_size <= (lib->_func_count + 1)) {
     lib->_func_list_size += TABLE_GROW_SIZE;
     lib->_func_list = (ext_func_node_t *)
-      realloc(lib->_func_list, sizeof(ext_func_node_t) * lib->_func_list_size);
+                      realloc(lib->_func_list, sizeof(ext_func_node_t) * lib->_func_list_size);
   }
 
   lib->_func_list[lib->_func_count].lib_id = lib_id;

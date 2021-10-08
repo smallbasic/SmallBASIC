@@ -1342,10 +1342,6 @@ struct LibProcs {
   {"SPEAK", tts_speak}
 };
 
-const char *sblib_get_module_name() {
-  return "android";
-}
-
 int sblib_proc_count(void) {
   return (sizeof(lib_procs) / sizeof(lib_procs[0]));
 }
