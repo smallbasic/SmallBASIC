@@ -234,6 +234,13 @@ void System::editSource(String loadPath, bool restoreOnExit) {
     editWidget->setCursorRow(gsb_last_line);
     statusMessage.update(editWidget, _output, true);
   } else if (gsb_last_error && !isBack()) {
+    if (gsb_last_errmsg[0]) {
+      // trim any trailing new-line character
+      char *nl = strrchr(gsb_last_errmsg, '\n');
+      if (nl) {
+        *nl = '\0';
+      }
+    }
     String lastFile(gsb_last_file);
     if (lastFile.endsWith(".sbu")) {
       _output->setStatus(!gsb_last_errmsg[0] ? "Unit error" : gsb_last_errmsg);
