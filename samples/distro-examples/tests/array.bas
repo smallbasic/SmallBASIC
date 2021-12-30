@@ -336,3 +336,9 @@ if (a[1] != [3,4]) then throw "err2"
 if (a[2] != [5,6]) then throw "err3"
 if (a[3] != [7,8,9]) then throw "err4"
 
+# parse with jsmn and ";" dimension syntax
+const font = {"a" : [1,2,3;4,5,6;7,8,999]}
+if (ubound(font["a"],1) != 2) then throw "err1"
+if (ubound(font["a"],2) != 2) then throw "err2"
+a = font["a"]
+if (a[2,2] != 999) then throw "err3"
