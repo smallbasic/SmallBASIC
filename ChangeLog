@@ -1,3 +1,6 @@
+2021-12-31 (12.24)
+	UI: add support for image.save("file.png") as per console
+
 2021-12-30 (12.24)
 	COMMON: parse JSON with SB ";" dimension syntax
 

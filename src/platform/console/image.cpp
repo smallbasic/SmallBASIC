@@ -375,16 +375,35 @@ void cmd_image_save(var_s *self, var_s *) {
   dev_file_t *filep = nullptr;
   byte code = code_peek();
   int error = -1;
-  int w = image->_width;
-  int h = image->_height;
+  var_t *array;
   var_t var;
 
   if (!prog_error && image != nullptr) {
+    unsigned w = image->_width;
+    unsigned h = image->_height;
     switch (code) {
     case kwTYPE_SEP:
       filep = get_file();
       if (filep != nullptr && filep->open_flags == DEV_FILE_OUTPUT) {
         error = lodepng_encode32_file(filep->name, image->_image, w, h);
+      }
+      break;
+    case kwTYPE_VAR:
+      array = par_getvar_ptr();
+      v_tomatrix(array, h, w);
+      //     x0   x1   x2    (w=3,h=2)
+      // y0  rgba rgba rgba  ypos=0
+      // y1  rgba rgba rgba  ypos=12
+      //
+      for (unsigned y = 0; y < h; y++) {
+        unsigned yoffs = (y * w * 4);
+        for (unsigned x = 0; x < w; x++) {
+          uint8_t a, r, g, b;
+          GET_IMAGE_ARGB(image->_image, yoffs + (x * 4), a, r, g, b);
+          pixel_t px = v_get_argb_px(a, r, g, b);
+          unsigned pos = y * w + x;
+          v_setint(v_elem(array, pos), px);
+        }
       }
       break;
     default:
