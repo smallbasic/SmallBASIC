@@ -2689,7 +2689,7 @@ void cmd_exprseq(void) {
     if (count > 1) {
       v_toarray1(var_p, count);
       dx = (xmax - xmin) / (count - 1);
-	  x = xmin;
+      x = xmin;
       // add the entries
       for (int i = 0; i < count; i++, x += dx) {
         var_t *elem_p = v_elem(var_p, i);
