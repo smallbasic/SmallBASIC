@@ -2670,7 +2670,7 @@ void cmd_swap(void) {
 void cmd_exprseq(void) {
   var_t *var_p;
   bcip_t use_ip, exit_ip = INVALID_ADDR;
-  var_num_t xmin, xmax, dx;
+  var_num_t xmin, xmax, x, dx;
   var_int_t count;
 
   par_massget("PFFI", &var_p, &xmin, &xmax, &count);
@@ -2689,9 +2689,9 @@ void cmd_exprseq(void) {
     if (count > 1) {
       v_toarray1(var_p, count);
       dx = (xmax - xmin) / (count - 1);
-
+      x = xmin;
       // add the entries
-      for (int i = 0, x = xmin; i < count; i++, x += dx) {
+      for (int i = 0; i < count; i++, x += dx) {
         var_t *elem_p = v_elem(var_p, i);
         v_setreal(elem_p, x);
         exec_usefunc(elem_p, use_ip);

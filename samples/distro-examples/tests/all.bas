@@ -12,6 +12,8 @@ n=1234
 a=[1,1;2,-1,-2;1,-2,2,1;1,-3,1,3;3,-1,-2]
 b=[44,3,4,5,6]
 inva=[1,-1,1;2,-1,2;3,2,-1]
+def expression(x) = x * 0.1
+DATA 1,"a"
 
 print "ACCESS:" +IFF(ACCESS ("/etc/hostname") != 0, "<> 0", "0")
 print "APPEND:"; : APPEND c, "1", "2", "3", "4": PRINT c
@@ -21,7 +23,7 @@ print "BEEP:" ':BEEP
 print "BLOAD:" ':BLOAD "/etc/hostname"
 print "BPUTC#:" ':BPUTC# fileN; byte
 print "BSAVE:" ':BSAVE filename, address, length
-print "CALL:" ':CALL (fp)
+print "CALL:" :aa=@expression: aa=CALL(aa,5):if(aa != 0.5) then throw "CALL failed"
 print "CHART:" ':CHART LINECHART|BARCHART, array() [, style [, x1, y1, x2, y2]]
 print "CHDIR:" ':CHDIR dir
 print "CHMOD:" ':CHMOD file, mode
@@ -30,7 +32,7 @@ print "CLOSE:" ':CLOSE #fileN
 print "CLS:" :CLS
 print "COLOR:" :COLOR 1,2
 print "COPY:" ':COPY "file", "newfile"
-print "DATEDMY:"': DATEDMY(100000,d,m,y); PRINT d,m,u
+print "DATEDMY:";: DATEDMY(2459590,jd,jm,jy): print jd;jm;jy
 print "DELAY:" ':DELAY ms
 print "DELETE:" :DELETE a, 1
 print "DERIV:" ':DERIV x, maxtries, maxerr, BYREF result, BYREF errcode USE expr
@@ -40,14 +42,14 @@ print "DRAW:" :DRAW ""
 print "DRAWPOLY:" ':DRAWPOLY array [,x-origin,y-origin [, scalef [, color]]] [COLOR color] [FILLED]
 print "EMPTY:" ':EMPTY (x)
 print "ENV:" :ENV("foo=bar"): if (env("foo") != "bar") then throw "env failed"
-print "EXPRSEQ:" ':EXPRSEQ BYREF array, xmin, xmax, count USE expression
+print "EXPRSEQ:" : EXPRSEQ aa, -30, 70, 5 USE expression(x): if aa != [-3,-0.5,2,4.5,7] then throw "EXPRSEQ failed"
 print "FORM(map):" ':FORM(map)
 print "IMAGE:" ':IMAGE [#handle | fileName | http://path-to-file.png | image-var | array of pixmap data]
 print "INPUT:" ':INPUT #fileN; var1 [,delim] [, var2 [,delim]] ...
 print "INPUT:" ':INPUT [prompt,|;] var[, var [, ...]]
-print "INSERT:" :INSERT a, 2, "this", "that", "the", "other"
+print "INSERT:" :InsIn=[1,2,3]:INSERT InsIn,2,"this","that","the","other":if(InsIn != [1,2,"other","the","that","this",3]) then throw "INSERT failed"
 print "INTERSECT:" ':INTERSECT Ax, Ay, Bx, By, Cx, Cy, Dx, Dy, BYREF type, BYREF Rx, BYREF Ry
-print "JOIN:" ':JOIN a, ",.", "ss": PRINT words
+print "JOIN:" :JoinIn=["a","b","c"]:JOIN JoinIn(),"-",JoinOut:if(JoinOut != "a-b-c") then throw("JOIN failed")
 print "KILL:" ':KILL "file"
 print "LINE:" ':LINE [STEP] x,y [,|STEP x2,y2] [, color| COLOR color]
 print "LINEINPUT:" ':LINEINPUT [#fileN] var
@@ -55,7 +57,7 @@ print "LINPUT:" ':LINPUT [#fileN] var
 print "LOCATE:" ':LOCATE y, x
 print "LOCK:" ':LOCK
 print "LOGPRINT:" ':LOGPRINT ...
-print "M3APPLY:" ': M3APPLY m3x3, poly
+print "M3APPLY:" ': M3APPLY m3x3, polyko
 print "M3IDENT:" ':M3IDENT m3x3
 print "M3ROTATE:" ':M3ROTATE m3x3, angle
 print "M3SCALE:" ':M3SCALE m3x3, x, y, Sx, Sy
@@ -72,7 +74,7 @@ print "POLYEXT:" :POLYEXT poly, xmin, ymin, xmax, ymax
 print "PRINT:" ':PRINT [USING [format];] [expr|str [,|; [expr|str]] ...
 print "PSET:" ':PSET [STEP] x,y [, color| COLOR color]
 print "RANDOMIZE:" :RANDOMIZE 111
-print "READ:" ':READ var[, var ...]
+print "READ:" :READ VarRead1, VarRead2: if(VarRead1 != 1 OR VarRead2 != "a") then throw "READ failed"
 print "RECT:" ':RECT [STEP] x,y [,|STEP x2,y2] [, color| COLOR color] [FILLED]
 print "REDIM:" ':REDIM x
 print "RENAME:" ':RENAME "file", "newname"
