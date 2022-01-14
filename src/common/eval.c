@@ -222,7 +222,6 @@ void mat_dot(var_t *l, var_t *r) {
 //
 void mat_mul(var_t *l, var_t *r) {
   int lr, lc, rr, rc;
-  fprintf(stderr, "MM\n");
 
   var_num_t *m1 = mat_toc(l, &lr, &lc);
   if (m1) {
