@@ -1147,7 +1147,6 @@ static inline void eval_callf(var_t *r) {
   case kwLOG10:
   case kwFIX:
   case kwINT:
-  case kwCDBL:
   case kwDEG:
   case kwRAD:
   case kwPENF:
@@ -1158,7 +1157,6 @@ static inline void eval_callf(var_t *r) {
     break;
   case kwFRE:
   case kwSGN:
-  case kwCINT:
   case kwEOF:
   case kwSEEKF:
   case kwLOF:

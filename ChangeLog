@@ -1,4 +1,7 @@
 2022-12-31 (12.24)
+	COMMON: Removed 'Meaningless' CDBL, CINT, CREAL. These can be poly-filled with 'DEF' if required.
+
+2022-12-31 (12.24)
 	COMMON: Fix #131 - Scalar * Vector doesnt work
 
 2021-12-31 (12.24)
