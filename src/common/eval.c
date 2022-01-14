@@ -32,9 +32,9 @@
     v_free((v));                                \
   }
 
-/**
- * matrix: convert var_t to double[r][c]
- */
+//
+// matrix: convert var_t to double[r][c]
+//
 var_num_t *mat_toc(var_t *v, int32_t *rows, int32_t *cols) {
   var_num_t *m = NULL;
   *rows = *cols = 0;
@@ -70,9 +70,9 @@ var_num_t *mat_toc(var_t *v, int32_t *rows, int32_t *cols) {
   return m;
 }
 
-/**
- * matrix: conv. double[nr][nc] to var_t
- */
+//
+// matrix: conv. double[nr][nc] to var_t
+//
 void mat_tov(var_t *v, var_num_t *m, int rows, int cols, int protect_col1) {
   if (cols > 1 || protect_col1) {
     v_tomatrix(v, rows, cols);
@@ -89,9 +89,9 @@ void mat_tov(var_t *v, var_num_t *m, int rows, int cols, int protect_col1) {
   }
 }
 
-/**
- * matrix: 1op
- */
+//
+// matrix: 1op
+//
 void mat_op1(var_t *l, int op, var_num_t n) {
   int lr, lc;
 
@@ -114,29 +114,33 @@ void mat_op1(var_t *l, int op, var_num_t n) {
         }
       }
     }
-    mat_tov(l, m, lr, lc, 1);
+    if (v_maxdim(l) == 1) {
+      mat_tov(l, m, lc, 1, 0);
+    } else {
+      mat_tov(l, m, lr, lc, 1);
+    }
     free(m1);
     free(m);
   }
 }
 
-/**
- * M = -A
- */
+//
+// M = -A
+//
 void mat_antithetos(var_t *v) {
   mat_op1(v, 'A', 0);
 }
 
-/**
- * M = A
- */
+//
+// M = A
+//
 void mat_mulN(var_t *v, var_num_t N) {
   mat_op1(v, '*', N);
 }
 
-/**
- * matrix - add/sub
- */
+//
+// matrix - add/sub
+//
 void mat_op2(var_t *l, var_t *r, int op) {
   int lr, lc, rr, rc;
 
@@ -157,8 +161,7 @@ void mat_op2(var_t *l, var_t *r, int op) {
             } else {
               m[pos] = m2[pos] - m1[pos];
             }
-            // array is comming reversed because of
-            // where to store
+            // array is reversed because of where to store
           }
         }
       }
@@ -187,9 +190,9 @@ void mat_sub(var_t *l, var_t *r) {
   mat_op2(l, r, '-');
 }
 
-/**
- * matrix: multiply two 1d arrays
- */
+//
+// matrix: multiply two 1d arrays
+//
 void mat_mul_1d(var_t *l, var_t *r) {
   uint32_t size = v_asize(l);
   for (uint32_t i = 0; i < size; i++) {
@@ -200,9 +203,9 @@ void mat_mul_1d(var_t *l, var_t *r) {
   }
 }
 
-/**
- * matrix: dot product of two 1d arrays
- */
+//
+// matrix: dot product of two 1d arrays
+//
 void mat_dot(var_t *l, var_t *r) {
   var_num_t result = 0;
   uint32_t size = v_asize(l);
@@ -214,11 +217,12 @@ void mat_dot(var_t *l, var_t *r) {
   v_setreal(r, result);
 }
 
-/**
- * matrix: multiply
- */
+//
+// matrix: multiply
+//
 void mat_mul(var_t *l, var_t *r) {
   int lr, lc, rr, rc;
+  fprintf(stderr, "MM\n");
 
   var_num_t *m1 = mat_toc(l, &lr, &lc);
   if (m1) {
@@ -255,9 +259,9 @@ void mat_mul(var_t *l, var_t *r) {
   }
 }
 
-/**
- * The LIKE operator
- */
+//
+// The LIKE operator
+//
 int v_wc_match(var_t *vwc, var_t *v) {
   int ri;
 
@@ -1219,9 +1223,9 @@ static inline void eval_callf(var_t *r) {
   }
 }
 
-/**
- * executes the expression (Code[IP]) and returns the result (r)
- */
+//
+// executes the expression (Code[IP]) and returns the result (r)
+//
 void eval(var_t *r) {
   var_t *left = NULL;
   bcip_t eval_pos = eval_sp;

@@ -1,3 +1,6 @@
+2022-12-31 (12.24)
+	COMMON: Fix #131 - Scalar * Vector doesnt work
+
 2021-12-31 (12.24)
 	UI: add support for image.save("file.png") as per console
 

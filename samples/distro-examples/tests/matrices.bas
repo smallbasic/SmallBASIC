@@ -44,3 +44,12 @@ a1=[1,2,4]
 a2=[1,4,5]
 if (a1 * a2 != [1,8,20]) then throw "err"
 if (a1 % a2 != 29) then throw "err"
+
+rem - Scalar * Vector doesnt work #131 (https://github.com/smallbasic/SmallBASIC/issues/131)
+dim r(2)
+v = [5, 10, 10]
+s = 2
+r = s * v
+if (r[0] != 10) then throw "err1"
+if (r[1] != 20) then throw "err2"
+if (r[2] != 20) then throw "err3"
