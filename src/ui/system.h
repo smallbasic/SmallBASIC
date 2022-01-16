@@ -64,7 +64,7 @@ struct System {
   virtual void optionsBox(StringList *items) = 0;
   virtual void onRunCompleted() = 0;
   virtual void saveWindowRect() = 0;
-  virtual void setWindowSize(int width, int height) = 0;
+  virtual void setWindowRect(int x, int y, int width, int height) = 0;
   virtual void setWindowTitle(const char *title) = 0;
   virtual void share(const char *path) = 0;
   virtual void showCursor(CursorType cursorType) = 0;

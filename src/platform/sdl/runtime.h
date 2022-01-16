@@ -46,7 +46,7 @@ struct Runtime : public System {
   void processEvent(MAEvent &event);
   void pushEvent(MAEvent *event);
   void saveWindowRect();
-  void setWindowSize(int width, int height);
+  void setWindowRect(int x, int y, int width, int height);
   void setWindowTitle(const char *title);
   void share(const char *path) {}
   void showCursor(CursorType cursorType);

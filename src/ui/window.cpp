@@ -28,6 +28,7 @@ extern System *g_system;
 #define WINDOW_INSET    "insetTextScreen"
 #define WINDOW_SETFONT  "setFont"
 #define WINDOW_SETSIZE  "setSize"
+#define WINDOW_SETLOCATION "setLocation"
 #define WINDOW_THEME    "theme"
 
 // returns the next set of string variable arguments as a String list
@@ -111,7 +112,13 @@ void cmd_window_set_font(var_s *self, var_s *) {
 void cmd_window_set_size(var_s *self, var_s *) {
   var_int_t width, height;
   par_massget("II", &width, &height);
-  g_system->setWindowSize(width, height);
+  g_system->setWindowRect(-1, -1, width, height);
+}
+
+void cmd_window_set_location(var_s *self, var_s *) {
+  var_int_t x, y;
+  par_massget("II", &x, &y);
+  g_system->setWindowRect(x, y, -1, -1);
 }
 
 void cmd_window_get_theme(var_s *, var_s *retval) {
@@ -186,6 +193,7 @@ extern "C" void v_create_window(var_p_t var) {
   v_create_func(var, WINDOW_INSET, cmd_window_inset);
   v_create_func(var, WINDOW_SETFONT, cmd_window_set_font);
   v_create_func(var, WINDOW_SETSIZE, cmd_window_set_size);
+  v_create_func(var, WINDOW_SETLOCATION, cmd_window_set_location);
   v_create_func(var, WINDOW_THEME, cmd_window_get_theme);
 }
 

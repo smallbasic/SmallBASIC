@@ -35,7 +35,7 @@ struct Runtime : public System {
   void setFontSize(int size);
   void setLoadBreak(const char *url) {}
   void setLoadPath(const char *url) {}
-  void setWindowSize(int width, int height);
+  void setWindowRect(int x, int y, int width, int height);
   void setWindowTitle(const char *title);
   void share(const char *path) {}
   void showCursor(CursorType cursorType);

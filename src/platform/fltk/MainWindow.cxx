@@ -31,6 +31,7 @@ strlib::String recentPath[NUM_RECENT_ITEMS];
 strlib::String recentLabel[NUM_RECENT_ITEMS];
 int recentPosition[NUM_RECENT_ITEMS];
 MainWindow *wnd;
+Fl_Window *outputWindow;
 ExecState runMode = init_state;
 
 const char *fontCache = "fonts.txt";
@@ -110,13 +111,14 @@ bool MainWindow::basicMain(EditorWidget *editWidget,
     }
   }
 
-  Fl_Window *fullScreen = NULL;
+  Fl_Window *fullScreen = nullptr;
   Fl_Group *oldOutputGroup = _outputGroup;
   int old_w = _out->w();
   int old_h = _out->h();
   int old_x = _out->x();
   int old_y = _out->y();
   int interactive = opt_interactive;
+  outputWindow = this;
 
   if (!toolExec) {
     if (opt_ide == IDE_NONE) {
@@ -130,6 +132,7 @@ bool MainWindow::basicMain(EditorWidget *editWidget,
       setTitle(fullScreen, filename);
       _profile->restoreAppPosition(fullScreen);
       _outputGroup = fullScreen;
+      outputWindow = fullScreen;
       resizeDisplay(0, 0, w(), h());
       hide();
     } else {
@@ -148,10 +151,11 @@ bool MainWindow::basicMain(EditorWidget *editWidget,
   }
   while (restart);
 
+  outputWindow = this;
   opt_interactive = interactive;
   bool was_break = (runMode == break_state);
 
-  if (fullScreen != NULL) {
+  if (fullScreen != nullptr) {
     _profile->setAppPosition(*fullScreen);
     fullScreen->remove(_out);
     delete fullScreen;
@@ -220,7 +224,7 @@ void MainWindow::close_other_tabs(Fl_Widget *w, void *eventData) {
   int n = _tabGroup->children();
   Fl_Group *items[n];
   for (int c = 0; c < n; c++) {
-    items[c] = NULL;
+    items[c] = nullptr;
     Fl_Group *child = (Fl_Group *)_tabGroup->child(c);
     if (child != selected && gw_editor == getGroupWidget(child)) {
       EditorWidget *editWidget = (EditorWidget *)child->child(0);
@@ -230,7 +234,7 @@ void MainWindow::close_other_tabs(Fl_Widget *w, void *eventData) {
     }
   }
   for (int c = 0; c < n; c++) {
-    if (items[c] != NULL) {
+    if (items[c] != nullptr) {
       _tabGroup->remove(items[c]);
       delete items[c];
     }
@@ -327,7 +331,7 @@ void MainWindow::help_contents_brief(Fl_Widget *w, void *eventData) {
     int start, end;
     char *selection = editWidget->getSelection(&start, &end);
     const char *help = getBriefHelp(selection);
-    if (help != NULL) {
+    if (help != nullptr) {
       editWidget->getTty()->print(help);
       editWidget->getTty()->print("\n");
     }
@@ -364,19 +368,19 @@ void MainWindow::export_file(Fl_Widget *w, void *eventData) {
         if (dev_fopen(handle, _exportFile, DEV_FILE_OUTPUT)) {
           const char *data = editWidget->data();
           if (token[0]) {
-            vsncat(buffer, sizeof(buffer), "# ", token, "\n", NULL);
+            vsncat(buffer, sizeof(buffer), "# ", token, "\n", nullptr);
             dev_fwrite(handle, (byte *)buffer, strlen(buffer));
           }
           if (!dev_fwrite(handle, (byte *)data, editWidget->dataLength())) {
-            vsncat(buffer, sizeof(buffer), "Failed to write: ", _exportFile.c_str(), NULL);
+            vsncat(buffer, sizeof(buffer), "Failed to write: ", _exportFile.c_str(), nullptr);
             statusMsg(rs_err, buffer);
           } else {
             vsncat(buffer, sizeof(buffer), "Exported", editWidget->getFilename(), " to ",
-                   _exportFile.c_str(), NULL);
+                   _exportFile.c_str(), nullptr);
             statusMsg(rs_ready, buffer);
           }
         } else {
-          vsncat(buffer, sizeof(buffer), "Failed to open: ", _exportFile.c_str(), NULL);
+          vsncat(buffer, sizeof(buffer), "Failed to open: ", _exportFile.c_str(), nullptr);
           statusMsg(rs_err, buffer);
         }
         dev_fclose(handle);
@@ -684,9 +688,9 @@ void MainWindow::scanPlugIns(Fl_Menu_Bar *menu) {
 
   snprintf(path, sizeof(path), "%s/%s", packageHome, pluginHome);
   DIR *dp = opendir(path);
-  while (dp != NULL) {
+  while (dp != nullptr) {
     struct dirent *e = readdir(dp);
-    if (e == NULL) {
+    if (e == nullptr) {
       break;
     }
     const char *filename = e->d_name;
@@ -1073,7 +1077,7 @@ void MainWindow::new_file(Fl_Widget *w, void *eventData) {
 }
 
 void MainWindow::open_file(Fl_Widget *w, void *eventData) {
-  FileWidget *fileWidget = NULL;
+  FileWidget *fileWidget = nullptr;
   Fl_Group *openFileGroup = findTab(gw_file);
   if (!openFileGroup) {
     openFileGroup = createTab(gw_file, fileTabName);
@@ -1185,7 +1189,7 @@ EditorWidget *MainWindow::getEditor(const char *fullpath) {
       }
     }
   }
-  return NULL;
+  return nullptr;
 }
 
 /**
@@ -1427,7 +1431,7 @@ int MainWindow::handle(int e) {
 }
 
 void MainWindow::loadHelp(const char *path) {
-  if (!getHelp()->loadHelp(path) && getEditor() != NULL) {
+  if (!getHelp()->loadHelp(path) && getEditor() != nullptr) {
     getEditor()->statusMsg("Failed to open help file");
   }
 }
@@ -1440,16 +1444,16 @@ void MainWindow::loadIcon() {
 #if defined(WIN32)
     HICON ico = (HICON) icon();
     if (!ico) {
-      ico = (HICON) LoadImage(GetModuleHandle(NULL), MAKEINTRESOURCE(101),
+      ico = (HICON) LoadImage(GetModuleHandle(nullptr), MAKEINTRESOURCE(101),
                               IMAGE_ICON, 32, 32, LR_DEFAULTCOLOR | LR_SHARED);
       if (!ico) {
-        ico = LoadIcon(NULL, IDI_APPLICATION);
+        ico = LoadIcon(nullptr, IDI_APPLICATION);
       }
     }
     icon((char *)ico);
 #else
 #include "icon.h"
-    Fl_RGB_Image *image = new Fl_PNG_Image(NULL, sb_desktop_128x128_png, sb_desktop_128x128_png_len);
+    Fl_RGB_Image *image = new Fl_PNG_Image(nullptr, sb_desktop_128x128_png, sb_desktop_128x128_png_len);
     icon(image);
 #endif
   }
@@ -1496,7 +1500,7 @@ int BaseWindow::handle(int e) {
       }
       break;
     }
-    if (_mainSystem != NULL) {
+    if (_mainSystem != nullptr) {
       _mainSystem->handle(e);
     }
     break;

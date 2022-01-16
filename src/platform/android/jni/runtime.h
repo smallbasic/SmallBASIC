@@ -62,7 +62,7 @@ struct Runtime : public System {
   char *loadResource(const char *fileName);
   void optionsBox(StringList *items);
   void saveWindowRect() {}
-  void setWindowSize(int width, int height) {};
+  void setWindowRect(int x, int y, int width, int height) {};
   void setWindowTitle(const char *title) {}
   void share(const char *path) { setString("share", path); }
   void showCursor(CursorType cursorType) {}

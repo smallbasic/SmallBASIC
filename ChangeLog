@@ -1,7 +1,10 @@
-2022-12-31 (12.24)
+2022-01-16 (12.24)
+	COMMON: Implemented window.setLocation(x,y) #102
+
+2022-01-15 (12.24)
 	COMMON: Removed 'Meaningless' CDBL, CINT, CREAL. These can be poly-filled with 'DEF' if required.
 
-2022-12-31 (12.24)
+2022-01-14 (12.24)
 	COMMON: Fix #131 - Scalar * Vector doesnt work
 
 2021-12-31 (12.24)

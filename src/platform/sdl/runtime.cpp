@@ -621,11 +621,16 @@ void Runtime::processEvent(MAEvent &event) {
   }
 }
 
-void Runtime::setWindowSize(int width, int height) {
+void Runtime::setWindowRect(int x, int y, int width, int height) {
   logEntered();
-  SDL_SetWindowSize(_window, width, height);
-  _graphics->resize(width, height);
-  resize();
+  if (width > 0 && height > 0) {
+    SDL_SetWindowSize(_window, width, height);
+    _graphics->resize(width, height);
+    resize();
+  }
+  if (x > 0 && y > 0) {
+    SDL_SetWindowPosition(_window, x, y);
+  }
 }
 
 void Runtime::setWindowTitle(const char *title) {
@@ -811,7 +816,7 @@ char *Runtime::getClipboardText() {
 void Runtime::onRunCompleted() {
   SDL_SetWindowPosition(_window, _saveRect.x, _saveRect.y);
   SDL_SetWindowSize(_window, _saveRect.w, _saveRect.h);
-  setWindowSize(_saveRect.w, _saveRect.h);
+  setWindowRect(_saveRect.x, _saveRect.y, _saveRect.w, _saveRect.h);
 }
 
 void Runtime::saveWindowRect() {
