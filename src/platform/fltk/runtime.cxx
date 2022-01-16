@@ -236,7 +236,7 @@ void Runtime::setFontSize(int size) {
 }
 
 void Runtime::setWindowRect(int x, int y, int width, int height) {
-  if (wnd != outputWindow) {
+  if (wnd != outputWindow && outputWindow != nullptr) {
     if (width > 0 && height > 0) {
       outputWindow->size(width, height);
     }
@@ -247,7 +247,9 @@ void Runtime::setWindowRect(int x, int y, int width, int height) {
 }
 
 void Runtime::setWindowTitle(const char *title) {
-  outputWindow->label(title);
+  if (wnd != outputWindow && outputWindow != nullptr) {
+    outputWindow->label(title);
+  }
 }
 
 void Runtime::showCursor(CursorType cursorType) {
