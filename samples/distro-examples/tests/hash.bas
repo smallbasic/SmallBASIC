@@ -61,3 +61,13 @@ f.inputs[6].value= "123"
 if (not isarray(f.inputs)) then
   throw "post: inputs not a map"
 endif
+
+'
+' multi-layer access
+'
+dim lights(1)
+shadow.vertices = []
+shadow.vertices << 1
+lights[0].shadows = []
+lights[0].shadows << shadow
+lights[0].shadows[0].vertices[0] = [1,2,3,4]
