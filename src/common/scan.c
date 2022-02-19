@@ -1872,9 +1872,7 @@ char *comp_array_params(char *src, char exitChar) {
           }
           if (*(p + 1) == '.') {
             p = comp_array_uds_field(p + 2, &comp_prog);
-            if (*p == '[' || *p == '(') {
-              continue;
-            }
+            continue;
           }
         }
       }
