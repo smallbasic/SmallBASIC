@@ -718,7 +718,6 @@ void v_strcat(var_t *var, const char *str) {
       strcpy(var->v.p.ptr, p);
       strcat(var->v.p.ptr, str);
     }
-
   } else {
     err_typemismatch();
   }

@@ -39,7 +39,9 @@ int sockcl_open(dev_file_t *f) {
   return 1;
 }
 
+//
 // open a web server connection
+//
 int http_open(dev_file_t *f) {
   char host[250];
   char txbuf[1024];
@@ -101,10 +103,10 @@ int http_open(dev_file_t *f) {
   }
 
   sprintf(txbuf, "GET %s HTTP/1.0\r\n"
-      "Host: %s\r\n"
-      "Accept: */*\r\n"
-      "Accept-Language: en-au\r\n"
-      "User-Agent: SmallBASIC\r\n", slash ? slash : "/", host);
+          "Host: %s\r\n"
+          "Accept: */*\r\n"
+          "Accept-Language: en-au\r\n"
+          "User-Agent: SmallBASIC\r\n", slash ? slash : "/", host);
   if (f->drv_dw[2]) {
     // If-Modified-Since: Sun, 03 Apr 2005 04:45:47 GMT
     strcat(txbuf, "If-Modified-Since: ");
@@ -116,70 +118,86 @@ int http_open(dev_file_t *f) {
   return 1;
 }
 
+//
 // read from a web server connection
+//
 int http_read(dev_file_t *f, var_t *var_p) {
   char rxbuff[1024];
-  int inHeader = 1;
+  int inContent = 0;
   int httpOK = 0;
 
-  v_free(var_p);
-  var_p->type = V_STR;
-  var_p->v.p.ptr = 0;
-  var_p->v.p.length = 0;
+  v_setint(var_p, 0);
 
   while (1) {
-    int bytes = net_read(f->handle, (char *) rxbuff, sizeof(rxbuff));
+    int bytes = net_read(f->handle, (char *)rxbuff, sizeof(rxbuff));
     if (bytes == -1) {
       httpOK = 0;
       break;
     } else if (bytes == 0) {
-      break;                    // no more data
+      // no more data
+      break;
     }
     // assumes http header < 1024 bytes
-    if (inHeader) {
-      int i = 0;
-      while (1) {
-        int iattr = i;
-        while (rxbuff[i] != 0 && rxbuff[i] != '\n') {
-          i++;
-        }
-        if (rxbuff[i] == 0) {
-          inHeader = 0;
-          break;                // no end delimiter
-        }
-        if (rxbuff[i + 2] == '\n') {
-          var_p->v.p.length = bytes - i - 3;
-          var_p->v.p.ptr = malloc(var_p->v.p.length + 1);
-          var_p->v.p.owner = 1;
-          memcpy(var_p->v.p.ptr, rxbuff + i + 3, var_p->v.p.length);
-          var_p->v.p.ptr[var_p->v.p.length] = 0;
-          inHeader = 0;
-          break;                // found start of content
-        }
-        // null terminate attribute (in \r)
-        rxbuff[i - 1] = 0;
-        i++;
-        if (strstr(rxbuff + iattr, "200 OK") != 0) {
-          httpOK = 1;
-        }
-        if (strncmp(rxbuff + iattr, "Location: ", 10) == 0) {
-          // handle redirection
-          sockcl_close(f);
-          strlcpy(f->name, rxbuff + iattr + 10, sizeof(f->name));
-          if (http_open(f) == 0) {
-            return 0;
-          }
-          break;                // scan next header
-        }
+    if (inContent) {
+      if (var_p->type == V_INT) {
+        v_setstrn(var_p, rxbuff, bytes);
+      } else {
+        var_p->v.p.ptr = realloc(var_p->v.p.ptr, var_p->v.p.length + bytes + 1);
+        memcpy(var_p->v.p.ptr + var_p->v.p.length, rxbuff, bytes);
+        var_p->v.p.length += bytes;
+        var_p->v.p.ptr[var_p->v.p.length] = '\0';
       }
     } else {
-      var_p->v.p.ptr = realloc(var_p->v.p.ptr, var_p->v.p.length + bytes + 1);
-      memcpy(var_p->v.p.ptr + var_p->v.p.length, rxbuff, bytes);
-      var_p->v.p.length += bytes;
-      var_p->v.p.ptr[var_p->v.p.length] = 0;
+      int i = 0;
+      int countNL = 0;
+      while (i < bytes && rxbuff[i] != 0 && countNL != 4) {
+        // scan for CR + LF + CR + LF
+        if (rxbuff[i] == '\r' && (countNL % 2) == 0) {
+          countNL++;
+        } else if (rxbuff[i] == '\n' && (countNL % 2) == 1) {
+          countNL++;
+        } else {
+          countNL = 0;
+        }
+        i++;
+      }
+      if (countNL == 4) {
+        // found start of content
+        if (i < bytes) {
+          // copy remaining characters from rxbuff
+          v_free(var_p);
+          var_p->type = V_STR;
+          var_p->v.p.length = bytes - i;
+          var_p->v.p.ptr = malloc(var_p->v.p.length + 1);
+          var_p->v.p.owner = 1;
+          memcpy(var_p->v.p.ptr, rxbuff + i, var_p->v.p.length);
+          var_p->v.p.ptr[var_p->v.p.length] = '\0';
+        }
+        inContent = 1;
+      }
+      // null terminate headers fragment
+      rxbuff[i - 1] = '\0';
+      if (strstr(rxbuff, "200 OK") != 0) {
+        httpOK = 1;
+      }
+      char *location = strstr(rxbuff, "Location: ");
+      if (location) {
+        // handle redirection
+        char *cr = strstr(location, "\r");
+        if (cr) {
+          *cr = '\0';
+          sockcl_close(f);
+          strlcpy(f->name, location + 10, sizeof(f->name));
+          if (http_open(f) == 0) {
+            httpOK = 0;
+            break;
+          }
+          inContent = 0;
+          v_setint(var_p, 0);
+        }
+      }
     }
   }
-
   return httpOK;
 }
 
@@ -190,17 +208,17 @@ int sockcl_close(dev_file_t *f) {
   return 1;
 }
 
-/*
- * write to a socket
- */
+//
+// write to a socket
+//
 int sockcl_write(dev_file_t *f, byte *data, uint32_t size) {
   net_send((socket_t) (long) f->handle, (char *)data, size);
   return size;
 }
 
-/*
- * read from a socket
- */
+//
+// read from a socket
+//
 int sockcl_read(dev_file_t *f, byte *data, uint32_t size) {
   int result;
   if (f->handle != -1) {
@@ -214,16 +232,16 @@ int sockcl_read(dev_file_t *f, byte *data, uint32_t size) {
   return result;
 }
 
-/*
- * Returns true (EOF) if the connection is broken
- */
+//
+// Returns true (EOF) if the connection is broken
+//
 int sockcl_eof(dev_file_t *f) {
   return (((long) f->drv_dw[0]) <= 0) ? 1 : 0;
 }
 
-/*
- * returns the size of the data which are waiting in stream's queue
- */
+//
+// returns the size of the data which are waiting in stream's queue
+//
 int sockcl_length(dev_file_t *f) {
   return net_peek((socket_t) (long) f->handle);
 }

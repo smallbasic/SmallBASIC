@@ -209,6 +209,5 @@ char *dev_gets(char *dest, int size) {
     }
   } while (ch != '\n' && ch != '\r');
   dest[len] = '\0';
-  dev_print(dest);
   return dest;
 }
