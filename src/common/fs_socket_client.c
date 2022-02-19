@@ -122,6 +122,7 @@ int http_open(dev_file_t *f) {
 // read from a web server connection
 //
 int http_read(dev_file_t *f, var_t *var_p) {
+  static const char *delim = "\r\n\r\n";
   char rxbuff[1024];
   int inContent = 0;
   int httpOK = 0;
@@ -140,7 +141,13 @@ int http_read(dev_file_t *f, var_t *var_p) {
     // assumes http header < 1024 bytes
     if (inContent) {
       if (var_p->type == V_INT) {
-        v_setstrn(var_p, rxbuff, bytes);
+        v_free(var_p);
+        var_p->type = V_STR;
+        var_p->v.p.length = bytes;
+        var_p->v.p.ptr = malloc(var_p->v.p.length + 1);
+        var_p->v.p.owner = 1;
+        memcpy(var_p->v.p.ptr, rxbuff, var_p->v.p.length);
+        var_p->v.p.ptr[var_p->v.p.length] = '\0';
       } else {
         var_p->v.p.ptr = realloc(var_p->v.p.ptr, var_p->v.p.length + bytes + 1);
         memcpy(var_p->v.p.ptr + var_p->v.p.length, rxbuff, bytes);
@@ -152,9 +159,7 @@ int http_read(dev_file_t *f, var_t *var_p) {
       int countNL = 0;
       while (i < bytes && rxbuff[i] != 0 && countNL != 4) {
         // scan for CR + LF + CR + LF
-        if (rxbuff[i] == '\r' && (countNL % 2) == 0) {
-          countNL++;
-        } else if (rxbuff[i] == '\n' && (countNL % 2) == 1) {
+        if (rxbuff[i] == delim[countNL]) {
           countNL++;
         } else {
           countNL = 0;

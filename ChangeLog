@@ -1,3 +1,6 @@
+2022-02-19 (12.24)
+	COMMON: Fixed http_read to handle large HTTP headers
+
 2022-01-16 (12.24)
 	COMMON: Implemented window.setLocation(x,y) #102
 
