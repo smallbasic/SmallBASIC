@@ -25,22 +25,26 @@ uint32_t g_start = 0;
 uint32_t g_maxTime = 2000;
 bool g_graphicText = true;
 bool g_noExecute = false;
+bool g_json = false;
+char *execBas = nullptr;
 struct MHD_Connection *g_connection;
 StringList g_cookies;
 
 static struct option OPTIONS[] = {
-  {"help",           no_argument,       NULL, 'h'},
-  {"verbose",        no_argument,       NULL, 'v'},
-  {"file-permitted", no_argument,       NULL, 'f'},
-  {"no-execute",     no_argument,       NULL, 'x'},
-  {"port",           optional_argument, NULL, 'p'},
-  {"run",            optional_argument, NULL, 'r'},
-  {"width",          optional_argument, NULL, 'w'},
-  {"height",         optional_argument, NULL, 'e'},
-  {"command",        optional_argument, NULL, 'c'},
-  {"graphic-text",   optional_argument, NULL, 'g'},
-  {"max-time",       optional_argument, NULL, 't'},
-  {"module",         optional_argument, NULL, 'm'},
+  {"help",           no_argument,       nullptr, 'h'},
+  {"verbose",        no_argument,       nullptr, 'v'},
+  {"file-permitted", no_argument,       nullptr, 'f'},
+  {"no-execute",     no_argument,       nullptr, 'x'},
+  {"json",           no_argument,       nullptr, 'j'},
+  {"port",           optional_argument, nullptr, 'p'},
+  {"run",            optional_argument, nullptr, 'r'},
+  {"width",          optional_argument, nullptr, 'w'},
+  {"height",         optional_argument, nullptr, 'e'},
+  {"command",        optional_argument, nullptr, 'c'},
+  {"graphic-text",   optional_argument, nullptr, 'g'},
+  {"max-time",       optional_argument, nullptr, 't'},
+  {"module",         optional_argument, nullptr, 'm'},
+  {"cgi-exec",       optional_argument, nullptr, 'i'},
   {0, 0, 0, 0}
 };
 
@@ -68,7 +72,7 @@ void show_help() {
           (int)sizeof(var_int_t), (int)sizeof(var_num_t));
   fprintf(stdout, "usage: sbasicw [options]...\n");
   int i = 0;
-  while (OPTIONS[i].name != NULL) {
+  while (OPTIONS[i].name != nullptr) {
     fprintf(stdout, OPTIONS[i].has_arg ?
             "  -%c, --%s='<argument>'\n" : "  -%c, --%s\n",
             OPTIONS[i].val, OPTIONS[i].name);
@@ -80,7 +84,7 @@ void show_help() {
 void log(const char *format, ...) {
   va_list args;
   va_start(args, format);
-  unsigned size = format == NULL ? 0 : vsnprintf(NULL, 0, format, args);
+  unsigned size = format == nullptr ? 0 : vsnprintf(nullptr, 0, format, args);
   va_end(args);
 
   if (size) {
@@ -92,7 +96,7 @@ void log(const char *format, ...) {
     buf[size] = '\0';
 
     char date[18];
-    time_t t = time(NULL);
+    time_t t = time(nullptr);
     struct tm *p = localtime(&t);
     strftime(date, sizeof(date), "%Y%m%d %H:%M:%S", p);
     fprintf(stdout, "%s %s\n", date, buf);
@@ -106,27 +110,22 @@ MHD_Result accept_cb(void *cls, const struct sockaddr *addr, socklen_t addrlen) 
 }
 
 MHD_Response *execute(struct MHD_Connection *connection, const char *bas) {
-  const char *width =
-    MHD_lookup_connection_value(connection, MHD_GET_ARGUMENT_KIND, "width");
-  const char *height =
-    MHD_lookup_connection_value(connection, MHD_GET_ARGUMENT_KIND, "height");
-  const char *command =
-    MHD_lookup_connection_value(connection, MHD_GET_ARGUMENT_KIND, "command");
-  const char *graphicText =
-    MHD_lookup_connection_value(connection, MHD_GET_ARGUMENT_KIND, "graphic-text");
-  const char *accept =
-    MHD_lookup_connection_value(connection, MHD_HEADER_KIND, MHD_HTTP_HEADER_ACCEPT);
+  const char *width = MHD_lookup_connection_value(connection, MHD_GET_ARGUMENT_KIND, "width");
+  const char *height = MHD_lookup_connection_value(connection, MHD_GET_ARGUMENT_KIND, "height");
+  const char *command = MHD_lookup_connection_value(connection, MHD_GET_ARGUMENT_KIND, "command");
+  const char *graphicText = MHD_lookup_connection_value(connection, MHD_GET_ARGUMENT_KIND, "graphic-text");
+  const char *accept = MHD_lookup_connection_value(connection, MHD_HEADER_KIND, MHD_HTTP_HEADER_ACCEPT);
 
-  if (width != NULL) {
+  if (width != nullptr) {
     os_graf_mx = atoi(width);
   }
-  if (height != NULL) {
+  if (height != nullptr) {
     os_graf_my = atoi(height);
   }
-  if (graphicText != NULL) {
+  if (graphicText != nullptr) {
     g_graphicText = atoi(graphicText) > 0;
   }
-  if (command != NULL) {
+  if (command != nullptr) {
     strcpy(opt_command, command);
   }
 
@@ -135,19 +134,15 @@ MHD_Response *execute(struct MHD_Connection *connection, const char *bas) {
   g_canvas.reset();
   g_start = dev_get_millisecond_count();
   g_canvas.setGraphicText(g_graphicText);
-  g_canvas.setJSON((strncmp(accept, "application/json", 16) == 0));
+  g_canvas.setJSON(g_json || (strncmp(accept, "application/json", 16) == 0));
   g_cookies.removeAll();
   sbasic_main(bas);
-  g_connection = NULL;
+  g_connection = nullptr;
   String page = g_canvas.getPage();
-  MHD_Response *response =
-    MHD_create_response_from_buffer(page.length(), (void *)page.c_str(),
-                                    MHD_RESPMEM_MUST_COPY);
+  MHD_Response *response = MHD_create_response_from_buffer(page.length(), (void *)page.c_str(), MHD_RESPMEM_MUST_COPY);
   List_each(String *, it, g_cookies) {
     String *next = (*it);
-    MHD_add_response_header(response,
-                            MHD_HTTP_HEADER_SET_COOKIE,
-                            next->c_str());
+    MHD_add_response_header(response, MHD_HTTP_HEADER_SET_COOKIE, next->c_str());
   }
   return response;
 }
@@ -159,15 +154,21 @@ MHD_Response *serve_file(const char *path) {
   if (!fstat(fd, &stbuf)) {
     response = MHD_create_response_from_fd(stbuf.st_size, fd);
   } else {
-    response = NULL;
+    response = nullptr;
   }
   return response;
 }
 
 MHD_Response *get_response(struct MHD_Connection *connection, const char *path) {
-  MHD_Response *response = NULL;
+  MHD_Response *response = nullptr;
   struct stat stbuf;
-  if (path[0] == '\0') {
+
+  if (execBas && stat(execBas, &stbuf) != -1 && S_ISREG(stbuf.st_mode)) {
+    if (path != nullptr && !opt_command[0]) {
+      strcpy(opt_command, path);
+    }
+    response = execute(connection, execBas);
+  } else if (path[0] == '\0') {
     if (stat("index.bas", &stbuf) != -1 && S_ISREG(stbuf.st_mode)) {
       response = execute(connection, "index.bas");
     } else {
@@ -175,7 +176,7 @@ MHD_Response *get_response(struct MHD_Connection *connection, const char *path) 
     }
   } else if (strcmp(path, "favicon.ico") == 0) {
     response = serve_file(path);
-  } else if (strstr(path, "..") == NULL) {
+  } else if (strstr(path, "..") == nullptr) {
     const char *dot = strrchr(path, '.');
     if (dot && !g_noExecute && strncasecmp(dot, ".bas", 4) == 0 &&
         stat(path, &stbuf) != -1 && S_ISREG(stbuf.st_mode)) {
@@ -205,26 +206,28 @@ MHD_Result access_cb(void *cls,
     return MHD_YES;
   }
   // clear context pointer
-  *ptr = NULL;
+  *ptr = nullptr;
 
-  if (upload_data != NULL) {
+  if (upload_data != nullptr) {
     size_t size = OPT_CMD_SZ - 1;
     if (*upload_data_size < size) {
       size = *upload_data_size;
     }
     strncpy(opt_command, upload_data, size);
+    *upload_data_size = 0;
+    return MHD_YES;
   }
 
   MHD_Result result;
-  struct MHD_Response *response = get_response(connection, url + 1);
-  if (response != NULL) {
-    result = MHD_queue_response(connection, MHD_HTTP_OK, response);
+  MHD_Response *response = get_response(connection, url + 1);
+  if (response != nullptr) {
+    int code = g_canvas.getPage().length() ? MHD_HTTP_OK : MHD_HTTP_NO_CONTENT;
+    result = MHD_queue_response(connection, code, response);
   } else {
     String error;
     error.append("File not found: ").append(url);
     log(error.c_str());
-    response = MHD_create_response_from_buffer(error.length(), (void *)error.c_str(),
-                                               MHD_RESPMEM_MUST_COPY);
+    response = MHD_create_response_from_buffer(error.length(), (void *)error.c_str(), MHD_RESPMEM_MUST_COPY);
     result = MHD_queue_response(connection, MHD_HTTP_NOT_FOUND, response);
   }
   MHD_destroy_response(response);
@@ -234,11 +237,11 @@ MHD_Result access_cb(void *cls,
 int main(int argc, char **argv) {
   init();
   int port = 8080;
-  char *runBas = NULL;
+  char *runBas = nullptr;
 
   while (1) {
     int option_index = 0;
-    int c = getopt_long(argc, argv, "hvfxp:t:m::r:w:e:c:g:", OPTIONS, &option_index);
+    int c = getopt_long(argc, argv, "hvfxjp:t:m::r:w:e:c:g:i:", OPTIONS, &option_index);
     if (c == -1) {
       break;
     }
@@ -284,8 +287,16 @@ int main(int argc, char **argv) {
         strcpy(opt_modpath, optarg);
       }
       break;
+    case 'i':
+      if (optarg) {
+        execBas = strdup(optarg);
+      }
+      break;
     case 'x':
       g_noExecute = true;
+      break;
+    case 'j':
+      g_json = true;
       break;
     default:
       show_help();
@@ -294,24 +305,24 @@ int main(int argc, char **argv) {
     }
   }
 
-  if (runBas != NULL) {
+  if (runBas != nullptr) {
     g_canvas.reset();
     g_start = dev_get_millisecond_count();
     sbasic_main(runBas);
     puts(g_canvas.getPage().c_str());
   } else {
     fprintf(stdout, "Starting SmallBASIC web server on port:%d\n", port);
-    MHD_Daemon *d =
-    MHD_start_daemon(MHD_USE_SELECT_INTERNALLY, port,
-                     &accept_cb, NULL,
-                     &access_cb, NULL, MHD_OPTION_END);
-    if (d == NULL) {
+    MHD_Daemon *d = MHD_start_daemon(MHD_USE_SELECT_INTERNALLY, port,
+                                     &accept_cb, nullptr,
+                                     &access_cb, nullptr, MHD_OPTION_END);
+    if (d == nullptr) {
       fprintf(stderr, "startup failed\n");
       return 1;
     }
     getc(stdin);
     MHD_stop_daemon(d);
   }
+  free(execBas);
   return 0;
 }
 
@@ -371,7 +382,7 @@ void osd_write(const char *str) {
 }
 
 char *dev_gets(char *dest, int maxSize) {
-  return NULL;
+  return nullptr;
 }
 
 void lwrite(const char *buf) {
@@ -385,7 +396,7 @@ void lwrite(const char *buf) {
 //
 struct ValueIteratorClosure {
   ValueIteratorClosure(int el) :
-    _result(NULL),
+    _result(nullptr),
     _count(0),
     _element(el) {
   }
@@ -419,33 +430,33 @@ int dev_setenv(const char *key, const char *value) {
 
 const char *dev_getenv(const char *key) {
   const char *result;
-  if (g_connection != NULL) {
+  if (g_connection != nullptr) {
     result = MHD_lookup_connection_value(g_connection, MHD_COOKIE_KIND, key);
-    if (result == NULL) {
+    if (result == nullptr) {
       result = MHD_lookup_connection_value(g_connection, MHD_HEADER_KIND, key);
     }
-    if (result == NULL) {
+    if (result == nullptr) {
       result = MHD_lookup_connection_value(g_connection, MHD_GET_ARGUMENT_KIND, key);
     }
   } else {
-    result = NULL;
+    result = nullptr;
   }
   return result;
 }
 
 int dev_env_count() {
   int count = 0;
-  if (g_connection != NULL) {
-    count += MHD_get_connection_values(g_connection, MHD_COOKIE_KIND, countIterator, NULL);
-    count += MHD_get_connection_values(g_connection, MHD_HEADER_KIND, countIterator, NULL);
-    count += MHD_get_connection_values(g_connection, MHD_GET_ARGUMENT_KIND, countIterator, NULL);
+  if (g_connection != nullptr) {
+    count += MHD_get_connection_values(g_connection, MHD_COOKIE_KIND, countIterator, nullptr);
+    count += MHD_get_connection_values(g_connection, MHD_HEADER_KIND, countIterator, nullptr);
+    count += MHD_get_connection_values(g_connection, MHD_GET_ARGUMENT_KIND, countIterator, nullptr);
   }
   return count;
 }
 
 const char *dev_getenv_n(int n) {
-  const char *result = NULL;
-  if (g_connection != NULL) {
+  const char *result = nullptr;
+  if (g_connection != nullptr) {
     ValueIteratorClosure closure(n);
     MHD_get_connection_values(g_connection, MHD_COOKIE_KIND, valueIterator, &closure);
     MHD_get_connection_values(g_connection, MHD_HEADER_KIND, valueIterator, &closure);

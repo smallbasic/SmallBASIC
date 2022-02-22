@@ -1,4 +1,7 @@
 2022-02-19 (12.24)
+	WEB: Added simple REST server support
+
+2022-02-19 (12.24)
 	COMMON: Fixed http_read to handle large HTTP headers
 	COMMON: Fixed hashmap access issue
 
