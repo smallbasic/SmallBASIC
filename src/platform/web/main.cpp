@@ -27,24 +27,26 @@ bool g_graphicText = true;
 bool g_noExecute = false;
 bool g_json = false;
 char *execBas = nullptr;
-struct MHD_Connection *g_connection;
+MHD_Connection *g_connection;
 StringList g_cookies;
+String g_path;
+String g_data;
 
 static struct option OPTIONS[] = {
-  {"help",           no_argument,       nullptr, 'h'},
-  {"verbose",        no_argument,       nullptr, 'v'},
   {"file-permitted", no_argument,       nullptr, 'f'},
+  {"help",           no_argument,       nullptr, 'h'},
+  {"json-content",   no_argument,       nullptr, 'j'},
   {"no-execute",     no_argument,       nullptr, 'x'},
-  {"json",           no_argument,       nullptr, 'j'},
+  {"verbose",        no_argument,       nullptr, 'v'},
+  {"command",        optional_argument, nullptr, 'c'},
+  {"exec-bas",       optional_argument, nullptr, 'i'},
+  {"graphic-text",   optional_argument, nullptr, 'g'},
+  {"height",         optional_argument, nullptr, 'e'},
+  {"max-time",       optional_argument, nullptr, 't'},
+  {"module",         optional_argument, nullptr, 'm'},
   {"port",           optional_argument, nullptr, 'p'},
   {"run",            optional_argument, nullptr, 'r'},
   {"width",          optional_argument, nullptr, 'w'},
-  {"height",         optional_argument, nullptr, 'e'},
-  {"command",        optional_argument, nullptr, 'c'},
-  {"graphic-text",   optional_argument, nullptr, 'g'},
-  {"max-time",       optional_argument, nullptr, 't'},
-  {"module",         optional_argument, nullptr, 'm'},
-  {"cgi-exec",       optional_argument, nullptr, 'i'},
   {0, 0, 0, 0}
 };
 
@@ -109,7 +111,7 @@ MHD_Result accept_cb(void *cls, const struct sockaddr *addr, socklen_t addrlen) 
   return MHD_YES;
 }
 
-MHD_Response *execute(struct MHD_Connection *connection, const char *bas) {
+MHD_Response *execute(MHD_Connection *connection, const char *bas) {
   const char *width = MHD_lookup_connection_value(connection, MHD_GET_ARGUMENT_KIND, "width");
   const char *height = MHD_lookup_connection_value(connection, MHD_GET_ARGUMENT_KIND, "height");
   const char *command = MHD_lookup_connection_value(connection, MHD_GET_ARGUMENT_KIND, "command");
@@ -159,14 +161,13 @@ MHD_Response *serve_file(const char *path) {
   return response;
 }
 
-MHD_Response *get_response(struct MHD_Connection *connection, const char *path) {
+MHD_Response *get_response(MHD_Connection *connection, const char *path) {
   MHD_Response *response = nullptr;
   struct stat stbuf;
 
+  g_path = path;
+
   if (execBas && stat(execBas, &stbuf) != -1 && S_ISREG(stbuf.st_mode)) {
-    if (path != nullptr && !opt_command[0]) {
-      strcpy(opt_command, path);
-    }
     response = execute(connection, execBas);
   } else if (path[0] == '\0') {
     if (stat("index.bas", &stbuf) != -1 && S_ISREG(stbuf.st_mode)) {
@@ -191,7 +192,7 @@ MHD_Response *get_response(struct MHD_Connection *connection, const char *path) 
 // server callback
 // see: /usr/share/doc/libmicrohttpd-dev/examples
 MHD_Result access_cb(void *cls,
-                     struct MHD_Connection *connection,
+                     MHD_Connection *connection,
                      const char *url,
                      const char *method,
                      const char *version,
@@ -209,11 +210,13 @@ MHD_Result access_cb(void *cls,
   *ptr = nullptr;
 
   if (upload_data != nullptr) {
+    // curl -H "Accept: application/json" -d '{"productId": 123456, "quantity": 100}' http://localhost:8080/foo
     size_t size = OPT_CMD_SZ - 1;
     if (*upload_data_size < size) {
       size = *upload_data_size;
     }
-    strncpy(opt_command, upload_data, size);
+    g_data.clear();
+    g_data.append(upload_data, size);
     *upload_data_size = 0;
     return MHD_YES;
   }
@@ -430,7 +433,11 @@ int dev_setenv(const char *key, const char *value) {
 
 const char *dev_getenv(const char *key) {
   const char *result;
-  if (g_connection != nullptr) {
+  if (strcmp(key, "path") == 0) {
+    result = g_path.c_str();
+  } else if (strcmp(key, "data") == 0) {
+    result = g_data.c_str();
+  } else if (g_connection != nullptr) {
     result = MHD_lookup_connection_value(g_connection, MHD_COOKIE_KIND, key);
     if (result == nullptr) {
       result = MHD_lookup_connection_value(g_connection, MHD_HEADER_KIND, key);
@@ -445,7 +452,7 @@ const char *dev_getenv(const char *key) {
 }
 
 int dev_env_count() {
-  int count = 0;
+  int count = 2;
   if (g_connection != nullptr) {
     count += MHD_get_connection_values(g_connection, MHD_COOKIE_KIND, countIterator, nullptr);
     count += MHD_get_connection_values(g_connection, MHD_HEADER_KIND, countIterator, nullptr);
