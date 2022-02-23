@@ -434,7 +434,13 @@ void map_set_primative(var_p_t dest, const char *s, int len) {
     }
   }
   if (text) {
-    v_setstrn(dest, s, len);
+    if (len == 4 && strncasecmp(s, "true", len) == 0) {
+      v_setint(dest, 1);
+    } else if (len == 5 && strncasecmp(s, "false", len) == 0) {
+      v_setint(dest, 0);
+    } else {
+      v_setstrn(dest, s, len);
+    }
   } else if (fract) {
     v_setreal(dest, atof(s));
   } else {

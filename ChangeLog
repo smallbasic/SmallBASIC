@@ -1,3 +1,6 @@
+2022-02-23 (12.24)
+	COMMON: ARRAY now parses json with true/false correctly
+
 2022-02-19 (12.24)
 	WEB: Added simple REST server support
 

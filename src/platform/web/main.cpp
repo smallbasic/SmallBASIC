@@ -117,6 +117,7 @@ MHD_Response *execute(MHD_Connection *connection, const char *bas) {
   const char *command = MHD_lookup_connection_value(connection, MHD_GET_ARGUMENT_KIND, "command");
   const char *graphicText = MHD_lookup_connection_value(connection, MHD_GET_ARGUMENT_KIND, "graphic-text");
   const char *accept = MHD_lookup_connection_value(connection, MHD_HEADER_KIND, MHD_HTTP_HEADER_ACCEPT);
+  const char *contentType = MHD_lookup_connection_value(connection, MHD_HEADER_KIND, MHD_HTTP_HEADER_CONTENT_TYPE);
 
   if (width != nullptr) {
     os_graf_mx = atoi(width);
@@ -131,7 +132,7 @@ MHD_Response *execute(MHD_Connection *connection, const char *bas) {
     strcpy(opt_command, command);
   }
 
-  log("%s dim:%dX%d", bas, os_graf_mx, os_graf_my);
+  log("%s dim:%dX%d [accept=%s, content-type=%s]", bas, os_graf_mx, os_graf_my, accept, contentType);
   g_connection = connection;
   g_canvas.reset();
   g_start = dev_get_millisecond_count();
@@ -473,6 +474,10 @@ const char *dev_getenv_n(int n) {
   return result;
 }
 
+void dev_delay(uint32_t ms) {
+  usleep(1000 * ms);
+}
+
 //
 // not implemented
 //
@@ -495,5 +500,4 @@ void v_create_image(var_p_t var) {}
 void v_create_form(var_p_t var) {}
 void v_create_window(var_p_t var) {}
 void dev_show_page() {}
-void dev_delay(uint32_t ms) {}
 void dev_log_stack(const char *keyword, int type, int line) {}
