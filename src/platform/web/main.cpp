@@ -137,7 +137,7 @@ MHD_Response *execute(MHD_Connection *connection, const char *bas) {
   g_canvas.reset();
   g_start = dev_get_millisecond_count();
   g_canvas.setGraphicText(g_graphicText);
-  g_canvas.setJSON(g_json || (strncmp(accept, "application/json", 16) == 0));
+  g_canvas.setJSON(g_json || (accept && strncmp(accept, "application/json", 16) == 0));
   g_cookies.removeAll();
   sbasic_main(bas);
   g_connection = nullptr;
@@ -316,7 +316,7 @@ int main(int argc, char **argv) {
     puts(g_canvas.getPage().c_str());
   } else {
     fprintf(stdout, "Starting SmallBASIC web server on port:%d\n", port);
-    MHD_Daemon *d = MHD_start_daemon(MHD_USE_SELECT_INTERNALLY, port,
+    MHD_Daemon *d = MHD_start_daemon(MHD_USE_INTERNAL_POLLING_THREAD, port,
                                      &accept_cb, nullptr,
                                      &access_cb, nullptr, MHD_OPTION_END);
     if (d == nullptr) {
