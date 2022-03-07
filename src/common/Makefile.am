@@ -23,7 +23,6 @@ EXTRA_DIST =                              \
     ../lib/jsmn/jsmn.h                    \
     ../lib/lodepng/lodepng.cpp            \
     ../lib/lodepng/lodepng.h              \
-    ../lib/miniaudio/extras/dr_wav.h      \
     ../lib/miniaudio/miniaudio.h          \
     ../lib/stb/stb_textedit.h
 
