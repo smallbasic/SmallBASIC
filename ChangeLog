@@ -1,4 +1,16 @@
 2022-02-23 (12.24)
+	CONSOLE: Added -i command switch for live mode
+
+	This will run the BASIC program in a loop. It can be used with the debug module
+	to rerun whenever the source code changes:
+
+	import debug
+	run("xdotool windowactivate `xdotool search --onlyvisible --name \"Emacs\"`")
+	while (!debug.IsSourceModified())
+	  rem main loop
+	wend
+
+2022-02-23 (12.24)
 	COMMON: ARRAY now parses json with true/false correctly
 
 2022-02-19 (12.24)

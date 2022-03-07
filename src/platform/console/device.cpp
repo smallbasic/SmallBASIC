@@ -90,7 +90,9 @@ void console_init() {
   p_write = default_write;
 }
 
+//
 // initialize driver
+//
 int osd_devinit() {
   p_arc = (arc_fn)plugin_get_func("sblib_arc");
   p_audio = (audio_fn)plugin_get_func("sblib_audio");
@@ -132,27 +134,35 @@ int osd_devinit() {
   return 1;
 }
 
+//
 // close driver
+//
 int osd_devrestore() {
   return 1;
 }
 
+//
 // set foreground and background color
 // a value of -1 means not change that color
+//
 void osd_settextcolor(long fg, long bg) {
   if (p_settextcolor) {
     p_settextcolor(fg, bg);
   }
 }
 
+//
 // enable or disable PEN/MOUSE driver
+//
 void osd_setpenmode(int enable) {
   if (p_setpenmode) {
     p_setpenmode(enable);
   }
 }
 
+//
 // return pen/mouse info ('code' is the rq, see doc)
+//
 int osd_getpen(int code) {
   int result;
   if (p_getpen) {
@@ -163,14 +173,18 @@ int osd_getpen(int code) {
   return result;
 }
 
+//
 // clear screen
+//
 void osd_cls() {
   if (p_cls) {
     p_cls();
   }
 }
 
+//
 // returns the current x position (text-mode cursor)
+//
 int osd_getx() {
   int result;
   if (p_getx) {
@@ -181,7 +195,9 @@ int osd_getx() {
   return result;
 }
 
+//
 // returns the current y position (text-mode cursor)
+//
 int osd_gety() {
   int result;
   if (p_gety) {
@@ -192,19 +208,25 @@ int osd_gety() {
   return result;
 }
 
+//
 // set's text-mode (or graphics) cursor position
+//
 void osd_setxy(int x, int y) {
   if (p_setxy) {
     p_setxy(x, y);
   }
 }
 
+//
 // Basic output - print sans control codes
+//
 void osd_write(const char *str) {
   p_write(str);
 }
 
+//
 // events loop (called from main, every 50ms)
+//
 int osd_events(int wait_flag) {
   int result = 0;
   if (p_events) {
@@ -218,42 +240,54 @@ int osd_events(int wait_flag) {
   return result;
 }
 
+//
 // sets foreground color
+//
 void osd_setcolor(long color) {
   if (p_setcolor) {
     p_setcolor(color);
   }
 }
 
+//
 // draw a line
+//
 void osd_line(int x1, int y1, int x2, int y2) {
   if (p_line) {
     p_line(x1, y1, x2, y2);
   }
 }
 
+//
 // draw an ellipse
+//
 void osd_ellipse(int xc, int yc, int xr, int yr, int fill) {
   if (p_ellipse) {
     p_ellipse(xc, yc, xr, yr, fill);
   }
 }
 
+//
 // draw an arc
+//
 void osd_arc(int xc, int yc, double r, double as, double ae, double aspect) {
   if (p_arc) {
     p_arc(xc, yc, r, as, ae, aspect);
   }
 }
 
+//
 // draw a pixel
+//
 void osd_setpixel(int x, int y) {
   if (p_setpixel) {
     p_setpixel(x, y);
   }
 }
 
+//
 // returns pixel's color
+//
 long osd_getpixel(int x, int y) {
   long result;
   if (p_getpixel) {
@@ -264,21 +298,27 @@ long osd_getpixel(int x, int y) {
   return result;
 }
 
+//
 // draw rectangle (parallelogram)
+//
 void osd_rect(int x1, int y1, int x2, int y2, int fill) {
   if (p_rect) {
     p_rect(x1, y1, x2, y2, fill);
   }
 }
 
+//
 // refresh/flush the screen/stdout
+//
 void osd_refresh() {
   if (p_refresh) {
     p_refresh();
   }
 }
 
+//
 // just a beep
+//
 void osd_beep() {
   if (p_beep) {
     p_beep();
@@ -287,28 +327,36 @@ void osd_beep() {
   }
 }
 
+//
 // play a sound
+//
 void osd_sound(int frq, int ms, int vol, int bgplay) {
   if (p_sound) {
     p_sound(frq, ms, vol, bgplay);
   }
 }
 
+//
 // clears sound-queue (stop background sound)
+//
 void osd_clear_sound_queue() {
   if (p_clear_sound_queue) {
     p_clear_sound_queue();
   }
 }
 
+//
 // play the given audio file
+//
 void osd_audio(const char *path) {
   if (p_audio) {
     p_audio(path);
   }
 }
 
+//
 // text-width in pixels
+//
 int osd_textwidth(const char *str) {
   int result;
   if (p_textwidth) {
@@ -319,7 +367,9 @@ int osd_textwidth(const char *str) {
   return result;
 }
 
+//
 // text-height in pixels
+//
 int osd_textheight(const char *str) {
   int result;
   if (p_textheight) {
@@ -330,7 +380,9 @@ int osd_textheight(const char *str) {
   return result;
 }
 
+//
 // delay while pumping events
+//
 void dev_delay(uint32_t timeout) {
   uint32_t slept = 0;
   uint32_t now = dev_get_millisecond_count();
@@ -349,7 +401,9 @@ void dev_delay(uint32_t timeout) {
   }
 }
 
+//
 // unused
+//
 void dev_log_stack(const char *keyword, int type, int line) {}
 void v_create_form(var_p_t var) {}
 void v_create_window(var_p_t var) {}
