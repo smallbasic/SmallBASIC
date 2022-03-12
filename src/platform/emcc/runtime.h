@@ -1,0 +1,42 @@
+// This file is part of SmallBASIC
+//
+// Copyright(C) 2001-2022 Chris Warren-Smith.
+//
+// This program is distributed under the terms of the GPL v2.0 or later
+// Download the GNU Public License (GPL) from www.gnu.org
+//
+
+#pragma once
+
+#include "ui/ansiwidget.h"
+#include "ui/system.h"
+
+struct Runtime : public System {
+  Runtime();
+  virtual ~Runtime();
+
+  void addShortcut(const char *) {}
+  void alert(const char *title, const char *message);
+  int  ask(const char *title, const char *prompt, bool cancel=true);
+  void browseFile(const char *url);
+  char *getClipboardText();
+  int  getFontSize() { return _output->getFontSize(); }
+  void enableCursor(bool enabled);
+  int  handle(int event);
+  char *loadResource(const char *fileName);
+  void optionsBox(StringList *items);
+  void onRunCompleted() {}
+  void saveWindowRect() {}
+  MAEvent processEvents(int waitFlag);
+  bool run(const char *bas) { return execute(bas); }
+  void runShell();
+  void resize(int w, int h);
+  void setClipboardText(const char *text);
+  void setFontSize(int size);
+  void setLoadBreak(const char *url) {}
+  void setLoadPath(const char *url) {}
+  void setWindowRect(int x, int y, int width, int height);
+  void setWindowTitle(const char *title);
+  void share(const char *path) {}
+  void showCursor(CursorType cursorType);
+};

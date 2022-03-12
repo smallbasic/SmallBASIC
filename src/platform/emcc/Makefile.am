@@ -26,15 +26,23 @@ CLEANFILES = sbasic.js sbasic.wasm
 
 bin_PROGRAMS = sbasic.html
 
-sbasic_html_SOURCES = \
-  ../../lib/lodepng/lodepng.cpp ../../lib/lodepng/lodepng.h \
-  ../console/main.cpp	\
-  ../console/input.cpp \
-  ../console/device.cpp \
-  ../console/image.cpp \
-  ../console/decomp.c
+sbasic_html_SOURCES =																				\
+  ../../lib/lodepng/lodepng.cpp ../../lib/lodepng/lodepng.h	\
+  ../../ui/ansiwidget.cpp																		\
+  ../../ui/window.cpp																				\
+  ../../ui/screen.cpp																				\
+  ../../ui/system.cpp																				\
+  ../../ui/form.cpp																					\
+  ../../ui/inputs.cpp																				\
+  ../../ui/textedit.cpp																			\
+  ../../ui/image.cpp																				\
+  ../../ui/strlib.cpp																				\
+  ../../ui/audio.cpp																				\
+  runtime.cpp																								\
+  display.cpp																								\
+  main.cpp
 
-sbasic_html_LDFLAGS = --shell-file shell.html
+sbasic_html_LDFLAGS = --bind --shell-file shell.html
 
 sbasic_html_LDADD = -L$(top_srcdir)/src/common -lsb_common @PACKAGE_LIBS@
 

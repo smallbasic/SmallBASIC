@@ -336,8 +336,12 @@ function buildEmscripten() {
    AC_CHECK_HEADERS([emscripten.h], [], [AC_MSG_ERROR([emscripten is not installed])])
    AM_CONDITIONAL(WITH_CYGWIN_CONSOLE, false)
    AC_DEFINE(_UnixOS, 1, [Building under Unix like systems.])
+   AC_DEFINE(_EMCC, 1, [Defined when building emscripten version])
    AC_DEFINE(USE_TERM_IO, 0, [dont use the termios library.])
+   AC_DEFINE(IMPL_LOG_WRITE, 1, [Driver implements lwrite()])
+   AC_DEFINE(IMPL_DEV_READ, 1, [Implement dev_read()])
    AC_SUBST(BUILD_SUBDIRS)
+   (cd src/platform/android/app/src/main/assets && xxd -i main.bas > ../../../../../../../src/platform/emcc/main_bas.h)
 }
 
 function buildFLTK() {
