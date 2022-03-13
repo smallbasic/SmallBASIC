@@ -39,10 +39,10 @@ sbasic_html_SOURCES =																				\
   ../../ui/strlib.cpp																				\
   ../../ui/audio.cpp																				\
   runtime.cpp																								\
-  display.cpp																								\
+  canvas.cpp																								\
   main.cpp
 
-sbasic_html_LDFLAGS = --bind --shell-file shell.html
+sbasic_html_LDFLAGS = -O3 -lembind --shell-file shell.html -s ASYNCIFY=1
 
 sbasic_html_LDADD = -L$(top_srcdir)/src/common -lsb_common @PACKAGE_LIBS@
 

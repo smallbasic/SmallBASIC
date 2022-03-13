@@ -36,6 +36,8 @@ Runtime::Runtime() :
   MAExtent screenSize = maGetScrSize();
   _output = new AnsiWidget(EXTENT_X(screenSize), EXTENT_Y(screenSize));
   _output->construct();
+  _output->setTextColor(DEFAULT_FOREGROUND, DEFAULT_BACKGROUND);
+  _output->setFontSize(11);
 
   //_eventQueue = new Stack<MAEvent *>();
   _state = kActiveState;
@@ -78,6 +80,8 @@ void Runtime::optionsBox(StringList *items) {
 }
 
 MAEvent Runtime::processEvents(int waitFlag) {
+  emscripten_sleep(10);
+
   MAEvent event;
   event.type = 0;
   event.key = 0;

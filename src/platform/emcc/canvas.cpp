@@ -12,59 +12,125 @@
 #include <emscripten/val.h>
 #include "ui/utils.h"
 #include "ui/rgb.h"
+#include "ui/strlib.h"
 #include "lib/maapi.h"
+#include "platform/emcc/canvas.h"
 
-struct Canvas;
-struct Font;
 static int nextId = 1000;
 pixel_t drawColor;
 Canvas *screen;
 Canvas *drawTarget;
 Font *font;
 
-EM_JS(int, get_canvas_width, (), {
+const char *colors[] = {
+  "#000",    // 0 black
+  "#000080", // 1 blue
+  "#008000", // 2 green
+  "#008080", // 3 cyan
+  "#800000", // 4 red
+  "#800080", // 5 magenta
+  "#800800", // 6 yellow
+  "#c0c0c0", // 7 white
+  "#808080", // 8 gray
+  "#0000ff", // 9 light blue
+  "#00ff00", // 10 light green
+  "#00ffff", // 11 light cyan
+  "#ff0000", // 12 light red
+  "#ff00ff", // 13 light magenta
+  "#ffff00", // 14 light yellow
+  "#fff"     // 15 bright white
+};
+
+const uint32_t colors_i[] = {
+  0x000000, // 0 black
+  0x000080, // 1 blue
+  0x008000, // 2 green
+  0x008080, // 3 cyan
+  0x800000, // 4 red
+  0x800080, // 5 magenta
+  0x808000, // 6 yellow
+  0xC0C0C0, // 7 white
+  0x808080, // 8 gray
+  0x0000FF, // 9 light blue
+  0x00FF00, // 10 light green
+  0x00FFFF, // 11 light cyan
+  0xFF0000, // 12 light red
+  0xFF00FF, // 13 light magenta
+  0xFFFF00, // 14 light yellow
+  0xFFFFFF  // 15 bright white
+};
+
+EM_JS(int, draw_pixel, (int id, int x, int y, int r, int g, int b), {
+    var c = document.getElementById(id == -1 ? "canvas" : "canvas_" + id);
+    var ctx = canvas.getContext("2d");
+    var pxId = ctx.createImageData(1, 1);
+    var pxData = pxId.data;
+    pxData[0] = r;
+    pxData[1] = g;
+    pxData[2] = b;
+    pxData[3] = 255;
+    ctx.putImageData(pxId, x, y);
+  });
+
+EM_JS(int, draw_text, (int id, int x, int y, const char *str, int len, const char *fg), {
+    var c = document.getElementById(id == -1 ? "canvas" : "canvas_" + id);
+    var ctx = canvas.getContext("2d");
+    var s = new String(str).substring(0, len);
+    var face = (i ? "italic" : "") + " " + (b ? "bold" : "");
+    var width = ctx.measureText(s).width;
+    var y1 = y * fontHeight;
+    ctx.font=face + " " + fontSize + "pt monospace";
+    ctx.fillStyle = fg;
+    ctx.fillText(s, x, y1);
+  });
+
+EM_JS(int, get_screen_width, (), {
     return document.getElementById("canvas").width;
   });
 
-EM_JS(int, get_canvas_height, (), {
+EM_JS(int, get_screen_height, (), {
     return document.getElementById("canvas").height;
   });
 
-struct Font {
-  Font(int size, bool bold, bool italic) :
-    _size(size),
-    _bold(bold),
-    _italic(italic) {
+EM_JS(int, get_text_size, (int id, const char *str, int len), {
+    var c = document.getElementById(id == -1 ? "canvas" : "canvas_" + id);
+    var ctx = canvas.getContext("2d");
+    var s = new String(str).substring(0, len);
+    var metrics = ctx.measureText(s);
+    var result = (metrics.width << 16) + (metrics.actualBoundingBoxAscent + metrics.actualBoundingBoxDescent);
+    return result;
+  });
+
+strlib::String get_color() {
+  strlib::String result;
+  long c = drawColor;
+  if (c < 0) {
+    c = -c;
+    int r = (c>>16) & 0xFF;
+    int g = (c>>8) & 0xFF;
+    int b = (c) & 0xFF;
+    char buf[8];
+    sprintf(buf, "#%x%x%x", b, g, r);
+    result.append(buf);
+  } else {
+    result.append((colors[c > 15 ? 15 : c]));
   }
+  return result;
+}
 
-  int _size;
-  bool _bold;
-  bool _italic;
-};
+Canvas::Canvas() :
+  _clip(nullptr),
+  _id(-1),
+  _w(0),
+  _h(0) {
+}
 
-struct Canvas {
-  Canvas() : _clip(nullptr), _id(-1), _w(0), _h(0) {}
-  ~Canvas();
-
-  bool create(int width, int height);
-  void drawArc(int xc, int yc, double r, double start, double end, double aspect);
-  void drawEllipse(int xc, int yc, int rx, int ry, bool fill);
-  void drawLine(int startX, int startY, int endX, int endY);
-  void drawPixel(int posX, int posY);
-  void drawRGB(const MAPoint2d *dstPoint, const void *src, const MARect *srcRect, int opacity, int bytesPerLine);
-  void drawRegion(Canvas *src, const MARect *srcRect, int destX, int destY);
-  void drawText(int left, int top, const char *str, int len);
-  void fillRect(int x, int y, int w, int h);
-  MAExtent getTextSize(const char *str, int len);
-  int  getPixel(Canvas *canvas, int x, int y);
-  void getImageData(Canvas *canvas, uint8_t *image, const MARect *srcRect, int bytesPerLine);
-  void setClip(int x, int y, int w, int h);
-
-  MARect *_clip;
-  int _id;
-  int _w;
-  int _h;
-};
+Canvas::Canvas(int width, int height) :
+  _clip(nullptr),
+  _id(-1),
+  _w(width),
+  _h(height) {
+}
 
 Canvas::~Canvas() {
   if (_id != -1) {
@@ -81,7 +147,7 @@ bool Canvas::create(int width, int height) {
   _h = height;
   EM_ASM_({
       var canvas = document.createElement("canvas");
-      canvas.id = "_canvas" + $0;
+      canvas.id = "canvas_" + $0;
       canvas.width = $1;
       canvas.height = $2;
       canvas.style.zIndex = 1;
@@ -93,41 +159,41 @@ bool Canvas::create(int width, int height) {
 };
 
 void Canvas::drawArc(int xc, int yc, double r, double start, double end, double aspect) {
+  EM_ASM_({
+      var c = document.getElementById($0 == -1 ? "canvas" : "canvas_" + $0);
+      var ctx = c.getContext("2d");
+      ctx.beginPath();
+      ctx.arc(100, 75, 50, 0, 2 * Math.PI);
+      ctx.stroke();
+    }, _id, xc, yc, r, start, end, aspect);
 }
 
 void Canvas::drawEllipse(int xc, int yc, int rx, int ry, bool fill) {
+  logEntered();
 }
 
 void Canvas::drawLine(int startX, int startY, int endX, int endY) {
-}
-
-void Canvas::drawPixel(int posX, int posY) {
+  logEntered();
 }
 
 void Canvas::drawRGB(const MAPoint2d *dstPoint, const void *src, const MARect *srcRect, int opacity, int bytesPerLine) {
+  logEntered();
 }
 
 void Canvas::drawRegion(Canvas *src, const MARect *srcRect, int destX, int destY) {
-}
-
-void Canvas::drawText(int left, int top, const char *str, int len) {
+  logEntered();
 }
 
 void Canvas::fillRect(int x, int y, int w, int h) {
+  logEntered();
 }
 
 MAExtent Canvas::getTextSize(const char *str, int len) {
-  int width = 0;
-  int height = 0;
-
-  return (MAExtent)((width << 16) + height);
-}
-
-int  Canvas::getPixel(Canvas *canvas, int x, int y) {
-  return 0;
+  return (MAExtent)get_text_size(_id, str, len);
 }
 
 void Canvas::getImageData(Canvas *canvas, uint8_t *image, const MARect *srcRect, int bytesPerLine) {
+  logEntered();
 }
 
 void Canvas::setClip(int x, int y, int w, int h) {
@@ -146,7 +212,6 @@ void Canvas::setClip(int x, int y, int w, int h) {
 //
 // maapi implementation
 //
-
 MAHandle maCreatePlaceholder(void) {
   MAHandle maHandle = (MAHandle) new Canvas();
   return maHandle;
@@ -174,9 +239,10 @@ MAExtent maGetTextSize(const char *str) {
 }
 
 MAExtent maGetScrSize(void) {
-  short width = get_canvas_width();
-  short height = get_canvas_height();
-  return (MAExtent)((width << 16) + height);
+  if (screen == nullptr) {
+    screen = new Canvas(get_screen_width(), get_screen_height());
+  }
+  return (MAExtent)((screen->_w << 16) + screen->_h);
 }
 
 void maDestroyPlaceholder(MAHandle maHandle) {
@@ -186,14 +252,11 @@ void maDestroyPlaceholder(MAHandle maHandle) {
 
 void maGetImageData(MAHandle maHandle, void *dst, const MARect *srcRect, int stride) {
   Canvas *holder = (Canvas *)maHandle;
-  if (srcRect->width == 1 && srcRect->height == 1) {
-    *((int *)dst) = drawTarget->getPixel(holder, srcRect->left, srcRect->top);
-  } else {
-    drawTarget->getImageData(holder, (uint8_t *)dst, srcRect, stride);
-  }
+  drawTarget->getImageData(holder, (uint8_t *)dst, srcRect, stride);
 }
 
 MAHandle maSetDrawTarget(MAHandle maHandle) {
+  logEntered();
   MAHandle result = (MAHandle) drawTarget;
   if (maHandle == (MAHandle) HANDLE_SCREEN ||
       maHandle == (MAHandle) HANDLE_SCREEN_BUFFER) {
@@ -211,10 +274,14 @@ int maCreateDrawableImage(MAHandle maHandle, int width, int height) {
   return drawable->create(width, height) ? RES_OK : -1;
 }
 
+void maUpdateScreen(void) {
+  logEntered();
+  trace("%d \n", screen->_id);
+}
+
 //
 // drawing
 //
-
 void maDrawImageRegion(MAHandle maHandle, const MARect *srcRect, const MAPoint2d *dstPoint, int transformMode) {
   Canvas *src = (Canvas *)maHandle;
   if (drawTarget && drawTarget != src) {
@@ -224,7 +291,16 @@ void maDrawImageRegion(MAHandle maHandle, const MARect *srcRect, const MAPoint2d
 
 void maPlot(int posX, int posY) {
   if (drawTarget) {
-    drawTarget->drawPixel(posX, posY);
+    int c = drawColor;
+    if (c < 0) {
+      c = -c;
+    } else {
+      c = colors_i[c > 15 ? 15 : c];
+    }
+    int r = (c & 0xff0000) >> 16;
+    int g = (c & 0xff00) >> 8;
+    int b = (c & 0xff);
+    draw_pixel(drawTarget->_id, posX, posY, r, g, b);
   }
 }
 
@@ -254,7 +330,7 @@ void maEllipse(int xc, int yc, int rx, int ry, int fill) {
 
 void maDrawText(int left, int top, const char *str, int length) {
   if (str && str[0] && drawTarget) {
-    drawTarget->drawText(left, top, str, length);
+    draw_text(drawTarget->_id, left, top, str, length, get_color());
   }
 }
 
@@ -298,7 +374,4 @@ void maShowVirtualKeyboard(void) {
 }
 
 void maHideVirtualKeyboard(void) {
-}
-
-void maUpdateScreen(void) {
 }
