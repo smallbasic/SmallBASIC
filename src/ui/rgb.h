@@ -39,7 +39,7 @@ inline void v_get_argb(int64_t c, uint8_t &a, uint8_t &r, uint8_t &g, uint8_t &b
 
 #define v_get_argb_px(a, r, g, b) (a << 24 | (r << 16) | (g << 8) | (b))
 
-#if defined(_SDL)
+#if defined(_SDL) || defined(_EMCC)
 // SDL_PACKEDORDER_XRGB
 // A = byte 3
 // R = byte 2

@@ -8,7 +8,6 @@
 
 #pragma once
 
-#include "ui/ansiwidget.h"
 #include "ui/system.h"
 
 struct Runtime : public System {
@@ -27,7 +26,12 @@ struct Runtime : public System {
   void optionsBox(StringList *items);
   void onRunCompleted() {}
   void saveWindowRect() {}
+  bool hasEvent() { return _eventQueue && _eventQueue->size() > 0; }
+  void pause(int timeout);
+  void pushEvent(MAEvent *event) { _eventQueue->push(event); }
+  MAEvent *popEvent() { return _eventQueue->pop(); }
   MAEvent processEvents(int waitFlag);
+  void processEvent(MAEvent &event);
   bool run(const char *bas) { return execute(bas); }
   void runShell();
   void resize(int w, int h);
@@ -35,8 +39,11 @@ struct Runtime : public System {
   void setFontSize(int size);
   void setLoadBreak(const char *url) {}
   void setLoadPath(const char *url) {}
-  void setWindowRect(int x, int y, int width, int height);
-  void setWindowTitle(const char *title);
+  void setWindowRect(int x, int y, int width, int height) {}
+  void setWindowTitle(const char *title) {}
   void share(const char *path) {}
   void showCursor(CursorType cursorType);
+
+private:
+  Stack<MAEvent *> *_eventQueue;
 };

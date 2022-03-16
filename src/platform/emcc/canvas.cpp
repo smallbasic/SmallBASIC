@@ -7,9 +7,8 @@
 //
 
 #include "config.h"
-#include <time.h>
 #include <emscripten.h>
-#include <emscripten/val.h>
+#include <stdint.h>
 #include "ui/utils.h"
 #include "ui/rgb.h"
 #include "ui/strlib.h"
@@ -114,7 +113,14 @@ EM_JS(void, draw_pixel, (int id, int x, int y, int r, int g, int b), {
     ctx.putImageData(pxId, x, y);
   });
 
-EM_JS(void, draw_rect_filled, (int id, int left, int top, int width, int height), {
+EM_JS(void, draw_rect_filled, (int id, int x, int y, int w, int h, const char *color), {
+    var c = document.getElementById(id == -1 ? "canvas" : "canvas_" + id);
+    var ctx = canvas.getContext("2d");
+    ctx.fillStyle = UTF8ToString(color);
+    ctx.fillRect(x, y, w, h);
+  });
+
+EM_JS(void, draw_region, (int id, int x, int y, int w, int h), {
     var c = document.getElementById(id == -1 ? "canvas" : "canvas_" + id);
     var ctx = canvas.getContext("2d");
 
@@ -137,14 +143,15 @@ strlib::String get_color() {
   long c = drawColor;
   if (c < 0) {
     c = -c;
-    int r = (c>>16) & 0xFF;
-    int g = (c>>8) & 0xFF;
-    int b = (c) & 0xFF;
-    char buf[8];
-    sprintf(buf, "#%x%x%x", b, g, r);
-    result.append(buf);
+  }
+  if (c >= 0 && c <= 15) {
+    result.append(colors[c]);
   } else {
-    result.append((colors[c > 15 ? 15 : c]));
+    uint8_t sR, sG, sB;
+    GET_RGB(c, sR, sG, sB);
+    char buf[8];
+    sprintf(buf, "#%x%x%x", sR, sG, sB);
+    result.append(buf);
   }
   return result;
 }
@@ -179,14 +186,12 @@ bool Canvas::create(int width, int height) {
   EM_ASM_({
       var canvas = document.createElement("canvas");
       canvas.id = "canvas_" + $0;
-      canvas.width = $1;
-      canvas.height = $2;
       canvas.style.zIndex = 1;
       canvas.style.display = "none";
       canvas.style.position = "absolute";
-      canvas.style.border = "1px solid";
+      canvas.className = "emscripten";
       document.body.appendChild(canvas);
-    }, _id, width, height);
+    }, _id);
   return true;
 };
 
@@ -305,8 +310,9 @@ void maPlot(int posX, int posY) {
 }
 
 void maFillRect(int left, int top, int width, int height) {
+  logEntered();
   if (drawTarget) {
-    draw_rect_filled(drawTarget->_id, left, top, width, height);
+    draw_rect_filled(drawTarget->_id, left, top, width, height, get_color());
   }
 }
 
@@ -325,6 +331,7 @@ void maDrawText(int left, int top, const char *str, int length) {
 }
 
 void maDrawImageRegion(MAHandle maHandle, const MARect *srcRect, const MAPoint2d *dstPoint, int transformMode) {
+  logEntered();
   Canvas *src = (Canvas *)maHandle;
   if (drawTarget && drawTarget != src) {
     //draw_region(drawTarget->_id, src, srcRect, dstPoint->x, dstPoint->y);
@@ -332,11 +339,11 @@ void maDrawImageRegion(MAHandle maHandle, const MARect *srcRect, const MAPoint2d
 }
 
 void maDrawRGB(const MAPoint2d *dstPoint, const void *src,  const MARect *srcRect, int opacity, int stride) {
+  logEntered();
 }
 
 void maGetImageData(MAHandle maHandle, void *dst, const MARect *srcRect, int stride) {
-  //Canvas *holder = (Canvas *)maHandle;
-  //drawTarget->getImageData(holder, (uint8_t *)dst, srcRect, stride);
+  logEntered();
 }
 
 //
