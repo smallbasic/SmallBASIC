@@ -51,6 +51,8 @@ void init() {
   opt_autolocal = 0;
   os_graf_mx = 1024;
   os_graf_my = 768;
+  os_graphics = 1;
+  os_color_depth = 16;
 }
 
 int main(int argc, char* argv[]) {

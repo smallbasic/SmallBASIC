@@ -6,16 +6,15 @@
     <title>SmallBASIC</title>
     <style>
       body {
-        margin: 1px;
+        margin: 0px;
+        width: 100%;
+        height: 100%;
       }
       .emscripten {
         padding-right: 0;
         margin-left: auto;
         margin-right: auto;
         display: block;
-      }
-      textarea.emscripten {
-        font-family: monospace; width: 80%;
       }
       div.emscripten {
         text-align: center;
@@ -73,11 +72,6 @@
           if (element) element.value = ''; // clear browser cache
           return function(text) {
             if (arguments.length > 1) text = Array.prototype.slice.call(arguments).join(' ');
-            // These replacements are necessary if you render to raw HTML
-            //text = text.replace(/&/g, "&amp;");
-            //text = text.replace(/</g, "&lt;");
-            //text = text.replace(/>/g, "&gt;");
-            //text = text.replace('\n', '<br>', 'g');
             console.log(text);
             if (element) {
               element.value += text + "\n";
@@ -87,10 +81,12 @@
         })(),
         canvas: (function() {
           var canvas = document.getElementById('canvas');
-
-          // As a default initial behavior, pop up an alert when webgl context is lost. To make your
-          // application robust, you may want to override this behavior before shipping!
-          // See http://www.khronos.org/registry/webgl/specs/latest/1.0/#5.15.2
+          function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+          };
+          window.addEventListener('resize', resizeCanvas, false);
+          resizeCanvas();
           canvas.addEventListener("webglcontextlost", function(e) { alert('WebGL context lost. You will need to reload the page.'); e.preventDefault(); }, false);
           return canvas;
         })(),

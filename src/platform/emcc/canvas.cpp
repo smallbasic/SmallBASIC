@@ -60,24 +60,27 @@ const uint32_t colors_i[] = {
 };
 
 EM_JS(int, get_screen_height, (), {
-    return document.getElementById("canvas").height;
+    return window.innerHeight;
   });
 
 EM_JS(int, get_screen_width, (), {
-    return document.getElementById("canvas").width;
+    return window.innerWidth;
   });
 
-EM_JS(int, get_text_size, (int id, const char *str, int len), {
-    var c = document.getElementById(id == -1 ? "canvas" : "canvas_" + id);
+EM_JS(int, get_text_size, (int id, const char *str, const char *face), {
+    var canvas = document.getElementById(id == -1 ? "canvas" : "canvas_" + id);
     var ctx = canvas.getContext("2d");
-    var s = new String(str).substring(0, len);
+    ctx.font = UTF8ToString(face);
+
+    var s = UTF8ToString(str);
     var metrics = ctx.measureText(s);
-    var result = (metrics.width << 16) + (metrics.actualBoundingBoxAscent + metrics.actualBoundingBoxDescent);
+    var height = metrics.fontBoundingBoxAscent + metrics.fontBoundingBoxDescent;
+    var result = (metrics.width << 16) + height;
     return result;
   });
 
 EM_JS(void, draw_arc, (int id, int xc, int yc, double r, double start, double end, double aspect), {
-    var c = document.getElementById(id == -1 ? "canvas" : "canvas_" + id);
+    var canvas = document.getElementById(id == -1 ? "canvas" : "canvas_" + id);
     var ctx = canvas.getContext("2d");
     ctx.beginPath();
     ctx.arc(100, 75, 50, 0, 2 * Math.PI);
@@ -85,13 +88,13 @@ EM_JS(void, draw_arc, (int id, int xc, int yc, double r, double start, double en
   });
 
 EM_JS(void, draw_ellipse, (int id, int xc, int yc, int rx, int ry, int fill), {
-    var c = document.getElementById(id == -1 ? "canvas" : "canvas_" + id);
+    var canvas = document.getElementById(id == -1 ? "canvas" : "canvas_" + id);
     var ctx = canvas.getContext("2d");
 
   });
 
 EM_JS(void, draw_line, (int id, int x1, int y1, int x2, int y2, const char *color), {
-    var c = document.getElementById(id == -1 ? "canvas" : "canvas_" + id);
+    var canvas = document.getElementById(id == -1 ? "canvas" : "canvas_" + id);
     var ctx = canvas.getContext("2d");
     ctx.beginPath();
     ctx.moveTo(x1, y1);
@@ -102,7 +105,7 @@ EM_JS(void, draw_line, (int id, int x1, int y1, int x2, int y2, const char *colo
   });
 
 EM_JS(void, draw_pixel, (int id, int x, int y, int r, int g, int b), {
-    var c = document.getElementById(id == -1 ? "canvas" : "canvas_" + id);
+    var canvas = document.getElementById(id == -1 ? "canvas" : "canvas_" + id);
     var ctx = canvas.getContext("2d");
     var pxId = ctx.createImageData(1, 1);
     var pxData = pxId.data;
@@ -114,28 +117,28 @@ EM_JS(void, draw_pixel, (int id, int x, int y, int r, int g, int b), {
   });
 
 EM_JS(void, draw_rect_filled, (int id, int x, int y, int w, int h, const char *color), {
-    var c = document.getElementById(id == -1 ? "canvas" : "canvas_" + id);
+    var canvas = document.getElementById(id == -1 ? "canvas" : "canvas_" + id);
     var ctx = canvas.getContext("2d");
     ctx.fillStyle = UTF8ToString(color);
     ctx.fillRect(x, y, w, h);
   });
 
-EM_JS(void, draw_region, (int id, int x, int y, int w, int h), {
-    var c = document.getElementById(id == -1 ? "canvas" : "canvas_" + id);
-    var ctx = canvas.getContext("2d");
-
+EM_JS(void, draw_region, (int id, int srcId, int x, int y, int w, int h, int dx, int dy), {
+    var canvas = document.getElementById(id == -1 ? "canvas" : "canvas_" + id);
+    var destination = canvas.getContext("2d");
+    var source = document.getElementById(srcId == -1 ? "canvas" : "canvas_" + srcId);
+    destination.drawImage(source, x, y, w, h, dx, dy, w, h);
   });
 
 EM_JS(void, draw_text, (int id, int x, int y, const char *str, int len, const char *color, const char *face), {
-    var c = document.getElementById(id == -1 ? "canvas" : "canvas_" + id);
+    var canvas = document.getElementById(id == -1 ? "canvas" : "canvas_" + id);
     var ctx = canvas.getContext("2d");
-    var s = UTF8ToString(str).substring(0, len);
-    var width = ctx.measureText(s).width;
-    var fontHeight = 15;
-    var y1 = y * fontHeight;
     ctx.font = UTF8ToString(face);
+
+    var s = UTF8ToString(str).substring(0, len);
+    var metrics = ctx.measureText(s);
     ctx.fillStyle = UTF8ToString(color);
-    ctx.fillText(s, x, y1);
+    ctx.fillText(s, x, y + metrics.fontBoundingBoxAscent + metrics.fontBoundingBoxDescent);
   });
 
 strlib::String get_color() {
@@ -153,6 +156,18 @@ strlib::String get_color() {
     sprintf(buf, "#%x%x%x", sR, sG, sB);
     result.append(buf);
   }
+  return result;
+}
+
+strlib::String get_face() {
+  strlib::String result;
+  if (font->_italic) {
+    result.append("italic ");
+  }
+  if (font->_bold) {
+    result.append("bold ");
+  }
+  result.append(font->_size).append("px monospace");
   return result;
 }
 
@@ -186,12 +201,14 @@ bool Canvas::create(int width, int height) {
   EM_ASM_({
       var canvas = document.createElement("canvas");
       canvas.id = "canvas_" + $0;
+      canvas.width = $1;
+      canvas.height = $2;
       canvas.style.zIndex = 1;
       canvas.style.display = "none";
       canvas.style.position = "absolute";
       canvas.className = "emscripten";
       document.body.appendChild(canvas);
-    }, _id);
+    }, _id, _w, _h);
   return true;
 };
 
@@ -229,8 +246,8 @@ void maSetClipRect(int left, int top, int width, int height) {
 
 MAExtent maGetTextSize(const char *str) {
   MAExtent result;
-  if (str && str[0] && drawTarget) {
-    result = (MAExtent)get_text_size(drawTarget->_id, str, strlen(str));
+  if (str && str[0]) {
+    result = (MAExtent)get_text_size(drawTarget ? drawTarget->_id : -1, str, get_face());
   } else {
     result = 0;
   }
@@ -245,6 +262,7 @@ MAExtent maGetScrSize(void) {
 }
 
 void maDestroyPlaceholder(MAHandle maHandle) {
+  logEntered();
   Canvas *holder = (Canvas *)maHandle;
   delete holder;
 }
@@ -266,11 +284,6 @@ MAHandle maSetDrawTarget(MAHandle maHandle) {
 int maCreateDrawableImage(MAHandle maHandle, int width, int height) {
   Canvas *drawable = (Canvas *)maHandle;
   return drawable->create(width, height) ? RES_OK : -1;
-}
-
-void maUpdateScreen(void) {
-  logEntered();
-  trace("%d \n", screen->_id);
 }
 
 //
@@ -318,15 +331,7 @@ void maFillRect(int left, int top, int width, int height) {
 
 void maDrawText(int left, int top, const char *str, int length) {
   if (str && str[0] && drawTarget) {
-    strlib::String face;
-    if (font->_italic) {
-      face.append("italic ");
-    }
-    if (font->_bold) {
-      face.append("bold ");
-    }
-    face.append(font->_size).append("pt monospace");
-    draw_text(drawTarget->_id, left, top, str, length, get_color(), face);
+    draw_text(drawTarget->_id, left, top, str, length, get_color(), get_face());
   }
 }
 
@@ -334,7 +339,7 @@ void maDrawImageRegion(MAHandle maHandle, const MARect *srcRect, const MAPoint2d
   logEntered();
   Canvas *src = (Canvas *)maHandle;
   if (drawTarget && drawTarget != src) {
-    //draw_region(drawTarget->_id, src, srcRect, dstPoint->x, dstPoint->y);
+    draw_region(drawTarget->_id, src->_id, srcRect->left, srcRect->top, srcRect->width, srcRect->height, dstPoint->x, dstPoint->y);
   }
 }
 
@@ -382,4 +387,7 @@ void maShowVirtualKeyboard(void) {
 }
 
 void maHideVirtualKeyboard(void) {
+}
+
+void maUpdateScreen(void) {
 }

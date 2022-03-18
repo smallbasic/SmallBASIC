@@ -82,11 +82,16 @@ Runtime::Runtime() :
   _output->setFontSize(11);
   _eventQueue = new Stack<MAEvent *>();
   _state = kActiveState;
-  g_themeId = 3;
+  g_themeId = 0;
 }
 
 Runtime::~Runtime() {
   logEntered();
+  delete _output;
+  delete _eventQueue;
+  runtime = NULL;
+  _output = NULL;
+  _eventQueue = NULL;
 }
 
 void Runtime::alert(const char *title, const char *message) {
