@@ -95,6 +95,9 @@ Runtime::~Runtime() {
 }
 
 void Runtime::alert(const char *title, const char *message) {
+  EM_ASM_({
+      window.alert(UTF8ToString($0) + "\n" + UTF8ToString($1));
+    }, title, message);
 }
 
 int Runtime::ask(const char *title, const char *prompt, bool cancel) {
@@ -103,9 +106,9 @@ int Runtime::ask(const char *title, const char *prompt, bool cancel) {
 }
 
 void Runtime::browseFile(const char *url) {
-}
-
-void Runtime::enableCursor(bool enabled) {
+  EM_ASM_({
+      window.open(UTF8ToString($0));
+    }, url);
 }
 
 char *Runtime::getClipboardText() {
@@ -124,6 +127,7 @@ char *Runtime::loadResource(const char *fileName) {
 }
 
 void Runtime::optionsBox(StringList *items) {
+
 }
 
 void Runtime::pause(int timeout) {
@@ -207,6 +211,13 @@ void Runtime::setClipboardText(const char *text) {
 }
 
 void Runtime::showCursor(CursorType cursorType) {
+  static CursorType _cursorType;
+  if (_cursorType != cursorType) {
+    _cursorType = cursorType;
+    EM_ASM_({
+        document.body.style.cursor = UTF8ToString($0);
+      }, cursorType == kIBeam ? "text" : cursorType == kArrow ? "auto" : "pointer");
+  }
 }
 
 //

@@ -97,8 +97,8 @@ EM_JS(void, draw_line, (int id, int x1, int y1, int x2, int y2, const char *colo
     var canvas = document.getElementById(id == -1 ? "canvas" : "canvas_" + id);
     var ctx = canvas.getContext("2d");
     ctx.beginPath();
-    ctx.moveTo(x1, y1);
-    ctx.lineTo(x2, y2);
+    ctx.moveTo(x1, y1 + 1);
+    ctx.lineTo(x2, y2 + 1);
     ctx.lineWidth = 1;
     ctx.strokeStyle = UTF8ToString(color);
     ctx.stroke();
@@ -153,7 +153,7 @@ strlib::String get_color() {
     uint8_t sR, sG, sB;
     GET_RGB(c, sR, sG, sB);
     char buf[8];
-    sprintf(buf, "#%x%x%x", sR, sG, sB);
+    sprintf(buf, "#%02x%02x%02x", sR, sG, sB);
     result.append(buf);
   }
   return result;

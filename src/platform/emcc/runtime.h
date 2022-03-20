@@ -20,7 +20,7 @@ struct Runtime : public System {
   void browseFile(const char *url);
   char *getClipboardText();
   int  getFontSize() { return _output->getFontSize(); }
-  void enableCursor(bool enabled);
+  void enableCursor(bool enabled) {}
   int  handle(int event);
   char *loadResource(const char *fileName);
   void optionsBox(StringList *items);
