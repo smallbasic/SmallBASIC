@@ -1,4 +1,7 @@
 2022-02-23 (12.24)
+	COMMON: Fix array access with embedded strings #136
+
+2022-02-23 (12.24)
 	CONSOLE: Added -i command switch for live mode
 
 	This will run the BASIC program in a loop. It can be used with the debug module

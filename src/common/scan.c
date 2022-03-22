@@ -1877,6 +1877,13 @@ char *comp_array_params(char *src, char exitChar) {
         }
       }
       break;
+    case '"':
+      // skip past the embedded string
+      p++;
+      while (*p && *p != '"') {
+        p++;
+      }
+      break;
     };
     if (*p != exitChar) {
       p++;
