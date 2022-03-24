@@ -1179,6 +1179,10 @@ int maGetEvent(MAEvent *event) {
   return result;
 }
 
+void maPushEvent(MAEvent *maEvent) {
+  runtime->pushEvent(maEvent);
+}
+
 void maWait(int timeout) {
   runtime->pause(timeout);
 }

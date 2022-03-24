@@ -38,11 +38,11 @@ sbasic_html_SOURCES =																				\
   ../../ui/image.cpp																				\
   ../../ui/strlib.cpp																				\
   ../../ui/audio.cpp																				\
-  runtime.cpp																								\
-  canvas.cpp																								\
+  runtime.h runtime.cpp																			\
+  canvas.h canvas.cpp																				\
   main.cpp
 
-sbasic_html_LDFLAGS = -O3 -lembind --shell-file shell.html -s ASYNCIFY=1
+sbasic_html_LDFLAGS = -O3 -lembind --shell-file shell.html -s ASYNCIFY=1 --preload-file basic
 
 sbasic_html_LDADD = -L$(top_srcdir)/src/common -lsb_common @PACKAGE_LIBS@
 

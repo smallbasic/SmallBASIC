@@ -311,6 +311,10 @@ int maGetEvent(MAEvent *event) {
   return result;
 }
 
+void maPushEvent(MAEvent *maEvent) {
+  // not implemented
+}
+
 void maWait(int timeout) {
   if (timeout == -1) {
     Fl::wait();

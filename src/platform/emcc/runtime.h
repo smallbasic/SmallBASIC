@@ -9,6 +9,7 @@
 #pragma once
 
 #include "ui/system.h"
+#include <emscripten/html5.h>
 
 struct Runtime : public System {
   Runtime();
@@ -23,15 +24,15 @@ struct Runtime : public System {
   void enableCursor(bool enabled) {}
   int  handle(int event);
   char *loadResource(const char *fileName);
-  void optionsBox(StringList *items);
   void onRunCompleted() {}
   void saveWindowRect() {}
+  void handleKeyboard(int eventType, const EmscriptenKeyboardEvent *e);
+  void handleMouse(int eventType, const EmscriptenMouseEvent *e);
   bool hasEvent() { return _eventQueue && _eventQueue->size() > 0; }
   void pause(int timeout);
   void pushEvent(MAEvent *event) { _eventQueue->push(event); }
   MAEvent *popEvent() { return _eventQueue->pop(); }
   MAEvent processEvents(int waitFlag);
-  void processEvent(MAEvent &event);
   bool run(const char *bas) { return execute(bas); }
   void runShell();
   void resize(int w, int h);

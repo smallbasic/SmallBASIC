@@ -9,7 +9,6 @@
 #include "config.h"
 
 #include <emscripten.h>
-#include <emscripten/html5.h>
 #include "include/osd.h"
 #include "common/smbas.h"
 #include "lib/maapi.h"
@@ -41,26 +40,12 @@ MAEvent *getKeyPressedEvent(int keycode, int nativeKey) {
 }
 
 EM_BOOL mouse_callback(int eventType, const EmscriptenMouseEvent *e, void *userData) {
-  //  printf("%s, screen: (%ld,%ld), client: (%ld,%ld),%s%s%s%s button: %hu, buttons: %hu, movement: (%ld,%ld), target: (%ld, %ld)\n",
-  //         emscripten_event_type_to_string(eventType), e->screenX, e->screenY, e->clientX, e->clientY,
-  //         e->ctrlKey ? " CTRL" : "", e->shiftKey ? " SHIFT" : "", e->altKey ? " ALT" : "", e->metaKey ? " META" : "",
-  //         e->button, e->buttons, e->movementX, e->movementY, e->targetX, e->targetY);
+  runtime->handleMouse(eventType, e);
+  return 0;
+}
 
-  switch (eventType) {
-  case EMSCRIPTEN_EVENT_DBLCLICK:
-  case EMSCRIPTEN_EVENT_CLICK:
-    //
-    break;
-  case EMSCRIPTEN_EVENT_MOUSEDOWN:
-    runtime->pushEvent(getMotionEvent(EVENT_TYPE_POINTER_PRESSED, e));
-    break;
-  case EMSCRIPTEN_EVENT_MOUSEMOVE:
-    runtime->pushEvent(getMotionEvent(EVENT_TYPE_POINTER_DRAGGED, e));
-    break;
-  case EMSCRIPTEN_EVENT_MOUSEUP:
-    runtime->pushEvent(getMotionEvent(EVENT_TYPE_POINTER_RELEASED, e));
-    break;
-  }
+EM_BOOL key_callback(int eventType, const EmscriptenKeyboardEvent *e, void *userData) {
+  runtime->handleKeyboard(eventType, e);
   return 0;
 }
 
@@ -69,11 +54,10 @@ Runtime::Runtime() :
   logEntered();
   runtime = this;
 
-  emscripten_set_click_callback(EMSCRIPTEN_EVENT_TARGET_WINDOW, 0, 1, mouse_callback);
-  emscripten_set_mousedown_callback(EMSCRIPTEN_EVENT_TARGET_WINDOW, 0, 1, mouse_callback);
-  emscripten_set_mouseup_callback(EMSCRIPTEN_EVENT_TARGET_WINDOW, 0, 1, mouse_callback);
-  emscripten_set_dblclick_callback(EMSCRIPTEN_EVENT_TARGET_WINDOW, 0, 1, mouse_callback);
-  emscripten_set_mousemove_callback(EMSCRIPTEN_EVENT_TARGET_WINDOW, 0, 1, mouse_callback);
+  emscripten_set_mousedown_callback(EMSCRIPTEN_EVENT_TARGET_WINDOW, this, true, mouse_callback);
+  emscripten_set_mouseup_callback(EMSCRIPTEN_EVENT_TARGET_WINDOW, this, true, mouse_callback);
+  emscripten_set_mousemove_callback(EMSCRIPTEN_EVENT_TARGET_WINDOW, this, true, mouse_callback);
+  emscripten_set_keydown_callback(EMSCRIPTEN_EVENT_TARGET_WINDOW, this, true, key_callback);
 
   MAExtent screenSize = maGetScrSize();
   _output = new AnsiWidget(EXTENT_X(screenSize), EXTENT_Y(screenSize));
@@ -87,11 +71,12 @@ Runtime::Runtime() :
 
 Runtime::~Runtime() {
   logEntered();
+  emscripten_html5_remove_all_event_listeners();
   delete _output;
   delete _eventQueue;
-  runtime = NULL;
-  _output = NULL;
-  _eventQueue = NULL;
+  runtime = nullptr;
+  _output = nullptr;
+  _eventQueue = nullptr;
 }
 
 void Runtime::alert(const char *title, const char *message) {
@@ -126,15 +111,40 @@ char *Runtime::loadResource(const char *fileName) {
   return buffer;
 }
 
-void Runtime::optionsBox(StringList *items) {
+void Runtime::handleKeyboard(int eventType, const EmscriptenKeyboardEvent *e) {
+  trace("eventType: %d [%s %s %s] [%d %d %d] %s%s%s%s ",
+        eventType,
+        e->key, e->code, e->charValue,
+        e->charCode,      e->keyCode,      e->which,
+        e->ctrlKey ? " CTRL" : "", e->shiftKey ? " SHIFT" : "", e->altKey ? " ALT" : "", e->metaKey ? " META" : "");
 
+}
+
+void Runtime::handleMouse(int eventType, const EmscriptenMouseEvent *e) {
+  switch (eventType) {
+  case EMSCRIPTEN_EVENT_MOUSEDOWN:
+    if (e->button == 2) {
+      _menuX = e->clientX;
+      _menuY = e->clientY;
+      showMenu();
+    } else {
+      pushEvent(getMotionEvent(EVENT_TYPE_POINTER_PRESSED, e));
+    }
+    break;
+  case EMSCRIPTEN_EVENT_MOUSEMOVE:
+    pushEvent(getMotionEvent(EVENT_TYPE_POINTER_DRAGGED, e));
+    break;
+  case EMSCRIPTEN_EVENT_MOUSEUP:
+    pushEvent(getMotionEvent(EVENT_TYPE_POINTER_RELEASED, e));
+    break;
+  }
 }
 
 void Runtime::pause(int timeout) {
   if (timeout == -1) {
     if (hasEvent()) {
       MAEvent *event = popEvent();
-      processEvent(*event);
+      handleEvent(*event);
       delete event;
     }
   } else {
@@ -144,7 +154,7 @@ void Runtime::pause(int timeout) {
         break;
       } else if (hasEvent()) {
         MAEvent *event = popEvent();
-        processEvent(*event);
+        handleEvent(*event);
         delete event;
       }
       emscripten_sleep(WAIT_INTERVAL);
@@ -155,17 +165,6 @@ void Runtime::pause(int timeout) {
     }
   }
 
-}
-
-void Runtime::processEvent(MAEvent &event) {
-  switch (event.type) {
-  case EVENT_TYPE_KEY_PRESSED:
-    //handleKeyEvent(event);
-    break;
-  default:
-    handleEvent(event);
-    break;
-  }
 }
 
 MAEvent Runtime::processEvents(int waitFlag) {
@@ -188,7 +187,7 @@ MAEvent Runtime::processEvents(int waitFlag) {
   MAEvent event;
   if (hasEvent()) {
     MAEvent *nextEvent = popEvent();
-    processEvent(*nextEvent);
+    handleEvent(*nextEvent);
     event = *nextEvent;
     delete nextEvent;
   } else {
@@ -235,6 +234,10 @@ int maGetEvent(MAEvent *event) {
     result = 0;
   }
   return result;
+}
+
+void maPushEvent(MAEvent *maEvent) {
+  runtime->pushEvent(maEvent);
 }
 
 void maWait(int timeout) {

@@ -60,6 +60,10 @@
 #define FONT_MIN 20
 #define FONT_MAX 200
 
+#define OPTIONS_BOX_WIDTH_EXTRA 1
+#define OPTIONS_BOX_BG 0xd2d1d0
+#define OPTIONS_BOX_FG 0x3e3f3e
+
 #if defined(_SDL)
 #define MK_MENU(l, a) " " l " " a " "
 #else
@@ -122,6 +126,8 @@ System::System() :
   _initialFontSize(0),
   _fontScale(100),
   _userScreenId(-1),
+  _menuX(0),
+  _menuY(0),
   _modifiedTime(0),
   _mainBas(false),
   _buttonPressed(false),
@@ -599,6 +605,104 @@ void System::logStack(const char *keyword, int type, int line) {
     }
   }
 #endif
+}
+
+void System::optionsBox(StringList *items) {
+  int backScreenId = _output->getScreenId(true);
+  int frontScreenId = _output->getScreenId(false);
+  _output->selectBackScreen(MENU_SCREEN);
+
+  int width = 0;
+  int charWidth = _output->getCharWidth();
+  List_each(String *, it, *items) {
+    char *str = (char *)(* it)->c_str();
+    int w = (strlen(str) * charWidth);
+    if (w > width) {
+      width = w;
+    }
+  }
+  width += (charWidth * OPTIONS_BOX_WIDTH_EXTRA);
+
+  int charHeight = _output->getCharHeight();
+  int textHeight = charHeight + (charHeight / 3);
+  int height = textHeight * items->size();
+
+  if (!_menuX) {
+    _menuX = _output->getWidth() - (width + charWidth * 2);
+  }
+  if (!_menuY) {
+    _menuY = _output->getHeight() - height;
+  }
+
+  if (_menuX + width >= _output->getWidth()) {
+    _menuX = _output->getWidth() - width;
+  }
+  if (_menuY + height >= _output->getHeight()) {
+    _menuY = _output->getHeight() - height;
+  }
+
+  int y = 0;
+  int index = 0;
+  int selectedIndex = -1;
+  int releaseCount = 0;
+
+  _output->insetMenuScreen(_menuX, _menuY, width, height);
+
+  List_each(String *, it, *items) {
+    char *str = (char *)(* it)->c_str();
+    FormInput *item = new MenuButton(index, selectedIndex, str, 0, y, width, textHeight);
+    _output->addInput(item);
+    item->setColor(OPTIONS_BOX_BG, OPTIONS_BOX_FG);
+    index++;
+    y += textHeight;
+  }
+
+  _output->redraw();
+  showCursor(kArrow);
+  while (selectedIndex == -1 && !isClosing()) {
+    MAEvent ev = processEvents(true);
+    if (ev.type == EVENT_TYPE_KEY_PRESSED) {
+      if (ev.key == 27) {
+        break;
+      } else if (ev.key == 13) {
+        selectedIndex = _output->getMenuIndex();
+        break;
+      } else if (ev.key == SB_KEY_UP) {
+        _output->handleMenu(true);
+      } else if (ev.key == SB_KEY_DOWN) {
+        _output->handleMenu(false);
+      }
+    }
+    if (ev.type == EVENT_TYPE_POINTER_RELEASED) {
+      showCursor(kArrow);
+      if (++releaseCount == 2) {
+        break;
+      }
+    }
+  }
+
+  _output->removeInputs();
+  _output->selectBackScreen(backScreenId);
+  _output->selectFrontScreen(frontScreenId);
+  _menuX = 0;
+  _menuY = 0;
+  if (selectedIndex != -1) {
+    if (_systemMenu == NULL && isRunning() &&
+        !form_ui::optionSelected(selectedIndex)) {
+      dev_clrkb();
+      dev_pushkey(selectedIndex);
+    } else {
+      MAEvent *maEvent = new MAEvent();
+      maEvent->type = EVENT_TYPE_OPTIONS_BOX_BUTTON_CLICKED;
+      maEvent->optionsBoxButtonIndex = selectedIndex;
+      maPushEvent(maEvent);
+    }
+  } else {
+    delete [] _systemMenu;
+    _systemMenu = NULL;
+  }
+
+  _output->redraw();
 }
 
 char *System::readSource(const char *fileName) {

@@ -37,14 +37,11 @@
 #define PAUSE_DEBUG_LAUNCH 750
 #define PAUSE_DEBUG_STEP 50
 #define MAIN_BAS "__main_bas__"
-#define OPTIONS_BOX_WIDTH_EXTRA 1
-#define OPTIONS_BOX_BG 0xd2d1d0
-#define OPTIONS_BOX_FG 0x3e3f3e
 #define EVENT_TYPE_RESTART 101
 
 Runtime *runtime;
-SDL_mutex *g_lock = NULL;
-SDL_cond *g_cond = NULL;
+SDL_mutex *g_lock = nullptr;
+SDL_cond *g_cond = nullptr;
 SDL_bool g_debugPause = SDL_FALSE;
 SDL_bool g_debugBreak = SDL_FALSE;
 SDL_bool g_debugTrace = SDL_TRUE;
@@ -73,15 +70,13 @@ MAEvent *getKeyPressedEvent(int keycode, int nativeKey) {
 
 Runtime::Runtime(SDL_Window *window) :
   System(),
-  _menuX(0),
-  _menuY(0),
   _fullscreen(false),
-  _graphics(NULL),
-  _eventQueue(NULL),
+  _graphics(nullptr),
+  _eventQueue(nullptr),
   _window(window),
-  _cursorHand(NULL),
-  _cursorArrow(NULL),
-  _cursorIBeam(NULL) {
+  _cursorHand(nullptr),
+  _cursorArrow(nullptr),
+  _cursorIBeam(nullptr) {
   runtime = this;
 }
 
@@ -90,17 +85,17 @@ Runtime::~Runtime() {
   delete _output;
   delete _eventQueue;
   delete _graphics;
-  runtime = NULL;
-  _output = NULL;
-  _eventQueue = NULL;
-  _graphics = NULL;
+  runtime = nullptr;
+  _output = nullptr;
+  _eventQueue = nullptr;
+  _graphics = nullptr;
 
   SDL_FreeCursor(_cursorHand);
   SDL_FreeCursor(_cursorArrow);
   SDL_FreeCursor(_cursorIBeam);
-  _cursorHand = NULL;
-  _cursorArrow = NULL;
-  _cursorIBeam = NULL;
+  _cursorHand = nullptr;
+  _cursorArrow = nullptr;
+  _cursorIBeam = nullptr;
 }
 
 void Runtime::alert(const char *title, const char *message) {
@@ -225,7 +220,7 @@ void Runtime::debugStep(TextEditInput *edit, TextEditHelpWidget *help, bool cont
     if (size > 0) {
       edit->gotoLine(buf);
       net_print(g_debugee, "v\n");
-      help->reload(NULL);
+      help->reload(nullptr);
       bool endChar = false;
       do {
         size = net_read(g_debugee, buf, sizeof(buf));
@@ -270,14 +265,6 @@ bool Runtime::toggleFullscreen() {
   return _fullscreen;
 }
 
-void Runtime::pushEvent(MAEvent *event) {
-  _eventQueue->push(event);
-}
-
-MAEvent *Runtime::popEvent() {
-  return _eventQueue->pop();
-}
-
 int Runtime::runShell(const char *startupBas, bool runWait, int fontScale, int debugPort) {
   logEntered();
 
@@ -310,7 +297,7 @@ int Runtime::runShell(const char *startupBas, bool runWait, int fontScale, int d
     SDL_DetachThread(thread);
   }
 
-  if (startupBas != NULL) {
+  if (startupBas != nullptr) {
     String bas = startupBas;
     if (opt_ide == IDE_INTERNAL) {
       runEdit(bas.c_str());
@@ -346,7 +333,7 @@ int Runtime::runShell(const char *startupBas, bool runWait, int fontScale, int d
 char *Runtime::loadResource(const char *fileName) {
   logEntered();
   char *buffer = System::loadResource(fileName);
-  if (buffer == NULL && strcmp(fileName, MAIN_BAS) == 0) {
+  if (buffer == nullptr && strcmp(fileName, MAIN_BAS) == 0) {
     buffer = (char *)malloc(main_bas_len + 1);
     memcpy(buffer, main_bas, main_bas_len);
     buffer[main_bas_len] = '\0';
@@ -444,7 +431,7 @@ void Runtime::pollEvents(bool blocking) {
   if (isActive() && !isRestart()) {
     SDL_Event ev;
     if (blocking ? SDL_WaitEvent(&ev) : SDL_PollEvent(&ev)) {
-      MAEvent *maEvent = NULL;
+      MAEvent *maEvent = nullptr;
       SDL_Keymod mod;
       switch (ev.type) {
       case SDL_TEXTINPUT:
@@ -475,7 +462,7 @@ void Runtime::pollEvents(bool blocking) {
         } else if (ev.key.keysym.sym == SDLK_b && (ev.key.keysym.mod & KMOD_CTRL)) {
           setBack();
         } else if (ev.key.keysym.sym == SDLK_BACKSPACE &&
-                   get_focus_edit() == NULL &&
+                   get_focus_edit() == nullptr &&
                    ((ev.key.keysym.mod & KMOD_CTRL) || !isRunning())) {
           setBack();
         } else if (!isEditing() && ev.key.keysym.sym == SDLK_PAGEUP &&
@@ -512,7 +499,7 @@ void Runtime::pollEvents(bool blocking) {
               break;
             }
           }
-          if (maEvent == NULL &&
+          if (maEvent == nullptr &&
               // Non-numeric-keypad, Control and Alt keys
               (((ev.key.keysym.sym >= SDLK_KP_1 && ev.key.keysym.sym <= SDLK_KP_0) &&
                 ev.key.keysym.mod != KMOD_NUM) ||
@@ -571,7 +558,7 @@ void Runtime::pollEvents(bool blocking) {
         }
         break;
       }
-      if (maEvent != NULL) {
+      if (maEvent != nullptr) {
         pushEvent(maEvent);
       }
     }
@@ -638,7 +625,7 @@ void Runtime::setWindowTitle(const char *title) {
     SDL_SetWindowTitle(_window, "SmallBASIC");
   } else {
     const char *slash = strrchr(title, '/');
-    if (slash == NULL) {
+    if (slash == nullptr) {
       slash = title;
     } else {
       slash++;
@@ -667,7 +654,7 @@ void Runtime::showCursor(CursorType cursorType) {
 
 void Runtime::onResize(int width, int height) {
   logEntered();
-  if (_graphics != NULL) {
+  if (_graphics != nullptr) {
     int w = _graphics->getWidth();
     int h = _graphics->getHeight();
     if (w != width || h != height) {
@@ -676,104 +663,6 @@ void Runtime::onResize(int width, int height) {
       resize();
     }
   }
-}
-
-void Runtime::optionsBox(StringList *items) {
-  int backScreenId = _output->getScreenId(true);
-  int frontScreenId = _output->getScreenId(false);
-  _output->selectBackScreen(MENU_SCREEN);
-
-  int width = 0;
-  int charWidth = _output->getCharWidth();
-  List_each(String *, it, *items) {
-    char *str = (char *)(* it)->c_str();
-    int w = (strlen(str) * charWidth);
-    if (w > width) {
-      width = w;
-    }
-  }
-  width += (charWidth * OPTIONS_BOX_WIDTH_EXTRA);
-
-  int charHeight = _output->getCharHeight();
-  int textHeight = charHeight + (charHeight / 3);
-  int height = textHeight * items->size();
-
-  if (!_menuX) {
-    _menuX = _output->getWidth() - (width + charWidth * 2);
-  }
-  if (!_menuY) {
-    _menuY = _output->getHeight() - height;
-  }
-
-  if (_menuX + width >= _output->getWidth()) {
-    _menuX = _output->getWidth() - width;
-  }
-  if (_menuY + height >= _output->getHeight()) {
-    _menuY = _output->getHeight() - height;
-  }
-
-  int y = 0;
-  int index = 0;
-  int selectedIndex = -1;
-  int releaseCount = 0;
-
-  _output->insetMenuScreen(_menuX, _menuY, width, height);
-
-  List_each(String *, it, *items) {
-    char *str = (char *)(* it)->c_str();
-    FormInput *item = new MenuButton(index, selectedIndex, str, 0, y, width, textHeight);
-    _output->addInput(item);
-    item->setColor(OPTIONS_BOX_BG, OPTIONS_BOX_FG);
-    index++;
-    y += textHeight;
-  }
-
-  _output->redraw();
-  showCursor(kArrow);
-  while (selectedIndex == -1 && !isClosing()) {
-    MAEvent ev = processEvents(true);
-    if (ev.type == EVENT_TYPE_KEY_PRESSED) {
-      if (ev.key == 27) {
-        break;
-      } else if (ev.key == 13) {
-        selectedIndex = _output->getMenuIndex();
-        break;
-      } else if (ev.key == SB_KEY_UP) {
-        _output->handleMenu(true);
-      } else if (ev.key == SB_KEY_DOWN) {
-        _output->handleMenu(false);
-      }
-    }
-    if (ev.type == EVENT_TYPE_POINTER_RELEASED) {
-      showCursor(kArrow);
-      if (++releaseCount == 2) {
-        break;
-      }
-    }
-  }
-
-  _output->removeInputs();
-  _output->selectBackScreen(backScreenId);
-  _output->selectFrontScreen(frontScreenId);
-  _menuX = 0;
-  _menuY = 0;
-  if (selectedIndex != -1) {
-    if (_systemMenu == NULL && isRunning() &&
-        !form_ui::optionSelected(selectedIndex)) {
-      dev_clrkb();
-      dev_pushkey(selectedIndex);
-    } else {
-      MAEvent *maEvent = new MAEvent();
-      maEvent->type = EVENT_TYPE_OPTIONS_BOX_BUTTON_CLICKED;
-      maEvent->optionsBoxButtonIndex = selectedIndex;
-      pushEvent(maEvent);
-    }
-  } else {
-    delete [] _systemMenu;
-    _systemMenu = NULL;
-  }
-
-  _output->redraw();
 }
 
 SDL_Rect Runtime::getWindowRect() {
@@ -808,7 +697,7 @@ char *Runtime::getClipboardText() {
     result = strdup(text);
     SDL_free(text);
   } else {
-    result = NULL;
+    result = nullptr;
   }
   return result;
 }
@@ -856,6 +745,10 @@ int maGetEvent(MAEvent *event) {
     result = 0;
   }
   return result;
+}
+
+void maPushEvent(MAEvent *maEvent) {
+  runtime->pushEvent(maEvent);
 }
 
 void maWait(int timeout) {

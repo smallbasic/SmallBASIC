@@ -325,6 +325,11 @@ void maHideVirtualKeyboard(void);
 int maGetEvent(MAEvent *event);
 
 /**
+ * Push an event onto the queue
+ */
+void maPushEvent(MAEvent *event);
+
+/**
  * Suspends execution until there is an event in the buffer,
  * or \a timeout milliseconds have passed. A timeout <= 0 is considered infinite.
  * Timer accuracy is platform-specific, but should be better than 20 ms.

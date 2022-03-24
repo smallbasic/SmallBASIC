@@ -75,8 +75,8 @@ EM_JS(int, get_text_size, (int id, const char *str, const char *face), {
     var s = UTF8ToString(str);
     var metrics = ctx.measureText(s);
     var height = metrics.fontBoundingBoxAscent + metrics.fontBoundingBoxDescent;
-    var result = (metrics.width << 16) + height;
-    return result;
+    var width = metrics.width;
+    return (width << 16) + height;
   });
 
 EM_JS(void, draw_arc, (int id, int xc, int yc, double r, double start, double end, double aspect), {
@@ -159,16 +159,18 @@ strlib::String get_color() {
   return result;
 }
 
-strlib::String get_face() {
-  strlib::String result;
-  if (font->_italic) {
-    result.append("italic ");
+Font::Font(int size, bool bold, bool italic) :
+  _size(size),
+  _bold(bold),
+  _italic(italic) {
+  _face.empty();
+  if (italic) {
+    _face.append("italic ");
   }
-  if (font->_bold) {
-    result.append("bold ");
+  if (bold) {
+    _face.append("bold ");
   }
-  result.append(font->_size).append("px monospace");
-  return result;
+  _face.append(size).append("px monospace");
 }
 
 Canvas::Canvas() :
@@ -247,7 +249,7 @@ void maSetClipRect(int left, int top, int width, int height) {
 MAExtent maGetTextSize(const char *str) {
   MAExtent result;
   if (str && str[0]) {
-    result = (MAExtent)get_text_size(drawTarget ? drawTarget->_id : -1, str, get_face());
+    result = (MAExtent)get_text_size(drawTarget ? drawTarget->_id : -1, str, font->_face.c_str());
   } else {
     result = 0;
   }
@@ -331,7 +333,7 @@ void maFillRect(int left, int top, int width, int height) {
 
 void maDrawText(int left, int top, const char *str, int length) {
   if (str && str[0] && drawTarget) {
-    draw_text(drawTarget->_id, left, top, str, length, get_color(), get_face());
+    draw_text(drawTarget->_id, left, top, str, length, get_color(), font->_face.c_str());
   }
 }
 
