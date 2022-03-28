@@ -33,6 +33,7 @@ struct Runtime : public System {
   void pushEvent(MAEvent *event) { _eventQueue->push(event); }
   MAEvent *popEvent() { return _eventQueue->pop(); }
   MAEvent processEvents(int waitFlag);
+  void processEvent(MAEvent &event);
   bool run(const char *bas) { return execute(bas); }
   void runShell();
   void resize(int w, int h);

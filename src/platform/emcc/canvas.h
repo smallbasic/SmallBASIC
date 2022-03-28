@@ -24,10 +24,11 @@ struct Canvas {
 
 struct Font {
   Font(int size, bool bold, bool italic);
+  virtual ~Font();
 
   int _size;
   bool _bold;
   bool _italic;
 
-  strlib::String _face;  
+  strlib::String _face;
 };

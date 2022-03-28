@@ -173,6 +173,12 @@ Font::Font(int size, bool bold, bool italic) :
   _face.append(size).append("px monospace");
 }
 
+Font::~Font() {
+  if (this == font) {
+    font = nullptr;
+  }
+}
+
 Canvas::Canvas() :
   _clip(nullptr),
   _id(-1),
@@ -190,9 +196,14 @@ Canvas::Canvas(int width, int height) :
 Canvas::~Canvas() {
   if (_id != -1) {
     EM_ASM_({
-        var element = document.getElementById($0);
+        var element = document.getElementById($0 == -1 ? "canvas" : "canvas_" + $0);
         document.body.removeChild(element);
       }, _id);
+  }
+  if (this == screen) {
+    screen = nullptr;
+  } else if (this == drawTarget) {
+    drawTarget = nullptr;
   }
 }
 
@@ -359,11 +370,8 @@ void maGetImageData(MAHandle maHandle, void *dst, const MARect *srcRect, int str
 MAHandle maFontLoadDefault(int type, int style, int size) {
   bool italic = (style & FONT_STYLE_ITALIC);
   bool bold = (style & FONT_STYLE_BOLD);
-  if (font) {
-    delete font;
-  }
-  font = new Font(size, bold, italic);
-  return (MAHandle)font;
+  Font *newFont = new Font(size, bold, italic);
+  return (MAHandle)newFont;
 }
 
 MAHandle maFontSetCurrent(MAHandle maHandle) {
@@ -374,9 +382,6 @@ MAHandle maFontSetCurrent(MAHandle maHandle) {
 int maFontDelete(MAHandle maHandle) {
   if (maHandle != -1) {
     Font *handleFont = (Font *)maHandle;
-    if (font == handleFont) {
-      font = nullptr;
-    }
     delete handleFont;
   }
   return RES_FONT_OK;

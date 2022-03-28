@@ -13,13 +13,14 @@
 #include "common/smbas.h"
 #include "lib/maapi.h"
 #include "ui/utils.h"
-#include "ui/audio.h"
 #include "ui/theme.h"
 #include "platform/emcc/runtime.h"
 #include "platform/emcc/main_bas.h"
 
 #define MAIN_BAS "__main_bas__"
 #define WAIT_INTERVAL 10
+#define EVENT_TYPE_RESTART 101
+#define EVENT_TYPE_SHOW_MENU 102
 
 Runtime *runtime;
 
@@ -54,6 +55,7 @@ Runtime::Runtime() :
   logEntered();
   runtime = this;
 
+  // note: cannot call emscripten_sleep from inside the callbacks
   emscripten_set_mousedown_callback(EMSCRIPTEN_EVENT_TARGET_WINDOW, this, true, mouse_callback);
   emscripten_set_mouseup_callback(EMSCRIPTEN_EVENT_TARGET_WINDOW, this, true, mouse_callback);
   emscripten_set_mousemove_callback(EMSCRIPTEN_EVENT_TARGET_WINDOW, this, true, mouse_callback);
@@ -124,9 +126,7 @@ void Runtime::handleMouse(int eventType, const EmscriptenMouseEvent *e) {
   switch (eventType) {
   case EMSCRIPTEN_EVENT_MOUSEDOWN:
     if (e->button == 2) {
-      _menuX = e->clientX;
-      _menuY = e->clientY;
-      showMenu();
+      pushEvent(getMotionEvent(EVENT_TYPE_SHOW_MENU, e));
     } else {
       pushEvent(getMotionEvent(EVENT_TYPE_POINTER_PRESSED, e));
     }
@@ -144,7 +144,7 @@ void Runtime::pause(int timeout) {
   if (timeout == -1) {
     if (hasEvent()) {
       MAEvent *event = popEvent();
-      handleEvent(*event);
+      processEvent(*event);
       delete event;
     }
   } else {
@@ -154,7 +154,7 @@ void Runtime::pause(int timeout) {
         break;
       } else if (hasEvent()) {
         MAEvent *event = popEvent();
-        handleEvent(*event);
+        processEvent(*event);
         delete event;
       }
       emscripten_sleep(WAIT_INTERVAL);
@@ -164,7 +164,6 @@ void Runtime::pause(int timeout) {
       }
     }
   }
-
 }
 
 MAEvent Runtime::processEvents(int waitFlag) {
@@ -187,7 +186,7 @@ MAEvent Runtime::processEvents(int waitFlag) {
   MAEvent event;
   if (hasEvent()) {
     MAEvent *nextEvent = popEvent();
-    handleEvent(*nextEvent);
+    processEvent(*nextEvent);
     event = *nextEvent;
     delete nextEvent;
   } else {
@@ -196,14 +195,30 @@ MAEvent Runtime::processEvents(int waitFlag) {
   return event;
 }
 
+void Runtime::processEvent(MAEvent &event) {
+  switch (event.type) {
+  case EVENT_TYPE_KEY_PRESSED:
+    //handleKeyEvent(event);
+    handleEvent(event);
+    break;
+  case EVENT_TYPE_RESTART:
+    setRestart();
+    break;
+  case EVENT_TYPE_SHOW_MENU:
+    _menuX = event.point.x;
+    _menuY = event.point.y;
+    showMenu();
+    break;
+  default:
+    handleEvent(event);
+    break;
+  }
+}
+
 void Runtime::runShell() {
   logEntered();
-
-  audio_open();
   runMain(MAIN_BAS);
-  audio_close();
   _state = kDoneState;
-  logLeaving();
 }
 
 void Runtime::setClipboardText(const char *text) {
@@ -271,3 +286,17 @@ int osd_devrestore(void) {
   runtime->setRunning(false);
   return 0;
 }
+
+
+void osd_audio(const char *path) {
+}
+
+void osd_beep() {
+}
+
+void osd_clear_sound_queue() {
+}
+
+void osd_sound(int frequency, int millis, int volume, int background) {
+}
+
