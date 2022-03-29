@@ -33,7 +33,7 @@
  #define deviceLog(...) appLog(__VA_ARGS__)
 #endif
 
-#if defined(_DEBUG) || defined(_EMCC)
+#if defined(_DEBUG)
  #define trace(...) deviceLog(__VA_ARGS__)
 #else
  #define trace(...)

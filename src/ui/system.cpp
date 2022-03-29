@@ -1085,7 +1085,7 @@ void System::showMenu() {
         _systemMenu[index++] = MENU_PASTE;
         _systemMenu[index++] = MENU_SELECT_ALL;
       }
-#if defined(_SDL) || defined(_FLTK)
+#if defined(_SDL) || defined(_FLTK) || defined(_EMCC)
       items->add(new String(MENU_STR_BACK));
       _systemMenu[index++] = MENU_BACK;
 #else
@@ -1109,7 +1109,7 @@ void System::showMenu() {
         _systemMenu[index++] = MENU_RESTART;
       }
 #endif
-#if !defined(_SDL) && !defined(_FLTK)
+#if !defined(_SDL) && !defined(_FLTK) && !defined(_EMCC)
       items->add(new String(MENU_STR_KEYPAD));
       _systemMenu[index++] = MENU_KEYPAD;
 #endif
@@ -1130,7 +1130,7 @@ void System::showMenu() {
       sprintf(buffer, MENU_STR_AUDIO, (opt_mute_audio ? MENU_STR_OFF : MENU_STR_ON));
       items->add(new String(buffer));
       _systemMenu[index++] = MENU_AUDIO;
-#if !defined(_SDL) && !defined(_FLTK)
+#if !defined(_SDL) && !defined(_FLTK) && !defined(_EMCC)
       if (!_mainBas && !_activeFile.empty()) {
         items->add(new String(MENU_STR_SHORT));
         items->add(new String(MENU_STR_SHARE));
@@ -1140,7 +1140,7 @@ void System::showMenu() {
 #endif
       items->add(new String(MENU_STR_SCREEN));
       _systemMenu[index++] = MENU_SCREENSHOT;
-#if defined(_SDL) || defined(_FLTK)
+#if defined(_SDL) || defined(_FLTK) || defined(_EMCC)
       items->add(new String(MENU_STR_BACK));
       _systemMenu[index++] = MENU_BACK;
 #endif

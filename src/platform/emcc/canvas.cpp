@@ -74,9 +74,9 @@ EM_JS(int, get_text_size, (int id, const char *str, const char *face), {
 
     var s = UTF8ToString(str);
     var metrics = ctx.measureText(s);
-    var height = metrics.fontBoundingBoxAscent + metrics.fontBoundingBoxDescent;
-    var width = metrics.width;
-    return (width << 16) + height;
+    var height = metrics.fontBoundingBoxAscent + metrics.fontBoundingBoxDescent + 2;
+    var width = s == "W" ? metrics.width : (metrics.actualBoundingBoxRight + 2);
+    return (Math.round(width) << 16) + height;
   });
 
 EM_JS(void, draw_arc, (int id, int xc, int yc, double r, double start, double end, double aspect), {

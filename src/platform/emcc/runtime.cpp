@@ -65,7 +65,7 @@ Runtime::Runtime() :
   _output = new AnsiWidget(EXTENT_X(screenSize), EXTENT_Y(screenSize));
   _output->construct();
   _output->setTextColor(DEFAULT_FOREGROUND, DEFAULT_BACKGROUND);
-  _output->setFontSize(11);
+  _output->setFontSize(12);
   _eventQueue = new Stack<MAEvent *>();
   _state = kActiveState;
   g_themeId = 0;
