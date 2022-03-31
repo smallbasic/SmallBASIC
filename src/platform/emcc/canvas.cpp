@@ -357,11 +357,11 @@ void maDrawImageRegion(MAHandle maHandle, const MARect *srcRect, const MAPoint2d
 }
 
 void maDrawRGB(const MAPoint2d *dstPoint, const void *src,  const MARect *srcRect, int opacity, int stride) {
-  logEntered();
+  appLog("maDrawRGB not yet implemented");
 }
 
 void maGetImageData(MAHandle maHandle, void *dst, const MARect *srcRect, int stride) {
-  logEntered();
+  appLog("maGetImageData not yet implemented");
 }
 
 //

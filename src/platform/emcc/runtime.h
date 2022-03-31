@@ -19,7 +19,7 @@ struct Runtime : public System {
   void alert(const char *title, const char *message);
   int  ask(const char *title, const char *prompt, bool cancel=true);
   void browseFile(const char *url);
-  char *getClipboardText();
+  char *getClipboardText() { return nullptr; }
   int  getFontSize() { return _output->getFontSize(); }
   void enableCursor(bool enabled) {}
   int  handle(int event);
@@ -37,7 +37,7 @@ struct Runtime : public System {
   bool run(const char *bas) { return execute(bas); }
   void runShell();
   void resize(int w, int h);
-  void setClipboardText(const char *text);
+  void setClipboardText(const char *text) {}
   void setFontSize(int size);
   void setLoadBreak(const char *url) {}
   void setLoadPath(const char *url) {}
