@@ -221,7 +221,7 @@ bool Canvas::create(int width, int height) {
       canvas.style.position = "absolute";
       canvas.className = "emscripten";
       document.body.appendChild(canvas);
-    }, _id, _w, _h);
+    }, _id, width, height);
   return true;
 };
 
@@ -268,10 +268,12 @@ MAExtent maGetTextSize(const char *str) {
 }
 
 MAExtent maGetScrSize(void) {
+  int w = get_screen_width();
+  int h = get_screen_height();
   if (screen == nullptr) {
-    screen = new Canvas(get_screen_width(), get_screen_height());
+    screen = new Canvas(w, h);
   }
-  return (MAExtent)((screen->_w << 16) + screen->_h);
+  return (MAExtent)((w << 16) + h);
 }
 
 void maDestroyPlaceholder(MAHandle maHandle) {

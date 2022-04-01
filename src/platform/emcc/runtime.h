@@ -36,7 +36,6 @@ struct Runtime : public System {
   void processEvent(MAEvent &event);
   bool run(const char *bas) { return execute(bas); }
   void runShell();
-  void resize(int w, int h);
   void setClipboardText(const char *text) {}
   void setFontSize(int size);
   void setLoadBreak(const char *url) {}

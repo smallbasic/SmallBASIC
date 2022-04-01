@@ -1140,8 +1140,10 @@ void System::showMenu() {
         _systemMenu[index++] = MENU_SHARE;
       }
 #endif
+#if !defined(_EMCC)
       items->add(new String(MENU_STR_SCREEN));
       _systemMenu[index++] = MENU_SCREENSHOT;
+#endif
 #if defined(_SDL) || defined(_FLTK) || defined(_EMCC)
       items->add(new String(MENU_STR_BACK));
       _systemMenu[index++] = MENU_BACK;

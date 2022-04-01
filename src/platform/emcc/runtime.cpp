@@ -23,6 +23,7 @@
 #define WAIT_INTERVAL 10
 #define EVENT_TYPE_RESTART 101
 #define EVENT_TYPE_SHOW_MENU 102
+#define EVENT_TYPE_RESIZE 103
 
 Runtime *runtime;
 
@@ -52,6 +53,15 @@ EM_BOOL key_callback(int eventType, const EmscriptenKeyboardEvent *e, void *user
   return 0;
 }
 
+EM_BOOL resize_callback(int eventType, const EmscriptenUiEvent *e, void *userData) {
+  MAEvent *event = new MAEvent();
+  event->type = EVENT_TYPE_RESIZE;
+  event->point.x = e->documentBodyClientWidth;
+  event->point.y = e->documentBodyClientHeight;
+  runtime->pushEvent(event);
+  return 0;
+}
+
 Runtime::Runtime() :
   System() {
   logEntered();
@@ -62,6 +72,7 @@ Runtime::Runtime() :
   emscripten_set_mouseup_callback(EMSCRIPTEN_EVENT_TARGET_WINDOW, this, true, mouse_callback);
   emscripten_set_mousemove_callback(EMSCRIPTEN_EVENT_TARGET_WINDOW, this, true, mouse_callback);
   emscripten_set_keydown_callback(EMSCRIPTEN_EVENT_TARGET_WINDOW, this, true, key_callback);
+  emscripten_set_resize_callback(EMSCRIPTEN_EVENT_TARGET_WINDOW, this, true, resize_callback);
 
   MAExtent screenSize = maGetScrSize();
   _output = new AnsiWidget(EXTENT_X(screenSize), EXTENT_Y(screenSize));
@@ -221,10 +232,6 @@ MAEvent Runtime::processEvents(int waitFlag) {
 
 void Runtime::processEvent(MAEvent &event) {
   switch (event.type) {
-  case EVENT_TYPE_KEY_PRESSED:
-    //handleKeyEvent(event);
-    handleEvent(event);
-    break;
   case EVENT_TYPE_RESTART:
     setRestart();
     break;
@@ -232,6 +239,9 @@ void Runtime::processEvent(MAEvent &event) {
     _menuX = event.point.x;
     _menuY = event.point.y;
     showMenu();
+    break;
+  case EVENT_TYPE_RESIZE:
+    resize();
     break;
   default:
     handleEvent(event);
@@ -241,8 +251,9 @@ void Runtime::processEvent(MAEvent &event) {
 
 void Runtime::runShell() {
   logEntered();
-  runMain(MAIN_BAS);
-  _state = kDoneState;
+  while (1) {
+    runMain(MAIN_BAS);
+  }
 }
 
 void Runtime::showCursor(CursorType cursorType) {
