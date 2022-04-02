@@ -41,7 +41,7 @@ void init() {
   opt_command[0] = '\0';
   opt_file_permitted = 0;
   opt_graphics = 1;
-  opt_ide = 0;
+  opt_ide = IDE_INTERNAL;
   opt_modpath[0] = '\0';
   opt_nosave = 1;
   opt_pref_height = 0;

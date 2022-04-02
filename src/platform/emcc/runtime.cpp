@@ -26,6 +26,7 @@
 #define EVENT_TYPE_RESIZE 103
 
 Runtime *runtime;
+String clipboard;
 
 MAEvent *getMotionEvent(int type, const EmscriptenMouseEvent *event) {
   MAEvent *result = new MAEvent();
@@ -111,6 +112,10 @@ void Runtime::browseFile(const char *url) {
     }, url);
 }
 
+char *Runtime::getClipboardText() {
+  return strdup(clipboard.c_str());
+}
+
 char *Runtime::loadResource(const char *fileName) {
   logEntered();
   char *buffer = System::loadResource(fileName);
@@ -131,6 +136,7 @@ void Runtime::handleKeyboard(int eventType, const EmscriptenKeyboardEvent *e) {
   case DOM_VK_CAPS_LOCK:
     // ignore press without modifier key
     break;
+
   default:
     for (int i = 0; i < KEYMAP_LEN; i++) {
       if (keyCode == KEYMAP[i][0]) {
@@ -138,6 +144,7 @@ void Runtime::handleKeyboard(int eventType, const EmscriptenKeyboardEvent *e) {
         break;
       }
     }
+
     if (e->ctrlKey && e->altKey) {
       pushEvent(getKeyPressedEvent(SB_KEY_CTRL_ALT(keyCode)));
     } else if (e->ctrlKey && e->shiftKey) {
@@ -145,11 +152,26 @@ void Runtime::handleKeyboard(int eventType, const EmscriptenKeyboardEvent *e) {
     } else if (e->altKey && e->shiftKey) {
       pushEvent(getKeyPressedEvent(SB_KEY_ALT_SHIFT(keyCode)));
     } else if (e->ctrlKey) {
+      if (keyCode >= 'A' && keyCode <= 'Z') {
+        keyCode += ('a' - 'A');
+      }
       pushEvent(getKeyPressedEvent(SB_KEY_CTRL(keyCode)));
     } else if (e->altKey) {
       pushEvent(getKeyPressedEvent(SB_KEY_ALT(keyCode)));
     } else if (e->shiftKey) {
-      pushEvent(getKeyPressedEvent(SB_KEY_SHIFT(keyCode)));
+      bool shifted = false;
+      for (int i = 0; i < SHIFT_KEYMAP_LEN; i++) {
+        if (keyCode == SHIFT_KEYMAP[i][0]) {
+          keyCode = SHIFT_KEYMAP[i][1];
+          shifted = true;
+          break;
+        }
+      }
+      if (shifted) {
+        pushEvent(getKeyPressedEvent(keyCode));
+      } else {
+        pushEvent(getKeyPressedEvent(SB_KEY_SHIFT(keyCode)));
+      }
     } else {
       pushEvent(getKeyPressedEvent(keyCode));
     }
@@ -254,6 +276,10 @@ void Runtime::runShell() {
   while (1) {
     runMain(MAIN_BAS);
   }
+}
+
+void Runtime::setClipboardText(const char *text) {
+  clipboard = text;
 }
 
 void Runtime::showCursor(CursorType cursorType) {
@@ -366,11 +392,16 @@ void System::editSource(strlib::String loadPath, bool restoreOnExit) {
         case SB_KEY_F(11):
         case SB_KEY_F(12):
         case SB_KEY_MENU:
-        case SB_KEY_ESCAPE:
         case SB_KEY_BREAK:
           // unhandled keys
           redraw = false;
         break;
+        case SB_KEY_ESCAPE:
+          widget = editWidget;
+          helpWidget->hide();
+          helpWidget->cancelMode();
+          editWidget->setFocus(true);
+          break;
         case SB_KEY_F(1):
           widget = helpWidget;
           helpWidget->createKeywordIndex();
@@ -379,10 +410,8 @@ void System::editSource(strlib::String loadPath, bool restoreOnExit) {
           showStatus = false;
           break;
         case SB_KEY_F(9):
+        case SB_KEY_CTRL('r'):
           _state = kRunState;
-          if (editWidget->isDirty()) {
-            saveFile(editWidget, loadPath);
-          }
           break;
         case SB_KEY_CTRL('s'):
           saveFile(editWidget, loadPath);
@@ -390,11 +419,11 @@ void System::editSource(strlib::String loadPath, bool restoreOnExit) {
         case SB_KEY_CTRL('c'):
         case SB_KEY_CTRL('x'):
           text = widget->copy(event.key == (int)SB_KEY_CTRL('x'));
-        if (text) {
-          setClipboardText(text);
-          free(text);
-        }
-        break;
+          if (text) {
+            setClipboardText(text);
+            free(text);
+          }
+          break;
         case SB_KEY_CTRL('v'):
           text = getClipboardText();
           widget->paste(text);
