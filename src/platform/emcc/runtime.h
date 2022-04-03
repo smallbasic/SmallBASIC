@@ -26,8 +26,8 @@ struct Runtime : public System {
   char *loadResource(const char *fileName);
   void onRunCompleted() {}
   void saveWindowRect() {}
-  void handleKeyboard(int eventType, const EmscriptenKeyboardEvent *e);
-  void handleMouse(int eventType, const EmscriptenMouseEvent *e);
+  bool handleKeyboard(int eventType, const EmscriptenKeyboardEvent *e);
+  bool handleMouse(int eventType, const EmscriptenMouseEvent *e);
   bool hasEvent() { return _eventQueue && _eventQueue->size() > 0; }
   void pause(int timeout);
   void pushEvent(MAEvent *event) { _eventQueue->push(event); }

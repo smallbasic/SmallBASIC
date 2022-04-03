@@ -76,6 +76,8 @@ extern "C" {
   #define SB_STR_VER VERSION " Android " BUILD_DATE
 #elif defined (_FLTK)
   #define SB_STR_VER VERSION " FLTK " BUILD_DATE
+#elif defined (_EMCC)
+  #define SB_STR_VER VERSION " Emscripten " BUILD_DATE
 #else
   #define SB_STR_VER VERSION " Console " SB_VERSYS SB_BIT_SZ BUILD_DATE
 #endif

@@ -79,18 +79,27 @@ EM_JS(int, get_text_size, (int id, const char *str, const char *face), {
     return (Math.round(width) << 16) + height;
   });
 
-EM_JS(void, draw_arc, (int id, int xc, int yc, double r, double start, double end, double aspect), {
+EM_JS(void, draw_arc, (int id, int xc, int yc, double r, double start, double end, double aspect, const char *color), {
     var canvas = document.getElementById(id == -1 ? "canvas" : "canvas_" + id);
     var ctx = canvas.getContext("2d");
     ctx.beginPath();
-    ctx.arc(100, 75, 50, 0, 2 * Math.PI);
+    ctx.arc(xc, yc, r, start, end, false);
+    ctx.strokeStyle = UTF8ToString(color);
     ctx.stroke();
   });
 
-EM_JS(void, draw_ellipse, (int id, int xc, int yc, int rx, int ry, int fill), {
+EM_JS(void, draw_ellipse, (int id, int xc, int yc, int rx, int ry, int fill, const char *color), {
     var canvas = document.getElementById(id == -1 ? "canvas" : "canvas_" + id);
     var ctx = canvas.getContext("2d");
-
+    ctx.beginPath();
+    ctx.ellipse(xc, yc, rx, ry, Math.PI * 2, 0, Math.PI * 2, false);
+    if (fill) {
+      ctx.fillStyle = UTF8ToString(color);
+      ctx.fill();
+    } else {
+      ctx.strokeStyle = UTF8ToString(color);
+      ctx.stroke();
+    }
   });
 
 EM_JS(void, draw_line, (int id, int x1, int y1, int x2, int y2, const char *color), {
@@ -306,13 +315,13 @@ int maCreateDrawableImage(MAHandle maHandle, int width, int height) {
 //
 void maArc(int xc, int yc, double r, double start, double end, double aspect) {
   if (drawTarget) {
-    draw_arc(drawTarget->_id, xc, yc, r, start, end, aspect);
+    draw_arc(drawTarget->_id, xc, yc, r, start, end, aspect, get_color());
   }
 }
 
 void maEllipse(int xc, int yc, int rx, int ry, int fill) {
   if (drawTarget) {
-    draw_ellipse(drawTarget->_id, xc, yc, rx, ry, fill);
+    draw_ellipse(drawTarget->_id, xc, yc, rx, ry, fill, get_color());
   }
 }
 

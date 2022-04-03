@@ -24,6 +24,11 @@
 #define EVENT_TYPE_RESTART 101
 #define EVENT_TYPE_SHOW_MENU 102
 #define EVENT_TYPE_RESIZE 103
+#define EVENT_TYPE_BACK 104
+#define EVENT_TYPE_PGUP 105
+#define EVENT_TYPE_PGDN 106
+#define EVENT_TYPE_UP 107
+#define EVENT_TYPE_DN 108
 
 Runtime *runtime;
 String clipboard;
@@ -31,8 +36,10 @@ String clipboard;
 MAEvent *getMotionEvent(int type, const EmscriptenMouseEvent *event) {
   MAEvent *result = new MAEvent();
   result->type = type;
-  result->point.x = event->clientX;
-  result->point.y = event->clientY;
+  if (event) {
+    result->point.x = event->clientX;
+    result->point.y = event->clientY;
+  }
   return result;
 }
 
@@ -45,13 +52,11 @@ MAEvent *getKeyPressedEvent(int keycode, int nativeKey = 0) {
 }
 
 EM_BOOL mouse_callback(int eventType, const EmscriptenMouseEvent *e, void *userData) {
-  runtime->handleMouse(eventType, e);
-  return 0;
+  return runtime->handleMouse(eventType, e);
 }
 
 EM_BOOL key_callback(int eventType, const EmscriptenKeyboardEvent *e, void *userData) {
-  runtime->handleKeyboard(eventType, e);
-  return 0;
+  return runtime->handleKeyboard(eventType, e);
 }
 
 EM_BOOL resize_callback(int eventType, const EmscriptenUiEvent *e, void *userData) {
@@ -127,14 +132,23 @@ char *Runtime::loadResource(const char *fileName) {
   return buffer;
 }
 
-void Runtime::handleKeyboard(int eventType, const EmscriptenKeyboardEvent *e) {
+bool Runtime::handleKeyboard(int eventType, const EmscriptenKeyboardEvent *e) {
   int keyCode = e->keyCode;
+  bool result = true;
   switch (e->keyCode) {
   case DOM_VK_SHIFT:
   case DOM_VK_CONTROL:
   case DOM_VK_ALT:
   case DOM_VK_CAPS_LOCK:
     // ignore press without modifier key
+    result = false;
+    break;
+
+  case DOM_VK_F5:
+  case DOM_VK_F11:
+  case DOM_VK_F12:
+    // ignore standard browser keystrokes
+    result = false;
     break;
 
   default:
@@ -155,9 +169,38 @@ void Runtime::handleKeyboard(int eventType, const EmscriptenKeyboardEvent *e) {
       if (keyCode >= 'A' && keyCode <= 'Z') {
         keyCode += ('a' - 'A');
       }
-      pushEvent(getKeyPressedEvent(SB_KEY_CTRL(keyCode)));
+      switch (keyCode) {
+      case 'b':
+        pushEvent(getMotionEvent(EVENT_TYPE_BACK, nullptr));
+        break;
+      case 'm':
+        pushEvent(getMotionEvent(EVENT_TYPE_SHOW_MENU, nullptr));
+        break;
+      case SB_KEY_PGUP:
+        pushEvent(getMotionEvent(EVENT_TYPE_PGUP, nullptr));
+        break;
+      case SB_KEY_PGDN:
+        pushEvent(getMotionEvent(EVENT_TYPE_PGDN, nullptr));
+        break;
+      case SB_KEY_UP:
+        pushEvent(getMotionEvent(EVENT_TYPE_UP, nullptr));
+        break;
+      case SB_KEY_DN:
+        pushEvent(getMotionEvent(EVENT_TYPE_PGDN, nullptr));
+        break;
+      default:
+        pushEvent(getKeyPressedEvent(SB_KEY_CTRL(keyCode)));
+      }
     } else if (e->altKey) {
-      pushEvent(getKeyPressedEvent(SB_KEY_ALT(keyCode)));
+      switch (keyCode) {
+      case 'D':
+        // browser keystroke
+        result = false;
+        break;
+      default:
+        pushEvent(getKeyPressedEvent(SB_KEY_ALT(keyCode)));
+        break;
+      }
     } else if (e->shiftKey) {
       bool shifted = false;
       for (int i = 0; i < SHIFT_KEYMAP_LEN; i++) {
@@ -177,9 +220,11 @@ void Runtime::handleKeyboard(int eventType, const EmscriptenKeyboardEvent *e) {
     }
     break;
   }
+  return result;
 }
 
-void Runtime::handleMouse(int eventType, const EmscriptenMouseEvent *e) {
+bool Runtime::handleMouse(int eventType, const EmscriptenMouseEvent *e) {
+  bool result = true;
   switch (eventType) {
   case EMSCRIPTEN_EVENT_MOUSEDOWN:
     if (e->button == 2) {
@@ -194,7 +239,11 @@ void Runtime::handleMouse(int eventType, const EmscriptenMouseEvent *e) {
   case EMSCRIPTEN_EVENT_MOUSEUP:
     pushEvent(getMotionEvent(EVENT_TYPE_POINTER_RELEASED, e));
     break;
+  default:
+    result = false;
+    break;
   }
+  return result;
 }
 
 void Runtime::pause(int timeout) {
@@ -265,6 +314,21 @@ void Runtime::processEvent(MAEvent &event) {
   case EVENT_TYPE_RESIZE:
     resize();
     break;
+  case EVENT_TYPE_BACK:
+    setBack();
+    break;
+  case EVENT_TYPE_PGUP:
+    _output->scroll(true, true);
+    break;
+  case EVENT_TYPE_PGDN:
+    _output->scroll(false, true);
+    break;
+  case EVENT_TYPE_UP:
+    _output->scroll(true, false);
+    break;
+  case EVENT_TYPE_DN:
+    _output->scroll(false, false);
+    break;
   default:
     handleEvent(event);
     break;
@@ -279,6 +343,9 @@ void Runtime::runShell() {
 }
 
 void Runtime::setClipboardText(const char *text) {
+  EM_ASM_({
+      navigator.clipboard.writeText(UTF8ToString($0));
+    }, text);
   clipboard = text;
 }
 
