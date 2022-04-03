@@ -116,13 +116,13 @@ EM_JS(void, draw_line, (int id, int x1, int y1, int x2, int y2, const char *colo
 EM_JS(void, draw_pixel, (int id, int x, int y, int r, int g, int b), {
     var canvas = document.getElementById(id == -1 ? "canvas" : "canvas_" + id);
     var ctx = canvas.getContext("2d");
-    var pxId = ctx.createImageData(1, 1);
-    var pxData = pxId.data;
-    pxData[0] = r;
-    pxData[1] = g;
-    pxData[2] = b;
-    pxData[3] = 255;
-    ctx.putImageData(pxId, x, y);
+    var pixel = new Uint8ClampedArray(4);
+    pixel[0] = r;
+    pixel[1] = g;
+    pixel[2] = b;
+    pixel[3] = 255;
+    var imageData = new ImageData(pixel, 1, 1);
+    ctx.putImageData(imageData, x, y);
   });
 
 EM_JS(void, draw_rect_filled, (int id, int x, int y, int w, int h, const char *color), {
@@ -336,13 +336,13 @@ void maPlot(int posX, int posY) {
     int c = drawColor;
     if (c < 0) {
       c = -c;
-    } else {
-      c = colors_i[c > 15 ? 15 : c];
     }
-    int r = (c & 0xff0000) >> 16;
-    int g = (c & 0xff00) >> 8;
-    int b = (c & 0xff);
-    draw_pixel(drawTarget->_id, posX, posY, r, g, b);
+    if (c >= 0 && c <= 15) {
+      c = colors_i[c];
+    }
+    uint8_t sR, sG, sB;
+    GET_RGB(c, sR, sG, sB);
+    draw_pixel(drawTarget->_id, posX, posY, sR, sG, sB);
   }
 }
 
