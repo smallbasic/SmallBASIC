@@ -1,4 +1,7 @@
 2022-02-23 (12.24)
+	EMCC: Implemented emscripten web version
+
+2022-02-23 (12.24)
 	COMMON: Fix array access with embedded strings #136
 
 2022-02-23 (12.24)

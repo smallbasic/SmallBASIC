@@ -1127,11 +1127,9 @@ void System::showMenu() {
         items->add(new String(buffer));
         _systemMenu[index++] = MENU_THEME;
       }
-#if !defined(_EMCC)
       sprintf(buffer, MENU_STR_AUDIO, (opt_mute_audio ? MENU_STR_OFF : MENU_STR_ON));
       items->add(new String(buffer));
       _systemMenu[index++] = MENU_AUDIO;
-#endif
 #if !defined(_SDL) && !defined(_FLTK) && !defined(_EMCC)
       if (!_mainBas && !_activeFile.empty()) {
         items->add(new String(MENU_STR_SHORT));

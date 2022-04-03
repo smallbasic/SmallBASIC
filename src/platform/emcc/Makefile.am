@@ -37,6 +37,7 @@ sbasic_html_SOURCES =																				\
   ../../ui/textedit.cpp																			\
   ../../ui/image.cpp																				\
   ../../ui/strlib.cpp																				\
+  ../../ui/audio.cpp																				\
   runtime.h runtime.cpp																			\
   canvas.h canvas.cpp																				\
   main.cpp

@@ -397,15 +397,3 @@ int maFontDelete(MAHandle maHandle) {
   }
   return RES_FONT_OK;
 }
-
-//
-// not implemented
-//
-void maShowVirtualKeyboard(void) {
-}
-
-void maHideVirtualKeyboard(void) {
-}
-
-void maUpdateScreen(void) {
-}

@@ -53,6 +53,7 @@ void init() {
   os_graf_my = 768;
   os_graphics = 1;
   os_color_depth = 16;
+  opt_mute_audio = 0;
 }
 
 int main(int argc, char* argv[]) {

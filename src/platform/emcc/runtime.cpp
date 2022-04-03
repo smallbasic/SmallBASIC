@@ -11,10 +11,12 @@
 #include <emscripten.h>
 #include <emscripten/key_codes.h>
 #include "include/osd.h"
+#include "common/inet.h"
 #include "common/smbas.h"
 #include "lib/maapi.h"
-#include "ui/utils.h"
+#include "ui/audio.h"
 #include "ui/theme.h"
+#include "ui/utils.h"
 #include "platform/emcc/runtime.h"
 #include "platform/emcc/main_bas.h"
 #include "platform/emcc/keymap.h"
@@ -135,11 +137,11 @@ char *Runtime::loadResource(const char *fileName) {
 bool Runtime::handleKeyboard(int eventType, const EmscriptenKeyboardEvent *e) {
   int keyCode = e->keyCode;
   bool result = true;
+  static bool capsLock = false;
   switch (e->keyCode) {
   case DOM_VK_SHIFT:
   case DOM_VK_CONTROL:
   case DOM_VK_ALT:
-  case DOM_VK_CAPS_LOCK:
     // ignore press without modifier key
     result = false;
     break;
@@ -151,6 +153,10 @@ bool Runtime::handleKeyboard(int eventType, const EmscriptenKeyboardEvent *e) {
     result = false;
     break;
 
+  case DOM_VK_CAPS_LOCK:
+    capsLock = !capsLock;
+    break;
+
   default:
     for (int i = 0; i < KEYMAP_LEN; i++) {
       if (keyCode == KEYMAP[i][0]) {
@@ -158,7 +164,6 @@ bool Runtime::handleKeyboard(int eventType, const EmscriptenKeyboardEvent *e) {
         break;
       }
     }
-
     if (e->ctrlKey && e->altKey) {
       pushEvent(getKeyPressedEvent(SB_KEY_CTRL_ALT(keyCode)));
     } else if (e->ctrlKey && e->shiftKey) {
@@ -166,9 +171,7 @@ bool Runtime::handleKeyboard(int eventType, const EmscriptenKeyboardEvent *e) {
     } else if (e->altKey && e->shiftKey) {
       pushEvent(getKeyPressedEvent(SB_KEY_ALT_SHIFT(keyCode)));
     } else if (e->ctrlKey) {
-      if (keyCode >= 'A' && keyCode <= 'Z') {
-        keyCode += ('a' - 'A');
-      }
+      keyCode = to_lower(keyCode);
       switch (keyCode) {
       case 'b':
         pushEvent(getMotionEvent(EVENT_TYPE_BACK, nullptr));
@@ -216,7 +219,7 @@ bool Runtime::handleKeyboard(int eventType, const EmscriptenKeyboardEvent *e) {
         pushEvent(getKeyPressedEvent(SB_KEY_SHIFT(keyCode)));
       }
     } else {
-      pushEvent(getKeyPressedEvent(keyCode));
+      pushEvent(getKeyPressedEvent(capsLock ? keyCode : to_lower(keyCode)));
     }
     break;
   }
@@ -337,6 +340,8 @@ void Runtime::processEvent(MAEvent &event) {
 
 void Runtime::runShell() {
   logEntered();
+  audio_open();
+  net_init();
   while (1) {
     runMain(MAIN_BAS);
   }
@@ -605,10 +610,6 @@ bool System::getPen3() {
   return result;
 }
 
-void System::completeKeyword(int index) {
-  // empty
-}
-
 //
 // sbasic implementation
 //
@@ -622,16 +623,10 @@ int osd_devrestore(void) {
   return 0;
 }
 
-
-void osd_audio(const char *path) {
-}
-
-void osd_beep() {
-}
-
-void osd_clear_sound_queue() {
-}
-
-void osd_sound(int frequency, int millis, int volume, int background) {
-}
-
+//
+// not implemented
+//
+void System::completeKeyword(int index) {}
+void maHideVirtualKeyboard(void) {}
+void maShowVirtualKeyboard(void) {}
+void maUpdateScreen(void) {}

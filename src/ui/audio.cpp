@@ -143,11 +143,15 @@ static void device_start() {
 bool audio_open() {
   bool result;
   ma_backend backends[] = {
+#if defined(_EMCC)
+    ma_backend_webaudio
+#else
     ma_backend_alsa,
     ma_backend_jack,
     ma_backend_pulseaudio,
     ma_backend_wasapi,
-    ma_backend_dsound
+    ma_backend_dsound,
+#endif
   };
   if (ma_context_init(backends, sizeof(backends)/sizeof(backends[0]), NULL, &context) != MA_SUCCESS) {
     result = false;
