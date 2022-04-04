@@ -1114,12 +1114,14 @@ void System::showMenu() {
       _systemMenu[index++] = MENU_KEYPAD;
 #endif
       if (_mainBas) {
+#if !defined(_EMCC)
         sprintf(buffer, MENU_STR_FONT, _fontScale - FONT_SCALE_INTERVAL);
         items->add(new String(buffer));
         sprintf(buffer, MENU_STR_FONT, _fontScale + FONT_SCALE_INTERVAL);
         items->add(new String(buffer));
         _systemMenu[index++] = MENU_ZOOM_UP;
         _systemMenu[index++] = MENU_ZOOM_DN;
+#endif
         sprintf(buffer, MENU_STR_EDITOR, opt_ide == IDE_NONE ? MENU_STR_OFF : MENU_STR_ON);
         items->add(new String(buffer));
         _systemMenu[index++] = MENU_EDITMODE;

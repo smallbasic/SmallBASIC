@@ -74,8 +74,8 @@ EM_JS(int, get_text_size, (int id, const char *str, const char *face), {
 
     var s = UTF8ToString(str);
     var metrics = ctx.measureText(s);
-    var height = metrics.fontBoundingBoxAscent + metrics.fontBoundingBoxDescent + 2;
-    var width = s == "W" ? metrics.width : (metrics.actualBoundingBoxRight + 2);
+    var height = metrics.fontBoundingBoxAscent + metrics.fontBoundingBoxDescent + 4;
+    var width = metrics.width;
     return (Math.round(width) << 16) + height;
   });
 
@@ -147,7 +147,7 @@ EM_JS(void, draw_text, (int id, int x, int y, const char *str, int len, const ch
     var s = UTF8ToString(str).substring(0, len);
     var metrics = ctx.measureText(s);
     ctx.fillStyle = UTF8ToString(color);
-    ctx.fillText(s, x, y + metrics.fontBoundingBoxAscent + metrics.fontBoundingBoxDescent);
+    ctx.fillText(s, x, y + metrics.fontBoundingBoxAscent + metrics.fontBoundingBoxDescent - 1);
   });
 
 strlib::String get_color() {
@@ -179,7 +179,7 @@ Font::Font(int size, bool bold, bool italic) :
   if (bold) {
     _face.append("bold ");
   }
-  _face.append(size).append("px monospace");
+  _face.append(size).append("px 'Inconsolata', monospace");
 }
 
 Font::~Font() {

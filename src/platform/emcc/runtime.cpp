@@ -21,6 +21,7 @@
 #include "platform/emcc/main_bas.h"
 #include "platform/emcc/keymap.h"
 
+#define FONT_SIZE 14
 #define MAIN_BAS "__main_bas__"
 #define WAIT_INTERVAL 10
 #define EVENT_TYPE_RESTART 101
@@ -86,7 +87,7 @@ Runtime::Runtime() :
   _output = new AnsiWidget(EXTENT_X(screenSize), EXTENT_Y(screenSize));
   _output->construct();
   _output->setTextColor(DEFAULT_FOREGROUND, DEFAULT_BACKGROUND);
-  _output->setFontSize(12);
+  _output->setFontSize(FONT_SIZE);
   _eventQueue = new Stack<MAEvent *>();
   _state = kActiveState;
   g_themeId = 0;
