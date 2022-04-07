@@ -12,7 +12,7 @@
 #include <emscripten/key_codes.h>
 #include "include/osd.h"
 #include "common/inet.h"
-#include "common/smbas.h"
+#include "common/device.h"
 #include "lib/maapi.h"
 #include "ui/audio.h"
 #include "ui/theme.h"
@@ -110,8 +110,9 @@ void Runtime::alert(const char *title, const char *message) {
 }
 
 int Runtime::ask(const char *title, const char *prompt, bool cancel) {
-  int result = 0;
-  return result;
+  return EM_ASM_INT({
+      return !window.confirm(UTF8ToString($0) + "\n" + UTF8ToString($1));
+    }, title, prompt);
 }
 
 void Runtime::browseFile(const char *url) {
@@ -333,6 +334,13 @@ void Runtime::processEvent(MAEvent &event) {
   case EVENT_TYPE_DN:
     _output->scroll(false, false);
     break;
+  case EVENT_TYPE_KEY_PRESSED:
+    handleEvent(event);
+    if (event.key != -1 && isRunning()) {
+      dev_pushkey(event.key);
+    }
+    break;
+
   default:
     handleEvent(event);
     break;
@@ -343,6 +351,7 @@ void Runtime::runShell() {
   logEntered();
   audio_open();
   net_init();
+  chdir("/basic");
   while (1) {
     runMain(MAIN_BAS);
   }
