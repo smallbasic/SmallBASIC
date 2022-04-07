@@ -179,7 +179,7 @@ Font::Font(int size, bool bold, bool italic) :
   if (bold) {
     _face.append("bold ");
   }
-  _face.append(size).append("px 'Inconsolata', monospace");
+  _face.append(size).append("px Inconsolata, monospace");
 }
 
 Font::~Font() {
