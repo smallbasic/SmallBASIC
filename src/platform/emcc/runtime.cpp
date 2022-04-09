@@ -36,6 +36,15 @@
 Runtime *runtime;
 String clipboard;
 
+int getFontSize() {
+  return EM_ASM_INT({
+      const parameters = new URLSearchParams(window.location.search);
+      const result = parameters.get('fontSize') || $0;
+      console.log(result);
+      return result;
+    }, FONT_SIZE);
+}
+
 MAEvent *getMotionEvent(int type, const EmscriptenMouseEvent *event) {
   MAEvent *result = new MAEvent();
   result->type = type;
@@ -87,7 +96,7 @@ Runtime::Runtime() :
   _output = new AnsiWidget(EXTENT_X(screenSize), EXTENT_Y(screenSize));
   _output->construct();
   _output->setTextColor(DEFAULT_FOREGROUND, DEFAULT_BACKGROUND);
-  _output->setFontSize(FONT_SIZE);
+  _output->setFontSize(::getFontSize());
   _eventQueue = new Stack<MAEvent *>();
   _state = kActiveState;
   g_themeId = 0;
