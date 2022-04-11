@@ -1,4 +1,7 @@
 2022-02-23 (12.24)
+	COMMON: m3Apply no longer crashes if the second argument is not an array
+
+2022-02-23 (12.24)
 	EMCC: Implemented emscripten web version
 
 2022-02-23 (12.24)
