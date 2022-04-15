@@ -1,3 +1,52 @@
+2022-02-23 (12.24)
+	COMMON: m3Apply no longer crashes if the second argument is not an array
+
+2022-02-23 (12.24)
+	EMCC: Implemented emscripten web version
+
+2022-02-23 (12.24)
+	COMMON: Fix array access with embedded strings #136
+
+2022-02-23 (12.24)
+	CONSOLE: Added -i command switch for live mode
+
+	This will run the BASIC program in a loop. It can be used with the debug module
+	to rerun whenever the source code changes:
+
+	import debug
+	run("xdotool windowactivate `xdotool search --onlyvisible --name \"Emacs\"`")
+	while (!debug.IsSourceModified())
+	  rem main loop
+	wend
+
+2022-02-23 (12.24)
+	COMMON: ARRAY now parses json with true/false correctly
+
+2022-02-19 (12.24)
+	WEB: Added simple REST server support
+
+2022-02-19 (12.24)
+	COMMON: Fixed http_read to handle large HTTP headers
+	COMMON: Fixed hashmap access issue
+
+2022-01-16 (12.24)
+	COMMON: Implemented window.setLocation(x,y) #102
+
+2022-01-15 (12.24)
+	COMMON: Removed 'Meaningless' CDBL, CINT, CREAL. These can be poly-filled with 'DEF' if required.
+
+2022-01-14 (12.24)
+	COMMON: Fix #131 - Scalar * Vector doesnt work
+
+2021-12-31 (12.24)
+	UI: add support for image.save("file.png") as per console
+
+2021-12-30 (12.24)
+	COMMON: parse JSON with SB ";" dimension syntax
+
+2021-08-22 (12.24)
+	COMMON: Update plugin system to allow loading to be driven by the IMPORT statement
+
 2021-08-22 (12.23)
 	SDL: Validate window dimensions on loading to prevent hidden window
 

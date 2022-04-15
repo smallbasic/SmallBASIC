@@ -336,3 +336,94 @@ if (a[1] != [3,4]) then throw "err2"
 if (a[2] != [5,6]) then throw "err3"
 if (a[3] != [7,8,9]) then throw "err4"
 
+# parse with jsmn and ";" dimension syntax
+const font = {"a" : [1,2,3;4,5,6;7,8,999]}
+if (ubound(font["a"],1) != 2) then throw "err1"
+if (ubound(font["a"],2) != 2) then throw "err2"
+a = font["a"]
+if (a[2,2] != 999) then throw "err3"
+
+'
+' test for compile errors (incorrect handling of quotes in comp_array_params)
+'
+dim p(256)
+p(asc("=")) = 1
+p(asc("[")) = 1
+p(asc("1")) = 1
+p(asc("2")) = 1
+p(asc("3")) = 1
+p(asc("4")) = 1
+p(asc("5")) = 1
+p(asc("6")) = 1
+p(asc("7")) = 1
+p(asc("8")) = 1
+p(asc("9")) = 1
+p(asc(":")) = 1
+p(asc(";")) = 1
+p(asc("<")) = 1
+p(asc(">")) = 1
+p(asc("?")) = 1
+p(asc("@")) = 1
+p(asc("A")) = 1
+p(asc("B")) = 1
+p(asc("C")) = 1
+p(asc("D")) = 1
+p(asc("E")) = 1
+p(asc("F")) = 1
+p(asc("G")) = 1
+p(asc("H")) = 1
+p(asc("I")) = 1
+p(asc("J")) = 1
+p(asc("K")) = 1
+p(asc("L")) = 1
+p(asc("M")) = 1
+p(asc("N")) = 1
+p(asc("O")) = 1
+p(asc("P")) = 1
+p(asc("Q")) = 1
+p(asc("R")) = 1
+p(asc("S")) = 1
+p(asc("T")) = 1
+p(asc("U")) = 1
+p(asc("V")) = 1
+p(asc("W")) = 1
+p(asc("X")) = 1
+p(asc("Y")) = 1
+p(asc("Z")) = 1
+p(asc("\\"))= 1
+p(asc("]")) = 1
+p(asc("^")) = 1
+p(asc("_")) = 1
+p(asc("`")) = 1
+p(asc("a")) = 1
+p(asc("b")) = 1
+p(asc("c")) = 1
+p(asc("d")) = 1
+p(asc("e")) = 1
+p(asc("f")) = 1
+p(asc("g")) = 1
+p(asc("h")) = 1
+p(asc("i")) = 1
+p(asc("j")) = 1
+p(asc("k")) = 1
+p(asc("l")) = 1
+p(asc("m")) = 1
+p(asc("n")) = 1
+p(asc("o")) = 1
+p(asc("p")) = 1
+p(asc("q")) = 1
+p(asc("r")) = 1
+p(asc("s")) = 1
+p(asc("t")) = 1
+p(asc("u")) = 1
+p(asc("v")) = 1
+p(asc("w")) = 1
+p(asc("x")) = 1
+p(asc("y")) = 1
+p(asc("z")) = 1
+p(asc("{")) = 1
+p(asc("|")) = 1
+p(asc("}")) = 1
+p(asc("~")) = 1
+
+

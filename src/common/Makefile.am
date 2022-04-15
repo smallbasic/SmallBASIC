@@ -19,7 +19,12 @@ EXTRA_DIST =                              \
     ../include/module.h                   \
     ../include/osd.h                      \
     ../include/var.h                      \
-    ../include/var_map.h
+    ../include/var_map.h                  \
+    ../lib/jsmn/jsmn.h                    \
+    ../lib/lodepng/lodepng.cpp            \
+    ../lib/lodepng/lodepng.h              \
+    ../lib/miniaudio/miniaudio.h          \
+    ../lib/stb/stb_textedit.h
 
 noinst_LIBRARIES = libsb_common.a
 
@@ -42,7 +47,7 @@ libsb_common_a_SOURCES =                  \
     system.c                              \
     random.c                              \
     eval.c                                \
-    extlib.c extlib.h                     \
+    plugins.c plugins.h                   \
     file.c                                \
     ffill.c                               \
     fmt.c fmt.h                           \
@@ -70,5 +75,3 @@ libsb_common_a_SOURCES =                  \
     sbapp.h                               \
     smbas.h                               \
     sys.h
-
-

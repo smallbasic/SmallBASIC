@@ -31,9 +31,7 @@ void unit_mgr_init() {
  *   close up
  */
 void unit_mgr_close() {
-  int i;
-
-  for (i = 0; i < unit_count; i++) {
+  for (int i = 0; i < unit_count; i++) {
     if (units[i].status == unit_loaded) {
       close_unit(i);
     }

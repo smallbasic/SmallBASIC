@@ -7,7 +7,6 @@
 //
 
 #define MINIAUDIO_IMPLEMENTATION
-#define DR_WAV_IMPLEMENTATION
 
 #include "config.h"
 #include <stdio.h>
@@ -16,7 +15,6 @@
 #include "include/osd.h"
 #include "ui/strlib.h"
 #include "ui/audio.h"
-#include "lib/miniaudio/extras/dr_wav.h"
 #include "lib/miniaudio/miniaudio.h"
 
 extern "C" {
@@ -87,11 +85,12 @@ static void data_callback(ma_device *device, void *output, const void *input, ma
   if (queue.empty()) {
     usleep(MILLIS_TO_MICROS(10));
   } else {
+    ma_uint64 framesRead;
     queuePos = (queuePos + 1) % queue.size();
     Sound *sound = queue[queuePos];
     if (sound->_decoder != nullptr) {
       // play audio track
-      ma_uint64 framesRead = ma_decoder_read_pcm_frames(sound->_decoder, output, frameCount);
+      ma_decoder_read_pcm_frames(sound->_decoder, output, frameCount, &framesRead);
       if (framesRead == 0) {
         // finished playing
         queue.pop(false);
@@ -99,13 +98,13 @@ static void data_callback(ma_device *device, void *output, const void *input, ma
     } else if (sound->_start == 0) {
       // start new sound
       sound->_start = dev_get_millisecond_count();
-      ma_waveform_read_pcm_frames(sound->_tone, (float *)output, frameCount);
+      ma_waveform_read_pcm_frames(sound->_tone, (float *)output, frameCount, &framesRead);
     } else if (dev_get_millisecond_count() - sound->_start > sound->_duration) {
       // sound has timed out
       queue.pop(false);
     } else {
       // continue sound
-      ma_waveform_read_pcm_frames(sound->_tone, (float *)output, frameCount);
+      ma_waveform_read_pcm_frames(sound->_tone, (float *)output, frameCount, &framesRead);
     }
   }
 }
@@ -133,7 +132,7 @@ static void setup_format(ma_format format, ma_uint32 channels, ma_uint32 sampleR
 }
 
 static void device_start() {
-  if (ma_device_get_state(&device) != MA_STATE_STARTED) {
+  if (ma_device_get_state(&device) != ma_device_state_started) {
     ma_result result = ma_device_start(&device);
     if (result != MA_SUCCESS) {
       err_throw("Failed to start audio [%d]", result);
@@ -144,11 +143,15 @@ static void device_start() {
 bool audio_open() {
   bool result;
   ma_backend backends[] = {
+#if defined(_EMCC)
+    ma_backend_webaudio
+#else
     ma_backend_alsa,
     ma_backend_jack,
     ma_backend_pulseaudio,
     ma_backend_wasapi,
-    ma_backend_dsound
+    ma_backend_dsound,
+#endif
   };
   if (ma_context_init(backends, sizeof(backends)/sizeof(backends[0]), NULL, &context) != MA_SUCCESS) {
     result = false;

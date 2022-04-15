@@ -15,7 +15,7 @@
 #include "common/blib.h"
 #include "common/str.h"
 #include "common/fmt.h"
-#include "common/extlib.h"
+#include "common/plugins.h"
 #include "common/units.h"
 #include "common/kw.h"
 #include "common/var.h"
@@ -688,7 +688,7 @@ static inline void bc_loop_call_extp() {
       prog_error = gsb_last_error;
     }
   } else {
-    slib_procexec(lib, prog_symtable[idx].exp_idx);
+    plugin_procexec(lib, prog_symtable[idx].exp_idx);
   }
 }
 
@@ -1132,12 +1132,12 @@ void brun_load_libraries(int tid) {
       // update lib-table's task-id field (in this code; not in lib's code)
       prog_libtable[i].tid = -1;  // not a task
       int lib_id = prog_libtable[i].id;
-      slib_import(lib_id, 0);
+      plugin_open(prog_libtable[i].lib, lib_id);
 
       // update lib-symbols's task-id field (in this code; not in lib's code)
       for (int j = 0; j < prog_symcount; j++) {
         if (prog_symtable[j].lib_id == lib_id) {
-          prog_symtable[j].exp_idx = slib_get_kid(lib_id, prog_symtable[j].symbol);
+          prog_symtable[j].exp_idx = plugin_get_kid(lib_id, prog_symtable[j].symbol);
           prog_symtable[j].task_id = -1;
         }
       }
@@ -1698,7 +1698,7 @@ int sbasic_main(const char *file) {
   // initialize managers
   init_tasks();
   unit_mgr_init();
-  slib_init();
+  plugin_init();
 
   if (prog_error) {
     success = 0;
@@ -1707,7 +1707,7 @@ int sbasic_main(const char *file) {
   }
 
   // clean up managers
-  slib_close();
+  plugin_close();
   unit_mgr_close();
   destroy_tasks();
 

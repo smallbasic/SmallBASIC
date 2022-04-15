@@ -14,8 +14,8 @@
 #include "common/bc.h"
 #include "common/scan.h"
 #include "common/smbas.h"
+#include "common/plugins.h"
 #include "common/units.h"
-#include "common/extlib.h"
 #include "common/messages.h"
 #include "languages/keywords.en.c"
 
@@ -1872,8 +1872,16 @@ char *comp_array_params(char *src, char exitChar) {
           }
           if (*(p + 1) == '.') {
             p = comp_array_uds_field(p + 2, &comp_prog);
+            continue;
           }
         }
+      }
+      break;
+    case '"':
+      // skip past the embedded string
+      p++;
+      while (*p && *p != '"') {
+        p++;
       }
       break;
     };
@@ -4231,6 +4239,16 @@ void comp_preproc_grmode(const char *source) {
  * copy the unit name from the source string to the given buffer
  */
 const char *get_unit_name(const char *p, char *buf_p) {
+  if (*p == '"') {
+    // copy the quoted string
+    *buf_p++ = *p++;
+    while (*p && *p != '"') {
+      *buf_p++ = *p++;
+    }
+    if (*p == '"') {
+      *buf_p++ = *p++;
+    }
+  }
   while (is_alnum(*p) || *p == '_' || *p == '.') {
     if (*p == '.') {
       *buf_p++ = OS_DIRSEP;
@@ -4265,23 +4283,21 @@ const char *get_alias(const char *p, char *alias, const char *def) {
 void comp_preproc_import(const char *slist) {
   char buf[OS_PATHNAME_SIZE + 1];
   char alias[OS_PATHNAME_SIZE + 1];
-
   const char *p = slist;
 
   SKIP_SPACES(p);
 
-  while (is_alpha(*p)) {
+  while (is_alpha(*p) || *p == '"') {
     // get name - "Import other.Foo => "other/Foo"
     p = get_unit_name(p, buf);
     p = get_alias(p, alias, buf);
 
     // import name
     strlower(buf);
-    int uid = slib_get_module_id(buf, alias);
+    int uid = plugin_import(buf, alias);
     if (uid != -1) {
       // store C module lib-record
-      slib_import(uid, 1);
-      add_libtable_rec(alias, alias, uid, 0);
+      add_libtable_rec(buf, alias, uid, 0);
     } else {
       uid = open_unit(buf, alias);
       if (uid < 0) {
@@ -4436,12 +4452,8 @@ char *comp_preproc_options(char *p) {
         opt_command[OPT_CMD_SZ - 1] = '\0';
       }
       *pe = lc;
-    } else if (strncmp(LCN_LOAD_MODULES, p, LEN_LDMODULES) == 0 &&
-               opt_modpath[0] != '\0') {
-      if (!opt_loadmod) {
-        opt_loadmod = 1;
-        slib_init();
-      }
+    } else if (strncmp(LCN_LOAD_MODULES, p, LEN_LDMODULES) == 0) {
+      // does nothing - for backwards compatibility
     } else {
       SKIP_SPACES(p);
       char *pe = p;

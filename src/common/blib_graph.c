@@ -1247,13 +1247,11 @@ var_t *par_getm3() {
 
 void m3combine(var_t *m, var_num_t nm[3][3]) {
   var_num_t om[3][3];
-  int i, j;
-  var_t *e;
 
   // copy m to om
-  for (i = 0; i < 3; i++) {
-    for (j = 0; j < 3; j++) {
-      e = v_elem(m, (i * 3 + j));
+  for (int i = 0; i < 3; i++) {
+    for (int j = 0; j < 3; j++) {
+      var_t *e = v_elem(m, (i * 3 + j));
       if (e->type == V_NUM) {
         om[i][j] = e->v.n;
       } else if (e->type == V_INT) {
@@ -1265,9 +1263,9 @@ void m3combine(var_t *m, var_num_t nm[3][3]) {
   }
 
   // combine
-  for (i = 0; i < 3; i++) {
-    for (j = 0; j < 3; j++) {
-      e = v_elem(m, (i * 3 + j));
+  for (int i = 0; i < 3; i++) {
+    for (int j = 0; j < 3; j++) {
+      var_t *e = v_elem(m, (i * 3 + j));
       if (e->type != V_NUM) {
         v_free(e);
       }
@@ -1275,15 +1273,11 @@ void m3combine(var_t *m, var_num_t nm[3][3]) {
       e->v.n = nm[i][0] * om[0][j] + nm[i][1] * om[1][j] + nm[i][2] * om[2][j];
     }
   }
-
 }
 
-//
 void m3ident(var_num_t m[3][3]) {
-  int i, j;
-
-  for (i = 0; i < 3; i++) {
-    for (j = 0; j < 3; j++) {
+  for (int i = 0; i < 3; i++) {
+    for (int j = 0; j < 3; j++) {
       m[i][j] = (i == j) ? 1.0 : 0.0;
     }
   }
@@ -1293,16 +1287,10 @@ void m3ident(var_num_t m[3][3]) {
 //  M3IDENT BYREF m3x3
 //
 void cmd_m3ident() {
-  var_t *m, *e;
-  int i, j;
-
-  m = par_getm3();
-  if (prog_error) {
-    return;
-  }
-  for (i = 0; i < 3; i++) {
-    for (j = 0; j < 3; j++) {
-      e = v_elem(m, (i * 3 + j));
+  var_t *m = par_getm3(); IF_PROG_ERR_RTN;
+  for (int i = 0; i < 3; i++) {
+    for (int j = 0; j < 3; j++) {
+      var_t *e = v_elem(m, (i * 3 + j));
       v_init(e);
       e->type = V_NUM;
       e->v.n = (i == j) ? 1.0 : 0.0;
@@ -1318,32 +1306,15 @@ void cmd_m3rotate() {
   var_num_t angle, x = 0, y = 0, c, s;
   var_num_t matrix[3][3];
 
-  m = par_getm3();
-  if (prog_error) {
-    return;
-  }
-  par_getcomma();
-  if (prog_error) {
-    return;
-  }
-  angle = par_getnum();
-  if (prog_error) {
-    return;
-  }
+  m = par_getm3(); IF_PROG_ERR_RTN;
+  par_getcomma();  IF_PROG_ERR_RTN;
+  angle = par_getnum(); IF_PROG_ERR_RTN;
+
   if (code_peek() == kwTYPE_SEP) {
-    par_getcomma();
-    if (prog_error)
-      return;
-    x = par_getnum();
-    if (prog_error)
-      return;
-    par_getcomma();
-    if (prog_error)
-      return;
-    y = par_getnum();
-    if (prog_error) {
-      return;
-    }
+    par_getcomma();   IF_PROG_ERR_RTN;
+    x = par_getnum(); IF_PROG_ERR_RTN;
+    par_getcomma();   IF_PROG_ERR_RTN;
+    y = par_getnum(); IF_PROG_ERR_RTN;
   }
 
   c = cos(angle);
@@ -1367,33 +1338,15 @@ void cmd_m3scale() {
   var_num_t x, y, fx, fy;
   var_num_t matrix[3][3];
 
-  m = par_getm3();
-  if (prog_error)
-    return;
-  par_getcomma();
-  if (prog_error)
-    return;
-  x = par_getnum();
-  if (prog_error)
-    return;
-  par_getcomma();
-  if (prog_error)
-    return;
-  y = par_getnum();
-  if (prog_error)
-    return;
-  par_getcomma();
-  if (prog_error)
-    return;
-  fx = par_getnum();
-  if (prog_error)
-    return;
-  par_getcomma();
-  if (prog_error)
-    return;
-  fy = par_getnum();
-  if (prog_error)
-    return;
+  m = par_getm3();  IF_PROG_ERR_RTN;
+  par_getcomma();   IF_PROG_ERR_RTN;
+  x = par_getnum(); IF_PROG_ERR_RTN;
+  par_getcomma();   IF_PROG_ERR_RTN;
+  y = par_getnum(); IF_PROG_ERR_RTN;
+  par_getcomma();   IF_PROG_ERR_RTN;
+  fx = par_getnum();IF_PROG_ERR_RTN;
+  par_getcomma();   IF_PROG_ERR_RTN;
+  fy = par_getnum();IF_PROG_ERR_RTN;
 
   m3ident(matrix);
   matrix[0][0] = fx;
@@ -1411,21 +1364,11 @@ void cmd_m3translate() {
   var_num_t x, y;
   var_num_t matrix[3][3];
 
-  m = par_getm3();
-  if (prog_error)
-    return;
-  par_getcomma();
-  if (prog_error)
-    return;
-  x = par_getnum();
-  if (prog_error)
-    return;
-  par_getcomma();
-  if (prog_error)
-    return;
-  y = par_getnum();
-  if (prog_error)
-    return;
+  m = par_getm3();  IF_PROG_ERR_RTN;
+  par_getcomma();   IF_PROG_ERR_RTN;
+  x = par_getnum(); IF_PROG_ERR_RTN;
+  par_getcomma();   IF_PROG_ERR_RTN;
+  y = par_getnum(); IF_PROG_ERR_RTN;
 
   m3ident(matrix);
   matrix[2][0] = x;
@@ -1439,22 +1382,21 @@ void cmd_m3translate() {
 void cmd_m3apply() {
   var_t *m, *p, *e;
   var_num_t om[3][3], x, y;
-  int i, j, count;
 
-  m = par_getm3();
-  if (prog_error)
+  m = par_getm3();     IF_PROG_ERR_RTN;
+  par_getcomma();      IF_PROG_ERR_RTN;
+  p = par_getvarray(); IF_PROG_ERR_RTN;
+
+  if (!p || p->type != V_ARRAY) {
+    err_varisnotarray();
     return;
-  par_getcomma();
-  if (prog_error)
-    return;
-  p = par_getvarray();
-  if (prog_error)
-    return;
-  count = v_asize(p);
+  }
+
+  int count = v_asize(p);
 
   // copy m to om
-  for (i = 0; i < 3; i++) {
-    for (j = 0; j < 3; j++) {
+  for (int i = 0; i < 3; i++) {
+    for (int j = 0; j < 3; j++) {
       e = v_elem(m, i * 3 + j);
       om[i][j] = v_getreal(e);
     }
@@ -1466,7 +1408,7 @@ void cmd_m3apply() {
     int o;
 
     count = (v_asize(p) >> 1);
-    for (i = 0; i < count; i++) {
+    for (int i = 0; i < count; i++) {
       o = i << 1;
       x = v_getreal(v_elem(p, o));
       y = v_getreal(v_elem(p, o + 1));
@@ -1474,16 +1416,15 @@ void cmd_m3apply() {
       v_setreal(v_elem(p, o + 1), x * om[0][1] + y * om[1][1] + om[2][1]);
     }
   } else {
-    for (i = 0; i < count; i++) {
+    for (int i = 0; i < count; i++) {
       e = v_elem(p, i);
 
-      if (e->type != V_ARRAY)
+      if (e->type != V_ARRAY) {
         err_parsepoly(i, 10);
-      else if ((v_asize(e) % 2) != 0)
+      } else if ((v_asize(e) % 2) != 0) {
         err_parsepoly(i, 11);
-
-      if (prog_error)
-        break;
+      }
+      IF_PROG_ERR_RTN;
 
       x = v_getreal(v_elem(e, 0));
       y = v_getreal(v_elem(e, 1));

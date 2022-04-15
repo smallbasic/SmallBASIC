@@ -39,8 +39,28 @@ C=LinEqn(a,b)
 print "[x; y; z] = "; C
 ?
 
-rem -- handling for dot product and multiplication of two 1D arrays
+rem - handling for dot product and multiplication of two 1D arrays
 a1=[1,2,4]
 a2=[1,4,5]
 if (a1 * a2 != [1,8,20]) then throw "err"
 if (a1 % a2 != 29) then throw "err"
+
+rem - Scalar * Vector doesnt work #131 (https://github.com/smallbasic/SmallBASIC/issues/131)
+dim r(2)
+v = [5, 10, 10]
+s = 2
+r = s * v
+if (r[0] != 10) then throw "err1"
+if (r[1] != 20) then throw "err2"
+if (r[2] != 20) then throw "err3"
+
+rem - blib_graph.c cleanup m3xx 
+strip = [[1,0.6], [1,0.2]]
+dim m(0 to 2, 0 to 2)
+m3ident m
+m3trans m, 1,1
+m3scale m, 0, 0, 20, 20
+m3rotate m, 2
+m3Apply m, strip
+if (strip != [[-18.23450585285103,14.19218649794793],[-10.96012643824558,17.52136119032507]]) then throw "m3Apply failed"
+

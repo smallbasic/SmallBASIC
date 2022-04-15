@@ -166,7 +166,7 @@ void dev_trace_line(int lineNo) {
 
 #ifndef IMPL_LOG_WRITE
 void lwrite(const char *buf) {
-  fprintf(stderr, "%s\n", buf);
+  fprintf(stderr, "%s", buf);
 }
 #endif
 

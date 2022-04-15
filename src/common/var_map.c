@@ -434,7 +434,13 @@ void map_set_primative(var_p_t dest, const char *s, int len) {
     }
   }
   if (text) {
-    v_setstrn(dest, s, len);
+    if (len == 4 && strncasecmp(s, "true", len) == 0) {
+      v_setint(dest, 1);
+    } else if (len == 5 && strncasecmp(s, "false", len) == 0) {
+      v_setint(dest, 0);
+    } else {
+      v_setstrn(dest, s, len);
+    }
   } else if (fract) {
     v_setreal(dest, atof(s));
   } else {
@@ -499,10 +505,10 @@ int map_create_array(var_p_t dest, JsonTokens *json, int end_position, int index
       break;
     }
     var_t *elem = map_array_list_add(&list, rows, curcol++);
-    if (token.type == JSMN_PRIMITIVE && json->tokens[0].type == JSMN_ARRAY) {
-      int len = token.end - token.start;
-      const char *str = json->js + token.start;
-      const char *delim = memchr(str, ';', len);
+    int len = token.end - token.start;
+    const char *str = json->js + token.start;
+    const char *delim = memchr(str, ';', len);
+    if (token.type == JSMN_PRIMITIVE && (delim != NULL || json->tokens[0].type == JSMN_ARRAY)) {
       if (delim != NULL) {
         if ((delim - str) > 0) {
           map_set_primative(elem, str, delim - str);
@@ -538,7 +544,7 @@ int map_create_array(var_p_t dest, JsonTokens *json, int end_position, int index
       cols = curcol;
     }
   }
-  map_build_array(dest, list.head, rows+1, cols);
+  map_build_array(dest, list.head, rows + 1, cols);
   return i;
 }
 

@@ -16,6 +16,7 @@
 #include <FL/Fl_Menu_Button.H>
 
 extern MainWindow *wnd;
+extern Fl_Window *outputWindow;
 extern System *g_system;
 static auto *onlineUrl = "http://smallbasic.github.io/samples/index.bas";
 
@@ -234,12 +235,21 @@ void Runtime::setFontSize(int size) {
   _output->setFontSize(size);
 }
 
-void Runtime::setWindowSize(int width, int height) {
-  wnd->size(width, height);
+void Runtime::setWindowRect(int x, int y, int width, int height) {
+  if (wnd != outputWindow && outputWindow != nullptr) {
+    if (width > 0 && height > 0) {
+      outputWindow->size(width, height);
+    }
+    if (x > 0 && y > 0) {
+      outputWindow->position(x, y);
+    }
+  }
 }
 
 void Runtime::setWindowTitle(const char *title) {
-  wnd->label(title);
+  if (wnd != outputWindow && outputWindow != nullptr) {
+    outputWindow->label(title);
+  }
 }
 
 void Runtime::showCursor(CursorType cursorType) {
@@ -299,6 +309,10 @@ int maGetEvent(MAEvent *event) {
     }
   }
   return result;
+}
+
+void maPushEvent(MAEvent *maEvent) {
+  // not implemented
 }
 
 void maWait(int timeout) {

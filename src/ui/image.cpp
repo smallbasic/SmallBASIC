@@ -464,23 +464,23 @@ void cmd_image_hide(var_s *self, var_s *) {
 void cmd_image_save(var_s *self, var_s *) {
   unsigned id = map_get_int(self, IMG_BID, -1);
   ImageBuffer *image = get_image(id);
-  var_t *array = nullptr;
-  dev_file_t *file = nullptr;
-  if (code_peek() == kwTYPE_SEP) {
-    file = eval_filep();
-  } else {
-    array = par_getvar_ptr();
-  }
-
+  dev_file_t *file;
+  var_t *array;
+  var_t var;
   bool saved = false;
   if (!prog_error && image != nullptr) {
     unsigned w = image->_width;
     unsigned h = image->_height;
-    if (file != nullptr && file->open_flags == DEV_FILE_OUTPUT) {
-      if (!encode_png_file(file->name, image->_image, w, h)) {
+    switch (code_peek()) {
+    case kwTYPE_SEP:
+      file = eval_filep();
+      if (file != nullptr && file->open_flags == DEV_FILE_OUTPUT &&
+          !encode_png_file(file->name, image->_image, w, h)) {
         saved = true;
       }
-    } else if (array != nullptr) {
+      break;
+    case kwTYPE_VAR:
+      array = par_getvar_ptr();
       v_tomatrix(array, h, w);
       //     x0   x1   x2    (w=3,h=2)
       // y0  rgba rgba rgba  ypos=0
@@ -497,6 +497,16 @@ void cmd_image_save(var_s *self, var_s *) {
         }
       }
       saved = true;
+      break;
+    default:
+      v_init(&var);
+      eval(&var);
+      if (var.type == V_STR && !prog_error &&
+          !lodepng_encode32_file(var.v.p.ptr, image->_image, w, h)) {
+        saved = true;
+      }
+      v_free(&var);
+      break;
     }
   }
 

@@ -70,7 +70,9 @@ int sys_search_path(const char *path, const char *file, char *retbuf) {
         strlcpy(cur_path, getenv("HOMEDRIVE"), sizeof(cur_path));
         strlcat(cur_path, getenv("HOMEPATH"), sizeof(cur_path));
       }
-      strlcat(cur_path, "/", sizeof(cur_path));
+      if (old_path[0] != '/') {
+        strlcat(cur_path, "/", sizeof(cur_path));
+      }
       strlcat(cur_path, old_path, sizeof(cur_path));
       free(old_path);
     }

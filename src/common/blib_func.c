@@ -620,9 +620,6 @@ var_num_t cmd_math1(long funcCode, var_t *arg) {
   case kwRAD:
     r = x * M_PI / 180.0;
     break;
-  case kwCDBL:
-    r = x;
-    break;
   default:
     rt_raise("Unsupported built-in function call %ld", funcCode);
     r = 0.0;
@@ -775,12 +772,6 @@ var_int_t cmd_imath1(long funcCode, var_t *arg) {
 
   IF_ERR_RETURN_0;
   switch (funcCode) {
-  case kwCINT:
-    //
-    // int <- CINT(float)
-    //
-    r = x;
-    break;
   case kwEOF:
     //
     // int <- EOF(file-handle)

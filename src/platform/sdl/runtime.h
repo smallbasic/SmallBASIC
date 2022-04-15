@@ -41,19 +41,18 @@ struct Runtime : public System {
   bool hasEvent() { return _eventQueue && _eventQueue->size() > 0; }
   void pause(int timeout);
   void pollEvents(bool blocking);
-  MAEvent *popEvent();
+  MAEvent *popEvent() { return _eventQueue->pop(); }
   MAEvent processEvents(int waitFlag);
   void processEvent(MAEvent &event);
-  void pushEvent(MAEvent *event);
+  void pushEvent(MAEvent *event) { _eventQueue->push(event); }
   void saveWindowRect();
-  void setWindowSize(int width, int height);
+  void setWindowRect(int x, int y, int width, int height);
   void setWindowTitle(const char *title);
   void share(const char *path) {}
   void showCursor(CursorType cursorType);
   int runShell(const char *startupBas, bool once, int fontScale, int debugPort);
   char *loadResource(const char *fileName);
   void logStack(int line, bool subOrFunc);
-  void optionsBox(StringList *items);
   void onResize(int w, int h);
   void onRunCompleted();
   void setClipboardText(const char *text);
@@ -62,7 +61,6 @@ struct Runtime : public System {
   SDL_Rect getWindowRect();
 
 private:
-  int _menuX, _menuY;
   bool _fullscreen;
   SDL_Rect _windowRect;
   SDL_Rect _saveRect;

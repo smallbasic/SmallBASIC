@@ -475,7 +475,6 @@ void Runtime::runShell() {
   os_graphics = 1;
   os_color_depth = 16;
   opt_mute_audio = 0;
-  opt_loadmod = 0;
 
   _app->activity->callbacks->onContentRectChanged = onContentRectChanged;
   loadConfig();
@@ -1180,6 +1179,10 @@ int maGetEvent(MAEvent *event) {
   return result;
 }
 
+void maPushEvent(MAEvent *maEvent) {
+  runtime->pushEvent(maEvent);
+}
+
 void maWait(int timeout) {
   runtime->pause(timeout);
 }
@@ -1342,10 +1345,6 @@ struct LibProcs {
   {"TTS_OFF", tts_off},
   {"SPEAK", tts_speak}
 };
-
-const char *sblib_get_module_name() {
-  return "android";
-}
 
 int sblib_proc_count(void) {
   return (sizeof(lib_procs) / sizeof(lib_procs[0]));

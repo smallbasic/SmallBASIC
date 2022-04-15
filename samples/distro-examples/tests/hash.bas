@@ -61,3 +61,22 @@ f.inputs[6].value= "123"
 if (not isarray(f.inputs)) then
   throw "post: inputs not a map"
 endif
+
+'
+' multi-layer access
+'
+dim lights(1)
+shadow.vertices = []
+shadow.vertices << 1
+lights[0].shadows = []
+lights[0].shadows << shadow
+lights[0].shadows[0].vertices[0] = [1,2,3,4]
+
+'
+' parse "true" and "false" as boolean fields
+'
+a= array("{\"stringT\", \"true\", \"stringF\", \"false\", \"booleanT\": true, \"booleanF\": false}")
+if (a.stringT <> "true") then throw "not true"
+if (a.stringF <> "false") then throw "not false"
+if (a.booleanT <> 1) then throw "not true"
+if (a.booleanF <> 0) then throw "not false"

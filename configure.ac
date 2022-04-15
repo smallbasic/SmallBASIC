@@ -7,7 +7,7 @@ dnl This program is distributed under the terms of the GPL v2.0
 dnl Download the GNU Public License (GPL) from www.gnu.org
 dnl
 
-AC_INIT([smallbasic], [12.23])
+AC_INIT([smallbasic], [12.24])
 AC_CONFIG_SRCDIR([configure.ac])
 
 AC_CANONICAL_TARGET
@@ -24,6 +24,11 @@ PKG_PROG_PKG_CONFIG
 TARGET=""
 
 dnl define build arguments
+AC_ARG_ENABLE(emcc,
+  AS_HELP_STRING([--enable-emcc],[build emscripten version(default=no)]),
+  [ac_build_emcc="yes"],
+  [ac_build_emcc="no"])
+
 AC_ARG_ENABLE(sdl,
   AS_HELP_STRING([--enable-sdl],[build SDL version(default=no)]),
   [ac_build_sdl="yes"],
@@ -115,6 +120,10 @@ function checkPCRE() {
    esac
 
    if test x$ac_build_android = xyes; then
+     have_pcre="no"
+   fi
+
+   if test x$ac_build_emcc = xyes; then
      have_pcre="no"
    fi
 
@@ -321,6 +330,20 @@ function buildWeb() {
    AC_SUBST(BUILD_SUBDIRS)
 }
 
+function buildEmscripten() {
+   TARGET="Building Emscripten version."
+   BUILD_SUBDIRS="src/common src/platform/emcc"
+   AC_CHECK_HEADERS([emscripten.h], [], [AC_MSG_ERROR([emscripten is not installed])])
+   AM_CONDITIONAL(WITH_CYGWIN_CONSOLE, false)
+   AC_DEFINE(_UnixOS, 1, [Building under Unix like systems.])
+   AC_DEFINE(_EMCC, 1, [Defined when building emscripten version])
+   AC_DEFINE(USE_TERM_IO, 0, [dont use the termios library.])
+   AC_DEFINE(IMPL_LOG_WRITE, 1, [Driver implements lwrite()])
+   AC_DEFINE(IMPL_DEV_READ, 1, [Implement dev_read()])
+   AC_SUBST(BUILD_SUBDIRS)
+   (cd src/platform/android/app/src/main/assets && xxd -i main.bas > ../../../../../../../src/platform/emcc/main_bas.h)
+}
+
 function buildFLTK() {
    TARGET="Building FLTK version."
 
@@ -389,6 +412,8 @@ elif test x$ac_build_web = xyes; then
    buildWeb
 elif test x$ac_build_fltk = xyes; then
    buildFLTK
+elif test x$ac_build_emcc = xyes; then
+   buildEmscripten
 else
    buildConsole
 fi
@@ -425,6 +450,7 @@ Makefile
 src/common/Makefile
 src/platform/android/Makefile
 src/platform/console/Makefile
+src/platform/emcc/Makefile
 src/platform/sdl/Makefile
 src/platform/web/Makefile
 src/platform/fltk/Makefile

@@ -61,17 +61,17 @@ struct System {
   virtual void browseFile(const char *url) = 0;
   virtual MAEvent processEvents(int waitFlag) = 0;
   virtual char *loadResource(const char *fileName);
-  virtual void optionsBox(StringList *items) = 0;
+  virtual void optionsBox(StringList *items);
   virtual void onRunCompleted() = 0;
   virtual void saveWindowRect() = 0;
-  virtual void setWindowSize(int width, int height) = 0;
+  virtual void setWindowRect(int x, int y, int width, int height) = 0;
   virtual void setWindowTitle(const char *title) = 0;
   virtual void share(const char *path) = 0;
   virtual void showCursor(CursorType cursorType) = 0;
   virtual void setClipboardText(const char *text) = 0;
   virtual char *getClipboardText() = 0;
 
-protected:
+  protected:
   void editSource(strlib::String loadPath, bool restoreOnExit);
   bool execute(const char *bas);
   bool fileExists(strlib::String &path);
@@ -137,6 +137,8 @@ protected:
   int _initialFontSize;
   int _fontScale;
   int _userScreenId;
+  int _menuX;
+  int _menuY;
   uint32_t _modifiedTime;
   bool _mainBas;
   bool _buttonPressed;

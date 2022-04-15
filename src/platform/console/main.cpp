@@ -28,6 +28,7 @@ static struct option OPTIONS[] = {
   {"keywords",       no_argument,       NULL, 'k'},
   {"no-file-access", no_argument,       NULL, 'f'},
   {"gen-sbx",        no_argument,       NULL, 'x'},
+  {"live-mode",      no_argument,       NULL, 'i'},
   {"module-path",    optional_argument, NULL, 'm'},
   {"decompile",      optional_argument, NULL, 's'},
   {"option",         optional_argument, NULL, 'o'},
@@ -92,9 +93,9 @@ void command_help(const char *selection) {
   }
 }
 
-/*
- * handles the command "sbasic -pkw"
- */
+//
+// handles the command "sbasic -pkw"
+//
 void print_keywords() {
   printf("SmallBASIC keywords table\n");
   printf("::':#:rem:\"\n");     // ted's format
@@ -138,9 +139,9 @@ void print_keywords() {
   }
 }
 
-/*
- * setup to run a program passed from the command line
- */
+//
+// setup to run a program passed from the command line
+//
 bool setup_command_program(const char *program, char **runFile) {
   char file[OS_PATHNAME_SIZE + 1];
 
@@ -218,7 +219,7 @@ void decompile(const char *path) {
   opt_nosave = 1;
   init_tasks();
   unit_mgr_init();
-  slib_init();
+  plugin_init();
 
   if (sbasic_compile(path)) {
     int exec_tid = sbasic_exec_prepare(path);
@@ -229,19 +230,19 @@ void decompile(const char *path) {
 
   // cleanup
   unit_mgr_close();
-  slib_close();
+  plugin_close();
   destroy_tasks();
   chdir(prev_cwd);
 }
 
-/*
- * process command-line parameters
- */
-bool process_options(int argc, char *argv[], char **runFile, bool *tmpFile) {
+//
+// process command-line parameters
+//
+bool process_options(int argc, char *argv[], char **runFile, bool *tmpFile, bool *iterate) {
   bool result = true;
   while (result) {
     int option_index = 0;
-    int c = getopt_long(argc, argv, "vkfxm:s:o:c:h::", OPTIONS, &option_index);
+    int c = getopt_long(argc, argv, "vkfxim:s:o:c:h::", OPTIONS, &option_index);
     if (c == -1 && !option_index) {
       // no more options
       for (int i = 1; i < argc; i++) {
@@ -286,7 +287,6 @@ bool process_options(int argc, char *argv[], char **runFile, bool *tmpFile) {
       opt_nosave = 0;
       break;
     case 'm':
-      opt_loadmod = 1;
       if (optarg) {
         strcpy(opt_modpath, optarg);
       }
@@ -310,15 +310,14 @@ bool process_options(int argc, char *argv[], char **runFile, bool *tmpFile) {
         result = false;
       }
       break;
+    case 'i':
+      *iterate = true;
+      break;
     default:
       show_help();
       result = false;
       break;
     }
-  }
-
-  if (getenv("SBASICPATH") != nullptr) {
-    opt_loadmod = 1;
   }
 
   if (strcmp("--", argv[argc - 1]) == 0) {
@@ -361,16 +360,53 @@ bool process_options(int argc, char *argv[], char **runFile, bool *tmpFile) {
   return result;
 }
 
-/*
- * program entry point
- */
+uint32_t get_modified_time(const char *file) {
+  uint32_t result = 0;
+  if (file != nullptr) {
+    struct stat st_file;
+    if (!stat(file, &st_file)) {
+      result = st_file.st_mtime;
+    }
+  }
+  return result;
+}
+
+#if !defined(__MACH__) && !defined(_Win32)
+bool wait_for_file(const char *file, uint32_t modifiedTime) {
+  bool result = false;
+  fcntl(0, F_SETFL, fcntl(0, F_GETFL) | O_NONBLOCK);
+  fprintf(stdout, "Fix the error [in %s] to continue, or press enter to exit...\n", file);
+  while (!result && modifiedTime == get_modified_time(file)) {
+    char c = 0;
+    read(0, &c, 1);
+    if (c != 0) {
+      result = true;
+      break;
+    }
+    usleep(500 * 1000);
+  }
+  return result;
+}
+#else
+bool wait_for_file(const char *file, uint32_t modifiedTime) {
+  bool result = false;
+  fprintf(stdout, "Fix the error [in %s] to continue...\n", file);
+  while (!result && modifiedTime == get_modified_time(file)) {
+    usleep(500 * 1000);
+  }
+  return result;
+}
+#endif
+
+//
+// program entry point
+//
 int main(int argc, char *argv[]) {
   opt_autolocal = 0;
   opt_command[0] = '\0';
   opt_modpath[0] = '\0';
   opt_file_permitted = 1;
   opt_ide = 0;
-  opt_loadmod = 0;
   opt_nosave = 1;
   opt_pref_height = 0;
   opt_pref_width = 0;
@@ -384,11 +420,20 @@ int main(int argc, char *argv[]) {
 
   char *file = nullptr;
   bool tmpFile = false;
-  if (process_options(argc, argv, &file, &tmpFile)) {
+  bool iterate = false;
+  if (process_options(argc, argv, &file, &tmpFile, &iterate)) {
     char prev_cwd[OS_PATHNAME_SIZE + 1];
     prev_cwd[0] = 0;
     getcwd(prev_cwd, sizeof(prev_cwd) - 1);
-    sbasic_main(file);
+    do {
+      uint32_t modifiedTime = get_modified_time(file);
+      bool result = sbasic_main(file);
+      if (!result && iterate) {
+        if (wait_for_file(file, modifiedTime)) {
+          break;
+        }
+      }
+    } while (iterate);
     chdir(prev_cwd);
     if (tmpFile) {
       unlink(file);
