@@ -25,6 +25,11 @@ endif
 
 sbasic_DEPENDENCIES = $(top_srcdir)/src/common/libsb_common.a
 
+iconsdir = $(datadir)/icons/hicolor/128x128/apps
+icons_DATA = ../../../images/sb-desktop-128x128.png
+desktopdir = $(datadir)/applications
+desktop_DATA = smallbasic.desktop
+
 TEST_DIR=../../../samples/distro-examples/tests
 UNIT_TESTS=array break byref eval-test iifs matrices metaa ongoto \
 	         uds hash pass1 call_tau short-circuit strings stack-test \
