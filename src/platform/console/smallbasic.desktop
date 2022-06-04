@@ -2,8 +2,8 @@
 Name=SmallBASIC
 Exec=sbasic
 Icon=sb-desktop-128x128
-Terminal=false
+Terminal=true
 Type=Application
-Categories=Development;
+Categories=Development
 MimeType=application/bas
 NoDisplay=false
