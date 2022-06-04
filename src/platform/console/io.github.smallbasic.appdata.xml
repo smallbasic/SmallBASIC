@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <component type="desktop-application">
-  <id>smallbasic</id>
+  <id>io.github.smallbasic</id>
   <name>SmallBASIC</name>
   <summary>SmallBASIC is a fast and easy to learn BASIC language interpreter ideal for everyday calculations, scripts and prototypes</summary>
   <metadata_license>MIT</metadata_license>
@@ -12,7 +12,7 @@
       sound, and graphic commands along with structured programming syntax. SmallBASIC is licensed under the GPL.
     </p>
   </description>
-  <launchable type="desktop-id">smallbasic.desktop</launchable>
+  <launchable type="desktop-id">io.github.smallbasic.desktop</launchable>
   <screenshots>
     <screenshot type="default">
       <image>https://smallbasic.github.io/images/screenshots/gold.png</image>
