@@ -1,0 +1,10 @@
+[Desktop Entry]
+Name=SmallBASIC
+Exec=sbasic
+Icon=sb-desktop-128x128
+Terminal=true
+Type=Application
+Categories=Development
+MimeType=application/bas
+NoDisplay=false
+

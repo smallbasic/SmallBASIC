@@ -1,5 +1,5 @@
 # SmallBASIC command line version
-# Copyright(C) 2001-2018 Chris Warren-Smith.
+# Copyright(C) 2001-2022 Chris Warren-Smith.
 #
 # This program is distributed under the terms of the GPL v2.0 or later
 # Download the GNU Public License (GPL) from www.gnu.org
@@ -24,6 +24,11 @@ sbasic_LDADD += -ldl
 endif
 
 sbasic_DEPENDENCIES = $(top_srcdir)/src/common/libsb_common.a
+
+iconsdir = $(datadir)/icons/hicolor/128x128/apps
+icons_DATA = ../../../images/sb-desktop-128x128.png
+desktopdir = $(datadir)/applications
+desktop_DATA = io.github.smallbasic.desktop
 
 TEST_DIR=../../../samples/distro-examples/tests
 UNIT_TESTS=array break byref eval-test iifs matrices metaa ongoto \

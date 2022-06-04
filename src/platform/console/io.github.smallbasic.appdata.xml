@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>io.github.smallbasic</id>
+  <name>SmallBASIC</name>
+  <summary>SmallBASIC is a fast and easy to learn BASIC language interpreter ideal for everyday calculations, scripts and prototypes</summary>
+  <metadata_license>MIT</metadata_license>
+  <project_license>GPL-2.0-or-later</project_license>
+  <description>
+    <p>
+      SmallBASIC is a fast and easy to learn BASIC language interpreter ideal for everyday calculations, scripts and prototypes.
+      SmallBASIC includes trigonometric, matrices and algebra functions,  a built in IDE, a powerful string library, system,
+      sound, and graphic commands along with structured programming syntax. SmallBASIC is licensed under the GPL.
+    </p>
+  </description>
+  <launchable type="desktop-id">io.github.smallbasic.desktop</launchable>
+  <screenshots>
+    <screenshot type="default">
+      <image>https://smallbasic.github.io/images/screenshots/sbasic.png</image>
+    </screenshot>
+    <screenshot>
+      <image>https://smallbasic.github.io/images/screenshots/gold.png</image>
+    </screenshot>
+  </screenshots>
+</component>

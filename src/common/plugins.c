@@ -210,6 +210,13 @@ static int slib_find_path(char *path, const char *file) {
       result = sys_search_path(rel_path, file, path);
     }
   }
+  // find in AppImage
+  if (!result && getenv("APPDIR")) {
+    char rel_path[PATH_SIZE];
+    strlcpy(rel_path, getenv("APPDIR"), PATH_SIZE);
+    strlcat(rel_path, "/usr/lib", PATH_SIZE);
+    result = sys_search_path(rel_path, file, path);
+  }
   // find in modpath
   if (!result && opt_modpath[0]) {
     result = sys_search_path(opt_modpath, file, path);

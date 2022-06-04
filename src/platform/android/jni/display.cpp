@@ -86,7 +86,7 @@ void Canvas::fillRect(int left, int top, int width, int height, pixel_t drawColo
         break;
       } else if (posY >= dtY) {
         pixel_t *line = getLine(posY);
-        for (int x = 0; x < width; x++) {
+        for (int x = 0; x < width && line; x++) {
           int posX = x + left;
           if (posX == _w) {
             break;

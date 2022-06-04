@@ -792,7 +792,7 @@ public class MainActivity extends NativeActivity {
     } else if (android.os.Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
       // https://commonsware.com/blog/2019/06/07/death-external-storage-end-saga.html
       File[] dirs = getExternalMediaDirs();
-      result = dirs[0].getAbsolutePath();
+      result = dirs != null && dirs.length > 0 ? dirs[0].getAbsolutePath() : getInternalStorage();
     } else {
       result = getInternalStorage();
     }
