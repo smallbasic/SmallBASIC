@@ -11,7 +11,7 @@ android {
     targetSdkVersion 30
     versionCode 50
     versionName "12.23"
-    resConfigs "en"
+    resConfigs 'en'
   }
 
   signingConfigs {

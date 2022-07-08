@@ -43,12 +43,10 @@ import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.core.content.FileProvider;
 
-import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.io.DataInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -60,19 +58,16 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
+import java.io.Reader;
 import java.io.UnsupportedEncodingException;
 import java.net.Inet4Address;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
-import java.net.ServerSocket;
-import java.net.Socket;
 import java.net.SocketException;
 import java.net.URLDecoder;
 import java.util.Date;
 import java.util.Enumeration;
-import java.util.HashMap;
 import java.util.Locale;
-import java.util.Map;
 import java.util.Properties;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -670,15 +665,6 @@ public class MainActivity extends NativeActivity {
     }
   }
 
-  private String buildRunForm(String buffer, String token) {
-    return "<form method=post>" +
-      "<input type=hidden name=token value='" + token +
-      "'><textarea cols=60 rows=30 name=src>" + buffer + "</textarea>" +
-      "<input value=Run name=run type=submit style='vertical-align:top'>" +
-      "<input value=Save name=save type=submit style='vertical-align:top'>" +
-      "</form>";
-  }
-
   private String buildTokenForm() {
     return "<p>Enter access token:</p><form method=post><input type=text name=token>" +
       "<input value=OK name=okay type=submit style='vertical-align:top'></form>";
@@ -765,7 +751,7 @@ public class MainActivity extends NativeActivity {
     }
   }
 
-  private void execStream(final String line, DataInputStream inputStream) throws IOException {
+  private void execStream(final String line, InputStream inputStream) throws IOException {
     File outputFile = new File(getInternalStorage(), WEB_BAS);
     BufferedWriter output = new BufferedWriter(new FileWriter(outputFile));
     Log.i(TAG, "execStream() entered");
@@ -801,38 +787,6 @@ public class MainActivity extends NativeActivity {
 
   private String getInternalStorage() {
     return getFilesDir().getAbsolutePath();
-  }
-
-  private Map<String, String> getPostData(DataInputStream inputStream, final String line) throws IOException {
-    int length = 0;
-    final String lengthHeader = "content-length: ";
-    String nextLine = line;
-    while (nextLine != null && nextLine.length() > 0) {
-      if (nextLine.toLowerCase(Locale.ENGLISH).startsWith(lengthHeader)) {
-        length = Integer.parseInt(nextLine.substring(lengthHeader.length()));
-      }
-      nextLine = readLine(inputStream);
-    }
-    StringBuilder postData = new StringBuilder();
-    for (int i = 0; i < length; i++) {
-      int b = inputStream.read();
-      if (b == -1) {
-        break;
-      } else {
-        postData.append(Character.toChars(b));
-      }
-    }
-    String[] fields = postData.toString().split("&");
-    Map<String, String> result = new HashMap<>();
-    for (String nextField : fields) {
-      int eq = nextField.indexOf("=");
-      if (eq != -1) {
-        String key = nextField.substring(0, eq);
-        String value = URLDecoder.decode(nextField.substring(eq + 1), "utf-8");
-        result.put(key, value);
-      }
-    }
-    return result;
   }
 
   private Uri getSharedFile(File file) {
@@ -919,7 +873,25 @@ public class MainActivity extends NativeActivity {
       int socket = Integer.parseInt(p.getProperty("serverSocket", "-1"));
       String token = p.getProperty("serverToken", new Date().toString());
       if (socket > 1023 && socket < 65536) {
-        startServer(socket, token);
+        WebServer webServer = new WebServer() {
+          @Override
+          protected void execStream(String line, InputStream inputStream) throws IOException {
+            MainActivity.this.execStream(line, inputStream);
+          }
+          @Override
+          protected void log(String message, Exception exception) {
+            Log.i(TAG, message, exception);
+          }
+          @Override
+          protected void log(String message) {
+            Log.i(TAG, message);
+          }
+          @Override
+          protected Reader openAsset(String path) throws IOException {
+            return new BufferedReader(new InputStreamReader(getAssets().open("webui/" + path)));
+          }
+        };
+        webServer.startServer(socket, token);
       } else {
         Log.i(TAG, "Web service disabled");
       }
@@ -946,7 +918,7 @@ public class MainActivity extends NativeActivity {
     return result.toString();
   }
 
-  private String readLine(DataInputStream inputReader) throws IOException {
+  private String readLine(InputStream inputReader) throws IOException {
     ByteArrayOutputStream out = new ByteArrayOutputStream(128);
     int b;
     for (b = inputReader.read(); b != -1 && b != '\n'; b = inputReader.read()) {
@@ -955,85 +927,6 @@ public class MainActivity extends NativeActivity {
       }
     }
     return b == -1 ? null : out.size() == 0 ? "" : out.toString();
-  }
-
-  private void runServer(final int socketNum, final String token) throws IOException {
-    Log.i(TAG, "Listening :" + socketNum);
-    Log.i(TAG, "Token :" + token);
-    ServerSocket serverSocket;
-    try {
-      serverSocket = new ServerSocket(socketNum);
-    }
-    catch (IllegalArgumentException e) {
-      Log.i(TAG, "Failed to start server: ", e);
-      serverSocket = null;
-    }
-    while (serverSocket != null) {
-      Socket socket = null;
-      DataInputStream inputStream = null;
-      try {
-        socket = serverSocket.accept();
-        Log.i(TAG, "Accepted connection from " + socket.getRemoteSocketAddress().toString());
-        inputStream = new DataInputStream(socket.getInputStream());
-        String line = readLine(inputStream);
-        if (line != null) {
-          String[] fields = line.split("\\s");
-          if ("GET".equals(fields[0])) {
-            Log.i(TAG, line);
-            sendResponse(socket, buildTokenForm());
-          } else if ("POST".equals(fields[0])) {
-            Map<String, String> postData = getPostData(inputStream, line);
-            String userToken = postData.get("token");
-            Log.i(TAG, "userToken="+ userToken);
-            if (token.equals(userToken)) {
-              String buffer = postData.get("src");
-              if (buffer != null) {
-                execBuffer(buffer, WEB_BAS, postData.get("run") != null);
-                sendResponse(socket, buildRunForm(buffer, token));
-              } else {
-                File inputFile = new File(getInternalStorage(), WEB_BAS);
-                sendResponse(socket, buildRunForm(readBuffer(inputFile), token));
-              }
-            } else {
-              // invalid token
-              sendResponse(socket, buildTokenForm());
-            }
-            Log.i(TAG, "Sent POST response");
-          } else if (line.contains(token)) {
-            execStream(line, inputStream);
-          } else {
-            Log.i(TAG, "Invalid request");
-          }
-        }
-      }
-      catch (IOException e) {
-        Log.i(TAG, "Server failed: ", e);
-        break;
-      }
-      finally {
-        Log.i(TAG, "socket cleanup");
-        if (socket != null) {
-          socket.close();
-        }
-        if (inputStream != null) {
-          inputStream.close();
-        }
-      }
-    }
-    Log.i(TAG, "server stopped");
-  }
-
-  private void sendResponse(Socket socket, String content) throws IOException {
-    Log.i(TAG, "sendResponse() entered");
-    String contentLength ="Content-length: " + content.length() + "\r\n";
-    BufferedOutputStream out = new BufferedOutputStream(socket.getOutputStream());
-    out.write("HTTP/1.0 200 OK\r\n".getBytes());
-    out.write("Content-type: text/html\r\n".getBytes());
-    out.write(contentLength.getBytes());
-    out.write("Server: SmallBASIC for Android\r\n\r\n".getBytes());
-    out.write(content.getBytes());
-    out.flush();
-    out.close();
   }
 
   private void setupStorageEnvironment(boolean external) {
@@ -1051,19 +944,5 @@ public class MainActivity extends NativeActivity {
       }
       setenv("EXTERNAL_DIR", externalDir);
     }
-  }
-
-  private void startServer(final int socketNum, final String token) {
-    Thread socketThread = new Thread(new Runnable() {
-      public void run() {
-        try {
-          runServer(socketNum, token);
-        }
-        catch (IOException e) {
-          Log.i(TAG, "startServer failed: ", e);
-        }
-      }
-    });
-    socketThread.start();
   }
 }
