@@ -12,6 +12,7 @@ import android.content.DialogInterface;
 import android.content.DialogInterface.OnCancelListener;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.content.res.AssetFileDescriptor;
 import android.content.res.Configuration;
 import android.content.res.Resources;
 import android.graphics.Rect;
@@ -58,13 +59,13 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
-import java.io.Reader;
 import java.io.UnsupportedEncodingException;
 import java.net.Inet4Address;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.net.URLDecoder;
+import java.util.Collection;
 import java.util.Date;
 import java.util.Enumeration;
 import java.util.Locale;
@@ -873,25 +874,8 @@ public class MainActivity extends NativeActivity {
       int socket = Integer.parseInt(p.getProperty("serverSocket", "-1"));
       String token = p.getProperty("serverToken", new Date().toString());
       if (socket > 1023 && socket < 65536) {
-        WebServer webServer = new WebServer() {
-          @Override
-          protected void execStream(String line, InputStream inputStream) throws IOException {
-            MainActivity.this.execStream(line, inputStream);
-          }
-          @Override
-          protected void log(String message, Exception exception) {
-            Log.i(TAG, message, exception);
-          }
-          @Override
-          protected void log(String message) {
-            Log.i(TAG, message);
-          }
-          @Override
-          protected Reader openAsset(String path) throws IOException {
-            return new BufferedReader(new InputStreamReader(getAssets().open("webui/" + path)));
-          }
-        };
-        webServer.startServer(socket, token);
+        WebServer webServer = new WebServerImpl();
+        webServer.run(socket, token);
       } else {
         Log.i(TAG, "Web service disabled");
       }
@@ -945,4 +929,34 @@ public class MainActivity extends NativeActivity {
       setenv("EXTERNAL_DIR", externalDir);
     }
   }
+
+  private class WebServerImpl extends WebServer {
+    @Override
+    protected void execStream(String line, InputStream inputStream) throws IOException {
+      MainActivity.this.execStream(line, inputStream);
+    }
+
+    @Override
+    protected Collection<FileData> getFileData() throws IOException {
+      // TODO
+      return null;
+    }
+
+    @Override
+    protected Response getResponse(String path, boolean asset) throws IOException {
+      String name = "webui/" + path;
+      AssetFileDescriptor fd = getAssets().openFd(name);
+      return new Response(getAssets().open(name), fd.getLength());
+    }
+
+    @Override
+    protected void log(String message, Exception exception) {
+      Log.i(TAG, message, exception);
+    }
+
+    @Override
+    protected void log(String message) {
+      Log.i(TAG, message);
+    }
+  };
 }
