@@ -1,4 +1,5 @@
 import {
+  useEffect,
   useState
 } from 'react';
 
@@ -7,6 +8,7 @@ import {
   Box,
   Button,
   Link,
+  TextField,
   Toolbar,
   Typography,
 } from '@mui/material';
@@ -60,8 +62,9 @@ function GridToolbarDownload(props) {
   let color = useTheme().palette.primary.main;
   let args = "";
   let join = "";
+  console.log(props.rows);
   props.selections.forEach(i => {
-    args += join + "f=" + encodeURIComponent(props.rows[i - 1].fileName);
+    args += join + "f=" + encodeURIComponent(props.rows[i].fileName);
     join = "&";
   });
 
@@ -87,9 +90,8 @@ function AppToolbar(props) {
   );
 }
 
-export default function App() {
+function FileList(props) {
   const [selectionModel, setSelectionModel] = useState([]);
-  const rows = window.rows;
   return (
     <Box sx={{flexGrow: 1}}>
       <AppBar position="static">
@@ -107,11 +109,11 @@ export default function App() {
         </Toolbar>
       </AppBar>
       <Box sx={{height: 'calc(100vh - 5.5em)', width: '100%'}}>
-        <DataGrid rows={rows}
+        <DataGrid rows={props.rows}
                   columns={columns}
                   pageSize={5}
                   components={{Toolbar: AppToolbar}}
-                  componentsProps={{toolbar: {selections: selectionModel, rows: rows}}}
+                  componentsProps={{toolbar: {selections: selectionModel, rows: props.rows}}}
                   onSelectionModelChange={(model) => setSelectionModel(model)}
                   selectionModel={selectionModel}
                   rowsPerPageOptions={[5]}
@@ -120,5 +122,28 @@ export default function App() {
       </Box>
     </Box>
 
+  );
+}
+
+export default function App() {
+  const [token, setToken] = useState("token=ABC123");
+  const [rows, setRows] = useState([]);
+
+  useEffect(() => {
+    const getFiles = async () => {
+      let response = await fetch('/api/files', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/text;charset=utf-8'
+        },
+        body: token
+      });
+      setRows(await response.json());
+    };
+    getFiles().catch(console.error);
+  }, [token, setRows]);
+
+  return (
+    <FileList rows={rows}/>
   );
 }

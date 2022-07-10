@@ -5,12 +5,18 @@ import java.io.BufferedOutputStream;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.UnsupportedEncodingException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.URLDecoder;
+import java.nio.file.Files;
+import java.nio.file.attribute.BasicFileAttributes;
+import java.nio.file.attribute.FileTime;
+import java.text.DateFormat;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -54,32 +60,6 @@ public abstract class WebServer {
   protected abstract Response getResponse(String path, boolean asset) throws IOException;
   protected abstract void log(String message, Exception exception);
   protected abstract void log(String message);
-
-  /**
-   * Appends a string field to the given JSON string
-   */
-  private void appendJson(StringBuilder json, String field, String value, boolean nextField) {
-    json.append(field)
-        .append(":'")
-        .append(value)
-        .append("'");
-    if (nextField) {
-      json.append(",");
-    }
-  }
-
-  /**
-   * Appends an int field to the given JSON string
-   */
-  private void appendJson(StringBuilder json, String field, long value, boolean nextField) {
-    json.append(field)
-        .append(":'")
-        .append(value)
-        .append("'");
-    if (nextField) {
-      json.append(",");
-    }
-  }
 
   /**
    * Parses HTTP GET parameters with the given name
@@ -168,21 +148,23 @@ public abstract class WebServer {
    * Handler for files API
    */
   private Response handleFileList() throws IOException {
-    StringBuilder json = new StringBuilder("[");
+    JsonBuilder builder = new JsonBuilder();
+    builder.append('[');
     long id = 0;
-    String comma = "";
+    char comma = 0;
     for (FileData nextFile : getFileData()) {
-      json.append(comma);
-      json.append("{");
-      appendJson(json, "id", id++, true);
-      appendJson(json, "fileName", nextFile.fileName, true);
-      appendJson(json, "size", nextFile.size, true);
-      appendJson(json, "date", nextFile.date, false);
-      json.append("}");
-      comma = ",";
+      builder.append(comma);
+      builder.append('{');
+      builder.append("id", id++, true);
+      builder.append("fileName", nextFile.fileName, true);
+      builder.append("size", nextFile.size, true);
+      builder.append("date", nextFile.date, false);
+      builder.append('}');
+      comma = ',';
     }
-    json.append("]");
-    return new Response(new ByteArrayInputStream(json.toString().getBytes("utf-8")), json.length());
+    builder.append(']');
+    byte[] json = builder.getBytes();
+    return new Response(new ByteArrayInputStream(json), json.length);
   }
 
   /**
@@ -298,6 +280,56 @@ public abstract class WebServer {
     String fileName;
     String date;
     long size;
+
+    FileData(File file) throws IOException {
+      BasicFileAttributes attr = Files.readAttributes(file.toPath(), BasicFileAttributes.class);
+      FileTime lastModifiedTime = attr.lastModifiedTime();
+      DateFormat dateFormat = DateFormat.getDateInstance(DateFormat.DEFAULT);
+      this.fileName = file.getName();
+      this.date = dateFormat.format(lastModifiedTime.toMillis());
+      this.size = file.length();
+    }
+  }
+
+  /**
+   * Build JSON string
+   */
+  public static class JsonBuilder {
+    private final StringBuilder json;
+
+    JsonBuilder() {
+      json = new StringBuilder();
+    }
+
+    void append(char chr) {
+      if (chr > 0) {
+        json.append(chr);
+      }
+    }
+
+    void append(String field, String value, boolean nextField, boolean quote) {
+      json.append("\"")
+          .append(field)
+          .append("\":")
+          .append(quote ? "\"" : "")
+          .append(value)
+          .append(quote ? "\"" : "");
+      if (nextField) {
+        json.append(",");
+      }
+    }
+
+    void append(String field, String value, boolean nextField) {
+      this.append(field, value, nextField, true);
+    }
+
+    void append(String field, long value, boolean nextField) {
+      this.append(field, String.valueOf(value), nextField, false);
+    }
+
+    byte[] getBytes() throws UnsupportedEncodingException {
+      return json.toString().getBytes("utf-8");
+    }
   }
 
   /**
@@ -312,11 +344,11 @@ public abstract class WebServer {
       this.length = length;
     }
 
-    public InputStream getInputStream() {
+    InputStream getInputStream() {
       return inputStream;
     }
 
-    public long getLength() {
+    long getLength() {
       return length;
     }
 

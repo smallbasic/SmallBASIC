@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
+import java.util.ArrayList;
 import java.util.Collection;
 
 public class Server {
@@ -16,7 +17,14 @@ public class Server {
 
       @Override
       protected Collection<FileData> getFileData() throws IOException {
-        return null;
+        final File folder = new File("../basic");
+        Collection<FileData> result = new ArrayList<>();
+        for (final File fileEntry : folder.listFiles()) {
+          if (!fileEntry.isDirectory()) {
+            result.add(new FileData(fileEntry));
+          }
+        }
+        return result;
       }
 
       @Override
