@@ -7,6 +7,7 @@ import {
   AppBar,
   Box,
   Button,
+  CssBaseline,
   Link,
   TextField,
   Toolbar,
@@ -58,11 +59,19 @@ const columns = [{
   },
 }];
 
+function getFetchHeader(body) {
+  return {
+    method: 'POST',
+    headers: {'Content-Type': 'application/text;charset=utf-8'},
+    body: body
+  };
+}
+
 function GridToolbarDownload(props) {
   let color = useTheme().palette.primary.main;
   let args = "";
   let join = "";
-  console.log(props.rows);
+
   props.selections.forEach(i => {
     args += join + "f=" + encodeURIComponent(props.rows[i].fileName);
     join = "&";
@@ -92,8 +101,91 @@ function AppToolbar(props) {
 
 function FileList(props) {
   const [selectionModel, setSelectionModel] = useState([]);
+
   return (
-    <Box sx={{flexGrow: 1}}>
+    <DataGrid rows={props.rows}
+              columns={columns}
+              pageSize={5}
+              components={{Toolbar: AppToolbar}}
+              componentsProps={{toolbar: {selections: selectionModel, rows: props.rows}}}
+              onSelectionModelChange={(model) => setSelectionModel(model)}
+              selectionModel={selectionModel}
+              rowsPerPageOptions={[5]}
+              checkboxSelection
+              disableSelectionOnClick/>
+  );
+}
+
+function TokenInput(props) {
+  const [token, setToken] = useState("");
+  const [error, setError] = useState(false);
+
+  const onClick = () => {
+    const validate = async () => {
+      let response = await fetch('/api/files', getFetchHeader("token=" + token));
+      let data = await response.json();
+      if (data.error) {
+        setError(true);
+      } else {
+        props.setRows(data);
+        props.setToken(token);
+      }
+    };
+    if (token) {
+      validate().catch(console.error);
+    }
+  };
+
+  const onChange = (event) => {
+    setToken(event.target.value);
+    if (!event.target.value) {
+      setError(false);
+    }
+  };
+
+  const onKeyPress = (event) => {
+    if (event.key === 'Enter') {
+      onClick();
+    }
+  };
+
+  const help = "Enter the access token displayed on the SmallBASIC [About] screen.";
+  let helperText = error ? "Invalid token. " + help : help;
+
+  return (
+    <Box sx={{display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%'}}>
+      <Box sx={{display: 'flex', flexDirection: 'column', marginBottom: '10em'}}>
+        <Box sx={{marginBottom: '1em'}}>
+          <TextField sx={{width: '20em'}}
+                     error={error}
+                     value={token}
+                     onChange={onChange}
+                     onKeyPress={onKeyPress}
+                     helperText={helperText}
+                     label="Enter your access token"/>
+        </Box>
+        <Box>
+          <Button onClick={onClick} variant="contained">Submit</Button>
+        </Box>
+      </Box>
+    </Box>
+  );
+}
+
+export default function App() {
+  const [token, setToken] = useState(null);
+  const [rows, setRows] = useState([]);
+
+  let content;
+  if (token) {
+    content = <FileList rows={rows}/>;
+  } else {
+    content = <TokenInput setRows={setRows} setToken={setToken} token={token}/>;
+  }
+
+  return (
+    <Box>
+      <CssBaseline/>
       <AppBar position="static">
         <Toolbar>
           <Typography variant="h6" component="div" sx={{flexGrow: 1}}>
@@ -109,41 +201,8 @@ function FileList(props) {
         </Toolbar>
       </AppBar>
       <Box sx={{height: 'calc(100vh - 5.5em)', width: '100%'}}>
-        <DataGrid rows={props.rows}
-                  columns={columns}
-                  pageSize={5}
-                  components={{Toolbar: AppToolbar}}
-                  componentsProps={{toolbar: {selections: selectionModel, rows: props.rows}}}
-                  onSelectionModelChange={(model) => setSelectionModel(model)}
-                  selectionModel={selectionModel}
-                  rowsPerPageOptions={[5]}
-                  checkboxSelection
-                  disableSelectionOnClick/>
+        {content}
       </Box>
     </Box>
-
-  );
-}
-
-export default function App() {
-  const [token, setToken] = useState("token=ABC123");
-  const [rows, setRows] = useState([]);
-
-  useEffect(() => {
-    const getFiles = async () => {
-      let response = await fetch('/api/files', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/text;charset=utf-8'
-        },
-        body: token
-      });
-      setRows(await response.json());
-    };
-    getFiles().catch(console.error);
-  }, [token, setRows]);
-
-  return (
-    <FileList rows={rows}/>
   );
 }

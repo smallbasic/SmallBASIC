@@ -34,6 +34,7 @@ import java.util.zip.ZipOutputStream;
 public abstract class WebServer {
   private static final int BUFFER_SIZE = 32768;
   private static final int SEND_SIZE = BUFFER_SIZE / 4;
+  private static final String UTF_8 = "utf-8";
 
   public WebServer() {
     super();
@@ -67,7 +68,7 @@ public abstract class WebServer {
   private Map<String, Collection<String>> getParameters(String url) throws IOException {
     Map<String, Collection<String>> result = new HashMap<>();
     try {
-      String[] args = URLDecoder.decode(url, "utf-8").split("[?]");
+      String[] args = URLDecoder.decode(url, UTF_8).split("[?]");
       if (args.length == 2) {
         for (String arg : args[1].split("&")) {
           String[] field = arg.split("=");
@@ -113,7 +114,7 @@ public abstract class WebServer {
       int eq = nextField.indexOf("=");
       if (eq != -1) {
         String key = nextField.substring(0, eq);
-        String value = URLDecoder.decode(nextField.substring(eq + 1), "utf-8");
+        String value = URLDecoder.decode(nextField.substring(eq + 1), UTF_8);
         result.put(key, value);
       }
     }
@@ -145,9 +146,21 @@ public abstract class WebServer {
   }
 
   /**
+   * Handler for failed token validation
+   */
+  private Response handleError(String error) throws IOException {
+    JsonBuilder out = new JsonBuilder();
+    out.append('{');
+    out.append("error", error, false);
+    out.append('}');
+    return new Response(out.getBytes());
+  }
+
+  /**
    * Handler for files API
    */
   private Response handleFileList() throws IOException {
+    log("sending file list");
     JsonBuilder builder = new JsonBuilder();
     builder.append('[');
     long id = 0;
@@ -252,6 +265,7 @@ public abstract class WebServer {
               handlePost(socket, postData, fields[1]);
             } else {
               log("Invalid token");
+              handleError("invalid token").send(socket);
             }
           } else {
             log("Invalid request");
@@ -328,7 +342,7 @@ public abstract class WebServer {
     }
 
     byte[] getBytes() throws UnsupportedEncodingException {
-      return json.toString().getBytes("utf-8");
+      return json.toString().getBytes(UTF_8);
     }
   }
 
@@ -342,6 +356,16 @@ public abstract class WebServer {
     public Response(InputStream inputStream, long length) {
       this.inputStream = inputStream;
       this.length = length;
+    }
+
+    public Response(String data) throws IOException {
+      this.inputStream = new ByteArrayInputStream(data.getBytes(UTF_8));
+      this.length = data.length();
+    }
+
+    public Response(byte[] bytes) {
+      this.inputStream = new ByteArrayInputStream(bytes);
+      this.length = bytes.length;
     }
 
     InputStream getInputStream() {
