@@ -5,7 +5,6 @@ import java.io.BufferedOutputStream;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -13,28 +12,26 @@ import java.io.UnsupportedEncodingException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.URLDecoder;
-import java.nio.file.Files;
-import java.nio.file.attribute.BasicFileAttributes;
-import java.nio.file.attribute.FileTime;
-import java.text.DateFormat;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.Locale;
+import java.util.List;
 import java.util.Map;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
 /**
- * WebServer
+ * Minimal AppServer with adequate performance for a single user
  *
  * @author chrisws
  */
 public abstract class WebServer {
   private static final int BUFFER_SIZE = 32768;
   private static final int SEND_SIZE = BUFFER_SIZE / 4;
+  private static final int LINE_SIZE = 128;
   private static final String UTF_8 = "utf-8";
+  private static final String TOKEN = "token";
 
   public WebServer() {
     super();
@@ -61,6 +58,49 @@ public abstract class WebServer {
   protected abstract Response getResponse(String path, boolean asset) throws IOException;
   protected abstract void log(String message, Exception exception);
   protected abstract void log(String message);
+
+  /**
+   * Returns the HTTP headers from the given stream
+   */
+  private List<String> getHeaders(InputStream stream) throws IOException {
+    List<String> result = new ArrayList<>();
+    ByteArrayOutputStream line = new ByteArrayOutputStream(LINE_SIZE);
+    final char[] endHeader = {'\r', '\n', '\r', '\n'};
+    int index = 0;
+    for (int b = stream.read(); b != -1; b = stream.read()) {
+      if (b == endHeader[index]) {
+        index++;
+        if (index == endHeader.length) {
+          // end of headers
+          break;
+        } else if (index == 2) {
+          // end of line
+          result.add(line.toString());
+          line.reset();
+        }
+      } else {
+        line.write(b);
+        index = 0;
+      }
+    }
+    return result;
+  }
+
+  /**
+   * Reads a line of text from the given stream
+   */
+  private String getLine(InputStream stream) throws IOException {
+    StringBuilder result = new StringBuilder();
+    while (stream.available() != 0) {
+      int b = stream.read();
+      if (b == -1 || b == 10 || b == 13) {
+        break;
+      } else {
+        result.append(Character.toChars(b));
+      }
+    }
+    return result.toString();
+  }
 
   /**
    * Parses HTTP GET parameters with the given name
@@ -90,25 +130,8 @@ public abstract class WebServer {
    * Parses HTTP POST data from the given input stream
    */
   private Map<String, String> getPostData(InputStream inputStream, final String line) throws IOException {
-    int length = 0;
-    final String lengthHeader = "content-length: ";
-    String nextLine = line;
-    while (nextLine != null && nextLine.length() > 0) {
-      if (nextLine.toLowerCase(Locale.ENGLISH).startsWith(lengthHeader)) {
-        length = Integer.parseInt(nextLine.substring(lengthHeader.length()));
-      }
-      nextLine = readLine(inputStream);
-    }
-    StringBuilder postData = new StringBuilder();
-    for (int i = 0; i < length; i++) {
-      int b = inputStream.read();
-      if (b == -1) {
-        break;
-      } else {
-        postData.append(Character.toChars(b));
-      }
-    }
-    String[] fields = postData.toString().split("&");
+    String postData = getLine(inputStream);
+    String[] fields = postData.split("&");
     Map<String, String> result = new HashMap<>();
     for (String nextField : fields) {
       int eq = nextField.indexOf("=");
@@ -181,25 +204,35 @@ public abstract class WebServer {
   }
 
   /**
-   * Handler for HTTP GET
+   * Handler for GET requests
    */
-  private void handleGet(Socket socket, String url) throws IOException {
-    Map<String, Collection<String>> parameters = getParameters(url);
+  private void handleGet(Socket socket, String token, List<String> headers, String url,
+                         Map<String, Collection<String>> parameters) throws IOException {
     if (url.startsWith("/api/download?")) {
-      handleDownload(parameters).send(socket);
+      if (hasTokenCookie(headers, token)) {
+        handleDownload(parameters).send(socket, null);
+      }
     } else {
-      handleWebResponse(url).send(socket);
+      handleWebResponse(url).send(socket, null);
     }
   }
 
   /**
-   * Handler for HTTP POST
+   * Handler for POST requests
    */
-  private void handlePost(Socket socket, Map<String, String> postData, String url) throws IOException {
-    if (url.startsWith("/api/files")) {
-      handleFileList().send(socket);
+  private void handlePost(Socket socket, String token, String url,
+                          Map<String, String> parameters) throws IOException {
+    String userToken = parameters.get(TOKEN);
+    log("userToken=" + userToken);
+    if (token.equals(userToken)) {
+      if (url.startsWith("/api/files")) {
+        handleFileList().send(socket, token);
+      }
+      log("Sent POST response");
+    } else {
+      log("Invalid token");
+      handleError("invalid token").send(socket, null);
     }
-    log("Sent POST response");
   }
 
   /**
@@ -218,17 +251,17 @@ public abstract class WebServer {
   }
 
   /**
-   * Reads a line of text from the given stream
+   * Inspects the headers to ensure the token cookie is present
    */
-  private String readLine(InputStream stream) throws IOException {
-    ByteArrayOutputStream out = new ByteArrayOutputStream(128);
-    int b;
-    for (b = stream.read(); b != -1 && b != '\n'; b = stream.read()) {
-      if (b != '\r') {
-        out.write(b);
+  private boolean hasTokenCookie(List<String> headers, String token) {
+    boolean result = false;
+    for (String header : headers) {
+      if (header.startsWith("Cookie: ") && header.contains(TOKEN) && header.contains(token)) {
+        result = true;
+        break;
       }
     }
-    return b == -1 ? null : out.size() == 0 ? "" : out.toString();
+    return result;
   }
 
   /**
@@ -251,28 +284,23 @@ public abstract class WebServer {
         socket = serverSocket.accept();
         log("Accepted connection from " + socket.getRemoteSocketAddress().toString());
         inputStream = new DataInputStream(socket.getInputStream());
-        String line = readLine(inputStream);
-        if (line != null) {
+        List<String> headers = getHeaders(inputStream);
+        if (!headers.isEmpty()) {
+          String line = headers.get(0);
           log(line);
           String[] fields = line.split("\\s");
           if ("GET".equals(fields[0]) && fields.length > 1) {
-            handleGet(socket, fields[1]);
-          } else if ("POST".equals(fields[0])) {
-            Map<String, String> postData = getPostData(inputStream, line);
-            String userToken = postData.get("token");
-            log("userToken=" + userToken);
-            if (token.equals(userToken)) {
-              handlePost(socket, postData, fields[1]);
-            } else {
-              log("Invalid token");
-              handleError("invalid token").send(socket);
-            }
+            Map<String, Collection<String>> parameters = getParameters(fields[1]);
+            handleGet(socket, token, headers, fields[1], parameters);
+          } else if ("POST".equals(fields[0]) && fields.length > 1) {
+            Map<String, String> parameters = getPostData(inputStream, line);
+            handlePost(socket, token, fields[1], parameters);
           } else {
             log("Invalid request");
           }
         }
-      } catch (IOException e) {
-        log("Server failed: ", e);
+      } catch (Throwable e) {
+        log("Server failed");
         break;
       } finally {
         log("socket cleanup");
@@ -291,17 +319,14 @@ public abstract class WebServer {
    * BASIC file details
    */
   public static class FileData {
-    String fileName;
-    String date;
-    long size;
+    private final String fileName;
+    private final String date;
+    private final long size;
 
-    FileData(File file) throws IOException {
-      BasicFileAttributes attr = Files.readAttributes(file.toPath(), BasicFileAttributes.class);
-      FileTime lastModifiedTime = attr.lastModifiedTime();
-      DateFormat dateFormat = DateFormat.getDateInstance(DateFormat.DEFAULT);
-      this.fileName = file.getName();
-      this.date = dateFormat.format(lastModifiedTime.toMillis());
-      this.size = file.length();
+    public FileData(String fileName, String date, long size) {
+      this.fileName = fileName;
+      this.date = date;
+      this.size = size;
     }
   }
 
@@ -379,13 +404,16 @@ public abstract class WebServer {
     /**
      * Sends the response to the given socket
      */
-    void send(Socket socket) throws IOException {
+    void send(Socket socket, String session) throws IOException {
       log("sendResponse() entered");
       String contentLength = "Content-length: " + length + "\r\n";
       BufferedOutputStream out = new BufferedOutputStream(socket.getOutputStream());
       out.write("HTTP/1.0 200 OK\r\n".getBytes());
       out.write("Content-type: text/html\r\n".getBytes());
       out.write(contentLength.getBytes());
+      if (session != null) {
+        out.write(("Set-Cookie: " + TOKEN + "=" + session + "\r\n").getBytes());
+      }
       out.write("Server: SmallBASIC for Android\r\n\r\n".getBytes());
       socket.setSendBufferSize(SEND_SIZE);
       int sent = toStream(out);

@@ -4,8 +4,12 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
+import java.nio.file.attribute.BasicFileAttributes;
+import java.nio.file.attribute.FileTime;
+import java.text.DateFormat;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Objects;
 
 public class Server {
   public static void main( String[] args ) {
@@ -19,9 +23,15 @@ public class Server {
       protected Collection<FileData> getFileData() throws IOException {
         final File folder = new File("../basic");
         Collection<FileData> result = new ArrayList<>();
-        for (final File fileEntry : folder.listFiles()) {
-          if (!fileEntry.isDirectory()) {
-            result.add(new FileData(fileEntry));
+        for (final File fileEntry : Objects.requireNonNull(folder.listFiles())) {
+          BasicFileAttributes attr = Files.readAttributes(fileEntry.toPath(), BasicFileAttributes.class);
+          if (!attr.isDirectory()) {
+            FileTime lastModifiedTime = attr.lastModifiedTime();
+            DateFormat dateFormat = DateFormat.getDateInstance(DateFormat.DEFAULT);
+            String fileName = fileEntry.getName();
+            String date = dateFormat.format(lastModifiedTime.toMillis());
+            long size = attr.size();
+            result.add(new FileData(fileName, date, size));
           }
         }
         return result;
