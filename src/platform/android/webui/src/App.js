@@ -1,5 +1,4 @@
 import {
-  useEffect,
   useState
 } from 'react';
 
@@ -22,7 +21,8 @@ import {
 } from '@mui/x-data-grid';
 
 import {
-  Download as DownloadIcon
+  Download as DownloadIcon,
+  Upload as UploadIcon
 } from '@mui/icons-material';
 
 import {
@@ -67,6 +67,40 @@ function getFetchHeader(body) {
   };
 }
 
+function getFiles(token, success, fail) {
+  fetch('/api/files', getFetchHeader("token=" + token))
+    .then(response => response.json())
+    .then(success)
+    .catch(fail);
+}
+
+function upload(name, data, success, fail) {
+  let body = "fileName=" + encodeURIComponent(name) + "&data=" + encodeURIComponent(data);
+  fetch('/api/upload', getFetchHeader(body))
+    .then(response => response.json())
+    .then(success)
+    .catch(fail);
+}
+
+function copyFiles(event, token, success, fail) {
+  const fileReader = new FileReader();
+  const input = event.target;
+  const files = input.files;
+  let index = 0;
+  fileReader.onload = () => {
+    upload(files[index].name, fileReader.result, () => {
+      if (++index < files.length) {
+        fileReader.readAsText(files[index]);
+      } else {
+        getFiles(token, success, fail);
+        // reset input control
+        input.value = input.defaultValue;
+      }
+    }, fail);
+  };
+  fileReader.readAsText(files[index]);
+}
+
 function GridToolbarDownload(props) {
   let color = useTheme().palette.primary.main;
   let args = "";
@@ -89,11 +123,31 @@ function GridToolbarDownload(props) {
   );
 }
 
+function GridToolbarUpload(props) {
+  const handleUpload = (event) => {
+    copyFiles(event, props.token, (newRows) => {
+      props.setRows(newRows);
+    }, (error) => {
+      // show toast message
+      console.log(error);
+    });
+  };
+
+  return (
+    <Button color="primary" size="small" component="label" sx={{marginLeft: '-4px'}}>
+      <input accept=".bas" hidden multiple type="file" onChange={handleUpload}/>
+      <UploadIcon />
+      UPLOAD
+    </Button>
+  );
+}
+
 function AppToolbar(props) {
   return (
     <GridToolbarContainer>
       <GridToolbarFilterButton />
       <GridToolbarDensitySelector />
+      <GridToolbarUpload {...props}/>
       <GridToolbarDownload {...props}/>
     </GridToolbarContainer>
   );
@@ -102,12 +156,19 @@ function AppToolbar(props) {
 function FileList(props) {
   const [selectionModel, setSelectionModel] = useState([]);
 
+  const toolbarProps = {
+    selections: selectionModel,
+    setRows: props.setRows,
+    rows: props.rows,
+    token: props.token,
+  };
+
   return (
     <DataGrid rows={props.rows}
               columns={columns}
               pageSize={5}
               components={{Toolbar: AppToolbar}}
-              componentsProps={{toolbar: {selections: selectionModel, rows: props.rows}}}
+              componentsProps={{toolbar: toolbarProps}}
               onSelectionModelChange={(model) => setSelectionModel(model)}
               selectionModel={selectionModel}
               rowsPerPageOptions={[5]}
@@ -121,19 +182,12 @@ function TokenInput(props) {
   const [error, setError] = useState(false);
 
   const onClick = () => {
-    const validate = async () => {
-      let response = await fetch('/api/files', getFetchHeader("token=" + token));
-      let data = await response.json();
-      if (data.error) {
-        setError(true);
-      } else {
-        props.setRows(data);
-        props.setToken(token);
-      }
-    };
-    if (token) {
-      validate().catch(console.error);
-    }
+    getFiles(token, (data) => {
+      props.setRows(data);
+      props.setToken(token);
+    }, () => {
+      setError(true);
+    });
   };
 
   const onChange = (event) => {
@@ -162,6 +216,7 @@ function TokenInput(props) {
                      onChange={onChange}
                      onKeyPress={onKeyPress}
                      helperText={helperText}
+                     autoFocus
                      label="Enter your access token"/>
         </Box>
         <Box>
@@ -178,7 +233,7 @@ export default function App() {
 
   let content;
   if (token) {
-    content = <FileList rows={rows}/>;
+    content = <FileList setRows={setRows} rows={rows} token={token} />;
   } else {
     content = <TokenInput setRows={setRows} setToken={setToken} token={token}/>;
   }

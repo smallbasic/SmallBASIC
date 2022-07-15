@@ -50,6 +50,11 @@ public class Server {
       }
 
       @Override
+      protected boolean saveFile(String fileName, String content) {
+        return true;
+      }
+
+      @Override
       protected void log(String message, Exception exception) {
         System.err.println(message);
         exception.printStackTrace();

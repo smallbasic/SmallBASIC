@@ -58,6 +58,7 @@ public abstract class WebServer {
   protected abstract Response getResponse(String path, boolean asset) throws IOException;
   protected abstract void log(String message, Exception exception);
   protected abstract void log(String message);
+  protected abstract boolean saveFile(String fileName, String content);
 
   /**
    * Returns the HTTP headers from the given stream
@@ -204,35 +205,18 @@ public abstract class WebServer {
   }
 
   /**
-   * Handler for GET requests
+   * Handler for file uploads
    */
-  private void handleGet(Socket socket, String token, List<String> headers, String url,
-                         Map<String, Collection<String>> parameters) throws IOException {
-    if (url.startsWith("/api/download?")) {
-      if (hasTokenCookie(headers, token)) {
-        handleDownload(parameters).send(socket, null);
-      }
-    } else {
-      handleWebResponse(url).send(socket, null);
-    }
-  }
-
-  /**
-   * Handler for POST requests
-   */
-  private void handlePost(Socket socket, String token, String url,
-                          Map<String, String> parameters) throws IOException {
-    String userToken = parameters.get(TOKEN);
-    log("userToken=" + userToken);
-    if (token.equals(userToken)) {
-      if (url.startsWith("/api/files")) {
-        handleFileList().send(socket, token);
-      }
-      log("Sent POST response");
-    } else {
-      log("Invalid token");
-      handleError("invalid token").send(socket, null);
-    }
+  private Response handleUpload(Map<String, String> parameters) throws UnsupportedEncodingException {
+    String fileName = parameters.get("fileName");
+    String content = parameters.get("data");
+    boolean result = saveFile(fileName, content);
+    JsonBuilder json = new JsonBuilder();
+    json.append('{');
+    json.append("success", Boolean.toString(result), false);
+    json.append('}');
+    byte[] output = json.getBytes();
+    return new Response(new ByteArrayInputStream(output), output.length);
   }
 
   /**
@@ -248,20 +232,6 @@ public abstract class WebServer {
       path = asset;
     }
     return getResponse(path, true);
-  }
-
-  /**
-   * Inspects the headers to ensure the token cookie is present
-   */
-  private boolean hasTokenCookie(List<String> headers, String token) {
-    boolean result = false;
-    for (String header : headers) {
-      if (header.startsWith("Cookie: ") && header.contains(TOKEN) && header.contains(token)) {
-        result = true;
-        break;
-      }
-    }
-    return result;
   }
 
   /**
@@ -284,21 +254,8 @@ public abstract class WebServer {
         socket = serverSocket.accept();
         log("Accepted connection from " + socket.getRemoteSocketAddress().toString());
         inputStream = new DataInputStream(socket.getInputStream());
-        List<String> headers = getHeaders(inputStream);
-        if (!headers.isEmpty()) {
-          String line = headers.get(0);
-          log(line);
-          String[] fields = line.split("\\s");
-          if ("GET".equals(fields[0]) && fields.length > 1) {
-            Map<String, Collection<String>> parameters = getParameters(fields[1]);
-            handleGet(socket, token, headers, fields[1], parameters);
-          } else if ("POST".equals(fields[0]) && fields.length > 1) {
-            Map<String, String> parameters = getPostData(inputStream, line);
-            handlePost(socket, token, fields[1], parameters);
-          } else {
-            log("Invalid request");
-          }
-        }
+        Request request = new Request(socket, getHeaders(inputStream));
+        request.invoke(inputStream, token);
       } catch (Throwable e) {
         log("Server failed");
         break;
@@ -368,6 +325,93 @@ public abstract class WebServer {
 
     byte[] getBytes() throws UnsupportedEncodingException {
       return json.toString().getBytes(UTF_8);
+    }
+  }
+
+  /**
+   * Server Request
+   */
+  public class Request {
+    Socket socket;
+    String method;
+    String url;
+    String token;
+    List<String> headers;
+
+    public Request(Socket socket, List<String> headers) {
+      String[] fields = headers.get(0).split("\\s");
+      this.socket = socket;
+      this.headers = headers;
+      this.token = getToken(headers);
+      if (fields.length > 1) {
+        this.method = fields[0];
+        this.url = fields[1];
+      } else {
+        this.method = null;
+        this.url = null;
+      }
+    }
+
+    public void invoke(InputStream inputStream, String tokenKey) throws IOException {
+      if (!headers.isEmpty()) {
+        log(url);
+        if ("GET".equals(method)) {
+          handleGet(getParameters(url), tokenKey);
+        } else if ("POST".equals(method)) {
+          handlePost(getPostData(inputStream, url), tokenKey);
+        } else {
+          log("Invalid request");
+        }
+      }
+    }
+
+    private String getToken(List<String> headers) {
+      String result = null;
+      for (String header : headers) {
+        if (header.startsWith("cookie:")) {
+          String[] fields = header.split(":");
+          if (fields.length == 2) {
+            fields = fields[1].split("=");
+            if (fields.length == 2 && TOKEN.equals(fields[0].trim())) {
+              result = fields[1];
+              break;
+            }
+          }
+        }
+      }
+      return result;
+    }
+
+    /**
+     * Handler for GET requests
+     */
+    private void handleGet(Map<String, Collection<String>> parameters, String tokenKey) throws IOException {
+      if (url.startsWith("/api/download?")) {
+        if (tokenKey.equals(token)) {
+          handleDownload(parameters).send(socket, null);
+        }
+      } else {
+        handleWebResponse(url).send(socket, null);
+      }
+    }
+
+    /**
+     * Handler for POST requests
+     */
+    private void handlePost(Map<String, String> parameters, String tokenKey) throws IOException {
+      String userToken = parameters.getOrDefault(TOKEN, token);
+      log("userToken=" + userToken);
+      if (tokenKey.equals(userToken)) {
+        if (url.startsWith("/api/files")) {
+          handleFileList().send(socket, token);
+        } else if (url.startsWith("/api/upload")) {
+          handleUpload(parameters).send(socket, token);
+        }
+        log("Sent POST response");
+      } else {
+        log("Invalid token");
+        handleError("invalid token").send(socket, null);
+      }
     }
   }
 
