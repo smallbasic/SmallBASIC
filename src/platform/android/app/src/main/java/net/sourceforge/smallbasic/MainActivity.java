@@ -943,15 +943,27 @@ public class MainActivity extends NativeActivity {
     }
 
     @Override
-    protected Response getResponse(String path, boolean asset) throws IOException {
-      String name = "webui/" + path;
-      AssetFileDescriptor fd = getAssets().openFd(name);
-      return new Response(getAssets().open(name), fd.getLength());
+    protected Response getFile(String path, boolean asset) throws IOException {
+      Response result;
+      if (asset) {
+        String name = "webui/" + path;
+        AssetFileDescriptor fd = getAssets().openFd(name);
+        result = new Response(getAssets().open(name), fd.getLength());
+      }
+      else {
+        result = null;
+      }
+      return result;
     }
 
     @Override
     protected void log(String message, Exception exception) {
       Log.i(TAG, message, exception);
+    }
+
+    @Override
+    protected boolean renameFile(String from, String to) {
+      return false;
     }
 
     @Override

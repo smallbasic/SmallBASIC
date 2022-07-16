@@ -1,11 +1,8 @@
 package net.sourceforge.smallbasic;
 
 import sun.misc.IOUtils;
-import sun.rmi.runtime.Log;
 
-import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
@@ -62,14 +59,20 @@ public class Server {
       }
 
       @Override
-      protected boolean saveFile(String fileName, String content) {
+      protected void log(String message, Exception exception) {
+        System.err.println(message);
+        exception.printStackTrace();
+      }
+
+      @Override
+      protected boolean renameFile(String from, String to) {
+        log("rename " + from + " to " + to);
         return true;
       }
 
       @Override
-      protected void log(String message, Exception exception) {
-        System.err.println(message);
-        exception.printStackTrace();
+      protected boolean saveFile(String fileName, String content) {
+        return true;
       }
     };
     webServer.run(8080, "ABC123");

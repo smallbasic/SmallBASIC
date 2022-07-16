@@ -32,6 +32,11 @@ import {
 const columns = [{
   field: 'fileName',
   headerName: 'Name',
+  editable: true,
+  preProcessEditCellProps: (params) => {
+    const hasError = !params.props.value.endsWith(".bas");
+    return {...params.props, error: hasError};
+  } ,
   flex: 1,
 }, {
   field: 'size',
@@ -41,22 +46,6 @@ const columns = [{
   field: 'date',
   headerName: 'Modified',
   type: 'number',
-}, {
-  field: 'actions',
-  type: 'actions',
-  headerName: 'Actions',
-  cellClassName: 'actions',
-  getActions: ({ id }) => {
-    return [
-      <Button
-        variant="contained"
-        size="small"
-        style={{marginLeft: 16}}
-        tabIndex={-1}>
-        Run
-      </Button>
-    ];
-  },
 }];
 
 function getFetchHeader(body) {
@@ -67,28 +56,35 @@ function getFetchHeader(body) {
   };
 }
 
-function getFiles(token, success, fail) {
-  fetch('/api/files', getFetchHeader("token=" + token))
-    .then(response => response.json())
-    .then(success)
-    .catch(fail);
-}
-
-function upload(name, data, success, fail) {
-  let body = "fileName=" + encodeURIComponent(name) + "&data=" + encodeURIComponent(data);
-  fetch('/api/upload', getFetchHeader(body))
+function fetchApi(api, body, success, fail) {
+  fetch(api, getFetchHeader(body))
     .then(response => response.json())
     .then((response) => {
       if (response.error) {
         fail(response.error);
       } else {
-        success();
+        success(response);
       }
     })
     .catch(fail);
 }
 
-function copyFiles(event, token, success, fail) {
+function getFiles(token, success, fail) {
+  let body = token ? ("token=" + token) : "";
+  fetchApi('/api/files', body, success, fail);
+}
+
+function upload(name, data, success, fail) {
+  let body = "fileName=" + encodeURIComponent(name) + "&data=" + encodeURIComponent(data);
+  fetchApi('/api/upload', body, success, fail);
+}
+
+function renameFile(from, to, success, fail) {
+  let body = "from=" + encodeURIComponent(from) + "&to=" + encodeURIComponent(to);
+  fetchApi('/api/rename', body, success, fail);
+}
+
+function copyFiles(event, success, fail) {
   const fileReader = new FileReader();
   const input = event.target;
   const files = input.files;
@@ -98,7 +94,7 @@ function copyFiles(event, token, success, fail) {
       if (++index < files.length) {
         fileReader.readAsText(files[index]);
       } else {
-        getFiles(token, success, fail);
+        getFiles(null, success, fail);
         // reset input control
         input.value = input.defaultValue;
       }
@@ -131,7 +127,7 @@ function GridToolbarDownload(props) {
 
 function GridToolbarUpload(props) {
   const handleUpload = (event) => {
-    copyFiles(event, props.token, (newRows) => {
+    copyFiles(event, (newRows) => {
       props.setRows(newRows);
     }, (error) => {
       // show toast message
@@ -159,19 +155,35 @@ function AppToolbar(props) {
   );
 }
 
+function onCellEditCommit(props, params) {
+  props.rows.forEach((row) => {
+    if (row.id === params.id) {
+      renameFile(row.fileName, params.value, () => {
+        getFiles(null, (data) => {
+          props.setRows(data);
+        }, (error) => {
+          console.log(error);
+        });
+      }, (error) => {
+        console.log(error);
+      });
+    }
+  });
+};
+
 function FileList(props) {
   const [selectionModel, setSelectionModel] = useState([]);
 
   const toolbarProps = {
     selections: selectionModel,
     setRows: props.setRows,
-    rows: props.rows,
-    token: props.token,
+    rows: props.rows
   };
 
   return (
     <DataGrid rows={props.rows}
               columns={columns}
+              onCellEditCommit={(params) => onCellEditCommit(props, params)}
               pageSize={5}
               components={{Toolbar: AppToolbar}}
               componentsProps={{toolbar: toolbarProps}}
@@ -239,7 +251,7 @@ export default function App() {
 
   let content;
   if (token) {
-    content = <FileList setRows={setRows} rows={rows} token={token} />;
+    content = <FileList setRows={setRows} rows={rows} />;
   } else {
     content = <TokenInput setRows={setRows} setToken={setToken} token={token}/>;
   }

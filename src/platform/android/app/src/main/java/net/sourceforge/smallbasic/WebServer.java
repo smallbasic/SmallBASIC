@@ -53,16 +53,17 @@ public abstract class WebServer {
 
   protected abstract void execStream(InputStream inputStream) throws IOException;
   protected abstract Collection<FileData> getFileData() throws IOException;
-  protected abstract Response getResponse(String path, boolean asset) throws IOException;
-  protected abstract void log(String message, Exception exception);
+  protected abstract Response getFile(String path, boolean asset) throws IOException;
   protected abstract void log(String message);
+  protected abstract void log(String message, Exception exception);
+  protected abstract boolean renameFile(String from, String to);
   protected abstract boolean saveFile(String fileName, String content);
 
   /**
    * Download files button handler
    */
-  private Response handleDownload(Map<String, Collection<String>> parameters) throws IOException {
-    Collection<String> fileNames = parameters.get("f");
+  private Response handleDownload(Map<String, Collection<String>> data) throws IOException {
+    Collection<String> fileNames = data.get("f");
     ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
     ZipOutputStream zipOutputStream = new ZipOutputStream(outputStream);
     if (fileNames == null) {
@@ -70,7 +71,7 @@ public abstract class WebServer {
     }
 
     for (String fileName : fileNames) {
-      Response response = getResponse(fileName, false);
+      Response response = getFile(fileName, false);
       ZipEntry entry = new ZipEntry(fileName);
       zipOutputStream.putNextEntry(entry);
       response.toStream(zipOutputStream);
@@ -107,6 +108,16 @@ public abstract class WebServer {
   }
 
   /**
+   * Handler for File rename operations
+   */
+  private Response handleRename(Map<String, String> data) throws IOException {
+    String from = data.get("from");
+    String to = data.get("to");
+    boolean result = renameFile(from, to);
+    return handleStatus(result, result ? "File renamed" : "File rename error");
+  }
+
+  /**
    * Handler to indicate operational status
    */
   private Response handleStatus(boolean success, String message) throws IOException {
@@ -124,9 +135,9 @@ public abstract class WebServer {
   /**
    * Handler for file uploads
    */
-  private Response handleUpload(Map<String, String> parameters) throws IOException {
-    String fileName = parameters.get("fileName");
-    String content = parameters.get("data");
+  private Response handleUpload(Map<String, String> data) throws IOException {
+    String fileName = data.get("fileName");
+    String content = data.get("data");
     boolean result = saveFile(fileName, content);
     return handleStatus(result, result ? "File saved" : "File save error");
   }
@@ -143,7 +154,7 @@ public abstract class WebServer {
     } else {
       path = asset;
     }
-    return getResponse(path, true);
+    return getFile(path, true);
   }
 
   /**
@@ -414,6 +425,8 @@ public abstract class WebServer {
           handleFileList().send(socket, userToken);
         } else if (url.startsWith("/api/upload")) {
           handleUpload(data).send(socket, null);
+        } else if (url.startsWith("/api/rename")) {
+          handleRename(data).send(socket, null);
         }
         log("Sent POST response");
       } else {
