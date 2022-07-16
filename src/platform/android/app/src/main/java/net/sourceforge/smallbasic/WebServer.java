@@ -1,10 +1,8 @@
 package net.sourceforge.smallbasic;
 
-import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -53,97 +51,12 @@ public abstract class WebServer {
     socketThread.start();
   }
 
-  protected abstract void execStream(String line, InputStream inputStream) throws IOException;
+  protected abstract void execStream(InputStream inputStream) throws IOException;
   protected abstract Collection<FileData> getFileData() throws IOException;
   protected abstract Response getResponse(String path, boolean asset) throws IOException;
   protected abstract void log(String message, Exception exception);
   protected abstract void log(String message);
   protected abstract boolean saveFile(String fileName, String content);
-
-  /**
-   * Returns the HTTP headers from the given stream
-   */
-  private List<String> getHeaders(InputStream stream) throws IOException {
-    List<String> result = new ArrayList<>();
-    ByteArrayOutputStream line = new ByteArrayOutputStream(LINE_SIZE);
-    final char[] endHeader = {'\r', '\n', '\r', '\n'};
-    int index = 0;
-    for (int b = stream.read(); b != -1; b = stream.read()) {
-      if (b == endHeader[index]) {
-        index++;
-        if (index == endHeader.length) {
-          // end of headers
-          break;
-        } else if (index == 2) {
-          // end of line
-          result.add(line.toString());
-          line.reset();
-        }
-      } else {
-        line.write(b);
-        index = 0;
-      }
-    }
-    return result;
-  }
-
-  /**
-   * Reads a line of text from the given stream
-   */
-  private String getLine(InputStream stream) throws IOException {
-    StringBuilder result = new StringBuilder();
-    while (stream.available() != 0) {
-      int b = stream.read();
-      if (b == -1 || b == 10 || b == 13) {
-        break;
-      } else {
-        result.append(Character.toChars(b));
-      }
-    }
-    return result.toString();
-  }
-
-  /**
-   * Parses HTTP GET parameters with the given name
-   */
-  private Map<String, Collection<String>> getParameters(String url) throws IOException {
-    Map<String, Collection<String>> result = new HashMap<>();
-    try {
-      String[] args = URLDecoder.decode(url, UTF_8).split("[?]");
-      if (args.length == 2) {
-        for (String arg : args[1].split("&")) {
-          String[] field = arg.split("=");
-          Collection<String> values = result.get(field[0]);
-          if (values == null) {
-            values = new ArrayList<>();
-            result.put(field[0], values);
-          }
-          values.add(field[1]);
-        }
-      }
-    } catch (Exception e) {
-      throw new IOException(e);
-    }
-    return result;
-  }
-
-  /**
-   * Parses HTTP POST data from the given input stream
-   */
-  private Map<String, String> getPostData(InputStream inputStream, final String line) throws IOException {
-    String postData = getLine(inputStream);
-    String[] fields = postData.split("&");
-    Map<String, String> result = new HashMap<>();
-    for (String nextField : fields) {
-      int eq = nextField.indexOf("=");
-      if (eq != -1) {
-        String key = nextField.substring(0, eq);
-        String value = URLDecoder.decode(nextField.substring(eq + 1), UTF_8);
-        result.put(key, value);
-      }
-    }
-    return result;
-  }
 
   /**
    * Download files button handler
@@ -167,17 +80,6 @@ public abstract class WebServer {
     zipOutputStream.finish();
     zipOutputStream.close();
     return new Response(new ByteArrayInputStream(outputStream.toByteArray()), outputStream.size());
-  }
-
-  /**
-   * Handler for failed token validation
-   */
-  private Response handleError(String error) throws IOException {
-    JsonBuilder out = new JsonBuilder();
-    out.append('{');
-    out.append("error", error, false);
-    out.append('}');
-    return new Response(out.getBytes());
   }
 
   /**
@@ -205,18 +107,28 @@ public abstract class WebServer {
   }
 
   /**
+   * Handler to indicate operational status
+   */
+  private Response handleStatus(boolean success, String message) throws IOException {
+    JsonBuilder out = new JsonBuilder();
+    out.append('{');
+    if (success) {
+      out.append("success", message, false);
+    } else {
+      out.append("error", message, false);
+    }
+    out.append('}');
+    return new Response(out.getBytes());
+  }
+
+  /**
    * Handler for file uploads
    */
-  private Response handleUpload(Map<String, String> parameters) throws UnsupportedEncodingException {
+  private Response handleUpload(Map<String, String> parameters) throws IOException {
     String fileName = parameters.get("fileName");
     String content = parameters.get("data");
     boolean result = saveFile(fileName, content);
-    JsonBuilder json = new JsonBuilder();
-    json.append('{');
-    json.append("success", Boolean.toString(result), false);
-    json.append('}');
-    byte[] output = json.getBytes();
-    return new Response(new ByteArrayInputStream(output), output.length);
+    return handleStatus(result, result ? "File saved" : "File save error");
   }
 
   /**
@@ -249,15 +161,15 @@ public abstract class WebServer {
     }
     while (true) {
       Socket socket = null;
-      DataInputStream inputStream = null;
+      InputStream inputStream = null;
       try {
         socket = serverSocket.accept();
         log("Accepted connection from " + socket.getRemoteSocketAddress().toString());
-        inputStream = new DataInputStream(socket.getInputStream());
-        Request request = new Request(socket, getHeaders(inputStream));
+        inputStream = socket.getInputStream();
+        Request request = new Request(socket, inputStream);
         request.invoke(inputStream, token);
-      } catch (Throwable e) {
-        log("Server failed");
+      } catch (Exception e) {
+        log("Server failed", e);
         break;
       } finally {
         log("socket cleanup");
@@ -332,17 +244,17 @@ public abstract class WebServer {
    * Server Request
    */
   public class Request {
-    Socket socket;
-    String method;
-    String url;
-    String token;
-    List<String> headers;
+    final Socket socket;
+    final String method;
+    final String url;
+    final String token;
+    final List<String> headers;
 
-    public Request(Socket socket, List<String> headers) {
-      String[] fields = headers.get(0).split("\\s");
+    public Request(Socket socket, InputStream inputStream) throws IOException {
+      this.headers = getHeaders(inputStream);
       this.socket = socket;
-      this.headers = headers;
       this.token = getToken(headers);
+      String[] fields = headers.get(0).split("\\s");
       if (fields.length > 1) {
         this.method = fields[0];
         this.url = fields[1];
@@ -354,21 +266,114 @@ public abstract class WebServer {
 
     public void invoke(InputStream inputStream, String tokenKey) throws IOException {
       if (!headers.isEmpty()) {
-        log(url);
+        log("URL: " + url);
         if ("GET".equals(method)) {
           handleGet(getParameters(url), tokenKey);
         } else if ("POST".equals(method)) {
-          handlePost(getPostData(inputStream, url), tokenKey);
+          handlePost(getPostData(inputStream), tokenKey);
+        } else if ("RUN".equals(method)) {
+          handleRun(inputStream, tokenKey);
         } else {
           log("Invalid request");
         }
       }
     }
 
+    /**
+     * Returns the HTTP headers from the given stream
+     */
+    private List<String> getHeaders(InputStream stream) throws IOException {
+      List<String> result = new ArrayList<>();
+      ByteArrayOutputStream line = new ByteArrayOutputStream(LINE_SIZE);
+      final char[] endHeader = {'\r', '\n', '\r', '\n'};
+      int index = 0;
+      int firstChar = 0;
+      for (int b = firstChar = stream.read(); b != -1; b = stream.read()) {
+        if (b == endHeader[index]) {
+          index++;
+          if (index == endHeader.length) {
+            // end of headers
+            break;
+          } else if (index == 2) {
+            // end of line
+            result.add(line.toString());
+            line.reset();
+          }
+        } else if (b == '\n' && ((char)firstChar) == '#') {
+          // export from SmallBASIC
+          result.add("RUN /import");
+          result.add("cookie: " + TOKEN + "=" + line.toString().substring(2));
+          break;
+        } else {
+          line.write(b);
+          index = 0;
+        }
+      }
+      return result;
+    }
+
+    /**
+     * Reads a line of text from the given stream
+     */
+    private String getLine(InputStream stream) throws IOException {
+      StringBuilder result = new StringBuilder();
+      while (stream.available() != 0) {
+        int b = stream.read();
+        if (b == -1 || b == 10 || b == 13) {
+          break;
+        } else {
+          result.append(Character.toChars(b));
+        }
+      }
+      return result.toString();
+    }
+
+    /**
+     * Parses HTTP GET parameters with the given name
+     */
+    private Map<String, Collection<String>> getParameters(String url) throws IOException {
+      Map<String, Collection<String>> result = new HashMap<>();
+      try {
+        String[] args = URLDecoder.decode(url, UTF_8).split("[?]");
+        if (args.length == 2) {
+          for (String arg : args[1].split("&")) {
+            String[] field = arg.split("=");
+            Collection<String> values = result.get(field[0]);
+            if (values == null) {
+              values = new ArrayList<>();
+              result.put(field[0], values);
+            }
+            values.add(field[1]);
+          }
+        }
+      } catch (Exception e) {
+        throw new IOException(e);
+      }
+      return result;
+    }
+
+    /**
+     * Parses HTTP POST data from the given input stream
+     */
+    private Map<String, String> getPostData(InputStream inputStream) throws IOException {
+      String postData = getLine(inputStream);
+      String[] fields = postData.split("&");
+      Map<String, String> result = new HashMap<>();
+      for (String nextField : fields) {
+        int eq = nextField.indexOf("=");
+        if (eq != -1) {
+          String key = nextField.substring(0, eq);
+          String value = URLDecoder.decode(nextField.substring(eq + 1), UTF_8);
+          result.put(key, value);
+        }
+      }
+      return result;
+    }
+
     private String getToken(List<String> headers) {
       String result = null;
       for (String header : headers) {
-        if (header.startsWith("cookie:")) {
+        if (header.toLowerCase().startsWith("cookie:")) {
           String[] fields = header.split(":");
           if (fields.length == 2) {
             fields = fields[1].split("=");
@@ -398,19 +403,30 @@ public abstract class WebServer {
     /**
      * Handler for POST requests
      */
-    private void handlePost(Map<String, String> parameters, String tokenKey) throws IOException {
-      String userToken = parameters.getOrDefault(TOKEN, token);
+    private void handlePost(Map<String, String> data, String tokenKey) throws IOException {
+      String userToken = data.get(TOKEN);
+      if (userToken == null) {
+        userToken = token;
+      }
       log("userToken=" + userToken);
       if (tokenKey.equals(userToken)) {
         if (url.startsWith("/api/files")) {
-          handleFileList().send(socket, token);
+          handleFileList().send(socket, userToken);
         } else if (url.startsWith("/api/upload")) {
-          handleUpload(parameters).send(socket, token);
+          handleUpload(data).send(socket, null);
         }
         log("Sent POST response");
       } else {
         log("Invalid token");
-        handleError("invalid token").send(socket, null);
+        handleStatus(false, "Invalid token").send(socket, null);
+      }
+    }
+
+    private void handleRun(InputStream inputStream, String tokenKey) throws IOException {
+      if (tokenKey.equals(token)) {
+        execStream(inputStream);
+      } else {
+        log("Invalid token");
       }
     }
   }
@@ -427,22 +443,9 @@ public abstract class WebServer {
       this.length = length;
     }
 
-    public Response(String data) throws IOException {
-      this.inputStream = new ByteArrayInputStream(data.getBytes(UTF_8));
-      this.length = data.length();
-    }
-
     public Response(byte[] bytes) {
       this.inputStream = new ByteArrayInputStream(bytes);
       this.length = bytes.length;
-    }
-
-    InputStream getInputStream() {
-      return inputStream;
-    }
-
-    long getLength() {
-      return length;
     }
 
     /**
@@ -469,18 +472,17 @@ public abstract class WebServer {
      * Transfers data from the input stream to the output stream
      */
     int toStream(OutputStream outputStream) throws IOException {
-      DataInputStream in = new DataInputStream(new BufferedInputStream(inputStream));
       int sent = 0;
       try {
         byte[] bytes = new byte[BUFFER_SIZE];
         int read;
-        while ((read = in.read(bytes)) != -1) {
+        while ((read = inputStream.read(bytes)) != -1) {
           outputStream.write(bytes, 0, read);
           outputStream.flush();
           sent += read;
         }
       } finally {
-        in.close();
+        inputStream.close();
       }
       return sent;
     }

@@ -1,6 +1,11 @@
 package net.sourceforge.smallbasic;
 
+import sun.misc.IOUtils;
+import sun.rmi.runtime.Log;
+
+import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
@@ -16,7 +21,14 @@ public class Server {
     // ln -s ../../../../../../../../app/src/main/java/net/sourceforge/smallbasic/WebServer.java .
     WebServer webServer = new WebServer() {
       @Override
-      protected void execStream(String line, InputStream inputStream) {
+      protected void execStream(InputStream inputStream) {
+        try {
+          byte[] data = IOUtils.readAllBytes(inputStream);
+          log(new String(data));
+        }
+        catch (IOException e) {
+          throw new RuntimeException(e);
+        }
       }
 
       @Override

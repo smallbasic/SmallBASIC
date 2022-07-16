@@ -752,14 +752,14 @@ public class MainActivity extends NativeActivity {
     }
   }
 
-  private void execStream(final String line, InputStream inputStream) throws IOException {
+  private void execStream(InputStream inputStream) throws IOException {
     File outputFile = new File(getInternalStorage(), WEB_BAS);
     BufferedWriter output = new BufferedWriter(new FileWriter(outputFile));
     Log.i(TAG, "execStream() entered");
-    String nextLine = line;
-    while (nextLine != null) {
-      output.write(nextLine + "\n");
-      nextLine = readLine(inputStream);
+    String line = readLine(inputStream);
+    while (line != null) {
+      output.write(line + "\n");
+      line = readLine(inputStream);
     }
     output.close();
     Log.i(TAG, "invoke runFile: " + outputFile.getAbsolutePath());
@@ -932,8 +932,8 @@ public class MainActivity extends NativeActivity {
 
   private class WebServerImpl extends WebServer {
     @Override
-    protected void execStream(String line, InputStream inputStream) throws IOException {
-      MainActivity.this.execStream(line, inputStream);
+    protected void execStream(InputStream inputStream) throws IOException {
+      MainActivity.this.execStream(inputStream);
     }
 
     @Override
@@ -957,6 +957,11 @@ public class MainActivity extends NativeActivity {
     @Override
     protected void log(String message) {
       Log.i(TAG, message);
+    }
+
+    @Override
+    protected boolean saveFile(String fileName, String content) {
+      return false;
     }
   };
 }

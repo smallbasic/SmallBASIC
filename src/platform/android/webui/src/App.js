@@ -78,7 +78,13 @@ function upload(name, data, success, fail) {
   let body = "fileName=" + encodeURIComponent(name) + "&data=" + encodeURIComponent(data);
   fetch('/api/upload', getFetchHeader(body))
     .then(response => response.json())
-    .then(success)
+    .then((response) => {
+      if (response.error) {
+        fail(response.error);
+      } else {
+        success();
+      }
+    })
     .catch(fail);
 }
 
