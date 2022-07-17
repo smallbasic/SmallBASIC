@@ -3,6 +3,7 @@ package net.sourceforge.smallbasic;
 import java.io.BufferedOutputStream;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -10,6 +11,7 @@ import java.io.UnsupportedEncodingException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.URLDecoder;
+import java.text.DateFormat;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -30,6 +32,9 @@ public abstract class WebServer {
   private static final int LINE_SIZE = 128;
   private static final String UTF_8 = "utf-8";
   private static final String TOKEN = "token";
+  private static final int SC_OKAY = 200;
+  private static final int SC_NOT_AUTHORISED = 401;
+  private static final int SC_NOT_FOUND = 404;
 
   public WebServer() {
     super();
@@ -52,8 +57,8 @@ public abstract class WebServer {
   }
 
   protected abstract void execStream(InputStream inputStream) throws IOException;
-  protected abstract Collection<FileData> getFileData() throws IOException;
   protected abstract Response getFile(String path, boolean asset) throws IOException;
+  protected abstract Collection<FileData> getFileData() throws IOException;
   protected abstract void log(String message);
   protected abstract void log(String message, Exception exception);
   protected abstract boolean renameFile(String from, String to);
@@ -154,7 +159,14 @@ public abstract class WebServer {
     } else {
       path = asset;
     }
-    return getFile(path, true);
+    Response result;
+    try {
+      result = getFile(path, true);
+    } catch (Exception e) {
+      log("error: " + e);
+      result = null;
+    }
+    return result != null ? result : new Response(SC_NOT_FOUND);
   }
 
   /**
@@ -181,7 +193,6 @@ public abstract class WebServer {
         request.invoke(inputStream, token);
       } catch (Exception e) {
         log("Server failed", e);
-        break;
       } finally {
         log("socket cleanup");
         if (socket != null) {
@@ -192,7 +203,6 @@ public abstract class WebServer {
         }
       }
     }
-    log("server stopped");
   }
 
   /**
@@ -207,6 +217,13 @@ public abstract class WebServer {
       this.fileName = fileName;
       this.date = date;
       this.size = size;
+    }
+
+    public FileData(File file) {
+      DateFormat dateFormat = DateFormat.getDateInstance(DateFormat.DEFAULT);
+      this.fileName = file.getName();
+      this.date = dateFormat.format(file.lastModified());
+      this.size = file.length();
     }
   }
 
@@ -265,8 +282,14 @@ public abstract class WebServer {
       this.headers = getHeaders(inputStream);
       this.socket = socket;
       this.token = getToken(headers);
-      String[] fields = headers.get(0).split("\\s");
-      if (fields.length > 1) {
+      String first = headers.get(0);
+      String[] fields;
+      if (first != null) {
+        fields = first.split("\\s");
+      } else {
+        fields = null;
+      }
+      if (fields != null && fields.length > 1) {
         this.method = fields[0];
         this.url = fields[1];
       } else {
@@ -405,6 +428,9 @@ public abstract class WebServer {
       if (url.startsWith("/api/download?")) {
         if (tokenKey.equals(token)) {
           handleDownload(parameters).send(socket, null);
+        } else {
+          log("Invalid token");
+          new Response(SC_NOT_AUTHORISED).send(socket, null);
         }
       } else {
         handleWebResponse(url).send(socket, null);
@@ -421,23 +447,30 @@ public abstract class WebServer {
       }
       log("userToken=" + userToken);
       if (tokenKey.equals(userToken)) {
-        if (url.startsWith("/api/files")) {
+        if (url.startsWith("/api/login")) {
           handleFileList().send(socket, userToken);
+        } else if (url.startsWith("/api/files")) {
+          handleFileList().send(socket, null);
         } else if (url.startsWith("/api/upload")) {
           handleUpload(data).send(socket, null);
         } else if (url.startsWith("/api/rename")) {
           handleRename(data).send(socket, null);
+        } else {
+          new Response(SC_NOT_FOUND).send(socket, null);
         }
         log("Sent POST response");
       } else {
         log("Invalid token");
-        handleStatus(false, "Invalid token").send(socket, null);
+        if (url.startsWith("/api/login")) {
+          handleStatus(false, "Invalid token").send(socket, null);
+        } else {
+          new Response(SC_NOT_AUTHORISED).send(socket, null);
+        }
       }
     }
 
     private void handleRun(InputStream inputStream, String tokenKey) throws IOException {
-      if (tokenKey.equals(token)) {
-        execStream(inputStream);
+      if (tokenKey.equals(token)) {        execStream(inputStream);
       } else {
         log("Invalid token");
       }
@@ -450,29 +483,40 @@ public abstract class WebServer {
   public class Response {
     private final InputStream inputStream;
     private final long length;
+    private final int errorCode;
 
     public Response(InputStream inputStream, long length) {
       this.inputStream = inputStream;
       this.length = length;
+      this.errorCode = SC_OKAY;
     }
 
     public Response(byte[] bytes) {
       this.inputStream = new ByteArrayInputStream(bytes);
       this.length = bytes.length;
+      this.errorCode = SC_OKAY;
+    }
+
+    public Response(int errorCode) throws IOException {
+      byte[] bytes = ("Error: " + errorCode).getBytes(UTF_8);
+      this.inputStream = new ByteArrayInputStream(bytes);
+      this.length = bytes.length;
+      this.errorCode = errorCode;
     }
 
     /**
      * Sends the response to the given socket
      */
-    void send(Socket socket, String session) throws IOException {
+    void send(Socket socket, String cookie) throws IOException {
       log("sendResponse() entered");
       String contentLength = "Content-length: " + length + "\r\n";
       BufferedOutputStream out = new BufferedOutputStream(socket.getOutputStream());
-      out.write("HTTP/1.0 200 OK\r\n".getBytes());
+      String code = errorCode == SC_OKAY ? SC_OKAY + " OK" : String.valueOf(errorCode);
+      out.write(("HTTP/1.0 " + code + "\r\n").getBytes());
       out.write("Content-type: text/html\r\n".getBytes());
       out.write(contentLength.getBytes());
-      if (session != null) {
-        out.write(("Set-Cookie: " + TOKEN + "=" + session + "\r\n").getBytes());
+      if (cookie != null) {
+        out.write(("Set-Cookie: " + TOKEN + "=" + cookie + "\r\n").getBytes());
       }
       out.write("Server: SmallBASIC for Android\r\n\r\n".getBytes());
       socket.setSendBufferSize(SEND_SIZE);

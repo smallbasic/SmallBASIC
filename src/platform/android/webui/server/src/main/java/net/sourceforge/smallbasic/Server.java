@@ -47,7 +47,7 @@ public class Server {
       }
 
       @Override
-      protected Response getResponse(String path, boolean asset) throws IOException {
+      protected Response getFile(String path, boolean asset) throws IOException {
         String prefix = asset ? "../build/" : "../basic/";
         File file = new File(prefix + path);
         return new Response(Files.newInputStream(file.toPath()), file.length());

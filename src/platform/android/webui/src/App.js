@@ -69,9 +69,13 @@ function fetchApi(api, body, success, fail) {
     .catch(fail);
 }
 
-function getFiles(token, success, fail) {
-  let body = token ? ("token=" + token) : "";
-  fetchApi('/api/files', body, success, fail);
+function getFiles(success, fail) {
+  fetchApi('/api/files', "", success, fail);
+}
+
+function login(token, success, fail) {
+  let body = "token=" + token;
+  fetchApi('/api/login', body, success, fail);
 }
 
 function upload(name, data, success, fail) {
@@ -94,7 +98,7 @@ function copyFiles(event, success, fail) {
       if (++index < files.length) {
         fileReader.readAsText(files[index]);
       } else {
-        getFiles(null, success, fail);
+        getFiles(success, fail);
         // reset input control
         input.value = input.defaultValue;
       }
@@ -159,7 +163,7 @@ function onCellEditCommit(props, params) {
   props.rows.forEach((row) => {
     if (row.id === params.id) {
       renameFile(row.fileName, params.value, () => {
-        getFiles(null, (data) => {
+        getFiles((data) => {
           props.setRows(data);
         }, (error) => {
           console.log(error);
@@ -200,7 +204,7 @@ function TokenInput(props) {
   const [error, setError] = useState(false);
 
   const onClick = () => {
-    getFiles(token, (data) => {
+    login(token, (data) => {
       props.setRows(data);
       props.setToken(token);
     }, () => {

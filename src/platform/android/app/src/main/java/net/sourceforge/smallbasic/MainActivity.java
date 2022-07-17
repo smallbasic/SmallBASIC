@@ -65,10 +65,13 @@ import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.net.URLDecoder;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
 import java.util.Enumeration;
+import java.util.HashMap;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Properties;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -666,11 +669,6 @@ public class MainActivity extends NativeActivity {
     }
   }
 
-  private String buildTokenForm() {
-    return "<p>Enter access token:</p><form method=post><input type=text name=token>" +
-      "<input value=OK name=okay type=submit style='vertical-align:top'></form>";
-  }
-
   private void checkFilePermission() {
     if (!permitted(Manifest.permission.WRITE_EXTERNAL_STORAGE)) {
       setupStorageEnvironment(false);
@@ -807,9 +805,9 @@ public class MainActivity extends NativeActivity {
     return result;
   }
 
-  private String getString(final byte[] promptBytes) {
+  private String getString(final byte[] bytes) {
     try {
-      return new String(promptBytes, CP1252);
+      return new String(bytes, CP1252);
     } catch (UnsupportedEncodingException e) {
       Log.i(TAG, "getString failed: ", e);
       return "";
@@ -930,16 +928,19 @@ public class MainActivity extends NativeActivity {
     }
   }
 
+  private static class BasFileFilter implements FilenameFilter {
+    @Override
+    public boolean accept(File dir, String name) {
+      return name.endsWith(".bas");
+    }
+  }
+
   private class WebServerImpl extends WebServer {
+    private final Map<String, Long> fileLengths = new HashMap<>();
+
     @Override
     protected void execStream(InputStream inputStream) throws IOException {
       MainActivity.this.execStream(inputStream);
-    }
-
-    @Override
-    protected Collection<FileData> getFileData() throws IOException {
-      // TODO
-      return null;
     }
 
     @Override
@@ -947,12 +948,20 @@ public class MainActivity extends NativeActivity {
       Response result;
       if (asset) {
         String name = "webui/" + path;
-        AssetFileDescriptor fd = getAssets().openFd(name);
-        result = new Response(getAssets().open(name), fd.getLength());
-      }
-      else {
+        long length = getFileLength(name);
+        log("Opened " + name + " " + length + " bytes");
+        result = new Response(getAssets().open(name), length);
+      } else {
         result = null;
       }
+      return result;
+    }
+
+    @Override
+    protected Collection<FileData> getFileData() throws IOException {
+      Collection<FileData> result = new ArrayList<>();
+      result.addAll(getFiles(new File(getExternalStorage())));
+      result.addAll(getFiles(new File(getInternalStorage())));
       return result;
     }
 
@@ -962,18 +971,46 @@ public class MainActivity extends NativeActivity {
     }
 
     @Override
-    protected boolean renameFile(String from, String to) {
-      return false;
-    }
-
-    @Override
     protected void log(String message) {
       Log.i(TAG, message);
     }
 
     @Override
+    protected boolean renameFile(String from, String to) {
+      return false;
+    }
+
+    @Override
     protected boolean saveFile(String fileName, String content) {
       return false;
+    }
+
+    private long getFileLength(String name) throws IOException {
+      Long length = fileLengths.get(name);
+      if (length == null) {
+        length = 0L;
+        InputStream inputStream = getAssets().open(name);
+        while (inputStream.available() > 0) {
+          int unused = inputStream.read();
+          length++;
+        }
+        inputStream.close();
+        fileLengths.put(name, length);
+      }
+      return length;
+    }
+
+    private Collection<FileData> getFiles(File path) {
+      Collection<FileData> result = new ArrayList<>();
+      if (path.isDirectory() && path.canRead()) {
+        File[] files = path.listFiles(new BasFileFilter());
+        if (files != null) {
+          for (File file : files) {
+            result.add(new FileData(file));
+          }
+        }
+      }
+      return result;
     }
   };
 }
