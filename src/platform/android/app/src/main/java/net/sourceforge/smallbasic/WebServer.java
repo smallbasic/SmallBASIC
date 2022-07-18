@@ -61,8 +61,8 @@ public abstract class WebServer {
   protected abstract Collection<FileData> getFileData() throws IOException;
   protected abstract void log(String message);
   protected abstract void log(String message, Exception exception);
-  protected abstract boolean renameFile(String from, String to);
-  protected abstract boolean saveFile(String fileName, String content);
+  protected abstract void renameFile(String from, String to) throws IOException;
+  protected abstract void saveFile(String fileName, byte[] content) throws IOException;
 
   /**
    * Download files button handler
@@ -118,8 +118,14 @@ public abstract class WebServer {
   private Response handleRename(Map<String, String> data) throws IOException {
     String from = data.get("from");
     String to = data.get("to");
-    boolean result = renameFile(from, to);
-    return handleStatus(result, result ? "File renamed" : "File rename error");
+    Response result;
+    try {
+      renameFile(from, to);
+      result = handleStatus(true, "File renamed");
+    } catch (IOException e) {
+      result = handleStatus(false, e.getMessage());
+    }
+    return result;
   }
 
   /**
@@ -143,8 +149,18 @@ public abstract class WebServer {
   private Response handleUpload(Map<String, String> data) throws IOException {
     String fileName = data.get("fileName");
     String content = data.get("data");
-    boolean result = saveFile(fileName, content);
-    return handleStatus(result, result ? "File saved" : "File save error");
+    Response result;
+    try {
+      if (fileName == null || content == null) {
+        result = handleStatus(false, "Invalid input");
+      } else {
+        saveFile(fileName, content.getBytes(UTF_8));
+        result = handleStatus(true, "File saved");
+      }
+    } catch (Exception e) {
+      result = handleStatus(false, e.getMessage());
+    }
+    return result;
   }
 
   /**

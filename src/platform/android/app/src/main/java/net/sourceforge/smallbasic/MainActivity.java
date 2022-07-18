@@ -12,7 +12,6 @@ import android.content.DialogInterface;
 import android.content.DialogInterface.OnCancelListener;
 import android.content.Intent;
 import android.content.pm.PackageManager;
-import android.content.res.AssetFileDescriptor;
 import android.content.res.Configuration;
 import android.content.res.Resources;
 import android.graphics.Rect;
@@ -99,6 +98,7 @@ public class MainActivity extends NativeActivity {
   private static final int REQUEST_STORAGE_PERMISSION = 1;
   private static final int REQUEST_LOCATION_PERMISSION = 2;
   private static final String FOLDER_NAME = "SmallBASIC";
+  private static final int COPY_BUFFER_SIZE = 1024;
   private String _startupBas = null;
   private boolean _untrusted = false;
   private final ExecutorService _audioExecutor = Executors.newSingleThreadExecutor();
@@ -694,22 +694,21 @@ public class MainActivity extends NativeActivity {
     });
   }
 
-  private void copy(File src, File dst) throws IOException {
-    InputStream in = new FileInputStream(src);
+  private void copy(InputStream in, OutputStream out) throws IOException {
     try {
-      OutputStream out = new FileOutputStream(dst);
-      try {
-        byte[] buf = new byte[1024];
-        int len;
-        while ((len = in.read(buf)) > 0) {
-          out.write(buf, 0, len);
-        }
-      } finally {
-        out.close();
+      byte[] buf = new byte[COPY_BUFFER_SIZE];
+      int len;
+      while ((len = in.read(buf)) > 0) {
+        out.write(buf, 0, len);
       }
     } finally {
+      out.close();
       in.close();
     }
+  }
+
+  private void copy(File src, File dst) throws IOException {
+    copy(new FileInputStream(src), new FileOutputStream(dst));
   }
 
   private String execBuffer(final String buffer, final String name, boolean run) throws IOException {
@@ -952,7 +951,15 @@ public class MainActivity extends NativeActivity {
         log("Opened " + name + " " + length + " bytes");
         result = new Response(getAssets().open(name), length);
       } else {
-        result = null;
+        File file = getFile(getExternalStorage(), path);
+        if (file == null) {
+          file = getFile(getInternalStorage(), path);
+        }
+        if (file != null) {
+          result = new Response(new FileInputStream(file), file.length());
+        } else {
+          throw new IOException("file not found");
+        }
       }
       return result;
     }
@@ -976,13 +983,46 @@ public class MainActivity extends NativeActivity {
     }
 
     @Override
-    protected boolean renameFile(String from, String to) {
-      return false;
+    protected void renameFile(String from, String to) throws IOException {
+      if (to == null || !to.endsWith(".bas")) {
+        throw new IOException("Invalid New File Name: " + to);
+      }
+      File toFile = getFile(getInternalStorage(), to);
+      if (toFile == null) {
+        toFile = getFile(getExternalStorage(), to);
+      }
+      if (toFile != null) {
+        throw new IOException("New File Name already exists");
+      }
+      File fromFile = getFile(getInternalStorage(), from);
+      if (fromFile == null) {
+        fromFile = getFile(getExternalStorage(), from);
+      }
+      if (fromFile == null) {
+        throw new IOException("Old File Name does not exist");
+      }
+      if (!fromFile.renameTo(new File(getExternalStorage(), to))) {
+        throw new IOException("File rename failed");
+      }
     }
 
     @Override
-    protected boolean saveFile(String fileName, String content) {
-      return false;
+    protected void saveFile(String fileName, byte[] content) throws IOException {
+      File file = new File(getExternalStorage(), fileName);
+      if (file.exists()) {
+        throw new IOException("File already exists");
+      } else if (file.isDirectory()) {
+        throw new IOException("Invalid File Name: " + fileName);
+      }
+      copy(new ByteArrayInputStream(content), new FileOutputStream(file));
+    }
+
+    private File getFile(String parent, String path) {
+      File result = new File(parent, path);
+      if (!result.exists() || !result.canRead() || result.isDirectory()) {
+        result = null;
+      }
+      return result;
     }
 
     private long getFileLength(String name) throws IOException {

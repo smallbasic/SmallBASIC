@@ -1,13 +1,16 @@
 import {
+  Fragment,
   useState
 } from 'react';
 
 import {
+  Alert,
   AppBar,
   Box,
   Button,
   CssBaseline,
   Link,
+  Snackbar,
   TextField,
   Toolbar,
   Typography,
@@ -33,10 +36,9 @@ const columns = [{
   field: 'fileName',
   headerName: 'Name',
   editable: true,
-  preProcessEditCellProps: (params) => {
-    const hasError = !params.props.value.endsWith(".bas");
-    return {...params.props, error: hasError};
-  } ,
+  valueGetter: (params) => {
+    return params.row.fileName;
+  },
   flex: 1,
 }, {
   field: 'size',
@@ -56,7 +58,7 @@ function getFetchHeader(body) {
   };
 }
 
-function fetchApi(api, body, success, fail) {
+function callApi(api, body, success, fail) {
   fetch(api, getFetchHeader(body))
     .then(response => response.json())
     .then((response) => {
@@ -70,22 +72,22 @@ function fetchApi(api, body, success, fail) {
 }
 
 function getFiles(success, fail) {
-  fetchApi('/api/files', "", success, fail);
+  callApi('/api/files', "", success, fail);
 }
 
 function login(token, success, fail) {
   let body = "token=" + token;
-  fetchApi('/api/login', body, success, fail);
+  callApi('/api/login', body, success, fail);
 }
 
 function upload(name, data, success, fail) {
   let body = "fileName=" + encodeURIComponent(name) + "&data=" + encodeURIComponent(data);
-  fetchApi('/api/upload', body, success, fail);
+  callApi('/api/upload', body, success, fail);
 }
 
 function renameFile(from, to, success, fail) {
   let body = "from=" + encodeURIComponent(from) + "&to=" + encodeURIComponent(to);
-  fetchApi('/api/rename', body, success, fail);
+  callApi('/api/rename', body, success, fail);
 }
 
 function copyFiles(event, success, fail) {
@@ -129,22 +131,42 @@ function GridToolbarDownload(props) {
   );
 }
 
+function ErrorMessage(props) {
+  const handleClose = (event, reason) => {
+    if (reason !== 'clickaway') {
+      props.setError(null);
+    }
+  };
+
+  return (
+    <Snackbar open={props.error !== null} autoHideDuration={6000} onClose={handleClose}>
+      <Alert onClose={handleClose} severity="error" sx={{width: '100%'}}>
+        {props.error}
+      </Alert>
+    </Snackbar>
+  );
+}
+
 function GridToolbarUpload(props) {
+  const [error, setError] = useState(null);
+
   const handleUpload = (event) => {
     copyFiles(event, (newRows) => {
       props.setRows(newRows);
     }, (error) => {
-      // show toast message
-      console.log(error);
+      setError(error);
     });
   };
 
   return (
-    <Button color="primary" size="small" component="label" sx={{marginLeft: '-4px'}}>
-      <input accept=".bas" hidden multiple type="file" onChange={handleUpload}/>
-      <UploadIcon />
-      UPLOAD
-    </Button>
+    <Fragment>
+      <ErrorMessage error={error} setError={setError} />
+      <Button color="primary" size="small" component="label" sx={{marginLeft: '-4px'}}>
+        <input accept=".bas" hidden multiple type="file" onChange={handleUpload}/>
+        <UploadIcon />
+        UPLOAD
+      </Button>
+    </Fragment>
   );
 }
 
@@ -159,17 +181,15 @@ function AppToolbar(props) {
   );
 }
 
-function onCellEditCommit(props, params) {
+function onCellEditCommit(props, params, setError) {
   props.rows.forEach((row) => {
     if (row.id === params.id) {
       renameFile(row.fileName, params.value, () => {
-        getFiles((data) => {
-          props.setRows(data);
-        }, (error) => {
-          console.log(error);
-        });
+        row.fileName = params.value;
+        props.setRows(props.rows.slice());
       }, (error) => {
-        console.log(error);
+        props.setRows(props.rows.slice());
+        setError(error);
       });
     }
   });
@@ -177,6 +197,7 @@ function onCellEditCommit(props, params) {
 
 function FileList(props) {
   const [selectionModel, setSelectionModel] = useState([]);
+  const [error, setError] = useState(null);
 
   const toolbarProps = {
     selections: selectionModel,
@@ -185,17 +206,20 @@ function FileList(props) {
   };
 
   return (
-    <DataGrid rows={props.rows}
-              columns={columns}
-              onCellEditCommit={(params) => onCellEditCommit(props, params)}
-              pageSize={5}
-              components={{Toolbar: AppToolbar}}
-              componentsProps={{toolbar: toolbarProps}}
-              onSelectionModelChange={(model) => setSelectionModel(model)}
-              selectionModel={selectionModel}
-              rowsPerPageOptions={[5]}
-              checkboxSelection
-              disableSelectionOnClick/>
+    <Fragment>
+      <ErrorMessage error={error} setError={setError} />
+      <DataGrid rows={props.rows}
+                columns={columns}
+                onCellEditCommit={(params) => onCellEditCommit(props, params, setError)}
+                pageSize={5}
+                components={{Toolbar: AppToolbar}}
+                componentsProps={{toolbar: toolbarProps}}
+                onSelectionModelChange={(model) => setSelectionModel(model)}
+                selectionModel={selectionModel}
+                rowsPerPageOptions={[5]}
+                checkboxSelection
+                disableSelectionOnClick/>
+    </Fragment>
   );
 }
 

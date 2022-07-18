@@ -14,7 +14,9 @@ import java.util.Collection;
 import java.util.Objects;
 
 public class Server {
-  public static void main( String[] args ) {
+  private static final String BASIC_HOME = "../basic";
+
+  public static void main(String[] args ) {
     // ln -s ../../../../../../../../app/src/main/java/net/sourceforge/smallbasic/WebServer.java .
     WebServer webServer = new WebServer() {
       @Override
@@ -30,7 +32,7 @@ public class Server {
 
       @Override
       protected Collection<FileData> getFileData() throws IOException {
-        final File folder = new File("../basic");
+        final File folder = new File(BASIC_HOME);
         Collection<FileData> result = new ArrayList<>();
         for (final File fileEntry : Objects.requireNonNull(folder.listFiles())) {
           BasicFileAttributes attr = Files.readAttributes(fileEntry.toPath(), BasicFileAttributes.class);
@@ -48,7 +50,7 @@ public class Server {
 
       @Override
       protected Response getFile(String path, boolean asset) throws IOException {
-        String prefix = asset ? "../build/" : "../basic/";
+        String prefix = asset ? "../build/" : BASIC_HOME;
         File file = new File(prefix + path);
         return new Response(Files.newInputStream(file.toPath()), file.length());
       }
@@ -65,15 +67,28 @@ public class Server {
       }
 
       @Override
-      protected boolean renameFile(String from, String to) {
-        log("rename " + from + " to " + to);
-        return true;
+      protected void renameFile(String from, String to) throws IOException {
+        if (to == null || !to.endsWith(".bas")) {
+          throw new IOException("Invalid New File Name: " + to);
+        }
+        File toFile = new File(BASIC_HOME, to);
+        if (toFile.exists()) {
+          throw new IOException("New File Name already exists");
+        }
+        File fromFile = new File(BASIC_HOME, from);
+        if (!fromFile.exists()) {
+          throw new IOException("Old File Name does not exist");
+        }
+        if (!fromFile.renameTo(new File(BASIC_HOME, to))) {
+          throw new IOException("File rename failed");
+        }
       }
 
       @Override
-      protected boolean saveFile(String fileName, String content) {
-        return true;
+      protected void saveFile(String fileName, byte[] content) throws IOException {
+        throw new IOException("Failed to save file: " + fileName);
       }
+
     };
     webServer.run(8080, "ABC123");
   }
