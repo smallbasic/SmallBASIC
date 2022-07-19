@@ -18,9 +18,11 @@ import {
 
 import {
   DataGrid,
+  GridToolbarColumnsButton,
   GridToolbarContainer,
-  GridToolbarFilterButton,
   GridToolbarDensitySelector,
+  GridToolbarExport,
+  GridToolbarFilterButton,
 } from '@mui/x-data-grid';
 
 import {
@@ -113,6 +115,7 @@ function GridToolbarDownload(props) {
   let color = useTheme().palette.primary.main;
   let args = "";
   let join = "";
+  let download = props.selections.length === 1 ? props.rows[props.selections[0]].fileName : "download.zip";
 
   props.selections.forEach(i => {
     args += join + "f=" + encodeURIComponent(props.rows[i].fileName);
@@ -120,7 +123,7 @@ function GridToolbarDownload(props) {
   });
 
   return !props.selections.length ? null : (
-    <a download="download.zip" href={`./api/download?${args}`} style={{color: color, textDecoration: 'none'}}>
+    <a download={download} href={`./api/download?${args}`} style={{color: color, textDecoration: 'none'}}>
       <Box sx={{display: 'flex', marginTop: '1px', alignItems: 'center'}} >
         <DownloadIcon />
         <Typography variant="caption">
@@ -139,8 +142,8 @@ function ErrorMessage(props) {
   };
 
   return (
-    <Snackbar open={props.error !== null} autoHideDuration={6000} onClose={handleClose}>
-      <Alert onClose={handleClose} severity="error" sx={{width: '100%'}}>
+    <Snackbar open={props.error !== null} autoHideDuration={5000} onClose={handleClose}>
+      <Alert onClose={handleClose} severity={props.severity} sx={{width: '100%'}}>
         {props.error}
       </Alert>
     </Snackbar>
@@ -149,18 +152,27 @@ function ErrorMessage(props) {
 
 function GridToolbarUpload(props) {
   const [error, setError] = useState(null);
+  const [severity, setSeverity] = useState("error");
 
   const handleUpload = (event) => {
+    const length = event.target.files.length;
+    setSeverity("error");
     copyFiles(event, (newRows) => {
       props.setRows(newRows);
+      setSeverity("success");
+      setError(`Uploaded ${length} files`);
     }, (error) => {
       setError(error);
+      // show any successful uploads
+      getFiles((newRows) => {
+        props.setRows(newRows);
+      }, (error)=> setError(error));
     });
   };
 
   return (
     <Fragment>
-      <ErrorMessage error={error} setError={setError} />
+      <ErrorMessage error={error} setError={setError} severity={severity}/>
       <Button color="primary" size="small" component="label" sx={{marginLeft: '-4px'}}>
         <input accept=".bas" hidden multiple type="file" onChange={handleUpload}/>
         <UploadIcon />
@@ -174,6 +186,8 @@ function AppToolbar(props) {
   return (
     <GridToolbarContainer>
       <GridToolbarFilterButton />
+      <GridToolbarColumnsButton />
+      <GridToolbarExport />
       <GridToolbarDensitySelector />
       <GridToolbarUpload {...props}/>
       <GridToolbarDownload {...props}/>
@@ -211,7 +225,7 @@ function FileList(props) {
       <DataGrid rows={props.rows}
                 columns={columns}
                 onCellEditCommit={(params) => onCellEditCommit(props, params, setError)}
-                pageSize={5}
+                autoPageSize
                 components={{Toolbar: AppToolbar}}
                 componentsProps={{toolbar: toolbarProps}}
                 onSelectionModelChange={(model) => setSelectionModel(model)}
@@ -295,7 +309,7 @@ export default function App() {
           <Box>
             <Link target="new" href="https://smallbasic.github.io" color="inherit">
               <Typography variant="h6" component="div" sx={{flexGrow: 1}}>
-                https://smallbasic.github.io
+                smallbasic.github.io
               </Typography>
             </Link>
           </Box>

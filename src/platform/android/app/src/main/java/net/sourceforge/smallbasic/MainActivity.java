@@ -958,7 +958,7 @@ public class MainActivity extends NativeActivity {
         if (file != null) {
           result = new Response(new FileInputStream(file), file.length());
         } else {
-          throw new IOException("file not found");
+          throw new IOException("File not found: " + path);
         }
       }
       return result;
@@ -985,21 +985,21 @@ public class MainActivity extends NativeActivity {
     @Override
     protected void renameFile(String from, String to) throws IOException {
       if (to == null || !to.endsWith(".bas")) {
-        throw new IOException("Invalid New File Name: " + to);
+        throw new IOException("Invalid file name: " + to);
       }
       File toFile = getFile(getInternalStorage(), to);
       if (toFile == null) {
         toFile = getFile(getExternalStorage(), to);
       }
       if (toFile != null) {
-        throw new IOException("New File Name already exists");
+        throw new IOException("File already exists");
       }
       File fromFile = getFile(getInternalStorage(), from);
       if (fromFile == null) {
         fromFile = getFile(getExternalStorage(), from);
       }
       if (fromFile == null) {
-        throw new IOException("Old File Name does not exist");
+        throw new IOException("Previous file does not exist");
       }
       if (!fromFile.renameTo(new File(getExternalStorage(), to))) {
         throw new IOException("File rename failed");
@@ -1010,9 +1010,9 @@ public class MainActivity extends NativeActivity {
     protected void saveFile(String fileName, byte[] content) throws IOException {
       File file = new File(getExternalStorage(), fileName);
       if (file.exists()) {
-        throw new IOException("File already exists");
+        throw new IOException("File already exists: " + fileName);
       } else if (file.isDirectory()) {
-        throw new IOException("Invalid File Name: " + fileName);
+        throw new IOException("Invalid file name: " + fileName);
       }
       copy(new ByteArrayInputStream(content), new FileOutputStream(file));
     }

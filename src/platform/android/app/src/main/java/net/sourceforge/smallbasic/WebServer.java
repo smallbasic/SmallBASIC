@@ -1,5 +1,6 @@
 package net.sourceforge.smallbasic;
 
+import javax.xml.ws.Response;
 import java.io.BufferedOutputStream;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -69,23 +70,28 @@ public abstract class WebServer {
    */
   private Response handleDownload(Map<String, Collection<String>> data) throws IOException {
     Collection<String> fileNames = data.get("f");
-    ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-    ZipOutputStream zipOutputStream = new ZipOutputStream(outputStream);
-    if (fileNames == null) {
-      fileNames = Collections.emptyList();
+    Response result;
+    if (fileNames == null || fileNames.size() == 0) {
+      result = handleStatus(false, "File list is empty");
+    } else if (fileNames.size() == 1) {
+      // plain text download single file
+      result = getFile(fileNames.iterator().next(), false);
+    } else {
+      // download multiple as zip
+      ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+      ZipOutputStream zipOutputStream = new ZipOutputStream(outputStream);
+      for (String fileName : fileNames) {
+        Response response = getFile(fileName, false);
+        ZipEntry entry = new ZipEntry(fileName);
+        zipOutputStream.putNextEntry(entry);
+        response.toStream(zipOutputStream);
+        zipOutputStream.closeEntry();
+      }
+      zipOutputStream.finish();
+      zipOutputStream.close();
+      result = new Response(new ByteArrayInputStream(outputStream.toByteArray()), outputStream.size());
     }
-
-    for (String fileName : fileNames) {
-      Response response = getFile(fileName, false);
-      ZipEntry entry = new ZipEntry(fileName);
-      zipOutputStream.putNextEntry(entry);
-      response.toStream(zipOutputStream);
-      zipOutputStream.closeEntry();
-    }
-
-    zipOutputStream.finish();
-    zipOutputStream.close();
-    return new Response(new ByteArrayInputStream(outputStream.toByteArray()), outputStream.size());
+    return result;
   }
 
   /**
