@@ -121,6 +121,9 @@ function GridToolbarDownload(props) {
     args += join + "f=" + encodeURIComponent(props.rows[i].fileName);
     join = "&";
   });
+  if (props.selections.length === props.rows.length) {
+    args = "";
+  }
 
   return !props.selections.length ? null : (
     <a download={download} href={`./api/download?${args}`} style={{color: color, textDecoration: 'none'}}>

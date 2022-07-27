@@ -1,6 +1,5 @@
 package net.sourceforge.smallbasic;
 
-import javax.xml.ws.Response;
 import java.io.BufferedOutputStream;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -15,7 +14,6 @@ import java.net.URLDecoder;
 import java.text.DateFormat;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -66,12 +64,26 @@ public abstract class WebServer {
   protected abstract void saveFile(String fileName, byte[] content) throws IOException;
 
   /**
+   * Return all file names
+   */
+  private Collection<String> getAllFileNames() throws IOException {
+    Collection<String> result = new ArrayList<>();
+    for (FileData fileData : getFileData()) {
+      result.add(fileData.fileName);
+    }
+    return result;
+  }
+
+  /**
    * Download files button handler
    */
   private Response handleDownload(Map<String, Collection<String>> data) throws IOException {
     Collection<String> fileNames = data.get("f");
-    Response result;
     if (fileNames == null || fileNames.size() == 0) {
+      fileNames = getAllFileNames();
+    }
+    Response result;
+    if (fileNames.size() == 0) {
       result = handleStatus(false, "File list is empty");
     } else if (fileNames.size() == 1) {
       // plain text download single file
@@ -534,13 +546,13 @@ public abstract class WebServer {
       String contentLength = "Content-length: " + length + "\r\n";
       BufferedOutputStream out = new BufferedOutputStream(socket.getOutputStream());
       String code = errorCode == SC_OKAY ? SC_OKAY + " OK" : String.valueOf(errorCode);
-      out.write(("HTTP/1.0 " + code + "\r\n").getBytes());
-      out.write("Content-type: text/html\r\n".getBytes());
-      out.write(contentLength.getBytes());
+      out.write(("HTTP/1.0 " + code + "\r\n").getBytes(UTF_8));
+      out.write("Content-type: text/html\r\n".getBytes(UTF_8));
+      out.write(contentLength.getBytes(UTF_8));
       if (cookie != null) {
-        out.write(("Set-Cookie: " + TOKEN + "=" + cookie + "\r\n").getBytes());
+        out.write(("Set-Cookie: " + TOKEN + "=" + cookie + "\r\n").getBytes(UTF_8));
       }
-      out.write("Server: SmallBASIC for Android\r\n\r\n".getBytes());
+      out.write("Server: SmallBASIC for Android\r\n\r\n".getBytes(UTF_8));
       socket.setSendBufferSize(SEND_SIZE);
       int sent = toStream(out);
       log("sent " + sent + " bytes");
