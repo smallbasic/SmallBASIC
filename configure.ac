@@ -248,6 +248,7 @@ function buildAndroid() {
 
    TEST_DIR="src/platform/android"
    AC_SUBST(TEST_DIR)
+   (cd src/platform/android/webui && npm run build)
 }
 
 function buildConsole() {

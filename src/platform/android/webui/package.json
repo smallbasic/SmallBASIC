@@ -16,7 +16,7 @@
   },
   "scripts": {
     "start": "react-scripts start",
-    "build": "react-scripts build && rm ../app/src/main/assets/webui/static/js/main.* && cp -R build/* ../app/src/main/assets/webui/",
+    "build": "GENERATE_SOURCEMAP=false react-scripts build && rm ../app/src/main/assets/webui/static/js/main.* && cp -R build/* ../app/src/main/assets/webui/",
     "update": "npm update && ncu"
   },
   "eslintConfig": {

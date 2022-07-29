@@ -115,7 +115,7 @@ function GridToolbarDownload(props) {
   let color = useTheme().palette.primary.main;
   let args = "";
   let join = "";
-  let download = props.selections.length === 1 ? props.rows[props.selections[0]].fileName : "download.zip";
+  let download = props.selections.length === 1 ? props.rows[props.selections[0]].fileName : "smallbasic-files.zip";
 
   props.selections.forEach(i => {
     args += join + "f=" + encodeURIComponent(props.rows[i].fileName);
