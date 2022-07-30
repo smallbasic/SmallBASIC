@@ -865,9 +865,11 @@ public class MainActivity extends NativeActivity {
   }
 
   private void processSettings() {
+    FileInputStream is = null;
     try {
+      is = getApplication().openFileInput("settings.txt");
       Properties p = new Properties();
-      p.load(getApplication().openFileInput("settings.txt"));
+      p.load(is);
       int socket = Integer.parseInt(p.getProperty("serverSocket", "-1"));
       String token = p.getProperty("serverToken", new Date().toString());
       if (socket > 1023 && socket < 65536) {
@@ -878,6 +880,15 @@ public class MainActivity extends NativeActivity {
       }
     } catch (Exception e) {
       Log.i(TAG, "Failed to start web service: ", e);
+    } finally {
+      if (is != null) {
+        try {
+          is.close();
+        }
+        catch (IOException e) {
+          Log.i(TAG, "Failed to close settings.txt: ", e);
+        }
+      }
     }
   }
 

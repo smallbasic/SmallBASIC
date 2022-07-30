@@ -51,8 +51,8 @@ public abstract class WebServer {
       public void run() {
         try {
           runServer(socketNum, token);
-        } catch (IOException e) {
-          log("startServer failed: ", e);
+        } catch (Exception e) {
+          log("Server failed to start: ", e);
         }
       }
     });
@@ -87,6 +87,7 @@ public abstract class WebServer {
         THREAD_POOL.submit(new Request(socket, token));
       } catch (Exception e) {
         log("Server failed", e);
+        break;
       }
     }
   }
@@ -321,7 +322,7 @@ public abstract class WebServer {
           }
         }
       } catch (IOException e) {
-        log("request failed", e);
+        log("Request failed", e);
       }
       finally {
         afterRun();
@@ -329,7 +330,7 @@ public abstract class WebServer {
     }
 
     private void afterRun() {
-      log("socket cleanup");
+      log("Socket cleanup");
       try {
         if (socket != null) {
           socket.close();
@@ -338,7 +339,7 @@ public abstract class WebServer {
           inputStream.close();
         }
       } catch (IOException e) {
-        log("socket cleanup failed: ", e);
+        log("Socket cleanup failed: ", e);
       }
     }
 
@@ -389,7 +390,7 @@ public abstract class WebServer {
      * Handler for files API
      */
     private Response handleFileList() throws IOException {
-      log("sending file list");
+      log("Sending file list");
       JsonBuilder builder = new JsonBuilder();
       builder.append('[');
       long id = 0;
@@ -433,7 +434,7 @@ public abstract class WebServer {
       if (userToken == null) {
         userToken = requestToken;
       }
-      log("userToken=" + userToken);
+      log("UserToken=" + userToken);
       if (tokenKey.equals(userToken)) {
         if (url.startsWith("/api/login")) {
           handleFileList().send(socket, userToken);
@@ -532,7 +533,7 @@ public abstract class WebServer {
       try {
         result = getFile(path, true);
       } catch (Exception e) {
-        log("error: " + e);
+        log("Error: " + e);
         result = null;
       }
       return result != null ? result : new Response(SC_NOT_FOUND);
@@ -570,7 +571,7 @@ public abstract class WebServer {
      * Sends the response to the given socket
      */
     void send(Socket socket, String cookie) throws IOException {
-      log("sendResponse() entered");
+      log("Sending response");
       String contentLength = "Content-length: " + length + "\r\n";
       BufferedOutputStream out = new BufferedOutputStream(socket.getOutputStream());
       String code = errorCode == SC_OKAY ? SC_OKAY + " OK" : String.valueOf(errorCode);
@@ -583,7 +584,7 @@ public abstract class WebServer {
       out.write("Server: SmallBASIC for Android\r\n\r\n".getBytes(UTF_8));
       socket.setSendBufferSize(SEND_SIZE);
       int sent = toStream(out);
-      log("sent " + sent + " bytes");
+      log("Sent " + sent + " bytes");
       out.close();
     }
 
