@@ -23,7 +23,8 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
 /**
- * Minimal AppServer with adequate performance for a single user
+ * Minimal AppServer with adequate performance for a single user.
+ * Uses some older java constructs to support SDK-16
  *
  * @author chrisws
  */
@@ -83,8 +84,7 @@ public abstract class WebServer {
       try {
         Socket socket = serverSocket.accept();
         log("Accepted connection from " + socket.getRemoteSocketAddress().toString());
-        Request request = new Request(socket, token);
-        THREAD_POOL.submit(request);
+        THREAD_POOL.submit(new Request(socket, token));
       } catch (Exception e) {
         log("Server failed", e);
       }
@@ -98,18 +98,18 @@ public abstract class WebServer {
     final Socket socket;
     final String method;
     final String url;
-    final String token;
+    final String requestToken;
+    final String tokenKey;
     final List<String> headers;
     final InputStream inputStream;
-    final String tokenKey;
 
     public AbstractRequest(Socket socket, String tokenKey) throws IOException {
       this.socket = socket;
       this.tokenKey = tokenKey;
       this.inputStream = socket.getInputStream();
       this.headers = getHeaders();
-      this.token = getToken(headers);
-      String first = headers.get(0);
+      this.requestToken = getToken(headers);
+      String first = headers.size() > 0 ? headers.get(0) : null;
       String[] fields;
       if (first != null) {
         fields = first.split("\\s");
@@ -175,7 +175,7 @@ public abstract class WebServer {
       ByteArrayOutputStream line = new ByteArrayOutputStream(LINE_SIZE);
       final char[] endHeader = {'\r', '\n', '\r', '\n'};
       int index = 0;
-      int firstChar = 0;
+      int firstChar;
       for (int b = firstChar = inputStream.read(); b != -1; b = inputStream.read()) {
         if (b == endHeader[index]) {
           index++;
@@ -311,11 +311,11 @@ public abstract class WebServer {
         if (!headers.isEmpty()) {
           log("URL: " + url);
           if ("GET".equals(method)) {
-            handleGet(getParameters(url), tokenKey);
+            handleGet(getParameters(url));
           } else if ("POST".equals(method)) {
-            handlePost(getPostData(inputStream), tokenKey);
+            handlePost(getPostData(inputStream));
           } else if ("RUN".equals(method)) {
-            handleRun(inputStream, tokenKey);
+            handleRun(inputStream);
           } else {
             log("Invalid request");
           }
@@ -324,11 +324,11 @@ public abstract class WebServer {
         log("request failed", e);
       }
       finally {
-        socketCleanup();
+        afterRun();
       }
     }
 
-    private void socketCleanup() {
+    private void afterRun() {
       log("socket cleanup");
       try {
         if (socket != null) {
@@ -412,9 +412,9 @@ public abstract class WebServer {
     /**
      * Handler for GET requests
      */
-    private void handleGet(Map<String, Collection<String>> parameters, String tokenKey) throws IOException {
+    private void handleGet(Map<String, Collection<String>> parameters) throws IOException {
       if (url.startsWith("/api/download?")) {
-        if (tokenKey.equals(token)) {
+        if (tokenKey.equals(requestToken)) {
           handleDownload(parameters).send(socket, null);
         } else {
           log("Invalid token");
@@ -428,10 +428,10 @@ public abstract class WebServer {
     /**
      * Handler for POST requests
      */
-    private void handlePost(Map<String, String> data, String tokenKey) throws IOException {
+    private void handlePost(Map<String, String> data) throws IOException {
       String userToken = data.get(TOKEN);
       if (userToken == null) {
-        userToken = token;
+        userToken = requestToken;
       }
       log("userToken=" + userToken);
       if (tokenKey.equals(userToken)) {
@@ -473,8 +473,8 @@ public abstract class WebServer {
       return result;
     }
 
-    private void handleRun(InputStream inputStream, String tokenKey) throws IOException {
-      if (tokenKey.equals(token)) {
+    private void handleRun(InputStream inputStream) throws IOException {
+      if (tokenKey.equals(requestToken)) {
         execStream(inputStream);
       } else {
         log("Invalid token");
