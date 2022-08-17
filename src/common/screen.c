@@ -304,6 +304,18 @@ void osd_line(int x1, int y1, int x2, int y2);
 //
 void dev_rect(int x1, int y1, int x2, int y2, int fill) {
   int c1, c2, in1, in2;
+
+  if (x2 < x1) {
+    int x11 = x1;
+    x1 = x2;
+    x2 = x11;
+  }
+  if (y2 < y1) {
+    int y11 = y1;
+    y1 = y2;
+    y2 = y11;
+  }
+
   int px1 = x1;
   int py1 = y1;
   int px2 = x2;
@@ -409,6 +421,9 @@ void dev_window(int x1, int y1, int x2, int y2) {
   }
 }
 
+//
+// set screen width and height
+//
 void dev_resize(int width, int height) {
   if (dev_Vx2 == dev_Vdx && dev_Vx2 == os_graf_mx - 1) {
     // viewport width is full-screen
@@ -432,6 +447,9 @@ void dev_resize(int width, int height) {
   setsysvar_int(SYSVAR_YMAX, height - 1);
 }
 
+//
+// remap x/y to world coordinates
+//
 void dev_map_point(int *x, int *y) {
   *x = W2X(*x);
   *y = W2Y(*y);

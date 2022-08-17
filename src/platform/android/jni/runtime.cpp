@@ -1,6 +1,6 @@
 // This file is part of SmallBASIC
 //
-// Copyright(C) 2001-2016 Chris Warren-Smith.
+// Copyright(C) 2001-2022 Chris Warren-Smith.
 //
 // This program is distributed under the terms of the GPL v2.0 or later
 // Download the GNU Public License (GPL) from www.gnu.org
@@ -132,6 +132,7 @@ int get_sensor_events(int fd, int events, void *data) {
   return 1;
 }
 
+// callbacks from MainActivity.java
 extern "C" JNIEXPORT void JNICALL Java_net_sourceforge_smallbasic_MainActivity_onActivityPaused
   (JNIEnv *env, jclass jclazz, jboolean paused) {
   if (runtime != nullptr && !runtime->isClosing() && runtime->isActive() && os_graphics) {
@@ -140,7 +141,6 @@ extern "C" JNIEXPORT void JNICALL Java_net_sourceforge_smallbasic_MainActivity_o
   }
 }
 
-// callback from MainActivity.java
 extern "C" JNIEXPORT jboolean JNICALL Java_net_sourceforge_smallbasic_MainActivity_optionSelected
   (JNIEnv *env, jclass jclazz, jint index) {
   auto *maEvent = new MAEvent();
@@ -178,6 +178,15 @@ extern "C" JNIEXPORT void JNICALL Java_net_sourceforge_smallbasic_MainActivity_o
   if (runtime != nullptr && !runtime->isClosing() && runtime->isActive() && os_graphics) {
     runtime->onUnicodeChar(ch);
   }
+}
+
+extern "C" JNIEXPORT jboolean JNICALL Java_net_sourceforge_smallbasic_MainActivity_libraryMode
+  (JNIEnv *env, jclass jclazz) {
+#if defined(_ANDROID_LIBRARY)
+  return true;
+#else
+  return false;
+#endif
 }
 
 void onContentRectChanged(ANativeActivity *activity, const ARect *rect) {

@@ -234,10 +234,14 @@ function buildSDL() {
 }
 
 function buildAndroid() {
-   TARGET="Building for Android."
-
    defaultConditionals
 
+   AC_MSG_CHECKING([if library mode is enabled])
+   AC_ARG_WITH(library,
+   [  --with-library            Build the android as a library default=no],
+       [with_library=$with_library],
+       [with_library=no])
+   AC_MSG_RESULT([$with_library])
    AC_DEFINE(_UnixOS, 1, [Building under Unix like systems.])
    AC_DEFINE(_ANDROID, 1, [Defined for Android build.])
    AC_DEFINE(IMPL_DEV_READ, 1, [Implement dev_read()])
@@ -248,7 +252,13 @@ function buildAndroid() {
 
    TEST_DIR="src/platform/android"
    AC_SUBST(TEST_DIR)
-   (cd src/platform/android/webui && npm run build)
+   if test $with_library = no; then
+      (cd src/platform/android/webui && npm run build)
+      TARGET="Building for Android."
+   else
+      TARGET="Building for Android library."
+      AC_DEFINE(_ANDROID_LIBRARY, 1, [android library build enabled])
+   fi
 }
 
 function buildConsole() {

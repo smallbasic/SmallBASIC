@@ -112,6 +112,7 @@ public class MainActivity extends NativeActivity {
     System.loadLibrary("smallbasic");
   }
 
+  public static native boolean libraryMode();
   public static native void onActivityPaused(boolean paused);
   public static native void onResize(int width, int height);
   public static native void onUnicodeChar(int ch);
@@ -640,10 +641,12 @@ public class MainActivity extends NativeActivity {
   @Override
   protected void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
-    processIntent();
-    processSettings();
     String homeFolder = setupStorageEnvironment();
-    installSamples(homeFolder);
+    if (!libraryMode()) {
+      processIntent();
+      processSettings();
+      installSamples(homeFolder);
+    }
   }
 
   @Override
