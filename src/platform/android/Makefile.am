@@ -31,5 +31,10 @@ ndk-build-release:
 	(cd jni && ${NDK}/ndk-build NDK_DEBUG=0)
 
 release:
-	(./gradle assemble)
+	(./gradlew clean assemble)
 
+library:
+	(./gradlew clean assemble)
+	(mkdir -p dist)
+	(cp -R app/build/intermediates/stripped_native_libs/release/out/lib/ dist)
+	(cp app/build/intermediates/dex/release/minifyReleaseWithR8/classes.dex dist)

@@ -489,6 +489,10 @@ void Runtime::runShell() {
   loadConfig();
 
   strcpy(opt_modpath, getString("getModulePath"));
+
+#if defined(_ANDROID_LIBRARY)
+  runOnce(MAIN_BAS, true);
+#else
   String ipAddress = getString("getIpAddress");
   if (!ipAddress.empty()) {
     setenv("IP_ADDR", ipAddress.c_str(), 1);
@@ -504,6 +508,7 @@ void Runtime::runShell() {
     runMain(MAIN_BAS);
   }
   saveConfig();
+#endif
 
   _state = kDoneState;
   logLeaving();
