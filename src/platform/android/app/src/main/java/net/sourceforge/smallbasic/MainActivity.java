@@ -107,6 +107,7 @@ public class MainActivity extends NativeActivity {
   private MediaPlayer _mediaPlayer = null;
   private LocationAdapter _locationAdapter = null;
   private TextToSpeechAdapter _tts;
+  private Storage _storage;
 
   static {
     System.loadLibrary("smallbasic");
@@ -254,18 +255,6 @@ public class MainActivity extends NativeActivity {
     return result;
   }
 
-  public String getExternalStorage() {
-    String result = null;
-    File files = getExternalFilesDir(null);
-    if (files != null) {
-      String externalFiles = files.getAbsolutePath();
-      if (isPublicStorage(externalFiles)) {
-        result = externalFiles;
-      }
-    }
-    return result;
-  }
-
   public String getIpAddress() {
     String result = "";
     try {
@@ -291,7 +280,7 @@ public class MainActivity extends NativeActivity {
   @SuppressLint("MissingPermission")
   public String getLocation() {
     StringBuilder result = new StringBuilder("{");
-    if (permitted(Manifest.permission.ACCESS_FINE_LOCATION)) {
+    if (locationPermitted()) {
       LocationManager locationService = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
       Location location = _locationAdapter != null ? _locationAdapter.getLocation() : null;
       if (locationService != null) {
@@ -485,7 +474,7 @@ public class MainActivity extends NativeActivity {
   public boolean requestLocationUpdates() {
     final LocationManager locationService = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
     boolean result = false;
-    if (!permitted(Manifest.permission.ACCESS_FINE_LOCATION)) {
+    if (!locationPermitted()) {
       checkPermission(Manifest.permission.ACCESS_FINE_LOCATION, REQUEST_LOCATION_PERMISSION);
     } else if (locationService != null) {
       final Criteria criteria = new Criteria();
@@ -641,11 +630,11 @@ public class MainActivity extends NativeActivity {
   @Override
   protected void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
-    String homeFolder = setupStorageEnvironment();
+    setupStorageEnvironment();
     if (!libraryMode()) {
       processIntent();
       processSettings();
-      installSamples(homeFolder);
+      installSamples();
     }
   }
 
@@ -728,7 +717,7 @@ public class MainActivity extends NativeActivity {
   }
 
   private void execStream(InputStream inputStream) throws IOException {
-    File outputFile = new File(getInternalStorage(), WEB_BAS);
+    File outputFile = new File(_storage.getInternal(), WEB_BAS);
     BufferedWriter output = new BufferedWriter(new FileWriter(outputFile));
     Log.i(TAG, "execStream() entered");
     String line = readLine(inputStream);
@@ -739,39 +728,6 @@ public class MainActivity extends NativeActivity {
     output.close();
     Log.i(TAG, "invoke runFile: " + outputFile.getAbsolutePath());
     runFile(outputFile.getAbsolutePath());
-  }
-
-  private String getInternalStorage() {
-    return getFilesDir().getAbsolutePath();
-  }
-
-  private String getLegacyStorage() {
-    String result;
-    String path = Environment.getExternalStorageDirectory().getAbsolutePath();
-    if (isPublicStorage(path)) {
-      File sb = new File(path, FOLDER_NAME);
-      if ((sb.isDirectory() && sb.canWrite()) || sb.mkdirs()) {
-        result = path + "/" + FOLDER_NAME;
-      } else {
-        result = path;
-      }
-    } else {
-      result = null;
-    }
-    return result;
-  }
-
-  private String getMediaStorage() {
-    String result = null;
-    if (android.os.Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-      // https://commonsware.com/blog/2019/06/07/death-external-storage-end-saga.html
-      File[] dirs = getExternalMediaDirs();
-      String path = dirs != null && dirs.length > 0 ? dirs[0].getAbsolutePath() : null;
-      if (isPublicStorage(path)) {
-        result = path;
-      }
-    }
-    return result;
   }
 
   private Uri getSharedFile(File file) {
@@ -800,7 +756,8 @@ public class MainActivity extends NativeActivity {
     }
   }
 
-  private void installSamples(String toDir) {
+  private void installSamples() {
+    String toDir = _storage.getExternal();
     File[] toFiles = new File(toDir).listFiles(new BasFileFilter());
     if (toFiles == null || toFiles.length == 0) {
       // only attempt with a clean destination folder
@@ -814,18 +771,8 @@ public class MainActivity extends NativeActivity {
     }
   }
 
-  private boolean isPublicStorage(String dir) {
-    boolean result;
-    if (dir == null || dir.isEmpty()) {
-      result = false;
-    } else {
-      File file = new File(dir);
-      result = file.isDirectory() && file.canRead() && file.canWrite();
-    }
-    return result;
-  }
-
-  private boolean permitted(String permission) {
+  private boolean locationPermitted() {
+    String permission = Manifest.permission.ACCESS_FINE_LOCATION;
     return (ContextCompat.checkSelfPermission(this, permission) == PackageManager.PERMISSION_GRANTED);
   }
 
@@ -902,31 +849,89 @@ public class MainActivity extends NativeActivity {
   }
 
   private String saveSchemeData(final String buffer) throws IOException {
-    File outputFile = new File(getInternalStorage(), SCHEME_BAS);
+    File outputFile = new File(_storage.getInternal(), SCHEME_BAS);
     BufferedWriter output = new BufferedWriter(new FileWriter(outputFile));
     output.write(buffer);
     output.close();
     return outputFile.getAbsolutePath();
   }
 
-  private String setupStorageEnvironment() {
-    setenv("INTERNAL_DIR", getInternalStorage());
-    setenv("LEGACY_DIR", getMediaStorage());
-    String legacyStorage = getLegacyStorage();
-    String externalStorage;
-    if (isPublicStorage(legacyStorage)) {
-      externalStorage = legacyStorage;
-    } else {
-      externalStorage = getExternalStorage();
-    }
-    setenv("EXTERNAL_DIR", externalStorage);
-    return externalStorage;
+  private void setupStorageEnvironment() {
+    _storage = new Storage();
+    setenv("EXTERNAL_DIR", _storage.getExternal());
+    setenv("INTERNAL_DIR", _storage.getInternal());
+    setenv("LEGACY_DIR", _storage.getMedia());
   }
 
   private static class BasFileFilter implements FilenameFilter {
     @Override
     public boolean accept(File dir, String name) {
       return name.endsWith(".bas");
+    }
+  }
+
+  private final class Storage {
+    private final String _external;
+    private final String _internal;
+    private final String _media;
+
+    private Storage() {
+      String external = null;
+      String media = null;
+
+      String path = Environment.getExternalStorageDirectory().getAbsolutePath();
+      if (isPublicStorage(path)) {
+        File sb = new File(path, FOLDER_NAME);
+        if ((sb.isDirectory() && sb.canWrite()) || sb.mkdirs()) {
+          external = path + "/" + FOLDER_NAME;
+        }
+      }
+
+      if (external == null) {
+        File files = getExternalFilesDir(null);
+        if (files != null) {
+          String externalFiles = files.getAbsolutePath();
+          if (isPublicStorage(externalFiles)) {
+            external = externalFiles;
+          }
+        }
+      }
+
+      if (android.os.Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+        // https://commonsware.com/blog/2019/06/07/death-external-storage-end-saga.html
+        File[] dirs = getExternalMediaDirs();
+        path = dirs != null && dirs.length > 0 ? dirs[0].getAbsolutePath() : null;
+        if (isPublicStorage(path)) {
+          media = path;
+        }
+      }
+
+      this._external = external;
+      this._internal = getFilesDir().getAbsolutePath();
+      this._media = media;
+    }
+
+    public String getExternal() {
+      return _external;
+    }
+
+    public String getInternal() {
+      return _internal;
+    }
+
+    public String getMedia() {
+      return _media;
+    }
+
+    private boolean isPublicStorage(String dir) {
+      boolean result;
+      if (dir == null || dir.isEmpty()) {
+        result = false;
+      } else {
+        File file = new File(dir);
+        result = file.isDirectory() && file.canRead() && file.canWrite();
+      }
+      return result;
     }
   }
 
@@ -947,12 +952,12 @@ public class MainActivity extends NativeActivity {
         log("Opened " + name + " " + length + " bytes");
         result = new Response(getAssets().open(name), length);
       } else {
-        File file = getFile(getExternalStorage(), path);
+        File file = getFile(_storage.getExternal(), path);
         if (file == null) {
-          file = getFile(getMediaStorage(), path);
+          file = getFile(_storage.getMedia(), path);
         }
         if (file == null) {
-          file = getFile(getInternalStorage(), path);
+          file = getFile(_storage.getInternal(), path);
         }
         if (file != null) {
           result = new Response(new FileInputStream(file), file.length());
@@ -966,9 +971,9 @@ public class MainActivity extends NativeActivity {
     @Override
     protected Collection<FileData> getFileData() throws IOException {
       Collection<FileData> result = new ArrayList<>();
-      result.addAll(getFiles(new File(getExternalStorage())));
-      result.addAll(getFiles(new File(getMediaStorage())));
-      result.addAll(getFiles(new File(getInternalStorage())));
+      result.addAll(getFiles(new File(_storage.getExternal())));
+      result.addAll(getFiles(new File(_storage.getMedia())));
+      result.addAll(getFiles(new File(_storage.getInternal())));
       return result;
     }
 
@@ -987,31 +992,31 @@ public class MainActivity extends NativeActivity {
       if (to == null || !to.endsWith(".bas")) {
         throw new IOException("Invalid file name: " + to);
       }
-      File toFile = getFile(getInternalStorage(), to);
+      File toFile = getFile(_storage.getInternal(), to);
       if (toFile == null) {
-        toFile = getFile(getExternalStorage(), to);
+        toFile = getFile(_storage.getExternal(), to);
       }
       if (toFile != null) {
         throw new IOException("File already exists");
       }
-      File fromFile = getFile(getInternalStorage(), from);
+      File fromFile = getFile(_storage.getInternal(), from);
       if (fromFile == null) {
-        fromFile = getFile(getExternalStorage(), from);
+        fromFile = getFile(_storage.getExternal(), from);
       }
       if (fromFile == null) {
-        fromFile = getFile(getInternalStorage(), from);
+        fromFile = getFile(_storage.getInternal(), from);
       }
       if (fromFile == null) {
         throw new IOException("Previous file does not exist");
       }
-      if (!fromFile.renameTo(new File(getExternalStorage(), to))) {
+      if (!fromFile.renameTo(new File(_storage.getExternal(), to))) {
         throw new IOException("File rename failed");
       }
     }
 
     @Override
     protected void saveFile(String fileName, byte[] content) throws IOException {
-      File file = new File(getExternalStorage(), fileName);
+      File file = new File(_storage.getExternal(), fileName);
       if (file.exists()) {
         throw new IOException("File already exists: " + fileName);
       } else if (file.isDirectory()) {

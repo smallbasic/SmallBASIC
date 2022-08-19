@@ -92,7 +92,7 @@ function renameFile(from, to, success, fail) {
   callApi('/api/rename', body, success, fail);
 }
 
-function copyFiles(event, success, fail) {
+function copyFiles(event, success, progress, fail) {
   const fileReader = new FileReader();
   const input = event.target;
   const files = input.files;
@@ -100,6 +100,7 @@ function copyFiles(event, success, fail) {
   fileReader.onload = () => {
     upload(files[index].name, fileReader.result, () => {
       if (++index < files.length) {
+        progress(index);
         fileReader.readAsText(files[index]);
       } else {
         getFiles(success, fail);
@@ -164,7 +165,11 @@ function GridToolbarUpload(props) {
       props.setRows(newRows);
       setSeverity("success");
       setError(`Uploaded ${length} files`);
+    }, (count) => {
+      setSeverity("success");
+      setError(`Uploaded ${count} files`);
     }, (error) => {
+      setSeverity("error");
       setError(error);
       // show any successful uploads
       getFiles((newRows) => {
