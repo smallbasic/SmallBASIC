@@ -952,13 +952,7 @@ public class MainActivity extends NativeActivity {
         log("Opened " + name + " " + length + " bytes");
         result = new Response(getAssets().open(name), length);
       } else {
-        File file = getFile(_storage.getExternal(), path);
-        if (file == null) {
-          file = getFile(_storage.getMedia(), path);
-        }
-        if (file == null) {
-          file = getFile(_storage.getInternal(), path);
-        }
+        File file = getFile(path);
         if (file != null) {
           result = new Response(new FileInputStream(file), file.length());
         } else {
@@ -992,20 +986,11 @@ public class MainActivity extends NativeActivity {
       if (to == null || !to.endsWith(".bas")) {
         throw new IOException("Invalid file name: " + to);
       }
-      File toFile = getFile(_storage.getInternal(), to);
-      if (toFile == null) {
-        toFile = getFile(_storage.getExternal(), to);
-      }
+      File toFile = getFile(to);
       if (toFile != null) {
         throw new IOException("File already exists");
       }
-      File fromFile = getFile(_storage.getInternal(), from);
-      if (fromFile == null) {
-        fromFile = getFile(_storage.getExternal(), from);
-      }
-      if (fromFile == null) {
-        fromFile = getFile(_storage.getInternal(), from);
-      }
+      File fromFile = getFile(from);
       if (fromFile == null) {
         throw new IOException("Previous file does not exist");
       }
@@ -1031,6 +1016,17 @@ public class MainActivity extends NativeActivity {
         result = null;
       }
       return result;
+    }
+
+    private File getFile(String path) {
+      File file = getFile(_storage.getExternal(), path);
+      if (file == null) {
+        file = getFile(_storage.getMedia(), path);
+      }
+      if (file == null) {
+        file = getFile(_storage.getInternal(), path);
+      }
+      return file;
     }
 
     private long getFileLength(String name) throws IOException {
