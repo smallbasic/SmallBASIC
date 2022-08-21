@@ -38,17 +38,14 @@ import android.view.View;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.Toast;
 
-import androidx.annotation.NonNull;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.core.content.FileProvider;
 
-import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.io.DataInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -64,10 +61,10 @@ import java.io.UnsupportedEncodingException;
 import java.net.Inet4Address;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
-import java.net.ServerSocket;
-import java.net.Socket;
 import java.net.SocketException;
 import java.net.URLDecoder;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Date;
 import java.util.Enumeration;
 import java.util.HashMap;
@@ -97,9 +94,10 @@ public class MainActivity extends NativeActivity {
   private static final int BASE_FONT_SIZE = 18;
   private static final long LOCATION_INTERVAL = 1000;
   private static final float LOCATION_DISTANCE = 1;
-  private static final int REQUEST_STORAGE_PERMISSION = 1;
   private static final int REQUEST_LOCATION_PERMISSION = 2;
   private static final String FOLDER_NAME = "SmallBASIC";
+  private static final int COPY_BUFFER_SIZE = 1024;
+  private static final String[] SAMPLES = {"welcome.bas"};
   private String _startupBas = null;
   private boolean _untrusted = false;
   private final ExecutorService _audioExecutor = Executors.newSingleThreadExecutor();
@@ -109,11 +107,13 @@ public class MainActivity extends NativeActivity {
   private MediaPlayer _mediaPlayer = null;
   private LocationAdapter _locationAdapter = null;
   private TextToSpeechAdapter _tts;
+  private Storage _storage;
 
   static {
     System.loadLibrary("smallbasic");
   }
 
+  public static native boolean libraryMode();
   public static native void onActivityPaused(boolean paused);
   public static native void onResize(int width, int height);
   public static native void onUnicodeChar(int ch);
@@ -280,7 +280,7 @@ public class MainActivity extends NativeActivity {
   @SuppressLint("MissingPermission")
   public String getLocation() {
     StringBuilder result = new StringBuilder("{");
-    if (permitted(Manifest.permission.ACCESS_FINE_LOCATION)) {
+    if (locationPermitted()) {
       LocationManager locationService = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
       Location location = _locationAdapter != null ? _locationAdapter.getLocation() : null;
       if (locationService != null) {
@@ -398,16 +398,6 @@ public class MainActivity extends NativeActivity {
     return super.onPrepareOptionsMenu(menu);
   }
 
-  @Override
-  public void onRequestPermissionsResult(int requestCode,
-                                         @NonNull String[] permissions,
-                                         @NonNull int[] grantResults) {
-    super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-    if (requestCode == REQUEST_STORAGE_PERMISSION && grantResults[0] != PackageManager.PERMISSION_DENIED) {
-      setupStorageEnvironment(true);
-    }
-  }
-
   public void optionsBox(final String[] items) {
     this._options = items;
     runOnUiThread(new Runnable() {
@@ -449,10 +439,10 @@ public class MainActivity extends NativeActivity {
     }).start();
   }
 
-  public void playTone(int frq, int dur, int vol, boolean bgplay) {
+  public void playTone(int frq, int dur, int vol, boolean backgroundPlay) {
     float volume = (vol / 100f);
     final Sound sound = new Sound(frq, dur, volume);
-    if (bgplay) {
+    if (backgroundPlay) {
       _sounds.add(sound);
       _audioExecutor.execute(new Runnable() {
         @Override
@@ -484,7 +474,7 @@ public class MainActivity extends NativeActivity {
   public boolean requestLocationUpdates() {
     final LocationManager locationService = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
     boolean result = false;
-    if (!permitted(Manifest.permission.ACCESS_FINE_LOCATION)) {
+    if (!locationPermitted()) {
       checkPermission(Manifest.permission.ACCESS_FINE_LOCATION, REQUEST_LOCATION_PERMISSION);
     } else if (locationService != null) {
       final Criteria criteria = new Criteria();
@@ -640,9 +630,12 @@ public class MainActivity extends NativeActivity {
   @Override
   protected void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
-    processIntent();
-    processSettings();
-    checkFilePermission();
+    setupStorageEnvironment();
+    if (!libraryMode()) {
+      processIntent();
+      processSettings();
+      installSamples();
+    }
   }
 
   @Override
@@ -670,35 +663,6 @@ public class MainActivity extends NativeActivity {
     }
   }
 
-  private String buildRunForm(String buffer, String token) {
-    return "<form method=post>" +
-      "<input type=hidden name=token value='" + token +
-      "'><textarea cols=60 rows=30 name=src>" + buffer + "</textarea>" +
-      "<input value=Run name=run type=submit style='vertical-align:top'>" +
-      "<input value=Save name=save type=submit style='vertical-align:top'>" +
-      "</form>";
-  }
-
-  private String buildTokenForm() {
-    return "<p>Enter access token:</p><form method=post><input type=text name=token>" +
-      "<input value=OK name=okay type=submit style='vertical-align:top'></form>";
-  }
-
-  private void checkFilePermission() {
-    if (!permitted(Manifest.permission.WRITE_EXTERNAL_STORAGE)) {
-      setupStorageEnvironment(false);
-      Runnable handler = new Runnable() {
-        @Override
-        public void run() {
-          checkPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE, REQUEST_STORAGE_PERMISSION);
-        }
-      };
-      new Handler().postDelayed(handler, 250);
-    } else {
-      setupStorageEnvironment(true);
-    }
-  }
-
   private void checkPermission(final String permission, final int result) {
     runOnUiThread(new Runnable() {
       @Override
@@ -709,34 +673,21 @@ public class MainActivity extends NativeActivity {
     });
   }
 
-  private void copy(File src, File dst) throws IOException {
-    InputStream in = new FileInputStream(src);
+  private void copy(InputStream in, OutputStream out) throws IOException {
     try {
-      OutputStream out = new FileOutputStream(dst);
-      try {
-        byte[] buf = new byte[1024];
-        int len;
-        while ((len = in.read(buf)) > 0) {
-          out.write(buf, 0, len);
-        }
-      } finally {
-        out.close();
+      byte[] buf = new byte[COPY_BUFFER_SIZE];
+      int len;
+      while ((len = in.read(buf)) > 0) {
+        out.write(buf, 0, len);
       }
     } finally {
+      out.close();
       in.close();
     }
   }
 
-  private String execBuffer(final String buffer, final String name, boolean run) throws IOException {
-    File outputFile = new File(getInternalStorage(), name);
-    BufferedWriter output = new BufferedWriter(new FileWriter(outputFile));
-    output.write(buffer);
-    output.close();
-    if (run) {
-      Log.i(TAG, "invoke runFile: " + outputFile.getAbsolutePath());
-      runFile(outputFile.getAbsolutePath());
-    }
-    return outputFile.getAbsolutePath();
+  private void copy(File src, File dst) throws IOException {
+    copy(new FileInputStream(src), new FileOutputStream(dst));
   }
 
   private void execScheme(final String data) {
@@ -758,81 +709,25 @@ public class MainActivity extends NativeActivity {
       } else {
         bas = URLDecoder.decode(input, "utf-8");
       }
-      _startupBas = execBuffer(bas, SCHEME_BAS, false);
+      _startupBas = saveSchemeData(bas);
       _untrusted = true;
     } catch (IOException e) {
       Log.i(TAG, "saveSchemeData failed: ", e);
     }
   }
 
-  private void execStream(final String line, DataInputStream inputStream) throws IOException {
-    File outputFile = new File(getInternalStorage(), WEB_BAS);
+  private void execStream(InputStream inputStream) throws IOException {
+    File outputFile = new File(_storage.getInternal(), WEB_BAS);
     BufferedWriter output = new BufferedWriter(new FileWriter(outputFile));
     Log.i(TAG, "execStream() entered");
-    String nextLine = line;
-    while (nextLine != null) {
-      output.write(nextLine + "\n");
-      nextLine = readLine(inputStream);
+    String line = readLine(inputStream);
+    while (line != null) {
+      output.write(line + "\n");
+      line = readLine(inputStream);
     }
     output.close();
     Log.i(TAG, "invoke runFile: " + outputFile.getAbsolutePath());
     runFile(outputFile.getAbsolutePath());
-  }
-
-  private String getExternalStorage() {
-    String result;
-    String path = Environment.getExternalStorageDirectory().getAbsolutePath();
-    if (isPublicStorage(path)) {
-      File sb = new File(path, FOLDER_NAME);
-      if ((sb.isDirectory() && sb.canWrite()) || sb.mkdirs()) {
-        result = path + "/" + FOLDER_NAME;
-      } else {
-        result = path;
-      }
-    } else if (android.os.Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-      // https://commonsware.com/blog/2019/06/07/death-external-storage-end-saga.html
-      File[] dirs = getExternalMediaDirs();
-      result = dirs != null && dirs.length > 0 ? dirs[0].getAbsolutePath() : getInternalStorage();
-    } else {
-      result = getInternalStorage();
-    }
-    return result;
-  }
-
-  private String getInternalStorage() {
-    return getFilesDir().getAbsolutePath();
-  }
-
-  private Map<String, String> getPostData(DataInputStream inputStream, final String line) throws IOException {
-    int length = 0;
-    final String lengthHeader = "content-length: ";
-    String nextLine = line;
-    while (nextLine != null && nextLine.length() > 0) {
-      if (nextLine.toLowerCase(Locale.ENGLISH).startsWith(lengthHeader)) {
-        length = Integer.parseInt(nextLine.substring(lengthHeader.length()));
-      }
-      nextLine = readLine(inputStream);
-    }
-    StringBuilder postData = new StringBuilder();
-    for (int i = 0; i < length; i++) {
-      int b = inputStream.read();
-      if (b == -1) {
-        break;
-      } else {
-        postData.append(Character.toChars(b));
-      }
-    }
-    String[] fields = postData.toString().split("&");
-    Map<String, String> result = new HashMap<>();
-    for (String nextField : fields) {
-      int eq = nextField.indexOf("=");
-      if (eq != -1) {
-        String key = nextField.substring(0, eq);
-        String value = URLDecoder.decode(nextField.substring(eq + 1), "utf-8");
-        result.put(key, value);
-      }
-    }
-    return result;
   }
 
   private Uri getSharedFile(File file) {
@@ -852,48 +747,32 @@ public class MainActivity extends NativeActivity {
     return result;
   }
 
-  private String getString(final byte[] promptBytes) {
+  private String getString(final byte[] bytes) {
     try {
-      return new String(promptBytes, CP1252);
+      return new String(bytes, CP1252);
     } catch (UnsupportedEncodingException e) {
       Log.i(TAG, "getString failed: ", e);
       return "";
     }
   }
 
-  private boolean isPublicStorage(String dir) {
-    boolean result;
-    if (dir == null || dir.isEmpty()) {
-      result = false;
-    } else {
-      File file = new File(dir);
-      result = file.isDirectory() && file.canRead() && file.canWrite();
-    }
-    return result;
-  }
-
-  private void migrateFiles(File fromDir, File toDir) {
-    FilenameFilter filter = new FilenameFilter() {
-      @Override
-      public boolean accept(File dir, String name) {
-        return name != null && name.endsWith(".bas");
-      }
-    };
-    File[] toFiles = toDir.listFiles(filter);
-    File[] fromFiles = fromDir.listFiles(filter);
-    if (fromFiles != null && (toFiles == null || toFiles.length == 0)) {
-      // only attempt file copy into a clean destination folder
-      for (File file : fromFiles) {
-        try {
-          copy(file, new File(toDir, file.getName()));
-        } catch (IOException e) {
-          Log.d(TAG, "failed to copy: ", e);
+  private void installSamples() {
+    String toDir = _storage.getExternal();
+    File[] toFiles = new File(toDir).listFiles(new BasFileFilter());
+    if (toFiles == null || toFiles.length == 0) {
+      // only attempt with a clean destination folder
+      try {
+        for (String sample : SAMPLES) {
+          copy(getAssets().open("samples/" + sample), new FileOutputStream(new File(toDir, sample)));
         }
+      } catch (IOException e) {
+        Log.d(TAG, "Failed to copy sample: ", e);
       }
     }
   }
 
-  private boolean permitted(String permission) {
+  private boolean locationPermitted() {
+    String permission = Manifest.permission.ACCESS_FINE_LOCATION;
     return (ContextCompat.checkSelfPermission(this, permission) == PackageManager.PERMISSION_GRANTED);
   }
 
@@ -913,18 +792,30 @@ public class MainActivity extends NativeActivity {
   }
 
   private void processSettings() {
+    FileInputStream is = null;
     try {
+      is = getApplication().openFileInput("settings.txt");
       Properties p = new Properties();
-      p.load(getApplication().openFileInput("settings.txt"));
+      p.load(is);
       int socket = Integer.parseInt(p.getProperty("serverSocket", "-1"));
       String token = p.getProperty("serverToken", new Date().toString());
       if (socket > 1023 && socket < 65536) {
-        startServer(socket, token);
+        WebServer webServer = new WebServerImpl();
+        webServer.run(socket, token);
       } else {
         Log.i(TAG, "Web service disabled");
       }
     } catch (Exception e) {
       Log.i(TAG, "Failed to start web service: ", e);
+    } finally {
+      if (is != null) {
+        try {
+          is.close();
+        }
+        catch (IOException e) {
+          Log.i(TAG, "Failed to close settings.txt: ", e);
+        }
+      }
     }
   }
 
@@ -946,7 +837,7 @@ public class MainActivity extends NativeActivity {
     return result.toString();
   }
 
-  private String readLine(DataInputStream inputReader) throws IOException {
+  private String readLine(InputStream inputReader) throws IOException {
     ByteArrayOutputStream out = new ByteArrayOutputStream(128);
     int b;
     for (b = inputReader.read(); b != -1 && b != '\n'; b = inputReader.read()) {
@@ -957,113 +848,213 @@ public class MainActivity extends NativeActivity {
     return b == -1 ? null : out.size() == 0 ? "" : out.toString();
   }
 
-  private void runServer(final int socketNum, final String token) throws IOException {
-    Log.i(TAG, "Listening :" + socketNum);
-    Log.i(TAG, "Token :" + token);
-    ServerSocket serverSocket;
-    try {
-      serverSocket = new ServerSocket(socketNum);
+  private String saveSchemeData(final String buffer) throws IOException {
+    File outputFile = new File(_storage.getInternal(), SCHEME_BAS);
+    BufferedWriter output = new BufferedWriter(new FileWriter(outputFile));
+    output.write(buffer);
+    output.close();
+    return outputFile.getAbsolutePath();
+  }
+
+  private void setupStorageEnvironment() {
+    _storage = new Storage();
+    setenv("EXTERNAL_DIR", _storage.getExternal());
+    setenv("INTERNAL_DIR", _storage.getInternal());
+    setenv("LEGACY_DIR", _storage.getMedia());
+  }
+
+  private static class BasFileFilter implements FilenameFilter {
+    @Override
+    public boolean accept(File dir, String name) {
+      return name.endsWith(".bas");
     }
-    catch (IllegalArgumentException e) {
-      Log.i(TAG, "Failed to start server: ", e);
-      serverSocket = null;
-    }
-    while (serverSocket != null) {
-      Socket socket = null;
-      DataInputStream inputStream = null;
-      try {
-        socket = serverSocket.accept();
-        Log.i(TAG, "Accepted connection from " + socket.getRemoteSocketAddress().toString());
-        inputStream = new DataInputStream(socket.getInputStream());
-        String line = readLine(inputStream);
-        if (line != null) {
-          String[] fields = line.split("\\s");
-          if ("GET".equals(fields[0])) {
-            Log.i(TAG, line);
-            sendResponse(socket, buildTokenForm());
-          } else if ("POST".equals(fields[0])) {
-            Map<String, String> postData = getPostData(inputStream, line);
-            String userToken = postData.get("token");
-            Log.i(TAG, "userToken="+ userToken);
-            if (token.equals(userToken)) {
-              String buffer = postData.get("src");
-              if (buffer != null) {
-                execBuffer(buffer, WEB_BAS, postData.get("run") != null);
-                sendResponse(socket, buildRunForm(buffer, token));
-              } else {
-                File inputFile = new File(getInternalStorage(), WEB_BAS);
-                sendResponse(socket, buildRunForm(readBuffer(inputFile), token));
-              }
-            } else {
-              // invalid token
-              sendResponse(socket, buildTokenForm());
-            }
-            Log.i(TAG, "Sent POST response");
-          } else if (line.contains(token)) {
-            execStream(line, inputStream);
-          } else {
-            Log.i(TAG, "Invalid request");
+  }
+
+  private final class Storage {
+    private final String _external;
+    private final String _internal;
+    private final String _media;
+
+    private Storage() {
+      String external = null;
+      String media = null;
+
+      String path = Environment.getExternalStorageDirectory().getAbsolutePath();
+      if (isPublicStorage(path)) {
+        File sb = new File(path, FOLDER_NAME);
+        if ((sb.isDirectory() && sb.canWrite()) || sb.mkdirs()) {
+          external = path + "/" + FOLDER_NAME;
+        }
+      }
+
+      if (external == null) {
+        File files = getExternalFilesDir(null);
+        if (files != null) {
+          String externalFiles = files.getAbsolutePath();
+          if (isPublicStorage(externalFiles)) {
+            external = externalFiles;
           }
         }
       }
-      catch (IOException e) {
-        Log.i(TAG, "Server failed: ", e);
-        break;
-      }
-      finally {
-        Log.i(TAG, "socket cleanup");
-        if (socket != null) {
-          socket.close();
-        }
-        if (inputStream != null) {
-          inputStream.close();
+
+      if (android.os.Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+        // https://commonsware.com/blog/2019/06/07/death-external-storage-end-saga.html
+        File[] dirs = getExternalMediaDirs();
+        path = dirs != null && dirs.length > 0 ? dirs[0].getAbsolutePath() : null;
+        if (isPublicStorage(path)) {
+          media = path;
         }
       }
+
+      this._external = external;
+      this._internal = getFilesDir().getAbsolutePath();
+      this._media = media;
     }
-    Log.i(TAG, "server stopped");
-  }
 
-  private void sendResponse(Socket socket, String content) throws IOException {
-    Log.i(TAG, "sendResponse() entered");
-    String contentLength ="Content-length: " + content.length() + "\r\n";
-    BufferedOutputStream out = new BufferedOutputStream(socket.getOutputStream());
-    out.write("HTTP/1.0 200 OK\r\n".getBytes());
-    out.write("Content-type: text/html\r\n".getBytes());
-    out.write(contentLength.getBytes());
-    out.write("Server: SmallBASIC for Android\r\n\r\n".getBytes());
-    out.write(content.getBytes());
-    out.flush();
-    out.close();
-  }
+    public String getExternal() {
+      return _external;
+    }
 
-  private void setupStorageEnvironment(boolean external) {
-    setenv("INTERNAL_DIR", getInternalStorage());
-    if (external) {
-      String externalDir = getExternalStorage();
-      File files = getExternalFilesDir(null);
-      if (files != null) {
-        String externalFiles = files.getAbsolutePath();
-        if (!externalDir.equals(externalFiles) && isPublicStorage(externalFiles)) {
-          migrateFiles(new File(externalDir), files);
-          setenv("LEGACY_DIR", externalDir);
-          externalDir = externalFiles;
-        }
+    public String getInternal() {
+      return _internal;
+    }
+
+    public String getMedia() {
+      return _media;
+    }
+
+    private boolean isPublicStorage(String dir) {
+      boolean result;
+      if (dir == null || dir.isEmpty()) {
+        result = false;
+      } else {
+        File file = new File(dir);
+        result = file.isDirectory() && file.canRead() && file.canWrite();
       }
-      setenv("EXTERNAL_DIR", externalDir);
+      return result;
     }
   }
 
-  private void startServer(final int socketNum, final String token) {
-    Thread socketThread = new Thread(new Runnable() {
-      public void run() {
-        try {
-          runServer(socketNum, token);
-        }
-        catch (IOException e) {
-          Log.i(TAG, "startServer failed: ", e);
+  private class WebServerImpl extends WebServer {
+    private final Map<String, Long> fileLengths = new HashMap<>();
+
+    @Override
+    protected void execStream(InputStream inputStream) throws IOException {
+      MainActivity.this.execStream(inputStream);
+    }
+
+    @Override
+    protected Response getFile(String path, boolean asset) throws IOException {
+      Response result;
+      if (asset) {
+        String name = "webui/" + path;
+        long length = getFileLength(name);
+        log("Opened " + name + " " + length + " bytes");
+        result = new Response(getAssets().open(name), length);
+      } else {
+        File file = getFile(path);
+        if (file != null) {
+          result = new Response(new FileInputStream(file), file.length());
+        } else {
+          throw new IOException("File not found: " + path);
         }
       }
-    });
-    socketThread.start();
-  }
+      return result;
+    }
+
+    @Override
+    protected Collection<FileData> getFileData() throws IOException {
+      Collection<FileData> result = new ArrayList<>();
+      result.addAll(getFiles(new File(_storage.getExternal())));
+      result.addAll(getFiles(new File(_storage.getMedia())));
+      result.addAll(getFiles(new File(_storage.getInternal())));
+      return result;
+    }
+
+    @Override
+    protected void log(String message, Exception exception) {
+      Log.i(TAG, message, exception);
+    }
+
+    @Override
+    protected void log(String message) {
+      Log.i(TAG, message);
+    }
+
+    @Override
+    protected void renameFile(String from, String to) throws IOException {
+      if (to == null || !to.endsWith(".bas")) {
+        throw new IOException("Invalid file name: " + to);
+      }
+      File toFile = getFile(to);
+      if (toFile != null) {
+        throw new IOException("File already exists");
+      }
+      File fromFile = getFile(from);
+      if (fromFile == null) {
+        throw new IOException("Previous file does not exist");
+      }
+      if (!fromFile.renameTo(new File(_storage.getExternal(), to))) {
+        throw new IOException("File rename failed");
+      }
+    }
+
+    @Override
+    protected void saveFile(String fileName, byte[] content) throws IOException {
+      File file = new File(_storage.getExternal(), fileName);
+      if (file.exists()) {
+        throw new IOException("File already exists: " + fileName);
+      } else if (file.isDirectory()) {
+        throw new IOException("Invalid file name: " + fileName);
+      }
+      copy(new ByteArrayInputStream(content), new FileOutputStream(file));
+    }
+
+    private File getFile(String parent, String path) {
+      File result = new File(parent, path);
+      if (!result.exists() || !result.canRead() || result.isDirectory()) {
+        result = null;
+      }
+      return result;
+    }
+
+    private File getFile(String path) {
+      File file = getFile(_storage.getExternal(), path);
+      if (file == null) {
+        file = getFile(_storage.getMedia(), path);
+      }
+      if (file == null) {
+        file = getFile(_storage.getInternal(), path);
+      }
+      return file;
+    }
+
+    private long getFileLength(String name) throws IOException {
+      Long length = fileLengths.get(name);
+      if (length == null) {
+        length = 0L;
+        InputStream inputStream = getAssets().open(name);
+        while (inputStream.available() > 0) {
+          int unused = inputStream.read();
+          length++;
+        }
+        inputStream.close();
+        fileLengths.put(name, length);
+      }
+      return length;
+    }
+
+    private Collection<FileData> getFiles(File path) {
+      Collection<FileData> result = new ArrayList<>();
+      if (path.isDirectory() && path.canRead()) {
+        File[] files = path.listFiles(new BasFileFilter());
+        if (files != null) {
+          for (File file : files) {
+            result.add(new FileData(file));
+          }
+        }
+      }
+      return result;
+    }
+  };
 }

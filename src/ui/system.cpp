@@ -1,6 +1,6 @@
 // This file is part of SmallBASIC
 //
-// Copyright(C) 2001-2019 Chris Warren-Smith.
+// Copyright(C) 2001-2022 Chris Warren-Smith.
 //
 // This program is distributed under the terms of the GPL v2.0 or later
 // Download the GNU Public License (GPL) from www.gnu.org
@@ -1122,9 +1122,11 @@ void System::showMenu() {
         _systemMenu[index++] = MENU_ZOOM_UP;
         _systemMenu[index++] = MENU_ZOOM_DN;
 #endif
+#if !defined(_ANDROID_LIBRARY)
         sprintf(buffer, MENU_STR_EDITOR, opt_ide == IDE_NONE ? MENU_STR_OFF : MENU_STR_ON);
         items->add(new String(buffer));
         _systemMenu[index++] = MENU_EDITMODE;
+#endif
         sprintf(buffer, MENU_STR_THEME, themeName());
         items->add(new String(buffer));
         _systemMenu[index++] = MENU_THEME;
