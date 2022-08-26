@@ -1028,7 +1028,7 @@ void cmd_str1(long funcCode, var_t *arg, var_t *r) {
     // str <- RTRIM$(s)
     //
     if (!v_is_type(arg, V_STR)) {
-      v_init(r);
+      v_set(r, arg);
       break;
     }
     p = arg->v.p.ptr;

@@ -1,7 +1,11 @@
-2022-02-23 (12.24)
+2022-08-26 (12.25)
+	CONSOLE: Fixed TAB handling
+	COMMON: Only TRIM Strings
+
+2022-04-11 (12.24)
 	COMMON: m3Apply no longer crashes if the second argument is not an array
 
-2022-02-23 (12.24)
+2022-04-09 (12.24)
 	EMCC: Implemented emscripten web version
 
 2022-02-23 (12.24)
