@@ -95,7 +95,7 @@ elif cmd in ["QUIT", "REM"]
 elif cmd="LET"
 	' assigns a value to a variable; syntax: LET variable = expression
 	sinput par; var, "=", vstr
-	setvar var, vstr
+	setvar trim(var), trim(vstr)
 elif cmd="LIST"
 	' prints the program, syntax: LIST
 	if len(labels) 

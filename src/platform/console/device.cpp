@@ -88,8 +88,9 @@ void default_write(const char *str) {
       } else if (escape && str[i] == 'G') {
         // move to column
         int escValue = get_escape(str, escape, i);
-        for (int t = column; t < escValue; t++) {
+        while (escValue > column) {
           putc(' ', stdout);
+          column++;
         }
         escape = 0;
       } else if (escape && str[i] == 'm') {

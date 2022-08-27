@@ -316,6 +316,7 @@ function buildConsole() {
       AC_SUBST(TEST_DIR)
    fi
 
+   AC_DEFINE(_CONSOLE, 1, [Defined for console build.])
    AC_SUBST(BUILD_SUBDIRS)
 }
 
