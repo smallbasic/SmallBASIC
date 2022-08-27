@@ -77,25 +77,18 @@ int get_escape(const char *str, int begin, int end) {
 }
 
 void default_write(const char *str) {
-  const int column_width = 8;
+  static int column = 0;
   int len = strlen(str);
   if (len) {
     int escape = 0;
-    int column = 0;
     for (int i = 0; i < len; i++) {
       if (i + 1 < len && str[i] == '\033' && str[i + 1] == '[') {
         i += 2;
         escape = i;
       } else if (escape && str[i] == 'G') {
-        int size = get_escape(str, escape, i);
-        //123|123|123|123|123|123|
-        //  xxxx  xxx  <= move 1 tab position
-        //  xx            xxx  <= move 3 tab positions
-        int step = column_width - (column % column_width);
-        if (size > 1) {
-          step += (size - 1) * column_width;
-        }
-        for (int t = 0; t < step; t++) {
+        // move to column
+        int escValue = get_escape(str, escape, i);
+        for (int t = column; t < escValue; t++) {
           putc(' ', stdout);
         }
         escape = 0;
