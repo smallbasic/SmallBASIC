@@ -860,7 +860,9 @@ void cmd_input(int input) {
   // exit
   if (input == PV_CONSOLE) {
     if (print_crlf && (prog_error == 0)) {
+#if !defined(_CONSOLE)
       pv_write("\n", input, handle);
+#endif
     }
   }
 

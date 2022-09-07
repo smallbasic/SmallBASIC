@@ -4,12 +4,12 @@
   "private": true,
   "proxy": "http://localhost:8080", 
   "dependencies": {
-    "@emotion/react": "^11.9.3",
-    "@emotion/styled": "^11.9.3",
-    "@mui/icons-material": "^5.8.4",
-    "@mui/material": "^5.9.1",
-    "@mui/x-data-grid": "^5.14.0",
-    "npm-check-updates": "^16.0.0",
+    "@emotion/react": "^11.10.4",
+    "@emotion/styled": "^11.10.4",
+    "@mui/icons-material": "^5.10.3",
+    "@mui/material": "^5.10.4",
+    "@mui/x-data-grid": "^5.17.1",
+    "npm-check-updates": "^16.1.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-scripts": "5.0.1"

@@ -64,25 +64,42 @@ static audio_fn p_audio;
 static textwidth_fn p_textwidth;
 static textheight_fn p_textheight;
 
+int get_escape(const char *str, int begin, int end) {
+  int result = 0;
+  for (int i = begin; i < end; i++) {
+    if (isdigit(str[i])) {
+      result = (result * 10) + (str[i] - '0');
+    } else {
+      break;
+    }
+  }
+  return result;
+}
+
 void default_write(const char *str) {
+  static int column = 0;
   int len = strlen(str);
   if (len) {
-    int i, index = 0, escape = 0;
-    char *buffer = (char *)malloc(len + 1);
-    for (i = 0; i < len; i++) {
+    int escape = 0;
+    for (int i = 0; i < len; i++) {
       if (i + 1 < len && str[i] == '\033' && str[i + 1] == '[') {
-        escape = 1;
+        i += 2;
+        escape = i;
+      } else if (escape && str[i] == 'G') {
+        // move to column
+        int escValue = get_escape(str, escape, i);
+        while (escValue > column) {
+          putc(' ', stdout);
+          column++;
+        }
+        escape = 0;
       } else if (escape && str[i] == 'm') {
         escape = 0;
       } else if (!escape) {
-        buffer[index++] = str[i];
+        putc(str[i], stdout);
+        column = (str[i] == '\n') ? 0 : column + 1;
       }
     }
-    if (index) {
-      buffer[index] = 0;
-      printf("%s", buffer);
-    }
-    free(buffer);
   }
 }
 

@@ -198,3 +198,7 @@ if (asc("\r") != 13) then throw "err6"
 if (asc("\t") !=  9) then throw "err7"
 if (asc("\v") != 11) then throw "err8"
 
+REM Only TRIM Strings
+if (trim(10) != 10) then throw "err"
+if (trim(10.1) != 10.1) then throw "err"
+if (trim([1,2,3]) != [1,2,3]) then throw "err"

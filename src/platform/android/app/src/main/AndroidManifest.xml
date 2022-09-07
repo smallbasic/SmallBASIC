@@ -17,7 +17,8 @@
     <activity android:name="net.sourceforge.smallbasic.MainActivity"
               android:label="@string/app_name"
               android:theme="@style/SBTheme"
-              android:configChanges="orientation|keyboardHidden|screenSize">
+              android:configChanges="orientation|keyboardHidden|screenSize"
+              android:exported="true">
       <!-- Tell NativeActivity the name of our .so -->
       <meta-data android:name="android.app.lib_name"
                  android:value="smallbasic" />

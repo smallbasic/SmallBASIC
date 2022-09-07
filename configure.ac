@@ -7,7 +7,7 @@ dnl This program is distributed under the terms of the GPL v2.0
 dnl Download the GNU Public License (GPL) from www.gnu.org
 dnl
 
-AC_INIT([smallbasic], [12.24])
+AC_INIT([smallbasic], [12.25])
 AC_CONFIG_SRCDIR([configure.ac])
 
 AC_CANONICAL_TARGET
@@ -316,6 +316,7 @@ function buildConsole() {
       AC_SUBST(TEST_DIR)
    fi
 
+   AC_DEFINE(_CONSOLE, 1, [Defined for console build.])
    AC_SUBST(BUILD_SUBDIRS)
 }
 

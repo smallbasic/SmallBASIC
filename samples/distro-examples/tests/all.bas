@@ -223,7 +223,7 @@ print "STR:" + STR (5)
 print "STRING:"; STRING(5, "Strings")
 print "SUM:" + SUM (1,2,3,4,5,6,7,8,9)
 print "SUMSQ:" + SUMSQ (1,2,3,4,5,6,7,8,9)
-print "TAB:" + TAB (n)
+print "TAB:" + TAB (8) + "HERE"
 print "TAN:" + TAN (x)
 print "TANH:" + TANH (x)
 print "TEXTHEIGHT:" + TEXTHEIGHT (s)
