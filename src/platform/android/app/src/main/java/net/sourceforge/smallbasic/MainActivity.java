@@ -735,7 +735,7 @@ public class MainActivity extends NativeActivity {
     try {
       File sharesPath = new File(getExternalFilesDir(null), "shares");
       if (sharesPath.mkdirs()) {
-        Log.i(TAG, "created folder: " + sharesPath.toString());
+        Log.i(TAG, "created folder: " + sharesPath);
       }
       File shareFile = new File(sharesPath, file.getName());
       copy(file, sharesPath);
@@ -1056,5 +1056,5 @@ public class MainActivity extends NativeActivity {
       }
       return result;
     }
-  };
+  }
 }

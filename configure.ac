@@ -345,6 +345,10 @@ function buildWeb() {
 function buildEmscripten() {
    TARGET="Building Emscripten version."
    BUILD_SUBDIRS="src/common src/platform/emcc"
+   AC_CHECK_PROG(have_xxd, xxd, [yes], [no])
+   if test "${have_xxd}" = "no" ; then
+     AC_MSG_ERROR([xxd command not installed: configure failed.])
+   fi
    AC_CHECK_HEADERS([emscripten.h], [], [AC_MSG_ERROR([emscripten is not installed])])
    AM_CONDITIONAL(WITH_CYGWIN_CONSOLE, false)
    AC_DEFINE(_UnixOS, 1, [Building under Unix like systems.])

@@ -76,16 +76,20 @@ func mk_scratch()
   return result
 end
 
-sub do_okay_button(bn_extra)
+sub do_okay_button(bn_extra1, bn_extra2)
   local frm, button
   button.label = "[Close]"
   button.x = (xmax - txtw(button.label)) / 2
   button.y = ypos * char_h
   button.color = colNav
   button.type = "link"
-  if (ismap(bn_extra)) then
-    frm.inputs << bn_extra
+  if (ismap(bn_extra1)) then
+    frm.inputs << bn_extra1
   endif
+  if (ismap(bn_extra2)) then
+    frm.inputs << bn_extra2
+  endif
+
   frm.inputs << button
   frm = form(frm)
   print
@@ -130,6 +134,17 @@ sub do_about()
   bn_home.color = colNav
   print:print
 
+  local bn_privacy
+  color colNav2
+  bn_privacy.x = 2
+  bn_privacy.y = ypos * char_h + char_h + 2
+  bn_privacy.type = "link"
+  bn_privacy.isExternal = true
+  bn_privacy.color = colNav
+  bn_privacy.label = "https://smallbasic.github.io/pages/privacy.html"
+  print "Privacy Policy:"
+  print:print
+
   color colText2
   print "SmallBASIC comes with ABSOLUTELY NO WARRANTY. ";
   print "This program is free software; you can use it ";
@@ -139,7 +154,7 @@ sub do_about()
   print
   color colText
   server_info()
-  do_okay_button(bn_home)
+  do_okay_button(bn_home, bn_privacy)
   clear_screen()
 end
 
@@ -538,7 +553,7 @@ sub manageFiles()
       for i = 0 to len_buffer
         print buffer(i)
       next i
-      do_okay_button(nil)
+      do_okay_button(nil, nil)
       clear_screen()
       wnd.graphicsScreen1()
       f.value = selectedFile
