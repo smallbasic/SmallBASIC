@@ -2307,8 +2307,8 @@ void cmd_genfunc(long funcCode, var_t *r) {
     for (int i = 0; i < count - 1; i++) {
       r->v.n = r->v.n + (poly[i].x - poly[i + 1].x) * (poly[i].y + poly[i + 1].y);
     }
-
-    // hmm.... closed ?
+    r->v.n = fabs(r->v.n / 2);
+    
     free(poly);
   }
     break;
