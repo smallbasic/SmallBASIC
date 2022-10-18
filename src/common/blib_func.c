@@ -2332,11 +2332,8 @@ void cmd_genfunc(long funcCode, var_t *r) {
     v_setreal(v_elem(r, 1), y);
     if (err == 2 && area == 0) {
       rt_raise(ERR_CENTROID);
-    } else {
-      rt_raise(ERR_WRONG_POLY);
     }
-
-    // hmm.... closed ?
+    
     free(poly);
   }
     break;
