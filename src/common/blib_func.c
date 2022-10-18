@@ -2330,7 +2330,11 @@ void cmd_genfunc(long funcCode, var_t *r) {
     v_toarray1(r, 2);
     v_setreal(v_elem(r, 0), x);
     v_setreal(v_elem(r, 1), y);
-    if (err == 2 && area == 0) {
+    
+    if (err == 1) {
+      rt_raise(ERR_WRONG_POLY);
+    }
+    if (err == 2) {
       rt_raise(ERR_CENTROID);
     }
     
