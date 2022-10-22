@@ -79,7 +79,7 @@ print "RECT:" ':RECT [STEP] x,y [,|STEP x2,y2] [, color| COLOR color] [FILLED]
 print "REDIM:" ':REDIM x
 print "RENAME:" ':RENAME "file", "newname"
 print "RMDIR:" ':RMDIR dir
-print "ROOT:" ':ROOT low, high, segs, maxerr, BYREF result, BYREF errcode USE expr
+print "ROOT:": ROOT -2, 2, 500, 0.01, result, errcode USE expression(x): if(result != 0) then throw "ROOT failed"
 print "SEARCH:" ':SEARCH A, key, BYREF ridx [USE cmpfunc]
 print "SEEK:" ':SEEK #fileN; pos
 print "SHOWPAGE:" :SHOWPAGE
