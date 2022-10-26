@@ -70,7 +70,7 @@ print "PAUSE:" ':PAUSE [secs]
 print "PEN:" : PEN ON: PEN OFF
 print "PLAY:" :PLAY "abcdefg"
 print "PLOT:" 'PLOT xmin, xmax USE f(x)
-print "POLYEXT:" :POLYEXT poly, xmin, ymin, xmax, ymax
+print "POLYEXT:": polygon = [[30,50], [100,70], [120,90], [50,100], [30,50]]: POLYEXT polygon, PolyMinX, PolyMinY, PolyMaxX, PolyMaxY: if([PolyMinX, PolyMinY, PolyMaxX, PolyMaxY] != [30,50,120,100]) then throw "POLYEXT failed"
 print "PRINT:" ':PRINT [USING [format];] [expr|str [,|; [expr|str]] ...
 print "PSET:" ':PSET [STEP] x,y [, color| COLOR color]
 print "RANDOMIZE:" :RANDOMIZE 111
@@ -79,7 +79,7 @@ print "RECT:" ':RECT [STEP] x,y [,|STEP x2,y2] [, color| COLOR color] [FILLED]
 print "REDIM:" ':REDIM x
 print "RENAME:" ':RENAME "file", "newname"
 print "RMDIR:" ':RMDIR dir
-print "ROOT:" ':ROOT low, high, segs, maxerr, BYREF result, BYREF errcode USE expr
+print "ROOT:": ROOT -2, 2, 500, 0.01, result, errcode USE expression(x): if(result != 0) then throw "ROOT failed"
 print "SEARCH:" ':SEARCH A, key, BYREF ridx [USE cmpfunc]
 print "SEEK:" ':SEEK #fileN; pos
 print "SHOWPAGE:" :SHOWPAGE
@@ -182,8 +182,8 @@ print "MIN:" + MIN (1,2,3,4,5,6,7,8,9)
 print "OCT:" + OCT (x)
 print "PEN:" + PEN (1)
 print "POINT:" + POINT (1,2)
-print "POLYAREA:" + POLYAREA (poly)
-print "POLYCENT:"' + POLYCENT(a)
+print "POLYAREA:": polygon = [[50,50], [100,50], [100,100], [50,100], [50,50]]: if(polyarea(polygon) != 2500) then throw "POLYAREA failed"
+print "POLYCENT:": if(polycent(polygon) != [75,75]) then throw "POLYCENT failed"
 print "POW:" + POW (x, y)
 print "PROGLINE:" + PROGLINE
 print "PTDISTLN:" + PTDISTLN (Bx,By,Cx,Cy,Ax,Ay)
