@@ -17,18 +17,20 @@
 
 #if defined OS_PREC64
 // limits for use with 64bit integer or 64bit fp algorithm
-#define FMT_xMIN        1e-8
-#define FMT_xMAX        1e+14
-#define FMT_RND         14
-#define FMT_xRND        1e+14
-#define FMT_xRND2       1e+13
+#define FMT_xMIN          1e-8
+#define FMT_xMAX          1e+14
+#define FMT_RND           14
+#define FMT_xRND          1e+14
+#define FMT_xRND2         1e+13
+#define FMT_MANTISSA_BITS 52
 #else
 // limits for use with 32bit integer algorithm
-#define FMT_xMIN        1e-8          // lowest limit to use the exp. format
-#define FMT_xMAX        1e+9          // highest limit to use the exp. format
-#define FMT_RND         9             // rounding on x digits
-#define FMT_xRND        1e+9          // 1 * 10 ^ FMT_RND
-#define FMT_xRND2       1e+8          // 1 * 10 ^ (FMT_RND-1)
+#define FMT_xMIN          1e-8          // lowest limit to use the exp. format
+#define FMT_xMAX          1e+9          // highest limit to use the exp. format
+#define FMT_RND           9             // rounding on x digits
+#define FMT_xRND          1e+9          // 1 * 10 ^ FMT_RND
+#define FMT_xRND2         1e+8          // 1 * 10 ^ (FMT_RND-1)
+#define FMT_MANTISSA_BITS 23            // Bits of mantissa for 32bit float
 #endif
 
 // PRINT USING; format-list
@@ -103,6 +105,8 @@ void fptoa_rmzeros(var_num_t x, char *dest) {
 void bestfta_p(var_num_t x, char *dest, var_num_t minx, var_num_t maxx) {
   var_num_t ipart, fpart, fdif;
   var_int_t power = 0;
+  unsigned int precision;
+  int exponent;
   int sign, i;
   char *d = dest;
   char buf[64];
@@ -164,7 +168,21 @@ void bestfta_p(var_num_t x, char *dest, var_num_t minx, var_num_t maxx) {
 
   // format left part
   ipart = fabsl(fint(x));
-  fpart = fround(frac(x), FMT_RND) * FMT_xRND;
+
+  // Determine precision of the floating point value.
+  // Very helpful: https://blog.demofox.org/2017/11/21/floating-point-precision/
+  //    precision = log10(2^FMT_MANTISSA_BITS / Range)
+  // -> precision = log10(2^FMT_MANTISSA_BITS) / (2^(exponent + 1) - 2^exponent))
+  // -> precision = log10(2^(FMT_MANTISSA_BITS - exponent))
+  // -> precision = (FMT_MANTISSA_BITS - exponent) * log(2) / log(10)
+
+  frexp(x, &exponent);
+  precision = (FMT_MANTISSA_BITS - exponent) * log10(2) / log10(10);
+  if(precision > FMT_RND) {
+    precision = FMT_RND;
+  }
+  fpart = fround(frac(x), precision) * pow(10, precision);
+
   if (fpart >= FMT_xRND) {      // rounding bug
     ipart = ipart + 1.0;
     if (ipart >= maxx) {
@@ -197,7 +215,7 @@ void bestfta_p(var_num_t x, char *dest, var_num_t minx, var_num_t maxx) {
     strcpy(d, buf);
     d += strlen(buf);
   }
-
+  
   if (power) {
     // add the power
     *d++ = 'E';
