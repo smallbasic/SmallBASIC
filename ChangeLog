@@ -1,3 +1,6 @@
+2022-11-06 (12.25)
+	ANDROID: fix crash with INPUT command while scrolled #160
+
 2022-08-26 (12.25)
 	CONSOLE: Fixed TAB handling
 	COMMON: Only TRIM Strings
