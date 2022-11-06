@@ -24,23 +24,23 @@ struct EditTheme {
   void selectTheme(const int theme[]);
   void contrast(EditTheme *other);
 
-  int _color;
-  int _background;
-  int _selection_color;
-  int _selection_background;
-  int _number_color;
-  int _number_selection_color;
-  int _number_selection_background;
-  int _cursor_color;
-  int _cursor_background;
-  int _match_background;
-  int _row_cursor;
-  int _syntax_comments;
-  int _syntax_text;
-  int _syntax_command;
-  int _syntax_statement;
-  int _syntax_digit;
-  int _row_marker;
+  int _color{};
+  int _background{};
+  int _selection_color{};
+  int _selection_background{};
+  int _number_color{};
+  int _number_selection_color{};
+  int _number_selection_background{};
+  int _cursor_color{};
+  int _cursor_background{};
+  int _match_background{};
+  int _row_cursor{};
+  int _syntax_comments{};
+  int _syntax_text{};
+  int _syntax_command{};
+  int _syntax_statement{};
+  int _syntax_digit{};
+  int _row_marker{};
 };
 
 #endif

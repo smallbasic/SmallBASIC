@@ -35,7 +35,7 @@ extern System *g_system;
 StringList *get_items() {
   var_t arg;
   bool done = false;
-  StringList *items = new StringList();
+  auto *items = new StringList();
   do {
     switch (code_peek()) {
     case kwTYPE_LINE:
@@ -100,9 +100,9 @@ void cmd_window_inset(var_s *self, var_s *) {
 void cmd_window_set_font(var_s *self, var_s *) {
   var_num_t size;
   var_int_t bold, italic;
-  char *unit = NULL;
+  char *unit = nullptr;
   par_massget("FSII", &size, &unit, &bold, &italic);
-  if (unit != NULL && strcmp(unit, "em") == 0) {
+  if (unit != nullptr && strcmp(unit, "em") == 0) {
     size *= g_system->getOutput()->getFontSize();
   }
   g_system->getOutput()->setFont(size, bold, italic);

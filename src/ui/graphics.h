@@ -35,7 +35,7 @@ struct Font {
   int _h;
   int _spacing;
   FT_Face _face;
-  Glyph _glyph[MAX_GLYPHS];
+  Glyph _glyph[MAX_GLYPHS]{};
 };
 
 struct Graphics {
@@ -76,13 +76,13 @@ protected:
   void plot4(int xc, int yc, int x, int y);
   void line2(int xc, int yc, int x, int y);
 
-  FT_Library _fontLibrary;
-  FT_Face _fontFace;
-  FT_Face _fontFaceB;
+  FT_Library _fontLibrary{};
+  FT_Face _fontFace{};
+  FT_Face _fontFaceB{};
   Canvas *_screen;
   Canvas *_drawTarget;
   Font *_font;
-  pixel_t _drawColor;
+  pixel_t _drawColor{};
 };
 
 }

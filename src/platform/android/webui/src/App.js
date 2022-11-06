@@ -182,7 +182,7 @@ function GridToolbarUpload(props) {
     <Fragment>
       <ErrorMessage error={error} setError={setError} severity={severity}/>
       <Button color="primary" size="small" component="label" sx={{marginLeft: '-4px'}}>
-        <input accept=".bas" hidden multiple type="file" onChange={handleUpload}/>
+        <input hidden multiple type="file" onChange={handleUpload}/>
         <UploadIcon />
         UPLOAD
       </Button>

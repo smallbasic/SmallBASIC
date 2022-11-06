@@ -51,11 +51,11 @@ const String &String::operator=(const char *s) {
   return *this;
 }
 
-const void String::operator+=(const String &s) {
+void String::operator+=(const String &s) {
   append(s._buffer);
 }
 
-const void String::operator+=(const char *s) {
+void String::operator+=(const char *s) {
   append(s);
 }
 
@@ -259,8 +259,7 @@ template<> void List<String *>::add(const char *s) {
 
 template<> bool List<String *>::contains(const char *s) {
   bool result = false;
-  for (String **it = begin(); it != end(); it++) {
-    String *next = (*it);
+  for (auto next : *this) {
     if (next->equals(s)) {
       result = true;
       break;
@@ -278,7 +277,7 @@ template<> void Properties<String *>::load(const char *s) {
 }
 
 template<> void Properties<String *>::load(const char *s, int slen) {
-  if (s == 0 || s[0] == 0 || slen == 0) {
+  if (s == nullptr || s[0] == 0 || slen == 0) {
     return;
   }
 
@@ -366,11 +365,11 @@ template<> void Properties<String *>::put(const char *key, const char *value) {
 
 template<> void Properties<String *>::get(const char *key, List<String *> *arrayValues) {
   for (int i = 0; i < _count; i++) {
-    String *nextKey = (String *)_head[i++];
+    auto *nextKey = (String *)_head[i++];
     if (nextKey == nullptr || i == _count) {
       break;
     }
-    String *nextValue = (String *)_head[i];
+    auto *nextValue = (String *)_head[i];
     if (nextValue == nullptr) {
       break;
     }

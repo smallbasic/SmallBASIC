@@ -10,7 +10,7 @@
 #include <android/native_window.h>
 #include <android/keycodes.h>
 #include <jni.h>
-#include <errno.h>
+#include <cerrno>
 
 #include "platform/android/jni/runtime.h"
 #include "lib/maapi.h"
@@ -570,7 +570,7 @@ bool Runtime::loadSettings(Properties<String *> &settings) {
   FILE *fp = fopen(path.c_str(), "r");
   if (fp) {
     String buffer;
-    struct stat st;
+    struct stat st{};
     if (stat(path.c_str(), &st) == 0) {
       int len = st.st_size;
       buffer.append(fp, len);
@@ -775,7 +775,7 @@ void Runtime::pause(int timeout) {
     }
   } else {
     int slept = 0;
-    while (1) {
+    while (true) {
       pollEvents(false);
       if (isBreak()) {
         break;
@@ -1201,11 +1201,11 @@ void maWait(int timeout) {
   runtime->pause(timeout);
 }
 
-void maShowVirtualKeyboard(void) {
+void maShowVirtualKeyboard() {
   runtime->showKeypad(true);
 }
 
-void maHideVirtualKeyboard(void) {
+void maHideVirtualKeyboard() {
   runtime->showKeypad(false);
 }
 

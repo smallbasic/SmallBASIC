@@ -17,7 +17,7 @@
 void android_main(android_app *app) {
   logEntered();
 
-  Runtime *runtime = new Runtime(app);
+  auto *runtime = new Runtime(app);
 
   // pump events until startup has completed
   while (runtime->isInitial()) {

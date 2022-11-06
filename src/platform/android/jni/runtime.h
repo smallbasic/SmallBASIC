@@ -87,12 +87,12 @@ private:
   Graphics *_graphics;
   android_app *_app;
   Stack<MAEvent *> *_eventQueue;
-  pthread_mutex_t _mutex;
+  pthread_mutex_t _mutex{};
   ALooper *_looper;
   ASensorManager *_sensorManager;
   const ASensor *_sensor;
   ASensorEventQueue *_sensorEventQueue;
-  ASensorEvent _sensorEvent;
+  ASensorEvent _sensorEvent{};
 };
 
 #endif

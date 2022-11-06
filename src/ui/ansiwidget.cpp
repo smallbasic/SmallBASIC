@@ -6,13 +6,13 @@
 // Download the GNU Public License (GPL) from www.gnu.org
 //
 
-#include <string.h>
-#include <ctype.h>
-#include <stdarg.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <wchar.h>
-#include <math.h>
+#include <cstring>
+#include <cctype>
+#include <cstdarg>
+#include <cstdio>
+#include <cstdlib>
+#include <cwchar>
+#include <cmath>
 
 #include "ui/ansiwidget.h"
 #include "ui/inputs.h"
@@ -47,7 +47,6 @@
   \e[27m  set reverse off
 */
 
-#define BUTTON_PADDING 10
 #define OVER_SCROLL 100
 #define H_SCROLL_SIZE 10
 #define SWIPE_MAX_TIMER 3000
@@ -73,8 +72,8 @@ AnsiWidget::AnsiWidget(int width, int height) :
   _touchTime(0),
   _swipeExit(false),
   _autoflush(true) {
-  for (int i = 0; i < MAX_SCREENS; i++) {
-    _screens[i] = nullptr;
+  for (auto & _screen : _screens) {
+    _screen = nullptr;
   }
   _fontSize = MIN(width, height) / FONT_FACTOR;
   trace("width: %d height: %d fontSize:%d", _width, height, _fontSize);
@@ -100,8 +99,8 @@ bool AnsiWidget::construct() {
 // widget clean up
 AnsiWidget::~AnsiWidget() {
   logEntered();
-  for (int i = 0; i < MAX_SCREENS; i++) {
-    delete _screens[i];
+  for (auto & _screen : _screens) {
+    delete _screen;
   }
 }
 
@@ -190,7 +189,7 @@ int AnsiWidget::getScreenId(bool back) {
 
 // prints the contents of the given string onto the backbuffer
 void AnsiWidget::print(const char *str) {
-  int len = (str == nullptr ? 0 : strlen(str));
+  unsigned len = (str == nullptr ? 0 : strlen(str));
   if (len) {
     _back->drawInto();
 
@@ -264,8 +263,7 @@ void AnsiWidget::reset() {
 // update the widget to new dimensions
 void AnsiWidget::resize(int newWidth, int newHeight) {
   int lineHeight = textHeight();
-  for (int i = 0; i < MAX_SCREENS; i++) {
-    Screen *screen = _screens[i];
+  for (auto screen : _screens) {
     if (screen) {
       screen->resize(newWidth, newHeight, _width, _height, lineHeight);
       if (screen == _front) {
@@ -338,9 +336,9 @@ void AnsiWidget::setFont(int size, bool bold, bool italic) {
 // sets the text font size
 void AnsiWidget::setFontSize(int fontSize) {
   this->_fontSize = fontSize;
-  for (int i = 0; i < MAX_SCREENS; i++) {
-    if (_screens[i] != nullptr) {
-      _screens[i]->reset(fontSize);
+  for (auto & _screen : _screens) {
+    if (_screen != nullptr) {
+      _screen->reset(fontSize);
     }
   }
   redraw();
@@ -383,7 +381,7 @@ void AnsiWidget::insetMenuScreen(int x, int y, int w, int h) {
   if (_back == _screens[MENU_SCREEN]) {
     _back = _screens[USER_SCREEN1];
   }
-  TextScreen *menuScreen = (TextScreen *)createScreen(MENU_SCREEN);
+  auto *menuScreen = (TextScreen *)createScreen(MENU_SCREEN);
   menuScreen->_x = x;
   menuScreen->_y = y;
   menuScreen->_width = w;
@@ -397,7 +395,7 @@ void AnsiWidget::insetTextScreen(int x, int y, int w, int h) {
   if (_back == _screens[TEXT_SCREEN]) {
     _back = _screens[USER_SCREEN1];
   }
-  TextScreen *textScreen = (TextScreen *)createScreen(TEXT_SCREEN);
+  auto *textScreen = (TextScreen *)createScreen(TEXT_SCREEN);
   textScreen->inset(x, y, w, h, _front);
   _front = _back = textScreen;
   _front->_dirty = true;
@@ -412,10 +410,10 @@ bool AnsiWidget::pointerTouchEvent(MAEvent &event) {
     _focus = _front;
   } else {
     // hit test buttons on remaining screens
-    for (int i = 0; i < MAX_SCREENS; i++) {
-      if (_screens[i] != nullptr && _screens[i] != _front) {
-        if (setActiveButton(event, _screens[i])) {
-          _focus = _screens[i];
+    for (auto & _screen : _screens) {
+      if (_screen != nullptr && _screen != _front) {
+        if (setActiveButton(event, _screen)) {
+          _focus = _screen;
           break;
         }
       }

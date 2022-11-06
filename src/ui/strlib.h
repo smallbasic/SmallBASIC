@@ -33,8 +33,8 @@ struct String {
   const String &operator=(const String &s);
   const String &operator=(const char *s);
   const String &operator=(const char c);
-  const void operator+=(const String &s);
-  const void operator+=(const char *s);
+  void operator+=(const String &s);
+  void operator+=(const char *s);
   String &append(const String &s);
   String &append(const String *s);
   String &append(int i);
