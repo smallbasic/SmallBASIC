@@ -2307,8 +2307,8 @@ void cmd_genfunc(long funcCode, var_t *r) {
     for (int i = 0; i < count - 1; i++) {
       r->v.n = r->v.n + (poly[i].x - poly[i + 1].x) * (poly[i].y + poly[i + 1].y);
     }
-
-    // hmm.... closed ?
+    r->v.n = fabs(r->v.n / 2);
+    
     free(poly);
   }
     break;
@@ -2330,13 +2330,14 @@ void cmd_genfunc(long funcCode, var_t *r) {
     v_toarray1(r, 2);
     v_setreal(v_elem(r, 0), x);
     v_setreal(v_elem(r, 1), y);
-    if (err == 2 && area == 0) {
-      rt_raise(ERR_CENTROID);
-    } else {
+    
+    if (err == 1) {
       rt_raise(ERR_WRONG_POLY);
     }
-
-    // hmm.... closed ?
+    if (err == 2) {
+      rt_raise(ERR_CENTROID);
+    }
+    
     free(poly);
   }
     break;
