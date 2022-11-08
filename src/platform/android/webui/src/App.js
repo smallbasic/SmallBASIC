@@ -49,7 +49,11 @@ const columns = [{
 }, {
   field: 'date',
   headerName: 'Modified',
-  type: 'number',
+  type: 'date',
+  minWidth: 110,
+  renderCell: (params) => {
+    return new Date(params.row.date).toLocaleDateString();
+  }
 }];
 
 function getFetchHeader(body) {
@@ -227,10 +231,17 @@ function FileList(props) {
     rows: props.rows
   };
 
+  const sorting = {
+    sorting: {
+      sortModel: [{ field: 'fileName', sort: 'asc' }],
+    },
+  };
+
   return (
     <Fragment>
       <ErrorMessage error={error} setError={setError} />
       <DataGrid rows={props.rows}
+                initialState={sorting}
                 columns={columns}
                 onCellEditCommit={(params) => onCellEditCommit(props, params, setError)}
                 autoPageSize

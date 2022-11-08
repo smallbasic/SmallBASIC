@@ -11,7 +11,10 @@ import java.io.UnsupportedEncodingException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.URLDecoder;
-import java.text.DateFormat;
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -250,9 +253,9 @@ public abstract class WebServer {
     }
 
     public FileData(File file) {
-      DateFormat dateFormat = DateFormat.getDateInstance(DateFormat.DEFAULT);
+      ZonedDateTime zonedDateTime = Instant.ofEpochMilli(file.lastModified()).atZone(ZoneId.of("UTC"));
       this.fileName = file.getName();
-      this.date = dateFormat.format(file.lastModified());
+      this.date = DateTimeFormatter.RFC_1123_DATE_TIME.format(zonedDateTime);
       this.size = file.length();
     }
   }
@@ -321,7 +324,7 @@ public abstract class WebServer {
             log("Invalid request");
           }
         }
-      } catch (IOException e) {
+      } catch (Exception e) {
         log("Request failed", e);
       }
       finally {
