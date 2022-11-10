@@ -11,15 +11,16 @@ import java.io.UnsupportedEncodingException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.URLDecoder;
-import java.time.Instant;
-import java.time.ZoneId;
-import java.time.ZonedDateTime;
-import java.time.format.DateTimeFormatter;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
+import java.util.TimeZone;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.zip.ZipEntry;
@@ -32,7 +33,7 @@ import java.util.zip.ZipOutputStream;
  * @author chrisws
  */
 public abstract class WebServer {
-  private static final int BUFFER_SIZE = 32768;
+  private static final int BUFFER_SIZE = 32768 / 2;
   private static final int SEND_SIZE = BUFFER_SIZE / 4;
   private static final int LINE_SIZE = 128;
   private static final String UTF_8 = "utf-8";
@@ -106,6 +107,7 @@ public abstract class WebServer {
     final String tokenKey;
     final List<String> headers;
     final InputStream inputStream;
+    private static final String BASE_64_PREFIX = ";base64,";
 
     public AbstractRequest(Socket socket, String tokenKey) throws IOException {
       this.socket = socket;
@@ -156,16 +158,24 @@ public abstract class WebServer {
     /**
      * Parses HTTP POST data from the given input stream
      */
-    protected Map<String, String> getPostData(InputStream inputStream) throws IOException {
+    protected Map<String, Object> getPostData(InputStream inputStream) throws IOException {
       String postData = getLine(inputStream);
       String[] fields = postData.split("&");
-      Map<String, String> result = new HashMap<>();
+      Map<String, Object> result = new HashMap<>();
       for (String nextField : fields) {
         int eq = nextField.indexOf("=");
         if (eq != -1) {
           String key = nextField.substring(0, eq);
-          String value = URLDecoder.decode(nextField.substring(eq + 1), UTF_8);
-          result.put(key, value);
+          String value = nextField.substring(eq + 1);
+          int index = value.indexOf(BASE_64_PREFIX);
+          if (index != -1) {
+            ByteArrayOutputStream data = new ByteArrayOutputStream();
+            value = value.substring(index + BASE_64_PREFIX.length());
+            data.write(Base64.getDecoder().decode(value));
+            result.put(key, data);
+          } else {
+            result.put(key, URLDecoder.decode(nextField.substring(eq + 1), UTF_8));
+          }
         }
       }
       return result;
@@ -253,9 +263,11 @@ public abstract class WebServer {
     }
 
     public FileData(File file) {
-      ZonedDateTime zonedDateTime = Instant.ofEpochMilli(file.lastModified()).atZone(ZoneId.of("UTC"));
+      final DateFormat format = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss z", Locale.ENGLISH);
+      format.setLenient(false);
+      format.setTimeZone(TimeZone.getTimeZone("UTC"));
       this.fileName = file.getName();
-      this.date = DateTimeFormatter.RFC_1123_DATE_TIME.format(zonedDateTime);
+      this.date = format.format(file.lastModified());
       this.size = file.length();
     }
   }
@@ -432,8 +444,8 @@ public abstract class WebServer {
     /**
      * Handler for POST requests
      */
-    private void handlePost(Map<String, String> data) throws IOException {
-      String userToken = data.get(TOKEN);
+    private void handlePost(Map<String, Object> data) throws IOException {
+      String userToken = (String) data.get(TOKEN);
       if (userToken == null) {
         userToken = requestToken;
       }
@@ -464,9 +476,9 @@ public abstract class WebServer {
     /**
      * Handler for File rename operations
      */
-    private Response handleRename(Map<String, String> data) throws IOException {
-      String from = data.get("from");
-      String to = data.get("to");
+    private Response handleRename(Map<String, Object> data) throws IOException {
+      String from = (String) data.get("from");
+      String to = (String) data.get("to");
       Response result;
       try {
         renameFile(from, to);
@@ -503,15 +515,15 @@ public abstract class WebServer {
     /**
      * Handler for file uploads
      */
-    private Response handleUpload(Map<String, String> data) throws IOException {
-      String fileName = data.get("fileName");
-      String content = data.get("data");
+    private Response handleUpload(Map<String, Object> data) throws IOException {
+      String fileName = (String) data.get("fileName");
+      ByteArrayOutputStream content = (ByteArrayOutputStream) data.get("data");
       Response result;
       try {
         if (fileName == null || content == null) {
           result = handleStatus(false, "Invalid input");
         } else {
-          saveFile(fileName, content.getBytes(UTF_8));
+          saveFile(fileName, content.toByteArray());
           result = handleStatus(true, "File saved");
         }
       } catch (Exception e) {

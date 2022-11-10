@@ -572,7 +572,7 @@ bool Runtime::loadSettings(Properties<String *> &settings) {
     String buffer;
     struct stat st{};
     if (stat(path.c_str(), &st) == 0) {
-      int len = st.st_size;
+      long len = st.st_size;
       buffer.append(fp, len);
       settings.load(buffer.c_str(), buffer.length());
       result = true;
@@ -959,7 +959,7 @@ bool System::getPen3() {
   return result;
 }
 
-void System::completeKeyword(int index) {
+void System::completeKeyword(int index) const {
   if (get_focus_edit() && isEditing()) {
     const char *help = get_focus_edit()->completeKeyword(index);
     if (help) {

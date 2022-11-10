@@ -22,8 +22,6 @@ public class Server {
   private static final String BASIC_HOME = "../basic/";
 
   public static void main(String[] args ) throws IOException {
-
-
     // ln -s ../../../../../../../../app/src/main/java/net/sourceforge/smallbasic/WebServer.java .
     WebServer webServer = new WebServer() {
       @Override

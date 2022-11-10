@@ -87,7 +87,7 @@ function login(token, success, fail) {
 }
 
 function upload(name, data, success, fail) {
-  let body = "fileName=" + encodeURIComponent(name) + "&data=" + encodeURIComponent(data);
+  let body = "fileName=" + encodeURIComponent(name) + "&data=" + data;
   callApi('/api/upload', body, success, fail);
 }
 
@@ -105,7 +105,7 @@ function copyFiles(event, success, progress, fail) {
     upload(files[index].name, fileReader.result, () => {
       if (++index < files.length) {
         progress(index);
-        fileReader.readAsText(files[index]);
+        fileReader.readAsDataURL(files[index]);
       } else {
         getFiles(success, fail);
         // reset input control
@@ -113,7 +113,7 @@ function copyFiles(event, success, progress, fail) {
       }
     }, fail);
   };
-  fileReader.readAsText(files[index]);
+  fileReader.readAsDataURL(files[index]);
 }
 
 function GridToolbarDownload(props) {

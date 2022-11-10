@@ -9,7 +9,7 @@ android {
     applicationId 'net.sourceforge.smallbasic'
     minSdkVersion 16
     targetSdkVersion 33
-    versionCode 53
+    versionCode 54
     versionName '12.25'
     resConfigs 'en'
   }
@@ -47,6 +47,7 @@ android {
       path '../jni/Android.mk'
     }
   }
+  namespace 'net.sourceforge.smallbasic'
 }
 
 dependencies {

@@ -1047,7 +1047,7 @@ public class MainActivity extends NativeActivity {
     private Collection<FileData> getFiles(File path) {
       Collection<FileData> result = new ArrayList<>();
       if (path.isDirectory() && path.canRead()) {
-        File[] files = path.listFiles(new BasFileFilter());
+        File[] files = path.listFiles((FilenameFilter)null);
         if (files != null) {
           for (File file : files) {
             result.add(new FileData(file));
