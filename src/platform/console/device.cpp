@@ -114,7 +114,7 @@ void vt100_write(const char *str) {
 }
 
 void console_init() {
-  p_write = vt100_write;
+  p_write = default_write;
 }
 
 //
@@ -160,7 +160,7 @@ int osd_devinit() {
     // Test if output is printed in a terminal. If output is piped into
     // a text file or sbasic is running as a cron job, use
     // default_write without vt100 support
-    if(!isatty(STDOUT_FILENO)) {
+    if (!isatty(STDOUT_FILENO)) {
       p_write = default_write;
       return 1;
     }
