@@ -1,7 +1,5 @@
 package net.sourceforge.smallbasic;
 
-import android.util.Base64;
-
 import java.io.BufferedOutputStream;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -64,9 +62,11 @@ public abstract class WebServer {
     socketThread.start();
   }
 
+  protected abstract void deleteFile(String fileName) throws IOException;
   protected abstract void execStream(InputStream inputStream) throws IOException;
   protected abstract Response getFile(String path, boolean asset) throws IOException;
   protected abstract Collection<FileData> getFileData() throws IOException;
+  protected abstract byte[] decodeBase64(String data);
   protected abstract void log(String message);
   protected abstract void log(String message, Exception exception);
   protected abstract void renameFile(String from, String to) throws IOException;
@@ -100,7 +100,7 @@ public abstract class WebServer {
   /**
    * Server Request base class
    */
-  public abstract static class AbstractRequest {
+  public abstract class AbstractRequest {
     final Socket socket;
     final String method;
     final String url;
@@ -267,7 +267,7 @@ public abstract class WebServer {
   /**
    * Holder for POST form data
    */
-  public static class FormField {
+  public class FormField {
     private static final String BASE_64_PREFIX = ";base64,";
     private final String string;
     private final byte[] bytes;
@@ -277,7 +277,7 @@ public abstract class WebServer {
       if (index != -1 && "data".equals(key)) {
         ByteArrayOutputStream data = new ByteArrayOutputStream();
         String base64Value = value.substring(index + BASE_64_PREFIX.length());
-        data.write(Base64.decode(base64Value, Base64.DEFAULT));
+        data.write(decodeBase64(base64Value));
         this.string = null;
         this.bytes = data.toByteArray();
       } else {
@@ -286,7 +286,8 @@ public abstract class WebServer {
       }
     }
 
-    public String getString() {
+    @Override
+    public String toString() {
       return string;
     }
 
@@ -438,7 +439,7 @@ public abstract class WebServer {
      * Handler for files API
      */
     private Response handleFileList() throws IOException {
-      log("Sending file list");
+      log("Creating file list");
       JsonBuilder builder = new JsonBuilder();
       builder.append('[');
       long id = 0;
@@ -492,6 +493,8 @@ public abstract class WebServer {
           handleUpload(data).send(socket, null);
         } else if (url.startsWith("/api/rename")) {
           handleRename(data).send(socket, null);
+        } else if (url.startsWith("/api/delete")) {
+          handleDelete(data).send(socket, null);
         } else {
           new Response(SC_NOT_FOUND).send(socket, null);
         }
@@ -504,6 +507,22 @@ public abstract class WebServer {
           new Response(SC_NOT_AUTHORISED).send(socket, null);
         }
       }
+    }
+
+    /**
+     * Handler for File delete
+     */
+    private Response handleDelete(Map<String, FormField> data) throws IOException {
+      String fileName = getString(data, "fileName");
+      Response result;
+      try {
+        deleteFile(fileName);
+        log("Deleted " + fileName);
+        result = handleFileList();
+      } catch (IOException e) {
+        result = handleStatus(false, e.getMessage());
+      }
+      return result;
     }
 
     /**

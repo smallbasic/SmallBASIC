@@ -939,6 +939,25 @@ public class MainActivity extends NativeActivity {
     private final Map<String, Long> fileLengths = new HashMap<>();
 
     @Override
+    protected byte[] decodeBase64(String data) {
+      return Base64.decode(data, Base64.DEFAULT);
+    }
+
+    @Override
+    protected void deleteFile(String fileName) throws IOException {
+      if (fileName == null) {
+        throw new IOException("Empty file name");
+      }
+      File file = getFile(fileName);
+      if (file == null) {
+        throw new IOException("File not found");
+      }
+      if (!file.delete()) {
+        throw new IOException("Failed to delete file:" + fileName);
+      }
+    }
+
+    @Override
     protected void execStream(InputStream inputStream) throws IOException {
       MainActivity.this.execStream(inputStream);
     }
@@ -983,8 +1002,8 @@ public class MainActivity extends NativeActivity {
 
     @Override
     protected void renameFile(String from, String to) throws IOException {
-      if (to == null || !to.endsWith(".bas")) {
-        throw new IOException("Invalid file name: " + to);
+      if (to == null) {
+        throw new IOException("Empty file name");
       }
       File toFile = getFile(to);
       if (toFile != null) {

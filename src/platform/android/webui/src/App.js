@@ -9,6 +9,11 @@ import {
   Box,
   Button,
   CssBaseline,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogContentText,
+  DialogTitle,
   Link,
   Snackbar,
   TextField,
@@ -26,6 +31,7 @@ import {
 } from '@mui/x-data-grid';
 
 import {
+  Delete as DeleteIcon,
   Download as DownloadIcon,
   Upload as UploadIcon
 } from '@mui/icons-material';
@@ -96,6 +102,11 @@ function renameFile(from, to, success, fail) {
   callApi('/api/rename', body, success, fail);
 }
 
+function deleteFile(fileName, success, fail) {
+  let body = "fileName=" + encodeURIComponent(fileName);
+  callApi('/api/delete', body, success, fail);
+}
+
 function copyFiles(event, success, progress, fail) {
   const fileReader = new FileReader();
   const input = event.target;
@@ -114,6 +125,68 @@ function copyFiles(event, success, progress, fail) {
     }, fail);
   };
   fileReader.readAsDataURL(files[index]);
+}
+
+function ConfirmDeleteDialog(props) {
+  return (
+    <div>
+      <Dialog
+        open={props.open}
+        onClose={props.handleClose}
+        aria-labelledby="alert-dialog-title"
+        aria-describedby="alert-dialog-description">
+        <DialogTitle id="alert-dialog-title">
+          {"Delete file"}
+        </DialogTitle>
+        <DialogContent>
+          <DialogContentText id="alert-dialog-description">
+            Are you sure you want to permanently delete {props.name}? You cannot undo this.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={props.handleClose}>Cancel</Button>
+          <Button onClick={props.handleDelete} autoFocus>
+            Delete
+          </Button>
+        </DialogActions>
+      </Dialog>
+    </div>
+  );
+}
+
+function GridToolbarDelete(props) {
+  const [error, setError] = useState(null);
+  const [open, setOpen] = useState(false);
+
+  const showPrompt = () => {
+    setOpen(true);
+  };
+
+  const handleClose = () => {
+    setOpen(false);
+  };
+
+  const handleDelete = () => {
+    setOpen(false);
+    deleteFile(props.rows[props.selections[0]].fileName, (data) => {
+      props.setRows(data);
+      props.setSelections([]);
+    }, (error) => {
+      setError(error);
+      setError(true);
+    });
+  };
+
+  return props.selections.length !== 1 ? null : (
+    <Fragment>
+      <ConfirmDeleteDialog open={open} name={props.rows[props.selections[0]].fileName} handleClose={handleClose} handleDelete={handleDelete}/>
+      <ErrorMessage error={error} setError={setError} severity="error"/>
+      <Button color="primary" size="small" component="label" sx={{marginLeft: '-4px'}} onClick={showPrompt}>
+        <DeleteIcon />
+        DELETE
+      </Button>
+    </Fragment>
+  );
 }
 
 function GridToolbarDownload(props) {
@@ -203,6 +276,7 @@ function AppToolbar(props) {
       <GridToolbarDensitySelector />
       <GridToolbarUpload {...props}/>
       <GridToolbarDownload {...props}/>
+      <GridToolbarDelete {...props}/>
     </GridToolbarContainer>
   );
 }
@@ -227,6 +301,7 @@ function FileList(props) {
 
   const toolbarProps = {
     selections: selectionModel,
+    setSelections: setSelectionModel,
     setRows: props.setRows,
     rows: props.rows
   };

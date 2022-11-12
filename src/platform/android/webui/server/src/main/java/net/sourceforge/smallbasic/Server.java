@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.FileTime;
 import java.time.Instant;
@@ -15,6 +16,7 @@ import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.Collection;
 import java.util.Objects;
 
@@ -25,6 +27,16 @@ public class Server {
     // ln -s ../../../../../../../../app/src/main/java/net/sourceforge/smallbasic/WebServer.java .
     WebServer webServer = new WebServer() {
       @Override
+      protected byte[] decodeBase64(String data) {
+        return Base64.getDecoder().decode(data);
+      }
+
+      @Override
+      protected void deleteFile(String fileName) throws IOException {
+        Files.delete(Paths.get(BASIC_HOME, fileName));
+      }
+
+      @Override
       protected void execStream(InputStream inputStream) {
         try {
           byte[] data = IOUtils.readAllBytes(inputStream);
@@ -33,6 +45,13 @@ public class Server {
         catch (IOException e) {
           throw new RuntimeException(e);
         }
+      }
+
+      @Override
+      protected Response getFile(String path, boolean asset) throws IOException {
+        String prefix = asset ? "../build/" : BASIC_HOME;
+        File file = new File(prefix + path);
+        return new Response(Files.newInputStream(file.toPath()), file.length());
       }
 
       @Override
@@ -54,13 +73,6 @@ public class Server {
       }
 
       @Override
-      protected Response getFile(String path, boolean asset) throws IOException {
-        String prefix = asset ? "../build/" : BASIC_HOME;
-        File file = new File(prefix + path);
-        return new Response(Files.newInputStream(file.toPath()), file.length());
-      }
-
-      @Override
       protected void log(String message) {
         System.err.println(message);
       }
@@ -73,7 +85,7 @@ public class Server {
 
       @Override
       protected void renameFile(String from, String to) throws IOException {
-        if (to == null || !to.endsWith(".bas")) {
+        if (to == null) {
           throw new IOException("Invalid File Name: " + to);
         }
         File toFile = new File(BASIC_HOME, to);
