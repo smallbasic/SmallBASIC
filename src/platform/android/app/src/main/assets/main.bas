@@ -34,6 +34,7 @@ const aboutId = "_about"
 const backId = "_back"
 const scratchId = "_scratch"
 const scratch_file = HOME + "/scratch.bas"
+const sortEnd = chr(255)
 
 func mk_menu(value, lab, x)
   local bn
@@ -230,6 +231,8 @@ end
 func fileCmpFunc0(l, r)
   local f1 = lower(l.name)
   local f2 = lower(r.name)
+  if (right(f1, 4) != ".bas") then f1 = sortEnd + f1
+  if (right(f2, 4) != ".bas") then f2 = sortEnd + f2
   local n = iff(f1 == f2, 0, iff(f1 > f2, 1, -1))
   return iff(l.dir == r.dir, n, iff(l.dir, 1, -1))
 end
@@ -237,6 +240,8 @@ end
 func fileCmpFunc1(l, r)
   local f1 = lower(l.name)
   local f2 = lower(r.name)
+  if (right(f1, 4) != ".bas") then f1 = sortEnd + f1
+  if (right(f2, 4) != ".bas") then f2 = sortEnd + f2
   local n = iff(f1 == f2, 0, iff(f1 > f2, -1, 1))
   return iff(l.dir == r.dir, n, iff(l.dir, 1, -1))
 end
@@ -285,7 +290,7 @@ sub loadFileList(path, byref basList)
   end
 
   func androidWalker(node)
-    if (node.dir == 0 && lower(right(node.name, 4)) == ".bas") then
+    if (node.dir == 0) then
       basList << node
     endif
     return node.depth == 0
@@ -392,7 +397,8 @@ sub listFiles(byref frm, path, sortDir, byref basList)
     endif
     if (abbr) then
       bn = mk_bn(path + name, name, txtcol)
-      bn.type = "link"
+      bn.type = iff(lower(right(name, 4)) == ".bas", "link", "label")
+      if (bn.type == "label") then bn.color = colText
       if (!node.dir) then bn.isExit = true
     else
       if (len(name) > 27) then
@@ -401,7 +407,8 @@ sub listFiles(byref frm, path, sortDir, byref basList)
         lab = name
       endif
       bn = mk_bn(path + name, lab, txtcol)
-      bn.type = "link"
+      bn.type = iff(lower(right(name, 4)) == ".bas", "link", "label")
+      if (bn.type == "label") then bn.color = colText
       if (!node.dir) then bn.isExit = true
       frm.inputs << bn
       gap = 12 - len(str(node.size))

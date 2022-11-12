@@ -1,5 +1,7 @@
 package net.sourceforge.smallbasic;
 
+import android.util.Base64;
+
 import java.io.BufferedOutputStream;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -14,7 +16,6 @@ import java.net.URLDecoder;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Base64;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
@@ -107,7 +108,6 @@ public abstract class WebServer {
     final String tokenKey;
     final List<String> headers;
     final InputStream inputStream;
-    private static final String BASE_64_PREFIX = ";base64,";
 
     public AbstractRequest(Socket socket, String tokenKey) throws IOException {
       this.socket = socket;
@@ -158,24 +158,16 @@ public abstract class WebServer {
     /**
      * Parses HTTP POST data from the given input stream
      */
-    protected Map<String, Object> getPostData(InputStream inputStream) throws IOException {
+    protected Map<String, FormField> getPostData(InputStream inputStream) throws IOException {
       String postData = getLine(inputStream);
       String[] fields = postData.split("&");
-      Map<String, Object> result = new HashMap<>();
+      Map<String, FormField> result = new HashMap<>();
       for (String nextField : fields) {
         int eq = nextField.indexOf("=");
         if (eq != -1) {
           String key = nextField.substring(0, eq);
           String value = nextField.substring(eq + 1);
-          int index = value.indexOf(BASE_64_PREFIX);
-          if (index != -1) {
-            ByteArrayOutputStream data = new ByteArrayOutputStream();
-            value = value.substring(index + BASE_64_PREFIX.length());
-            data.write(Base64.getDecoder().decode(value));
-            result.put(key, data);
-          } else {
-            result.put(key, URLDecoder.decode(nextField.substring(eq + 1), UTF_8));
-          }
+          result.put(key, new FormField(key, value));
         }
       }
       return result;
@@ -269,6 +261,37 @@ public abstract class WebServer {
       this.fileName = file.getName();
       this.date = format.format(file.lastModified());
       this.size = file.length();
+    }
+  }
+
+  /**
+   * Holder for POST form data
+   */
+  public static class FormField {
+    private static final String BASE_64_PREFIX = ";base64,";
+    private final String string;
+    private final byte[] bytes;
+
+    public FormField(String key, String value) throws IOException {
+      int index = value.indexOf(BASE_64_PREFIX);
+      if (index != -1 && "data".equals(key)) {
+        ByteArrayOutputStream data = new ByteArrayOutputStream();
+        String base64Value = value.substring(index + BASE_64_PREFIX.length());
+        data.write(Base64.decode(base64Value, Base64.DEFAULT));
+        this.string = null;
+        this.bytes = data.toByteArray();
+      } else {
+        this.string = URLDecoder.decode(value, UTF_8);
+        this.bytes = null;
+      }
+    }
+
+    public String getString() {
+      return string;
+    }
+
+    public byte[] toByteArray() {
+      return bytes;
     }
   }
 
@@ -369,6 +392,16 @@ public abstract class WebServer {
       return result;
     }
 
+    private byte[] getData(Map<String, FormField> data) {
+      FormField field = data.get("data");
+      return field == null ? null : field.toByteArray();
+    }
+
+    private String getString(Map<String, FormField> data, String key) {
+      FormField field = data.get(key);
+      return field == null ? null : field.toString();
+    }
+
     /**
      * Download files button handler
      */
@@ -444,8 +477,8 @@ public abstract class WebServer {
     /**
      * Handler for POST requests
      */
-    private void handlePost(Map<String, Object> data) throws IOException {
-      String userToken = (String) data.get(TOKEN);
+    private void handlePost(Map<String, FormField> data) throws IOException {
+      String userToken = getString(data, TOKEN);
       if (userToken == null) {
         userToken = requestToken;
       }
@@ -476,9 +509,9 @@ public abstract class WebServer {
     /**
      * Handler for File rename operations
      */
-    private Response handleRename(Map<String, Object> data) throws IOException {
-      String from = (String) data.get("from");
-      String to = (String) data.get("to");
+    private Response handleRename(Map<String, FormField> data) throws IOException {
+      String from = getString(data, "from");
+      String to = getString(data, "to");
       Response result;
       try {
         renameFile(from, to);
@@ -515,15 +548,15 @@ public abstract class WebServer {
     /**
      * Handler for file uploads
      */
-    private Response handleUpload(Map<String, Object> data) throws IOException {
-      String fileName = (String) data.get("fileName");
-      ByteArrayOutputStream content = (ByteArrayOutputStream) data.get("data");
+    private Response handleUpload(Map<String, FormField> data) throws IOException {
+      String fileName = getString(data, "fileName");
+      byte[] content = getData(data);
       Response result;
       try {
         if (fileName == null || content == null) {
           result = handleStatus(false, "Invalid input");
         } else {
-          saveFile(fileName, content.toByteArray());
+          saveFile(fileName, content);
           result = handleStatus(true, "File saved");
         }
       } catch (Exception e) {
