@@ -76,6 +76,9 @@ int get_escape(const char *str, int begin, int end) {
   return result;
 }
 
+//
+// Console output if vt100 (esc sequences) is not supported
+//
 void default_write(const char *str) {
   static int column = 0;
   int len = strlen(str);
@@ -101,6 +104,13 @@ void default_write(const char *str) {
       }
     }
   }
+}
+
+//
+// console output if vt100 (esc sequences) is supported
+//
+void vt100_write(const char *str) {
+  printf("%s", str);
 }
 
 void console_init() {
@@ -145,9 +155,40 @@ int osd_devinit() {
   setsysvar_int(SYSVAR_YMAX, os_graf_my);
 
   if (p_write == NULL) {
-    p_write = default_write;
-  }
+    p_write = vt100_write;
+  
+    // Test if output is printed in a terminal. If output is piped into
+    // a text file or sbasic is running as a cron job, use
+    // default_write without vt100 support
+    if (!isatty(STDOUT_FILENO)) {
+      p_write = default_write;
+      return 1;
+    }
 
+    #if defined(_Win32)
+    // Enable vt100 support in newer versions of Windows 10 or 11.
+    // If vt100 is not supported fall back to default_write.
+    // See: https://learn.microsoft.com/en-us/windows/console/console-virtual-terminal-sequences
+
+    HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE);
+    if (hOut == INVALID_HANDLE_VALUE) {
+      p_write = default_write;
+      return 1;
+    }
+
+    DWORD dwMode = 0;
+    if (!GetConsoleMode(hOut, &dwMode)) {
+      p_write = default_write;
+      return 1;
+    }
+
+    dwMode |= ENABLE_VIRTUAL_TERMINAL_PROCESSING;
+    if (!SetConsoleMode(hOut, dwMode)) {
+      p_write = default_write;
+      return 1;
+    }
+    #endif
+  }
   return 1;
 }
 
