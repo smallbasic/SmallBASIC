@@ -1,3 +1,13 @@
+2022-11-13 (12.25)
+	ANDROID: Updated file manager web UI:
+	- Implemented delete command
+	- Implemented upload support for non .bas files
+	- Fixed date column sorting
+	COMMON: SPLIT with empty input now gives zero length output #147
+	COMMON: Fix for bug #166:  Display floating point numbers with high precision (by J7M)
+	COMMON: Fixed functions Polyarea, Polycent (by J7M)
+	CONSOLE: vt100 (esc sequences) support for console (by J7M)
+
 2022-11-06 (12.25)
 	ANDROID: fix crash with INPUT command while scrolled #160
 
