@@ -735,7 +735,7 @@ public class MainActivity extends NativeActivity {
     try {
       File sharesPath = new File(getExternalFilesDir(null), "shares");
       if (sharesPath.mkdirs()) {
-        Log.i(TAG, "created folder: " + sharesPath.toString());
+        Log.i(TAG, "created folder: " + sharesPath);
       }
       File shareFile = new File(sharesPath, file.getName());
       copy(file, sharesPath);
@@ -939,6 +939,25 @@ public class MainActivity extends NativeActivity {
     private final Map<String, Long> fileLengths = new HashMap<>();
 
     @Override
+    protected byte[] decodeBase64(String data) {
+      return Base64.decode(data, Base64.DEFAULT);
+    }
+
+    @Override
+    protected void deleteFile(String fileName) throws IOException {
+      if (fileName == null) {
+        throw new IOException("Empty file name");
+      }
+      File file = getFile(fileName);
+      if (file == null) {
+        throw new IOException("File not found");
+      }
+      if (!file.delete()) {
+        throw new IOException("Failed to delete file:" + fileName);
+      }
+    }
+
+    @Override
     protected void execStream(InputStream inputStream) throws IOException {
       MainActivity.this.execStream(inputStream);
     }
@@ -983,8 +1002,8 @@ public class MainActivity extends NativeActivity {
 
     @Override
     protected void renameFile(String from, String to) throws IOException {
-      if (to == null || !to.endsWith(".bas")) {
-        throw new IOException("Invalid file name: " + to);
+      if (to == null) {
+        throw new IOException("Empty file name");
       }
       File toFile = getFile(to);
       if (toFile != null) {
@@ -1047,7 +1066,7 @@ public class MainActivity extends NativeActivity {
     private Collection<FileData> getFiles(File path) {
       Collection<FileData> result = new ArrayList<>();
       if (path.isDirectory() && path.canRead()) {
-        File[] files = path.listFiles(new BasFileFilter());
+        File[] files = path.listFiles((FilenameFilter)null);
         if (files != null) {
           for (File file : files) {
             result.add(new FileData(file));
@@ -1056,5 +1075,5 @@ public class MainActivity extends NativeActivity {
       }
       return result;
     }
-  };
+  }
 }

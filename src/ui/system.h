@@ -106,7 +106,7 @@ struct System {
 
   // platform static virtual
   bool getPen3();
-  void completeKeyword(int index);
+  void completeKeyword(int index) const;
 
   strlib::Stack<String *> _history;
   StackTrace _stackTrace;

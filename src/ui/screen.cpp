@@ -6,7 +6,7 @@
 // Download the GNU Public License (GPL) from www.gnu.org
 //
 
-#include <string.h>
+#include <cstring>
 
 #include "ui/screen.h"
 
@@ -22,8 +22,8 @@
     rect->draw(_x + rect->_x, _y + rect->_y - _scrollY, w(), h(), _charWidth)
 
 int compareZIndex(const void *p1, const void *p2) {
-  ImageDisplay **i1 = (ImageDisplay **)p1;
-  ImageDisplay **i2 = (ImageDisplay **)p2;
+  auto **i1 = (ImageDisplay **)p1;
+  auto **i2 = (ImageDisplay **)p2;
   return (*i1)->_zIndex < (*i2)->_zIndex ? -1 : (*i1)->_zIndex == (*i2)->_zIndex ? 0 : 1;
 }
 
@@ -140,7 +140,7 @@ void Screen::drawMenu() {
 }
 
 void Screen::drawShape(Shape *rect) {
-  if (rect != NULL &&
+  if (rect != nullptr &&
       rect->_y >= _scrollY &&
       rect->_y + rect->_height <= _scrollY + _height) {
     rect->draw(_x + rect->_x, _y + rect->_y - _scrollY, w(), h(), _charWidth);
@@ -167,7 +167,7 @@ void Screen::drawOverlay(bool vscroll) {
     DRAW_SHAPE;
   }
 
-  FormInput *drawTop = NULL;
+  FormInput *drawTop = nullptr;
   List_each(FormInput *, it, _inputs) {
     FormInput *input = (*it);
     if (input->_y >= _scrollY - _height &&
@@ -179,7 +179,7 @@ void Screen::drawOverlay(bool vscroll) {
       }
     }
   }
-  if (drawTop != NULL) {
+  if (drawTop != nullptr) {
     drawTop->draw(_x + drawTop->_x, _y + drawTop->_y - _scrollY, w(), h(), _charWidth);
   }
 
@@ -220,7 +220,7 @@ void Screen::drawInto(bool background) {
 
 int Screen::getIndex(FormInput *input) const {
   int index;
-  if (input == NULL) {
+  if (input == nullptr) {
     index = -1;
   } else {
     index = 0;
@@ -238,19 +238,19 @@ int Screen::getIndex(FormInput *input) const {
 
 FormInput *Screen::getMenu(FormInput *prev, int px, int py) {
   FormInput *result = _inputs[0];
-  if (result != NULL && overlaps(px, py)) {
+  if (result != nullptr && overlaps(px, py)) {
     int item = (py - _y) / result->_height;
     result = _inputs[item];
   } else {
-    result = NULL;
+    result = nullptr;
   }
   if (result != prev) {
     MAHandle currentHandle = maSetDrawTarget(HANDLE_SCREEN);
-    if (prev != NULL) {
+    if (prev != nullptr) {
       prev->_pressed = false;
       drawShape(prev);
     }
-    if (result != NULL) {
+    if (result != nullptr) {
       result->_pressed = true;
       drawShape(result);
     }
@@ -262,7 +262,7 @@ FormInput *Screen::getMenu(FormInput *prev, int px, int py) {
 
 FormInput *Screen::getNextMenu(FormInput *prev, bool up) {
   int index;
-  if (prev == NULL) {
+  if (prev == nullptr) {
     index = 0;
   } else {
     index = getIndex(prev) + (up ? -1 : 1);
@@ -273,7 +273,7 @@ FormInput *Screen::getNextMenu(FormInput *prev, bool up) {
     next = _inputs.get(index);
     next->_pressed = true;
     drawShape(next);
-    if (prev != NULL) {
+    if (prev != nullptr) {
       prev->_pressed = false;
       drawShape(prev);
     }
@@ -432,15 +432,15 @@ void Screen::setFont(bool bold, bool italic, int size) {
 }
 
 FormInput *Screen::getNextField(FormInput *field) {
-  FormInput *result = NULL;
+  FormInput *result = nullptr;
   bool setNext = false;
   List_each(FormInput *, it, _inputs) {
     FormInput *next = (*it);
     if (!next->isNoFocus()) {
-      if (result == NULL) {
+      if (result == nullptr) {
         // set result to first item
         result = next;
-        if (field == NULL) {
+        if (field == nullptr) {
           // no next item
           break;
         }
@@ -463,7 +463,7 @@ void Screen::updateInputs(var_p_t form, bool setVars) {
       next->updateField(form);
     } else {
       var_p_t field = next->getField(form);
-      if (field == NULL) {
+      if (field == nullptr) {
         _inputs.remove(it);
         delete next;
         setDirty();
@@ -481,10 +481,10 @@ void Screen::updateInputs(var_p_t form, bool setVars) {
 GraphicScreen::GraphicScreen(int width, int height, int fontSize) :
   Screen(0, 0, width, height, fontSize),
   _image(0),
-  _underline(0),
-  _invert(0),
-  _bold(0),
-  _italic(0),
+  _underline(false),
+  _invert(false),
+  _bold(false),
+  _italic(false),
   _imageWidth(width),
   _imageHeight(height),
   _curYSaved(0),
@@ -939,9 +939,9 @@ struct RectFilledShape : Shape {
 //
 TextScreen::TextScreen(int width, int height, int fontSize) :
   Screen(0, 0, width, height, fontSize),
-  _over(NULL),
+  _over(nullptr),
   _inset(0, 0, 0, 0),
-  _buffer(NULL),
+  _buffer(nullptr),
   _head(0),
   _tail(0),
   _rows(TEXT_ROWS),
@@ -960,7 +960,7 @@ void TextScreen::calcTab() {
 bool TextScreen::construct() {
   reset(_fontSize);
   _buffer = new Row[_rows];
-  return (_buffer != NULL);
+  return (_buffer != nullptr);
 }
 
 //
@@ -995,7 +995,7 @@ void TextScreen::drawBase(bool vscroll, bool update) {
     numRows = textRows - firstRow;
   }
 
-  if (_over != NULL && _over != this) {
+  if (_over != nullptr && _over != this) {
     _over->drawBase(vscroll, false);
   }
 
@@ -1013,7 +1013,7 @@ void TextScreen::drawBase(bool vscroll, bool update) {
     Row *line = getLine(row);   // next logical row
     TextSeg *seg = line->_head;
     int px = (_x + INITXY) - _scrollX;
-    while (seg != NULL) {
+    while (seg != nullptr) {
       if (seg->escape(&bold, &italic, &underline, &invert)) {
         setFont(bold, italic, _fontSize);
       } else if (seg->isReset()) {
@@ -1135,7 +1135,7 @@ void TextScreen::resize(int newWidth, int newHeight, int, int, int) {
 //
 int TextScreen::print(const char *p, int lineHeight, bool allChars) {
   Row *line = getLine(_head);
-  TextSeg *segment = new TextSeg();
+  auto *segment = new TextSeg();
   line->append(segment);
 
   int numChars = Screen::print(p, lineHeight, true);

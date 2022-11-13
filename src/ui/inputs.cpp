@@ -270,16 +270,16 @@ bool FormInput::selected(MAPoint2d pt, int scrollX, int scrollY, bool &redraw) {
   return FormInput::overlaps(pt, scrollX, scrollY);
 }
 
-void FormInput::setTextColor() {
+void FormInput::setTextColor() const {
   maSetColor(hasFocus() || _noFocus ? _fg : lerp(_bg, _fg, 0.7));
 }
 
-void FormInput::setHelpTextColor() {
+void FormInput::setHelpTextColor() const {
   maSetColor(lerp(_bg, _fg, 0.4));
 }
 
 // returns the field var attached to the field
-var_p_t FormInput::getField(var_p_t form) {
+var_p_t FormInput::getField(var_p_t form) const {
   var_p_t result = nullptr;
   if (form->type == V_MAP) {
     var_p_t inputs = map_get(form, FORM_INPUTS);
@@ -849,7 +849,7 @@ void ListModel::fromArray(var_t *v) {
 
 // return the text at the given index
 const char *ListModel::getTextAt(int index) {
-  const char *s = 0;
+  const char *s = nullptr;
   if (index > -1 && index < _list.size()) {
     s = _list[index]->c_str();
   }

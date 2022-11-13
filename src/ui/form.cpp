@@ -16,7 +16,7 @@
 
 extern System *g_system;
 extern FormInput *focusInput;
-var_p_t form = NULL;
+var_p_t form = nullptr;
 
 enum Mode {
   m_init,
@@ -25,11 +25,11 @@ enum Mode {
 } mode = m_init;
 
 const char *FormInput::getValue() {
-  const char *result = NULL;
+  const char *result = nullptr;
   var_p_t field = getField(form);
-  if (field != NULL) {
+  if (field != nullptr) {
     var_p_t value = map_get(field, FORM_INPUT_VALUE);
-    if (value != NULL && value->type == V_STR) {
+    if (value != nullptr && value->type == V_STR) {
       result = value->v.p.ptr;
     }
   }
@@ -45,10 +45,10 @@ void FormInput::clicked(int x, int y, bool pressed) {
       cmd_push_args(kwPROC, prog_ip, INVALID_ADDR);
       bc_loop(2);
       prog_ip = ip;
-    } else if (form != NULL) {
+    } else if (form != nullptr) {
       if (_exit) {
         const char *value = getValue();
-        g_system->setLoadBreak(value != NULL ? value : getText());
+        g_system->setLoadBreak(value != nullptr ? value : getText());
       }
       else {
         selected();
@@ -58,10 +58,10 @@ void FormInput::clicked(int x, int y, bool pressed) {
 }
 
 void FormInput::selected() {
-  if (form != NULL && g_system->isRunning()) {
+  if (form != nullptr && g_system->isRunning()) {
     setFocus(true);
     updateForm(form);
-    if (focusInput != NULL) {
+    if (focusInput != nullptr) {
       focusInput->updateField(form);
     }
     mode = m_selected;
@@ -85,7 +85,7 @@ bool FormLineInput::selected(MAPoint2d pt, int scrollX, int scrollY, bool &redra
 }
 
 void FormDropList::clicked(int x, int y, bool pressed) {
-  if (form != NULL && !pressed && g_system->isRunning()) {
+  if (form != nullptr && !pressed && g_system->isRunning()) {
     setFocus(true);
     updateForm(form);
     _listActive = !_listActive;
@@ -97,7 +97,7 @@ void FormDropList::clicked(int x, int y, bool pressed) {
 }
 
 void FormListBox::clicked(int x, int y, bool pressed) {
-  if (form != NULL && !pressed && g_system->isRunning()) {
+  if (form != nullptr && !pressed && g_system->isRunning()) {
     setFocus(true);
     if (_activeIndex != -1) {
       optionSelected(_activeIndex + _topIndex);
@@ -108,9 +108,9 @@ void FormListBox::clicked(int x, int y, bool pressed) {
 
 void FormLink::clicked(int x, int y, bool pressed) {
   setFocus(true);
-  if (!pressed && _external && form != NULL && g_system->isRunning()) {
+  if (!pressed && _external && form != nullptr && g_system->isRunning()) {
     const char *value = getValue();
-    g_system->browseFile(value != NULL ? value : _link.c_str());
+    g_system->browseFile(value != nullptr ? value : _link.c_str());
   } else {
     FormInput::clicked(x, y, pressed);
   }
@@ -162,7 +162,7 @@ void cmd_form_do_events(var_s *self, var_s *) {
           dev_clrkb();
           focusInput = out->getNextField(focusInput);
           out->setDirty();
-        } else if (focusInput != NULL &&
+        } else if (focusInput != nullptr &&
                    event.key != SB_KEY_MENU &&
                    focusInput->edit(event.key, sw, charWidth)) {
           dev_clrkb();
@@ -178,14 +178,14 @@ void cmd_form_do_events(var_s *self, var_s *) {
         }
       }
     }
-    form = NULL;
+    form = nullptr;
   }
 }
 
 int get_selected_index(var_p_t v_field) {
   var_p_t value = map_get(v_field, FORM_INPUT_INDEX);
   int result;
-  if (value == NULL) {
+  if (value == nullptr) {
     result = 0;
     map_add_var(v_field, FORM_INPUT_INDEX, result);
   } else {
@@ -205,17 +205,17 @@ FormInput *create_input(var_p_t v_field) {
   const char *help = map_get_str(v_field, FORM_INPUT_HELP);
   var_p_t value = map_get(v_field, FORM_INPUT_VALUE);
 
-  if (label == NULL) {
+  if (label == nullptr) {
     label = "";
   }
 
-  if (value == NULL) {
+  if (value == nullptr) {
     value = map_add_var(v_field, FORM_INPUT_VALUE, 0);
     v_setstr(value, label);
   }
 
-  FormInput *widget = NULL;
-  if (type == NULL || strcasecmp("button", type) == 0) {
+  FormInput *widget = nullptr;
+  if (type == nullptr || strcasecmp("button", type) == 0) {
     widget = new FormButton(label, x, y, w, h);
   } else if (strcasecmp("label", type) == 0) {
     widget = new FormLabel(label, x, y, w, h);
@@ -237,7 +237,7 @@ FormInput *create_input(var_p_t v_field) {
     if (maxSize < 1 || maxSize > 1024) {
       maxSize = 100;
     }
-    const char *text = NULL;
+    const char *text = nullptr;
     if (value->type == V_STR) {
       text = value->v.p.ptr;
     }
@@ -249,7 +249,7 @@ FormInput *create_input(var_p_t v_field) {
   } else if (strcasecmp("image", type) == 0) {
     const char *name = map_get_str(v_field, FORM_INPUT_NAME);
     ImageDisplay *image = create_display_image(v_field, name);
-    if (image != NULL) {
+    if (image != nullptr) {
       widget = new FormImage(image, x, y);
     }
   } else if (strcasecmp("print", type) == 0) {
@@ -270,7 +270,7 @@ extern "C" void v_create_form(var_p_t var) {
     arg = code_getvarptr();
     if (arg->type == V_MAP) {
       var_p_t inputs = map_get(arg, FORM_INPUTS);
-      if (inputs != NULL && inputs->type == V_ARRAY) {
+      if (inputs != nullptr && inputs->type == V_ARRAY) {
         for (unsigned i = 0; i < v_asize(inputs); i++) {
           var_p_t elem = v_elem(inputs, i);
           if (elem->type == V_MAP) {
@@ -285,13 +285,13 @@ extern "C" void v_create_form(var_p_t var) {
     set_input_defaults(out->getColor(), out->getBackgroundColor());
     map_set(var, arg);
     var_p_t v_focus = map_get(var, FORM_FOCUS);
-    unsigned i_focus = v_focus != NULL ? v_getint(v_focus) : -1;
+    unsigned i_focus = v_focus != nullptr ? v_getint(v_focus) : -1;
     var_p_t inputs = map_get(var, FORM_INPUTS);
-    for (unsigned i = 0; inputs != NULL && i < v_asize(inputs); i++) {
+    for (unsigned i = 0; inputs != nullptr && i < v_asize(inputs); i++) {
       var_p_t elem = v_elem(inputs, i);
       if (elem->type == V_MAP) {
         FormInput *widget = create_input(elem);
-        if (widget != NULL) {
+        if (widget != nullptr) {
           widget->construct(var, elem, i);
           out->addInput(widget);
           if (i_focus == i || v_asize(inputs) == 1) {

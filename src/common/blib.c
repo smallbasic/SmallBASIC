@@ -2249,10 +2249,11 @@ void cmd_wsplit() {
     elem_p = v_elem(var_p, count);
     if (*ps) {
       v_setstr(elem_p, ps);
-    } else {
+      count++;
+    } else if (count) {
       v_setstr(elem_p, "");
+      count++;
     }
-    count++;
 
     // final resize
     v_resize_array(var_p, count);

@@ -134,19 +134,19 @@ struct FormInput : public Shape {
   bool hasFocus() const;
   void hide() { _visible = false; }
   int  getId() { return _id; }
-  var_p_t getField(var_p_t form);
+  var_p_t getField(var_p_t form) const;
   bool isNoFocus() { return _noFocus; }
   bool isResizable() { return _resizable; }
   bool isVisible() { return _visible; }
   void setColor(int bg, int fg) { _bg = bg; _fg = fg; }
-  void setTextColor();
-  void setHelpTextColor();
+  void setTextColor() const;
+  void setHelpTextColor() const;
   void selected();
   void show() { _visible = true; }
   bool _pressed;
 
 protected:
-  bool __padding[3];
+  bool __padding[3]{};
   int  _id;
   bool _exit;
   bool _visible;

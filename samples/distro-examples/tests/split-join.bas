@@ -60,3 +60,12 @@ if (9 != ubound(a)) then
   throw "Final empty entry was ignored"
 endif
 
+row = ""
+split row, ":", fields()
+if (len(fields) != 0) then throw "Empty input gave non-empty output"
+
+s="$$$1$2$3$4$5$$$6$7$"
+split s, "!@#$%^", a
+if (ubound(a) - lbound(a) != len(a) - 1) then throw "Dimension error"
+
+

@@ -54,7 +54,7 @@ struct Runtime : public System {
   void pushEvent(MAEvent *event);
   void readSensorEvents();
   void setFloat(const char *methodName, float value);
-  void setLocationData(var_t *retval);
+  static void setLocationData(var_t *retval);
   void setSensorData(var_t *retval);
   void setString(const char *methodName, const char *value);
   void speak(const char *text) { setString("speak", text); }
@@ -72,7 +72,7 @@ struct Runtime : public System {
   void onRunCompleted();
   void onUnicodeChar(int ch);
   void loadConfig();
-  void loadEnvConfig(Properties<String *> &settings, const char *key);
+  static void loadEnvConfig(Properties<String *> &settings, const char *key);
   bool loadSettings(Properties<String *> &settings);
   void saveConfig();
   void runPath(const char *path);
@@ -87,12 +87,12 @@ private:
   Graphics *_graphics;
   android_app *_app;
   Stack<MAEvent *> *_eventQueue;
-  pthread_mutex_t _mutex;
+  pthread_mutex_t _mutex{};
   ALooper *_looper;
   ASensorManager *_sensorManager;
   const ASensor *_sensor;
   ASensorEventQueue *_sensorEventQueue;
-  ASensorEvent _sensorEvent;
+  ASensorEvent _sensorEvent{};
 };
 
 #endif

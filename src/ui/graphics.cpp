@@ -10,7 +10,7 @@
 
 #include "ui/graphics.h"
 #include "ui/utils.h"
-#include <math.h>
+#include <cmath>
 
 #include "common/smbas.h"
 #include "common/device.h"
@@ -31,7 +31,7 @@ inline double fpart(double x) {
 }
 
 #define _SWAP(a, b) \
-  { __typeof__(a) tmp; tmp = a; a = b; b = tmp; }
+  { __typeof__(a) tmp; tmp = a; (a) = b; (b) = tmp; }
 
 Font::Font(FT_Face face, int size, bool italic) :
   _face(face) {
@@ -58,7 +58,7 @@ Font::Font(FT_Face face, int size, bool italic) :
       trace("Failed to get glyph %d", i);
     }
     if (italic) {
-      FT_Glyph_Transform(_glyph[i]._slot, &matrix, 0 );
+      FT_Glyph_Transform(_glyph[i]._slot, &matrix, nullptr );
     }
     FT_Vector origin;
     origin.x = 0;
@@ -72,8 +72,8 @@ Font::Font(FT_Face face, int size, bool italic) :
 }
 
 Font::~Font() {
-  for (int i = 0; i < MAX_GLYPHS; i++) {
-    FT_Done_Glyph(_glyph[i]._slot);
+  for (auto & i : _glyph) {
+    FT_Done_Glyph(i._slot);
   }
 }
 
@@ -278,7 +278,7 @@ void Graphics::drawPixel(int posX, int posY) {
 
 void Graphics::drawRGB(const MAPoint2d *dstPoint, const void *src,
                        const MARect *srcRect, int opacity, int stride) {
-  uint8_t *image = (uint8_t *)src;
+  auto *image = (uint8_t *)src;
   float op = opacity / 100.0f;
   int top = srcRect->top;
   int left = srcRect->left;
@@ -358,7 +358,7 @@ void Graphics::drawText(int left, int top, const char *str, int len) {
     pen.y = top + _font->_h + ((_font->_spacing - _font->_h) / 2);
     for (int i = 0; i < len; i++) {
       uint8_t ch = str[i];
-      FT_BitmapGlyph glyph = (FT_BitmapGlyph)_font->_glyph[ch]._slot;
+      auto glyph = (FT_BitmapGlyph)_font->_glyph[ch]._slot;
       drawChar(&glyph->bitmap,
                pen.x + glyph->left,
                pen.y - glyph->top);
@@ -583,7 +583,7 @@ void Graphics::line2(int xc, int yc, int x, int y) {
 //
 // maapi implementation
 //
-MAHandle maCreatePlaceholder(void) {
+MAHandle maCreatePlaceholder() {
   MAHandle maHandle = (MAHandle) new Canvas();
   return maHandle;
 }
@@ -652,7 +652,7 @@ MAExtent maGetTextSize(const char *str) {
   return result;
 }
 
-MAExtent maGetScrSize(void) {
+MAExtent maGetScrSize() {
   short width = graphics->getWidth();
   short height = graphics->getHeight();
   return (MAExtent)((width << 16) + height);
@@ -672,20 +672,20 @@ MAHandle maFontSetCurrent(MAHandle maHandle) {
 void maDrawImageRegion(MAHandle maHandle, const MARect *srcRect,
                        const MAPoint2d *dstPoint, int transformMode) {
   Canvas *drawTarget = graphics->getDrawTarget();
-  Canvas *src = (Canvas *)maHandle;
+  auto *src = (Canvas *)maHandle;
   if (drawTarget && drawTarget != src) {
     drawTarget->drawRegion(src, srcRect, dstPoint->x, dstPoint->y);
   }
 }
 
 void maDestroyPlaceholder(MAHandle maHandle) {
-  Canvas *holder = (Canvas *)maHandle;
+  auto *holder = (Canvas *)maHandle;
   delete holder;
 }
 
 void maGetImageData(MAHandle maHandle, void *dst,
                     const MARect *srcRect, int stride) {
-  Canvas *holder = (Canvas *)maHandle;
+  auto *holder = (Canvas *)maHandle;
   if (srcRect->width == 1 && srcRect->height == 1) {
     *((int *)dst) = graphics->getPixel(holder, srcRect->left, srcRect->top);
   } else {
@@ -703,7 +703,7 @@ int maCreateDrawableImage(MAHandle maHandle, int width, int height) {
   if (height > maxSize * MAX_CANVAS_SIZE) {
     result -= 1;
   } else {
-    Canvas *drawable = (Canvas *)maHandle;
+    auto *drawable = (Canvas *)maHandle;
     result = drawable->create(width, height) ? RES_OK : -1;
   }
   return result;

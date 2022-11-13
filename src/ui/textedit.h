@@ -52,11 +52,11 @@ struct EditBuffer {
   void clear();
   int  countNewlines(const char *text, int num);
   int  deleteChars(int pos, int num);
-  char getChar(int pos);
+  char getChar(int pos) const;
   int  insertChars(int pos, const char *text, int num);
   int  lineCount();
   void removeTrailingSpaces(STB_TexteditState *state);
-  char *textRange(int start, int end);
+  char *textRange(int start, int end) const;
 };
 
 struct TextEditInput : public FormEditInput {
@@ -136,7 +136,7 @@ protected:
   int  getCursorRow();
   uint32_t getHash(const char *str, int offs, int &count);
   int  getIndent(char *spaces, int len, int pos);
-  int  getLineChars(StbTexteditRow *row, int pos);
+  int  getLineChars(StbTexteditRow *row, int pos) const;
   char *getSelection(int *start, int *end);
   void gotoNextMarker();
   void killWord();
@@ -157,7 +157,7 @@ protected:
   int wordStart();
 
   EditBuffer _buf;
-  STB_TexteditState _state;
+  STB_TexteditState _state{};
   EditTheme *_theme;
   int _charWidth;
   int _charHeight;

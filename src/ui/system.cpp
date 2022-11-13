@@ -8,10 +8,10 @@
 
 #include "config.h"
 
-#include <string.h>
+#include <cstring>
 #include <unistd.h>
-#include <stdio.h>
-#include <errno.h>
+#include <cstdio>
+#include <cerrno>
 
 #include "include/osd.h"
 #include "common/sbapp.h"
@@ -225,7 +225,7 @@ bool System::fileExists(strlib::String &path) {
   if (path.indexOf("://", 1) != -1) {
     result = true;
   } else if (!path.empty()) {
-    struct stat st_file;
+    struct stat st_file{};
     result = stat(path.c_str(), &st_file) == 0;
   }
   return result;
@@ -337,7 +337,7 @@ char *System::getText(char *dest, int maxSize) {
 uint32_t System::getModifiedTime() {
   uint32_t result = 0;
   if (!_activeFile.empty()) {
-    struct stat st_file;
+    struct stat st_file{};
     if (!stat(_activeFile.c_str(), &st_file)) {
       result = st_file.st_mtime;
     }
@@ -687,19 +687,19 @@ void System::optionsBox(StringList *items) {
   _menuX = 0;
   _menuY = 0;
   if (selectedIndex != -1) {
-    if (_systemMenu == NULL && isRunning() &&
+    if (_systemMenu == nullptr && isRunning() &&
         !form_ui::optionSelected(selectedIndex)) {
       dev_clrkb();
       dev_pushkey(selectedIndex);
     } else {
-      MAEvent *maEvent = new MAEvent();
+      auto *maEvent = new MAEvent();
       maEvent->type = EVENT_TYPE_OPTIONS_BOX_BUTTON_CLICKED;
       maEvent->optionsBoxButtonIndex = selectedIndex;
       maPushEvent(maEvent);
     }
   } else {
     delete [] _systemMenu;
-    _systemMenu = NULL;
+    _systemMenu = nullptr;
   }
 
   _output->redraw();
@@ -715,7 +715,7 @@ char *System::readSource(const char *fileName) {
     if (!buffer) {
       int h = open(fileName, O_BINARY | O_RDONLY);
       if (h != -1) {
-        struct stat st;
+        struct stat st{};
         if (fstat(h, &st) == 0) {
           int len = st.st_size;
           buffer = (char *)malloc(len + 1);
@@ -919,9 +919,9 @@ void System::setBack() {
     if (!_mainBas) {
       // remove the current item
       strlib::String *old = _history.pop();
-      if (old) {
+
         delete old;
-      }
+
       if (_history.peek() != nullptr) {
         _loadPath.clear();
         _loadPath.append(_history.peek());
@@ -980,7 +980,7 @@ void System::setupPath(String &loadPath) {
         strncpy(path, filename, len);
         path[len] = 0;
         chdir(path);
-        struct stat st_file;
+        struct stat st_file{};
         if (stat(loadPath.c_str(), &st_file) < 0) {
           // reset relative path back to full path
           getcwd(path, FILENAME_MAX);
@@ -1478,7 +1478,7 @@ char *dev_read(const char *fileName) {
   return g_system->readSource(fileName);
 }
 
-int maGetMilliSecondCount(void) {
+int maGetMilliSecondCount() {
   return dev_get_millisecond_count();
 }
 

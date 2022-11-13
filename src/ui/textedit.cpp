@@ -6,8 +6,8 @@
 // Download the GNU Public License (GPL) from www.gnu.org
 //
 
-#include <stdlib.h>
-#include <string.h>
+#include <cstdlib>
+#include <cstring>
 
 #include "ui/textedit.h"
 #include "ui/inputs.h"
@@ -22,8 +22,8 @@ void safe_memmove(void *dest, const void *src, size_t n) {
 }
 
 #define STB_TEXTEDIT_IS_SPACE(ch) IS_WHITE(ch)
-#define STB_TEXTEDIT_IS_PUNCT(ch) (ch != '_' && ch != '$' && ispunct(ch))
-#define IS_VAR_CHAR(ch) (ch == '_' || ch == '$' || isalpha(ch) || isdigit(ch))
+#define STB_TEXTEDIT_IS_PUNCT(ch) ((ch) != '_' && (ch) != '$' && ispunct(ch))
+#define IS_VAR_CHAR(ch) ((ch) == '_' || (ch) == '$' || isalpha(ch) || isdigit(ch))
 #define STB_TEXTEDIT_memmove safe_memmove
 #define STB_TEXTEDIT_IMPLEMENTATION
 
@@ -402,7 +402,7 @@ int EditBuffer::deleteChars(int pos, int num) {
   return 1;
 }
 
-char EditBuffer::getChar(int pos) {
+char EditBuffer::getChar(int pos) const {
   char result;
   if (_buffer != nullptr && pos >= 0 && pos < _len) {
     result = _buffer[pos];
@@ -443,7 +443,7 @@ int EditBuffer::lineCount() {
   return _lines;
 }
 
-char *EditBuffer::textRange(int start, int end) {
+char *EditBuffer::textRange(int start, int end) const {
   char *result;
   int len;
   if (start < 0 || start > _len || end <= start) {
@@ -546,13 +546,13 @@ const char *TextEditInput::completeKeyword(int index) {
   if (selection != nullptr) {
     int len = strlen(selection);
     int count = 0;
-    for (int i = 0; i < keyword_help_len; i++) {
-      if (strncasecmp(selection, keyword_help[i].keyword, len) == 0 &&
+    for (auto & i : keyword_help) {
+      if (strncasecmp(selection, i.keyword, len) == 0 &&
           count++ == index) {
         if (IS_WHITE(_buf._buffer[_state.cursor]) || _buf._buffer[_state.cursor] == '\0') {
-          completeWord(keyword_help[i].keyword);
+          completeWord(i.keyword);
         }
-        help = keyword_help[i].signature;
+        help = i.signature;
         break;
       }
     }
@@ -1488,7 +1488,7 @@ int TextEditInput::getCompletions(StringList *list, int max) {
   if (len > 0) {
     for (int i = 0; i < keyword_help_len && count < max; i++) {
       if (strncasecmp(selection, keyword_help[i].keyword, len) == 0) {
-        String *s = new String();
+        auto *s = new String();
         s->append(" ");
         s->append(keyword_help[i].keyword);
         list->add(s);
@@ -1601,7 +1601,7 @@ int TextEditInput::getIndent(char *spaces, int len, int pos) {
   return i;
 }
 
-int TextEditInput::getLineChars(StbTexteditRow *row, int pos) {
+int TextEditInput::getLineChars(StbTexteditRow *row, int pos) const {
   int numChars = row->num_chars;
   if (numChars > 0 && _buf._buffer[pos + row->num_chars - 1] == '\r') {
     numChars--;
@@ -2084,10 +2084,10 @@ void TextEditHelpWidget::createCompletionHelp() {
   int len = selection != nullptr ? strlen(selection) : 0;
   if (len > 0) {
     StringList words;
-    for (int i = 0; i < keyword_help_len; i++) {
-      if (strncasecmp(selection, keyword_help[i].keyword, len) == 0) {
-        words.add(keyword_help[i].keyword);
-        _buf.append(keyword_help[i].keyword);
+    for (auto & i : keyword_help) {
+      if (strncasecmp(selection, i.keyword, len) == 0) {
+        words.add(i.keyword);
+        _buf.append(i.keyword);
         _buf.append("\n", 1);
       }
     }
@@ -2112,15 +2112,15 @@ void TextEditHelpWidget::createCompletionHelp() {
     }
   } else {
     const char *package = nullptr;
-    for (int i = 0; i < keyword_help_len; i++) {
-      if (package == nullptr || strcasecmp(package, keyword_help[i].package) != 0) {
+    for (auto & i : keyword_help) {
+      if (package == nullptr || strcasecmp(package, i.package) != 0) {
         // next package
-        package = keyword_help[i].package;
+        package = i.package;
         _buf.append("[");
         _buf.append(package);
         _buf.append("]\n");
       }
-      _buf.append(keyword_help[i].keyword);
+      _buf.append(i.keyword);
       _buf.append("\n", 1);
     }
   }
@@ -2164,9 +2164,9 @@ void TextEditHelpWidget::createKeywordIndex() {
 
   if (!keywordFound) {
     const char *package = nullptr;
-    for (int i = 0; i < keyword_help_len; i++) {
-      if (package == nullptr || strcasecmp(package, keyword_help[i].package) != 0) {
-        package = keyword_help[i].package;
+    for (auto & i : keyword_help) {
+      if (package == nullptr || strcasecmp(package, i.package) != 0) {
+        package = i.package;
         _buf.append(TWISTY1_OPEN, TWISTY1_LEN);
         _buf.append(package);
         _buf.append("\n", 1);

@@ -10,7 +10,7 @@
 #include <android/native_window.h>
 #include <android/keycodes.h>
 #include <jni.h>
-#include <errno.h>
+#include <cerrno>
 
 #include "platform/android/jni/runtime.h"
 #include "lib/maapi.h"
@@ -570,9 +570,9 @@ bool Runtime::loadSettings(Properties<String *> &settings) {
   FILE *fp = fopen(path.c_str(), "r");
   if (fp) {
     String buffer;
-    struct stat st;
+    struct stat st{};
     if (stat(path.c_str(), &st) == 0) {
-      int len = st.st_size;
+      long len = st.st_size;
       buffer.append(fp, len);
       settings.load(buffer.c_str(), buffer.length());
       result = true;
@@ -775,7 +775,7 @@ void Runtime::pause(int timeout) {
     }
   } else {
     int slept = 0;
-    while (1) {
+    while (true) {
       pollEvents(false);
       if (isBreak()) {
         break;
@@ -959,7 +959,7 @@ bool System::getPen3() {
   return result;
 }
 
-void System::completeKeyword(int index) {
+void System::completeKeyword(int index) const {
   if (get_focus_edit() && isEditing()) {
     const char *help = get_focus_edit()->completeKeyword(index);
     if (help) {
@@ -1201,11 +1201,11 @@ void maWait(int timeout) {
   runtime->pause(timeout);
 }
 
-void maShowVirtualKeyboard(void) {
+void maShowVirtualKeyboard() {
   runtime->showKeypad(true);
 }
 
-void maHideVirtualKeyboard(void) {
+void maHideVirtualKeyboard() {
   runtime->showKeypad(false);
 }
 

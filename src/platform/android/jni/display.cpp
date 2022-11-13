@@ -7,7 +7,7 @@
 //
 
 #include "config.h"
-#include <time.h>
+#include <ctime>
 #include "platform/android/jni/display.h"
 #include "ui/utils.h"
 #include "common/device.h"
@@ -82,13 +82,13 @@ void Canvas::fillRect(int left, int top, int width, int height, pixel_t drawColo
   } else {
     for (int y = 0; y < height; y++) {
       int posY = y + top;
-      if (posY == _h) {
+      if (posY >= _h) {
         break;
       } else if (posY >= dtY) {
         pixel_t *line = getLine(posY);
         for (int x = 0; x < width && line; x++) {
           int posX = x + left;
-          if (posX == _w) {
+          if (posX >= _w) {
             break;
           } else if (posX >= dtX) {
             line[posX] = drawColor;
@@ -187,7 +187,7 @@ void Graphics::redraw() {
 bool Graphics::resize() {
   bool result;
   if (_screen == nullptr || _screen->_w != _w || _screen->_h != _h) {
-    Canvas *newScreen = new Canvas();
+    auto *newScreen = new Canvas();
     result = newScreen->create(_w, _h);
     if (result) {
       delete _screen;

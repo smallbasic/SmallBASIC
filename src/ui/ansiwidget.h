@@ -111,7 +111,7 @@ private:
   void handleEscape(const char *&p, int textHeight);
   bool setActiveButton(MAEvent &event, Screen *screen);
 
-  Screen *_screens[MAX_SCREENS];
+  Screen *_screens[MAX_SCREENS]{};
   Screen *_back;   // screen being painted/written
   Screen *_front;  // screen to display
   Screen *_focus;  // screen with the active button

@@ -46,13 +46,7 @@ ImageBuffer::ImageBuffer() :
   _height(0) {
 }
 
-ImageBuffer::ImageBuffer(ImageBuffer &o) :
-  _filename(o._filename),
-  _image(o._image),
-  _bid(o._bid),
-  _width(o._width),
-  _height(o._height) {
-}
+ImageBuffer::ImageBuffer(ImageBuffer &o) = default;
 
 ImageBuffer::~ImageBuffer() {
   free(_filename);
@@ -667,7 +661,7 @@ extern "C" void v_create_image(var_p_t var) {
         // load from 2d array
         image = load_image(&arg);
       } else if (elem0->type == V_INT) {
-        unsigned char *data = new unsigned char[v_asize(&arg)];
+        auto *data = new unsigned char[v_asize(&arg)];
         for (unsigned i = 0; i < v_asize(&arg); i++) {
           var_p_t elem = v_elem(&arg, i);
           data[i] = (unsigned char)elem->v.i;

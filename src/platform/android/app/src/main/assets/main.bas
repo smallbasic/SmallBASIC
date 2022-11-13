@@ -34,6 +34,7 @@ const aboutId = "_about"
 const backId = "_back"
 const scratchId = "_scratch"
 const scratch_file = HOME + "/scratch.bas"
+const sortEnd = chr(255)
 
 func mk_menu(value, lab, x)
   local bn
@@ -76,16 +77,20 @@ func mk_scratch()
   return result
 end
 
-sub do_okay_button(bn_extra)
+sub do_okay_button(bn_extra1, bn_extra2)
   local frm, button
   button.label = "[Close]"
   button.x = (xmax - txtw(button.label)) / 2
   button.y = ypos * char_h
   button.color = colNav
   button.type = "link"
-  if (ismap(bn_extra)) then
-    frm.inputs << bn_extra
+  if (ismap(bn_extra1)) then
+    frm.inputs << bn_extra1
   endif
+  if (ismap(bn_extra2)) then
+    frm.inputs << bn_extra2
+  endif
+
   frm.inputs << button
   frm = form(frm)
   print
@@ -130,6 +135,17 @@ sub do_about()
   bn_home.color = colNav
   print:print
 
+  local bn_privacy
+  color colNav2
+  bn_privacy.x = 2
+  bn_privacy.y = ypos * char_h + char_h + 2
+  bn_privacy.type = "link"
+  bn_privacy.isExternal = true
+  bn_privacy.color = colNav
+  bn_privacy.label = "https://smallbasic.github.io/pages/privacy.html"
+  print "Privacy Policy:"
+  print:print
+
   color colText2
   print "SmallBASIC comes with ABSOLUTELY NO WARRANTY. ";
   print "This program is free software; you can use it ";
@@ -139,7 +155,7 @@ sub do_about()
   print
   color colText
   server_info()
-  do_okay_button(bn_home)
+  do_okay_button(bn_home, bn_privacy)
   clear_screen()
 end
 
@@ -215,6 +231,8 @@ end
 func fileCmpFunc0(l, r)
   local f1 = lower(l.name)
   local f2 = lower(r.name)
+  if (right(f1, 4) != ".bas") then f1 = sortEnd + f1
+  if (right(f2, 4) != ".bas") then f2 = sortEnd + f2
   local n = iff(f1 == f2, 0, iff(f1 > f2, 1, -1))
   return iff(l.dir == r.dir, n, iff(l.dir, 1, -1))
 end
@@ -222,6 +240,8 @@ end
 func fileCmpFunc1(l, r)
   local f1 = lower(l.name)
   local f2 = lower(r.name)
+  if (right(f1, 4) != ".bas") then f1 = sortEnd + f1
+  if (right(f2, 4) != ".bas") then f2 = sortEnd + f2
   local n = iff(f1 == f2, 0, iff(f1 > f2, -1, 1))
   return iff(l.dir == r.dir, n, iff(l.dir, 1, -1))
 end
@@ -270,7 +290,7 @@ sub loadFileList(path, byref basList)
   end
 
   func androidWalker(node)
-    if (node.dir == 0 && lower(right(node.name, 4)) == ".bas") then
+    if (node.dir == 0) then
       basList << node
     endif
     return node.depth == 0
@@ -377,7 +397,8 @@ sub listFiles(byref frm, path, sortDir, byref basList)
     endif
     if (abbr) then
       bn = mk_bn(path + name, name, txtcol)
-      bn.type = "link"
+      bn.type = iff(lower(right(name, 4)) == ".bas", "link", "label")
+      if (bn.type == "label") then bn.color = colText
       if (!node.dir) then bn.isExit = true
     else
       if (len(name) > 27) then
@@ -386,7 +407,8 @@ sub listFiles(byref frm, path, sortDir, byref basList)
         lab = name
       endif
       bn = mk_bn(path + name, lab, txtcol)
-      bn.type = "link"
+      bn.type = iff(lower(right(name, 4)) == ".bas", "link", "label")
+      if (bn.type == "label") then bn.color = colText
       if (!node.dir) then bn.isExit = true
       frm.inputs << bn
       gap = 12 - len(str(node.size))
@@ -538,7 +560,7 @@ sub manageFiles()
       for i = 0 to len_buffer
         print buffer(i)
       next i
-      do_okay_button(nil)
+      do_okay_button(nil, nil)
       clear_screen()
       wnd.graphicsScreen1()
       f.value = selectedFile

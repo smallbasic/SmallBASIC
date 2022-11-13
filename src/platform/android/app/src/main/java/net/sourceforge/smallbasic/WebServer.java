@@ -12,11 +12,14 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.URLDecoder;
 import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
+import java.util.TimeZone;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.zip.ZipEntry;
@@ -29,7 +32,7 @@ import java.util.zip.ZipOutputStream;
  * @author chrisws
  */
 public abstract class WebServer {
-  private static final int BUFFER_SIZE = 32768;
+  private static final int BUFFER_SIZE = 32768 / 2;
   private static final int SEND_SIZE = BUFFER_SIZE / 4;
   private static final int LINE_SIZE = 128;
   private static final String UTF_8 = "utf-8";
@@ -59,9 +62,11 @@ public abstract class WebServer {
     socketThread.start();
   }
 
+  protected abstract void deleteFile(String fileName) throws IOException;
   protected abstract void execStream(InputStream inputStream) throws IOException;
   protected abstract Response getFile(String path, boolean asset) throws IOException;
   protected abstract Collection<FileData> getFileData() throws IOException;
+  protected abstract byte[] decodeBase64(String data);
   protected abstract void log(String message);
   protected abstract void log(String message, Exception exception);
   protected abstract void renameFile(String from, String to) throws IOException;
@@ -95,7 +100,7 @@ public abstract class WebServer {
   /**
    * Server Request base class
    */
-  public abstract static class AbstractRequest {
+  public abstract class AbstractRequest {
     final Socket socket;
     final String method;
     final String url;
@@ -153,16 +158,16 @@ public abstract class WebServer {
     /**
      * Parses HTTP POST data from the given input stream
      */
-    protected Map<String, String> getPostData(InputStream inputStream) throws IOException {
+    protected Map<String, FormField> getPostData(InputStream inputStream) throws IOException {
       String postData = getLine(inputStream);
       String[] fields = postData.split("&");
-      Map<String, String> result = new HashMap<>();
+      Map<String, FormField> result = new HashMap<>();
       for (String nextField : fields) {
         int eq = nextField.indexOf("=");
         if (eq != -1) {
           String key = nextField.substring(0, eq);
-          String value = URLDecoder.decode(nextField.substring(eq + 1), UTF_8);
-          result.put(key, value);
+          String value = nextField.substring(eq + 1);
+          result.put(key, new FormField(key, value));
         }
       }
       return result;
@@ -250,10 +255,44 @@ public abstract class WebServer {
     }
 
     public FileData(File file) {
-      DateFormat dateFormat = DateFormat.getDateInstance(DateFormat.DEFAULT);
+      final DateFormat format = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss z", Locale.ENGLISH);
+      format.setLenient(false);
+      format.setTimeZone(TimeZone.getTimeZone("UTC"));
       this.fileName = file.getName();
-      this.date = dateFormat.format(file.lastModified());
+      this.date = format.format(file.lastModified());
       this.size = file.length();
+    }
+  }
+
+  /**
+   * Holder for POST form data
+   */
+  public class FormField {
+    private static final String BASE_64_PREFIX = ";base64,";
+    private final String string;
+    private final byte[] bytes;
+
+    public FormField(String key, String value) throws IOException {
+      int index = value.indexOf(BASE_64_PREFIX);
+      if (index != -1 && "data".equals(key)) {
+        ByteArrayOutputStream data = new ByteArrayOutputStream();
+        String base64Value = value.substring(index + BASE_64_PREFIX.length());
+        data.write(decodeBase64(base64Value));
+        this.string = null;
+        this.bytes = data.toByteArray();
+      } else {
+        this.string = URLDecoder.decode(value, UTF_8);
+        this.bytes = null;
+      }
+    }
+
+    @Override
+    public String toString() {
+      return string;
+    }
+
+    public byte[] toByteArray() {
+      return bytes;
     }
   }
 
@@ -321,7 +360,7 @@ public abstract class WebServer {
             log("Invalid request");
           }
         }
-      } catch (IOException e) {
+      } catch (Exception e) {
         log("Request failed", e);
       }
       finally {
@@ -352,6 +391,16 @@ public abstract class WebServer {
         result.add(fileData.fileName);
       }
       return result;
+    }
+
+    private byte[] getData(Map<String, FormField> data) {
+      FormField field = data.get("data");
+      return field == null ? null : field.toByteArray();
+    }
+
+    private String getString(Map<String, FormField> data, String key) {
+      FormField field = data.get(key);
+      return field == null ? null : field.toString();
     }
 
     /**
@@ -390,7 +439,7 @@ public abstract class WebServer {
      * Handler for files API
      */
     private Response handleFileList() throws IOException {
-      log("Sending file list");
+      log("Creating file list");
       JsonBuilder builder = new JsonBuilder();
       builder.append('[');
       long id = 0;
@@ -429,8 +478,8 @@ public abstract class WebServer {
     /**
      * Handler for POST requests
      */
-    private void handlePost(Map<String, String> data) throws IOException {
-      String userToken = data.get(TOKEN);
+    private void handlePost(Map<String, FormField> data) throws IOException {
+      String userToken = getString(data, TOKEN);
       if (userToken == null) {
         userToken = requestToken;
       }
@@ -444,6 +493,8 @@ public abstract class WebServer {
           handleUpload(data).send(socket, null);
         } else if (url.startsWith("/api/rename")) {
           handleRename(data).send(socket, null);
+        } else if (url.startsWith("/api/delete")) {
+          handleDelete(data).send(socket, null);
         } else {
           new Response(SC_NOT_FOUND).send(socket, null);
         }
@@ -459,11 +510,27 @@ public abstract class WebServer {
     }
 
     /**
+     * Handler for File delete
+     */
+    private Response handleDelete(Map<String, FormField> data) throws IOException {
+      String fileName = getString(data, "fileName");
+      Response result;
+      try {
+        deleteFile(fileName);
+        log("Deleted " + fileName);
+        result = handleFileList();
+      } catch (IOException e) {
+        result = handleStatus(false, e.getMessage());
+      }
+      return result;
+    }
+
+    /**
      * Handler for File rename operations
      */
-    private Response handleRename(Map<String, String> data) throws IOException {
-      String from = data.get("from");
-      String to = data.get("to");
+    private Response handleRename(Map<String, FormField> data) throws IOException {
+      String from = getString(data, "from");
+      String to = getString(data, "to");
       Response result;
       try {
         renameFile(from, to);
@@ -500,15 +567,15 @@ public abstract class WebServer {
     /**
      * Handler for file uploads
      */
-    private Response handleUpload(Map<String, String> data) throws IOException {
-      String fileName = data.get("fileName");
-      String content = data.get("data");
+    private Response handleUpload(Map<String, FormField> data) throws IOException {
+      String fileName = getString(data, "fileName");
+      byte[] content = getData(data);
       Response result;
       try {
         if (fileName == null || content == null) {
           result = handleStatus(false, "Invalid input");
         } else {
-          saveFile(fileName, content.getBytes(UTF_8));
+          saveFile(fileName, content);
           result = handleStatus(true, "File saved");
         }
       } catch (Exception e) {

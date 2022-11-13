@@ -9,6 +9,11 @@ import {
   Box,
   Button,
   CssBaseline,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogContentText,
+  DialogTitle,
   Link,
   Snackbar,
   TextField,
@@ -26,6 +31,7 @@ import {
 } from '@mui/x-data-grid';
 
 import {
+  Delete as DeleteIcon,
   Download as DownloadIcon,
   Upload as UploadIcon
 } from '@mui/icons-material';
@@ -49,7 +55,11 @@ const columns = [{
 }, {
   field: 'date',
   headerName: 'Modified',
-  type: 'number',
+  type: 'date',
+  minWidth: 110,
+  renderCell: (params) => {
+    return new Date(params.row.date).toLocaleDateString();
+  }
 }];
 
 function getFetchHeader(body) {
@@ -83,13 +93,18 @@ function login(token, success, fail) {
 }
 
 function upload(name, data, success, fail) {
-  let body = "fileName=" + encodeURIComponent(name) + "&data=" + encodeURIComponent(data);
+  let body = "fileName=" + encodeURIComponent(name) + "&data=" + data;
   callApi('/api/upload', body, success, fail);
 }
 
 function renameFile(from, to, success, fail) {
   let body = "from=" + encodeURIComponent(from) + "&to=" + encodeURIComponent(to);
   callApi('/api/rename', body, success, fail);
+}
+
+function deleteFile(fileName, success, fail) {
+  let body = "fileName=" + encodeURIComponent(fileName);
+  callApi('/api/delete', body, success, fail);
 }
 
 function copyFiles(event, success, progress, fail) {
@@ -101,7 +116,7 @@ function copyFiles(event, success, progress, fail) {
     upload(files[index].name, fileReader.result, () => {
       if (++index < files.length) {
         progress(index);
-        fileReader.readAsText(files[index]);
+        fileReader.readAsDataURL(files[index]);
       } else {
         getFiles(success, fail);
         // reset input control
@@ -109,7 +124,69 @@ function copyFiles(event, success, progress, fail) {
       }
     }, fail);
   };
-  fileReader.readAsText(files[index]);
+  fileReader.readAsDataURL(files[index]);
+}
+
+function ConfirmDeleteDialog(props) {
+  return (
+    <div>
+      <Dialog
+        open={props.open}
+        onClose={props.handleClose}
+        aria-labelledby="alert-dialog-title"
+        aria-describedby="alert-dialog-description">
+        <DialogTitle id="alert-dialog-title">
+          {"Delete file"}
+        </DialogTitle>
+        <DialogContent>
+          <DialogContentText id="alert-dialog-description">
+            Are you sure you want to permanently delete {props.name}? You cannot undo this.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={props.handleClose}>Cancel</Button>
+          <Button onClick={props.handleDelete} autoFocus>
+            Delete
+          </Button>
+        </DialogActions>
+      </Dialog>
+    </div>
+  );
+}
+
+function GridToolbarDelete(props) {
+  const [error, setError] = useState(null);
+  const [open, setOpen] = useState(false);
+
+  const showPrompt = () => {
+    setOpen(true);
+  };
+
+  const handleClose = () => {
+    setOpen(false);
+  };
+
+  const handleDelete = () => {
+    setOpen(false);
+    deleteFile(props.rows[props.selections[0]].fileName, (data) => {
+      props.setRows(data);
+      props.setSelections([]);
+    }, (error) => {
+      setError(error);
+      setError(true);
+    });
+  };
+
+  return props.selections.length !== 1 ? null : (
+    <Fragment>
+      <ConfirmDeleteDialog open={open} name={props.rows[props.selections[0]].fileName} handleClose={handleClose} handleDelete={handleDelete}/>
+      <ErrorMessage error={error} setError={setError} severity="error"/>
+      <Button color="primary" size="small" component="label" sx={{marginLeft: '-4px'}} onClick={showPrompt}>
+        <DeleteIcon />
+        DELETE
+      </Button>
+    </Fragment>
+  );
 }
 
 function GridToolbarDownload(props) {
@@ -182,7 +259,7 @@ function GridToolbarUpload(props) {
     <Fragment>
       <ErrorMessage error={error} setError={setError} severity={severity}/>
       <Button color="primary" size="small" component="label" sx={{marginLeft: '-4px'}}>
-        <input accept=".bas" hidden multiple type="file" onChange={handleUpload}/>
+        <input hidden multiple type="file" onChange={handleUpload}/>
         <UploadIcon />
         UPLOAD
       </Button>
@@ -199,6 +276,7 @@ function AppToolbar(props) {
       <GridToolbarDensitySelector />
       <GridToolbarUpload {...props}/>
       <GridToolbarDownload {...props}/>
+      <GridToolbarDelete {...props}/>
     </GridToolbarContainer>
   );
 }
@@ -223,14 +301,22 @@ function FileList(props) {
 
   const toolbarProps = {
     selections: selectionModel,
+    setSelections: setSelectionModel,
     setRows: props.setRows,
     rows: props.rows
+  };
+
+  const sorting = {
+    sorting: {
+      sortModel: [{ field: 'fileName', sort: 'asc' }],
+    },
   };
 
   return (
     <Fragment>
       <ErrorMessage error={error} setError={setError} />
       <DataGrid rows={props.rows}
+                initialState={sorting}
                 columns={columns}
                 onCellEditCommit={(params) => onCellEditCommit(props, params, setError)}
                 autoPageSize
