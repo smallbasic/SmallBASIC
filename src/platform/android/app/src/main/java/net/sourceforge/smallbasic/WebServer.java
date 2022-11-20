@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
+import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.URLDecoder;
@@ -32,7 +33,7 @@ import java.util.zip.ZipOutputStream;
  * @author chrisws
  */
 public abstract class WebServer {
-  private static final int BUFFER_SIZE = 32768 / 2;
+  private static final int BUFFER_SIZE = 32768;
   private static final int SEND_SIZE = BUFFER_SIZE / 4;
   private static final int LINE_SIZE = 128;
   private static final String UTF_8 = "utf-8";
@@ -62,15 +63,15 @@ public abstract class WebServer {
     socketThread.start();
   }
 
-  protected abstract void deleteFile(String fileName) throws IOException;
+  protected abstract void deleteFile(String remoteHost, String fileName) throws IOException;
   protected abstract void execStream(InputStream inputStream) throws IOException;
-  protected abstract Response getFile(String path, boolean asset) throws IOException;
-  protected abstract Collection<FileData> getFileData() throws IOException;
+  protected abstract Response getFile(String remoteHost, String path, boolean asset) throws IOException;
+  protected abstract Collection<FileData> getFileData(String remoteHost) throws IOException;
   protected abstract byte[] decodeBase64(String data);
   protected abstract void log(String message);
   protected abstract void log(String message, Exception exception);
-  protected abstract void renameFile(String from, String to) throws IOException;
-  protected abstract void saveFile(String fileName, byte[] content) throws IOException;
+  protected abstract void renameFile(String remoteHost, String from, String to) throws IOException;
+  protected abstract void saveFile(String remoteHost, String fileName, byte[] content) throws IOException;
 
   /**
    * WebServer main loop to be run in a separate thread
@@ -108,6 +109,7 @@ public abstract class WebServer {
     final String tokenKey;
     final List<String> headers;
     final InputStream inputStream;
+    final String remoteHost;
 
     public AbstractRequest(Socket socket, String tokenKey) throws IOException {
       this.socket = socket;
@@ -115,6 +117,7 @@ public abstract class WebServer {
       this.inputStream = socket.getInputStream();
       this.headers = getHeaders();
       this.requestToken = getToken(headers);
+      this.remoteHost = ((InetSocketAddress) socket.getRemoteSocketAddress()).getHostName();
       String first = headers.size() > 0 ? headers.get(0) : null;
       String[] fields;
       if (first != null) {
@@ -387,7 +390,7 @@ public abstract class WebServer {
      */
     private Collection<String> getAllFileNames() throws IOException {
       Collection<String> result = new ArrayList<>();
-      for (FileData fileData : getFileData()) {
+      for (FileData fileData : getFileData(remoteHost)) {
         result.add(fileData.fileName);
       }
       return result;
@@ -416,13 +419,13 @@ public abstract class WebServer {
         result = handleStatus(false, "File list is empty");
       } else if (fileNames.size() == 1) {
         // plain text download single file
-        result = getFile(fileNames.iterator().next(), false);
+        result = getFile(remoteHost, fileNames.iterator().next(), false);
       } else {
         // download multiple as zip
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         ZipOutputStream zipOutputStream = new ZipOutputStream(outputStream);
         for (String fileName : fileNames) {
-          Response response = getFile(fileName, false);
+          Response response = getFile(remoteHost, fileName, false);
           ZipEntry entry = new ZipEntry(fileName);
           zipOutputStream.putNextEntry(entry);
           response.toStream(zipOutputStream);
@@ -444,7 +447,7 @@ public abstract class WebServer {
       builder.append('[');
       long id = 0;
       char comma = 0;
-      for (FileData nextFile : getFileData()) {
+      for (FileData nextFile : getFileData(remoteHost)) {
         builder.append(comma);
         builder.append('{');
         builder.append("id", id++, true);
@@ -516,7 +519,7 @@ public abstract class WebServer {
       String fileName = getString(data, "fileName");
       Response result;
       try {
-        deleteFile(fileName);
+        deleteFile(remoteHost, fileName);
         log("Deleted " + fileName);
         result = handleFileList();
       } catch (IOException e) {
@@ -533,7 +536,7 @@ public abstract class WebServer {
       String to = getString(data, "to");
       Response result;
       try {
-        renameFile(from, to);
+        renameFile(remoteHost, from, to);
         result = handleStatus(true, "File renamed");
       } catch (IOException e) {
         result = handleStatus(false, e.getMessage());
@@ -575,7 +578,7 @@ public abstract class WebServer {
         if (fileName == null || content == null) {
           result = handleStatus(false, "Invalid input");
         } else {
-          saveFile(fileName, content);
+          saveFile(remoteHost, fileName, content);
           result = handleStatus(true, "File saved");
         }
       } catch (Exception e) {
@@ -598,7 +601,7 @@ public abstract class WebServer {
       }
       Response result;
       try {
-        result = getFile(path, true);
+        result = getFile(remoteHost, path, true);
       } catch (Exception e) {
         log("Error: " + e);
         result = null;

@@ -32,7 +32,7 @@ public class Server {
       }
 
       @Override
-      protected void deleteFile(String fileName) throws IOException {
+      protected void deleteFile(String hostName, String fileName) throws IOException {
         Files.delete(Paths.get(BASIC_HOME, fileName));
       }
 
@@ -48,14 +48,14 @@ public class Server {
       }
 
       @Override
-      protected Response getFile(String path, boolean asset) throws IOException {
+      protected Response getFile(String hostName, String path, boolean asset) throws IOException {
         String prefix = asset ? "../build/" : BASIC_HOME;
         File file = new File(prefix + path);
         return new Response(Files.newInputStream(file.toPath()), file.length());
       }
 
       @Override
-      protected Collection<FileData> getFileData() throws IOException {
+      protected Collection<FileData> getFileData(String hostName) throws IOException {
         final File folder = new File(BASIC_HOME);
         Collection<FileData> result = new ArrayList<>();
         for (final File fileEntry : Objects.requireNonNull(folder.listFiles())) {
@@ -84,7 +84,7 @@ public class Server {
       }
 
       @Override
-      protected void renameFile(String from, String to) throws IOException {
+      protected void renameFile(String hostName, String from, String to) throws IOException {
         if (to == null) {
           throw new IOException("Invalid File Name: " + to);
         }
@@ -102,7 +102,7 @@ public class Server {
       }
 
       @Override
-      protected void saveFile(String fileName, byte[] content) throws IOException {
+      protected void saveFile(String hostName, String fileName, byte[] content) throws IOException {
         File file = new File(BASIC_HOME, fileName);
         if (file.exists()) {
           throw new IOException("File already exists: " + fileName);

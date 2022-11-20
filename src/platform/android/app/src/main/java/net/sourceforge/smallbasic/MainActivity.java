@@ -103,6 +103,7 @@ public class MainActivity extends NativeActivity {
   private final ExecutorService _audioExecutor = Executors.newSingleThreadExecutor();
   private final Queue<Sound> _sounds = new ConcurrentLinkedQueue<>();
   private final Handler _keypadHandler = new Handler(Looper.getMainLooper());
+  private final Map<String, Boolean> permittedHost = new HashMap<>();
   private String[] _options = null;
   private MediaPlayer _mediaPlayer = null;
   private LocationAdapter _locationAdapter = null;
@@ -578,7 +579,7 @@ public class MainActivity extends NativeActivity {
       public void run() {
         new AlertDialog.Builder(activity)
           .setTitle(title).setMessage(message)
-          .setPositiveButton("OK", new DialogInterface.OnClickListener() {
+          .setPositiveButton(R.string.OK, new DialogInterface.OnClickListener() {
             public void onClick(DialogInterface dialog, int which) {}
           }).show();
       }
@@ -771,6 +772,10 @@ public class MainActivity extends NativeActivity {
     }
   }
 
+  private boolean isHostPermitted(String remoteHost) {
+    return (remoteHost != null && permittedHost.get(remoteHost) != null && Boolean.TRUE.equals(permittedHost.get(remoteHost)));
+  }
+
   private boolean locationPermitted() {
     String permission = Manifest.permission.ACCESS_FINE_LOCATION;
     return (ContextCompat.checkSelfPermission(this, permission) == PackageManager.PERMISSION_GRANTED);
@@ -848,6 +853,26 @@ public class MainActivity extends NativeActivity {
     return b == -1 ? null : out.size() == 0 ? "" : out.toString();
   }
 
+  private void requestHostPermission(String remoteHost) {
+    final Activity activity = this;
+    runOnUiThread(new Runnable() {
+      public void run() {
+        new AlertDialog.Builder(activity)
+            .setTitle(R.string.PORTAL_PROMPT).setMessage(getString(R.string.PORTAL_QUESTION, remoteHost))
+            .setPositiveButton(R.string.OK, new DialogInterface.OnClickListener() {
+              public void onClick(DialogInterface dialog, int which) {
+                permittedHost.put(remoteHost, Boolean.TRUE);
+              }
+            })
+            .setNegativeButton(R.string.Cancel, new DialogInterface.OnClickListener() {
+              public void onClick(DialogInterface dialog, int which) {
+                permittedHost.put(remoteHost, Boolean.FALSE);
+              }
+            }).show();
+      }
+    });
+  }
+
   private String saveSchemeData(final String buffer) throws IOException {
     File outputFile = new File(_storage.getInternal(), SCHEME_BAS);
     BufferedWriter output = new BufferedWriter(new FileWriter(outputFile));
@@ -861,6 +886,12 @@ public class MainActivity extends NativeActivity {
     setenv("EXTERNAL_DIR", _storage.getExternal());
     setenv("INTERNAL_DIR", _storage.getInternal());
     setenv("LEGACY_DIR", _storage.getMedia());
+  }
+
+  private void validateAccess(String remoteHost) throws IOException {
+    if (!isHostPermitted(remoteHost)) {
+      throw new IOException("Access denied");
+    }
   }
 
   private static class BasFileFilter implements FilenameFilter {
@@ -944,7 +975,8 @@ public class MainActivity extends NativeActivity {
     }
 
     @Override
-    protected void deleteFile(String fileName) throws IOException {
+    protected void deleteFile(String remoteHost, String fileName) throws IOException {
+      validateAccess(remoteHost);
       if (fileName == null) {
         throw new IOException("Empty file name");
       }
@@ -963,14 +995,18 @@ public class MainActivity extends NativeActivity {
     }
 
     @Override
-    protected Response getFile(String path, boolean asset) throws IOException {
+    protected Response getFile(String remoteHost, String path, boolean asset) throws IOException {
       Response result;
       if (asset) {
         String name = "webui/" + path;
         long length = getFileLength(name);
         log("Opened " + name + " " + length + " bytes");
         result = new Response(getAssets().open(name), length);
+        if ("index.html".equals(path) && !isHostPermitted(remoteHost)) {
+          requestHostPermission(remoteHost);
+        }
       } else {
+        validateAccess(remoteHost);
         File file = getFile(path);
         if (file != null) {
           result = new Response(new FileInputStream(file), file.length());
@@ -982,7 +1018,8 @@ public class MainActivity extends NativeActivity {
     }
 
     @Override
-    protected Collection<FileData> getFileData() throws IOException {
+    protected Collection<FileData> getFileData(String remoteHost) throws IOException {
+      validateAccess(remoteHost);
       Collection<FileData> result = new ArrayList<>();
       result.addAll(getFiles(new File(_storage.getExternal())));
       result.addAll(getFiles(new File(_storage.getMedia())));
@@ -1001,7 +1038,8 @@ public class MainActivity extends NativeActivity {
     }
 
     @Override
-    protected void renameFile(String from, String to) throws IOException {
+    protected void renameFile(String remoteHost, String from, String to) throws IOException {
+      validateAccess(remoteHost);
       if (to == null) {
         throw new IOException("Empty file name");
       }
@@ -1019,7 +1057,8 @@ public class MainActivity extends NativeActivity {
     }
 
     @Override
-    protected void saveFile(String fileName, byte[] content) throws IOException {
+    protected void saveFile(String remoteHost, String fileName, byte[] content) throws IOException {
+      validateAccess(remoteHost);
       File file = new File(_storage.getExternal(), fileName);
       if (file.exists()) {
         throw new IOException("File already exists: " + fileName);
