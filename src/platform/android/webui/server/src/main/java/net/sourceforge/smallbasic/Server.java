@@ -37,7 +37,7 @@ public class Server {
       }
 
       @Override
-      protected void execStream(InputStream inputStream) {
+      protected void execStream(String remoteHost, InputStream inputStream) {
         try {
           byte[] data = IOUtils.readAllBytes(inputStream);
           log(new String(data));

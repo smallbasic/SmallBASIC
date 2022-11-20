@@ -772,8 +772,12 @@ public class MainActivity extends NativeActivity {
     }
   }
 
-  private boolean isHostPermitted(String remoteHost) {
-    return (remoteHost != null && permittedHost.get(remoteHost) != null && Boolean.TRUE.equals(permittedHost.get(remoteHost)));
+  private boolean isHostDenied(String remoteHost) {
+    return (remoteHost != null && permittedHost.get(remoteHost) != null && Boolean.FALSE.equals(permittedHost.get(remoteHost)));
+  }
+
+  private boolean isHostNonPermitted(String remoteHost) {
+    return (remoteHost == null || permittedHost.get(remoteHost) == null || !Boolean.TRUE.equals(permittedHost.get(remoteHost)));
   }
 
   private boolean locationPermitted() {
@@ -889,8 +893,8 @@ public class MainActivity extends NativeActivity {
   }
 
   private void validateAccess(String remoteHost) throws IOException {
-    if (!isHostPermitted(remoteHost)) {
-      throw new IOException("Access denied");
+    if (isHostNonPermitted(remoteHost)) {
+      throw new IOException(getString(R.string.PORTAL_DENIED));
     }
   }
 
@@ -990,8 +994,15 @@ public class MainActivity extends NativeActivity {
     }
 
     @Override
-    protected void execStream(InputStream inputStream) throws IOException {
-      MainActivity.this.execStream(inputStream);
+    protected void execStream(String remoteHost, InputStream inputStream) throws IOException {
+      if (isHostDenied(remoteHost)) {
+        throw new IOException(getString(R.string.PORTAL_DENIED));
+      }
+      if (isHostNonPermitted(remoteHost)) {
+        requestHostPermission(remoteHost);
+      } else {
+        MainActivity.this.execStream(inputStream);
+      }
     }
 
     @Override
@@ -1002,7 +1013,7 @@ public class MainActivity extends NativeActivity {
         long length = getFileLength(name);
         log("Opened " + name + " " + length + " bytes");
         result = new Response(getAssets().open(name), length);
-        if ("index.html".equals(path) && !isHostPermitted(remoteHost)) {
+        if ("index.html".equals(path) && isHostNonPermitted(remoteHost)) {
           requestHostPermission(remoteHost);
         }
       } else {

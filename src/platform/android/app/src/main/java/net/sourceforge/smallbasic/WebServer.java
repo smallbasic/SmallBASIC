@@ -64,7 +64,7 @@ public abstract class WebServer {
   }
 
   protected abstract void deleteFile(String remoteHost, String fileName) throws IOException;
-  protected abstract void execStream(InputStream inputStream) throws IOException;
+  protected abstract void execStream(String remoteHost, InputStream inputStream) throws IOException;
   protected abstract Response getFile(String remoteHost, String path, boolean asset) throws IOException;
   protected abstract Collection<FileData> getFileData(String remoteHost) throws IOException;
   protected abstract byte[] decodeBase64(String data);
@@ -546,7 +546,7 @@ public abstract class WebServer {
 
     private void handleRun(InputStream inputStream) throws IOException {
       if (tokenKey.equals(requestToken)) {
-        execStream(inputStream);
+        execStream(remoteHost, inputStream);
       } else {
         log("Invalid token");
       }
