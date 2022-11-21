@@ -150,13 +150,13 @@ public class MainActivity extends NativeActivity {
       public void run() {
         AlertDialog.Builder builder = new AlertDialog.Builder(activity);
         builder.setTitle(title).setMessage(prompt);
-        builder.setPositiveButton("Yes", new DialogInterface.OnClickListener() {
+        builder.setPositiveButton(R.string.YES, new DialogInterface.OnClickListener() {
           public void onClick(DialogInterface dialog, int which) {
             result.setYes();
             mutex.release();
           }
         });
-        builder.setNegativeButton("No", new DialogInterface.OnClickListener() {
+        builder.setNegativeButton(R.string.NO, new DialogInterface.OnClickListener() {
           public void onClick(DialogInterface dialog, int which) {
             result.setNo();
             mutex.release();
@@ -170,7 +170,7 @@ public class MainActivity extends NativeActivity {
           }
         });
         if (cancel) {
-          builder.setNeutralButton("Cancel", new DialogInterface.OnClickListener() {
+          builder.setNeutralButton(R.string.CANCEL, new DialogInterface.OnClickListener() {
             public void onClick(DialogInterface dialog, int which) {
               result.setCancel();
               mutex.release();
@@ -502,8 +502,7 @@ public class MainActivity extends NativeActivity {
       final String text = new String(textBytes, CP1252);
       runOnUiThread(new Runnable() {
         public void run() {
-          ClipboardManager clipboard =
-            (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
+          ClipboardManager clipboard = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
           if (clipboard != null) {
             ClipData clip = ClipData.newPlainText("text", text);
             clipboard.setPrimaryClip(clip);
@@ -578,7 +577,8 @@ public class MainActivity extends NativeActivity {
     runOnUiThread(new Runnable() {
       public void run() {
         new AlertDialog.Builder(activity)
-          .setTitle(title).setMessage(message)
+          .setTitle(title)
+          .setMessage(message)
           .setPositiveButton(R.string.OK, new DialogInterface.OnClickListener() {
             public void onClick(DialogInterface dialog, int which) {}
           }).show();
@@ -806,11 +806,11 @@ public class MainActivity extends NativeActivity {
       is = getApplication().openFileInput("settings.txt");
       Properties p = new Properties();
       p.load(is);
-      int socket = Integer.parseInt(p.getProperty("serverSocket", "-1"));
+      int port = Integer.parseInt(p.getProperty("serverSocket", "-1"));
       String token = p.getProperty("serverToken", new Date().toString());
-      if (socket > 1023 && socket < 65536) {
+      if (port > 1023 && port < 65536) {
         WebServer webServer = new WebServerImpl();
-        webServer.run(socket, token);
+        webServer.run(port, token);
       } else {
         Log.i(TAG, "Web service disabled");
       }
@@ -862,13 +862,14 @@ public class MainActivity extends NativeActivity {
     runOnUiThread(new Runnable() {
       public void run() {
         new AlertDialog.Builder(activity)
-            .setTitle(R.string.PORTAL_PROMPT).setMessage(getString(R.string.PORTAL_QUESTION, remoteHost))
+            .setTitle(R.string.PORTAL_PROMPT)
+            .setMessage(getString(R.string.PORTAL_QUESTION, remoteHost))
             .setPositiveButton(R.string.OK, new DialogInterface.OnClickListener() {
               public void onClick(DialogInterface dialog, int which) {
                 permittedHost.put(remoteHost, Boolean.TRUE);
               }
             })
-            .setNegativeButton(R.string.Cancel, new DialogInterface.OnClickListener() {
+            .setNegativeButton(R.string.CANCEL, new DialogInterface.OnClickListener() {
               public void onClick(DialogInterface dialog, int which) {
                 permittedHost.put(remoteHost, Boolean.FALSE);
               }

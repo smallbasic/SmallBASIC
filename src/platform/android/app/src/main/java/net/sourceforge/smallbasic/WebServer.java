@@ -50,11 +50,11 @@ public abstract class WebServer {
   /**
    * Runs the WebServer in a new thread
    */
-  public void run(final int socketNum, final String token) {
+  public void run(final int portNum, final String token) {
     Thread socketThread = new Thread(new Runnable() {
       public void run() {
         try {
-          runServer(socketNum, token);
+          runServer(portNum, token);
         } catch (Exception e) {
           log("Server failed to start: ", e);
         }
@@ -76,12 +76,12 @@ public abstract class WebServer {
   /**
    * WebServer main loop to be run in a separate thread
    */
-  private void runServer(final int socketNum, final String token) throws IOException {
-    log("Listening :" + socketNum);
+  private void runServer(final int portNum, final String token) throws IOException {
+    log("Listening :" + portNum);
     log("Token :" + token);
     ServerSocket serverSocket;
     try {
-      serverSocket = new ServerSocket(socketNum);
+      serverSocket = new ServerSocket(portNum);
     } catch (IllegalArgumentException e) {
       log("Failed to start server: ", e);
       throw new IOException(e);

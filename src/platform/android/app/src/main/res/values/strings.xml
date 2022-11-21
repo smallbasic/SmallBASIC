@@ -5,7 +5,9 @@
   <string name="PORTAL_PROMPT">Allow Web portal access?</string>
   <string name="PORTAL_QUESTION">Do you wish to allow anyone with IP address [%s] to gain access to the portal?</string>
   <string name="OK">OK</string>
-  <string name="Cancel">Cancel</string>
+  <string name="CANCEL">Cancel</string>
+  <string name="YES">Yes</string>
+  <string name="NO">No</string>
   <style name="SBTheme" parent="android:Theme.Holo.Light">
     <item name="android:windowActionBar">false</item>
     <item name="android:windowNoTitle">true</item>
