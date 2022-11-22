@@ -52,7 +52,6 @@ void init() {
   os_graf_mx = 1024;
   os_graf_my = 768;
   os_graphics = 1;
-  os_color_depth = 16;
   opt_mute_audio = 0;
 }
 

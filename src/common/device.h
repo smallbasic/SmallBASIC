@@ -99,8 +99,6 @@ void g_line(int x1, int y1, int x2, int y2, void (*dotproc) (int, int));
  *
  * @code
  * byte  os_charset;   // System's charset (see os_charset_codes)
- * uint32_t os_color_depth; // The number of bits of the supported colors
- *             // (i.e.: 8 for 256 colors, 15 or 16 for 64K, 24 or 32 for 1.6M)
  * byte  os_graphics;  // Non-zero if the driver supports graphics
  * int   os_graf_mx;   // Graphic mode: screen width
  * int   os_graf_my;   // Graphic mode: screen height
@@ -128,8 +126,6 @@ enum os_charset_codes {
 extern byte os_charset;
 
 extern byte os_color;         // true if the output has real colors (256+ colors)
-extern uint32_t os_color_depth;  // the number of bits of the supported colors
-                              // (ex: 8 for 256 colors, 15 or 16 for 64K, 24 or 32 for 1.6M)
 extern byte os_graphics;      // non-zero if the driver supports graphics
 extern int os_graf_mx;        // graphic mode: maximum x
 extern int os_graf_my;        // graphic mode: maximum y

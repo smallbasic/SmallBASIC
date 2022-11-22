@@ -269,7 +269,6 @@ int Runtime::runShell(const char *startupBas, bool runWait, int fontScale, int d
   logEntered();
 
   os_graphics = 1;
-  os_color_depth = 16;
   opt_file_permitted = 1;
   opt_graphics = true;
   opt_nosave = true;
@@ -720,7 +719,7 @@ bool System::getPen3() {
   return (SDL_BUTTON(SDL_BUTTON_LEFT) && SDL_GetMouseState(&_touchCurX, &_touchCurY));
 }
 
-void System::completeKeyword(int index) {
+void System::completeKeyword(int index) const {
   if (get_focus_edit() && isEditing()) {
     const char *help = get_focus_edit()->completeKeyword(index);
     if (help) {

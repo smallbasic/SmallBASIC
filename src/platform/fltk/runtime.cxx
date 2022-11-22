@@ -283,7 +283,7 @@ bool System::getPen3() {
   return result;
 }
 
-void System::completeKeyword(int index) {
+void System::completeKeyword(int index) const {
   // empty
 }
 
