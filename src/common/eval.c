@@ -1175,6 +1175,7 @@ static inline void eval_callf(var_t *r) {
   case kwSUMSV:
   case kwSTATMEAN:
   case kwSTATMEANDEV:
+  case kwSTATSTD:
   case kwSTATSPREADS:
   case kwSTATSPREADP:
   case kwSEGCOS:

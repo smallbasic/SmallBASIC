@@ -66,19 +66,45 @@ var_num_t mat_determ(var_num_t *a, int n, double toler);
 
 /**
  * @ingroup math
- * todo: statmeandev
+ * 
+ * Mean absolute deviation around arithmetic mean
+ * 
+ * @param e array with numbers
+ * @param count number of elements of e
+ * @return the mean absolute deviation around arithmetic mean
  */
 var_num_t statmeandev(var_num_t *e, int count);
 
 /**
  * @ingroup math
- * todo: statspreads
+ * 
+ * Standard deviation
+ * 
+ * @param e array with numbers
+ * @param count number of elements of e
+ * @return the standard deviation
+ */
+var_num_t statstd(var_num_t *e, int count);
+
+/**
+ * @ingroup math
+ * 
+ * Unbiased sample variance
+ * 
+ * @param e array with numbers
+ * @param count number of elements of e
+ * @return Unbiased sample variance
  */
 var_num_t statspreads(var_num_t *e, int count);
 
 /**
  * @ingroup math
- * todo: statspreadp
+ * 
+ * Biased sample variance
+ * 
+ * @param e array with numbers
+ * @param count number of elements of e
+ * @return Biased sample variance
  */
 var_num_t statspreadp(var_num_t *e, int count);
 

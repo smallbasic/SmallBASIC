@@ -2600,6 +2600,7 @@ void cmd_genfunc(long funcCode, var_t *r) {
     //
     //
   case kwSTATMEANDEV:
+  case kwSTATSTD:
   case kwSTATSPREADS:
   case kwSTATSPREADP:
     ready = 0;
@@ -2668,6 +2669,9 @@ void cmd_genfunc(long funcCode, var_t *r) {
       switch (funcCode) {
       case kwSTATMEANDEV:
         r->v.n = statmeandev(dar, tcount);
+        break;
+      case kwSTATSTD:
+        r->v.n = statstd(dar, tcount);
         break;
       case kwSTATSPREADS:
         r->v.n = statspreads(dar, tcount);
