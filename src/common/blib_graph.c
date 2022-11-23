@@ -897,7 +897,7 @@ void chart_draw(int x1, int y1, int x2, int y2, var_num_t *vals, int count,
                 var_num_t *xvals, int xcount, int chart, int marks) {
   var_num_t lx, ly;
   char buf[32];
-  int32_t color = 0;
+  int32_t color = dev_fgcolor;
   int rx1 = x1;
 
   // ready
@@ -1052,6 +1052,7 @@ void chart_draw(int x1, int y1, int x2, int y2, var_num_t *vals, int count,
   case 5:
     // line chart
     // points
+    dev_settextcolor(color, 15);
     if (chart == 5) {
       for (int i = 0; i < count; i++) {
         dev_setpixel(pts[i * 2], pts[i * 2 + 1]);
@@ -1061,6 +1062,7 @@ void chart_draw(int x1, int y1, int x2, int y2, var_num_t *vals, int count,
         dev_line(pts[(i - 1) * 2], pts[(i - 1) * 2 + 1], pts[i * 2], pts[i * 2 + 1]);
       }
     }
+    dev_settextcolor(0, 15);
 
     // draw marks
     if (marks & 0x1) {
@@ -1094,19 +1096,12 @@ void chart_draw(int x1, int y1, int x2, int y2, var_num_t *vals, int count,
     // draw rect
     color = 0;
     for (int i = 1; i < count; i++) {
-      if (os_color_depth > 2) {
-        dev_setcolor(color);
-        color++;
-        if (color >= 15) {
-          color = 0;
-        }
-      }
+      dev_setcolor(color);
+      color = (color + 1) % 16;
       dev_rect(pts[(i - 1) * 2], pts[(i - 1) * 2 + 1], pts[i * 2] - 2, y2, 1);
     }
 
-    if (os_color_depth > 2) {
-      dev_setcolor(color);
-    }
+    dev_setcolor(color);
     dev_rect(pts[(count - 1) * 2], pts[(count - 1) * 2 + 1],
              pts[(count - 1) * 2] + lx - 1, y2, 1);
 
@@ -1121,22 +1116,17 @@ void chart_draw(int x1, int y1, int x2, int y2, var_num_t *vals, int count,
         int mx = pts[i * 2] + lx / 2 - fw / 2;
         int my = pts[i * 2 + 1];
 
-        if (os_color_depth > 2) {
-          if (my - fh >= y1) {
-            dev_settextcolor(0, 15);
+        if (my - fh >= y1) {
+          dev_settextcolor(0, 15);
+        } else {
+          if (color >= 7 && color != 8) {
+            dev_settextcolor(0, color);
           } else {
-            if (color >= 7 && color != 8) {
-              dev_settextcolor(0, color);
-            } else {
-              dev_settextcolor(15, color);
-            }
-          }
-
-          color++;
-          if (color >= 15) {
-            color = 0;
+            dev_settextcolor(15, color);
           }
         }
+
+        color = (color + 1) % 16;
 
         if (my - fh >= y1) {
           my -= fh;

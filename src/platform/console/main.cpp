@@ -414,7 +414,6 @@ int main(int argc, char *argv[]) {
   opt_verbose = 0;
   opt_graphics = 1;
   os_graphics = 1;
-  os_color_depth = 16;
 
   console_init();
 

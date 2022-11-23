@@ -482,7 +482,6 @@ void Runtime::runShell() {
   opt_command[0] = 0;
   opt_file_permitted = 1;
   os_graphics = 1;
-  os_color_depth = 16;
   opt_mute_audio = 0;
 
   _app->activity->callbacks->onContentRectChanged = onContentRectChanged;
