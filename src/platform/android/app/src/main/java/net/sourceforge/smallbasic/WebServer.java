@@ -447,19 +447,25 @@ public abstract class WebServer {
       builder.append('[');
       long id = 0;
       char comma = 0;
-      for (FileData nextFile : getFileData(remoteHost)) {
-        builder.append(comma);
-        builder.append('{');
-        builder.append("id", id++, true);
-        builder.append("fileName", nextFile.fileName, true);
-        builder.append("size", nextFile.size, true);
-        builder.append("date", nextFile.date, false);
-        builder.append('}');
-        comma = ',';
+      Response result;
+      try {
+        for (FileData nextFile : getFileData(remoteHost)) {
+          builder.append(comma);
+          builder.append('{');
+          builder.append("id", id++, true);
+          builder.append("fileName", nextFile.fileName, true);
+          builder.append("size", nextFile.size, true);
+          builder.append("date", nextFile.date, false);
+          builder.append('}');
+          comma = ',';
+        }
+        builder.append(']');
+        byte[] json = builder.getBytes();
+        result = new Response(new ByteArrayInputStream(json), json.length);
+      } catch (Exception e) {
+        result = handleStatus(false, e.getMessage());
       }
-      builder.append(']');
-      byte[] json = builder.getBytes();
-      return new Response(new ByteArrayInputStream(json), json.length);
+      return result;
     }
 
     /**
@@ -522,7 +528,7 @@ public abstract class WebServer {
         deleteFile(remoteHost, fileName);
         log("Deleted " + fileName);
         result = handleFileList();
-      } catch (IOException e) {
+      } catch (Exception e) {
         result = handleStatus(false, e.getMessage());
       }
       return result;
@@ -538,7 +544,7 @@ public abstract class WebServer {
       try {
         renameFile(remoteHost, from, to);
         result = handleStatus(true, "File renamed");
-      } catch (IOException e) {
+      } catch (Exception e) {
         result = handleStatus(false, e.getMessage());
       }
       return result;

@@ -1,3 +1,4 @@
+
 import {
   Fragment,
   useState
@@ -173,7 +174,6 @@ function GridToolbarDelete(props) {
       props.setSelections([]);
     }, (error) => {
       setError(error);
-      setError(true);
     });
   };
 
@@ -314,7 +314,7 @@ function FileList(props) {
 
   return (
     <Fragment>
-      <ErrorMessage error={error} setError={setError} />
+      <ErrorMessage error={error} setError={setError} severity="error"/>
       <DataGrid rows={props.rows}
                 initialState={sorting}
                 columns={columns}

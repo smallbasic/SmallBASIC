@@ -72,6 +72,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Queue;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -103,7 +104,7 @@ public class MainActivity extends NativeActivity {
   private final ExecutorService _audioExecutor = Executors.newSingleThreadExecutor();
   private final Queue<Sound> _sounds = new ConcurrentLinkedQueue<>();
   private final Handler _keypadHandler = new Handler(Looper.getMainLooper());
-  private final Map<String, Boolean> permittedHost = new HashMap<>();
+  private final Map<String, Boolean> permittedHost = new ConcurrentHashMap<>();
   private String[] _options = null;
   private MediaPlayer _mediaPlayer = null;
   private LocationAdapter _locationAdapter = null;
@@ -776,7 +777,7 @@ public class MainActivity extends NativeActivity {
     return (remoteHost != null && permittedHost.get(remoteHost) != null && Boolean.FALSE.equals(permittedHost.get(remoteHost)));
   }
 
-  private boolean isHostNonPermitted(String remoteHost) {
+  private boolean isHostNotPermitted(String remoteHost) {
     return (remoteHost == null || permittedHost.get(remoteHost) == null || !Boolean.TRUE.equals(permittedHost.get(remoteHost)));
   }
 
@@ -894,7 +895,7 @@ public class MainActivity extends NativeActivity {
   }
 
   private void validateAccess(String remoteHost) throws IOException {
-    if (isHostNonPermitted(remoteHost)) {
+    if (isHostNotPermitted(remoteHost)) {
       throw new IOException(getString(R.string.PORTAL_DENIED));
     }
   }
@@ -999,7 +1000,7 @@ public class MainActivity extends NativeActivity {
       if (isHostDenied(remoteHost)) {
         throw new IOException(getString(R.string.PORTAL_DENIED));
       }
-      if (isHostNonPermitted(remoteHost)) {
+      if (isHostNotPermitted(remoteHost)) {
         requestHostPermission(remoteHost);
       } else {
         MainActivity.this.execStream(inputStream);
@@ -1014,7 +1015,7 @@ public class MainActivity extends NativeActivity {
         long length = getFileLength(name);
         log("Opened " + name + " " + length + " bytes");
         result = new Response(getAssets().open(name), length);
-        if ("index.html".equals(path) && isHostNonPermitted(remoteHost)) {
+        if ("index.html".equals(path) && isHostNotPermitted(remoteHost)) {
           requestHostPermission(remoteHost);
         }
       } else {
