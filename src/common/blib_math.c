@@ -232,6 +232,31 @@ var_num_t statmeandev(var_num_t *e, int count) {
   return sum / count;
 }
 
+//
+// Standard deviation
+//
+var_num_t statstd(var_num_t *e, int count) {
+  var_num_t sum = 0.0;
+  var_num_t mean;
+  int i;
+
+  if (count == 0) {
+    return 0;
+  }
+
+  for (i = 0; i < count; i++) {
+    sum += e[i];
+  }
+  mean = sum / count;
+
+  sum = 0.0;
+  for (i = 0; i < count; i++) {
+    sum += pow(fabsl(e[i] - mean),2);
+  }
+
+  return sqrt(sum / (count - 1));
+}
+
 /*
  */
 var_num_t statspreads(var_num_t *e, int count) {
