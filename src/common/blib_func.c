@@ -957,9 +957,18 @@ void cmd_str1(long funcCode, var_t *arg, var_t *r) {
     //
   case kwBIN:
     l = v_getint(arg);
-    IF_ERR_RETURN;
+    IF_ERR_RETURN;     
+    
+    if (l == 0) {
+      r->v.p.ptr = (char *)malloc(2);
+      strcpy(r->v.p.ptr, "0");
+      r->v.p.length = strlen(r->v.p.ptr) + 1;
+      break;
+    }
+
     tb = malloc(33);
-    memset(tb, 0, 33);
+    memset(tb, 0, 33);  
+    
     for (int i = 0; i < 32; i++) {
       if (l & (1 << i)) {
         tb[31 - i] = '1';
@@ -967,8 +976,15 @@ void cmd_str1(long funcCode, var_t *arg, var_t *r) {
         tb[31 - i] = '0';
       }
     }
+    
+    // remove preceding zeros
+    p = tb;
+    while (*p == '0') {
+      p++;
+    }  
 
-    r->v.p.ptr = tb;
+    r->v.p.ptr = (char *)malloc(strlen(p) + 1);
+    strcpy(r->v.p.ptr, p);
     r->v.p.length = strlen(r->v.p.ptr) + 1;
     break;
   case kwHEX:
@@ -2307,7 +2323,7 @@ void cmd_genfunc(long funcCode, var_t *r) {
     for (int i = 0; i < count - 1; i++) {
       r->v.n = r->v.n + (poly[i].x - poly[i + 1].x) * (poly[i].y + poly[i + 1].y);
     }
-    r->v.n = fabs(r->v.n / 2);
+    r->v.n = r->v.n / 2;
     
     free(poly);
   }
@@ -2327,17 +2343,21 @@ void cmd_genfunc(long funcCode, var_t *r) {
     IF_ERR_RETURN;
 
     err = geo_polycentroid(poly, count, &x, &y, &area);
-    v_toarray1(r, 2);
-    v_setreal(v_elem(r, 0), x);
-    v_setreal(v_elem(r, 1), y);
     
     if (err == 1) {
       rt_raise(ERR_WRONG_POLY);
     }
     if (err == 2) {
-      rt_raise(ERR_CENTROID);
-    }
+      // return empty array insead of "rt_raise(ERR_CENTROID);"
+      v_toarray1(r, 0);
+      free(poly);
+      break;
+    }    
     
+    v_toarray1(r, 2);
+    v_setreal(v_elem(r, 0), x);
+    v_setreal(v_elem(r, 1), y);
+        
     free(poly);
   }
     break;
