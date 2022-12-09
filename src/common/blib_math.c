@@ -233,6 +233,35 @@ var_num_t statmeandev(var_num_t *e, int count) {
 }
 
 //
+// compare function for median calculation
+//
+int median_compare (const void * a, const void * b) {
+  var_num_t fa = *(var_num_t*) a;
+  var_num_t fb = *(var_num_t*) b;
+  return (fa > fb) - (fa < fb);
+}
+
+//
+// Median
+//
+// Median is calculated using quicksort with a complexity of O(n log n).
+// Faster approch would be to implement i.e. quickselect with a 
+// complexity of O(n).
+//
+var_num_t statmedian(var_num_t *e, int count) {  
+  if (count == 0) {
+    return 0;
+  }
+
+  qsort(e, count, sizeof(var_num_t), median_compare);
+
+  if (count % 2 == 0)  
+      return (e[count/2] + e[count/2 - 1]) / 2;  
+  else  
+      return e[count/2];  
+}
+
+//
 // Standard deviation
 //
 var_num_t statstd(var_num_t *e, int count) {

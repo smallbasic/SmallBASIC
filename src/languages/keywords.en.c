@@ -288,6 +288,7 @@ struct func_keyword_s func_table[] = {
 { "SUM",                        kwSUM },
 { "SUMSQ",                      kwSUMSV },
 { "STATMEAN",                   kwSTATMEAN },
+{ "STATMEDIAN",                 kwSTATMEDIAN},
 { "STATSTD",                    kwSTATSTD},
 { "STATMEANDEV",                kwSTATMEANDEV },
 { "STATSPREADS",                kwSTATSPREADS },
