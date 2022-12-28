@@ -31,6 +31,7 @@ static char *date_m3_table[] = TABLE_MONTH_3C;
 static char *date_mN_table[] = TABLE_MONTH_FULL;
 
 #define BUF_LEN 64
+#define BIN_LEN 32  // Number of max bits (digits) kwBIN creates
 
 /*
  */
@@ -960,32 +961,29 @@ void cmd_str1(long funcCode, var_t *arg, var_t *r) {
     IF_ERR_RETURN;     
     
     if (l == 0) {
-      r->v.p.ptr = (char *)malloc(2);
-      strcpy(r->v.p.ptr, "0");
-      r->v.p.length = strlen(r->v.p.ptr) + 1;
+      v_createstr(r, "0");
       break;
     }
 
-    tb = malloc(33);
-    memset(tb, 0, 33);  
-    
-    for (int i = 0; i < 32; i++) {
+    tb = malloc(BIN_LEN + 1);
+    memset(tb, 0, BIN_LEN + 1);  
+        
+    for (int i = 0; i < BIN_LEN; i++) {
       if (l & (1 << i)) {
-        tb[31 - i] = '1';
+        tb[BIN_LEN - 1 - i] = '1';
       } else {
-        tb[31 - i] = '0';
+        tb[BIN_LEN - 1 - i] = '0';
       }
     }
-    
+        
     // remove preceding zeros
     p = tb;
     while (*p == '0') {
       p++;
     }  
 
-    r->v.p.ptr = (char *)malloc(strlen(p) + 1);
-    strcpy(r->v.p.ptr, p);
-    r->v.p.length = strlen(r->v.p.ptr) + 1;
+    v_createstr(r, p);
+
     break;
   case kwHEX:
     //

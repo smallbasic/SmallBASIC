@@ -202,3 +202,11 @@ REM Only TRIM Strings
 if (trim(10) != 10) then throw "err"
 if (trim(10.1) != 10.1) then throw "err"
 if (trim([1,2,3]) != [1,2,3]) then throw "err"
+
+REM test for integer-to-string conversion
+number_test=[[, "0", "0", "0"], [0, "0", "0", "0"], [7, "111", "7", "7"], [14, "1110", "16", "E"], [2090, "100000101010", "4052", "82A"]]
+for t in number_test
+  if (t[1] != bin(t[0])) then throw "err: bin(" + str(t[0]) + ") <> " + t[1]
+  if (t[2] != oct(t[0])) then throw "err: oct(" + str(t[0]) + ") <> " + t[2]
+  if (t[3] != hex(t[0])) then throw "err: hex(" + str(t[0]) + ") <> " + t[3]
+next
