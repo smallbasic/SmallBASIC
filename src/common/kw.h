@@ -348,6 +348,7 @@ enum func_keywords {
   kwSUM,
   kwSUMSV,
   kwSTATMEAN,
+  kwSTATMEDIAN,
   kwSTATSTD,
   kwSTATMEANDEV,
   kwSTATSPREADS,

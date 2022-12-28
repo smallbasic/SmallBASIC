@@ -78,6 +78,17 @@ var_num_t statmeandev(var_num_t *e, int count);
 /**
  * @ingroup math
  * 
+ * Median
+ * 
+ * @param e array with numbers
+ * @param count number of elements of e
+ * @return the median
+ */
+var_num_t statmedian(var_num_t *e, int count);
+
+/**
+ * @ingroup math
+ * 
  * Standard deviation
  * 
  * @param e array with numbers

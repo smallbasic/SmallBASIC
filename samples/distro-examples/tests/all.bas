@@ -99,7 +99,7 @@ print "TSAVE:" ':TSAVE file, var
 print "VIEW:" ':VIEW [x1,y1,x2,y2 [,color [,border-color]]]
 print "WINDOW:" ':WINDOW [x1,y1,x2,y2]
 print "WRITE:" ':WRITE #fileN; var1 [, ...]
-print "ABS:" + ABS (12.2222)
+print "ABS:" + ABS (-12.2222)
 print "ABSMAX:" + ABSMAX (1,2,3,4,5,6,7,8,9)
 print "ABSMIN:" + ABSMIN (1,2,3,4,5,6,7,8,9)
 print "ACOS:" + ACOS (x)
@@ -217,6 +217,7 @@ print "SQR:" + SQR (x)
 print "SQUEEZE:" + SQUEEZE (s)
 print "STATMEAN:" + STATMEAN (1,2,3,4,5,6,7,8,9)
 print "STATMEANDEV:" + STATMEANDEV (1,2,3,4,5,6,7,8,9)
+print "STATMEDIAN:" + STATMEDIAN(1,2,3,4,5,6,7,8,9)
 print "STATSPREADP:" + STATSPREADP (1,2,3,4,5,6,7,8,9)
 print "STATSPREADS:" + STATSPREADS (1,2,3,4,5,6,7,8,9)
 print "STATSTD:" + STATSTD (1,2,3,4,5,6,7,8,9)

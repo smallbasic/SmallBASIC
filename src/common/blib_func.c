@@ -31,6 +31,7 @@ static char *date_m3_table[] = TABLE_MONTH_3C;
 static char *date_mN_table[] = TABLE_MONTH_FULL;
 
 #define BUF_LEN 64
+#define BIN_LEN 32  // Number of max bits (digits) kwBIN creates
 
 /*
  */
@@ -957,19 +958,33 @@ void cmd_str1(long funcCode, var_t *arg, var_t *r) {
     //
   case kwBIN:
     l = v_getint(arg);
-    IF_ERR_RETURN;
-    tb = malloc(33);
-    memset(tb, 0, 33);
-    for (int i = 0; i < 32; i++) {
-      if (l & (1 << i)) {
-        tb[31 - i] = '1';
-      } else {
-        tb[31 - i] = '0';
-      }
+    IF_ERR_RETURN;     
+    
+    if (l == 0) {
+      v_createstr(r, "0");
+      break;
     }
 
-    r->v.p.ptr = tb;
-    r->v.p.length = strlen(r->v.p.ptr) + 1;
+    tb = malloc(BIN_LEN + 1);
+    memset(tb, 0, BIN_LEN + 1);  
+        
+    for (int i = 0; i < BIN_LEN; i++) {
+      if (l & (1 << i)) {
+        tb[BIN_LEN - 1 - i] = '1';
+      } else {
+        tb[BIN_LEN - 1 - i] = '0';
+      }
+    }
+        
+    // remove preceding zeros
+    p = tb;
+    while (*p == '0') {
+      p++;
+    }  
+
+    v_createstr(r, p);
+    free(tb);
+    
     break;
   case kwHEX:
     //
@@ -2307,7 +2322,7 @@ void cmd_genfunc(long funcCode, var_t *r) {
     for (int i = 0; i < count - 1; i++) {
       r->v.n = r->v.n + (poly[i].x - poly[i + 1].x) * (poly[i].y + poly[i + 1].y);
     }
-    r->v.n = fabs(r->v.n / 2);
+    r->v.n = r->v.n / 2;
     
     free(poly);
   }
@@ -2327,17 +2342,21 @@ void cmd_genfunc(long funcCode, var_t *r) {
     IF_ERR_RETURN;
 
     err = geo_polycentroid(poly, count, &x, &y, &area);
-    v_toarray1(r, 2);
-    v_setreal(v_elem(r, 0), x);
-    v_setreal(v_elem(r, 1), y);
     
     if (err == 1) {
       rt_raise(ERR_WRONG_POLY);
     }
     if (err == 2) {
-      rt_raise(ERR_CENTROID);
-    }
+      // return empty array insead of "rt_raise(ERR_CENTROID);"
+      v_toarray1(r, 0);
+      free(poly);
+      break;
+    }    
     
+    v_toarray1(r, 2);
+    v_setreal(v_elem(r, 0), x);
+    v_setreal(v_elem(r, 1), y);
+        
     free(poly);
   }
     break;
@@ -2600,6 +2619,7 @@ void cmd_genfunc(long funcCode, var_t *r) {
     //
     //
   case kwSTATMEANDEV:
+  case kwSTATMEDIAN:
   case kwSTATSTD:
   case kwSTATSPREADS:
   case kwSTATSPREADP:
@@ -2669,6 +2689,9 @@ void cmd_genfunc(long funcCode, var_t *r) {
       switch (funcCode) {
       case kwSTATMEANDEV:
         r->v.n = statmeandev(dar, tcount);
+        break;
+      case kwSTATMEDIAN:
+        r->v.n = statmedian(dar, tcount);
         break;
       case kwSTATSTD:
         r->v.n = statstd(dar, tcount);
