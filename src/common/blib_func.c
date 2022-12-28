@@ -983,7 +983,8 @@ void cmd_str1(long funcCode, var_t *arg, var_t *r) {
     }  
 
     v_createstr(r, p);
-
+    free(tb);
+    
     break;
   case kwHEX:
     //

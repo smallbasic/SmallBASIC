@@ -257,8 +257,7 @@ var_num_t statmedian(var_num_t *e, int count) {
 
   if (count % 2 == 0) {
     return (e[count/2] + e[count/2 - 1]) / 2;
-  }
-  else {  
+  } else {  
     return e[count/2];
   }  
 }
