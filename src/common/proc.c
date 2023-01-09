@@ -165,6 +165,25 @@ void pv_write_str(char *str, var_t *vp) {
   }
 }
 
+void pv_write_str_var(var_t *var, int method, intptr_t handle) {
+  switch (method) {
+  case PV_FILE:
+    dev_fwrite((int)handle, (byte *)var->v.p.ptr, var->v.p.length - 1);
+    break;
+  case PV_LOG:
+    lwrite(var->v.p.ptr);
+    break;
+  case PV_STRING:
+    pv_write_str(var->v.p.ptr, (var_t *)handle);
+    break;
+  case PV_NET:
+    net_send((socket_t)handle, (const char *)var->v.p.ptr, var->v.p.length - 1);
+    break;
+  default:
+    dev_print(var->v.p.ptr);
+  }
+}
+
 /*
  * Write string to output device
  */
@@ -206,7 +225,7 @@ void pv_writevar(var_t *var, int method, intptr_t handle) {
     pv_write(tmpsb, method, handle);
     break;
   case V_STR:
-    pv_write(var->v.p.ptr, method, handle);
+    pv_write_str_var(var, method, handle);
     break;
   case V_ARRAY:
   case V_MAP:

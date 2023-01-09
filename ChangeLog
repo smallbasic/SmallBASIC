@@ -1,3 +1,6 @@
+2023-01-09 (12.26)
+	COMMON: fix printing chr(0) into a file or network interface
+
 2022-11-13 (12.25)
 	ANDROID: Updated file manager web UI:
 	- Implemented delete command
