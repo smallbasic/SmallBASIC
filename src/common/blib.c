@@ -704,7 +704,7 @@ void cmd_input(int input) {
 
   // get list of parameters
   par_t *ptable = NULL;
-  int pcount = par_getpartable(&ptable, ",;");
+  int pcount = par_getpartable(&ptable, ",;", input == PV_FILE ? MAX_PARAMS_FILE : MAX_PARAMS);
   if (pcount == 0) {
     rt_raise(ERR_INPUT_NO_VARS);
   }
@@ -813,7 +813,7 @@ void cmd_input(int input) {
             // (,)
             char *p;
             if (pcount == 1) {
-              p = (inp_p + strlen(inp_p));
+              p = (inp_p + (!inp_p ? 0 : strlen(inp_p)));
             } else {
               p = q_strstr(inp_p, ((next_is_const) ? v_getstr(ptable[cur_par_idx].var) : ","), "\"\"");
             }
@@ -830,7 +830,7 @@ void cmd_input(int input) {
               }
             } else {
               v_input2var(inp_p, par->var);
-              inp_p = (inp_p + strlen(inp_p));  // go to '\0'
+              inp_p = (inp_p + (!inp_p ? 0 : strlen(inp_p)));  // go to '\0'
               input_is_finished = 1;
             }
           }

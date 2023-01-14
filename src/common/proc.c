@@ -15,8 +15,6 @@
 #include <limits.h>
 #include <dirent.h>
 
-#define MAX_PARAM 8
-
 /*
  * returns the last-modified time of the file
  *
@@ -900,7 +898,7 @@ void par_freepartable(par_t **ptable_pp, int pcount) {
  * YOU MUST FREE THAT TABLE BY USING par_freepartable()
  * IF THERE IS NO ERROR, CALL TO par_freepartable IS NOT NEEDED
  */
-int par_getpartable(par_t **ptable_pp, const char *valid_sep) {
+int par_getpartable(par_t **ptable_pp, const char *valid_sep, unsigned max_items) {
   bcip_t ofs;
   char vsep[8];
 
@@ -908,7 +906,8 @@ int par_getpartable(par_t **ptable_pp, const char *valid_sep) {
   var_t *par = NULL;
   byte last_sep = 0;
   int pcount = 0;
-  par_t *ptable = *ptable_pp = malloc(sizeof(par_t) * MAX_PARAM);
+
+  par_t *ptable = *ptable_pp = malloc(sizeof(par_t) * max_items);
 
   if (valid_sep) {
     strlcpy(vsep, valid_sep, sizeof(vsep));
@@ -954,9 +953,9 @@ int par_getpartable(par_t **ptable_pp, const char *valid_sep) {
       if (code_isvar()) {
         // push parameter
         ptable[pcount].var = code_getvarptr();
-        if (++pcount == MAX_PARAM) {
+        if (++pcount == max_items) {
           par_freepartable(ptable_pp, pcount);
-          err_parfmt(__FILE__);
+          err_parfmt(ERR_PARAM_TOO_MANY);
           return -1;
         }
         break;
@@ -974,9 +973,9 @@ int par_getpartable(par_t **ptable_pp, const char *valid_sep) {
         // push parameter
         ptable[pcount].var = par;
         ptable[pcount].flags = PAR_BYVAL;
-        if (++pcount == MAX_PARAM) {
+        if (++pcount == max_items) {
           par_freepartable(ptable_pp, pcount);
-          err_parfmt(__FILE__);
+          err_parfmt(ERR_PARAM_TOO_MANY);
           return -1;
         }
       } else {
@@ -1047,7 +1046,7 @@ int par_massget_type_check(char fmt, par_t *par) {
 int par_massget(const char *fmt, ...) {
   // get ptable
   par_t *ptable;
-  int pcount = par_getpartable(&ptable, NULL);
+  int pcount = par_getpartable(&ptable, NULL, MAX_PARAMS);
   if (pcount == -1) {
     free(ptable);
     return -1;

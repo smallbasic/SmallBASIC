@@ -1,4 +1,7 @@
 2023-01-09 (12.26)
+	COMMON: INPUT #F; now supports up to 64 parameters
+
+2023-01-09 (12.26)
 	COMMON: fix printing chr(0) into a file or network interface
 
 2022-11-13 (12.25)
