@@ -674,13 +674,6 @@ char *dev_getcwd() {
     retbuf[l] = OS_DIRSEP;
     retbuf[l + 1] = '\0';
   }
-#if defined(_Win32)
-  for (int i = 0; i < l; i++) {
-    if (retbuf[i] == '\\') {
-      retbuf[i] = OS_DIRSEP;
-    }
-  }
-#endif
   return retbuf;
 }
 

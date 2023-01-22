@@ -781,7 +781,8 @@ void join_path(char *path, char *ext) {
   int len = strlen(path);
   if (path[len - 1] != OS_DIRSEP) {
     if (ext[0] != OS_DIRSEP) {
-      strcat(path, "/");
+      char ch[] = {OS_DIRSEP, '\0'};
+      strcat(path, ch);
       strcat(path, ext);
     } else {
       strcat(path, ext);
@@ -792,6 +793,11 @@ void join_path(char *path, char *ext) {
     } else {
       strcat(path, ext + 1);
     }
+  }
+  // don't end with trailing slash
+  len = strlen(path);
+  if (path[len - 1] == OS_DIRSEP) {
+    path[len - 1] = '\0';
   }
 }
 

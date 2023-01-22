@@ -287,11 +287,6 @@ void exec_setup_predefined_variables() {
       *p = '\0';
     }
   }
-  for (char *p = homedir; *p; p++) {
-    if (*p == '\\') {
-      *p = '/';
-    }
-  }
 #elif defined(_UnixOS)
   if (getenv("HOME")) {
     strlcpy(homedir, getenv("HOME"), sizeof(homedir));
