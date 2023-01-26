@@ -50,14 +50,15 @@ extern "C" {
 #define OS_PATHNAME_SIZE    1024
 #define OS_FILENAME_SIZE    256
 #define OS_FILEHANDLES      256
-#define OS_DIRSEP   '/'
 
 #if defined(_Win32)
  #define SB_VERSYS "Win"
  #define OS_LINESEPARATOR  "\r\n"
+ #define OS_DIRSEP '\\'
 #else
  #define SB_VERSYS "Unix"
  #define OS_LINESEPARATOR  "\n"
+ #define OS_DIRSEP '/'
 #endif
 
 #define STRLEN(s) ((sizeof(s) / sizeof(s[0])) - 1)

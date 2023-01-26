@@ -34,14 +34,16 @@ static char *date_mN_table[] = TABLE_MONTH_FULL;
 #define BIN_LEN 32  // Number of max bits (digits) kwBIN creates
 
 /*
+ * Clamp floating point number and convert to integer
+ * x: number, l: lower bound, h: upper bound
  */
 var_int_t r2int(var_num_t x, var_int_t l, var_int_t h) {
   var_int_t nx;
-
+  
   if (x < 0.0) {
-    nx = (var_int_t) -floor(-x + .5);
+    nx = (var_int_t) (x - .5);
   } else {
-    nx = (var_int_t) floor(x + .5);
+    nx = (var_int_t) (x + .5);
   }
 
   if (nx < l) {
@@ -49,6 +51,7 @@ var_int_t r2int(var_num_t x, var_int_t l, var_int_t h) {
   } else if (nx > h) {
     nx = h;
   }
+
   return nx;
 }
 
@@ -1935,37 +1938,22 @@ void cmd_intN(long funcCode, var_t *r) {
     // i <- RGB(r,g,b)
     // i <- RGBF(r,g,b)
   case kwRGB:
-  case kwRGBF: {
+  case kwRGBF:  
     var_num_t rc, gc, bc;
-    int code;
 
     par_massget("FFF", &rc, &gc, &bc);
     IF_ERR_RETURN;
-    code = 0;
-    if (funcCode == kwRGBF) {
-      if ((rc >= 0 && rc <= 1) && (gc >= 0 && gc <= 1) && (bc >= 0 && bc <= 1)) {
-        code = 1;
-      }
-    } else {
-      if ((rc >= 0 && rc <= 255) && (gc >= 0 && gc <= 255) && (bc >= 0 && bc <= 255)) {
-        code = 2;
-      }
-    }
 
-    switch (code) {
-    case 1:
-      r->v.i = (r2int(rc * 255.0, 0, 255) << 16) | (r2int(gc * 255.0, 0, 255) << 8)
-          | r2int(bc * 255.0, 0, 255);
+    switch (funcCode) {
+    case kwRGB:
+      r->v.i = (r2int(rc, 0, 255) << 16) | (r2int(gc, 0, 255) << 8) | r2int(bc, 0, 255);
       break;
-    case 2:
-      r->v.i = ((uint32_t) rc << 16) | ((uint32_t) gc << 8) | (uint32_t) bc;
+    case kwRGBF:
+      r->v.i = (r2int(rc * 255.0, 0, 255) << 16) | (r2int(gc * 255.0, 0, 255) << 8) | r2int(bc * 255.0, 0, 255);
       break;
-    default:
-      err_argerr();
     }
-
+    
     r->v.i = -r->v.i;
-  }
     break;
 
   default:

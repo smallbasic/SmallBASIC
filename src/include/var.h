@@ -99,7 +99,7 @@ typedef struct var_s {
       uint32_t capacity;
       // upper and lower bounds
       int32_t ubound[MAXDIM];
-      int8_t  lbound[MAXDIM];
+      int32_t lbound[MAXDIM];
       // number of dimensions
       uint8_t maxdim;
     } a;
