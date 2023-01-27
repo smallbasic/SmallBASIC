@@ -12,20 +12,6 @@ endif
 
 AM_CPPFLAGS = -I$(abs_top_builddir)/src -DPACKAGE_LIB_DIR=\""$(pkglibdir)"\"
 
-EXTRA_DIST =                              \
-    ../languages/chars.en.h               \
-    ../languages/keywords.en.c            \
-    ../languages/messages.en.h            \
-    ../include/module.h                   \
-    ../include/osd.h                      \
-    ../include/var.h                      \
-    ../include/var_map.h                  \
-    ../lib/jsmn/jsmn.h                    \
-    ../lib/lodepng/lodepng.cpp            \
-    ../lib/lodepng/lodepng.h              \
-    ../lib/miniaudio/miniaudio.h          \
-    ../lib/stb/stb_textedit.h
-
 noinst_LIBRARIES = libsb_common.a
 
 libsb_common_a_SOURCES =                  \
