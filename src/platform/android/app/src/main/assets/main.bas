@@ -397,7 +397,7 @@ sub listFiles(byref frm, path, sortDir, byref basList)
     endif
     if (abbr) then
       bn = mk_bn(path + name, name, txtcol)
-      bn.type = iff(lower(right(name, 4)) == ".bas", "link", "label")
+      bn.type = iff(!is_android || lower(right(name, 4)) == ".bas", "link", "label")
       if (bn.type == "label") then bn.color = colText
       if (!node.dir) then bn.isExit = true
     else
@@ -407,7 +407,7 @@ sub listFiles(byref frm, path, sortDir, byref basList)
         lab = name
       endif
       bn = mk_bn(path + name, lab, txtcol)
-      bn.type = iff(lower(right(name, 4)) == ".bas", "link", "label")
+      bn.type = iff(!is_android || lower(right(name, 4)) == ".bas", "link", "label")
       if (bn.type == "label") then bn.color = colText
       if (!node.dir) then bn.isExit = true
       frm.inputs << bn
