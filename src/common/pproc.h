@@ -32,6 +32,9 @@
 #define PV_STRING       3
 #define PV_NET          4
 
+#define MAX_PARAMS_FILE 64
+#define MAX_PARAMS 8
+
 #if defined(__cplusplus)
 extern "C" {
 #endif
@@ -285,7 +288,7 @@ void par_skip(void);
  * @return on success the number of the parameters; otherwise -1
  * @see par_freepartable, par_massget
  */
-int par_getpartable(par_t **ptable_pp, const char *valid_sep);
+int par_getpartable(par_t **ptable_pp, const char *valid_sep, unsigned max_items);
 
 /**
  * @ingroup par

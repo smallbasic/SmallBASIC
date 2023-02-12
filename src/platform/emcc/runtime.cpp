@@ -645,7 +645,7 @@ int osd_devrestore(void) {
 //
 // not implemented
 //
-void System::completeKeyword(int index) {}
+void System::completeKeyword(int index) const {}
 void maHideVirtualKeyboard(void) {}
 void maShowVirtualKeyboard(void) {}
 void maUpdateScreen(void) {}

@@ -1,3 +1,19 @@
+2023-01-20 (12.26)
+	COMMON: Fixed DIM lower bound
+	COMMON: RGB and RGBF now clamp parameters
+	COMMON: Fix for BIN and changes to return values of POLYCENT and POLYAREA
+
+2023-01-09 (12.26)
+	COMMON: INPUT #F; now supports up to 64 parameters
+	COMMON: Implemented STATMEDIAN() to calculate the median of a data sample in statistics.
+	COMMON: Implemented STATSTD() to calculate standard deviation
+
+2023-01-09 (12.26)
+	COMMON: Fix printing chr(0) into a file or network interface
+
+2022-11-13 (12.26)
+	COMMON: Fix line-chart line drawing to use current foreground color
+
 2022-11-13 (12.25)
 	ANDROID: Updated file manager web UI:
 	- Implemented delete command

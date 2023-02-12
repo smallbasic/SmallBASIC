@@ -1938,7 +1938,7 @@ void cmd_intN(long funcCode, var_t *r) {
     // i <- RGB(r,g,b)
     // i <- RGBF(r,g,b)
   case kwRGB:
-  case kwRGBF:  
+  case kwRGBF: {
     var_num_t rc, gc, bc;
 
     par_massget("FFF", &rc, &gc, &bc);
@@ -1955,7 +1955,7 @@ void cmd_intN(long funcCode, var_t *r) {
     
     r->v.i = -r->v.i;
     break;
-
+  }
   default:
     rt_raise("Unsupported built-in function call %ld", funcCode);
   }
