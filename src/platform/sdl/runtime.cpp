@@ -714,10 +714,13 @@ void Runtime::saveWindowRect() {
 //
 // System platform methods
 //
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wint-in-bool-context"
 bool System::getPen3() {
   SDL_PumpEvents();
   return (SDL_BUTTON(SDL_BUTTON_LEFT) && SDL_GetMouseState(&_touchCurX, &_touchCurY));
 }
+#pragma GCC diagnostic pop
 
 void System::completeKeyword(int index) const {
   if (get_focus_edit() && isEditing()) {
