@@ -616,7 +616,7 @@ void Runtime::setWindowRect(int x, int y, int width, int height) {
   logEntered();
   if (width > 0 && height > 0) {
     SDL_SetWindowSize(_window, width, height);
-    onResize(width, height);
+    pause(10);
   }
   if (x > 0 && y > 0) {
     SDL_SetWindowPosition(_window, x, y);
