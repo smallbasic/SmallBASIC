@@ -212,10 +212,23 @@ function buildSDL() {
 
      (cd images && xxd -i sb-desktop-128x128.png > ../src/platform/sdl/icon.h)
 
+     HAVE_SDL2_STATIC=yes
+     AC_MSG_CHECKING([if installed SDL2 supports static libs])
+     AC_PATH_PROGS_FEATURE_CHECK([SDL2_STATIC_TMP], [sdl2-config],
+       AS_IF([`"$ac_path_SDL2_STATIC_TMP" --static-libs  2>&1 | sed '/Usage/!{q1};' > /dev/null`], [HAVE_SDL2_STATIC=no]))
+     AC_MSG_RESULT([$HAVE_SDL2_STATIC])
+
+     if test "x$HAVE_SDL2_STATIC" = "xno"; then
+        SDL_LIBS=`sdl2-config --libs`
+     else
+        SDL_LIBS=`sdl2-config --static-libs`
+     fi
+
      dnl backlinking support for modules
      PACKAGE_LIBS="${PACKAGE_LIBS} -ldl -no-pie"
      PACKAGE_LIBS="${PACKAGE_LIBS} ${FONTCONFIG_LIBS}"
-     PACKAGE_LIBS="-static-libgcc ${PACKAGE_LIBS} `sdl2-config --static-libs` `pkg-config freetype2 --libs`"
+
+     PACKAGE_LIBS="-static-libgcc ${PACKAGE_LIBS} ${SDL_LIBS} `pkg-config freetype2 --libs`"
    esac
 
    PACKAGE_CFLAGS="${PACKAGE_CFLAGS} `sdl2-config --cflags` `pkg-config freetype2 --cflags` -fno-exceptions"

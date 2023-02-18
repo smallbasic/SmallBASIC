@@ -1,4 +1,7 @@
 2023-01-20 (12.26)
+	SDL: Fixed an issue with window resizing #144
+
+2023-01-20 (12.26)
 	COMMON: Fixed DIM lower bound
 	COMMON: RGB and RGBF now clamp parameters
 	COMMON: Fix for BIN and changes to return values of POLYCENT and POLYAREA

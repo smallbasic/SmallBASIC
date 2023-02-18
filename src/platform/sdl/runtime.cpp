@@ -533,13 +533,18 @@ void Runtime::pollEvents(bool blocking) {
         case SDL_WINDOWEVENT_FOCUS_GAINED:
           break;
         case SDL_WINDOWEVENT_RESIZED:
+        case SDL_WINDOWEVENT_SIZE_CHANGED:
           onResize(ev.window.data1, ev.window.data2);
           break;
         case SDL_WINDOWEVENT_EXPOSED:
+        case SDL_WINDOWEVENT_SHOWN:
           _graphics->redraw();
           break;
         case SDL_WINDOWEVENT_LEAVE:
           _output->removeHover();
+          break;
+        default:
+          trace("Unhandled window event [%d]", ev.window.event);
           break;
         }
         break;
@@ -611,8 +616,6 @@ void Runtime::setWindowRect(int x, int y, int width, int height) {
   logEntered();
   if (width > 0 && height > 0) {
     SDL_SetWindowSize(_window, width, height);
-    _graphics->resize(width, height);
-    resize();
   }
   if (x > 0 && y > 0) {
     SDL_SetWindowPosition(_window, x, y);
@@ -714,10 +717,13 @@ void Runtime::saveWindowRect() {
 //
 // System platform methods
 //
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wint-in-bool-context"
 bool System::getPen3() {
   SDL_PumpEvents();
   return (SDL_BUTTON(SDL_BUTTON_LEFT) && SDL_GetMouseState(&_touchCurX, &_touchCurY));
 }
+#pragma GCC diagnostic pop
 
 void System::completeKeyword(int index) const {
   if (get_focus_edit() && isEditing()) {
