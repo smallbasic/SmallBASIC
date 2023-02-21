@@ -358,11 +358,20 @@ EditBuffer::EditBuffer(TextEditInput *in, const char *text) :
     _buffer = (char *)malloc(_size);
     memcpy(_buffer, text, _len);
     _buffer[_len] = '\0';
+    convertTabs();
   }
 }
 
 EditBuffer::~EditBuffer() {
   clear();
+}
+
+void EditBuffer::convertTabs() {
+  for (int i = 0; i < _len; i++) {
+    if (_buffer[i] == '\t') {
+      _buffer[i] = ' ';
+    }
+  }
 }
 
 void EditBuffer::clear() {
@@ -409,6 +418,9 @@ char EditBuffer::getChar(int pos) const {
   } else {
     result = '\0';
   }
+  if (result == '\r') {
+    result = '\n';
+  }
   return result;
 }
 
@@ -428,6 +440,7 @@ int EditBuffer::insertChars(int pos, const char *text, int num) {
   _len += num;
   _buffer[_len] = '\0';
   _in->setDirty(true);
+  convertTabs();
   if (num > 1) {
     _lines += countNewlines(text, num);
   } else if (text[0] == '\n') {
@@ -729,8 +742,7 @@ void TextEditInput::dragPage(int y, bool &redraw) {
   }
 }
 
-void TextEditInput::drawText(int x, int y, const char *str,
-                             int length, SyntaxState &state) {
+void TextEditInput::drawText(int x, int y, const char *str, int length, SyntaxState &state) {
   int i = 0;
   int offs = 0;
   SyntaxState nextState = state;
@@ -1603,10 +1615,10 @@ int TextEditInput::getIndent(char *spaces, int len, int pos) {
 
 int TextEditInput::getLineChars(StbTexteditRow *row, int pos) const {
   int numChars = row->num_chars;
-  if (numChars > 0 && _buf._buffer[pos + row->num_chars - 1] == '\r') {
+  if (numChars > 0 && _buf._buffer[pos + numChars - 1] == '\n') {
     numChars--;
   }
-  if (numChars > 0 && _buf._buffer[pos + row->num_chars - 1] == '\n') {
+  if (numChars > 0 && _buf._buffer[pos + numChars - 1] == '\r') {
     numChars--;
   }
   return numChars;
