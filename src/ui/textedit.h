@@ -50,6 +50,7 @@ struct EditBuffer {
   void append(const char *text, int len) { insertChars(_len, text, len); }
   void append(const char *text) { insertChars(_len, text, strlen(text)); }
   void clear();
+  void convertTabs();
   int  countNewlines(const char *text, int num);
   int  deleteChars(int pos, int num);
   char getChar(int pos) const;

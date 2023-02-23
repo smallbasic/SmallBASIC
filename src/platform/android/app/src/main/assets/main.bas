@@ -16,6 +16,7 @@ const colNav2  = theme.text6
 const menu_gap = -(char_w / 2)
 const is_android = instr(sbver, "Android") != 0
 const is_sdl = instr(sbver, "SDL") != 0
+const path_sep = iff(instr(sbver, "Win_") != 0, "\\", "/")
 const onlineUrl = "http://smallbasic.github.io/samples/index.bas"
 const idxEdit = 6
 const idxFiles = 7
@@ -321,7 +322,7 @@ sub listFiles(byref frm, path, sortDir, byref basList)
   local date_col = colNav
 
   sub fix_path
-    if (right(path, 1) != "/") then path += "/"
+    if (right(path, 1) != path_sep) then path += path_sep
   end
 
   fix_path
@@ -679,17 +680,19 @@ sub main
   sub go_back
     local backPath, index
     backPath = ""
-    index = iff(isstring(path), rinstr(path, "/"), 0)
+    index = iff(isstring(path), rinstr(path, path_sep), 0)
     if (index > 0 && index == len(path)) then
-      index = rinstr(left(path, index - 1), "/")
-    fi
+      index = rinstr(left(path, index - 1), path_sep)
+    endif
     if (index == 1) then
       index++
-    fi
+    endif
     if (index > 0)
       backPath = left(path, index - 1)
+    else if (mid(path, 2, 1) == ":") then
+      backPath = path
     else
-      backPath = "/"
+      backPath = path_sep
     endif
     path = backPath
   end

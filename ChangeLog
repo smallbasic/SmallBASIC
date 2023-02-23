@@ -1,5 +1,6 @@
-2023-01-20 (12.26)
+2023-02-19 (12.26)
 	SDL: Fixed an issue with window resizing #144
+	COMMON: Fixed "make dist" so it can produce a package with all internal dependencies
 
 2023-01-20 (12.26)
 	COMMON: Fixed DIM lower bound
