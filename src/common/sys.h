@@ -72,11 +72,11 @@ extern "C" {
 
 // SB's constants
 #if defined(_SDL)
- #define SB_STR_VER VERSION " SDL " SB_VERSYS SB_BIT_SZ BUILD_DATE
+ #define SB_STR_VER VERSION " SDL " _SDL_VERSION SB_VERSYS SB_BIT_SZ BUILD_DATE
 #elif defined (_ANDROID)
   #define SB_STR_VER VERSION " Android " BUILD_DATE
 #elif defined (_FLTK)
-  #define SB_STR_VER VERSION " FLTK " BUILD_DATE
+  #define SB_STR_VER VERSION " FLTK " _FLTK_VERSION SB_VERSYS SB_BIT_SZ BUILD_DATE
 #elif defined (_EMCC)
   #define SB_STR_VER VERSION " Emscripten " BUILD_DATE
 #else
