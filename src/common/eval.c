@@ -531,6 +531,12 @@ static inline void oper_log(var_t *r, var_t *left) {
     b = ri;
     ri = 0;
     set = 0;
+
+    if ((a == 0) & (b == 0)) {
+      ri = 1;
+      break;
+    }
+
     for (i = (sizeof(var_int_t) * 8) - 1; i >= 0; i--) {
       int ba = ((a >> i) & 1);
       int bb = ((b >> i) & 1);
