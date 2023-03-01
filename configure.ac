@@ -235,6 +235,7 @@ function buildSDL() {
    CXXFLAGS="${CXXFLAGS} -fno-rtti -std=c++14"
 
    dnl preconfigured values for SDL build
+   AC_DEFINE_UNQUOTED([_SDL_VERSION], ["`sdl2-config --version` "], [SDL library version])
    AC_DEFINE(_SDL, 1, [Defined when building SDL version])
    AC_DEFINE(_UnixOS, 1, [Building under Unix like systems.])
    AC_DEFINE(IMPL_DEV_READ, 1, [Implement dev_read()])
@@ -416,6 +417,7 @@ function buildFLTK() {
    defaultConditionals
 
    dnl preconfigured values for FLTK build
+   AC_DEFINE_UNQUOTED([_FLTK_VERSION], ["`fltk-config --version` "], [FLTK library version])
    AC_DEFINE(_UnixOS, 1, [Building under Unix like systems.])
    AC_DEFINE(_FLTK, 1, [Defined for FLTK build.])
    AC_DEFINE(IMPL_DEV_READ, 1, [Implement dev_read()])
