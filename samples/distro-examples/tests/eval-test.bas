@@ -193,6 +193,10 @@ assertEq 0xcccccccc Imp 0xaaaaaaaa, 0xbbbbbbbb, PROGLINE
 assertEq 0xcccc Imp 0xaaaa, 0xbbbb, PROGLINE
 assertEq 0xcc Imp 0xaa, 0xbb, PROGLINE
 assertEq 0xc Imp 0xa, 0xb, PROGLINE
+assertEq 0 Imp 0, 1, PROGLINE
+assertEq 0 Imp 1, 1, PROGLINE
+assertEq 1 Imp 0, 0, PROGLINE
+assertEq 1 Imp 1, 1, PROGLINE
 
 ' The Eqv operator returns 1 if and only if both inputs are equal.
 ' 1100
@@ -203,6 +207,10 @@ assertEq 0xcccccccc Eqv 0xaaaaaaaa, 0x99999999, PROGLINE
 assertEq 0xcccc Eqv 0xaaaa, 0x9999, PROGLINE
 assertEq 0xcc Eqv 0xaa, 0x99, PROGLINE
 assertEq 0xc Eqv 0xa, 0x9, PROGLINE
+assertEQ 0 EQV 0, 1, PROGLINE
+assertEQ 0 EQV 1, 0, PROGLINE
+assertEQ 1 EQV 0, 0, PROGLINE
+assertEQ 1 EQV 1, 1, PROGLINE
 
 ' bit shift operators
 assertEq 0xFF  LSHIFT 1, 0x1FE, PROGLINE
