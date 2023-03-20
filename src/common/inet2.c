@@ -161,9 +161,6 @@ int net_input(socket_t s, char *buf, int size, const char *delim) {
     if (bytes <= 0) {
       return count;             // no more data
     } else {
-      if (ch == 0) {
-        return count;
-      }
       if (delim) {
         if ((strchr(delim, ch) != NULL)) {
           return count;         // delimiter found
@@ -178,19 +175,19 @@ int net_input(socket_t s, char *buf, int size, const char *delim) {
 }
 
 /**
- * return true if there something waiting
+ * return available data in bytes
  */
 int net_peek(socket_t s) {
 #if defined(_Win32)
   unsigned long bytes;
 
   ioctlsocket(s, FIONREAD, &bytes);
-  return (bytes > 0);
+  return (bytes);
 #else
   int bytes;
 
   ioctl(s, FIONREAD, &bytes);
-  return (bytes > 0);
+  return (bytes);
 #endif
 }
 

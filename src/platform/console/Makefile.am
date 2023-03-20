@@ -34,7 +34,8 @@ TEST_DIR=../../../samples/distro-examples/tests
 UNIT_TESTS=array break byref eval-test iifs matrices metaa ongoto \
 	         uds hash pass1 call_tau short-circuit strings stack-test \
            replace-test read-data proc optchk letbug ptr ref input \
-           trycatch chain stream-files split-join sprint all scope goto keymap
+           trycatch chain stream-files split-join sprint all scope \
+           goto keymap socket-io
 
 test: ${bin_PROGRAMS}
 	@for utest in $(UNIT_TESTS); do                             \
