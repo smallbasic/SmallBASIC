@@ -45,9 +45,7 @@ const columns = [{
   field: 'fileName',
   headerName: 'Name',
   editable: true,
-  valueGetter: (params) => {
-    return params.row.fileName;
-  },
+  valueGetter: (params) => params.row.fileName,
   flex: 1,
 }, {
   field: 'size',
@@ -58,9 +56,8 @@ const columns = [{
   headerName: 'Modified',
   type: 'date',
   minWidth: 110,
-  renderCell: (params) => {
-    return new Date(params.row.date).toLocaleDateString();
-  }
+  valueGetter: (params) => new Date(params.row.date),
+  renderCell: (params) => params.value.toLocaleDateString()
 }];
 
 function getFetchHeader(body) {
@@ -322,11 +319,11 @@ function FileList(props) {
                 autoPageSize
                 components={{Toolbar: AppToolbar}}
                 componentsProps={{toolbar: toolbarProps}}
-                onSelectionModelChange={(model) => setSelectionModel(model)}
-                selectionModel={selectionModel}
-                rowsPerPageOptions={[5]}
+                onRowSelectionModelChange={(model) => setSelectionModel(model)}
+                rowSelectionModel={selectionModel}
+                pageSizeOptions={[5]}
                 checkboxSelection
-                disableSelectionOnClick/>
+                disableRowSelectionOnClick/>
     </Fragment>
   );
 }
