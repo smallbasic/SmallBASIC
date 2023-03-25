@@ -1,16 +1,25 @@
+2023-03-26 (12.26)
+	ANDROID: Fix setenv error #187
+	ANDROID: update web UI dependencies
+	COMMON: Fix bug in BGETC when using sockets (Joe7M)
+	COMMON: Fix EQV bug. "0 EQV 0" will return correct result "1" (Joe7M)
+	COMMON: Fix: "0 IMP 0" returns now correct result 1 (Joe7M)
+	UI: FLTK and SDL version numbers now included in SBVER
+	UI: fix editor display issues with DOS line-endings
+
 2023-02-19 (12.26)
 	SDL: Fixed an issue with window resizing #144
 	COMMON: Fixed "make dist" so it can produce a package with all internal dependencies
 
 2023-01-20 (12.26)
-	COMMON: Fixed DIM lower bound
-	COMMON: RGB and RGBF now clamp parameters
-	COMMON: Fix for BIN and changes to return values of POLYCENT and POLYAREA
+	COMMON: Fixed DIM lower bound (Joe7M)
+	COMMON: RGB and RGBF now clamp parameters (Joe7M)
+	COMMON: Fix for BIN and changes to return values of POLYCENT and POLYAREA (Joe7M)
 
 2023-01-09 (12.26)
 	COMMON: INPUT #F; now supports up to 64 parameters
-	COMMON: Implemented STATMEDIAN() to calculate the median of a data sample in statistics.
-	COMMON: Implemented STATSTD() to calculate standard deviation
+	COMMON: Implemented STATMEDIAN() to calculate the median of a data sample in statistics (Joe7M)
+	COMMON: Implemented STATSTD() to calculate standard deviation (Joe7M)
 
 2023-01-09 (12.26)
 	COMMON: Fix printing chr(0) into a file or network interface
