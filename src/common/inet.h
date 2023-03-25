@@ -134,7 +134,7 @@ void net_disconnect(socket_t s);
 /**
  * @ingroup net
  *
- * returns true if something is waiting in input-buffer
+ * returns number of bytes waiting in input-buffer
  *
  * @param s the socket
  * @return non-zero if something is waiting in input-buffer; otherwise returns 0

@@ -245,7 +245,7 @@ int sockcl_eof(dev_file_t *f) {
 }
 
 //
-// returns the size of the data which are waiting in stream's queue
+// returns the size of data waiting in stream's queue
 //
 int sockcl_length(dev_file_t *f) {
   return net_peek((socket_t) (long) f->handle);
