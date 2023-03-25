@@ -913,8 +913,8 @@ public class MainActivity extends NativeActivity {
     private final String _media;
 
     private Storage() {
-      String external = null;
-      String media = null;
+      String external = "";
+      String media = "";
 
       String path = Environment.getExternalStorageDirectory().getAbsolutePath();
       if (isPublicStorage(path)) {
