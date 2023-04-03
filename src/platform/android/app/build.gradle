@@ -9,9 +9,9 @@ android {
     applicationId 'net.sourceforge.smallbasic'
     minSdkVersion 16
     targetSdkVersion 33
-    versionCode 55
-    versionName '12.25'
-    resConfigs 'en'
+    versionCode 57
+    versionName '12.26'
+      resConfigs 'en'
   }
 
   signingConfigs {

@@ -913,8 +913,8 @@ public class MainActivity extends NativeActivity {
     private final String _media;
 
     private Storage() {
-      String external = "";
-      String media = "";
+      String external = null;
+      String media = null;
 
       String path = Environment.getExternalStorageDirectory().getAbsolutePath();
       if (isPublicStorage(path)) {
@@ -949,15 +949,15 @@ public class MainActivity extends NativeActivity {
     }
 
     public String getExternal() {
-      return _external;
+      return _external != null ? _external : "";
     }
 
     public String getInternal() {
-      return _internal;
+      return _internal != null ? _internal : "";
     }
 
     public String getMedia() {
-      return _media;
+      return _media != null ? _media : "";
     }
 
     private boolean isPublicStorage(String dir) {
