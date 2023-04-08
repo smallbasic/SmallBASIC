@@ -319,8 +319,10 @@ public class MainActivity extends NativeActivity {
         result = result.substring(0, lastSlash);
       }
     } else {
+      Log.i(TAG, "class loader is not BaseDexClassLoader");
       result = "";
     }
+    Log.i(TAG, "modulePath = " + result);
     return result;
   }
 

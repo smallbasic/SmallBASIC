@@ -9,7 +9,7 @@ android {
     applicationId 'net.sourceforge.smallbasic'
     minSdkVersion 16
     targetSdkVersion 33
-    versionCode 57
+    versionCode 59
     versionName '12.26'
       resConfigs 'en'
   }
@@ -42,12 +42,20 @@ android {
       signingConfig signingConfigs.release
     }
   }
+
   externalNativeBuild {
     ndkBuild {
       path '../jni/Android.mk'
     }
   }
+
   namespace 'net.sourceforge.smallbasic'
+
+  packagingOptions {
+    jniLibs {
+      useLegacyPackaging = true
+    }
+  }
 }
 
 dependencies {
