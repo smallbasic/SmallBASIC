@@ -17,9 +17,11 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import java.util.TimeZone;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -424,8 +426,24 @@ public abstract class WebServer {
         // download multiple as zip
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         ZipOutputStream zipOutputStream = new ZipOutputStream(outputStream);
+        Set<String> fileNameSet = new HashSet<>();
         for (String fileName : fileNames) {
           Response response = getFile(remoteHost, fileName, false);
+          // de-duplicate the fileName entry to avoid a duplicate entry/zip exception
+          int index = 1;
+          String originalName = fileName;
+          while (fileNameSet.contains(fileName)) {
+            int dot = originalName.lastIndexOf('.');
+            if (dot != -1) {
+              String extension = originalName.substring(dot + 1);
+              String name = originalName.substring(0, dot);
+              fileName = String.format(Locale.ENGLISH, "%s (%d).%s", name, index, extension);
+            } else {
+              fileName = String.format(Locale.ENGLISH, "%s (%d)", originalName, index);
+            }
+            index++;
+          }
+          fileNameSet.add(fileName);
           ZipEntry entry = new ZipEntry(fileName);
           zipOutputStream.putNextEntry(entry);
           response.toStream(zipOutputStream);

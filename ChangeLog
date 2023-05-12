@@ -1,3 +1,7 @@
+2023-05-12 (12.27)
+	CONSOLE: Fix image save
+	ANDROID: Fix download error when there are duplicate scratch.bas files
+
 2023-03-26 (12.26)
 	ANDROID: Fix setenv error #187
 	ANDROID: update web UI dependencies
