@@ -183,7 +183,7 @@ void bestfta_p(var_num_t x, char *dest, var_num_t minx, var_num_t maxx) {
   }
   fpart = fround(frac(x), precision) * pow(10, precision);
 
-  if (fpart >= FMT_xRND) {      // rounding bug
+  if (fpart >= pow(10, precision)) {      // rounding bug, i.e: print 32.99999999999999 -> Output: 32.1
     ipart = ipart + 1.0;
     if (ipart >= maxx) {
       ipart = ipart / 10.0;

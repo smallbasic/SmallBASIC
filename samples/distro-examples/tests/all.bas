@@ -245,3 +245,4 @@ print "VAL:" + VAL (s)
 print "WEEKDAY:" + WEEKDAY(dmy) + " " + WEEKDAY(1,1,2020) + " " + WEEKDAY(JULIAN(d,m,y))
 print "XPOS:" + XPOS
 print "YPOS:" + YPOS
+print "RoundPrecisionBug:"; 32.99999999999999
