@@ -72,6 +72,8 @@ typedef struct var_s {
       uint32_t count;
       uint32_t size;
       uint32_t id;
+      uint32_t lib_id;
+      uint32_t cls_id;
     } m;
 
     // reference variable
