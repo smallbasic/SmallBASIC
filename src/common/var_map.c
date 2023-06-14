@@ -171,7 +171,10 @@ var_p_t map_elem_key(const var_p_t var_p, int index) {
  */
 void map_free(var_p_t var_p) {
   if (var_p->type == V_MAP) {
-    if (var_p->v.m.lib_id != -1 && var_p->v.m.cls_id != -1 && var_p->v.m.id != -1) {
+    if (var_p->v.m.lib_id != -1 &&
+        var_p->v.m.cls_id != -1 &&
+        var_p->v.m.id != -1 &&
+        --var_p->v.m.ref == 0) {
       plugin_free(var_p->v.m.lib_id, var_p->v.m.cls_id, var_p->v.m.id);
     }
     hashmap_destroy(var_p);
@@ -297,6 +300,7 @@ void map_set(var_p_t dest, const var_p_t src) {
     dest->v.m.id = src->v.m.id;
     dest->v.m.lib_id = src->v.m.lib_id;
     dest->v.m.cls_id = src->v.m.cls_id;
+    dest->v.m.ref = src->v.m.ref + 1;
   }
 }
 

@@ -39,7 +39,7 @@ typedef int (*sblib_exec_fn)(int, int, slib_par_t *, var_t *);
 typedef int (*sblib_getname_fn) (int, char *);
 typedef int (*sblib_count_fn) (void);
 typedef int (*sblib_init_fn) (const char *);
-typedef int (*sblib_free_fn)(int, int);
+typedef int (*sblib_free_fn) (int, int);
 typedef void (*sblib_close_fn) (void);
 
 typedef struct {
@@ -476,6 +476,7 @@ static int slib_exec(slib_t *lib, var_t *ret, int index, int proc) {
 
   if (success && v_is_type(ret, V_MAP)) {
     ret->v.m.lib_id = lib->_id;
+    ret->v.m.ref = 1;
   }
 
   return success;
