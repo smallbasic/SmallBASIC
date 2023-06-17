@@ -75,7 +75,6 @@ typedef struct var_s {
       uint32_t id;
       uint32_t lib_id;
       uint32_t cls_id;
-      uint32_t ref;
     } m;
 
     // reference variable
@@ -104,13 +103,14 @@ typedef struct var_s {
       // upper and lower bounds
       int32_t ubound[MAXDIM];
       int32_t lbound[MAXDIM];
-      // number of dimensions
-      uint8_t maxdim;
     } a;
 
     // next item in the free-list
     struct var_s *pool_next;
   } v;
+
+  // number of dimensions
+  uint8_t maxdim;
 
   // variables type
   uint8_t type;
@@ -426,7 +426,7 @@ void v_input2var(const char *str, var_t *var);
  * < the number of array dimensions (x)
  * @ingroup var
  */
-#define v_maxdim(x) ((x)->v.a.maxdim)
+#define v_maxdim(x) ((x)->maxdim)
 
 /**
  * < the array lower bound of the given dimension (x)

@@ -21,9 +21,9 @@
 
 #include "lib/jsmn/jsmn.h"
 
-/**
- * Container for map_from_str
- */
+//
+// Container for map_from_str
+//
 typedef struct JsonTokens {
   const char *js;
   jsmntok_t *tokens;
@@ -43,42 +43,42 @@ typedef struct ArrayList {
   ArrayNode *tail;
 } ArrayList;
 
-/**
- * Process the next token
- */
+//
+// Process the next token
+//
 int map_read_next_token(var_p_t dest, JsonTokens *json, int index);
 
-/**
- * initialise the variable as a map
- */
+//
+// initialise the variable as a map
+//
 void map_init(var_p_t map) {
   hashmap_create(map, 0);
 }
 
-/**
- * Compare one MAP to another. see v_compare comments for return spec.
- */
+//
+// Compare one MAP to another. see v_compare comments for return spec.
+//
 int map_compare(const var_p_t var_a, const var_p_t var_b) {
   return 0;
 }
 
-/**
- * Return true if the structure is empty
- */
+//
+// Return true if the structure is empty
+//
 int map_is_empty(const var_p_t var_p) {
   return (var_p->v.m.map == NULL);
 }
 
-/**
- * Return the contents of the structure as an integer
- */
+//
+// Return the contents of the structure as an integer
+//
 int map_to_int(const var_p_t var_p) {
   return map_length(var_p);
 }
 
-/**
- * Return the number of elements
- */
+//
+// Return the number of elements
+//
 int map_length(const var_p_t var_p) {
   int result;
   if (var_p->type == V_MAP) {
@@ -134,9 +134,9 @@ const char *map_get_str(var_p_t base, const char *name) {
   return result;
 }
 
-/**
- * return the element at the nth position
- */
+//
+// return the element at the nth position
+//
 int map_elem_cb(hashmap_cb *cb, var_p_t key, var_p_t value) {
   int result;
   if (cb->count++ == cb->index) {
@@ -148,9 +148,9 @@ int map_elem_cb(hashmap_cb *cb, var_p_t key, var_p_t value) {
   return result;
 }
 
-/**
- * return the element key at the nth position
- */
+//
+// return the element key at the nth position
+//
 var_p_t map_elem_key(const var_p_t var_p, int index) {
   var_p_t result;
   if (var_p->type == V_MAP) {
@@ -166,15 +166,14 @@ var_p_t map_elem_key(const var_p_t var_p, int index) {
   return result;
 }
 
-/**
- * Free the map data
- */
+//
+// Free the map data
+//
 void map_free(var_p_t var_p) {
   if (var_p->type == V_MAP) {
     if (var_p->v.m.lib_id != -1 &&
         var_p->v.m.cls_id != -1 &&
-        var_p->v.m.id != -1 &&
-        --var_p->v.m.ref == 0) {
+        var_p->v.m.id != -1) {
       plugin_free(var_p->v.m.lib_id, var_p->v.m.cls_id, var_p->v.m.id);
     }
     hashmap_destroy(var_p);
@@ -182,12 +181,33 @@ void map_free(var_p_t var_p) {
   }
 }
 
-/**
- * Returns the final element eg z in foo.x.y.z
- *
- * Scan byte code for node kwTYPE_UDS_EL and attach as field elements
- * if they don't already exist.
- */
+//
+// callback for map_set_lib_id
+//
+int map_set_lib_id_cb(hashmap_cb *cb, var_p_t key, var_p_t value) {
+  if (v_is_type(value, V_MAP)) {
+    value->v.m.lib_id = cb->index;
+  }
+  return 0;
+}
+
+//
+// sets the library-id onto the map parent and direct children
+//
+void map_set_lib_id(var_p_t var_p, int lib_id) {
+  if (v_is_type(var_p, V_MAP)) {
+    hashmap_cb cb;
+    var_p->v.m.lib_id = lib_id;
+    cb.index = lib_id;
+    hashmap_foreach(var_p, map_set_lib_id_cb, &cb);
+  }
+}
+
+//
+// Returns the final element eg z in foo.x.y.z
+// Scan byte code for node kwTYPE_UDS_EL and attach as field elements
+// if they don't already exist.
+//
 var_p_t map_resolve_fields(var_p_t base, var_p_t *parent) {
   var_p_t field = NULL;
   if (code_peek() == kwTYPE_UDS_EL) {
@@ -228,9 +248,9 @@ var_p_t map_resolve_fields(var_p_t base, var_p_t *parent) {
   return field;
 }
 
-/**
- * Adds a new variable onto the map
- */
+//
+// Adds a new variable onto the map
+//
 var_p_t map_add_var(var_p_t base, const char *name, int value) {
   var_p_t key = v_new();
   v_setstr(key, name);
@@ -239,10 +259,10 @@ var_p_t map_add_var(var_p_t base, const char *name, int value) {
   return var;
 }
 
-/**
- * Return the variable in base keyed by key, if not found then creates
- * an empty variable that will be returned in a further call
- */
+//
+// Return the variable in base keyed by key, if not found then creates
+// an empty variable that will be returned in a further call
+//
 void map_get_value(var_p_t base, var_p_t var_key, var_p_t *result) {
   if (base->type == V_ARRAY && v_asize(base)) {
     // convert the non-empty array to a map
@@ -274,9 +294,9 @@ void map_get_value(var_p_t base, var_p_t var_key, var_p_t *result) {
   *result = hashmap_put(base, var_key->v.p.ptr, v_strlen(var_key));
 }
 
-/**
- * Traverse the root to copy into dest
- */
+//
+// Traverse the root to copy into dest
+//
 int map_set_cb(hashmap_cb *cb, var_p_t var_key, var_p_t value) {
   if (var_key->type != V_STR || var_key->v.p.ptr[0] != MAP_TMP_FIELD[0]) {
     var_p_t key = v_new();
@@ -287,9 +307,9 @@ int map_set_cb(hashmap_cb *cb, var_p_t var_key, var_p_t value) {
   return 0;
 }
 
-/**
- * Copy values from one structure to another
- */
+//
+// Copy values from one structure to another
+//
 void map_set(var_p_t dest, const var_p_t src) {
   if (dest != src && src->type == V_MAP) {
     hashmap_cb cb;
@@ -298,9 +318,8 @@ void map_set(var_p_t dest, const var_p_t src) {
     hashmap_foreach(src, map_set_cb, &cb);
     dest->v.m.count = src->v.m.count;
     dest->v.m.id = src->v.m.id;
-    dest->v.m.lib_id = src->v.m.lib_id;
-    dest->v.m.cls_id = src->v.m.cls_id;
-    dest->v.m.ref = src->v.m.ref + 1;
+    dest->v.m.lib_id = -1;
+    dest->v.m.cls_id = -1;
   }
 }
 
@@ -313,9 +332,9 @@ void map_set_int(var_p_t base, const char *name, var_int_t n) {
   }
 }
 
-/**
- * Helper for map_to_str
- */
+//
+// Helper for map_to_str
+//
 int map_to_str_cb(hashmap_cb *cb, var_p_t v_key, var_p_t v_var) {
   char *key = v_str(v_key);
   char *value = v_str(v_var);
@@ -344,9 +363,9 @@ int map_to_str_cb(hashmap_cb *cb, var_p_t v_key, var_p_t v_var) {
   return 0;
 }
 
-/**
- * Print the array element, growing the buffer as needed
- */
+//
+// Print the array element, growing the buffer as needed
+//
 void array_append_elem(hashmap_cb *cb, var_t *elem) {
   char *value = v_str(elem);
   int required = strlen(cb->buffer) + strlen(value) + BUFFER_PADDING;
@@ -358,9 +377,9 @@ void array_append_elem(hashmap_cb *cb, var_t *elem) {
   free(value);
 }
 
-/**
- * print the array variable
- */
+//
+// print the array variable
+//
 void array_to_str(hashmap_cb *cb, var_t *var) {
   strcpy(cb->buffer, "[");
   if (v_maxdim(var) == 2) {
@@ -393,9 +412,9 @@ void array_to_str(hashmap_cb *cb, var_t *var) {
   strcat(cb->buffer, "]");
 }
 
-/**
- * Return the contents of the structure as a string
- */
+//
+// Return the contents of the structure as a string
+//
 char *map_to_str(const var_p_t var_p) {
   hashmap_cb cb;
   cb.count = BUFFER_GROW_SIZE;
@@ -412,9 +431,9 @@ char *map_to_str(const var_p_t var_p) {
   return cb.buffer;
 }
 
-/**
- * Print the contents of the structure
- */
+//
+// Print the contents of the structure
+//
 void map_write(const var_p_t var_p, int method, intptr_t handle) {
   if (var_p->type == V_MAP || var_p->type == V_ARRAY) {
     char *buffer = map_to_str(var_p);
@@ -423,9 +442,9 @@ void map_write(const var_p_t var_p, int method, intptr_t handle) {
   }
 }
 
-/**
- * Process the next primative value
- */
+//
+// Process the next primative value
+//
 void map_set_primative(var_p_t dest, const char *s, int len) {
   int value = 0;
   int fract = 0;
@@ -458,9 +477,9 @@ void map_set_primative(var_p_t dest, const char *s, int len) {
   }
 }
 
-/**
- * Adds a node to the array list
- */
+//
+// Adds a node to the array list
+//
 var_t *map_array_list_add(ArrayList *list, int row, int col) {
   if (list->head == NULL) {
     list->head = malloc(sizeof(ArrayNode));
@@ -476,9 +495,9 @@ var_t *map_array_list_add(ArrayList *list, int row, int col) {
   return list->tail->v;
 }
 
-/**
- * Builds the array from the ArrayNode list
- */
+//
+// Builds the array from the ArrayNode list
+//
 void map_build_array(var_p_t dest, ArrayNode *node_next, int rows, int cols) {
   if (rows > 1) {
     v_tomatrix(dest, rows, cols);
@@ -496,9 +515,9 @@ void map_build_array(var_p_t dest, ArrayNode *node_next, int rows, int cols) {
   }
 }
 
-/**
- * Creates an array variable
- */
+//
+// Creates an array variable
+//
 int map_create_array(var_p_t dest, JsonTokens *json, int end_position, int index) {
   int i = index;
   int rows = 0;
@@ -558,9 +577,9 @@ int map_create_array(var_p_t dest, JsonTokens *json, int end_position, int index
   return i;
 }
 
-/**
- * Creates a map variable
- */
+//
+// Creates a map variable
+//
 int map_create(var_p_t dest, JsonTokens *json, int end_position, int index) {
   hashmap_create(dest, 0);
   int i = index;
@@ -581,9 +600,9 @@ int map_create(var_p_t dest, JsonTokens *json, int end_position, int index) {
   return i;
 }
 
-/**
- * Process the next token
- */
+//
+// Process the next token
+//
 int map_read_next_token(var_p_t dest, JsonTokens *json, int index) {
   int next;
   jsmntok_t token = json->tokens[index];
@@ -636,9 +655,9 @@ void map_parse_str(const char *js, size_t len, var_p_t dest) {
   free(tokens);
 }
 
-/**
- * Initialise a map from a string
- */
+//
+// Initialise a map from a string
+//
 void map_from_str(var_p_t dest) {
   var_t arg;
   v_init(&arg);
@@ -653,8 +672,10 @@ void map_from_str(var_p_t dest) {
   v_free(&arg);
 }
 
+//
 // array <- CODEARRAY(x1,y1...[;x2,y2...])
 // dynamic arrays created with the [] operators
+//
 void map_from_codearray(var_p_t dest) {
   int rows = 0;
   int cols = 0;

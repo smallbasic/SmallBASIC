@@ -475,8 +475,7 @@ static int slib_exec(slib_t *lib, var_t *ret, int index, int proc) {
   }
 
   if (success && v_is_type(ret, V_MAP)) {
-    ret->v.m.lib_id = lib->_id;
-    ret->v.m.ref = 1;
+    map_set_lib_id(ret, lib->_id);
   }
 
   return success;

@@ -555,6 +555,7 @@ void v_move(var_t *dest, const var_t *src) {
     break;
   case V_ARRAY:
     memcpy(&dest->v.a, &src->v.a, sizeof(src->v.a));
+    v_maxdim(dest) = v_maxdim(src);
     break;
   case V_PTR:
     dest->v.ap.p = src->v.ap.p;
@@ -567,7 +568,6 @@ void v_move(var_t *dest, const var_t *src) {
     dest->v.m.id = src->v.m.id;
     dest->v.m.lib_id = src->v.m.lib_id;
     dest->v.m.cls_id = src->v.m.cls_id;
-    dest->v.m.ref = src->v.m.ref;
     break;
   case V_REF:
     dest->v.ref = src->v.ref;
