@@ -426,4 +426,15 @@ p(asc("|")) = 1
 p(asc("}")) = 1
 p(asc("~")) = 1
 
+'
+' https://www.syntaxbomb.com/smallbasic/redim-why-to-keep-old-versons/
+'
+a = [0,1,2,3,4,5,6,7,8,9,10,11]
+redim a(11)    : if a != [0,1,2,3,4,5,6,7,8,9,10,11] then throw str(a)
+redim a(1, 11) : if a != [0,1,2,3,4,5,6,7,8,9,10,11;0,0,0,0,0,0,0,0,0,0,0,0] then throw str(a)
+redim a(2, 10) : if a != [0,1,2,3,4,5,6,7,8,9,10;11,0,0,0,0,0,0,0,0,0,0;0,0,0,0,0,0,0,0,0,0,0] then throw str(a)
+redim a(1, 11) : if a != [0,1,2,3,4,5,6,7,8,9,10,11;0,0,0,0,0,0,0,0,0,0,0,0] then throw str(a)
+redim a(10)    : if a != [0,1,2,3,4,5,6,7,8,9,10] then throw str(a)
+redim a(0 to 7): if a != [0,1,2,3,4,5,6,7] then throw str(a)
+redim a(0 to 1): if a != [0,1] then throw str(a)
 

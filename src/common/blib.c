@@ -210,8 +210,6 @@ void cmd_dim(int preserve) {
       }
       if (!preserve || var_p->type != V_ARRAY) {
         v_new_array(var_p, size);
-      } else if (v_maxdim(var_p) != dimensions) {
-        err_matdim();
       } else {
         // preserve previous array contents
         v_resize_array(var_p, size);
