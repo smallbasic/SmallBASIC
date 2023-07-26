@@ -39,6 +39,7 @@ typedef int (*sblib_exec_fn)(int, int, slib_par_t *, var_t *);
 typedef int (*sblib_getname_fn) (int, char *);
 typedef int (*sblib_count_fn) (void);
 typedef int (*sblib_init_fn) (const char *);
+typedef int (*sblib_free_fn) (int, int);
 typedef void (*sblib_close_fn) (void);
 
 typedef struct {
@@ -47,6 +48,7 @@ typedef struct {
   void *_handle;
   sblib_exec_fn _sblib_proc_exec;
   sblib_exec_fn _sblib_func_exec;
+  sblib_free_fn _sblib_free;
   ext_func_node_t *_func_list;
   ext_proc_node_t *_proc_list;
   uint32_t _id;
@@ -304,6 +306,7 @@ static void slib_import_routines(slib_t *lib, int comp) {
 
   lib->_sblib_func_exec = slib_getoptptr(lib, "sblib_func_exec");
   lib->_sblib_proc_exec = slib_getoptptr(lib, "sblib_proc_exec");
+  lib->_sblib_free = slib_getoptptr(lib, "sblib_free");
   sblib_count_fn fcount = slib_getoptptr(lib, "sblib_proc_count");
   sblib_getname_fn fgetname = slib_getoptptr(lib, "sblib_proc_getname");
 
@@ -471,6 +474,10 @@ static int slib_exec(slib_t *lib, var_t *ret, int index, int proc) {
     free(ptable);
   }
 
+  if (success && v_is_type(ret, V_MAP)) {
+    map_set_lib_id(ret, lib->_id);
+  }
+
   return success;
 }
 
@@ -598,6 +605,13 @@ int plugin_funcexec(int lib_id, int index, var_t *ret) {
   return result;
 }
 
+void plugin_free(int lib_id, int cls_id, int id) {
+  slib_t *lib = get_lib(lib_id);
+  if (lib && lib->_sblib_free) {
+    lib->_sblib_free(cls_id, id);
+  }
+}
+
 void plugin_close() {
   for (int i = 0; i < MAX_SLIBS; i++) {
     if (plugins[i]) {
@@ -626,5 +640,6 @@ int plugin_get_kid(int lib_id, const char *keyword) { return -1; }
 void *plugin_get_func(const char *name) { return 0; }
 int plugin_procexec(int lib_id, int index) { return -1; }
 int plugin_funcexec(int lib_id, int index, var_t *ret) { return -1; }
+void plugin_free(int lib_id, int cls_id, int id) {}
 void plugin_close() {}
 #endif

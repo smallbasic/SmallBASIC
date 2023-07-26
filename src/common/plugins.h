@@ -56,6 +56,11 @@ int plugin_procexec(int lib_id, int index);
 int plugin_funcexec(int lib_id, int index, var_t *ret);
 
 //
+// cleanup any resources held against the map data
+//
+void plugin_free(int lib_id, int cls_id, int id);
+
+//
 // closes the plugin system
 //
 void plugin_close();

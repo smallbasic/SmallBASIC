@@ -405,6 +405,7 @@ void cmd_image_save(var_s *self, var_s *) {
           v_setint(v_elem(array, pos), px);
         }
       }
+      error = 0;
       break;
     default:
       v_init(&var);
