@@ -442,7 +442,7 @@ int main(int argc, char *argv[]) {
   return gsb_last_error ? gsb_last_line : 0;
 }
 
-#if defined(__GNUC__) && !defined(__MACH__) && !defined(_Win32)
+#if defined(__GNUC__) && !defined(__MACH__) && !defined(_Win32) && !defined(__CYGWIN__)
 // for analysing excessive malloc calls using kdbg
 extern "C" void *__libc_malloc(size_t size);
 void *malloc(size_t size) {
