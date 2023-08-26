@@ -398,6 +398,12 @@ bool wait_for_file(const char *file, uint32_t modifiedTime) {
 }
 #endif
 
+static void exit_handler(void) {
+  if (count_tasks()) {
+    err_stackunderflow();
+  }
+}
+
 //
 // program entry point
 //
@@ -416,6 +422,7 @@ int main(int argc, char *argv[]) {
   os_graphics = 1;
 
   console_init();
+  atexit(exit_handler);
 
   char *file = nullptr;
   bool tmpFile = false;
