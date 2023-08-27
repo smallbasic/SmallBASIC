@@ -379,6 +379,10 @@ void err_network() {
   rt_raise(ERR_NETWORK);
 }
 
+void err_abnormal_exit() {
+  rt_raise(ERR_ABNORMAL_EXIT);
+}
+
 /**
  * the DONE message
  */

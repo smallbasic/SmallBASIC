@@ -400,7 +400,7 @@ bool wait_for_file(const char *file, uint32_t modifiedTime) {
 
 static void exit_handler(void) {
   if (count_tasks()) {
-    err_stackunderflow();
+    err_abnormal_exit();
   }
 }
 
