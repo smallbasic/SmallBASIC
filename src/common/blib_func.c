@@ -1053,8 +1053,8 @@ void cmd_str1(long funcCode, var_t *arg, var_t *r) {
     uint32_t len = strlen(arg->v.p.ptr);
     if (*p != '\0') {
       p = p + len - 1; 
-      while (is_wspace(*p)) {
-        len--;
+      while (p >= arg->v.p.ptr && is_wspace(*p)) {
+        len--;      
         p--;
       }
     }
