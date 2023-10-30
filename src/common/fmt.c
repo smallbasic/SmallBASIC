@@ -20,16 +20,12 @@
 #define FMT_xMIN          1e-8
 #define FMT_xMAX          1e+14
 #define FMT_RND           14
-#define FMT_xRND          1e+14
-#define FMT_xRND2         1e+13
 #define FMT_MANTISSA_BITS 52
 #else
 // limits for use with 32bit integer algorithm
 #define FMT_xMIN          1e-8          // lowest limit to use the exp. format
 #define FMT_xMAX          1e+9          // highest limit to use the exp. format
 #define FMT_RND           9             // rounding on x digits
-#define FMT_xRND          1e+9          // 1 * 10 ^ FMT_RND
-#define FMT_xRND2         1e+8          // 1 * 10 ^ (FMT_RND-1)
 #define FMT_MANTISSA_BITS 23            // Bits of mantissa for 32bit float
 #endif
 
@@ -183,7 +179,7 @@ void bestfta_p(var_num_t x, char *dest, var_num_t minx, var_num_t maxx) {
   }
   fpart = fround(frac(x), precision) * pow(10, precision);
 
-  if (fpart >= FMT_xRND) {      // rounding bug
+  if (fpart >= pow(10, precision)) {      // rounding bug, i.e: print 32.99999999999999 -> Output: 32.1
     ipart = ipart + 1.0;
     if (ipart >= maxx) {
       ipart = ipart / 10.0;
@@ -195,18 +191,13 @@ void bestfta_p(var_num_t x, char *dest, var_num_t minx, var_num_t maxx) {
   fptoa(ipart, buf);
   strcpy(d, buf);
   d += strlen(buf);
-
+  
   if (fpart > 0.0) {
     // format right part
     *d++ = '.';
+    fdif = fpart;
 
-    fdif = frac(x) * FMT_xRND;
-    if (fdif < fpart) {
-      // rounded value has greater precision
-      fdif = fpart;
-    }
-
-    while (fdif < FMT_xRND2) {
+    while (fdif < pow(10, precision - 1)) {
       fdif *= 10;
       *d++ = '0';
     }

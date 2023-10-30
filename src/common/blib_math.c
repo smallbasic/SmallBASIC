@@ -121,7 +121,7 @@ void mat_gauss_jordan(var_num_t *a, var_num_t *b, int n, double toler) {
     indxr[i] = irow;
     indxc[i] = icol;
 
-    if (a[icol * n + icol] < toler) {
+    if (fabs(a[icol * n + icol]) < toler) {
       err_matsig();
       free(indxc);
       free(indxr);

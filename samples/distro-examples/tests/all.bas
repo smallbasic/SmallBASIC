@@ -140,7 +140,7 @@ print "DETERM:"' + DETERM (A, 1)
 print "DISCLOSE:" + DISCLOSE("{debraceme}", "{}")
 print "ENCLOSE:" + ENCLOSE ("braceme", "{}")
 print "EOF:"' + EOF (fileN)
-print "EXIST:"' + EXIST (file)
+print "EXIST:" + EXIST ("Makefile")
 print "EXP:" + EXP (x)
 print "FILES:"; FILES ("file-not-found")
 print "FIX:" + FIX (x)
@@ -245,3 +245,5 @@ print "VAL:" + VAL (s)
 print "WEEKDAY:" + WEEKDAY(dmy) + " " + WEEKDAY(1,1,2020) + " " + WEEKDAY(JULIAN(d,m,y))
 print "XPOS:" + XPOS
 print "YPOS:" + YPOS
+print "RoundPrecisionBug:"; 32.99999999999999
+print "RoundPrecisionBug2:"; 64.1

@@ -210,3 +210,8 @@ for t in number_test
   if (t[2] != oct(t[0])) then throw "err: oct(" + str(t[0]) + ") <> " + t[2]
   if (t[3] != hex(t[0])) then throw "err: hex(" + str(t[0]) + ") <> " + t[3]
 next
+
+REM Bug: RTRIM trimed input string on the right side
+s1 = "   test   "
+s2 = rtrim(s1)
+if(s1 != "   test   ") then throw "err: RTRIM changed input string"

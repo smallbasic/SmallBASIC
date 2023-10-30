@@ -123,7 +123,7 @@ DETERM:
 DISCLOSE:debraceme
 ENCLOSE:{braceme}
 EOF:
-EXIST:
+EXIST:1
 EXP:219695.9886721379
 FILES:[]
 FIX:13
@@ -228,3 +228,5 @@ VAL:0
 WEEKDAY:-1 3 1
 XPOS:0
 YPOS:0
+RoundPrecisionBug:33
+RoundPrecisionBug2:64.1
