@@ -1050,19 +1050,17 @@ void cmd_str1(long funcCode, var_t *arg, var_t *r) {
       break;
     }
     p = arg->v.p.ptr;
+    uint32_t len = strlen(arg->v.p.ptr);
     if (*p != '\0') {
-      while (*p) {
-        p++;
-      }
-      p--;
-      while (p >= arg->v.p.ptr && (is_wspace(*p))) {
+      p = p + len - 1; 
+      while (p >= arg->v.p.ptr && is_wspace(*p)) {
+        len--;      
         p--;
       }
-      p++;
-      *p = '\0';
     }
-    r->v.p.ptr = (char *)malloc(strlen(arg->v.p.ptr) + 1);
-    strcpy(r->v.p.ptr, arg->v.p.ptr);
+    r->v.p.ptr = (char *)malloc(len + 1);
+    strncpy(r->v.p.ptr, arg->v.p.ptr, len);
+    r->v.p.ptr[len] = '\0';
     r->v.p.length = strlen(r->v.p.ptr) + 1;
 
     // alltrim
