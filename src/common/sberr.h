@@ -79,6 +79,7 @@ void err_array();
 void err_form_input();
 void err_memory();
 void err_network();
+void err_abnormal_exit();
 void err_throw(const char *fmt, ...);
 int  err_handle_error(const char *err, var_p_t var);
 void inf_done(void);

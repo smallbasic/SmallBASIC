@@ -375,7 +375,7 @@ uint32_t get_modified_time(const char *file) {
 bool wait_for_file(const char *file, uint32_t modifiedTime) {
   bool result = false;
   fcntl(0, F_SETFL, fcntl(0, F_GETFL) | O_NONBLOCK);
-  fprintf(stdout, "Fix the error [in %s] to continue, or press enter to exit...\n", file);
+  fprintf(stdout, "Fix the error in [%s] to continue, or press enter to exit...\n", file);
   while (!result && modifiedTime == get_modified_time(file)) {
     char c = 0;
     read(0, &c, 1);
@@ -390,13 +390,19 @@ bool wait_for_file(const char *file, uint32_t modifiedTime) {
 #else
 bool wait_for_file(const char *file, uint32_t modifiedTime) {
   bool result = false;
-  fprintf(stdout, "Fix the error [in %s] to continue...\n", file);
+  fprintf(stdout, "Fix the error in [%s] to continue...\n", file);
   while (!result && modifiedTime == get_modified_time(file)) {
     usleep(500 * 1000);
   }
   return result;
 }
 #endif
+
+static void exit_handler(void) {
+  if (count_tasks()) {
+    err_abnormal_exit();
+  }
+}
 
 //
 // program entry point
@@ -416,6 +422,7 @@ int main(int argc, char *argv[]) {
   os_graphics = 1;
 
   console_init();
+  atexit(exit_handler);
 
   char *file = nullptr;
   bool tmpFile = false;

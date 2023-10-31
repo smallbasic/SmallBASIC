@@ -14,7 +14,31 @@
 #include <string.h>
 #include <errno.h>
 
-void err_title_msg(const char *seg, const char *file, int line) {
+void err_title_msg(int compileError, int parameterError) {
+  const char *seg;
+  const char *file;
+  int line;
+
+  if (compileError) {
+    file = comp_bc_sec;
+    line = comp_line;
+    seg = WORD_COMP;
+  } else {
+    file = prog_file;
+    line = prog_line;
+    seg = WORD_RTE;
+    if (ctask->parent > 0 && parameterError) {
+      task_t *parent = taskinfo(ctask->parent);
+      line = parent->line;
+      file = parent->file;
+    }
+  }
+
+  const char *slash = strrchr(file, '/');
+  if (slash) {
+    file = slash + 1;
+  }
+
   gsb_last_line = line;
   gsb_last_error = prog_error;
   strlcpy(gsb_last_file, file, sizeof(gsb_last_file));
@@ -80,7 +104,7 @@ void sc_raise(const char *format, ...) {
     va_end(args);
 
     if (comp_bc_sec) {
-      err_title_msg(WORD_COMP, comp_bc_sec, comp_line);
+      err_title_msg(1, 0);
     }
     if (size) {
       va_start(args, format);
@@ -102,7 +126,7 @@ void rt_raise(const char *format, ...) {
     unsigned size = vsnprintf(NULL, 0, format, args);
     va_end(args);
 
-    err_title_msg(WORD_RTE, prog_file, prog_line);
+    err_title_msg(0, strcmp(format, ERR_PARAM_NUM) == 0);
     if (size) {
       va_start(args, format);
       va_err_detail_msg(format, args, size);
@@ -161,7 +185,7 @@ void err_syntax(int keyword, const char *fmt) {
       fmt_p++;
     }
 
-    err_title_msg(WORD_RTE, prog_file, prog_line);
+    err_title_msg(0, 0);
     err_detail_msg(ERR_SYNTAX);
     err_stack_msg();
     log_printf("Expected:");
@@ -355,6 +379,10 @@ void err_network() {
   rt_raise(ERR_NETWORK);
 }
 
+void err_abnormal_exit() {
+  rt_raise(ERR_ABNORMAL_EXIT);
+}
+
 /**
  * the DONE message
  */
@@ -458,7 +486,7 @@ void err_throw_str(const char *err) {
     }
 
     if (!caught) {
-      err_title_msg(WORD_RTE, prog_file, prog_line);
+      err_title_msg(0, 0);
       err_detail_msg(err);
       err_stack_msg();
       trace_done = 1;
@@ -477,7 +505,7 @@ void err_throw_str(const char *err) {
   if (!caught) {
     prog_error = errRuntime;
     if (!trace_done) {
-      err_title_msg(WORD_RTE, prog_file, prog_line);
+      err_title_msg(0, 0);
       err_detail_msg(err);
       err_stack_msg();
     }
