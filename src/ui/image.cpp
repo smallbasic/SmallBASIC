@@ -450,17 +450,19 @@ void cmd_image_hide(var_s *self, var_s *) {
 }
 
 //
-// Output the image to a PNG file
+// Output the image to a PNG file or an array
 //
 // png.save("horse1.png")
 // png.save(#1)
+// png.save(byref var)
+// file = "abc.png" : png.save(file)
 //
 void cmd_image_save(var_s *self, var_s *) {
   unsigned id = map_get_int(self, IMG_BID, -1);
   ImageBuffer *image = get_image(id);
   dev_file_t *file;
-  var_t *array;
-  var_t var;
+  var_t *var;
+  var_t str;
   bool saved = false;
   if (!prog_error && image != nullptr) {
     unsigned w = image->_width;
@@ -473,37 +475,43 @@ void cmd_image_save(var_s *self, var_s *) {
         saved = true;
       }
       break;
-    case kwTYPE_VAR:
-      array = par_getvar_ptr();
-      v_tomatrix(array, h, w);
-      //     x0   x1   x2    (w=3,h=2)
-      // y0  rgba rgba rgba  ypos=0
-      // y1  rgba rgba rgba  ypos=12
-      //
-      for (unsigned y = 0; y < h; y++) {
-        unsigned yoffs = (y * w * 4);
-        for (unsigned x = 0; x < w; x++) {
-          uint8_t a, r, g, b;
-          GET_IMAGE_ARGB(image->_image, yoffs + (x * 4), a, r, g, b);
-          pixel_t px = v_get_argb_px(a, r, g, b);
-          unsigned pos = y * w + x;
-          v_setint(v_elem(array, pos), px);
-        }
-      }
-      saved = true;
+    case kwTYPE_STR:
+      par_getstr(&str);
+      if (!prog_error &&
+          !encode_png_file(str.v.p.ptr, image->_image, w, h)) {
+        saved = true;
+      }      
+      v_free(&str);
       break;
     default:
-      v_init(&var);
-      eval(&var);
-      if (var.type == V_STR && !prog_error &&
-          !lodepng_encode32_file(var.v.p.ptr, image->_image, w, h)) {
+      var = par_getvar_ptr();
+      if (var->type == V_STR && !prog_error &&
+          !encode_png_file(var->v.p.ptr, image->_image, w, h)) {
         saved = true;
-      }
-      v_free(&var);
-      break;
+      } else if (!prog_error) {
+        u_int32_t offsetLeft = map_get_int(self, IMG_OFFSET_LEFT, -1);
+        u_int32_t offsetTop = map_get_int(self, IMG_OFFSET_TOP, -1);
+        u_int32_t wClip = map_get_int(self, IMG_WIDTH, -1);
+        u_int32_t hClip = map_get_int(self, IMG_HEIGHT, -1);
+        v_tomatrix(var, hClip, wClip);
+        //     x0   x1   x2    (w=3,h=2)
+        // y0  rgba rgba rgba  ypos=0
+        // y1  rgba rgba rgba  ypos=12
+        //   
+        for (unsigned y = offsetTop; y < offsetTop + hClip; y++) {
+          unsigned yoffs = (y * w * 4);
+          for (unsigned x = offsetLeft; x < offsetLeft + wClip; x++) {
+            uint8_t a, r, g, b;
+            GET_IMAGE_ARGB(image->_image, yoffs + (x * 4), a, r, g, b);
+            pixel_t px = v_get_argb_px(a, r, g, b);
+            unsigned pos = (y - offsetTop ) * wClip + (x - offsetLeft);            
+            v_setint(v_elem(var, pos), px);
+          }
+        }
+        saved = true;
+      }    
     }
   }
-
   if (!saved) {
     err_throw(ERR_IMAGE_SAVE);
   }
@@ -512,7 +520,7 @@ void cmd_image_save(var_s *self, var_s *) {
 
 //
 // Reduces the size of the image
-// arguments: left, top, right, bottom
+// arguments: left, top, width, height
 //
 // png.clip(10, 10, 10, 10)
 //
@@ -521,12 +529,12 @@ void cmd_image_clip(var_s *self, var_s *) {
     int bid = map_get_int(self, IMG_BID, -1);
     if (bid != -1) {
       ImageBuffer *image = get_image((unsigned)bid);
-      var_int_t left, top, right, bottom;
-      if (image != nullptr && par_massget("iiii", &left, &top, &right, &bottom)) {
+      var_int_t left, top, width, heigth;
+      if (image != nullptr && par_massget("iiii", &left, &top, &width, &heigth)) {
         map_set_int(self, IMG_OFFSET_LEFT, left);
         map_set_int(self, IMG_OFFSET_TOP, top);
-        map_set_int(self, IMG_WIDTH, right);
-        map_set_int(self, IMG_HEIGHT, bottom);
+        map_set_int(self, IMG_WIDTH, width);
+        map_set_int(self, IMG_HEIGHT, heigth);
       }
     }
   }
