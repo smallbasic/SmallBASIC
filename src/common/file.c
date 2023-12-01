@@ -183,7 +183,7 @@ int dev_fopen(int sb_handle, const char *name, int flags) {
       }
       if (strncmp(f->name, "COM", 3) == 0) {
         f->type = ft_serial_port;
-        f->port = f->name[3] - '1';
+        f->port = f->name[3] - '0';
         if (f->port < 0) {
           f->port = 10;
         }
