@@ -489,24 +489,35 @@ void cmd_image_save(var_s *self, var_s *) {
           !encode_png_file(var->v.p.ptr, image->_image, w, h)) {
         saved = true;
       } else if (!prog_error) {
-        u_int32_t offsetLeft = map_get_int(self, IMG_OFFSET_LEFT, -1);
-        u_int32_t offsetTop = map_get_int(self, IMG_OFFSET_TOP, -1);
-        u_int32_t wClip = map_get_int(self, IMG_WIDTH, -1);
-        u_int32_t hClip = map_get_int(self, IMG_HEIGHT, -1);
-        v_tomatrix(var, hClip, wClip);
-        //     x0   x1   x2    (w=3,h=2)
-        // y0  rgba rgba rgba  ypos=0
-        // y1  rgba rgba rgba  ypos=12
-        //   
-        for (unsigned y = offsetTop; y < offsetTop + hClip; y++) {
-          unsigned yoffs = (y * w * 4);
-          for (unsigned x = offsetLeft; x < offsetLeft + wClip; x++) {
-            uint8_t a, r, g, b;
-            GET_IMAGE_ARGB(image->_image, yoffs + (x * 4), a, r, g, b);
-            pixel_t px = v_get_argb_px(a, r, g, b);
-            unsigned pos = (y - offsetTop ) * wClip + (x - offsetLeft);            
-            v_setint(v_elem(var, pos), px);
+        uint32_t offsetLeft = map_get_int(self, IMG_OFFSET_LEFT, 0);
+        uint32_t offsetTop = map_get_int(self, IMG_OFFSET_TOP, 0);
+        uint32_t wClip = map_get_int(self, IMG_WIDTH, w);
+        uint32_t hClip = map_get_int(self, IMG_HEIGHT, h);
+               
+        if (offsetTop < h && offsetLeft < w) {
+          if (offsetTop + hClip > h) {
+            hClip = h - offsetTop;
           }
+          if (offsetLeft + wClip > w) {
+            wClip = w - offsetLeft;
+          }
+          v_tomatrix(var, hClip, wClip);
+          //     x0   x1   x2    (w=3,h=2)
+          // y0  rgba rgba rgba  ypos=0
+          // y1  rgba rgba rgba  ypos=12
+          //
+          for (unsigned y = offsetTop; y < offsetTop + hClip; y++) {
+            unsigned yoffs = (y * w * 4);
+            for (unsigned x = offsetLeft; x < offsetLeft + wClip; x++) {
+              uint8_t a, r, g, b;
+              GET_IMAGE_ARGB(image->_image, yoffs + (x * 4), a, r, g, b);
+              pixel_t px = v_get_argb_px(a, r, g, b);
+              unsigned pos = (y - offsetTop ) * wClip + (x - offsetLeft);            
+              v_setint(v_elem(var, pos), px);
+            }
+          }
+        } else {
+          v_tomatrix(var, hClip, wClip);
         }
         saved = true;
       }    
@@ -531,6 +542,12 @@ void cmd_image_clip(var_s *self, var_s *) {
       ImageBuffer *image = get_image((unsigned)bid);
       var_int_t left, top, width, heigth;
       if (image != nullptr && par_massget("iiii", &left, &top, &width, &heigth)) {
+        if (left < 0) {
+          left = 0;
+        }
+        if (top < 0) {
+          top = 0;
+        }
         map_set_int(self, IMG_OFFSET_LEFT, left);
         map_set_int(self, IMG_OFFSET_TOP, top);
         map_set_int(self, IMG_WIDTH, width);
