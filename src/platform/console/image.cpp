@@ -245,10 +245,15 @@ ImageBuffer *load_xpm_image(char **data) {
 //
 // png.clip(10, 10, 10, 10)
 //
-void cmd_image_clip(var_s *self, var_s *) {
-  var_int_t left, top, right, bottom;
+void cmd_image_clip(var_s *self, int param_count, slib_par_t *params, var_s *) {
   ImageBuffer *image = load_image(self);
-  if (par_massget("iiii", &left, &top, &right, &bottom) == 4) {
+  if (param_count != 4) {
+    err_parm_num(param_count, 4);
+  } else {
+    var_int_t left = v_getint(params[0].var_p);
+    var_int_t top = v_getint(params[1].var_p);
+    var_int_t right = v_getint(params[2].var_p);
+    var_int_t bottom = v_getint(params[3].var_p);
     int w = image->_width - (right + left);
     int h = image->_height - (bottom + top);
     int size = w * h * 4;
@@ -277,8 +282,6 @@ void cmd_image_clip(var_s *self, var_s *) {
       map_set_int(self, IMG_WIDTH, w);
       map_set_int(self, IMG_HEIGHT, h);
     }
-  } else {
-    err_throw(ERR_PARAM);
   }
 }
 
@@ -290,7 +293,7 @@ void cmd_image_clip(var_s *self, var_s *) {
 // end
 // png.filter(use colorToAlpha(x))
 //
-void cmd_image_filter(var_s *self, var_s *) {
+void cmd_image_filter(var_s *self, int param_count, slib_par_t *params, var_s *) {
   ImageBuffer *image_buffer = load_image(self);
   if (code_peek() == kwUSE && image_buffer != nullptr) {
     code_skipnext();
@@ -326,19 +329,22 @@ void cmd_image_filter(var_s *self, var_s *) {
 // png2 = image(w, h)
 // png2.paste(png1, 0, 0)
 //
-void cmd_image_paste(var_s *self, var_s *) {
-  var_int_t x, y;
-  var_t *var;
+void cmd_image_paste(var_s *self, int param_count, slib_par_t *params, var_s *) {
   ImageBuffer *image = load_image(self);
-  int count = par_massget("Piiii", &var, &x, &y);
-  if (image != nullptr && (count == 1 || count == 3)) {
+  if (image != nullptr && (param_count == 1 || param_count == 3)) {
+    var_t *var = params[0].var_p;
     ImageBuffer *srcImage = load_image(var);
     if (srcImage == nullptr) {
       err_throw(ERR_PARAM);
     } else {
+      var_int_t x;
+      var_int_t y;
       if (count == 1) {
         x = 0;
         y = 0;
+      } else {
+        x = v_getint(params[1].var_p);
+        y = v_getint(params[2].var_p);
       }
       int dw = image->_width;
       int dh = image->_height;
@@ -370,7 +376,7 @@ void cmd_image_paste(var_s *self, var_s *) {
 // png.save("horse1.png")
 // png.save(#1)
 //
-void cmd_image_save(var_s *self, var_s *) {
+void cmd_image_save(var_s *self, int param_count, slib_par_t *params, var_s *) {
   ImageBuffer *image = load_image(self);
   dev_file_t *filep = nullptr;
   byte code = code_peek();

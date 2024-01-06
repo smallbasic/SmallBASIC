@@ -12,6 +12,7 @@
 #include "common/fmt.h"
 #include "common/keymap.h"
 #include "common/messages.h"
+#include "common/plugins.h"
 
 #define STR_INIT_SIZE 256
 #define PKG_INIT_SIZE 5
@@ -2881,12 +2882,21 @@ void cmd_call_vfunc() {
       rt_raise(ERR_NO_FUNC);
     }
   } else {
+    slib_par_t *ptable;
+    int pcount;
     if (code_peek() == kwTYPE_LEVEL_BEGIN) {
-      code_skipnext();
+      ptable = (slib_par_t *)malloc(sizeof(slib_par_t) * MAX_PARAMS);
+      pcount = plugin_build_ptable(ptable, MAX_PARAMS);
+    } else {
+      ptable = NULL;
+      pcount = 0;
     }
-    v_func->v.fn.cb(map, NULL);
-    if (code_peek() == kwTYPE_LEVEL_END) {
-      code_skipnext();
+    if (!prog_error) {
+      v_func->v.fn.cb(map, pcount, ptable, NULL);
+    }
+    if (ptable) {
+      plugin_free_ptable(ptable, pcount);
+      free(ptable);
     }
   }
 }

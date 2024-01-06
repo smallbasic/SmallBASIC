@@ -16,14 +16,6 @@
 extern "C" {
 #endif
 
-typedef struct {
-  // the parameter
-  var_t *var_p;
-
-  // whether the parameter can be used by reference
-  uint8_t byref;
-} slib_par_t;
-
 /**
  * @ingroup modstd
  *

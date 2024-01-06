@@ -47,7 +47,17 @@ extern "C" {
 #endif
 
 struct var_s;
-typedef void (*method) (struct var_s *self, struct var_s *retval);
+
+typedef struct {
+  // the parameter
+  struct var_s *var_p;
+
+  // whether the parameter can be used by reference
+  uint8_t byref;
+} slib_par_t;
+
+// object method signature
+typedef void (*method) (struct var_s *self, int param_count, slib_par_t *params, struct var_s *retval);
 
 typedef struct var_s {
   union {

@@ -62,30 +62,34 @@ StringList *get_items() {
   return items;
 }
 
-void cmd_window_select_screen1(var_s *self, var_s *) {
+void cmd_window_select_screen1(var_s *self, int param_count, slib_par_t *params, var_s *) {
   g_system->getOutput()->selectScreen(USER_SCREEN1);
 }
 
-void cmd_window_select_screen2(var_s *self, var_s *) {
+void cmd_window_select_screen2(var_s *self, int param_count, slib_par_t *params, var_s *) {
   g_system->getOutput()->selectScreen(USER_SCREEN2);
 }
 
-void cmd_window_select_screen3(var_s *self, var_s *) {
+void cmd_window_select_screen3(var_s *self, int param_count, slib_par_t *params, var_s *) {
   g_system->getOutput()->selectScreen(TEXT_SCREEN);
 }
 
-void cmd_window_show_keypad(var_s *self, var_s *) {
+void cmd_window_show_keypad(var_s *self, int param_count, slib_par_t *params, var_s *) {
   maShowVirtualKeyboard();
 }
 
-void cmd_window_hide_keypad(var_s *self, var_s *) {
+void cmd_window_hide_keypad(var_s *self, int param_count, slib_par_t *params, var_s *) {
   maHideVirtualKeyboard();
 }
 
-void cmd_window_inset(var_s *self, var_s *) {
-  var_int_t x, y, w, h;
-  par_massget("IIII", &x, &y, &w, &h);
-  if (!prog_error) {
+void cmd_window_inset(var_s *self, int param_count, slib_par_t *params, var_s *) {
+  if (param_count != 4) {
+    err_parm_num(param_count, 4);
+  } else {
+    var_int_t x = v_getint(params[0].var_p);
+    var_int_t y = v_getint(params[1].var_p);
+    var_int_t w = v_getint(params[2].var_p);
+    var_int_t h = v_getint(params[3].var_p);
     if (x < 0 || x > 100 ||
         y < 0 || y > 100 ||
         w < 1 || x + w > 100 ||
@@ -97,31 +101,42 @@ void cmd_window_inset(var_s *self, var_s *) {
   }
 }
 
-void cmd_window_set_font(var_s *self, var_s *) {
-  var_num_t size;
-  var_int_t bold, italic;
-  char *unit = nullptr;
-  par_massget("FSII", &size, &unit, &bold, &italic);
-  if (unit != nullptr && strcmp(unit, "em") == 0) {
-    size *= g_system->getOutput()->getFontSize();
+void cmd_window_set_font(var_s *self, int param_count, slib_par_t *params, var_s *) {
+  if (param_count != 4) {
+    err_parm_num(param_count, 4);
+  } else {
+    var_num_t size = v_getreal(params[0].var_p);
+    const char *unit = v_getstr(params[1].var_p);
+    var_int_t bold = v_getint(params[2].var_p);
+    var_int_t italic = v_getint(params[3].var_p);
+    if (unit != nullptr && strcmp(unit, "em") == 0) {
+      size *= g_system->getOutput()->getFontSize();
+    }
+    g_system->getOutput()->setFont(size, bold, italic);
   }
-  g_system->getOutput()->setFont(size, bold, italic);
-  pfree(unit);
 }
 
-void cmd_window_set_size(var_s *self, var_s *) {
-  var_int_t width, height;
-  par_massget("II", &width, &height);
-  g_system->setWindowRect(-1, -1, width, height);
+void cmd_window_set_size(var_s *self, int param_count, slib_par_t *params, var_s *) {
+  if (param_count != 2) {
+    err_parm_num(param_count, 2);
+  } else {
+    var_int_t width = v_getint(params[0].var_p);
+    var_int_t height = v_getint(params[1].var_p);
+    g_system->setWindowRect(-1, -1, width, height);
+  }
 }
 
-void cmd_window_set_location(var_s *self, var_s *) {
-  var_int_t x, y;
-  par_massget("II", &x, &y);
-  g_system->setWindowRect(x, y, -1, -1);
+void cmd_window_set_location(var_s *self, int param_count, slib_par_t *params, var_s *) {
+  if (param_count != 2) {
+    err_parm_num(param_count, 2);
+  } else {
+    var_int_t x = v_getint(params[0].var_p);
+    var_int_t y = v_getint(params[1].var_p);
+    g_system->setWindowRect(x, y, -1, -1);
+  }
 }
 
-void cmd_window_get_theme(var_s *, var_s *retval) {
+void cmd_window_get_theme(var_s *self, int param_count, slib_par_t *params, var_s *retval) {
   if (retval != nullptr) {
     EditTheme theme;
     theme.setId(g_themeId);
@@ -137,7 +152,7 @@ void cmd_window_get_theme(var_s *, var_s *retval) {
   }
 }
 
-void cmd_window_alert(var_s *self, var_s *) {
+void cmd_window_alert(var_s *self, int param_count, slib_par_t *params, var_s *) {
   StringList *items = get_items();
   if (!prog_error && items->size() > 0) {
     const char *message = items->size() > 0 ? (*items)[0]->c_str() : "";
@@ -147,7 +162,7 @@ void cmd_window_alert(var_s *self, var_s *) {
   delete items;
 }
 
-void cmd_window_ask(var_s *self, var_s *retval) {
+void cmd_window_ask(var_s *self, int param_count, slib_par_t *params, var_s *retval) {
   StringList *items = get_items();
   if (!prog_error && items->size() > 0) {
     const char *message = items->size() > 0 ? (*items)[0]->c_str() : "";
@@ -161,7 +176,7 @@ void cmd_window_ask(var_s *self, var_s *retval) {
   delete items;
 }
 
-void cmd_window_menu(var_s *self, var_s *) {
+void cmd_window_menu(var_s *self, int param_count, slib_par_t *params, var_s *) {
   StringList *items = get_items();
   if (!prog_error && items->size() > 0) {
     g_system->optionsBox(items);
@@ -169,7 +184,7 @@ void cmd_window_menu(var_s *self, var_s *) {
   delete items;
 }
 
-void cmd_window_message(var_s *self, var_s *) {
+void cmd_window_message(var_s *self, int param_count, slib_par_t *params, var_s *) {
   var_t arg;
   v_init(&arg);
   eval(&arg);
