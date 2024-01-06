@@ -116,20 +116,29 @@ void FormLink::clicked(int x, int y, bool pressed) {
   }
 }
 
-void cmd_form_close(var_s *self, int param_count, slib_par_t *params, var_s *) {
+void cmd_form_close(var_s *self, var_s *) {
   g_system->getOutput()->removeInputs();
   g_system->getOutput()->resetScroll();
-  if (param_count == 1 && params[0].var_p->type == V_STR) {
-    g_system->setLoadBreak(params[0].var_p->v.p.ptr);
+
+  var_t arg;
+  v_init(&arg);
+  eval(&arg);
+  if (arg.type == V_STR) {
+    g_system->setLoadBreak(arg.v.p.ptr);
   }
+  v_free(&arg);
 }
 
-void cmd_form_refresh(var_s *self, int param_count, slib_par_t *params, var_s *) {
-  bool setVars = param_count == 1 && v_getint(params[0].var_p) != 0;
+void cmd_form_refresh(var_s *self, var_s *) {
+  var_t arg;
+  v_init(&arg);
+  eval(&arg);
+  bool setVars = v_getint(&arg) != 0;
+  v_free(&arg);
   g_system->getOutput()->updateInputs(self, setVars);
 }
 
-void cmd_form_do_events(var_s *self, int param_count, slib_par_t *params, var_s *) {
+void cmd_form_do_events(var_s *self, var_s *) {
   // apply any variable changes onto attached widgets
   if (g_system->isRunning()) {
     AnsiWidget *out = g_system->getOutput();

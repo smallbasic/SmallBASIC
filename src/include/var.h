@@ -56,8 +56,11 @@ typedef struct {
   uint8_t byref;
 } slib_par_t;
 
-// object method signature
-typedef void (*method) (struct var_s *self, int param_count, slib_par_t *params, struct var_s *retval);
+// signature for module callback/virtual functions
+typedef int (*callback) (struct var_s *self, int param_count, slib_par_t *params, struct var_s *retval);
+
+// signature for internal v_funcs
+typedef void (*method) (struct var_s *self, struct var_s *retval);
 
 typedef struct var_s {
   union {
@@ -93,6 +96,7 @@ typedef struct var_s {
     // object method
     struct {
       method cb;
+      callback mcb;
       uint32_t id;
     } fn;
 

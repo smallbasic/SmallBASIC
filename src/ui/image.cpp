@@ -370,7 +370,7 @@ ImageBuffer *load_xpm_image(char **data) {
   return result;
 }
 
-void get_image_display(var_s *self, int param_count, slib_par_t *params, ImageDisplay *image) {
+void get_image_display(var_s *self, ImageDisplay *image) {
   image->_bid = map_get_int(self, IMG_BID, -1);
 
   List_each(ImageBuffer *, it, buffers) {
@@ -381,13 +381,14 @@ void get_image_display(var_s *self, int param_count, slib_par_t *params, ImageDi
     }
   }
 
-  if (prog_error || image->_buffer == nullptr || param_count == 1 || param_count > 4) {
+  var_int_t x, y, z, op;
+  int count = par_massget("iiii", &x, &y, &z, &op);
+
+  if (prog_error || image->_buffer == nullptr || count == 1 || count > 4) {
     err_throw(ERR_PARAM);
   } else {
     // 0, 2, 3, 4 arguments accepted
-    if (param_count >= 2) {
-      var_int_t x = v_getint(params[0].var_p);
-      var_int_t y = v_getint(params[1].var_p);
+    if (count >= 2) {
       image->_x = x;
       image->_y = y;
       map_set_int(self, IMG_X, x);
@@ -396,15 +397,13 @@ void get_image_display(var_s *self, int param_count, slib_par_t *params, ImageDi
       image->_x = map_get_int(self, IMG_X, -1);
       image->_y = map_get_int(self, IMG_Y, -1);
     }
-    if (param_count >= 3) {
-      var_int_t z = v_getint(params[2].var_p);
+    if (count >= 3) {
       image->_zIndex = z;
       map_set_int(self, IMG_ZINDEX, z);
     } else {
       image->_zIndex = map_get_int(self, IMG_ZINDEX, -1);
     }
-    if (param_count == 4) {
-      var_int_t op = v_getint(params[3].var_p);
+    if (count == 4) {
       image->_opacity = op;
       map_set_int(self, IMG_OPACITY, op);
     } else {
@@ -422,9 +421,9 @@ void get_image_display(var_s *self, int param_count, slib_par_t *params, ImageDi
 //
 // png.show(x, y, zindex, opacity)
 //
-void cmd_image_show(var_s *self, int param_count, slib_par_t *params, var_s *) {
+void cmd_image_show(var_s *self, var_s *) {
   ImageDisplay image;
-  get_image_display(self, param_count, params, &image);
+  get_image_display(self, &image);
   if (!prog_error) {
     g_system->getOutput()->addImage(image);
   }
@@ -433,9 +432,9 @@ void cmd_image_show(var_s *self, int param_count, slib_par_t *params, var_s *) {
 //
 // png.draw(x, y, opacity)
 //
-void cmd_image_draw(var_s *self, int param_count, slib_par_t *params, var_s *) {
+void cmd_image_draw(var_s *self, var_s *) {
   ImageDisplay image;
-  get_image_display(self, param_count, params, &image);
+  get_image_display(self, &image);
   if (!prog_error) {
     image._opacity = image._zIndex;
     g_system->getOutput()->drawImage(image);
@@ -445,7 +444,7 @@ void cmd_image_draw(var_s *self, int param_count, slib_par_t *params, var_s *) {
 //
 // png.hide()
 //
-void cmd_image_hide(var_s *self, int param_count, slib_par_t *params, var_s *) {
+void cmd_image_hide(var_s *self, var_s *) {
   int id = map_get_int(self, IMG_ID, -1);
   g_system->getOutput()->removeImage(id);
 }
@@ -456,7 +455,7 @@ void cmd_image_hide(var_s *self, int param_count, slib_par_t *params, var_s *) {
 // png.save("horse1.png")
 // png.save(#1)
 //
-void cmd_image_save(var_s *self, int param_count, slib_par_t *params, var_s *) {
+void cmd_image_save(var_s *self, var_s *) {
   unsigned id = map_get_int(self, IMG_BID, -1);
   ImageBuffer *image = get_image(id);
   dev_file_t *file;
@@ -517,16 +516,17 @@ void cmd_image_save(var_s *self, int param_count, slib_par_t *params, var_s *) {
 //
 // png.clip(10, 10, 10, 10)
 //
-void cmd_image_clip(var_s *self, int param_count, slib_par_t *params, var_s *) {
+void cmd_image_clip(var_s *self, var_s *) {
   if (self->type == V_MAP) {
     int bid = map_get_int(self, IMG_BID, -1);
     if (bid != -1) {
       ImageBuffer *image = get_image((unsigned)bid);
-      if (image != nullptr && param_count == 4) {
-        map_set_int(self, IMG_OFFSET_LEFT, v_getint(params[0].var_p));
-        map_set_int(self, IMG_OFFSET_TOP, v_getint(params[1].var_p));
-        map_set_int(self, IMG_WIDTH, v_getint(params[2].var_p));
-        map_set_int(self, IMG_HEIGHT, v_getint(params[3].var_p));
+      var_int_t left, top, right, bottom;
+      if (image != nullptr && par_massget("iiii", &left, &top, &right, &bottom)) {
+        map_set_int(self, IMG_OFFSET_LEFT, left);
+        map_set_int(self, IMG_OFFSET_TOP, top);
+        map_set_int(self, IMG_WIDTH, right);
+        map_set_int(self, IMG_HEIGHT, bottom);
       }
     }
   }

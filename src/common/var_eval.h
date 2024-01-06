@@ -67,6 +67,13 @@ int code_isvar(void);
  */
 void v_eval_str(var_p_t v);
 
+/**
+ * @ingroup var
+ *
+ * invokes the virtual function
+ */
+void v_eval_func(var_p_t self, var_p_t v_func, var_p_t result);
+
 #if defined(__cplusplus)
 }
 #endif
