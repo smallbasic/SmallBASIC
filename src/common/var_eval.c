@@ -16,6 +16,17 @@
 #include "common/var_eval.h"
 #include "common/plugins.h"
 
+//
+// returns a temporary var that can exist in the calling scope
+//
+var_p_t v_get_tmp(var_p_t map) {
+  var_p_t result = map_get(map, MAP_TMP_FIELD);
+  if (result == NULL) {
+    result = map_add_var(map, MAP_TMP_FIELD, 0);
+  }
+  return result;
+}
+
 void v_eval_func(var_p_t self, var_p_t v_func, var_p_t result) {
   if (v_func->v.fn.cb != NULL) {
     // internal object method
@@ -185,11 +196,7 @@ var_t *code_get_map_element(var_t *map, var_t *field) {
       if (udf_rv.type != kwTYPE_RET) {
         err_stackmess();
       } else {
-        // result must exist until processed in eval()
-        var_p_t var = map_get(map, MAP_TMP_FIELD);
-        if (var == NULL) {
-          var = map_add_var(map, MAP_TMP_FIELD, 0);
-        }
+        var_p_t var = v_get_tmp(map);
         v_move(var, udf_rv.x.vdvar.vptr);
         v_detach(udf_rv.x.vdvar.vptr);
         result = var;
@@ -198,10 +205,7 @@ var_t *code_get_map_element(var_t *map, var_t *field) {
   } else if (field->type == V_ARRAY) {
     result = code_getvarptr_arridx(field);
   } else if (field->type == V_FUNC) {
-    result = map_get(map, MAP_TMP_FIELD);
-    if (result == NULL) {
-      result = map_add_var(map, MAP_TMP_FIELD, 0);
-    }
+    result = v_get_tmp(map);
     v_init(result);
     v_eval_func(map, field, result);
   } else {

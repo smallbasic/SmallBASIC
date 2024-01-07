@@ -503,6 +503,13 @@ int v_strlen(const var_t *v);
  */
 void v_create_func(var_p_t map, const char *name, method cb);
 
+/**
+ * @ingroup var
+ *
+ * creates a callback method
+ */
+void v_create_callback(var_p_t map, const char *name, callback cb);
+
 #if defined(__cplusplus)
 }
 #endif
