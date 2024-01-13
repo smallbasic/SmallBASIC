@@ -5,7 +5,7 @@
 // This program is distributed under the terms of the GPL v2.0 or later
 // Download the GNU Public License (GPL) from www.gnu.org
 //
-// Copyright(C) 2010-2014 Chris Warren-Smith. [http://tinyurl.com/ja2ss]
+// Copyright(C) 2010-2024 Chris Warren-Smith. [http://tinyurl.com/ja2ss]
 
 #include "common/sys.h"
 #include "common/kw.h"
@@ -14,6 +14,55 @@
 #include "common/smbas.h"
 #include "common/var.h"
 #include "common/var_eval.h"
+#include "common/plugins.h"
+
+//
+// returns a temporary var that can exist in the calling scope
+//
+var_p_t v_get_tmp(var_p_t map) {
+  var_p_t result = map_get(map, MAP_TMP_FIELD);
+  if (result == NULL) {
+    result = map_add_var(map, MAP_TMP_FIELD, 0);
+  }
+  return result;
+}
+
+void v_eval_func(var_p_t self, var_p_t v_func, var_p_t result) {
+  if (v_func->v.fn.cb != NULL) {
+    // internal object method
+    if (code_peek() == kwTYPE_LEVEL_BEGIN) {
+      code_skipnext();
+    }
+    v_func->v.fn.cb(self, NULL);
+    if (code_peek() == kwTYPE_LEVEL_END) {
+      code_skipnext();
+    }
+  } else {
+    // module callback
+    slib_par_t *ptable;
+    int pcount;
+    if (code_peek() == kwTYPE_LEVEL_BEGIN) {
+      ptable = (slib_par_t *)malloc(sizeof(slib_par_t) * MAX_PARAMS);
+      pcount = plugin_build_ptable(ptable, MAX_PARAMS);
+    } else {
+      ptable = NULL;
+      pcount = 0;
+    }
+    if (!prog_error) {
+      if (!v_func->v.fn.mcb(self, pcount, ptable, result)) {
+        if (result->type == V_STR) {
+          err_throw(result->v.p.ptr);
+        } else {
+          err_throw("Undefined");
+        }
+      }
+    }
+    if (ptable) {
+      plugin_free_ptable(ptable, pcount);
+      free(ptable);
+    }
+  }
+}
 
 /**
  * Convert multi-dim index to one-dim index
@@ -147,11 +196,7 @@ var_t *code_get_map_element(var_t *map, var_t *field) {
       if (udf_rv.type != kwTYPE_RET) {
         err_stackmess();
       } else {
-        // result must exist until processed in eval()
-        var_p_t var = map_get(map, MAP_TMP_FIELD);
-        if (var == NULL) {
-          var = map_add_var(map, MAP_TMP_FIELD, 0);
-        }
+        var_p_t var = v_get_tmp(map);
         v_move(var, udf_rv.x.vdvar.vptr);
         v_detach(udf_rv.x.vdvar.vptr);
         result = var;
@@ -159,6 +204,10 @@ var_t *code_get_map_element(var_t *map, var_t *field) {
     }
   } else if (field->type == V_ARRAY) {
     result = code_getvarptr_arridx(field);
+  } else if (field->type == V_FUNC) {
+    result = v_get_tmp(map);
+    v_init(result);
+    v_eval_func(map, field, result);
   } else {
     code_skipnext();
     var_t var;

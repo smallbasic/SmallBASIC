@@ -2881,13 +2881,10 @@ void cmd_call_vfunc() {
       rt_raise(ERR_NO_FUNC);
     }
   } else {
-    if (code_peek() == kwTYPE_LEVEL_BEGIN) {
-      code_skipnext();
-    }
-    v_func->v.fn.cb(map, NULL);
-    if (code_peek() == kwTYPE_LEVEL_END) {
-      code_skipnext();
-    }
+    var_t result;
+    v_init(&result);
+    v_eval_func(map, v_func, &result);
+    v_free(&result);
   }
 }
 

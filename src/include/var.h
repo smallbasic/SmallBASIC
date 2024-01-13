@@ -47,6 +47,19 @@ extern "C" {
 #endif
 
 struct var_s;
+
+typedef struct {
+  // the parameter
+  struct var_s *var_p;
+
+  // whether the parameter can be used by reference
+  uint8_t byref;
+} slib_par_t;
+
+// signature for module callback/virtual functions
+typedef int (*callback) (struct var_s *self, int param_count, slib_par_t *params, struct var_s *retval);
+
+// signature for internal v_funcs
 typedef void (*method) (struct var_s *self, struct var_s *retval);
 
 typedef struct var_s {
@@ -83,6 +96,7 @@ typedef struct var_s {
     // object method
     struct {
       method cb;
+      callback mcb;
       uint32_t id;
     } fn;
 
@@ -488,6 +502,13 @@ int v_strlen(const var_t *v);
  * setup a method on the map using the given name
  */
 void v_create_func(var_p_t map, const char *name, method cb);
+
+/**
+ * @ingroup var
+ *
+ * creates a callback method
+ */
+void v_create_callback(var_p_t map, const char *name, callback cb);
 
 #if defined(__cplusplus)
 }

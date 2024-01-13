@@ -359,80 +359,6 @@ static void slib_import_routines(slib_t *lib, int comp) {
 }
 
 //
-// build parameter table
-//
-static int slib_build_ptable(slib_par_t *ptable) {
-  int pcount = 0;
-  var_t *arg;
-  bcip_t ofs;
-
-  if (code_peek() == kwTYPE_LEVEL_BEGIN) {
-    code_skipnext();
-    byte ready = 0;
-    do {
-      byte code = code_peek();
-      switch (code) {
-      case kwTYPE_EOC:
-        code_skipnext();
-        break;
-      case kwTYPE_SEP:
-        code_skipsep();
-        break;
-      case kwTYPE_LEVEL_END:
-        ready = 1;
-        break;
-      case kwTYPE_VAR:
-        // variable
-        ofs = prog_ip;
-        if (code_isvar()) {
-          // push parameter
-          ptable[pcount].var_p = code_getvarptr();
-          ptable[pcount].byref = 1;
-          pcount++;
-          break;
-        }
-
-        // restore IP
-        prog_ip = ofs;
-        // no 'break' here
-      default:
-        // default --- expression (BYVAL ONLY)
-        arg = v_new();
-        eval(arg);
-        if (!prog_error) {
-          // push parameter
-          ptable[pcount].var_p = arg;
-          ptable[pcount].byref = 0;
-          pcount++;
-        } else {
-          v_free(arg);
-          v_detach(arg);
-          return pcount;
-        }
-      }
-      if (pcount == MAX_PARAM) {
-        err_parm_limit(MAX_PARAM);
-      }
-    } while (!ready && !prog_error);
-    // kwTYPE_LEVEL_END
-    code_skipnext();
-  }
-  return pcount;
-}
-
-//
-// free parameter table
-//
-static void slib_free_ptable(slib_par_t *ptable, int pcount) {
-  for (int i = 0; i < pcount; i++) {
-    if (ptable[i].byref == 0) {
-      v_free(ptable[i].var_p);
-      v_detach(ptable[i].var_p);
-    }
-  }
-}
-
-//
 // execute a function or procedure
 //
 static int slib_exec(slib_t *lib, var_t *ret, int index, int proc) {
@@ -440,13 +366,13 @@ static int slib_exec(slib_t *lib, var_t *ret, int index, int proc) {
   int pcount;
   if (code_peek() == kwTYPE_LEVEL_BEGIN) {
     ptable = (slib_par_t *)malloc(sizeof(slib_par_t) * MAX_PARAM);
-    pcount = slib_build_ptable(ptable);
+    pcount = plugin_build_ptable(ptable, MAX_PARAM);
   } else {
     ptable = NULL;
     pcount = 0;
   }
   if (prog_error) {
-    slib_free_ptable(ptable, pcount);
+    plugin_free_ptable(ptable, pcount);
     free(ptable);
     return 0;
   }
@@ -470,7 +396,7 @@ static int slib_exec(slib_t *lib, var_t *ret, int index, int proc) {
 
   // clean-up
   if (ptable) {
-    slib_free_ptable(ptable, pcount);
+    plugin_free_ptable(ptable, pcount);
     free(ptable);
   }
 
@@ -643,3 +569,71 @@ int plugin_funcexec(int lib_id, int index, var_t *ret) { return -1; }
 void plugin_free(int lib_id, int cls_id, int id) {}
 void plugin_close() {}
 #endif
+
+int plugin_build_ptable(slib_par_t *ptable, int size) {
+  int pcount = 0;
+  var_t *arg;
+  bcip_t ofs;
+
+  if (code_peek() == kwTYPE_LEVEL_BEGIN) {
+    code_skipnext();
+    byte ready = 0;
+    do {
+      byte code = code_peek();
+      switch (code) {
+      case kwTYPE_EOC:
+        code_skipnext();
+        break;
+      case kwTYPE_SEP:
+        code_skipsep();
+        break;
+      case kwTYPE_LEVEL_END:
+        ready = 1;
+        break;
+      case kwTYPE_VAR:
+        // variable
+        ofs = prog_ip;
+        if (code_isvar()) {
+          // push parameter
+          ptable[pcount].var_p = code_getvarptr();
+          ptable[pcount].byref = 1;
+          pcount++;
+          break;
+        }
+
+        // restore IP
+        prog_ip = ofs;
+        // no 'break' here
+      default:
+        // default --- expression (BYVAL ONLY)
+        arg = v_new();
+        eval(arg);
+        if (!prog_error) {
+          // push parameter
+          ptable[pcount].var_p = arg;
+          ptable[pcount].byref = 0;
+          pcount++;
+        } else {
+          v_free(arg);
+          v_detach(arg);
+          return pcount;
+        }
+      }
+      if (pcount == size) {
+        err_parm_limit(size);
+      }
+    } while (!ready && !prog_error);
+    // kwTYPE_LEVEL_END
+    code_skipnext();
+  }
+  return pcount;
+}
+
+void plugin_free_ptable(slib_par_t *ptable, int pcount) {
+  for (int i = 0; i < pcount; i++) {
+    if (ptable[i].byref == 0) {
+      v_free(ptable[i].var_p);
+      v_detach(ptable[i].var_p);
+    }
+  }
+}

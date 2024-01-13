@@ -800,5 +800,14 @@ void v_create_func(var_p_t map, const char *name, method cb) {
   var_p_t v_func = map_add_var(map, name, 0);
   v_func->type = V_FUNC;
   v_func->v.fn.cb = cb;
+  v_func->v.fn.mcb = NULL;
+  v_func->v.fn.id = 0;
+}
+
+void v_create_callback(var_p_t map, const char *name, callback cb) {
+  var_p_t v_func = map_add_var(map, name, 0);
+  v_func->type = V_FUNC;
+  v_func->v.fn.cb = NULL;
+  v_func->v.fn.mcb = cb;
   v_func->v.fn.id = 0;
 }

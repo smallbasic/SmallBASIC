@@ -44,7 +44,7 @@ int plugin_get_kid(int lib_id, const char *keyword);
 // returns the function pointer for the given function name
 //
 void *plugin_get_func(const char *name);
-  
+
 //
 // executes the plugin procedure at the given index
 //
@@ -64,6 +64,16 @@ void plugin_free(int lib_id, int cls_id, int id);
 // closes the plugin system
 //
 void plugin_close();
+
+//
+// build parameter table
+//
+int plugin_build_ptable(slib_par_t *ptable, int size);
+
+//
+// free parameter table
+//
+void plugin_free_ptable(slib_par_t *ptable, int pcount);
 
 #if defined(__cplusplus)
 }
