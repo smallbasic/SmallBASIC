@@ -20,13 +20,75 @@
 #include <sys/select.h>
 #include <errno.h>
 
+/**
+ * terminal speed
+ * select the correct system constant
+ */
+long select_unix_serial_speed(long n) {
+  switch (n) {
+    case 300:
+    return B300;
+    case 600:
+    return B600;
+    case 1200:
+    return B1200;
+    case 2400:
+    return B2400;
+    case 4800:
+    return B4800;
+    case 9600:
+    return B9600;
+    case 19200:
+    return B19200;
+    case 38400:
+    return B38400;
+    // extra baud rates (but not posix)
+    case 57600:
+    return B57600;
+    case 115200:
+    return B115200;
+    case 230400:
+    return B230400;
+    case 460800:
+    return B460800;
+    case 500000:
+    return B500000;
+    case 576000:
+    return B576000; 
+    case 921600:
+    return B921600;
+    case 1000000:
+    return B1000000;
+    case 1152000:
+    return B1152000;
+    case 1500000:
+    return B1500000;
+    case 2000000:
+    return B2000000;
+    case 2500000:
+    return B2500000;
+    case 3000000:
+    return B3000000;
+    case 3500000:
+    return B3500000;
+    case 4000000:
+    return B4000000;
+  }
+  return B9600;
+}
+
 int serial_open(dev_file_t *f) {
-  sprintf(f->name, "/dev/ttyS%d", f->port);
+  if (strncmp(f->name, "COM", 3) == 0) {
+    sprintf(f->name, "/dev/ttyS%d", f->port);
+  }
 
   f->handle = open(f->name, O_RDWR | O_NOCTTY);
   if (f->handle < 0) {
     err_file((f->last_error = errno));
   }
+
+  f->devspeed = select_unix_serial_speed(f->devspeed);
+
   // save current port settings
   tcgetattr(f->handle, &f->oldtio);
   bzero(&f->newtio, sizeof(f->newtio));
@@ -83,15 +145,20 @@ int serial_open(dev_file_t *f) {
   HANDLE hCom;
   DWORD dwer;
 
-  sprintf(f->name, "COM%d", f->port);
+  if (strncmp(f->name, "COM", 3) != 0) {
+    rt_raise("SERIALFS: Linux serial port was specified. Use COM instead.");
+  }
 
+  // Bug when opening COM-Port > 9: https://support.microsoft.com/en-us/topic/howto-specify-serial-ports-larger-than-com9-db9078a5-b7b6-bf00-240f-f749ebfd913e
+  sprintf(f->name, "\\\\.\\COM%d", f->port);
+  
   hCom = CreateFile(f->name, GENERIC_READ | GENERIC_WRITE,
                     0, NULL, OPEN_EXISTING, 0, NULL);
 
   if (hCom == INVALID_HANDLE_VALUE) {
     dwer = GetLastError();
     if (dwer != 5) {
-      rt_raise("SERIALFS: CreateFile() failed (%d)", dwer);
+      rt_raise("SERIALFS: CreateFile() failed (Error %d)", dwer);
     } else {
       rt_raise("SERIALFS: ACCESS DENIED");
     }
@@ -99,17 +166,31 @@ int serial_open(dev_file_t *f) {
   }
 
   if (!GetCommState(hCom, &dcb)) {
-    rt_raise("SERIALFS: GetCommState() failed (%d)", GetLastError());
+    rt_raise("SERIALFS: GetCommState() failed (Error %d)", GetLastError());
     return 0;
   }
 
+  // Default settings from Putty
+  dcb.fBinary = TRUE;                    
+  dcb.fDtrControl = DTR_CONTROL_ENABLE;   // This is needed for Raspberry Pi PICO
+  dcb.fDsrSensitivity = FALSE;
+  dcb.fTXContinueOnXoff = FALSE;
+  dcb.fOutX = FALSE;                      
+  dcb.fInX = FALSE;                       
+  dcb.fErrorChar = FALSE;
+  dcb.fNull = FALSE;
+  dcb.fRtsControl = RTS_CONTROL_ENABLE;  
+  dcb.fAbortOnError = FALSE;
+  dcb.fOutxCtsFlow = FALSE;
+  dcb.fOutxDsrFlow = FALSE;
+  // Settings SmallBASIC
   dcb.BaudRate = f->devspeed;
   dcb.ByteSize = 8;
   dcb.Parity = NOPARITY;
   dcb.StopBits = ONESTOPBIT;
 
   if (!SetCommState(hCom, &dcb)) {
-    rt_raise("SERIALFS: SetCommState() failed (%d)", GetLastError());
+    rt_raise("SERIALFS: SetCommState() failed (Error %d)", GetLastError());
     return 0;
   }
 

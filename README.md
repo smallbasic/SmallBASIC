@@ -13,6 +13,7 @@ Initial setup on linux
  $ sudo apt-get install git autotools-dev automake gcc g++ libsdl2-dev libfreetype6-dev libfontconfig1-dev xxd
  $ git clone https://github.com/smallbasic/SmallBASIC.git
  $ cd SmallBASIC
+ $ git submodule update --init
  $ sh autogen.sh
 ```
 Build in linux

@@ -113,34 +113,6 @@ int dev_fstatus(int handle) {
 }
 
 /**
- * terminal speed
- * select the correct system constant
- */
-#if USE_TERM_IO
-int select_unix_serial_speed(int n) {
-  switch (n) {
-    case 300:
-    return B300;
-    case 600:
-    return B600;
-    case 1200:
-    return B1200;
-    case 2400:
-    return B2400;
-    case 4800:
-    return B4800;
-    case 9600:
-    return B9600;
-    case 19200:
-    return B19200;
-    case 38400:
-    return B38400;
-  }
-  return B9600;
-}
-#endif
-
-/**
  * opens a file
  *
  * returns true on success
@@ -183,19 +155,14 @@ int dev_fopen(int sb_handle, const char *name, int flags) {
       }
       if (strncmp(f->name, "COM", 3) == 0) {
         f->type = ft_serial_port;
-        f->port = f->name[3] - '1';
+        f->devspeed = 9600;
+        f->port = f->name[3] - '0';
         if (f->port < 0) {
           f->port = 10;
         }
         if (strlen(f->name) > 5) {
           f->devspeed = xstrtol(f->name + 5);
-        } else {
-          f->devspeed = 9600;
         }
-
-#if USE_TERM_IO
-        f->devspeed = select_unix_serial_speed(f->devspeed);
-#endif
       } else if (strncmp(f->name, "SOCL:", 5) == 0) {
         f->type = ft_socket_client;
       } else if (strncasecmp(f->name, "HTTP:", 5) == 0) {
@@ -216,6 +183,32 @@ int dev_fopen(int sb_handle, const char *name, int flags) {
       } else if (strncmp(f->name, "KBD:", 4) == 0) {
         strcpy(f->name, "SDIN:");
         f->type = ft_stream;
+      }
+    } else if (strncmp(f->name, "/dev/tty", 8) == 0) {
+      f->type = ft_serial_port;
+      f->devspeed = 9600;      
+      const char *ptrSpeed = strchr(f->name, ':');
+      if(ptrSpeed) {
+        if(strlen(ptrSpeed) > 1) {
+          f->devspeed = xstrtol(ptrSpeed + 1);
+        }       
+        f->name[ptrSpeed - f->name] = '\0';        
+      }
+    }
+    if (f->name[5] == ':') {
+      for (int i = 0; i < 4; i++) {
+        f->name[i] = to_upper(f->name[i]);
+      }
+      if (strncmp(f->name, "COM", 3) == 0) {
+        f->type = ft_serial_port;
+        f->devspeed = 9600;
+        f->port = (f->name[3] - '0') * 10 + (f->name[4] - '0');
+        if (f->port < 0) {
+          f->port = 10;
+        }
+        if (strlen(f->name) > 6) {
+          f->devspeed = xstrtol(f->name + 6);
+        }
       }
     }
   } // device
