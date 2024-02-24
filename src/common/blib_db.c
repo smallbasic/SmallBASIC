@@ -660,15 +660,11 @@ void cmd_floadln() {
     // type == 1, build string
     v_free(var_p);
     int len = dev_flength(handle);
-    if (len < 1 || prog_error) {
-      err_throw(FSERR_NOT_FOUND);
-    } else {
-      v_init_str(var_p, len);
-      if (var_p->v.p.length > 1) {
-        dev_fread(handle, (byte *)var_p->v.p.ptr, var_p->v.p.length - 1);
-        var_p->v.p.ptr[var_p->v.p.length - 1] = '\0';
-      }
-    }
+    v_init_str(var_p, len);
+    if (var_p->v.p.length > 1) {
+      dev_fread(handle, (byte *)var_p->v.p.ptr, var_p->v.p.length - 1);
+      var_p->v.p.ptr[var_p->v.p.length - 1] = '\0';
+    }    
   }
   if (flags == DEV_FILE_INPUT) {
     dev_fclose(handle);
@@ -722,10 +718,14 @@ void cmd_fsaveln() {
 
   if (var_p->type == V_ARRAY) {
     // parameter is an array
-    for (int i = 0; i < v_asize(array_p); i++) {
-      var_p = v_elem(array_p, i);
+    if(v_asize(array_p) > 0) {
+      var_p = v_elem(array_p, 0);
       fprint_var(handle, var_p);
-      dev_fwrite(handle, (byte *)OS_LINESEPARATOR, OS_LINESEPARATOR_LEN);
+      for (int i = 1; i < v_asize(array_p); i++) {
+        var_p = v_elem(array_p, i);
+        dev_fwrite(handle, (byte *)OS_LINESEPARATOR, OS_LINESEPARATOR_LEN);
+        fprint_var(handle, var_p);        
+      }
     }
   } else {
     // parameter is an string
