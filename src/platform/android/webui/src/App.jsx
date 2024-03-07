@@ -1,5 +1,5 @@
-
 import {
+  React,
   Fragment,
   useState
 } from 'react';
@@ -290,7 +290,7 @@ function onCellEditCommit(props, params, setError) {
       });
     }
   });
-};
+}
 
 function FileList(props) {
   const [selectionModel, setSelectionModel] = useState([]);
