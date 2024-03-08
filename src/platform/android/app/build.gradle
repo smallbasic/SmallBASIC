@@ -7,7 +7,7 @@ android {
   // can override some attributes in main/AndroidManifest.xml
   defaultConfig {
     applicationId 'net.sourceforge.smallbasic'
-    minSdkVersion 16
+    minSdkVersion 19
     targetSdkVersion 34
     versionCode 59
     versionName '12.26'
@@ -26,16 +26,10 @@ android {
   }
 
   buildTypes {
-    debug {
-      buildConfigField "boolean", "DEBUG_VIEW", "true"
-      buildConfigField "java.util.Date", "BUILD_TIME", "new java.util.Date(" + System.currentTimeMillis() + "L)"
-    }
     release {
       ndk {
        debugSymbolLevel = 'FULL'
       }
-      buildConfigField "boolean", "DEBUG_VIEW", "false"
-      buildConfigField "java.util.Date", "BUILD_TIME", "new java.util.Date(" + System.currentTimeMillis() + "L)"
       shrinkResources true
       minifyEnabled true
       proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
@@ -60,5 +54,6 @@ android {
 
 dependencies {
   implementation 'androidx.core:core:1.12.0'
+  implementation project(':ioio')
   testImplementation 'junit:junit:4.13.2'
 }

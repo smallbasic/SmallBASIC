@@ -35,6 +35,7 @@
 #define SERVER_TOKEN_KEY "serverToken"
 #define MUTE_AUDIO_KEY "muteAudio"
 #define THEME_KEY "theme"
+#define LOAD_MODULES_KEY "loadModules"
 #define OPT_IDE_KEY "optIde"
 #define GBOARD_KEY_QUESTION 274
 #define EVENT_TYPE_EXIT 100
@@ -557,7 +558,14 @@ void Runtime::loadConfig() {
     loadEnvConfig(settings, SERVER_SOCKET_KEY);
     loadEnvConfig(settings, SERVER_TOKEN_KEY);
     loadEnvConfig(settings, FONT_ID_KEY);
+
+    s = settings.get(LOAD_MODULES_KEY);
+    if (s && s->toInteger() == 1) {
+      trace("calling loadModules");
+      getBoolean("loadModules");
+    }
   }
+
 }
 
 bool Runtime::loadSettings(Properties<String *> &settings) {

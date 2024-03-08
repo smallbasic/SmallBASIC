@@ -42,6 +42,8 @@ import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.core.content.FileProvider;
 
+import net.sourceforge.smallbasic.ioio.IOIOUtility;
+
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.ByteArrayInputStream;
@@ -355,6 +357,20 @@ public class MainActivity extends NativeActivity {
     Rect rect = new Rect();
     findViewById(android.R.id.content).getWindowVisibleDisplayFrame(rect);
     return rect.height();
+  }
+
+  public boolean loadModules() {
+    Log.i(TAG, "loadModules");
+    boolean result;
+    try {
+      System.loadLibrary("ioio");
+      IOIOUtility.init();
+      result = true;
+    } catch (SecurityException | UnsatisfiedLinkError e) {
+      Log.i(TAG, "loadModules", e);
+      result = false;
+    }
+    return result;
   }
 
   @Override
