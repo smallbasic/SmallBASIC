@@ -152,7 +152,7 @@ sub do_about()
   print "This program is free software; you can use it ";
   print "redistribute it and/or modify it under the terms of the ";
   print "GNU General Public License version 2 as published by ";
-  print "the Free Software Foundation." + chr(10)
+  print "the Free Software Foundation."
   print
   color colText
   server_info()
@@ -162,6 +162,60 @@ end
 
 sub do_setup()
   local frm
+
+  color colText, colBkGnd
+  cls
+  at 0, char_h * 6.5
+  print "Envy Code R:"
+  print "  http://damieng.com/envy-code-r"
+  print "Inconsolata:"
+  print "  Copyright 2006 The Inconsolata Project"
+  print "  http://scripts.sil.org/OFL"
+  print "Ubuntu:"
+  print "  https://ubuntu.com/legal/font-licence"
+  at 0, char_h * 1
+  local w = char_w * 14.5
+  local h = char_h * 4.5
+  local x = char_w / 2
+  local y = char_h / 2
+  rect x, y, w * 2, h + y * 2.5
+  dim frm.inputs(3)
+  frm.inputs(0).type = "label"
+  frm.inputs(0).label = "Select display font:"
+  frm.inputs(0).x = char_w
+  frm.inputs(1).type = "list"
+  frm.inputs(1).value = "Inconsolata|Envy Code R|UbuntuMono"
+  frm.inputs(1).selectedIndex = env("fontId")
+  frm.inputs(1).x = char_w * 1.5
+  frm.inputs(1).y = char_h * 2.2
+  frm.inputs(1).height = char_h * 3 + 4
+  frm.inputs(1).width = char_w * 12
+  frm.inputs(2).type = "button"
+  frm.inputs(2).backgroundColor = colBkGnd
+  frm.inputs(2).color = colText
+  frm.inputs(2).label = "OK"
+  frm.inputs(2).value = "OK"
+  frm.inputs(2).x = -(char_w * 8)
+  frm.inputs(2).y = -(char_h)
+  frm = form(frm)
+  while 1
+    frm.doEvents()
+    if (frm.value == "OK") then exit loop
+  wend
+  env("fontId=" + frm.inputs(1).selectedIndex)
+
+  cls
+  at 0, char_h * 1
+  rect x, y, w * 2, h + y * 2.5
+  frm.inputs(0).label = "Extension modules:"
+  frm.inputs(1).value = "Ignore|Load"
+  frm.inputs(1).selectedIndex = env("loadModules")
+  frm = form(frm)
+  while 1
+    frm.doEvents()
+    if (frm.value == "OK") then exit loop
+  wend
+  env("loadModules=" + frm.inputs(1).selectedIndex)
 
   color colText, colBkGnd
   cls
@@ -188,30 +242,6 @@ sub do_setup()
     env("serverToken=" + token)
   endif
 
-  color colText, colBkGnd
-  cls
-  print "Web service port number: " + env("serverSocket")
-  print
-  print boldOn + "Select display font."
-  print boldOff
-  print "Envy Code R:"
-  print "  http://damieng.com/envy-code-r"
-  print "Inconsolata:"
-  print "  Copyright 2006 The Inconsolata Project"
-  print "  http://scripts.sil.org/OFL"
-  print "Ubuntu:"
-  print "  https://ubuntu.com/legal/font-licence"
-  print
-  dim frm.inputs(1)
-  frm.inputs(0).type="list"
-  frm.inputs(0).value="Inconsolata|Envy Code R|UbuntuMono"
-  frm.inputs(0).selectedIndex=env("fontId")
-  frm.inputs(0).height=TXTH("Q")*3+4
-  frm.inputs(0).width=TXTW("Q")*12
-  frm = form(frm)
-  frm.doEvents()
-  env("fontId=" + frm.inputs(0).selectedIndex)
-
   local msg = "You must restart SmallBASIC for this change to take effect."
   wnd.alert(msg, "Restart required")
   clear_screen()
@@ -220,13 +250,18 @@ end
 sub server_info()
   local serverSocket = env("serverSocket")
   local ipAddr = env("IP_ADDR")
+  local loadModules = env("loadModules")
 
   if (len(serverSocket) > 0 && int(serverSocket) > 1023 && int(serverSocket) < 65536 && len(ipAddr)) then
     serverSocket = ipAddr + ":" + serverSocket
     print boldOff + "Web Service: " + boldOn + serverSocket
     print boldOff + "Access token: " + boldOn + env("serverToken")
-    print boldOff
+    print boldOff;
   fi
+  if (int(loadModules) == 1) then
+    print "Extension modules: " + boldOn + "Enabled"
+    print boldOff;
+  endif
 end
 
 func fileCmpFunc0(l, r)

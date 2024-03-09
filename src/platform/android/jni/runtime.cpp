@@ -557,15 +557,13 @@ void Runtime::loadConfig() {
     }
     loadEnvConfig(settings, SERVER_SOCKET_KEY);
     loadEnvConfig(settings, SERVER_TOKEN_KEY);
+    loadEnvConfig(settings, LOAD_MODULES_KEY);
     loadEnvConfig(settings, FONT_ID_KEY);
-
     s = settings.get(LOAD_MODULES_KEY);
-    if (s && s->toInteger() == 1) {
-      trace("calling loadModules");
-      getBoolean("loadModules");
+    if (s && s->toInteger() == 1 && !getBoolean("loadModules")) {
+      systemLog("loadModules failed");
     }
   }
-
 }
 
 bool Runtime::loadSettings(Properties<String *> &settings) {
@@ -618,6 +616,7 @@ void Runtime::saveConfig() {
       char *env = environ[i];
       if (strstr(env, SERVER_SOCKET_KEY) != nullptr ||
           strstr(env, SERVER_TOKEN_KEY) != nullptr ||
+          strstr(env, LOAD_MODULES_KEY) != nullptr ||
           strstr(env, FONT_ID_KEY) != nullptr) {
         fprintf(fp, "%s\n", env);
       }

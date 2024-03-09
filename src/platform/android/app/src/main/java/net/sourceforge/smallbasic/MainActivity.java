@@ -42,8 +42,6 @@ import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.core.content.FileProvider;
 
-import net.sourceforge.smallbasic.ioio.IOIOUtility;
-
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.ByteArrayInputStream;
@@ -364,9 +362,9 @@ public class MainActivity extends NativeActivity {
     boolean result;
     try {
       System.loadLibrary("ioio");
-      IOIOUtility.init();
+      Class.forName("net.sourceforge.smallbasic.ioio.IOIOLoader").newInstance();
       result = true;
-    } catch (SecurityException | UnsatisfiedLinkError e) {
+    } catch (Exception | UnsatisfiedLinkError e) {
       Log.i(TAG, "loadModules", e);
       result = false;
     }
