@@ -363,6 +363,7 @@ public class MainActivity extends NativeActivity {
     try {
       System.loadLibrary("ioio");
       Class.forName("net.sourceforge.smallbasic.ioio.IOIOLoader").newInstance();
+      Log.i(TAG, "loadModules - success");
       result = true;
     } catch (Exception | UnsatisfiedLinkError e) {
       Log.i(TAG, "loadModules", e);
