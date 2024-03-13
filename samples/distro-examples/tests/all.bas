@@ -92,10 +92,10 @@ print "STKDUMP:" ':STKDUMP
 print "SWAP:"; :sa=10:sb=20:SWAP sa,sb: PRINT sa;sb
 print "THROW:" ':THROW [info [, ...]]
 print "TIMEHMS:" ':TIMEHMS hms| timer, BYREF h, BYREF m, BYREF s
-print "TLOAD:" ':TLOAD file, BYREF var [, type]
 print "TRON:" :TRON
 print "TROFF:" :TROFF
-print "TSAVE:" ':TSAVE file, var
+print "TSAVE:" : tsavetest = [1,2,3, "test"]: tsave "tsave.txt", tsavetest
+print "TLOAD: "; : tload "tsave.txt", tloadtest: print tloadtest
 print "VIEW:" ':VIEW [x1,y1,x2,y2 [,color [,border-color]]]
 print "WINDOW:" ':WINDOW [x1,y1,x2,y2]
 print "WRITE:" ':WRITE #fileN; var1 [, ...]
