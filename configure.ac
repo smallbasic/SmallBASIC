@@ -184,7 +184,7 @@ function buildSDL() {
      PACKAGE_CFLAGS="${PACKAGE_CFLAGS} -mms-bitfields"
      PACKAGE_LIBS="${PACKAGE_LIBS} -lwsock32 -lws2_32 -static-libgcc -static-libstdc++"
      PACKAGE_LIBS="${PACKAGE_LIBS} -Wl,-Bstatic -Wl,-Map=output.map"
-     PACKAGE_LIBS="${PACKAGE_LIBS} `sdl2-config --static-libs` `pkg-config -libs -static freetype2`"
+     PACKAGE_LIBS="${PACKAGE_LIBS} `sdl2-config --static-libs` `pkg-config freetype2 --libs --static`"
      AC_DEFINE(_Win32, 1, [Windows build])
      ;;
 
