@@ -190,6 +190,11 @@ extern "C" JNIEXPORT jboolean JNICALL Java_net_sourceforge_smallbasic_MainActivi
 #endif
 }
 
+extern "C" JNIEXPORT jlong JNICALL Java_net_sourceforge_smallbasic_MainActivity_getActivity
+  (JNIEnv *env, jobject instance) {
+  return runtime->getActivity();
+}
+
 void onContentRectChanged(ANativeActivity *activity, const ARect *rect) {
   logEntered();
   runtime->onResize(rect->right, rect->bottom);
@@ -555,14 +560,20 @@ void Runtime::loadConfig() {
         g_themeId = id;
       }
     }
+    s = settings.get(LOAD_MODULES_KEY);
+    if (s && s->toInteger() == 1) {
+      if (getBoolean("loadModules")) {
+        systemLog("Extension modules loaded\n");
+        settings.put(LOAD_MODULES_KEY, "2");
+      } else {
+        systemLog("Loading extension modules failed\n");
+        settings.put(LOAD_MODULES_KEY, "0");
+      }
+    }
     loadEnvConfig(settings, SERVER_SOCKET_KEY);
     loadEnvConfig(settings, SERVER_TOKEN_KEY);
     loadEnvConfig(settings, LOAD_MODULES_KEY);
     loadEnvConfig(settings, FONT_ID_KEY);
-    s = settings.get(LOAD_MODULES_KEY);
-    if (s && s->toInteger() == 1 && !getBoolean("loadModules")) {
-      systemLog("loadModules failed");
-    }
   }
 }
 

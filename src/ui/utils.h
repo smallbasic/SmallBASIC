@@ -26,8 +26,11 @@
 
 #if defined(_ANDROID)
  #include <android/log.h>
- #define deviceLog(...) __android_log_print(ANDROID_LOG_INFO, \
-                        "smallbasic", __VA_ARGS__)
+ #if defined(_DEBUG)
+   #define deviceLog(...) __android_log_print(ANDROID_LOG_ERROR, "smallbasic", __VA_ARGS__)
+ #else
+   #define deviceLog(...) __android_log_print(ANDROID_LOG_INFO, "smallbasic", __VA_ARGS__)
+ #endif
 #elif defined(_SDL) || defined(_FLTK) || defined(_EMCC)
  void appLog(const char *format, ...);
  #define deviceLog(...) appLog(__VA_ARGS__)
@@ -39,10 +42,8 @@
  #define trace(...)
 #endif
 
-#define logEntered() trace("%s entered (%s %d)", \
-                           __FUNCTION__, __FILE__, __LINE__);
-#define logLeaving() trace("%s leaving (%s %d)", \
-                           __FUNCTION__, __FILE__, __LINE__);
+#define logEntered() trace("%s entered (%s %d)", __FUNCTION__, __FILE__, __LINE__);
+#define logLeaving() trace("%s leaving (%s %d)", __FUNCTION__, __FILE__, __LINE__);
 
 #define C_LINKAGE_BEGIN extern "C" {
 #define C_LINKAGE_END }

@@ -115,6 +115,7 @@ public class MainActivity extends NativeActivity {
     System.loadLibrary("smallbasic");
   }
 
+  public native long getActivity();
   public static native boolean libraryMode();
   public static native void onActivityPaused(boolean paused);
   public static native void onResize(int width, int height);
@@ -220,6 +221,16 @@ public class MainActivity extends NativeActivity {
       _tts.stop();
     }
     return removeLocationUpdates();
+  }
+
+  public Class<?> findClass(String className) {
+    try {
+      Log.d(TAG, "findClass " + className);
+      return Class.forName(className.replace("/", "."));
+    }
+    catch (ClassNotFoundException e) {
+      throw new RuntimeException(e);
+    }
   }
 
   public byte[] getClipboardText() {
@@ -358,15 +369,16 @@ public class MainActivity extends NativeActivity {
   }
 
   public boolean loadModules() {
-    Log.i(TAG, "loadModules");
+    Log.i(TAG, "loadModules: " + getActivity() );
     boolean result;
     try {
       System.loadLibrary("ioio");
-      Class.forName("net.sourceforge.smallbasic.ioio.IOIOLoader").newInstance();
-      Log.i(TAG, "loadModules - success");
+      Class<?> clazz = Class.forName("net.sourceforge.smallbasic.ioio.IOIOLoader");
+      clazz.getDeclaredConstructor(Long.class).newInstance(getActivity());
+      Log.d(TAG, "loadModules - success");
       result = true;
     } catch (Exception | UnsatisfiedLinkError e) {
-      Log.i(TAG, "loadModules", e);
+      Log.d(TAG, "loadModules", e);
       result = false;
     }
     return result;

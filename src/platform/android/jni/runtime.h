@@ -36,6 +36,7 @@ struct Runtime : public System {
   void disableSensor();
   void enableCursor(bool enabled) {}
   bool enableSensor(int sensorType);
+  jlong getActivity() { return (jlong)_app->activity->clazz; }
   bool getBoolean(const char *methodName);
   String getString(const char *methodName);
   String getStringBytes(const char *methodName);

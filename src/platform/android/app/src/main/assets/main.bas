@@ -162,6 +162,8 @@ end
 
 sub do_setup()
   local frm
+  local fontId = int(env("fontId"))
+  local loadModules = int(env("loadModules"))
 
   color colText, colBkGnd
   cls
@@ -185,7 +187,7 @@ sub do_setup()
   frm.inputs(0).x = char_w
   frm.inputs(1).type = "list"
   frm.inputs(1).value = "Inconsolata|Envy Code R|UbuntuMono"
-  frm.inputs(1).selectedIndex = env("fontId")
+  frm.inputs(1).selectedIndex = iff(fontId in [0,1,2], fontId, 0)
   frm.inputs(1).x = char_w * 1.5
   frm.inputs(1).y = char_h * 2.2
   frm.inputs(1).height = char_h * 3 + 4
@@ -213,14 +215,14 @@ sub do_setup()
       goto exitFunc
     endif
   wend
-  local fontId = frm.inputs(1).selectedIndex
+  fontId = frm.inputs(1).selectedIndex
 
   cls
   at 0, char_h * 1
   rect x, y, w * 2, h + y * 2.5
   frm.inputs(0).label = "Extension modules:"
   frm.inputs(1).value = "Ignore|Load"
-  frm.inputs(1).selectedIndex = env("loadModules")
+  frm.inputs(1).selectedIndex = iff(loadModules == 1, 1, 0)
   frm = form(frm)
   while 1
     frm.doEvents()
@@ -230,7 +232,7 @@ sub do_setup()
       goto exitFunc
     endif
   wend
-  local loadModules = frm.inputs(1).selectedIndex
+  loadModules = frm.inputs(1).selectedIndex
 
   color colText, colBkGnd
   cls
@@ -270,22 +272,17 @@ end
 sub server_info()
   local serverSocket = env("serverSocket")
   local ipAddr = env("IP_ADDR")
-  local loadModules = env("loadModules")
-  local hasText = false
+  local loadModules = int(env("loadModules"))
 
   if (len(serverSocket) > 0 && int(serverSocket) > 1023 && int(serverSocket) < 65536 && len(ipAddr)) then
     serverSocket = ipAddr + ":" + serverSocket
     print boldOff + "Web Service: " + boldOn + serverSocket
     print boldOff + "Access token: " + boldOn + env("serverToken")
     print boldOff;
-    hasText = true
   fi
-  if (int(loadModules) == 1) then
-    print "Extension modules: " + boldOn + "Enabled"
-    print boldOff;
-    hasText = true
-  endif
-  if (hasText) then print
+
+  print "Extension modules: " + boldOn + iff(loadModules == 2, "Active", iff(loadModules == 1, "Enabled", "Disabled"))
+  print boldOff
 end
 
 func fileCmpFunc0(l, r)
