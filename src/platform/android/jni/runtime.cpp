@@ -627,9 +627,14 @@ void Runtime::saveConfig() {
       char *env = environ[i];
       if (strstr(env, SERVER_SOCKET_KEY) != nullptr ||
           strstr(env, SERVER_TOKEN_KEY) != nullptr ||
-          strstr(env, LOAD_MODULES_KEY) != nullptr ||
           strstr(env, FONT_ID_KEY) != nullptr) {
         fprintf(fp, "%s\n", env);
+      } else if (strstr(env, LOAD_MODULES_KEY) != nullptr) {
+        if (strstr(env, LOAD_MODULES_KEY "=2") != nullptr)  {
+          fprintf(fp, "%s=1\n", LOAD_MODULES_KEY);
+        } else {
+          fprintf(fp, "%s\n", env);
+        }
       }
     }
     fclose(fp);

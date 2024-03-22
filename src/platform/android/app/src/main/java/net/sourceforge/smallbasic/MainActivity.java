@@ -369,12 +369,12 @@ public class MainActivity extends NativeActivity {
   }
 
   public boolean loadModules() {
-    Log.i(TAG, "loadModules: " + getActivity() );
+    Log.i(TAG, "loadModules: " + getActivity());
     boolean result;
     try {
       System.loadLibrary("ioio");
       Class<?> clazz = Class.forName("net.sourceforge.smallbasic.ioio.IOIOLoader");
-      clazz.getDeclaredConstructor(Long.class).newInstance(getActivity());
+      clazz.getDeclaredConstructor(Long.class, Context.class).newInstance(getActivity(), this);
       Log.d(TAG, "loadModules - success");
       result = true;
     } catch (Exception | UnsatisfiedLinkError e) {

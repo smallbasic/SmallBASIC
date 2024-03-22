@@ -11,7 +11,7 @@ android {
     targetSdkVersion 34
     versionCode 59
     versionName '12.26'
-    resConfigs 'en'
+    resourceConfigurations += ['en']
   }
 
   signingConfigs {
@@ -54,6 +54,6 @@ android {
 
 dependencies {
   implementation 'androidx.core:core:1.12.0'
-  //implementation files('libs/ioio-release.aar')
+  //implementation files('libs/ioio-debug.aar')
   testImplementation 'junit:junit:4.13.2'
 }
