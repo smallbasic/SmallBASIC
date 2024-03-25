@@ -373,12 +373,12 @@ public class MainActivity extends NativeActivity {
     boolean result;
     try {
       System.loadLibrary("ioio");
-      Class<?> clazz = Class.forName("net.sourceforge.smallbasic.ioio.IOIOLoader");
+      Class<?> clazz = Class.forName("ioio.smallbasic.android.IOIOLoader");
       clazz.getDeclaredConstructor(Long.class, Context.class).newInstance(getActivity(), this);
-      Log.d(TAG, "loadModules - success");
+      Log.e(TAG, "loadModules - success");
       result = true;
     } catch (Exception | UnsatisfiedLinkError e) {
-      Log.d(TAG, "loadModules", e);
+      Log.e(TAG, "loadModules", e);
       result = false;
     }
     return result;
