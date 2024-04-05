@@ -308,6 +308,7 @@ struct func_keyword_s func_table[] = {
 { "LINEQN",                     kwGAUSSJORDAN },
 { "FILES",                      kwFILES },
 { "INVERSE",                    kwINVERSE },
+{ "TRANSPOSE",                  kwTRANSPOSE },
 { "DETERM",                     kwDETERM },
 { "JULIAN",                     kwJULIAN },
 { "DATEFMT",                    kwDATEFMT },
