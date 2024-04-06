@@ -81,6 +81,7 @@ struct Runtime : public System {
   char *getClipboardText();
   void setFocus(bool focus) { _hasFocus = focus; }
   int  getFontId();
+  int  invokeRequest(int param_count, slib_par_t *params, var_t *retval);
 
 private:
   bool _keypadActive;

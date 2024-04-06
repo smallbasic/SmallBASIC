@@ -964,6 +964,46 @@ int Runtime::getFontId() {
   return result;
 }
 
+int Runtime::invokeRequest(int argc, slib_par_t *params, var_t *retval) {
+  int result = 0;
+  if (argc >= 1 && argc < 5 &&
+      v_is_type(params[0].var_p, V_STR) &&
+      v_is_type(params[1].var_p, V_STR) &&
+      v_is_type(params[2].var_p, V_STR) &&
+      v_is_type(params[3].var_p, V_STR)) {
+    JNIEnv *env;
+    _app->activity->vm->AttachCurrentThread(&env, nullptr);
+
+    auto endPoint = env->NewStringUTF(v_getstr(params[0].var_p));
+    auto method = env->NewStringUTF(v_getstr(params[1].var_p));
+    auto data = env->NewStringUTF(v_getstr(params[2].var_p));
+    auto apiKey = env->NewStringUTF(v_getstr(params[3].var_p));
+
+    jclass clazz = env->GetObjectClass(_app->activity->clazz);
+    const char *signature = "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;";
+    jmethodID methodId = env->GetMethodID(clazz, "request", signature);
+    jstring resultStr = (jstring)env->CallObjectMethod(_app->activity->clazz, methodId, endPoint, method, data, apiKey);
+    const char *str = env->GetStringUTFChars(resultStr, JNI_FALSE);
+    v_init(retval);
+    v_setstr(retval, str);
+    result = 1;
+
+    env->ReleaseStringUTFChars(resultStr, str);
+    env->DeleteLocalRef(resultStr);
+    env->DeleteLocalRef(clazz);
+    env->DeleteLocalRef(endPoint);
+    env->DeleteLocalRef(method);
+    env->DeleteLocalRef(data);
+    env->DeleteLocalRef(apiKey);
+
+    _app->activity->vm->DetachCurrentThread();
+  }
+  if (!result) {
+    v_setstr(retval, "invalid arguments");
+  }
+  return result;
+}
+
 //
 // System platform methods
 //
@@ -1409,7 +1449,8 @@ int sblib_proc_exec(int index, int param_count, slib_par_t *params, var_t *retva
 
 const char *lib_funcs[] = {
   "LOCATION",
-  "SENSOR"
+  "SENSOR",
+  "REQUEST"
 };
 
 int sblib_func_count(void) {
@@ -1437,6 +1478,9 @@ int sblib_func_exec(int index, int param_count, slib_par_t *params, var_t *retva
   case 1:
     runtime->setSensorData(retval);
     result = 1;
+    break;
+  case 2:
+    result = runtime->invokeRequest(param_count, params, retval);
     break;
   default:
     result = 0;

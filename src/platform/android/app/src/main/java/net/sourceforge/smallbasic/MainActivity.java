@@ -58,11 +58,14 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
+import java.net.HttpURLConnection;
 import java.net.Inet4Address;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
+import java.net.URL;
 import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
@@ -115,7 +118,6 @@ public class MainActivity extends NativeActivity {
     System.loadLibrary("smallbasic");
   }
 
-  public native long getActivity();
   public static native boolean libraryMode();
   public static native void onActivityPaused(boolean paused);
   public static native void onResize(int width, int height);
@@ -232,6 +234,8 @@ public class MainActivity extends NativeActivity {
       throw new RuntimeException(e);
     }
   }
+
+  public native long getActivity();
 
   public byte[] getClipboardText() {
     final StringBuilder text = new StringBuilder();
@@ -372,9 +376,10 @@ public class MainActivity extends NativeActivity {
     Log.i(TAG, "loadModules: " + getActivity());
     boolean result;
     try {
+      // this would ideally be done with some kind of dependency injection
       System.loadLibrary("ioio");
-      Class<?> clazz = Class.forName("ioio.smallbasic.android.IOIOLoader");
-      clazz.getDeclaredConstructor(Long.class, Context.class).newInstance(getActivity(), this);
+      Class.forName("ioio.smallbasic.android.ModuleLoader")
+           .getDeclaredConstructor(Long.class, Context.class).newInstance(getActivity(), this);
       Log.e(TAG, "loadModules - success");
       result = true;
     } catch (Exception | UnsatisfiedLinkError e) {
@@ -499,6 +504,39 @@ public class MainActivity extends NativeActivity {
       }
     }
     Log.i(TAG, "removeRuntimeHandlers=" + result);
+    return result;
+  }
+
+  public String request(String endPoint, String method, String data, String apiKey) throws IOException {
+    String result = null;
+    try {
+      URL url = new URL(endPoint);
+      HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+      conn.setRequestMethod(method == null || method.isEmpty() ? "POST" : method);
+      if (apiKey != null && !apiKey.isEmpty()) {
+        conn.setRequestProperty("Content-Type", "application/json");
+        conn.setRequestProperty("Authorization", "Bearer " + apiKey);
+      }
+      conn.setDoOutput(true);
+      if (data != null && !data.isEmpty()) {
+        OutputStream os = conn.getOutputStream();
+        os.write(data.getBytes(StandardCharsets.UTF_8));
+        os.flush();
+        os.close();
+      }
+      if (conn.getResponseCode() == HttpURLConnection.HTTP_OK) {
+        BufferedReader in = new BufferedReader(new InputStreamReader(conn.getInputStream()));
+        String inputLine;
+        StringBuilder response = new StringBuilder();
+        while ((inputLine = in.readLine()) != null) {
+          response.append(inputLine);
+        }
+        in.close();
+        result = response.toString();
+      }
+    } catch (Exception e) {
+      Log.d(TAG, e.toString());
+    }
     return result;
   }
 
