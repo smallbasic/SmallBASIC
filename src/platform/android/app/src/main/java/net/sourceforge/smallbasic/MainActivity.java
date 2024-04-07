@@ -38,6 +38,7 @@ import android.view.View;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.Toast;
 
+import androidx.annotation.NonNull;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.core.content.FileProvider;
@@ -118,6 +119,7 @@ public class MainActivity extends NativeActivity {
     System.loadLibrary("smallbasic");
   }
 
+  public static native void consoleLog(String value);
   public static native boolean libraryMode();
   public static native void onActivityPaused(boolean paused);
   public static native void onResize(int width, int height);
@@ -380,10 +382,10 @@ public class MainActivity extends NativeActivity {
       System.loadLibrary("ioio");
       Class.forName("ioio.smallbasic.android.ModuleLoader")
            .getDeclaredConstructor(Long.class, Context.class).newInstance(getActivity(), this);
-      Log.e(TAG, "loadModules - success");
+      consoleLog("loadModules - success");
       result = true;
     } catch (Exception | UnsatisfiedLinkError e) {
-      Log.e(TAG, "loadModules", e);
+      consoleLog(e.toString());
       result = false;
     }
     return result;
@@ -508,23 +510,17 @@ public class MainActivity extends NativeActivity {
   }
 
   public String request(String endPoint, String method, String data, String apiKey) throws IOException {
-    String result = null;
+    String result;
     try {
-      URL url = new URL(endPoint);
-      HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-      conn.setRequestMethod(method == null || method.isEmpty() ? "POST" : method);
-      if (apiKey != null && !apiKey.isEmpty()) {
-        conn.setRequestProperty("Content-Type", "application/json");
-        conn.setRequestProperty("Authorization", "Bearer " + apiKey);
-      }
-      conn.setDoOutput(true);
+      HttpURLConnection conn = getHttpURLConnection(endPoint, method, apiKey);
       if (data != null && !data.isEmpty()) {
         OutputStream os = conn.getOutputStream();
         os.write(data.getBytes(StandardCharsets.UTF_8));
         os.flush();
         os.close();
       }
-      if (conn.getResponseCode() == HttpURLConnection.HTTP_OK) {
+      int responseCode = conn.getResponseCode();
+      if (responseCode == HttpURLConnection.HTTP_OK) {
         BufferedReader in = new BufferedReader(new InputStreamReader(conn.getInputStream()));
         String inputLine;
         StringBuilder response = new StringBuilder();
@@ -533,9 +529,11 @@ public class MainActivity extends NativeActivity {
         }
         in.close();
         result = response.toString();
+      } else {
+        result = "[error:" + responseCode + "]";
       }
     } catch (Exception e) {
-      Log.d(TAG, e.toString());
+      result = "[error:" + e + "]";
     }
     return result;
   }
@@ -797,6 +795,24 @@ public class MainActivity extends NativeActivity {
     output.close();
     Log.i(TAG, "invoke runFile: " + outputFile.getAbsolutePath());
     runFile(outputFile.getAbsolutePath());
+  }
+
+  @NonNull
+  private static HttpURLConnection getHttpURLConnection(String endPoint,
+                                                        String method,
+                                                        String apiKey) throws IOException {
+    URL url = new URL(endPoint);
+    HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+    conn.setConnectTimeout(10000);
+    conn.setRequestProperty("User-Agent", "SmallBASIC");
+    conn.setRequestMethod(method == null || method.isEmpty() ? "POST" : method);
+    conn.setInstanceFollowRedirects(true);
+    if (apiKey != null && !apiKey.isEmpty()) {
+      conn.setRequestProperty("Content-Type", "application/json");
+      conn.setRequestProperty("Authorization", "Bearer " + apiKey);
+    }
+    conn.setDoOutput(true);
+    return conn;
   }
 
   private Uri getSharedFile(File file) {

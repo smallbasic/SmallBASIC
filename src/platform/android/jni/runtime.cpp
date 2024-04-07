@@ -195,6 +195,15 @@ extern "C" JNIEXPORT jlong JNICALL Java_net_sourceforge_smallbasic_MainActivity_
   return runtime->getActivity();
 }
 
+extern "C" JNIEXPORT void JNICALL Java_net_sourceforge_smallbasic_MainActivity_consoleLog
+  (JNIEnv *env, jclass clazz, jstring jstr) {
+  if (jstr != nullptr) {
+    const char *str = env->GetStringUTFChars(jstr, 0);
+    runtime->systemLog(str);
+    env->ReleaseStringUTFChars(jstr, str);
+  }
+}
+
 void onContentRectChanged(ANativeActivity *activity, const ARect *rect) {
   logEntered();
   runtime->onResize(rect->right, rect->bottom);
@@ -355,6 +364,7 @@ String Runtime::getString(const char *methodName) {
   const char *resultStr = env->GetStringUTFChars(resultObj, JNI_FALSE);
   String result = resultStr;
   env->ReleaseStringUTFChars(resultObj, resultStr);
+  env->DeleteLocalRef(resultObj);
   env->DeleteLocalRef(clazz);
   _app->activity->vm->DetachCurrentThread();
   return result;
@@ -966,30 +976,27 @@ int Runtime::getFontId() {
 
 int Runtime::invokeRequest(int argc, slib_par_t *params, var_t *retval) {
   int result = 0;
-  if (argc >= 1 && argc < 5 &&
-      v_is_type(params[0].var_p, V_STR) &&
-      v_is_type(params[1].var_p, V_STR) &&
-      v_is_type(params[2].var_p, V_STR) &&
-      v_is_type(params[3].var_p, V_STR)) {
+  if ((argc >= 1 && argc <= 4 && v_is_type(params[0].var_p, V_STR)) &&
+      (argc < 2 || v_is_type(params[1].var_p, V_STR)) &&
+      (argc < 3 || v_is_type(params[2].var_p, V_STR)) &&
+      (argc < 4 || v_is_type(params[3].var_p, V_STR))) {
     JNIEnv *env;
     _app->activity->vm->AttachCurrentThread(&env, nullptr);
 
     auto endPoint = env->NewStringUTF(v_getstr(params[0].var_p));
-    auto method = env->NewStringUTF(v_getstr(params[1].var_p));
-    auto data = env->NewStringUTF(v_getstr(params[2].var_p));
-    auto apiKey = env->NewStringUTF(v_getstr(params[3].var_p));
+    auto method = env->NewStringUTF(argc < 2 ? "POST" : v_getstr(params[1].var_p));
+    auto data = env->NewStringUTF(argc < 3 ? "" : v_getstr(params[2].var_p));
+    auto apiKey = env->NewStringUTF(argc < 4 ? "" : v_getstr(params[3].var_p));
 
     jclass clazz = env->GetObjectClass(_app->activity->clazz);
     const char *signature = "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;";
     jmethodID methodId = env->GetMethodID(clazz, "request", signature);
-    jstring resultStr = (jstring)env->CallObjectMethod(_app->activity->clazz, methodId, endPoint, method, data, apiKey);
-    const char *str = env->GetStringUTFChars(resultStr, JNI_FALSE);
-    v_init(retval);
+    jstring jstr = (jstring)env->CallObjectMethod(_app->activity->clazz, methodId, endPoint, method, data, apiKey);
+    const char *str = env->GetStringUTFChars(jstr, JNI_FALSE);
     v_setstr(retval, str);
-    result = 1;
-
-    env->ReleaseStringUTFChars(resultStr, str);
-    env->DeleteLocalRef(resultStr);
+    result = strncmp(str, "[error:", 7) == 0 ? 0 : 1;
+    env->ReleaseStringUTFChars(jstr, str);
+    env->DeleteLocalRef(jstr);
     env->DeleteLocalRef(clazz);
     env->DeleteLocalRef(endPoint);
     env->DeleteLocalRef(method);
@@ -997,8 +1004,7 @@ int Runtime::invokeRequest(int argc, slib_par_t *params, var_t *retval) {
     env->DeleteLocalRef(apiKey);
 
     _app->activity->vm->DetachCurrentThread();
-  }
-  if (!result) {
+  } else {
     v_setstr(retval, "invalid arguments");
   }
   return result;
@@ -1493,3 +1499,4 @@ void sblib_close(void) {
   runtime->getBoolean("closeLibHandlers");
   runtime->disableSensor();
 }
+

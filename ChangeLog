@@ -1,3 +1,6 @@
+2024-04-07 (12.27)
+	ANDROID: Implemented "android.request"
+
 2024-01-06 (12.27)
 	COMMON: Allow modules to return objects with methods that take arguments
 
