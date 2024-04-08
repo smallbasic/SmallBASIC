@@ -200,6 +200,7 @@ extern "C" JNIEXPORT void JNICALL Java_net_sourceforge_smallbasic_MainActivity_c
   if (jstr != nullptr) {
     const char *str = env->GetStringUTFChars(jstr, 0);
     runtime->systemLog(str);
+    runtime->systemLog("\n");
     env->ReleaseStringUTFChars(jstr, str);
   }
 }
@@ -976,30 +977,27 @@ int Runtime::getFontId() {
 
 int Runtime::invokeRequest(int argc, slib_par_t *params, var_t *retval) {
   int result = 0;
-  if ((argc >= 1 && argc <= 4 && v_is_type(params[0].var_p, V_STR)) &&
+  if ((argc >= 1 && argc <= 3 && v_is_type(params[0].var_p, V_STR)) &&
       (argc < 2 || v_is_type(params[1].var_p, V_STR)) &&
-      (argc < 3 || v_is_type(params[2].var_p, V_STR)) &&
-      (argc < 4 || v_is_type(params[3].var_p, V_STR))) {
+      (argc < 3 || v_is_type(params[2].var_p, V_STR))) {
     JNIEnv *env;
     _app->activity->vm->AttachCurrentThread(&env, nullptr);
 
     auto endPoint = env->NewStringUTF(v_getstr(params[0].var_p));
-    auto method = env->NewStringUTF(argc < 2 ? "POST" : v_getstr(params[1].var_p));
     auto data = env->NewStringUTF(argc < 3 ? "" : v_getstr(params[2].var_p));
     auto apiKey = env->NewStringUTF(argc < 4 ? "" : v_getstr(params[3].var_p));
 
     jclass clazz = env->GetObjectClass(_app->activity->clazz);
-    const char *signature = "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;";
+    const char *signature = "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;";
     jmethodID methodId = env->GetMethodID(clazz, "request", signature);
-    jstring jstr = (jstring)env->CallObjectMethod(_app->activity->clazz, methodId, endPoint, method, data, apiKey);
+    jstring jstr = (jstring)env->CallObjectMethod(_app->activity->clazz, methodId, endPoint, data, apiKey);
     const char *str = env->GetStringUTFChars(jstr, JNI_FALSE);
     v_setstr(retval, str);
-    result = strncmp(str, "[error:", 7) == 0 ? 0 : 1;
+    result = strncmp(str, "error:[", 7) == 0 ? 0 : 1;
     env->ReleaseStringUTFChars(jstr, str);
     env->DeleteLocalRef(jstr);
     env->DeleteLocalRef(clazz);
     env->DeleteLocalRef(endPoint);
-    env->DeleteLocalRef(method);
     env->DeleteLocalRef(data);
     env->DeleteLocalRef(apiKey);
 

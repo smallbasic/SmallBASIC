@@ -103,6 +103,7 @@ public class MainActivity extends NativeActivity {
   private static final String FOLDER_NAME = "SmallBASIC";
   private static final int COPY_BUFFER_SIZE = 1024;
   private static final String[] SAMPLES = {"welcome.bas"};
+  private static final int TIMEOUT_MILLIS = 5000;
   private String _startupBas = null;
   private boolean _untrusted = false;
   private final ExecutorService _audioExecutor = Executors.newSingleThreadExecutor();
@@ -382,7 +383,6 @@ public class MainActivity extends NativeActivity {
       System.loadLibrary("ioio");
       Class.forName("ioio.smallbasic.android.ModuleLoader")
            .getDeclaredConstructor(Long.class, Context.class).newInstance(getActivity(), this);
-      consoleLog("loadModules - success");
       result = true;
     } catch (Exception | UnsatisfiedLinkError e) {
       consoleLog(e.toString());
@@ -509,10 +509,10 @@ public class MainActivity extends NativeActivity {
     return result;
   }
 
-  public String request(String endPoint, String method, String data, String apiKey) throws IOException {
+  public String request(String endPoint, String data, String apiKey) throws IOException {
     String result;
     try {
-      HttpURLConnection conn = getHttpURLConnection(endPoint, method, apiKey);
+      HttpURLConnection conn = getHttpURLConnection(endPoint, (data == null || data.isEmpty()) ? "GET" : "POST", apiKey);
       if (data != null && !data.isEmpty()) {
         OutputStream os = conn.getOutputStream();
         os.write(data.getBytes(StandardCharsets.UTF_8));
@@ -530,10 +530,10 @@ public class MainActivity extends NativeActivity {
         in.close();
         result = response.toString();
       } else {
-        result = "[error:" + responseCode + "]";
+        result = "error:[" + responseCode + "]";
       }
     } catch (Exception e) {
-      result = "[error:" + e + "]";
+      result = "error:[" + e + "]";
     }
     return result;
   }
@@ -798,21 +798,19 @@ public class MainActivity extends NativeActivity {
   }
 
   @NonNull
-  private static HttpURLConnection getHttpURLConnection(String endPoint,
-                                                        String method,
-                                                        String apiKey) throws IOException {
+  private HttpURLConnection getHttpURLConnection(String endPoint, String method, String apiKey) throws IOException {
     URL url = new URL(endPoint);
-    HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-    conn.setConnectTimeout(10000);
-    conn.setRequestProperty("User-Agent", "SmallBASIC");
-    conn.setRequestMethod(method == null || method.isEmpty() ? "POST" : method);
-    conn.setInstanceFollowRedirects(true);
+    HttpURLConnection result = (HttpURLConnection) url.openConnection();
+    result.setConnectTimeout(TIMEOUT_MILLIS);
+    result.setRequestProperty("User-Agent", "SmallBASIC");
+    result.setRequestMethod(method);
+    result.setInstanceFollowRedirects(true);
     if (apiKey != null && !apiKey.isEmpty()) {
-      conn.setRequestProperty("Content-Type", "application/json");
-      conn.setRequestProperty("Authorization", "Bearer " + apiKey);
+      result.setRequestProperty("Content-Type", "application/json");
+      result.setRequestProperty("Authorization", "Bearer " + apiKey);
     }
-    conn.setDoOutput(true);
-    return conn;
+    result.setDoOutput(true);
+    return result;
   }
 
   private Uri getSharedFile(File file) {
