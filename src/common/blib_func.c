@@ -2810,8 +2810,8 @@ void cmd_genfunc(long funcCode, var_t *r) {
     
     var_num_t *m = (var_num_t *)malloc(((rows) * (cols)) * sizeof(var_num_t));
     
-    for(int32_t x = 0; x < cols; x++) {
-      for(int32_t y = 0; y < rows; y++) {
+    for (int32_t x = 0; x < cols; x++) {
+      for (int32_t y = 0; y < rows; y++) {
         pos1 = y * cols + x;
         pos2 = x * rows + y;        
         e = v_elem(a, pos1);
@@ -2819,7 +2819,7 @@ void cmd_genfunc(long funcCode, var_t *r) {
       }
     }
 
-    if(cols > 1) {
+    if (cols > 1) {
       mat_tov(r, m, cols, rows, 1);
     } else {
       mat_tov(r, m, rows, 1, 0);
