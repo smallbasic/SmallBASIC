@@ -5,7 +5,7 @@ buildscript {
     mavenCentral()
   }
   dependencies {
-    classpath 'com.android.tools.build:gradle:8.0.1'
+    classpath 'com.android.tools.build:gradle:8.3.2'
   }
 }
 
@@ -18,11 +18,11 @@ allprojects {
 
 apply plugin: 'idea'
 
-task clean(type: Delete) {
+tasks.register('clean', Delete) {
   delete rootProject.buildDir
 }
 
-task test {
+tasks.register('test') {
   doLast {
     exec {
       commandLine 'sh', '-c', 'adb -a logcat -c && \

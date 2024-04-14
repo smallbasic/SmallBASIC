@@ -38,6 +38,7 @@ import android.view.View;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.Toast;
 
+import androidx.annotation.NonNull;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.core.content.FileProvider;
@@ -58,11 +59,14 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
+import java.net.HttpURLConnection;
 import java.net.Inet4Address;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
+import java.net.URL;
 import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
@@ -99,6 +103,7 @@ public class MainActivity extends NativeActivity {
   private static final String FOLDER_NAME = "SmallBASIC";
   private static final int COPY_BUFFER_SIZE = 1024;
   private static final String[] SAMPLES = {"welcome.bas"};
+  private static final int TIMEOUT_MILLIS = 5000;
   private String _startupBas = null;
   private boolean _untrusted = false;
   private final ExecutorService _audioExecutor = Executors.newSingleThreadExecutor();
@@ -115,6 +120,7 @@ public class MainActivity extends NativeActivity {
     System.loadLibrary("smallbasic");
   }
 
+  public static native void consoleLog(String value);
   public static native boolean libraryMode();
   public static native void onActivityPaused(boolean paused);
   public static native void onResize(int width, int height);
@@ -221,6 +227,18 @@ public class MainActivity extends NativeActivity {
     }
     return removeLocationUpdates();
   }
+
+  public Class<?> findClass(String className) {
+    try {
+      Log.d(TAG, "findClass " + className);
+      return Class.forName(className.replace("/", "."));
+    }
+    catch (ClassNotFoundException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  public native long getActivity();
 
   public byte[] getClipboardText() {
     final StringBuilder text = new StringBuilder();
@@ -357,6 +375,22 @@ public class MainActivity extends NativeActivity {
     return rect.height();
   }
 
+  public boolean loadModules() {
+    Log.i(TAG, "loadModules: " + getActivity());
+    boolean result;
+    try {
+      // this would ideally be done with some kind of dependency injection
+      System.loadLibrary("ioio");
+      Class.forName("ioio.smallbasic.android.ModuleLoader")
+           .getDeclaredConstructor(Long.class, Context.class).newInstance(getActivity(), this);
+      result = true;
+    } catch (Exception | UnsatisfiedLinkError e) {
+      consoleLog(e.toString());
+      result = false;
+    }
+    return result;
+  }
+
   @Override
   public void onGlobalLayout() {
     super.onGlobalLayout();
@@ -472,6 +506,35 @@ public class MainActivity extends NativeActivity {
       }
     }
     Log.i(TAG, "removeRuntimeHandlers=" + result);
+    return result;
+  }
+
+  public String request(String endPoint, String data, String apiKey) throws IOException {
+    String result;
+    try {
+      HttpURLConnection conn = getHttpURLConnection(endPoint, (data == null || data.isEmpty()) ? "GET" : "POST", apiKey);
+      if (data != null && !data.isEmpty()) {
+        OutputStream os = conn.getOutputStream();
+        os.write(data.getBytes(StandardCharsets.UTF_8));
+        os.flush();
+        os.close();
+      }
+      int responseCode = conn.getResponseCode();
+      if (responseCode == HttpURLConnection.HTTP_OK) {
+        BufferedReader in = new BufferedReader(new InputStreamReader(conn.getInputStream()));
+        String inputLine;
+        StringBuilder response = new StringBuilder();
+        while ((inputLine = in.readLine()) != null) {
+          response.append(inputLine);
+        }
+        in.close();
+        result = response.toString();
+      } else {
+        result = "error:[" + responseCode + "]";
+      }
+    } catch (Exception e) {
+      result = "error:[" + e + "]";
+    }
     return result;
   }
 
@@ -732,6 +795,22 @@ public class MainActivity extends NativeActivity {
     output.close();
     Log.i(TAG, "invoke runFile: " + outputFile.getAbsolutePath());
     runFile(outputFile.getAbsolutePath());
+  }
+
+  @NonNull
+  private HttpURLConnection getHttpURLConnection(String endPoint, String method, String apiKey) throws IOException {
+    URL url = new URL(endPoint);
+    HttpURLConnection result = (HttpURLConnection) url.openConnection();
+    result.setConnectTimeout(TIMEOUT_MILLIS);
+    result.setRequestProperty("User-Agent", "SmallBASIC");
+    result.setRequestMethod(method);
+    result.setInstanceFollowRedirects(true);
+    if (apiKey != null && !apiKey.isEmpty()) {
+      result.setRequestProperty("Content-Type", "application/json");
+      result.setRequestProperty("Authorization", "Bearer " + apiKey);
+    }
+    result.setDoOutput(true);
+    return result;
   }
 
   private Uri getSharedFile(File file) {

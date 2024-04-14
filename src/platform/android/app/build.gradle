@@ -2,16 +2,16 @@ apply plugin: 'com.android.application'
 
 android {
   // app can use the API features included in this API level and lower.
-  compileSdkVersion 33
+  compileSdk 34
 
   // can override some attributes in main/AndroidManifest.xml
   defaultConfig {
     applicationId 'net.sourceforge.smallbasic'
-    minSdkVersion 16
-    targetSdkVersion 33
-    versionCode 59
-    versionName '12.26'
-    resConfigs 'en'
+    minSdkVersion 19
+    targetSdkVersion 34
+    versionCode 60
+    versionName '12.27'
+    resourceConfigurations += ['en']
   }
 
   signingConfigs {
@@ -26,19 +26,13 @@ android {
   }
 
   buildTypes {
-    debug {
-      buildConfigField "boolean", "DEBUG_VIEW", "true"
-      buildConfigField "java.util.Date", "BUILD_TIME", "new java.util.Date(" + System.currentTimeMillis() + "L)"
-    }
     release {
       ndk {
-       debugSymbolLevel = 'FULL'
+        debugSymbolLevel = 'FULL'
       }
-      buildConfigField "boolean", "DEBUG_VIEW", "false"
-      buildConfigField "java.util.Date", "BUILD_TIME", "new java.util.Date(" + System.currentTimeMillis() + "L)"
       shrinkResources true
       minifyEnabled true
-      proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+      proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
       signingConfig signingConfigs.release
     }
   }
@@ -59,6 +53,7 @@ android {
 }
 
 dependencies {
-  implementation 'androidx.core:core:1.10.0'
+  implementation 'androidx.core:core:1.12.0'
+  implementation files('libs/ioio-release.aar')
   testImplementation 'junit:junit:4.13.2'
 }

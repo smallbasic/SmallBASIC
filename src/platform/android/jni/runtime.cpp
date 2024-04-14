@@ -35,6 +35,7 @@
 #define SERVER_TOKEN_KEY "serverToken"
 #define MUTE_AUDIO_KEY "muteAudio"
 #define THEME_KEY "theme"
+#define LOAD_MODULES_KEY "loadModules"
 #define OPT_IDE_KEY "optIde"
 #define GBOARD_KEY_QUESTION 274
 #define EVENT_TYPE_EXIT 100
@@ -187,6 +188,21 @@ extern "C" JNIEXPORT jboolean JNICALL Java_net_sourceforge_smallbasic_MainActivi
 #else
   return false;
 #endif
+}
+
+extern "C" JNIEXPORT jlong JNICALL Java_net_sourceforge_smallbasic_MainActivity_getActivity
+  (JNIEnv *env, jobject instance) {
+  return runtime->getActivity();
+}
+
+extern "C" JNIEXPORT void JNICALL Java_net_sourceforge_smallbasic_MainActivity_consoleLog
+  (JNIEnv *env, jclass clazz, jstring jstr) {
+  if (jstr != nullptr) {
+    const char *str = env->GetStringUTFChars(jstr, 0);
+    runtime->systemLog(str);
+    runtime->systemLog("\n");
+    env->ReleaseStringUTFChars(jstr, str);
+  }
 }
 
 void onContentRectChanged(ANativeActivity *activity, const ARect *rect) {
@@ -349,6 +365,7 @@ String Runtime::getString(const char *methodName) {
   const char *resultStr = env->GetStringUTFChars(resultObj, JNI_FALSE);
   String result = resultStr;
   env->ReleaseStringUTFChars(resultObj, resultStr);
+  env->DeleteLocalRef(resultObj);
   env->DeleteLocalRef(clazz);
   _app->activity->vm->DetachCurrentThread();
   return result;
@@ -554,8 +571,19 @@ void Runtime::loadConfig() {
         g_themeId = id;
       }
     }
+    s = settings.get(LOAD_MODULES_KEY);
+    if (s && s->toInteger() == 1) {
+      if (getBoolean("loadModules")) {
+        systemLog("Extension modules loaded\n");
+        settings.put(LOAD_MODULES_KEY, "2");
+      } else {
+        systemLog("Loading extension modules failed\n");
+        settings.put(LOAD_MODULES_KEY, "0");
+      }
+    }
     loadEnvConfig(settings, SERVER_SOCKET_KEY);
     loadEnvConfig(settings, SERVER_TOKEN_KEY);
+    loadEnvConfig(settings, LOAD_MODULES_KEY);
     loadEnvConfig(settings, FONT_ID_KEY);
   }
 }
@@ -612,6 +640,12 @@ void Runtime::saveConfig() {
           strstr(env, SERVER_TOKEN_KEY) != nullptr ||
           strstr(env, FONT_ID_KEY) != nullptr) {
         fprintf(fp, "%s\n", env);
+      } else if (strstr(env, LOAD_MODULES_KEY) != nullptr) {
+        if (strstr(env, LOAD_MODULES_KEY "=2") != nullptr)  {
+          fprintf(fp, "%s=1\n", LOAD_MODULES_KEY);
+        } else {
+          fprintf(fp, "%s\n", env);
+        }
       }
     }
     fclose(fp);
@@ -937,6 +971,39 @@ int Runtime::getFontId() {
     if (s) {
       result = s->toInteger();
     }
+  }
+  return result;
+}
+
+int Runtime::invokeRequest(int argc, slib_par_t *params, var_t *retval) {
+  int result = 0;
+  if ((argc >= 1 && argc <= 3 && v_is_type(params[0].var_p, V_STR)) &&
+      (argc < 2 || v_is_type(params[1].var_p, V_STR)) &&
+      (argc < 3 || v_is_type(params[2].var_p, V_STR))) {
+    JNIEnv *env;
+    _app->activity->vm->AttachCurrentThread(&env, nullptr);
+
+    auto endPoint = env->NewStringUTF(v_getstr(params[0].var_p));
+    auto data = env->NewStringUTF(argc < 3 ? "" : v_getstr(params[2].var_p));
+    auto apiKey = env->NewStringUTF(argc < 4 ? "" : v_getstr(params[3].var_p));
+
+    jclass clazz = env->GetObjectClass(_app->activity->clazz);
+    const char *signature = "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;";
+    jmethodID methodId = env->GetMethodID(clazz, "request", signature);
+    jstring jstr = (jstring)env->CallObjectMethod(_app->activity->clazz, methodId, endPoint, data, apiKey);
+    const char *str = env->GetStringUTFChars(jstr, JNI_FALSE);
+    v_setstr(retval, str);
+    result = strncmp(str, "error:[", 7) == 0 ? 0 : 1;
+    env->ReleaseStringUTFChars(jstr, str);
+    env->DeleteLocalRef(jstr);
+    env->DeleteLocalRef(clazz);
+    env->DeleteLocalRef(endPoint);
+    env->DeleteLocalRef(data);
+    env->DeleteLocalRef(apiKey);
+
+    _app->activity->vm->DetachCurrentThread();
+  } else {
+    v_setstr(retval, "invalid arguments");
   }
   return result;
 }
@@ -1386,7 +1453,8 @@ int sblib_proc_exec(int index, int param_count, slib_par_t *params, var_t *retva
 
 const char *lib_funcs[] = {
   "LOCATION",
-  "SENSOR"
+  "SENSOR",
+  "REQUEST"
 };
 
 int sblib_func_count(void) {
@@ -1415,6 +1483,9 @@ int sblib_func_exec(int index, int param_count, slib_par_t *params, var_t *retva
     runtime->setSensorData(retval);
     result = 1;
     break;
+  case 2:
+    result = runtime->invokeRequest(param_count, params, retval);
+    break;
   default:
     result = 0;
     break;
@@ -1426,3 +1497,4 @@ void sblib_close(void) {
   runtime->getBoolean("closeLibHandlers");
   runtime->disableSensor();
 }
+
