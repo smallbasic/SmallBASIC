@@ -366,6 +366,7 @@ enum func_keywords {
   kwGAUSSJORDAN,
   kwFILES,
   kwINVERSE,
+  kwTRANSPOSE,
   kwDETERM,
   kwJULIAN,
   kwDATEFMT,

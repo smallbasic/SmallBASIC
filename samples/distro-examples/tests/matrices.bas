@@ -64,3 +64,17 @@ m3rotate m, 2
 m3Apply m, strip
 if (strip != [[-18.23450585285103,14.19218649794793],[-10.96012643824558,17.52136119032507]]) then throw "m3Apply failed"
 
+A = [1;2;3;4]
+B = transpose(A)
+if (B[0] != 1) then throw "Error TRANSPOSE()"
+if (B[1] != 2) then throw "Error TRANSPOSE()"
+if (B[2] != 3) then throw "Error TRANSPOSE()"
+if (B[3] != 4) then throw "Error TRANSPOSE()"
+A = [1,2; 3,4; 5,6]
+B = transpose(A)
+if (B[0,0] != 1) then throw "Error TRANSPOSE()"
+if (B[0,1] != 3) then throw "Error TRANSPOSE()"
+if (B[0,2] != 5) then throw "Error TRANSPOSE()"
+if (B[1,0] != 2) then throw "Error TRANSPOSE()"
+if (B[1,1] != 4) then throw "Error TRANSPOSE()"
+if (B[1,2] != 6) then throw "Error TRANSPOSE()"

@@ -555,8 +555,8 @@ var_int_t numexpr_strtol(char *source) {
 /**
  * convertion: binary to decimal
  */
-long bintol(const char *str) {
-  long r = 0;
+var_int_t bintol(const char *str) {
+  var_int_t r = 0;
   char *p = (char *) str;
 
   if (p == NULL) {
@@ -575,8 +575,8 @@ long bintol(const char *str) {
 /**
  * convertion: octal to decimal
  */
-long octtol(const char *str) {
-  long r = 0;
+var_int_t octtol(const char *str) {
+  var_int_t r = 0;
   char *p = (char *) str;
 
   if (p == NULL) {
@@ -595,8 +595,8 @@ long octtol(const char *str) {
 /**
  * convertion: hexadecimal to decimal
  */
-long hextol(const char *str) {
-  long r = 0;
+var_int_t hextol(const char *str) {
+  var_int_t r = 0;
   char *p = (char *) str;
 
   if (p == NULL) {

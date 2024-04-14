@@ -1205,6 +1205,7 @@ static inline void eval_callf(var_t *r) {
   case kwGAUSSJORDAN:
   case kwFILES:
   case kwINVERSE:
+  case kwTRANSPOSE:
   case kwDETERM:
   case kwJULIAN:
   case kwDATEFMT:

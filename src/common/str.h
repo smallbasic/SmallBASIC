@@ -170,7 +170,7 @@ void str_alltrim(char *str);
  * @param str the string
  * @return the number
  */
-long bintol(const char *str);
+var_int_t bintol(const char *str);
 
 /**
  * @ingroup str
@@ -180,7 +180,7 @@ long bintol(const char *str);
  * @param str the string
  * @return the number
  */
-long octtol(const char *str);
+var_int_t octtol(const char *str);
 
 /**
  * @ingroup str
@@ -190,7 +190,7 @@ long octtol(const char *str);
  * @param str the string
  * @return the number
  */
-long hextol(const char *str);
+var_int_t hextol(const char *str);
 
 /**
  * @ingroup str

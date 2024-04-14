@@ -2784,6 +2784,51 @@ void cmd_genfunc(long funcCode, var_t *r) {
   }
     break;
     //
+    // array <- TRANSPOSE(a)
+    //
+  case kwTRANSPOSE: {
+    int32_t rows, cols, pos1, pos2;
+    var_t *e;
+
+    v_init(r);
+    var_t *a = par_getvarray();  
+    IF_ERR_RETURN;    
+    
+    if (v_maxdim(a) > 2) {
+      err_matdim();
+      IF_ERR_RETURN;
+    }
+    
+    rows = ABS(v_lbound(a, 0) - v_ubound(a, 0)) + 1;
+
+    if (v_maxdim(a) == 2) {
+      cols = ABS(v_lbound(a, 1) - v_ubound(a, 1)) + 1;
+    } else {
+      cols = rows;
+      rows = 1;
+    }
+    
+    var_num_t *m = (var_num_t *)malloc(((rows) * (cols)) * sizeof(var_num_t));
+    
+    for (int32_t x = 0; x < cols; x++) {
+      for (int32_t y = 0; y < rows; y++) {
+        pos1 = y * cols + x;
+        pos2 = x * rows + y;        
+        e = v_elem(a, pos1);
+        m[pos2] = v_getval(e);
+      }
+    }
+
+    if (cols > 1) {
+      mat_tov(r, m, cols, rows, 1);
+    } else {
+      mat_tov(r, m, rows, 1, 0);
+    }
+    
+    free(m);    
+  }
+    break;
+    //
     // n <- DETERM(A)
     //
   case kwDETERM: {
