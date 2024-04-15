@@ -23,7 +23,7 @@
   },
   "scripts": {
     "start": "vite --host",
-    "build": "GENERATE_SOURCEMAP=false vite build && rm ../app/src/main/assets/webui/static/js/main.* && cp -R build/* ../app/src/main/assets/webui/",
+    "build": "GENERATE_SOURCEMAP=false vite build && rm -rf ../app/src/main/assets/webui/* && cp -R dist/* ../app/src/main/assets/webui/",
     "update": "npm update && ncu -u && npm install && npm audit fix"
   },
   "eslintConfig": {
