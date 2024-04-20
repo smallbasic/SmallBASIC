@@ -1095,7 +1095,8 @@ public class MainActivity extends NativeActivity {
         String name = "webui/" + path;
         long length = getFileLength(name);
         log("Opened " + name + " " + length + " bytes");
-        result = new Response(getAssets().open(name), length);
+        String contentType = path.endsWith("js") ? "text/javascript" : "text/html";
+        result = new Response(getAssets().open(name), length, contentType);
         if ("index.html".equals(path) && isHostNotPermitted(remoteHost)) {
           requestHostPermission(remoteHost);
         }

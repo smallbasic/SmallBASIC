@@ -44,6 +44,7 @@ public abstract class WebServer {
   private static final int SC_NOT_AUTHORISED = 401;
   private static final int SC_NOT_FOUND = 404;
   private static final ExecutorService THREAD_POOL = Executors.newCachedThreadPool();
+  private static final String TEXT_HTML = "text/html";
 
   public WebServer() {
     super();
@@ -641,17 +642,27 @@ public abstract class WebServer {
     private final InputStream inputStream;
     private final long length;
     private final int errorCode;
+    private final String contentType;
+
+    public Response(InputStream inputStream, long length, String contentType) {
+      this.inputStream = inputStream;
+      this.length = length;
+      this.errorCode = SC_OKAY;
+      this.contentType = contentType;
+    }
 
     public Response(InputStream inputStream, long length) {
       this.inputStream = inputStream;
       this.length = length;
       this.errorCode = SC_OKAY;
+      this.contentType = TEXT_HTML;
     }
 
     public Response(byte[] bytes) {
       this.inputStream = new ByteArrayInputStream(bytes);
       this.length = bytes.length;
       this.errorCode = SC_OKAY;
+      this.contentType = TEXT_HTML;
     }
 
     public Response(int errorCode) throws IOException {
@@ -659,6 +670,7 @@ public abstract class WebServer {
       this.inputStream = new ByteArrayInputStream(bytes);
       this.length = bytes.length;
       this.errorCode = errorCode;
+      this.contentType = TEXT_HTML;
     }
 
     /**
@@ -670,7 +682,7 @@ public abstract class WebServer {
       BufferedOutputStream out = new BufferedOutputStream(socket.getOutputStream());
       String code = errorCode == SC_OKAY ? SC_OKAY + " OK" : String.valueOf(errorCode);
       out.write(("HTTP/1.0 " + code + "\r\n").getBytes(UTF_8));
-      out.write("Content-type: text/html\r\n".getBytes(UTF_8));
+      out.write(("Content-type: " + contentType + "\r\n").getBytes(UTF_8));
       out.write(contentLength.getBytes(UTF_8));
       if (cookie != null) {
         out.write(("Set-Cookie: " + TOKEN + "=" + cookie + "\r\n").getBytes(UTF_8));
