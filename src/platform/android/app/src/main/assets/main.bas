@@ -723,9 +723,9 @@ sub main
     frm.inputs << bn_files
     frm.inputs << bn_online
     frm.inputs << bn_scratch
-'    if (!is_sdl) then
+    if (!is_sdl) then
       frm.inputs << bn_setup
-'    endif
+    endif
     frm.inputs << bn_about
     listFiles frm, path, sortDir, basList
     frm = form(frm)
