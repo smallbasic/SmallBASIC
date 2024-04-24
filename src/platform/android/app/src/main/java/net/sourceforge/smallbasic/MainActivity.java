@@ -514,6 +514,7 @@ public class MainActivity extends NativeActivity {
     try {
       HttpURLConnection conn = getHttpURLConnection(endPoint, (data == null || data.isEmpty()) ? "GET" : "POST", apiKey);
       if (data != null && !data.isEmpty()) {
+        conn.setRequestProperty("Content-Length", "" + data.getBytes().length);
         OutputStream os = conn.getOutputStream();
         os.write(data.getBytes(StandardCharsets.UTF_8));
         os.flush();
@@ -530,10 +531,10 @@ public class MainActivity extends NativeActivity {
         in.close();
         result = response.toString();
       } else {
-        result = "error:[" + responseCode + "]";
+        result = "error: [" + responseCode + "]";
       }
     } catch (Exception e) {
-      result = "error:[" + e + "]";
+      result = "error: [" + e + "]";
     }
     return result;
   }
@@ -806,6 +807,7 @@ public class MainActivity extends NativeActivity {
     result.setRequestMethod(method);
     result.setInstanceFollowRedirects(true);
     if (apiKey != null && !apiKey.isEmpty()) {
+      result.setRequestProperty("Accept", "application/json");
       result.setRequestProperty("Content-Type", "application/json");
       result.setRequestProperty("Authorization", "Bearer " + apiKey);
     }
@@ -921,7 +923,7 @@ public class MainActivity extends NativeActivity {
       }
       input.close();
     } catch (FileNotFoundException e) {
-      Log.i(TAG, "readBuffer failed: ", e);
+      Log.i(TAG, "file not found: ", e);
     } catch (IOException e) {
       Log.i(TAG, "readBuffer failed: ", e);
     }
