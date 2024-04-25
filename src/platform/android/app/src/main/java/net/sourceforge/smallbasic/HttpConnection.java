@@ -38,7 +38,7 @@ public class HttpConnection implements Runnable {
         result = buildError("timeout");
       }
     } catch (InterruptedException e) {
-      result = ERROR_PREFIX + e + ERROR_POSTFIX;
+      result = buildError(e.toString());
     }
     return result;
   }
@@ -60,7 +60,7 @@ public class HttpConnection implements Runnable {
       if (responseCode == HttpURLConnection.HTTP_OK) {
         result = getText(conn.getInputStream());
       } else if (responseCode >= HttpURLConnection.HTTP_BAD_REQUEST && responseCode < HttpURLConnection.HTTP_INTERNAL_ERROR) {
-        result =  buildError(getText(conn.getErrorStream()));
+        result = buildError(getText(conn.getErrorStream()));
       } else {
         result = buildError(String.valueOf(responseCode));
       }
