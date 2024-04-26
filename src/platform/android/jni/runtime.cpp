@@ -977,8 +977,15 @@ int Runtime::getFontId() {
 
 int Runtime::invokeRequest(int argc, slib_par_t *params, var_t *retval) {
   int result = 0;
-  if ((argc >= 1 && argc <= 3 && v_is_type(params[0].var_p, V_STR)) &&
-      (argc < 3 || v_is_type(params[2].var_p, V_STR))) {
+  if (argc != 1 && argc != 3) {
+    v_setstr(retval, "Expected 1 or 3 arguments");
+  } else if (!v_is_type(params[0].var_p, V_STR)) {
+    v_setstr(retval, "invalid endPoint");
+  } else if (argc == 3 && !v_is_type(params[1].var_p, V_STR) && !v_is_type(params[1].var_p, V_MAP)) {
+    v_setstr(retval, "invalid postData");
+  } else if (argc == 3 && !v_is_type(params[2].var_p, V_STR)) {
+    v_setstr(retval, "invalid apiKey");
+  } else {
     _output->redraw();
 
     JNIEnv *env;
@@ -1002,8 +1009,6 @@ int Runtime::invokeRequest(int argc, slib_par_t *params, var_t *retval) {
     env->DeleteLocalRef(apiKey);
 
     _app->activity->vm->DetachCurrentThread();
-  } else {
-    v_setstr(retval, "Invalid request arguments");
   }
   return result;
 }
