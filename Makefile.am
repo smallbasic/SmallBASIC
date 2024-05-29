@@ -107,8 +107,8 @@ src/platform/android/jni/main.cpp                            \
 src/platform/android/jni/runtime.cpp                         \
 src/platform/android/jni/runtime.h                           \
 src/platform/android/webui/package.json                      \
-src/platform/android/webui/src/App.js                        \
-src/platform/android/webui/src/index.js                      \
+src/platform/android/webui/src/App.jsx                       \
+src/platform/android/webui/index.html                        \
 src/platform/console/Makefile.am                             \
 src/platform/console/Makefile.in                             \
 src/platform/console/decomp.c                                \
