@@ -315,7 +315,7 @@ int main(int argc, char **argv) {
     sbasic_main(runBas);
     puts(g_canvas.getPage().c_str());
   } else {
-    fprintf(stdout, "Starting SmallBASIC web server on port:%d\n", port);
+    fprintf(stdout, "Starting SmallBASIC web server on port:%d. Press return to exit.\n", port);
     MHD_Daemon *d = MHD_start_daemon(MHD_USE_INTERNAL_POLLING_THREAD, port,
                                      &accept_cb, nullptr,
                                      &access_cb, nullptr, MHD_OPTION_END);
@@ -323,7 +323,12 @@ int main(int argc, char **argv) {
       fprintf(stderr, "startup failed\n");
       return 1;
     }
-    getc(stdin);
+
+    while(getc(stdin) != '\n') {
+      usleep(10000); // On Raspberry Pi OS getc returns immediately EOF if in background.
+                     // Sleep to reduce cpu usage.
+    }
+
     MHD_stop_daemon(d);
   }
   free(execBas);
