@@ -42,7 +42,9 @@ long select_unix_serial_speed(long n) {
     return B19200;
     case 38400:
     return B38400;
-    // extra baud rates (but not posix)
+#ifdef B4000000
+    // extra baud rates are not POSIX standard
+    // but supported by Linux and FreeBSD
     case 57600:
     return B57600;
     case 115200:
@@ -53,14 +55,10 @@ long select_unix_serial_speed(long n) {
     return B460800;
     case 500000:
     return B500000;
-    case 576000:
-    return B576000; 
     case 921600:
     return B921600;
     case 1000000:
     return B1000000;
-    case 1152000:
-    return B1152000;
     case 1500000:
     return B1500000;
     case 2000000:
@@ -73,6 +71,15 @@ long select_unix_serial_speed(long n) {
     return B3500000;
     case 4000000:
     return B4000000;
+#endif
+#ifdef B576000
+    // Following baud rates are supported in Linux but
+    // not defined in FreeBSD
+    case 576000:
+    return B576000;
+    case 1152000:
+    return B1152000;
+#endif
   }
   return B9600;
 }
