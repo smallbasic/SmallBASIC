@@ -462,12 +462,6 @@ public class MainActivity extends NativeActivity {
                   return true;
                 }
               });
-              _mediaPlayer.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
-                @Override
-                public void onCompletion(MediaPlayer mp) {
-                  releaseMediaPlayer();
-                }
-              });
             } else {
               _mediaPlayer.reset();
             }
