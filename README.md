@@ -1,45 +1,82 @@
 SmallBASIC is a fast and easy to learn BASIC language interpreter ideal for everyday calculations, scripts and prototypes. SmallBASIC includes trigonometric, matrices and algebra functions, a built in IDE, a powerful string library, system, sound, and graphic commands along with structured programming syntax.
 
-### Initialise dependencies
-
-```
-$ git submodule update --init
-```
-
 ## Building the SDL version
 
-Initial setup on linux
+### LINUX
+
+#### Install packages
+
+Ubuntu
+
 ```
- $ sudo apt-get install git autotools-dev automake gcc g++ libsdl2-dev libfreetype6-dev libfontconfig1-dev xxd
+sudo apt-get install git autotools-dev automake gcc g++ libsdl2-dev libfreetype6-dev libfontconfig1-dev xxd
+```
+
+Manjaro (Arch)
+
+```
+sudo pacman -S gcc make autoconf automake sdl2 freetype2 fontconfig pkgconf vim
+```
+
+#### Initial setup
+
+```
  $ git clone https://github.com/smallbasic/SmallBASIC.git
  $ cd SmallBASIC
  $ git submodule update --init
  $ sh autogen.sh
 ```
-Build in linux
+
+#### Build
+
 ```
  $ ./configure --enable-sdl
  $ make
 ```
-Build the debian package
+
+#### Install (optional)
+
+```
+ $ sudo make install 
+```
+
+This will install `sbasicg` in `/usr/local/bin`
+
+#### Run
+
+```
+ $ cd ./src/platform/sdl/
+ $ sbasicg
+```
+
+#### Build the Debian package (optional)
+
 ```
  $ sudo apt-get install dpkg-dev build-essential debhelper
  $ make deb
 ```
-On windows, install tools:
- https://www.gtk.org/download/windows.php
+
+### WINDOWS
+
+Install tools: `https://www.gtk.org/download/windows.php`
+
 ```
  $ ./configure --host=i686-w64-mingw32 --enable-sdl
  $ make
 ```
- or for cross-compiling under linux:
+
+### Cross-compiling for Windows under Linux
+
 ```
  $ sudo apt-get install mingw-w64
  $ ./configure --host=i686-w64-mingw32 --prefix=/devsw/mingw --enable-sdl
 ```
+
 Note: requires building SDL2 and freetype-2 into the prefix folder
 
-## Building on MacOSX
+### MacOSX
+
+#### Install packages
 
 Open the terminal window, then type the following commands at the prompt:
 
@@ -53,35 +90,70 @@ $ brew install automake
 $ brew install autoconf
 ```
 
-Next download the SmallBASIC source code from git and then build:
+#### Initial setup
 
 ```
 $ git clone https://github.com/smallbasic/SmallBASIC.git
 $ cd SmallBASIC
+$ git submodule update --init
 $ sh autogen.sh
+```
+
+#### Build
+
+```
 $ ./configure --enable-sdl
 $ make
+```
+
+#### Run
+
+```
 $ cd /src/platform/sdl
-```
-
-Then type the following to run the executable:
-
-```
 $ ./sbasicg
 ```
 
 ## Building the non-graphical console version (cygwin or linux)
+
 ```
  $ ./configure && make
 ```
+
  Windows 32 bit mingw console:
+
 ```
  $./configure --host=i686-w64-mingw32 && make
 ```
+
  Windows 64 bit mingw console:
+
 ```
  $./configure --host=x86_64-w64-mingw32 && make
 ```
+
+## Building web-server sbasicw
+
+### Linux
+
+#### Install microhttp library
+
+Ubuntu
+```
+ $ sudo apt install libmicrohttpd-dev
+```
+
+Manjaro
+```
+ $ sudo pacman -S libmicrohttpd
+```
+
+#### Build
+
+```
+ $ ./configure --enable-web
+ $ make
+```
+
 ## Building the Android port
 
 1. Setup .bashrc
@@ -124,18 +196,17 @@ Useful adb commands for debugging:
 adb shell dumpsys cpuinfo
 adb shell top -m 10
 
-### Building the FLTK version
+## Building the FLTK version
 
-1. Install and build FLTK 1.4
+#### Install and build FLTK 1.4
 
 ```
 $ cd ~/github
 $ git clone https://github.com/fltk/fltk.git
 $ sudo make install
-
 ```
 
-2. Build
+#### Build
 
 ```
 $ cd ~/github/SmallBASIC
@@ -143,7 +214,7 @@ $ ./configure --enable-fltk
 $ make -s
 ```
 
-### .indent.pro settings
+## .indent.pro settings
 ```
  -brf -nbap -br -brs -cdb -cdw -ce -cli0 -fca -i2 -l110 -lc110 -lp
  -nbbo -nbc -ncs -nip -npcs -npsl -nut -ppi0 -sc
