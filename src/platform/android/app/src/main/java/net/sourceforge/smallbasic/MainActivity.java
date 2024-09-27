@@ -18,7 +18,6 @@ import android.graphics.Rect;
 import android.location.Criteria;
 import android.location.Location;
 import android.location.LocationManager;
-import android.media.AudioManager;
 import android.media.MediaPlayer;
 import android.net.Uri;
 import android.os.Build;
@@ -105,6 +104,7 @@ public class MainActivity extends NativeActivity {
   private final Queue<Sound> _sounds = new ConcurrentLinkedQueue<>();
   private final Handler _keypadHandler = new Handler(Looper.getMainLooper());
   private final Map<String, Boolean> permittedHost = new ConcurrentHashMap<>();
+  private final Object _mediaPlayerLock = new Object();
   private String[] _options = null;
   private MediaPlayer _mediaPlayer = null;
   private LocationAdapter _locationAdapter = null;
@@ -210,10 +210,7 @@ public class MainActivity extends NativeActivity {
     for (Sound sound : _sounds) {
       sound.setSilent(true);
     }
-    if (_mediaPlayer != null) {
-      _mediaPlayer.release();
-      _mediaPlayer = null;
-    }
+    releaseMediaPlayer();
   }
 
   public boolean closeLibHandlers() {
@@ -454,19 +451,35 @@ public class MainActivity extends NativeActivity {
     new Thread(new Runnable() {
       public void run() {
         try {
-          Uri uri = Uri.parse("file://" + new String(pathBytes, CP1252));
-          if (_mediaPlayer == null) {
-            _mediaPlayer = new MediaPlayer();
-          } else {
-            _mediaPlayer.reset();
+          synchronized (_mediaPlayerLock) {
+            if (_mediaPlayer == null) {
+              _mediaPlayer = new MediaPlayer();
+              _mediaPlayer.setOnErrorListener(new MediaPlayer.OnErrorListener() {
+                @Override
+                public boolean onError(MediaPlayer mp, int what, int extra) {
+                  Log.e(TAG, "MediaPlayer error: " + what + ", " + extra);
+                  releaseMediaPlayer();
+                  return true;
+                }
+              });
+              _mediaPlayer.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
+                @Override
+                public void onCompletion(MediaPlayer mp) {
+                  releaseMediaPlayer();
+                }
+              });
+            } else {
+              _mediaPlayer.reset();
+            }
+            String path = _storage.findPath(new String(pathBytes, CP1252));
+            _mediaPlayer.setDataSource(getApplicationContext(), Uri.parse("file://" + path));
+            _mediaPlayer.prepare();
+            _mediaPlayer.start();
           }
-          _mediaPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
-          _mediaPlayer.setDataSource(getApplicationContext(), uri);
-          _mediaPlayer.prepare();
-          _mediaPlayer.start();
         }
-        catch (IOException e) {
+        catch (Exception e) {
           Log.i(TAG, "playAudio failed: ", e);
+          releaseMediaPlayer();
         }
       }
     }).start();
@@ -691,10 +704,7 @@ public class MainActivity extends NativeActivity {
   @Override
   protected void onStop() {
     super.onStop();
-    if (_mediaPlayer != null) {
-      _mediaPlayer.release();
-      _mediaPlayer = null;
-    }
+    releaseMediaPlayer();
     if (_tts != null) {
       _tts.close();
       _tts = null;
@@ -894,6 +904,15 @@ public class MainActivity extends NativeActivity {
     return b == -1 ? null : out.size() == 0 ? "" : out.toString();
   }
 
+  private void releaseMediaPlayer() {
+    synchronized (_mediaPlayerLock) {
+      if (_mediaPlayer != null) {
+        _mediaPlayer.release();
+        _mediaPlayer = null;
+      }
+    }
+  }
+
   private void requestHostPermission(String remoteHost) {
     final Activity activity = this;
     runOnUiThread(new Runnable() {
@@ -982,6 +1001,26 @@ public class MainActivity extends NativeActivity {
       this._external = external;
       this._internal = getFilesDir().getAbsolutePath();
       this._media = media;
+    }
+
+    public String findPath(String file) {
+      String result;
+      if (file.startsWith("/")) {
+        result = file;
+      }
+      else {
+        result = getExternal() + "/" + file;
+        if (!new File(result).canRead()) {
+          result = getInternal() + "/" + file;
+          if (!new File(result).canRead()) {
+            result = getMedia() + "/" + file;
+            if (!new File(result).canRead()) {
+              result = file;
+            }
+          }
+        }
+      }
+      return result;
     }
 
     public String getExternal() {

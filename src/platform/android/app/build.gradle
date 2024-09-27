@@ -7,10 +7,10 @@ android {
   // can override some attributes in main/AndroidManifest.xml
   defaultConfig {
     applicationId 'net.sourceforge.smallbasic'
-    minSdkVersion 19
+    minSdkVersion 21
     targetSdkVersion 34
-    versionCode 63
-    versionName '12.27'
+    versionCode 64
+    versionName '12.28'
     resourceConfigurations += ['en']
   }
 

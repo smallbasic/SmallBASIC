@@ -222,7 +222,7 @@ sub do_setup()
   rect x, y, w * 2, h + y * 2.5
   frm.inputs(0).label = "Extension modules:"
   frm.inputs(1).value = "Ignore|Load"
-  frm.inputs(1).selectedIndex = iff(loadModules == 1, 1, 0)
+  frm.inputs(1).selectedIndex = iff(loadModules >= 1, 1, 0)
   frm = form(frm)
   while 1
     frm.doEvents()

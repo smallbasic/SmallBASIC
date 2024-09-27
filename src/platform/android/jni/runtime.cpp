@@ -573,7 +573,7 @@ void Runtime::loadConfig() {
     }
     s = settings.get(LOAD_MODULES_KEY);
     if (s && s->toInteger() == 1) {
-      if (getBoolean("loadModules")) {
+      if (getBoolean(LOAD_MODULES_KEY)) {
         systemLog("Extension modules loaded\n");
         settings.put(LOAD_MODULES_KEY, "2");
       } else {
