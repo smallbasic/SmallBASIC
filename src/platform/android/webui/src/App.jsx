@@ -45,7 +45,6 @@ const columns = [{
   field: 'fileName',
   headerName: 'Name',
   editable: true,
-  valueGetter: (params) => params.row.fileName,
   flex: 1,
 }, {
   field: 'size',
@@ -56,7 +55,7 @@ const columns = [{
   headerName: 'Modified',
   type: 'date',
   minWidth: 110,
-  valueGetter: (params) => new Date(params.row.date),
+  valueGetter: (value) => new Date(value),
   renderCell: (params) => params.value.toLocaleDateString()
 }];
 
@@ -86,22 +85,22 @@ function getFiles(success, fail) {
 }
 
 function login(token, success, fail) {
-  let body = "token=" + token;
+  const body = "token=" + token;
   callApi('/api/login', body, success, fail);
 }
 
 function upload(name, data, success, fail) {
-  let body = "fileName=" + encodeURIComponent(name) + "&data=" + data;
+  const body = "fileName=" + encodeURIComponent(name) + "&data=" + data;
   callApi('/api/upload', body, success, fail);
 }
 
 function renameFile(from, to, success, fail) {
-  let body = "from=" + encodeURIComponent(from) + "&to=" + encodeURIComponent(to);
+  const body = "from=" + encodeURIComponent(from) + "&to=" + encodeURIComponent(to);
   callApi('/api/rename', body, success, fail);
 }
 
 function deleteFile(fileName, success, fail) {
-  let body = "fileName=" + encodeURIComponent(fileName);
+  const body = "fileName=" + encodeURIComponent(fileName);
   callApi('/api/delete', body, success, fail);
 }
 
@@ -187,10 +186,10 @@ function GridToolbarDelete(props) {
 }
 
 function GridToolbarDownload(props) {
-  let color = useTheme().palette.primary.main;
+  const color = useTheme().palette.primary.main;
+  const download = props.selections.length === 1 ? props.rows[props.selections[0]].fileName : "smallbasic-files.zip";
   let args = "";
   let join = "";
-  let download = props.selections.length === 1 ? props.rows[props.selections[0]].fileName : "smallbasic-files.zip";
 
   props.selections.forEach(i => {
     args += join + "f=" + encodeURIComponent(props.rows[i].fileName);
@@ -308,7 +307,8 @@ function FileList(props) {
       sortModel: [{ field: 'fileName', sort: 'asc' }],
     },
   };
-
+  console.log("props=%o", props);
+  
   return (
     <Fragment>
       <ErrorMessage error={error} setError={setError} severity="error"/>
@@ -317,8 +317,8 @@ function FileList(props) {
                 columns={columns}
                 onCellEditCommit={(params) => onCellEditCommit(props, params, setError)}
                 autoPageSize
-                components={{Toolbar: AppToolbar}}
-                componentsProps={{toolbar: toolbarProps}}
+                slots={{toolbar: AppToolbar}}
+                slotProps={{toolbar: toolbarProps}}
                 onRowSelectionModelChange={(model) => setSelectionModel(model)}
                 rowSelectionModel={selectionModel}
                 pageSizeOptions={[5]}
@@ -355,7 +355,7 @@ function TokenInput(props) {
   };
 
   const help = "Enter the access token displayed on the SmallBASIC [About] screen.";
-  let helperText = error ? "Invalid token. " + help : help;
+  const helperText = error ? "Invalid token. " + help : help;
 
   return (
     <Box sx={{display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%'}}>
