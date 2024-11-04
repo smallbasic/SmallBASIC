@@ -501,8 +501,7 @@ public class MainActivity extends NativeActivity {
     if (_locationAdapter != null) {
       LocationManager locationService = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
       if (locationService != null) {
-        // requires coarse location permission
-        //locationService.removeUpdates(_locationAdapter);
+        locationService.removeUpdates(_locationAdapter);
         _locationAdapter = null;
         result = true;
       }
@@ -531,8 +530,7 @@ public class MainActivity extends NativeActivity {
         runOnUiThread(new Runnable() {
           @SuppressLint("MissingPermission")
           public void run() {
-            locationService.requestLocationUpdates(provider, LOCATION_INTERVAL,
-              LOCATION_DISTANCE, _locationAdapter);
+            locationService.requestLocationUpdates(provider, LOCATION_INTERVAL, LOCATION_DISTANCE, _locationAdapter);
           }
         });
       }
