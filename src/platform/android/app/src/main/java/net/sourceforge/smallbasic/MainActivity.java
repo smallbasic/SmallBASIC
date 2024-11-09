@@ -67,6 +67,7 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.Enumeration;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
@@ -521,16 +522,16 @@ public class MainActivity extends NativeActivity {
     if (!locationPermitted()) {
       checkPermission(Manifest.permission.ACCESS_FINE_LOCATION, REQUEST_LOCATION_PERMISSION);
     } else if (locationService != null) {
-      final Criteria criteria = new Criteria();
-      final String provider = locationService.getBestProvider(criteria, true);
-      if (_locationAdapter == null && provider != null &&
-        locationService.isProviderEnabled(provider)) {
+      final List<String> providers = locationService.getProviders(true);
+      if (_locationAdapter == null) {
         _locationAdapter = new LocationAdapter();
         result = true;
         runOnUiThread(new Runnable() {
           @SuppressLint("MissingPermission")
           public void run() {
-            locationService.requestLocationUpdates(provider, LOCATION_INTERVAL, LOCATION_DISTANCE, _locationAdapter);
+            for (String provider : providers) {
+              locationService.requestLocationUpdates(provider, LOCATION_INTERVAL, LOCATION_DISTANCE, _locationAdapter);
+            }
           }
         });
       }

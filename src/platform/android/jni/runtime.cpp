@@ -482,6 +482,15 @@ void Runtime::setSensorData(var_t *retval) {
     case ASENSOR_TYPE_PROXIMITY:
       v_setreal(map_add_var(retval, "distance", 0), _sensorEvent.distance);
       break;
+    case ASENSOR_TYPE_PRESSURE:
+      v_setreal(map_add_var(retval, "pressure", 0), _sensorEvent.pressure);
+      break;
+    case ASENSOR_TYPE_RELATIVE_HUMIDITY:
+      v_setreal(map_add_var(retval, "relative_humidity", 0), _sensorEvent.relative_humidity);
+      break;
+    case ASENSOR_TYPE_AMBIENT_TEMPERATURE:
+      v_setreal(map_add_var(retval, "temperature", 0), _sensorEvent.temperature);
+      break;
     default:
       break;
     }
@@ -807,7 +816,7 @@ void Runtime::pause(int timeout) {
       delete event;
     }
   } else {
-    int slept = 0;
+    uint32_t startTime = dev_get_millisecond_count();
     while (true) {
       pollEvents(false);
       if (isBreak()) {
@@ -817,9 +826,8 @@ void Runtime::pause(int timeout) {
         processEvent(*event);
         delete event;
       }
-      usleep(WAIT_INTERVAL * 1000);
-      slept += WAIT_INTERVAL;
-      if (timeout > 0 && slept > timeout) {
+      usleep(1000);
+      if (timeout > 0 && (dev_get_millisecond_count() - startTime) > timeout) {
         break;
       }
     }
@@ -1298,7 +1306,7 @@ void osd_audio(const char *path) {
 }
 
 void osd_sound(int frq, int dur, int vol, int bgplay) {
-  if (dur > 0 && frq > 0) {
+  if (dur > 0) {
     runtime->playTone(frq, dur, vol, bgplay);
   }
 }
@@ -1343,6 +1351,15 @@ int sensor_on(int param_count, slib_par_t *params, var_t *retval) {
       break;
     case 4:
       result = runtime->enableSensor(ASENSOR_TYPE_PROXIMITY);
+      break;
+    case 5:
+      result = runtime->enableSensor(ASENSOR_TYPE_PRESSURE);
+      break;
+    case 6:
+      result = runtime->enableSensor(ASENSOR_TYPE_RELATIVE_HUMIDITY);
+      break;
+    case 7:
+      result = runtime->enableSensor(ASENSOR_TYPE_AMBIENT_TEMPERATURE);
       break;
     default:
       break;
