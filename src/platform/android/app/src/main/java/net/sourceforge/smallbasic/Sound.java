@@ -1,13 +1,13 @@
 package net.sourceforge.smallbasic;
 
+import android.media.AudioAttributes;
 import android.media.AudioFormat;
-import android.media.AudioManager;
 import android.media.AudioTrack;
 import android.util.Log;
 
 /**
  * Support for BEEP and PLAY commands
- * 
+ *
  * @author chrisws
  */
 class Sound {
@@ -18,28 +18,20 @@ class Sound {
   private final float _volume;
   private final int _dur;
   private boolean _silent;
-  
+
   Sound(int frq, int dur, float vol) {
-    this._sound = generateTone(frq, dur);
+    this._sound = frq == 0 ? null : generateTone(frq, dur);
     this._volume = vol;
     this._dur = dur;
     this._silent = false;
   }
-  
+
   void play() {
     if (!_silent) {
-      try {
-        AudioTrack audioTrack = new AudioTrack(AudioManager.STREAM_MUSIC,
-            AUDIO_SAMPLE_RATE, AudioFormat.CHANNEL_OUT_MONO,
-            AudioFormat.ENCODING_PCM_16BIT, _sound.length, AudioTrack.MODE_STATIC);
-        if (audioTrack.write(_sound, 0, _sound.length) == _sound.length) {
-          audioTrack.setStereoVolume(_volume, _volume);
-          playTrack(audioTrack);
-        } else {
-          Log.i(TAG, "Failed to write audio: " + _sound.length);
-        }
-      } catch (Exception e) {
-        Log.i(TAG, "play failed: ", e);
+      if (_sound == null) {
+        playSilence();
+      } else {
+        playTrack();
       }
     }
   }
@@ -66,7 +58,7 @@ class Sound {
     int i = 0;
 
     // Amplitude ramp as a percent of sample count
-    int ramp = numSamples / 20;
+    int ramp = numSamples / 2;
 
     while (i < ramp) {
       // Ramp amplitude up (to avoid clicks)
@@ -103,14 +95,55 @@ class Sound {
     return result;
   }
 
+  private AudioTrack getAudioTrack() {
+    AudioAttributes audioAttributes = new AudioAttributes.Builder()
+        .setUsage(AudioAttributes.USAGE_MEDIA)
+        .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
+        .build();
+    return new AudioTrack.Builder()
+        .setAudioAttributes(audioAttributes)
+        .setTransferMode(AudioTrack.MODE_STATIC)
+        .setAudioFormat(new AudioFormat.Builder()
+                            .setSampleRate(AUDIO_SAMPLE_RATE)
+                            .setChannelMask(AudioFormat.CHANNEL_OUT_MONO)
+                            .setEncoding(AudioFormat.ENCODING_PCM_16BIT)
+                            .build())
+        .setBufferSizeInBytes(_sound.length)
+        .build();
+  }
+
+  private void playSilence() {
+    try {
+      Thread.sleep(_dur);
+    }
+    catch (InterruptedException e) {
+      Log.i(TAG, "failed to sleep: ", e);
+    }
+  }
+
+  private void playTrack() {
+    try {
+      AudioTrack audioTrack = getAudioTrack();
+      if (audioTrack.write(_sound, 0, _sound.length) == _sound.length) {
+        audioTrack.setVolume(_volume);
+        playTrack(audioTrack);
+      } else {
+        Log.i(TAG, "Failed to write audio: " + _sound.length);
+      }
+    } catch (Exception e) {
+      Log.i(TAG, "play failed: ", e);
+    }
+  }
+
   private void playTrack(AudioTrack audioTrack) throws InterruptedException {
     int frame;
     int frames = _sound.length / 2;
     audioTrack.play();
     do {
-      Thread.sleep(_dur / 2);
+      Thread.sleep(_dur);
       frame = audioTrack.getPlaybackHeadPosition();
     } while (frame < frames);
+    Thread.sleep(1);
     audioTrack.release();
   }
 }
