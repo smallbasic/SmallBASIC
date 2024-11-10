@@ -13,7 +13,9 @@ import android.util.Log;
 class Sound {
   private static final String TAG = "smallbasic";
   private static final int AUDIO_SAMPLE_RATE = 8000;
-  private static final int WAVE_MAX = 32000;
+  private static final int MAX_AMPLITUDE = Short.MAX_VALUE;
+  private static final int ONE_SECOND_MILLIS = 1000;
+  private static final double PI2 = 2 * Math.PI;
   private final byte[] _sound;
   private final float _volume;
   private final int _dur;
@@ -44,52 +46,40 @@ class Sound {
    * http://stackoverflow.com/questions/2413426/playing-an-arbitrary-tone-with-android
    */
   private byte[] generateTone(int freqOfTone, int durationMillis) {
-    int numSamples = Math.max(1, durationMillis * AUDIO_SAMPLE_RATE / 1000);
+    int numSamples = Math.max(1, durationMillis * AUDIO_SAMPLE_RATE / ONE_SECOND_MILLIS);
     double[] sample = new double[numSamples];
     byte[] result = new byte[2 * numSamples];
 
     for (int i = 0; i < numSamples; ++i) {
       // Fill the sample array
-      sample[i] = Math.sin(freqOfTone * 2 * Math.PI * i / AUDIO_SAMPLE_RATE);
+      sample[i] = Math.sin(freqOfTone * PI2 * i / AUDIO_SAMPLE_RATE);
     }
 
     // convert to 16 bit pcm sound array assumes the sample buffer is normalised.
-    int idx = 0;
+    int index = 0;
     int i = 0;
 
     // Amplitude ramp as a percent of sample count
-    int ramp = numSamples / 2;
+    int ramp = numSamples / (_dur < ONE_SECOND_MILLIS ? 2 : 20);
 
     while (i < ramp) {
       // Ramp amplitude up (to avoid clicks)
-      double dVal = sample[i];
-      // Ramp up to maximum
-      final short val = (short) ((dVal * WAVE_MAX * i / ramp));
-      // in 16 bit wav PCM, first byte is the low order byte
-      result[idx++] = (byte) (val & 0x00ff);
-      result[idx++] = (byte) ((val & 0xff00) >>> 8);
+      final short val = (short) ((sample[i] * MAX_AMPLITUDE * i / ramp));
+      index = setValue(result, index, val);
       i++;
     }
 
     while (i < numSamples - ramp) {
-      // Max amplitude for most of the samples
-      double dVal = sample[i];
-      // scale to maximum amplitude
-      final short val = (short) ((dVal * WAVE_MAX));
-      // in 16 bit wav PCM, first byte is the low order byte
-      result[idx++] = (byte) (val & 0x00ff);
-      result[idx++] = (byte) ((val & 0xff00) >>> 8);
+      // Max amplitude for most of the samples - scale to maximum amplitude
+      final short val = (short) ((sample[i] * MAX_AMPLITUDE));
+      index = setValue(result, index, val);
       i++;
     }
 
     while (i < numSamples) {
-      // Ramp amplitude down
-      double dVal = sample[i];
-      // Ramp down to zero
-      final short val = (short) ((dVal * WAVE_MAX * (numSamples - i) / ramp));
-      // in 16 bit wav PCM, first byte is the low order byte
-      result[idx++] = (byte) (val & 0x00ff);
-      result[idx++] = (byte) ((val & 0xff00) >>> 8);
+      // Ramp amplitude down to zero
+      final short val = (short) ((sample[i] * MAX_AMPLITUDE * (numSamples - i) / ramp));
+      index = setValue(result, index, val);
       i++;
     }
     return result;
@@ -143,7 +133,15 @@ class Sound {
       Thread.sleep(_dur);
       frame = audioTrack.getPlaybackHeadPosition();
     } while (frame < frames);
-    Thread.sleep(1);
     audioTrack.release();
+  }
+
+  /**
+   * in 16 bit wav PCM, first byte is the low order byte
+   */
+  private static int setValue(byte[] result, int index, short value) {
+    result[index++] = (byte) (value & 0x00ff);
+    result[index++] = (byte) ((value & 0xff00) >>> 8);
+    return index;
   }
 }
