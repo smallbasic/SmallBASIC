@@ -287,6 +287,7 @@ int Runtime::ask(const char *title, const char *prompt, bool cancel) {
 }
 
 void Runtime::clearSoundQueue() {
+  _audio.clearSoundQueue();
   JNIEnv *env;
   _app->activity->vm->AttachCurrentThread(&env, nullptr);
   jclass clazz = env->GetObjectClass(_app->activity->clazz);
@@ -794,16 +795,6 @@ void Runtime::optionsBox(StringList *items) {
   env->DeleteLocalRef(clazz);
   env->DeleteLocalRef(array);
   env->DeleteLocalRef(stringClass);
-  _app->activity->vm->DetachCurrentThread();
-}
-
-void Runtime::playTone(int frq, int dur, int vol, bool bgplay) {
-  JNIEnv *env;
-  _app->activity->vm->AttachCurrentThread(&env, nullptr);
-  jclass clazz = env->GetObjectClass(_app->activity->clazz);
-  jmethodID methodId = env->GetMethodID(clazz, "playTone", "(IIIZ)V");
-  env->CallVoidMethod(_app->activity->clazz, methodId, frq, dur, vol, bgplay);
-  env->DeleteLocalRef(clazz);
   _app->activity->vm->DetachCurrentThread();
 }
 

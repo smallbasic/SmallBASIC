@@ -14,14 +14,15 @@
 #include "ui/inputs.h"
 #include "ui/system.h"
 #include "platform/android/jni/display.h"
+#include "platform/android/jni/audio.h"
 
 #include <android_native_app_glue.h>
 #include <android/keycodes.h>
 #include <android/sensor.h>
 
 struct Runtime : public System {
-  Runtime(android_app *app);
-  virtual ~Runtime();
+  explicit Runtime(android_app *app);
+  ~Runtime() override;
 
   void addShortcut(const char *path) { setString("addShortcut", path); }
   void alert(const char *title, const char *message);
@@ -49,7 +50,7 @@ struct Runtime : public System {
   void processEvent(MAEvent &event);
   bool hasEvent() { return _eventQueue && _eventQueue->size() > 0; }
   void playAudio(const char *path) { setString("playAudio", path); }
-  void playTone(int frq, int dur, int vol, bool bgplay);
+  void playTone(int frq, int dur, int vol, bool bgplay) { _audio.play(frq, dur, vol, bgplay); }
   void pollEvents(bool blocking);
   MAEvent *popEvent();
   void pushEvent(MAEvent *event);
@@ -95,6 +96,7 @@ private:
   const ASensor *_sensor;
   ASensorEventQueue *_sensorEventQueue;
   ASensorEvent _sensorEvent{};
+  Audio _audio;
 };
 
 #endif

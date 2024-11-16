@@ -22,6 +22,7 @@ LOCAL_C_INCLUDES := $(SB_HOME) $(SB_HOME)/src  \
 LOCAL_SRC_FILES  := main.cpp                   \
                     display.cpp                \
                     runtime.cpp                \
+                    audio.cpp                  \
                     ../../../ui/screen.cpp     \
                     ../../../ui/ansiwidget.cpp \
                     ../../../ui/window.cpp     \
@@ -32,7 +33,7 @@ LOCAL_SRC_FILES  := main.cpp                   \
                     ../../../ui/strlib.cpp     \
                     ../../../ui/graphics.cpp   \
                     ../../../ui/system.cpp
-LOCAL_LDLIBS     := -llog -landroid -ljnigraphics
+LOCAL_LDLIBS     := -llog -landroid -ljnigraphics -laaudio
 LOCAL_STATIC_LIBRARIES := sb_common freetype android_native_app_glue
 include $(BUILD_SHARED_LIBRARY)
 

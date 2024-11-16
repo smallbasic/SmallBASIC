@@ -15,9 +15,9 @@ import android.content.pm.PackageManager;
 import android.content.res.Configuration;
 import android.content.res.Resources;
 import android.graphics.Rect;
-import android.location.Criteria;
 import android.location.Location;
 import android.location.LocationManager;
+import android.media.AudioTrack;
 import android.media.MediaPlayer;
 import android.net.Uri;
 import android.os.Build;
@@ -102,7 +102,6 @@ public class MainActivity extends NativeActivity {
   private String _startupBas = null;
   private boolean _untrusted = false;
   private final ExecutorService _audioExecutor = Executors.newSingleThreadExecutor();
-  private final Queue<Sound> _sounds = new ConcurrentLinkedQueue<>();
   private final Handler _keypadHandler = new Handler(Looper.getMainLooper());
   private final Map<String, Boolean> permittedHost = new ConcurrentHashMap<>();
   private final Object _mediaPlayerLock = new Object();
@@ -207,10 +206,6 @@ public class MainActivity extends NativeActivity {
   }
 
   public void clearSoundQueue() {
-    Log.i(TAG, "clearSoundQueue");
-    for (Sound sound : _sounds) {
-      sound.setSilent(true);
-    }
     releaseMediaPlayer();
   }
 
@@ -478,23 +473,6 @@ public class MainActivity extends NativeActivity {
         }
       }
     }).start();
-  }
-
-  public void playTone(int frq, int dur, int vol, boolean backgroundPlay) {
-    float volume = (vol / 100f);
-    final Sound sound = new Sound(frq, dur, volume);
-    if (backgroundPlay) {
-      _sounds.add(sound);
-      _audioExecutor.execute(new Runnable() {
-        @Override
-        public void run() {
-          sound.play();
-          _sounds.remove(sound);
-        }
-      });
-    } else {
-      sound.play();
-    }
   }
 
   public boolean removeLocationUpdates() {

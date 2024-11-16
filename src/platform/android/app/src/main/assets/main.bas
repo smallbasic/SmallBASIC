@@ -120,7 +120,7 @@ sub do_about()
   color colText
   print "Version "; sbver
   print
-  print "Copyright (c) 2002-2023 Chris Warren-Smith"
+  print "Copyright (c) 2002-2024 Chris Warren-Smith"
   print "Copyright (c) 1999-2006 Nicholas Christopoulos" + chr(10)
 
   local bn_home
