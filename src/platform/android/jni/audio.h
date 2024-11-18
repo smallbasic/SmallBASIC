@@ -8,7 +8,7 @@
 
 #pragma once
 
-#include <aaudio/AAudio.h>
+#include <pthread.h>
 #include "ui/strlib.h"
 
 struct Sound;
@@ -17,12 +17,14 @@ struct Audio {
   Audio();
   virtual ~Audio();
 
-  void play(int frequency, int duration, int volume, bool background);
-  void clearSoundQueue();
   Sound *front();
+  void play(int frequency, int millis, int volume, bool background);
+  void clearSoundQueue();
 
   private:
-  AAudioStream *_stream;
+  void construct();
+  void destroy();
+
   pthread_mutex_t _mutex{};
   strlib::Queue<Sound *> _queue;
 };

@@ -6,10 +6,10 @@
 // Download the GNU Public License (GPL) from www.gnu.org
 //
 
-#include <aaudio/AAudio.h>
-#include <pthread.h>
+#include <oboe/Oboe.h>
 #include <cstdint>
 #include <cmath>
+#include <unistd.h>
 
 #include "config.h"
 #include "ui/strlib.h"
@@ -17,153 +17,84 @@
 #include "lib/maapi.h"
 #include "audio.h"
 
-const int32_t AUDIO_SAMPLE_RATE = 8000;
-const float PI2 = 2.0f * 3.14159265359f;
-
-int instances = 0;
+const int32_t AUDIO_SAMPLE_RATE = 48000;
+const float PI2 = 2.0f * M_PI;
 
 struct Sound {
-  Sound(float frequency, int millis, int volume);
-  virtual ~Sound() {
-    instances--;
-  };
+  Sound(int frequency, int millis, int volume);
+  ~Sound() = default;
 
   int16_t sample();
   bool ready();
 
-  private:
-  uint32_t _volume;
-  uint32_t _duration;
-  uint32_t _start;
+private:
+  int32_t _duration;
+  int32_t _start;
+  int32_t _samples;
+  int32_t _sampled;
+  float _amplitude;
   float _increment;
   float _phase;
 };
 
-Sound::Sound(float frequency, int millis, int volume) :
-  _volume(volume),
+Sound::Sound(int frequency, int millis, int volume) :
   _duration(millis),
   _start(0),
-  _increment((frequency * PI2) / AUDIO_SAMPLE_RATE),
-  _phase(0) {
-  instances++;
+  _samples(millis * AUDIO_SAMPLE_RATE / 1000),
+  _sampled(0),
+  _amplitude((float)volume / 100 * INT16_MAX),
+  _increment((float)frequency / AUDIO_SAMPLE_RATE * PI2),
+  _phase(_increment) {
 }
 
 bool Sound::ready() {
-  bool result = true;
+  bool result;
   if (_start == 0) {
     _start = maGetMilliSecondCount();
-  } else if (maGetMilliSecondCount() - _start > _duration) {
+    result = true;
+  } else if (_sampled > _samples || maGetMilliSecondCount() - _start > _duration) {
     result = false;
+  } else {
+    result = true;
   }
   return result;
 }
 
 int16_t Sound::sample() {
-  float result = sinf(_phase);
+  auto result = static_cast<int16_t>(sinf(_phase) * _amplitude);
+  _sampled++;
   _phase += _increment;
   if (_phase >= PI2) {
     // wrap phase
     _phase -= PI2;
   }
-  return static_cast<int16_t>(result * INT16_MAX * _volume / 100);
-}
-
-//
-// Callback function to generate sine wave tone
-//
-aaudio_data_callback_result_t callback(AAudioStream* stream, void *userData, void *audioData, int32_t numFrames) {
-  aaudio_data_callback_result_t result;
-  Sound *sound = ((Audio *)userData)->front();
-  if (sound == nullptr) {
-    result = AAUDIO_CALLBACK_RESULT_STOP;
-  } else {
-    auto *buffer = (int16_t *)audioData;
-    for (int i = 0; i < numFrames; ++i) {
-      buffer[i] = sound->sample();
-    }
-    result = AAUDIO_CALLBACK_RESULT_CONTINUE;
-  }
   return result;
 }
 
-AAudioStream* createAudioStream(Audio *audio) {
-  AAudioStreamBuilder *builder = nullptr;
-  AAudio_createStreamBuilder(&builder);
 
-  AAudioStreamBuilder_setDirection(builder, AAUDIO_DIRECTION_OUTPUT);
-  AAudioStreamBuilder_setSharingMode(builder, AAUDIO_SHARING_MODE_SHARED);
-  AAudioStreamBuilder_setSampleRate(builder, AUDIO_SAMPLE_RATE);
-  AAudioStreamBuilder_setFormat(builder, AAUDIO_FORMAT_PCM_I16);
-  AAudioStreamBuilder_setDataCallback(builder, callback, audio);
+Audio::Audio() {
+  oboe::AudioStreamBuilder builder;
+  oboe::AudioStream *stream = nullptr;
+  builder.setDirection(oboe::Direction::Output)
+    ->setFormat(oboe::AudioFormat::I16)
+    ->setChannelCount(oboe::ChannelCount::Mono)
+    ->setSampleRate(44100)
+    ->openStream(&stream);
 
-    //AAudioStreamBuilder_setUsage(builder, AAUDIO_USAGE_MEDIA);
-    //AAudioStreamBuilder_setContentType(builder, AAUDIO_CONTENT_TYPE_MUSIC);
-    //AAudioStreamBuilder_setChannelMask(builder, AAUDIO_CHANNEL_MONO);
-
-
-  AAudioStream *result = nullptr;
-  AAudioStreamBuilder_openStream(builder, &result);
-  AAudioStreamBuilder_delete(builder);
-  return result;
-}
-
-Audio::Audio() :
-  _stream(createAudioStream(this)) {
-  pthread_mutex_init(&_mutex, nullptr);
 }
 
 Audio::~Audio() {
   clearSoundQueue();
-  AAudioStream_close(_stream);
-  pthread_mutex_destroy(&_mutex);
-  _stream = nullptr;
-  trace("Leaked %d sound instances", instances);
 }
 
 void Audio::play(int frequency, int millis, int volume, bool background) {
-  if (_stream == nullptr) {
-    trace("Invalid stream");
-  } else {
-    pthread_mutex_lock(&_mutex);
-    _queue.push(new Sound((float)frequency, millis, volume));
-    pthread_mutex_unlock(&_mutex);
-
-    AAudioStream_requestStart(_stream);
-
-    if (!background) {
-      maWait(millis);
-      AAudioStream_requestStop(_stream);
-      pthread_mutex_lock(&_mutex);
-      _queue.pop();
-      pthread_mutex_unlock(&_mutex);
-      trace("Stopped playback.");
-    }
-  }
-}
-
-//
-// returns the next active Sound from the queue
-//
-Sound *Audio::front() {
-  Sound *result = nullptr;
-  pthread_mutex_lock(&_mutex);
-
-  while (!_queue.empty()) {
-    result = _queue.front();
-    if (result->ready()) {
-      break;
-    }
-    _queue.pop();
-  }
-
-  pthread_mutex_unlock(&_mutex);
-  return result;
 }
 
 //
 // Remove any cached sounds from the queue
 //
 void Audio::clearSoundQueue() {
+  logEntered();
   pthread_mutex_lock(&_mutex);
 
   List_each(Sound *, it, _queue) {
@@ -176,4 +107,8 @@ void Audio::clearSoundQueue() {
   _queue.removeAll();
 
   pthread_mutex_unlock(&_mutex);
+}
+
+Sound *Audio::front() {
+  return nullptr;
 }

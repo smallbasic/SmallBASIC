@@ -24,18 +24,18 @@ struct Runtime : public System {
   explicit Runtime(android_app *app);
   ~Runtime() override;
 
-  void addShortcut(const char *path) { setString("addShortcut", path); }
-  void alert(const char *title, const char *message);
+  void addShortcut(const char *path) override { setString("addShortcut", path); }
+  void alert(const char *title, const char *message) override;
   void alert(const char *title) { setString("showToast", title); }
-  int ask(const char *title, const char *prompt, bool cancel);
-  void browseFile(const char *url) { setString("browseFile", url); }
+  int ask(const char *title, const char *prompt, bool cancel) override;
+  void browseFile(const char *url) override { setString("browseFile", url); }
   void clearSoundQueue();
   void construct();
   void debugStart(TextEditInput *edit, const char *file) {}
   void debugStep(TextEditInput *edit, TextEditHelpWidget *help, bool cont) {}
   void debugStop() {}
   void disableSensor();
-  void enableCursor(bool enabled) {}
+  void enableCursor(bool enabled) override {}
   bool enableSensor(int sensorType);
   jlong getActivity() { return (jlong)_app->activity->clazz; }
   bool getBoolean(const char *methodName);
@@ -46,7 +46,7 @@ struct Runtime : public System {
   void redraw() { _graphics->redraw(); }
   void handleKeyEvent(MAEvent &event);
   void pause(int timeout);
-  MAEvent processEvents(int waitFlag);
+  MAEvent processEvents(int waitFlag) override;
   void processEvent(MAEvent &event);
   bool hasEvent() { return _eventQueue && _eventQueue->size() > 0; }
   void playAudio(const char *path) { setString("playAudio", path); }
@@ -61,25 +61,25 @@ struct Runtime : public System {
   void setString(const char *methodName, const char *value);
   void speak(const char *text) { setString("speak", text); }
   void runShell();
-  char *loadResource(const char *fileName);
-  void optionsBox(StringList *items);
-  void saveWindowRect() {}
-  void setWindowRect(int x, int y, int width, int height) {};
-  void setWindowTitle(const char *title) {}
-  void share(const char *path) { setString("share", path); }
-  void showCursor(CursorType cursorType) {}
+  char *loadResource(const char *fileName) override;
+  void optionsBox(StringList *items) override;
+  void saveWindowRect() override {}
+  void setWindowRect(int x, int y, int width, int height) override {};
+  void setWindowTitle(const char *title) override {}
+  void share(const char *path) override { setString("share", path); }
+  void showCursor(CursorType cursorType) override {}
   void showKeypad(bool show);
   void onPaused(bool paused) { if (_graphics != NULL) _graphics->onPaused(paused); }
   void onResize(int w, int h);
-  void onRunCompleted();
+  void onRunCompleted() override;
   void onUnicodeChar(int ch);
   void loadConfig();
   static void loadEnvConfig(Properties<String *> &settings, const char *key);
   bool loadSettings(Properties<String *> &settings);
   void saveConfig();
   void runPath(const char *path);
-  void setClipboardText(const char *s) { if (s) setString("setClipboardText", s); }
-  char *getClipboardText();
+  void setClipboardText(const char *s) override { if (s) setString("setClipboardText", s); }
+  char *getClipboardText() override;
   void setFocus(bool focus) { _hasFocus = focus; }
   int  getFontId();
   int  invokeRequest(int param_count, slib_par_t *params, var_t *retval);

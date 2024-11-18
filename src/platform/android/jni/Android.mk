@@ -7,7 +7,16 @@
 
 JNI_PATH := $(call my-dir)
 SB_HOME := $(JNI_PATH)/../../../..
-FREETYPE_HOME := $(HOME)/android-sdk/freetype-2.10.4
+SDK := $(HOME)/android-sdk
+FREETYPE_HOME := $(SDK)/freetype-2.13.3
+
+#
+# modify build_all_android.sh > DBUILD_SHARED_LIBS=false
+# export ANDROID_NDK=~/android-sdk/sdk/ndk/27.0.12077973
+# ./build_all_android.sh
+#
+OBOE_LIB_DIR := $(SDK)/oboe/build/$(TARGET_ARCH_ABI)/staging/lib/$(TARGET_ARCH_ABI)
+OBOE_INCLUDE_PATH := $(SDK)/oboe/include
 
 include $(call all-subdir-makefiles)
 LOCAL_PATH := $(JNI_PATH)
@@ -16,7 +25,7 @@ include $(CLEAR_VARS)
 LOCAL_MODULE     := smallbasic
 LOCAL_CFLAGS     := -DHAVE_CONFIG_H=1 -DLODEPNG_NO_COMPILE_CPP \
 	                  -DPIXELFORMAT_RGBA8888 -Wno-unknown-pragmas
-LOCAL_C_INCLUDES := $(SB_HOME) $(SB_HOME)/src  \
+LOCAL_C_INCLUDES := $(SB_HOME) $(SB_HOME)/src $(OBOE_INCLUDE_PATH) \
                     $(FREETYPE_HOME)/freetype/include/freetype2   \
                     $(FREETYPE_HOME)/freetype/include/freetype2/freetype
 LOCAL_SRC_FILES  := main.cpp                   \
@@ -33,7 +42,7 @@ LOCAL_SRC_FILES  := main.cpp                   \
                     ../../../ui/strlib.cpp     \
                     ../../../ui/graphics.cpp   \
                     ../../../ui/system.cpp
-LOCAL_LDLIBS     := -llog -landroid -ljnigraphics -laaudio
+LOCAL_LDLIBS     := -llog -landroid -ljnigraphics -L$(OBOE_LIB_DIR) -loboe
 LOCAL_STATIC_LIBRARIES := sb_common freetype android_native_app_glue
 include $(BUILD_SHARED_LIBRARY)
 
