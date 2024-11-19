@@ -22,7 +22,7 @@ constexpr float PI2 = 2.0f * M_PI;
 
 struct Sound {
   Sound(int frequency, int millis, int volume);
-  ~Sound() = default;
+  ~Sound();
 
   int16_t sample();
   bool ready();
@@ -45,6 +45,10 @@ Sound::Sound(int frequency, int millis, int volume) :
   _amplitude((float)volume * INT16_MAX / 100),
   _increment((float)frequency * PI2 / AUDIO_SAMPLE_RATE),
   _phase(_increment) {
+}
+
+Sound::~Sound() {
+  logEntered();
 }
 
 bool Sound::ready() {
@@ -73,17 +77,17 @@ int16_t Sound::sample() {
 
 Audio::Audio() {
   AudioStreamBuilder builder;
-  AudioStream *stream = nullptr;
   builder.setDirection(Direction::Output)
-    ->setSharingMode(SharingMode::Exclusive)
-    ->setPerformanceMode(PerformanceMode::LowLatency)
-    ->setChannelCount(1)
-    ->setFormat(AudioFormat::I16)
     ->setChannelCount(ChannelCount::Mono)
-    ->setSampleRate(AUDIO_SAMPLE_RATE)
-    ->setSampleRateConversionQuality(SampleRateConversionQuality::Medium)
     ->setDataCallback(this)
-    ->openStream(&stream);
+    ->setFormat(AudioFormat::I16)
+    ->setPerformanceMode(PerformanceMode::LowLatency)
+    ->setSampleRate(AUDIO_SAMPLE_RATE)
+    ->setSampleRateConversionQuality(SampleRateConversionQuality::Best)
+    ->setSharingMode(SharingMode::Shared)
+    ->openStream(_stream);
+  // play silence to initialise the player
+  play(0, 2000, 100, true);
 }
 
 Audio::~Audio() {
@@ -96,29 +100,13 @@ Audio::~Audio() {
   }
 }
 
-DataCallbackResult Audio::onAudioReady(AudioStream *oboeStream, void *audioData, int32_t numFrames) {
-  DataCallbackResult result;
-  Sound *sound = front();
-  if (sound == nullptr) {
-    result = DataCallbackResult::Stop;
-  } else {
-    auto *buffer = (int16_t *)audioData;
-    for (int i = 0; i < numFrames; ++i) {
-      int16_t sample = sound->sample();
-      buffer[i] = sample;
-    }
-    result = DataCallbackResult::Continue;
-  }
-  return result;
-}
-
-void Audio::add(int frequency, int millis, int volume) {
-  std::lock_guard<std::mutex> lock(_lock);
-  _queue.push(new Sound(frequency, millis, volume));
-}
-
+//
+// Play a sound with the given specification
+//
 void Audio::play(int frequency, int millis, int volume, bool background) {
-  if (millis > 0) {
+  if (_stream == nullptr) {
+    trace("Invalid stream");
+  } else if (millis > 0) {
     add(frequency, millis, volume);
     _stream->requestStart();
 
@@ -137,13 +125,46 @@ void Audio::play(int frequency, int millis, int volume, bool background) {
 void Audio::clearSoundQueue() {
   logEntered();
   std::lock_guard<std::mutex> lock(_lock);
-  while (!_queue.empty()) {
-    Sound* sound = _queue.front();
-    _queue.pop();
-    delete sound;
+  List_each(Sound *, it, _queue) {
+    Sound *next = *it;
+    if (next != nullptr) {
+      _queue.remove(it);
+      it--;
+    }
   }
+  _queue.removeAll();
 }
 
+//
+// Callback to play the next block of audio
+//
+DataCallbackResult Audio::onAudioReady(AudioStream *oboeStream, void *audioData, int32_t numFrames) {
+  DataCallbackResult result;
+  Sound *sound = front();
+  if (sound == nullptr) {
+    result = DataCallbackResult::Stop;
+  } else {
+    auto *buffer = (int16_t *)audioData;
+    for (int i = 0; i < numFrames; ++i) {
+      int16_t sample = sound->sample();
+      buffer[i] = sample;
+    }
+    result = DataCallbackResult::Continue;
+  }
+  return result;
+}
+
+//
+// Adds a sound to the queue
+//
+void Audio::add(int frequency, int millis, int volume) {
+  std::lock_guard<std::mutex> lock(_lock);
+  _queue.push(new Sound(frequency, millis, volume));
+}
+
+//
+// Returns the next sound at the head of the queue
+//
 Sound *Audio::front() {
   Sound *result = nullptr;
   std::lock_guard<std::mutex> lock(_lock);
@@ -158,5 +179,4 @@ Sound *Audio::front() {
   }
 
   return result;
-
 }

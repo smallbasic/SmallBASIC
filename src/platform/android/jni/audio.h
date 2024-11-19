@@ -9,7 +9,7 @@
 #pragma once
 
 #include <oboe/Oboe.h>
-#include <queue>
+#include "ui/strlib.h"
 
 struct Sound;
 
@@ -22,9 +22,8 @@ struct Audio : public AudioStreamDataCallback {
   void play(int frequency, int millis, int volume, bool background);
   void clearSoundQueue();
 
-  DataCallbackResult onAudioReady(AudioStream *oboeStream, void *audioData, int32_t numFrames) override;
-
   private:
+  DataCallbackResult onAudioReady(AudioStream *oboeStream, void *audioData, int32_t numFrames) override;
   Sound *front();
   void add(int frequency, int millis, int volume);
   void construct();
@@ -32,5 +31,5 @@ struct Audio : public AudioStreamDataCallback {
 
   std::mutex _lock;
   std::shared_ptr<oboe::AudioStream> _stream;
-  std::queue<Sound *> _queue;
+  strlib::Queue<Sound *> _queue;
 };
