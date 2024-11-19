@@ -6,7 +6,6 @@
 // Download the GNU Public License (GPL) from www.gnu.org
 //
 
-#include <oboe/Oboe.h>
 #include <cstdint>
 #include <cmath>
 #include <unistd.h>
@@ -17,8 +16,9 @@
 #include "lib/maapi.h"
 #include "audio.h"
 
-const int32_t AUDIO_SAMPLE_RATE = 48000;
-const float PI2 = 2.0f * M_PI;
+//see: https://github.com/google/oboe/blob/main/docs/GettingStarted.md
+constexpr int32_t AUDIO_SAMPLE_RATE = 48000;
+constexpr float PI2 = 2.0f * M_PI;
 
 struct Sound {
   Sound(int frequency, int millis, int volume);
@@ -42,8 +42,8 @@ Sound::Sound(int frequency, int millis, int volume) :
   _start(0),
   _samples(millis * AUDIO_SAMPLE_RATE / 1000),
   _sampled(0),
-  _amplitude((float)volume / 100 * INT16_MAX),
-  _increment((float)frequency / AUDIO_SAMPLE_RATE * PI2),
+  _amplitude((float)volume * INT16_MAX / 100),
+  _increment((float)frequency * PI2 / AUDIO_SAMPLE_RATE),
   _phase(_increment) {
 }
 
@@ -71,23 +71,64 @@ int16_t Sound::sample() {
   return result;
 }
 
-
 Audio::Audio() {
-  oboe::AudioStreamBuilder builder;
-  oboe::AudioStream *stream = nullptr;
-  builder.setDirection(oboe::Direction::Output)
-    ->setFormat(oboe::AudioFormat::I16)
-    ->setChannelCount(oboe::ChannelCount::Mono)
-    ->setSampleRate(44100)
+  AudioStreamBuilder builder;
+  AudioStream *stream = nullptr;
+  builder.setDirection(Direction::Output)
+    ->setSharingMode(SharingMode::Exclusive)
+    ->setPerformanceMode(PerformanceMode::LowLatency)
+    ->setChannelCount(1)
+    ->setFormat(AudioFormat::I16)
+    ->setChannelCount(ChannelCount::Mono)
+    ->setSampleRate(AUDIO_SAMPLE_RATE)
+    ->setSampleRateConversionQuality(SampleRateConversionQuality::Medium)
+    ->setDataCallback(this)
     ->openStream(&stream);
-
 }
 
 Audio::~Audio() {
   clearSoundQueue();
+  std::lock_guard<std::mutex> lock(_lock);
+  if (_stream) {
+    _stream->stop();
+    _stream->close();
+    _stream.reset();
+  }
+}
+
+DataCallbackResult Audio::onAudioReady(AudioStream *oboeStream, void *audioData, int32_t numFrames) {
+  DataCallbackResult result;
+  Sound *sound = front();
+  if (sound == nullptr) {
+    result = DataCallbackResult::Stop;
+  } else {
+    auto *buffer = (int16_t *)audioData;
+    for (int i = 0; i < numFrames; ++i) {
+      int16_t sample = sound->sample();
+      buffer[i] = sample;
+    }
+    result = DataCallbackResult::Continue;
+  }
+  return result;
+}
+
+void Audio::add(int frequency, int millis, int volume) {
+  std::lock_guard<std::mutex> lock(_lock);
+  _queue.push(new Sound(frequency, millis, volume));
 }
 
 void Audio::play(int frequency, int millis, int volume, bool background) {
+  if (millis > 0) {
+    add(frequency, millis, volume);
+    _stream->requestStart();
+
+    if (!background) {
+      usleep(millis * 1000);
+      _stream->requestStop();
+      std::lock_guard<std::mutex> lock(_lock);
+      _queue.pop();
+    }
+  }
 }
 
 //
@@ -95,20 +136,27 @@ void Audio::play(int frequency, int millis, int volume, bool background) {
 //
 void Audio::clearSoundQueue() {
   logEntered();
-  pthread_mutex_lock(&_mutex);
-
-  List_each(Sound *, it, _queue) {
-    Sound *next = *it;
-    if (next != nullptr) {
-      _queue.remove(it);
-      it--;
-    }
+  std::lock_guard<std::mutex> lock(_lock);
+  while (!_queue.empty()) {
+    Sound* sound = _queue.front();
+    _queue.pop();
+    delete sound;
   }
-  _queue.removeAll();
-
-  pthread_mutex_unlock(&_mutex);
 }
 
 Sound *Audio::front() {
-  return nullptr;
+  Sound *result = nullptr;
+  std::lock_guard<std::mutex> lock(_lock);
+
+  while (!_queue.empty()) {
+    result = _queue.front();
+    if (result->ready()) {
+      break;
+    }
+    result = nullptr;
+    _queue.pop();
+  }
+
+  return result;
+
 }

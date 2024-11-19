@@ -8,23 +8,29 @@
 
 #pragma once
 
-#include <pthread.h>
-#include "ui/strlib.h"
+#include <oboe/Oboe.h>
+#include <queue>
 
 struct Sound;
 
-struct Audio {
-  Audio();
-  virtual ~Audio();
+using namespace oboe;
 
-  Sound *front();
+struct Audio : public AudioStreamDataCallback {
+  explicit Audio();
+  ~Audio() override;
+
   void play(int frequency, int millis, int volume, bool background);
   void clearSoundQueue();
 
+  DataCallbackResult onAudioReady(AudioStream *oboeStream, void *audioData, int32_t numFrames) override;
+
   private:
+  Sound *front();
+  void add(int frequency, int millis, int volume);
   void construct();
   void destroy();
 
-  pthread_mutex_t _mutex{};
-  strlib::Queue<Sound *> _queue;
+  std::mutex _lock;
+  std::shared_ptr<oboe::AudioStream> _stream;
+  std::queue<Sound *> _queue;
 };
