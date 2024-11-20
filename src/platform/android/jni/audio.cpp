@@ -19,12 +19,13 @@
 //see: https://github.com/google/oboe/blob/main/docs/GettingStarted.md
 constexpr int32_t AUDIO_SAMPLE_RATE = 48000;
 constexpr float PI2 = 2.0f * M_PI;
+int instances = 0;
 
 struct Sound {
   Sound(int frequency, int millis, int volume);
   ~Sound();
 
-  int16_t sample();
+  float sample();
   bool ready();
 
 private:
@@ -42,13 +43,14 @@ Sound::Sound(int frequency, int millis, int volume) :
   _start(0),
   _samples(millis * AUDIO_SAMPLE_RATE / 1000),
   _sampled(0),
-  _amplitude((float)volume * INT16_MAX / 100),
+  _amplitude((float)volume / 100.0f),
   _increment((float)frequency * PI2 / AUDIO_SAMPLE_RATE),
-  _phase(_increment) {
+  _phase(0) {
+  instances++;
 }
 
 Sound::~Sound() {
-  logEntered();
+  instances--;
 }
 
 bool Sound::ready() {
@@ -64,8 +66,8 @@ bool Sound::ready() {
   return result;
 }
 
-int16_t Sound::sample() {
-  auto result = static_cast<int16_t>(sinf(_phase) * _amplitude);
+float Sound::sample() {
+  auto result = sinf(_phase) * _amplitude;
   _sampled++;
   _phase += _increment;
   if (_phase >= PI2) {
@@ -77,44 +79,45 @@ int16_t Sound::sample() {
 
 Audio::Audio() {
   AudioStreamBuilder builder;
-  builder.setDirection(Direction::Output)
+  Result result = builder.setDirection(Direction::Output)
     ->setChannelCount(ChannelCount::Mono)
     ->setDataCallback(this)
-    ->setFormat(AudioFormat::I16)
+    ->setFormat(AudioFormat::Float)
     ->setPerformanceMode(PerformanceMode::LowLatency)
     ->setSampleRate(AUDIO_SAMPLE_RATE)
-    ->setSampleRateConversionQuality(SampleRateConversionQuality::Best)
+    ->setSampleRateConversionQuality(SampleRateConversionQuality::Medium)
     ->setSharingMode(SharingMode::Shared)
     ->openStream(_stream);
-  // play silence to initialise the player
-  play(0, 2000, 100, true);
+  if (result == oboe::Result::OK) {
+    // play silence to initialise the player
+    play(0, 2000, 100, true);
+  } else {
+    _stream = nullptr;
+  }
 }
 
 Audio::~Audio() {
   clearSoundQueue();
   std::lock_guard<std::mutex> lock(_lock);
-  if (_stream) {
+  if (_stream != nullptr) {
     _stream->stop();
     _stream->close();
     _stream.reset();
   }
+  trace("Leaked %d sound instances", instances);
 }
 
 //
 // Play a sound with the given specification
 //
 void Audio::play(int frequency, int millis, int volume, bool background) {
-  if (_stream == nullptr) {
-    trace("Invalid stream");
-  } else if (millis > 0) {
+  if (_stream != nullptr && millis > 0) {
     add(frequency, millis, volume);
-    _stream->requestStart();
-
+    if (_stream->getState() != StreamState::Started) {
+      _stream->requestStart();
+    }
     if (!background) {
       usleep(millis * 1000);
-      _stream->requestStop();
-      std::lock_guard<std::mutex> lock(_lock);
-      _queue.pop();
     }
   }
 }
@@ -125,13 +128,6 @@ void Audio::play(int frequency, int millis, int volume, bool background) {
 void Audio::clearSoundQueue() {
   logEntered();
   std::lock_guard<std::mutex> lock(_lock);
-  List_each(Sound *, it, _queue) {
-    Sound *next = *it;
-    if (next != nullptr) {
-      _queue.remove(it);
-      it--;
-    }
-  }
   _queue.removeAll();
 }
 
@@ -141,12 +137,15 @@ void Audio::clearSoundQueue() {
 DataCallbackResult Audio::onAudioReady(AudioStream *oboeStream, void *audioData, int32_t numFrames) {
   DataCallbackResult result;
   Sound *sound = front();
+  auto *buffer = (float *)audioData;
   if (sound == nullptr) {
+    for (int i = 0; i < numFrames; ++i) {
+      buffer[i] = 0;
+    }
     result = DataCallbackResult::Stop;
   } else {
-    auto *buffer = (int16_t *)audioData;
     for (int i = 0; i < numFrames; ++i) {
-      int16_t sample = sound->sample();
+      auto sample = sound->sample();
       buffer[i] = sample;
     }
     result = DataCallbackResult::Continue;
@@ -166,8 +165,8 @@ void Audio::add(int frequency, int millis, int volume) {
 // Returns the next sound at the head of the queue
 //
 Sound *Audio::front() {
-  Sound *result = nullptr;
   std::lock_guard<std::mutex> lock(_lock);
+  Sound *result = nullptr;
 
   while (!_queue.empty()) {
     result = _queue.front();
