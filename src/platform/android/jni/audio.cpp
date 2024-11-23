@@ -17,7 +17,7 @@
 #include "audio.h"
 
 //see: https://github.com/google/oboe/blob/main/docs/GettingStarted.md
-constexpr int32_t AUDIO_SAMPLE_RATE = 48000;
+constexpr int32_t AUDIO_SAMPLE_RATE = 44100;
 constexpr float PI2 = 2.0f * M_PI;
 constexpr int SILENCE_BEFORE_STOP = kMillisPerSecond * 10;
 int instances = 0;
@@ -87,7 +87,8 @@ Audio::Audio() {
     ->setPerformanceMode(PerformanceMode::LowLatency)
     ->setSampleRate(AUDIO_SAMPLE_RATE)
     ->setSampleRateConversionQuality(SampleRateConversionQuality::Medium)
-    ->setSharingMode(SharingMode::Shared)
+    ->setSharingMode(SharingMode::Exclusive)
+    ->setUsage(oboe::Usage::Game)
     ->openStream(_stream);
   if (result == oboe::Result::OK) {
     // play silence to initialise the player
