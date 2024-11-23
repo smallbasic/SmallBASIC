@@ -19,6 +19,7 @@
 //see: https://github.com/google/oboe/blob/main/docs/GettingStarted.md
 constexpr int32_t AUDIO_SAMPLE_RATE = 48000;
 constexpr float PI2 = 2.0f * M_PI;
+constexpr int SILENCE_BEFORE_STOP = kMillisPerSecond * 10;
 int instances = 0;
 
 struct Sound {
@@ -90,7 +91,7 @@ Audio::Audio() {
     ->openStream(_stream);
   if (result == oboe::Result::OK) {
     // play silence to initialise the player
-    play(0, 2000, 100, true);
+    play(0, 1, 100, true);
   } else {
     _stream = nullptr;
   }
@@ -135,20 +136,25 @@ void Audio::clearSoundQueue() {
 // Callback to play the next block of audio
 //
 DataCallbackResult Audio::onAudioReady(AudioStream *oboeStream, void *audioData, int32_t numFrames) {
-  DataCallbackResult result;
+  DataCallbackResult result = DataCallbackResult::Continue;
   Sound *sound = front();
   auto *buffer = (float *)audioData;
   if (sound == nullptr) {
     for (int i = 0; i < numFrames; ++i) {
       buffer[i] = 0;
     }
-    result = DataCallbackResult::Stop;
+    // continue filling with silence in case the script requests further sounds
+    if (_silenceStart == 0) {
+      _silenceStart = maGetMilliSecondCount();
+    } else if (maGetMilliSecondCount() - _silenceStart > SILENCE_BEFORE_STOP) {
+      _silenceStart = 0;
+      result = DataCallbackResult::Stop;
+    }
   } else {
     for (int i = 0; i < numFrames; ++i) {
       auto sample = sound->sample();
       buffer[i] = sample;
     }
-    result = DataCallbackResult::Continue;
   }
   return result;
 }
@@ -159,6 +165,7 @@ DataCallbackResult Audio::onAudioReady(AudioStream *oboeStream, void *audioData,
 void Audio::add(int frequency, int millis, int volume) {
   std::lock_guard<std::mutex> lock(_lock);
   _queue.push(new Sound(frequency, millis, volume));
+  _silenceStart = 0;
 }
 
 //
