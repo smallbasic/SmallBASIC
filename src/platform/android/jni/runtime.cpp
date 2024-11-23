@@ -714,9 +714,11 @@ void Runtime::handleKeyEvent(MAEvent &event) {
     event.key = SB_KEY_KP_MINUS;
     break;
   case AKEYCODE_PAGE_UP:
+  case AKEYCODE_VOLUME_UP:
     event.key = SB_KEY_PGUP;
     break;
   case AKEYCODE_PAGE_DOWN:
+  case AKEYCODE_VOLUME_DOWN:
     event.key = SB_KEY_PGDN;
     break;
   case AKEYCODE_DPAD_UP:
