@@ -19,15 +19,17 @@
 //see: https://github.com/google/oboe/blob/main/docs/GettingStarted.md
 constexpr int32_t AUDIO_SAMPLE_RATE = 44100;
 constexpr float PI2 = 2.0f * M_PI;
-constexpr int SILENCE_BEFORE_STOP = kMillisPerSecond * 10;
+constexpr int SILENCE_BEFORE_STOP = kMillisPerSecond * 5;
+
 int instances = 0;
 
 struct Sound {
   Sound(int frequency, int millis, int volume);
   ~Sound();
 
-  float sample();
   bool ready();
+  float sample();
+  void sync(Sound *previous);
 
 private:
   int32_t _duration;
@@ -54,6 +56,9 @@ Sound::~Sound() {
   instances--;
 }
 
+//
+// Returns whether the sound is ready or completed
+//
 bool Sound::ready() {
   bool result;
   if (_start == 0) {
@@ -67,15 +72,23 @@ bool Sound::ready() {
   return result;
 }
 
+//
+// Returns the next wave sample value
+//
 float Sound::sample() {
   auto result = sinf(_phase) * _amplitude;
   _sampled++;
-  _phase += _increment;
-  if (_phase >= PI2) {
-    // wrap phase
-    _phase -= PI2;
-  }
+  _phase = fmod(_phase + _increment, PI2);
   return result;
+}
+
+//
+// Continues the same phase for the previous sound with the same frequency
+//
+void Sound::sync(Sound *previous) {
+  if (previous != nullptr && previous->_increment == _increment) {
+    _phase = previous->_phase;
+  }
 }
 
 Audio::Audio() {
@@ -116,6 +129,7 @@ void Audio::play(int frequency, int millis, int volume, bool background) {
   if (_stream != nullptr && millis > 0) {
     add(frequency, millis, volume);
     if (_stream->getState() != StreamState::Started) {
+      trace("Start audio");
       _stream->requestStart();
     }
     if (!background) {
@@ -145,10 +159,8 @@ DataCallbackResult Audio::onAudioReady(AudioStream *oboeStream, void *audioData,
       buffer[i] = 0;
     }
     // continue filling with silence in case the script requests further sounds
-    if (_silenceStart == 0) {
-      _silenceStart = maGetMilliSecondCount();
-    } else if (maGetMilliSecondCount() - _silenceStart > SILENCE_BEFORE_STOP) {
-      _silenceStart = 0;
+    if (_silenceStart != 0 && maGetMilliSecondCount() - _silenceStart > SILENCE_BEFORE_STOP) {
+      trace("Stop audio. xruns: %d", oboeStream->getXRunCount());
       result = DataCallbackResult::Stop;
     }
   } else {
@@ -181,8 +193,17 @@ Sound *Audio::front() {
     if (result->ready()) {
       break;
     }
-    result = nullptr;
+
     _queue.pop();
+    auto *next = _queue.front();
+    if (next != nullptr) {
+      next->sync(result);
+    }
+    result = nullptr;
+  }
+
+  if (result == nullptr && _silenceStart == 0) {
+    _silenceStart = maGetMilliSecondCount();
   }
 
   return result;
