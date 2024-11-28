@@ -83,12 +83,10 @@ float Sound::sample() {
 }
 
 //
-// Continues the same phase for the previous sound with the same frequency
+// Continues the same phase for the previous sound
 //
 void Sound::sync(Sound *previous) {
-  if (previous != nullptr && previous->_increment == _increment) {
-    _phase = previous->_phase;
-  }
+  _phase = previous->_phase;
 }
 
 Audio::Audio() {
@@ -133,7 +131,11 @@ void Audio::play(int frequency, int millis, int volume, bool background) {
       _stream->requestStart();
     }
     if (!background) {
-      usleep(millis * 1000);
+      if (millis < kMillisPerSecond) {
+        usleep(millis * kMillisPerSecond);
+      } else {
+        maWait(millis);
+      }
     }
   }
 }
