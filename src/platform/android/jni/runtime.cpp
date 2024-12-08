@@ -830,7 +830,7 @@ void Runtime::pause(int timeout) {
 void Runtime::pollEvents(bool blocking) {
   int events;
   android_poll_source *source;
-  ALooper_pollAll(blocking || !_hasFocus ? -1 : 0, nullptr, &events, (void **)&source);
+  ALooper_pollOnce(blocking || !_hasFocus ? -1 : 0, nullptr, &events, (void **)&source);
   if (source != nullptr) {
     source->process(_app, source);
   }
