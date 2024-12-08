@@ -32,5 +32,5 @@ struct Audio : public AudioStreamDataCallback {
   std::mutex _lock;
   std::shared_ptr<oboe::AudioStream> _stream;
   strlib::Queue<Sound *> _queue;
-  int _silenceStart{};
+  int _startNoSound{};
 };
