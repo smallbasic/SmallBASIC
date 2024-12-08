@@ -528,7 +528,7 @@ int map_create_array(var_p_t dest, JsonTokens *json, int end_position, int index
   list.head = NULL;
   list.tail = NULL;
 
-  while (i < json->num_tokens) {
+  while (i < json->num_tokens && !prog_error) {
     jsmntok_t token = json->tokens[i];
     if (token.start > end_position) {
       break;
@@ -545,7 +545,7 @@ int map_create_array(var_p_t dest, JsonTokens *json, int end_position, int index
             cols = curcol;
           }
         }
-        while (delim != NULL) {
+        while (delim != NULL && !prog_error) {
           rows++;
           curcol = 0;
           len -= (delim - str) + 1;
@@ -583,7 +583,7 @@ int map_create_array(var_p_t dest, JsonTokens *json, int end_position, int index
 int map_create(var_p_t dest, JsonTokens *json, int end_position, int index) {
   hashmap_create(dest, 0);
   int i = index;
-  while (i < json->num_tokens) {
+  while (i < json->num_tokens && !prog_error) {
     jsmntok_t token = json->tokens[i];
     if (token.start > end_position) {
       break;
@@ -593,7 +593,12 @@ int map_create(var_p_t dest, JsonTokens *json, int end_position, int index) {
       var_p_t value = hashmap_putv(dest, key);
       i = map_read_next_token(value, json, i + 1);
     } else {
-      err_array();
+      int position = token.start;
+      if (i > 0) {
+        // error near end of previous token
+        position = json->tokens[i - 1].start;
+      }
+      err_json(position);
       break;
     }
   }

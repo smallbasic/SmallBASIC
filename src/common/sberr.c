@@ -367,6 +367,10 @@ void err_array() {
   rt_raise(MSG_ARRAY_SE);
 }
 
+void err_json(int pos) {
+  err_throw(MSG_ERR_JSON, pos);
+}
+
 void err_form_input() {
   err_throw(ERR_FORM_INPUT);
 }
