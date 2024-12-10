@@ -20,7 +20,7 @@
 constexpr int32_t AUDIO_SAMPLE_RATE = 44100;
 constexpr float PI2 = 2.0f * M_PI;
 constexpr int SILENCE_BEFORE_STOP = kMillisPerSecond * 5;
-constexpr int RAMP = 250;
+constexpr int MAX_RAMP = 350;
 int instances = 0;
 
 struct Sound {
@@ -35,7 +35,7 @@ private:
   uint32_t _duration;
   uint32_t _samples;
   uint32_t _sampled;
-  uint32_t _frequency;
+  uint32_t _ramp;
   float _amplitude;
   float _increment;
   float _phase;
@@ -45,14 +45,20 @@ Sound::Sound(int blockSize, int frequency, int millis, int volume) :
   _duration(millis),
   _samples(AUDIO_SAMPLE_RATE * millis / 1000),
   _sampled(0),
-  _frequency(frequency),
+  _ramp(_samples / 10),
   _amplitude((float)volume / 100.0f),
   _increment(PI2 * (float)frequency / AUDIO_SAMPLE_RATE),
   _phase(0) {
   instances++;
 
+  if (frequency != 0) {
+    _ramp = 0;
+  } else if (_ramp > MAX_RAMP) {
+    _ramp = MAX_RAMP;
+  }
+
   // align sample size with burst-size
-  if (!frequency && _samples > blockSize) {
+  if (_ramp != 0 && _samples > blockSize) {
     _samples = (_samples / blockSize) * blockSize;
   }
 }
@@ -76,13 +82,13 @@ float Sound::sample() {
   _sampled++;
   _phase = fmod(_phase + _increment, PI2);
 
-  if (_frequency == 0) {
-    if (_sampled < RAMP) {
+  if (_ramp != 0) {
+    if (_sampled < _ramp) {
       // fadeOut the previous sound
-      result *= (float)(RAMP - _sampled) / RAMP;
-    } else if (_samples - _sampled < RAMP) {
+      result *= (float)(_ramp - _sampled) / (float)_ramp;
+    } else if (_samples - _sampled < _ramp) {
       // fadeIn the next sound
-      result *= (float)(RAMP - (_samples - _sampled)) / RAMP;
+      result *= (float)(_ramp - (_samples - _sampled)) / (float)_ramp;
     } else {
       result = 0;
     }
@@ -95,7 +101,7 @@ float Sound::sample() {
 //
 void Sound::sync(Sound *previous) {
   _phase = previous->_phase;
-  if (_frequency == 0) {
+  if (_ramp != 0) {
     // for fadeOut/In
     _increment = previous->_increment;
   }
@@ -122,8 +128,8 @@ Audio::Audio() {
 }
 
 Audio::~Audio() {
-  clearSoundQueue();
   std::lock_guard<std::mutex> lock(_lock);
+  _queue.removeAll();
   if (_stream != nullptr) {
     _stream->stop();
     _stream->close();
