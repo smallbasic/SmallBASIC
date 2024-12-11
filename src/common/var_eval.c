@@ -51,7 +51,7 @@ void v_eval_func(var_p_t self, var_p_t v_func, var_p_t result) {
     if (!prog_error) {
       if (!v_func->v.fn.mcb(self, pcount, ptable, result)) {
         if (result->type == V_STR) {
-          err_throw(result->v.p.ptr);
+          err_throw("%s", result->v.p.ptr);
         } else {
           err_throw("Undefined");
         }

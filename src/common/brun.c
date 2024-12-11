@@ -1185,17 +1185,15 @@ int brun_create_task(const char *filename, byte *preloaded_bc, int libf) {
     } else {
       find_unit(filename, fname);
     }
-    if (access(fname, R_OK)) {
-      panic("File '%s' not found", fname);
-    }
-    // look if it is already loaded
-    if (search_task(fname) != -1) {
-      return search_task(fname);
-    }
     // open & load
     int h = open(fname, O_RDWR | O_BINARY);
     if (h == -1) {
       panic("File '%s' not found", fname);
+    }
+    // look if it is already loaded
+    if (search_task(fname) != -1) {
+      close(h);
+      return search_task(fname);
     }
     // load it
     if (libf) {

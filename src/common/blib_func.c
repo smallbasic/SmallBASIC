@@ -1922,7 +1922,7 @@ void cmd_intN(long funcCode, var_t *r) {
           if (l >= 0 && l < v_maxdim(var_p)) {
             r->v.i = v_ubound(var_p, l);
           } else {
-            rt_raise(ERR_BOUND_DIM, v_maxdim(var_p));
+            rt_raise(ERR_BOUND_DIM, l, v_maxdim(var_p));
           }
         }
       } else {

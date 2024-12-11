@@ -60,7 +60,7 @@ int sys_search_path(const char *path, const char *file, char *retbuf) {
 
     // fix home directory
     if (cur_path[0] == '~') {
-      char *old_path = malloc(strlen(cur_path));
+      char *old_path = malloc(strlen(cur_path) + 1);
       strcpy(old_path, cur_path + 1);
       if (getenv("HOME")) {
         strlcpy(cur_path, getenv("HOME"), sizeof(cur_path));

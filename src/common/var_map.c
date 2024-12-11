@@ -473,7 +473,7 @@ void map_set_primative(var_p_t dest, const char *s, int len) {
   } else if (fract) {
     v_setreal(dest, atof(s));
   } else {
-    v_setint(dest, sign * value);
+    v_setint(dest, (var_int_t)sign * value);
   }
 }
 
