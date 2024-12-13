@@ -184,8 +184,7 @@ DataCallbackResult Audio::onAudioReady(AudioStream *oboeStream, void *audioData,
     }
   } else {
     for (int i = 0; i < numFrames; ++i) {
-      auto sample = sound->sample();
-      buffer[i] = sample;
+      buffer[i] = sound->sample();
     }
   }
   return result;
