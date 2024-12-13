@@ -307,8 +307,7 @@ function FileList(props) {
       sortModel: [{ field: 'fileName', sort: 'asc' }],
     },
   };
-  console.log("props=%o", props);
-  
+
   return (
     <Fragment>
       <ErrorMessage error={error} setError={setError} severity="error"/>
