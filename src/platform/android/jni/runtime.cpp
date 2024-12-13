@@ -42,11 +42,23 @@
 
 Runtime *runtime = nullptr;
 
+// the sensorTypes corresponding to _sensors[] positions
+constexpr int SENSOR_TYPES[MAX_SENSORS] = {
+  ASENSOR_TYPE_ACCELEROMETER,
+  ASENSOR_TYPE_MAGNETIC_FIELD,
+  ASENSOR_TYPE_GYROSCOPE,
+  ASENSOR_TYPE_LIGHT,
+  ASENSOR_TYPE_PROXIMITY,
+  ASENSOR_TYPE_PRESSURE,
+  ASENSOR_TYPE_RELATIVE_HUMIDITY,
+  ASENSOR_TYPE_AMBIENT_TEMPERATURE,
+};
+
 MAEvent *getMotionEvent(int type, AInputEvent *event) {
   auto *result = new MAEvent();
   result->type = type;
-  result->point.x = AMotionEvent_getX(event, 0);
-  result->point.y = AMotionEvent_getY(event, 0);
+  result->point.x = (int)AMotionEvent_getX(event, 0);
+  result->point.y = (int)AMotionEvent_getY(event, 0);
   return result;
 }
 
@@ -211,7 +223,7 @@ void onContentRectChanged(ANativeActivity *activity, const ARect *rect) {
 }
 
 jbyteArray newByteArray(JNIEnv *env, const char *str) {
-  int size = strlen(str);
+  int size = (int)strlen(str);
   jbyteArray result = env->NewByteArray(size);
   env->SetByteArrayRegion(result, 0, size, (const jbyte *)str);
   return result;
@@ -224,7 +236,6 @@ Runtime::Runtime(android_app *app) :
   _graphics(nullptr),
   _app(app),
   _eventQueue(nullptr),
-  _sensor(nullptr),
   _sensorEventQueue(nullptr) {
   _app->userData = nullptr;
   _app->onAppCmd = handleCommand;
@@ -238,6 +249,7 @@ Runtime::Runtime(android_app *app) :
   pthread_mutex_init(&_mutex, nullptr);
   _looper = ALooper_forThread();
   _sensorManager = ASensorManager_getInstance();
+  memset(&_sensors, 0, sizeof(_sensors));
   memset(&_sensorEvent, 0, sizeof(_sensorEvent));
 }
 
@@ -317,31 +329,34 @@ void Runtime::construct() {
 void Runtime::disableSensor() {
   logEntered();
   if (_sensorEventQueue) {
-    if (_sensor) {
-      ASensorEventQueue_disableSensor(_sensorEventQueue, _sensor);
+    for (auto & i : _sensors) {
+      if (i) {
+        ASensorEventQueue_disableSensor(_sensorEventQueue, i);
+        i = nullptr;
+      }
     }
     ASensorManager_destroyEventQueue(_sensorManager, _sensorEventQueue);
   }
   _sensorEventQueue = nullptr;
-  _sensor = nullptr;
 }
 
-bool Runtime::enableSensor(int sensorType) {
-  _sensorEvent.type = 0;
-  if (!_sensorEventQueue) {
-    _sensorEventQueue =
-      ASensorManager_createEventQueue(_sensorManager, _looper, ALOOPER_POLL_CALLBACK,
-                                      get_sensor_events, nullptr);
-  } else if (_sensor) {
-    ASensorEventQueue_disableSensor(_sensorEventQueue, _sensor);
-  }
-  _sensor = ASensorManager_getDefaultSensor(_sensorManager, sensorType);
+bool Runtime::enableSensor(int sensorId) {
   bool result;
-  if (_sensor) {
-    ASensorEventQueue_enableSensor(_sensorEventQueue, _sensor);
-    result = true;
-  } else {
+  _sensorEvent.type = 0;
+  if (sensorId < 0 || sensorId >= MAX_SENSORS) {
     result = false;
+  } else if (_sensors[sensorId] == nullptr) {
+    if (!_sensorEventQueue) {
+      _sensorEventQueue =
+        ASensorManager_createEventQueue(_sensorManager, _looper, ALOOPER_POLL_CALLBACK, get_sensor_events, nullptr);
+    }
+    _sensors[sensorId] = ASensorManager_getDefaultSensor(_sensorManager, SENSOR_TYPES[sensorId]);
+    result = _sensors[sensorId] != nullptr;
+    if (result) {
+      ASensorEventQueue_enableSensor(_sensorEventQueue, _sensors[sensorId]);
+    }
+  } else {
+    result = true;
   }
   return result;
 }
@@ -467,8 +482,18 @@ void Runtime::setLocationData(var_t *retval) {
 void Runtime::setSensorData(var_t *retval) {
   v_init(retval);
   map_init(retval);
-  if (_sensor != nullptr) {
-    v_setstr(map_add_var(retval, "name", 0), ASensor_getName(_sensor));
+
+  // find the sensor for the retrieved sensor type
+  const ASensor *sensor = nullptr;
+  for (int i = 0; i < MAX_SENSORS; i++) {
+    if (_sensorEvent.type == SENSOR_TYPES[i]) {
+      sensor = _sensors[i];
+      break;
+    }
+  }
+
+  if (sensor != nullptr) {
+    v_setstr(map_add_var(retval, "name", 0), ASensor_getName(sensor));
     switch (_sensorEvent.type) {
     case ASENSOR_TYPE_ACCELEROMETER:
     case ASENSOR_TYPE_MAGNETIC_FIELD:
@@ -1329,33 +1354,9 @@ int gps_off(int param_count, slib_par_t *params, var_t *retval) {
 int sensor_on(int param_count, slib_par_t *params, var_t *retval) {
   int result = 0;
   if (param_count == 1) {
-    switch (v_getint(params[0].var_p)) {
-    case 0:
-      result = runtime->enableSensor(ASENSOR_TYPE_ACCELEROMETER);
-      break;
-    case 1:
-      result = runtime->enableSensor(ASENSOR_TYPE_MAGNETIC_FIELD);
-      break;
-    case 2:
-      result = runtime->enableSensor(ASENSOR_TYPE_GYROSCOPE);
-      break;
-    case 3:
-      result = runtime->enableSensor(ASENSOR_TYPE_LIGHT);
-      break;
-    case 4:
-      result = runtime->enableSensor(ASENSOR_TYPE_PROXIMITY);
-      break;
-    case 5:
-      result = runtime->enableSensor(ASENSOR_TYPE_PRESSURE);
-      break;
-    case 6:
-      result = runtime->enableSensor(ASENSOR_TYPE_RELATIVE_HUMIDITY);
-      break;
-    case 7:
-      result = runtime->enableSensor(ASENSOR_TYPE_AMBIENT_TEMPERATURE);
-      break;
-    default:
-      break;
+    int sensor = v_getint(params[0].var_p);
+    if (sensor >= 0 && sensor < MAX_SENSORS) {
+      result = runtime->enableSensor(sensor);
     }
   }
   if (!result) {

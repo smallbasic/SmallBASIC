@@ -20,6 +20,8 @@
 #include <android/keycodes.h>
 #include <android/sensor.h>
 
+constexpr int MAX_SENSORS = 8;
+
 struct Runtime : public System {
   explicit Runtime(android_app *app);
   ~Runtime() override;
@@ -36,7 +38,7 @@ struct Runtime : public System {
   void debugStop() {}
   void disableSensor();
   void enableCursor(bool enabled) override {}
-  bool enableSensor(int sensorType);
+  bool enableSensor(int sensorId);
   jlong getActivity() { return (jlong)_app->activity->clazz; }
   bool getBoolean(const char *methodName);
   String getString(const char *methodName);
@@ -48,7 +50,7 @@ struct Runtime : public System {
   void pause(int timeout);
   MAEvent processEvents(int waitFlag) override;
   void processEvent(MAEvent &event);
-  bool hasEvent() { return _eventQueue && _eventQueue->size() > 0; }
+  bool hasEvent() { return _eventQueue && !_eventQueue->empty(); }
   void playAudio(const char *path) { setString("playAudio", path); }
   void playTone(int frq, int dur, int vol, bool bgplay) { _audio.play(frq, dur, vol, bgplay); }
   void pollEvents(bool blocking);
@@ -93,7 +95,7 @@ private:
   pthread_mutex_t _mutex{};
   ALooper *_looper;
   ASensorManager *_sensorManager;
-  const ASensor *_sensor;
+  const ASensor * _sensors[MAX_SENSORS]{};
   ASensorEventQueue *_sensorEventQueue;
   ASensorEvent _sensorEvent{};
   Audio _audio;
