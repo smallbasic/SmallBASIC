@@ -140,11 +140,6 @@ static void process_input(android_app *app, android_poll_source *source) {
   }
 }
 
-int get_sensor_events(int fd, int events, void *data) {
-  runtime->readSensorEvents();
-  return 1;
-}
-
 // callbacks from MainActivity.java
 extern "C" JNIEXPORT void JNICALL Java_net_sourceforge_smallbasic_MainActivity_onActivityPaused
   (JNIEnv *env, jclass jclazz, jboolean paused) {
@@ -250,7 +245,6 @@ Runtime::Runtime(android_app *app) :
   _looper = ALooper_forThread();
   _sensorManager = ASensorManager_getInstance();
   memset(&_sensors, 0, sizeof(_sensors));
-  memset(&_sensorEvent, 0, sizeof(_sensorEvent));
 }
 
 Runtime::~Runtime() {
@@ -329,7 +323,7 @@ void Runtime::construct() {
 void Runtime::disableSensor() {
   logEntered();
   if (_sensorEventQueue) {
-    for (auto & i : _sensors) {
+    for (auto &i : _sensors) {
       if (i) {
         ASensorEventQueue_disableSensor(_sensorEventQueue, i);
         i = nullptr;
@@ -342,13 +336,11 @@ void Runtime::disableSensor() {
 
 bool Runtime::enableSensor(int sensorId) {
   bool result;
-  _sensorEvent.type = 0;
   if (sensorId < 0 || sensorId >= MAX_SENSORS) {
     result = false;
   } else if (_sensors[sensorId] == nullptr) {
     if (!_sensorEventQueue) {
-      _sensorEventQueue =
-        ASensorManager_createEventQueue(_sensorManager, _looper, ALOOPER_POLL_CALLBACK, get_sensor_events, nullptr);
+      _sensorEventQueue = ASensorManager_createEventQueue(_sensorManager, _looper, ALOOPER_POLL_CALLBACK, nullptr, nullptr);
     }
     _sensors[sensorId] = ASensorManager_getDefaultSensor(_sensorManager, SENSOR_TYPES[sensorId]);
     result = _sensors[sensorId] != nullptr;
@@ -460,10 +452,6 @@ void Runtime::pushEvent(MAEvent *event) {
   pthread_mutex_unlock(&_mutex);
 }
 
-void Runtime::readSensorEvents() {
-  ASensorEventQueue_getEvents(_sensorEventQueue, &_sensorEvent, 1);
-}
-
 void Runtime::setFloat(const char *methodName, float value) {
   JNIEnv *env;
   _app->activity->vm->AttachCurrentThread(&env, nullptr);
@@ -475,7 +463,7 @@ void Runtime::setFloat(const char *methodName, float value) {
 }
 
 void Runtime::setLocationData(var_t *retval) {
-  String location = runtime->getString("getLocation");
+  String location = getString("getLocation");
   map_parse_str(location.c_str(), location.length(), retval);
 }
 
@@ -483,39 +471,38 @@ void Runtime::setSensorData(var_t *retval) {
   v_init(retval);
   map_init(retval);
 
-  // find the sensor for the retrieved sensor type
-  const ASensor *sensor = nullptr;
-  for (int i = 0; i < MAX_SENSORS; i++) {
-    if (_sensorEvent.type == SENSOR_TYPES[i]) {
-      sensor = _sensors[i];
-      break;
+  ASensorEvent sensorEvent;
+  if (ASensorEventQueue_getEvents(_sensorEventQueue, &sensorEvent, 1) == 1) {
+    // find the sensor for the event type
+    for (int i = 0; i < MAX_SENSORS; i++) {
+      if (sensorEvent.type == SENSOR_TYPES[i]) {
+        v_setint(map_add_var(retval, "type", 0), i);
+        v_setstr(map_add_var(retval, "name", 0), ASensor_getName(_sensors[i]));
+        break;
+      }
     }
-  }
-
-  if (sensor != nullptr) {
-    v_setstr(map_add_var(retval, "name", 0), ASensor_getName(sensor));
-    switch (_sensorEvent.type) {
+    switch (sensorEvent.type) {
     case ASENSOR_TYPE_ACCELEROMETER:
     case ASENSOR_TYPE_MAGNETIC_FIELD:
     case ASENSOR_TYPE_GYROSCOPE:
-      v_setreal(map_add_var(retval, "x", 0), _sensorEvent.vector.x);
-      v_setreal(map_add_var(retval, "y", 0), _sensorEvent.vector.y);
-      v_setreal(map_add_var(retval, "z", 0), _sensorEvent.vector.z);
+      v_setreal(map_add_var(retval, "x", 0), sensorEvent.vector.x);
+      v_setreal(map_add_var(retval, "y", 0), sensorEvent.vector.y);
+      v_setreal(map_add_var(retval, "z", 0), sensorEvent.vector.z);
       break;
     case ASENSOR_TYPE_LIGHT:
-      v_setreal(map_add_var(retval, "light", 0), _sensorEvent.light);
+      v_setreal(map_add_var(retval, "light", 0), sensorEvent.light);
       break;
     case ASENSOR_TYPE_PROXIMITY:
-      v_setreal(map_add_var(retval, "distance", 0), _sensorEvent.distance);
+      v_setreal(map_add_var(retval, "distance", 0), sensorEvent.distance);
       break;
     case ASENSOR_TYPE_PRESSURE:
-      v_setreal(map_add_var(retval, "pressure", 0), _sensorEvent.pressure);
+      v_setreal(map_add_var(retval, "pressure", 0), sensorEvent.pressure);
       break;
     case ASENSOR_TYPE_RELATIVE_HUMIDITY:
-      v_setreal(map_add_var(retval, "relative_humidity", 0), _sensorEvent.relative_humidity);
+      v_setreal(map_add_var(retval, "relative_humidity", 0), sensorEvent.relative_humidity);
       break;
     case ASENSOR_TYPE_AMBIENT_TEMPERATURE:
-      v_setreal(map_add_var(retval, "temperature", 0), _sensorEvent.temperature);
+      v_setreal(map_add_var(retval, "temperature", 0), sensorEvent.temperature);
       break;
     default:
       break;
@@ -1023,7 +1010,7 @@ int Runtime::invokeRequest(int argc, slib_par_t *params, var_t *retval) {
     jclass clazz = env->GetObjectClass(_app->activity->clazz);
     const char *signature = "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;";
     jmethodID methodId = env->GetMethodID(clazz, "request", signature);
-    jstring jstr = (jstring)env->CallObjectMethod(_app->activity->clazz, methodId, endPoint, data, apiKey);
+    auto jstr = (jstring)env->CallObjectMethod(_app->activity->clazz, methodId, endPoint, data, apiKey);
     const char *str = env->GetStringUTFChars(jstr, JNI_FALSE);
     v_setstr(retval, str);
     result = strncmp(str, "error: [", 8) == 0 ? 0 : 1;

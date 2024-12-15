@@ -17,7 +17,6 @@ import android.content.res.Resources;
 import android.graphics.Rect;
 import android.location.Location;
 import android.location.LocationManager;
-import android.media.AudioTrack;
 import android.media.MediaPlayer;
 import android.net.Uri;
 import android.os.Build;
@@ -71,9 +70,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
-import java.util.Queue;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Semaphore;
@@ -98,7 +95,7 @@ public class MainActivity extends NativeActivity {
   private static final int REQUEST_LOCATION_PERMISSION = 2;
   private static final String FOLDER_NAME = "SmallBASIC";
   private static final int COPY_BUFFER_SIZE = 1024;
-  private static final String[] SAMPLES = {"welcome.bas"};
+  private static final String[] SAMPLES = {"welcome.bas", "sound.bas"};
   private String _startupBas = null;
   private boolean _untrusted = false;
   private final ExecutorService _audioExecutor = Executors.newSingleThreadExecutor();
@@ -782,7 +779,9 @@ public class MainActivity extends NativeActivity {
       // only attempt with a clean destination folder
       try {
         for (String sample : SAMPLES) {
-          copy(getAssets().open("samples/" + sample), new FileOutputStream(new File(toDir, sample)));
+          OutputStream outputStream = new FileOutputStream(new File(toDir, sample));
+          copy(getAssets().open("samples/" + sample), outputStream);
+          outputStream.close();
         }
       } catch (IOException e) {
         Log.d(TAG, "Failed to copy sample: ", e);

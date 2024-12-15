@@ -56,9 +56,8 @@ struct Runtime : public System {
   void pollEvents(bool blocking);
   MAEvent *popEvent();
   void pushEvent(MAEvent *event);
-  void readSensorEvents();
   void setFloat(const char *methodName, float value);
-  static void setLocationData(var_t *retval);
+  void setLocationData(var_t *retval);
   void setSensorData(var_t *retval);
   void setString(const char *methodName, const char *value);
   void speak(const char *text) { setString("speak", text); }
@@ -97,7 +96,6 @@ private:
   ASensorManager *_sensorManager;
   const ASensor * _sensors[MAX_SENSORS]{};
   ASensorEventQueue *_sensorEventQueue;
-  ASensorEvent _sensorEvent{};
   Audio _audio;
 };
 
