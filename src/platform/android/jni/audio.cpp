@@ -21,17 +21,18 @@
 constexpr int32_t AUDIO_SAMPLE_RATE = 44100;
 constexpr float PI2 = 2.0f * M_PI;
 constexpr int SILENCE_BEFORE_STOP = kMillisPerSecond * 5;
-constexpr int MAX_RAMP = 450;
+constexpr int MAX_RAMP = 250;
+constexpr int MAX_QUEUE_SIZE = 250;
 constexpr int RAMP_SCALE = 10;
 int instances = 0;
 
 struct Sound {
-  Sound(int blockSize, bool fadeIn, int frequency, int millis, int volume);
+  Sound(bool fadeIn, int frequency, int millis, int volume);
   ~Sound();
 
   bool ready() const;
   float sample();
-  void sync(Sound *previous, bool lastSound, int blockSize);
+  void sync(Sound *previous, bool lastSound);
 
 private:
   uint32_t _duration;
@@ -45,7 +46,7 @@ private:
   float _phase;
 };
 
-Sound::Sound(int blockSize, bool fadeIn, int frequency, int millis, int volume) :
+Sound::Sound(bool fadeIn, int frequency, int millis, int volume) :
   _duration(millis),
   _samples(AUDIO_SAMPLE_RATE * millis / 1000),
   _sampled(0),
@@ -61,10 +62,6 @@ Sound::Sound(int blockSize, bool fadeIn, int frequency, int millis, int volume) 
     _fadeIn = std::min((int)_samples / RAMP_SCALE, MAX_RAMP);
   } else if (frequency == 0) {
     _rest = std::min((int)_samples / RAMP_SCALE, MAX_RAMP);
-    // align sample size with burst-size
-    if (_rest != 0 && _samples > blockSize) {
-      _samples = (_samples / blockSize) * blockSize;
-    }
   }
 }
 
@@ -104,13 +101,14 @@ float Sound::sample() {
     // fadeOut to silence
     result *= (float)(_samples - _sampled) / (float)_fadeOut;
   }
+
   return result;
 }
 
 //
 // Continues the same phase for the previous sound
 //
-void Sound::sync(Sound *previous, bool lastSound, int blockSize) {
+void Sound::sync(Sound *previous, bool lastSound) {
   _phase = previous->_phase;
   if (_rest != 0) {
     // for fadeOut/In for adjoining silence
@@ -118,9 +116,6 @@ void Sound::sync(Sound *previous, bool lastSound, int blockSize) {
   }
   if (lastSound) {
     // fade out non-silent sound to silence
-    if (_samples > blockSize) {
-      _samples = (_samples / blockSize) * blockSize;
-    }
     _fadeOut = _samples / RAMP_SCALE;
     if (_fadeOut > MAX_RAMP) {
       _fadeOut = MAX_RAMP;
@@ -163,7 +158,7 @@ Audio::~Audio() {
 // Play a sound with the given specification
 //
 void Audio::play(int frequency, int millis, int volume, bool background) {
-  if (_stream != nullptr && millis > 0) {
+  if (_stream != nullptr && millis > 0 && _queue.size() < MAX_QUEUE_SIZE) {
     add(frequency, millis, volume);
     if (_stream->getState() != StreamState::Started) {
       trace("Start audio");
@@ -192,21 +187,24 @@ void Audio::clearSoundQueue() {
 // Callback to play the next block of audio
 //
 DataCallbackResult Audio::onAudioReady(AudioStream *oboeStream, void *audioData, int32_t numFrames) {
-  DataCallbackResult result = DataCallbackResult::Continue;
   Sound *sound = front();
   auto *buffer = (float *)audioData;
-  if (sound == nullptr) {
-    for (int i = 0; i < numFrames; ++i) {
+  for (int i = 0; i < numFrames; ++i) {
+    if (sound == nullptr) {
       buffer[i] = 0;
-    }
-    // continue filling with silence in case the script requests further sounds
-    if (_startNoSound != 0 && maGetMilliSecondCount() - _startNoSound > SILENCE_BEFORE_STOP) {
-      result = DataCallbackResult::Stop;
-    }
-  } else {
-    for (int i = 0; i < numFrames; ++i) {
+    } else {
       buffer[i] = sound->sample();
+      if (!sound->ready()) {
+        sound = front();
+      }
     }
+  }
+
+  DataCallbackResult result;
+  if (sound == nullptr && _startNoSound != 0 && maGetMilliSecondCount() - _startNoSound > SILENCE_BEFORE_STOP) {
+    result = DataCallbackResult::Stop;
+  } else {
+    result = DataCallbackResult::Continue;
   }
   return result;
 }
@@ -216,7 +214,7 @@ DataCallbackResult Audio::onAudioReady(AudioStream *oboeStream, void *audioData,
 //
 void Audio::add(int frequency, int millis, int volume) {
   std::lock_guard<std::mutex> lock(_lock);
-  _queue.push(new Sound(_stream->getFramesPerBurst(), _queue.empty(), frequency, millis, volume));
+  _queue.push(new Sound(_queue.empty(), frequency, millis, volume));
   _startNoSound = 0;
 }
 
@@ -236,7 +234,7 @@ Sound *Audio::front() {
     _queue.pop();
     auto *next = _queue.front();
     if (next != nullptr) {
-      next->sync(result, _queue.size() == 1, _stream->getFramesPerBurst());
+      next->sync(result, _queue.size() == 1);
     }
     result = nullptr;
   }
