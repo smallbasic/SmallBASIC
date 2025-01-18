@@ -154,7 +154,7 @@ var_t *v_new(void);
  *
  * @return a newly created var_t array of the given size
  */
-void v_new_array(var_t *var, unsigned size);
+void v_new_array(var_t *var, uint32_t size);
 
 /**
  * @ingroup var

@@ -11,7 +11,12 @@
 #include "common/sberr.h"
 
 #define INT_STR_LEN 64
+
+#if defined(_TEENSY)
+#define VAR_POOL_SIZE 4192
+#else
 #define VAR_POOL_SIZE 8192
+#endif
 
 var_t var_pool[VAR_POOL_SIZE];
 var_t *var_pool_head;

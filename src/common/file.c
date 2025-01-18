@@ -30,6 +30,90 @@
 // FILE TABLE
 static dev_file_t file_table[OS_FILEHANDLES];
 
+/*
+ * returns the last-modified time of the file
+ *
+ * on error returns 0L
+ */
+time_t sys_filetime(const char *file) {
+  struct stat st;
+
+  if (stat(file, &st) == 0) {
+    return st.st_mtime;
+  }
+  return 0L;
+}
+
+/*
+ * search a set of directories for the given file
+ * directories on path must be separated with symbol ':' (unix) or ';' (dos/win)
+ *
+ * @param path the path
+ * @param file the file
+ * @param retbuf a buffer to store the full-path-name file (can be NULL)
+ * @return non-zero if found
+ */
+int sys_search_path(const char *path, const char *file, char *retbuf) {
+  char cur_path[OS_PATHNAME_SIZE + 1];
+  int found = 0;
+
+  if (path == NULL || strlen(path) == 0) {
+    return 0;
+  }
+  const char *ps = path;
+  const char *p;
+  do {
+    // next element, build cur_path
+    p = strchr(ps, ':');
+    if (!p) {
+      strlcpy(cur_path, ps, sizeof(cur_path));
+    } else {
+      strncpy(cur_path, ps, p - ps);
+      cur_path[p - ps] = '\0';
+      ps = p + 1;
+    }
+
+    // fix home directory
+    if (cur_path[0] == '~') {
+      char *old_path = malloc(strlen(cur_path) + 1);
+      strcpy(old_path, cur_path + 1);
+      if (getenv("HOME")) {
+        strlcpy(cur_path, getenv("HOME"), sizeof(cur_path));
+      } else {
+        strlcpy(cur_path, getenv("HOMEDRIVE"), sizeof(cur_path));
+        strlcat(cur_path, getenv("HOMEPATH"), sizeof(cur_path));
+      }
+      if (old_path[0] != '/') {
+        strlcat(cur_path, "/", sizeof(cur_path));
+      }
+      strlcat(cur_path, old_path, sizeof(cur_path));
+      free(old_path);
+    }
+
+    DIR *dp = opendir(cur_path);
+    if (dp != NULL) {
+      struct dirent *entry;
+      while (!found && (entry = readdir(dp)) != NULL) {
+        if (strcasecmp(entry->d_name, file) == 0) {
+          int end = strlen(cur_path);
+          strcat(cur_path, "/");
+          strcat(cur_path, entry->d_name);
+          if (access(cur_path, R_OK) == 0) {
+            if (retbuf) {
+              strcpy(retbuf, cur_path);
+            }
+            found = 1;
+          } else {
+            cur_path[end] = '\0';
+          }
+        }
+      }
+      closedir(dp);
+    }
+  } while (p && !found);
+  return found;
+}
+
 /**
  * Basic wild-cards
  */

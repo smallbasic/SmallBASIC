@@ -12,12 +12,14 @@
 #endif
 
 #include "common/smbas.h"
+#include "common/pproc.h"
 
 #if defined(__MINGW32__)
 #include <windows.h>
 #include <error.h>
 #define WIN_EXTLIB
 #define LIB_EXT ".dll"
+#elif defined(_TEENSY)
 #elif defined(_UnixOS)
 #include <dlfcn.h>
 #define LNX_EXTLIB
@@ -26,7 +28,6 @@
 
 #if defined(LNX_EXTLIB) || defined(WIN_EXTLIB)
 #include "common/plugins.h"
-#include "common/pproc.h"
 #include <dirent.h>
 
 #define MAX_SLIBS 64
