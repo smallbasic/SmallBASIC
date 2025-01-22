@@ -743,7 +743,7 @@ void dev_destroy_file_list(char_p_t *list, int count) {
  * returns the current directory
  * BUG: no drivers supported
  */
-char *dev_getcwd() {
+const char *dev_getcwd() {
   static char retbuf[OS_PATHNAME_SIZE + 1];
   getcwd(retbuf, OS_PATHNAME_SIZE);
   int l = strlen(retbuf);

@@ -19,7 +19,8 @@
 #include <error.h>
 #define WIN_EXTLIB
 #define LIB_EXT ".dll"
-#elif defined(_TEENSY)
+#elif defined(_MCU)
+
 #elif defined(_UnixOS)
 #include <dlfcn.h>
 #define LNX_EXTLIB

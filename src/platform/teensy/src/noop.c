@@ -73,32 +73,24 @@ void dev_cls() {}
 char_p_t *dev_create_file_list(const char *wc, int *count) {return 0;}
 void dev_destroy_file_list(char_p_t *list, int count) {}
 int dev_env_count() { return 0; }
-int dev_events(int dead_loop) { return 0; }
 int dev_faccess(const char *filename) { return 0; }
 int dev_fattr(const char *filename) { return 0; }
-int dev_feof(int SBHandle) { return 0; }
+int dev_feof(int handle) { return 0; }
 int dev_fexists(const char *filename) { return 0; }
 int dev_filemtime(var_t *v, char **buffer) { return 0; }
-uint32_t dev_flength(int SBHandle) { return 0; }
-int dev_fread(int SBHandle, byte *buff, uint32_t size) { return 0; }
+uint32_t dev_flength(int handle) { return 0; }
+int dev_fread(int handle, byte *buff, uint32_t size) { return 0; }
 int dev_freefilehandle() {return 0; }
 int dev_fstatus(int handle) { return 0; }
-uint32_t dev_ftell(int SBHandle) { return 0; }
+uint32_t dev_ftell(int handle) { return 0; }
 int dev_fwrite(int handle, byte *buffer, uint32_t size) { return 0; }
-char *dev_getcwd() { return NULL; }
 const char *dev_getenv(const char *name) { return NULL; }
 const char *dev_getenv_n(int n) { return NULL; }
-uint64_t dev_get_millisecond_count() { return 0; }
 int dev_getpen(int code) { return 0; }
 long dev_getpixel(int x, int y) { return 0; }
 char *dev_gets(char *buffer, int size) { return buffer; }
 int dev_getx() { return 0; }
 int dev_gety() { return 0; }
-int dev_init(int mode, int flags) {return 0;}
-void dev_print(const char *str) {}
-void dev_printf(const char *format, ...) {}
-char *dev_read(const char *file) { return NULL; }
-int dev_restore() { return 0; }
 int dev_run(const char *src, var_t *v, int wait) {return 0;}
 int dev_setenv(const char *name, const char *value) { return 0; }
 void dev_setpenmode(int mode) {}
@@ -106,7 +98,9 @@ void dev_settextcolor(long fg, long bg) {}
 void dev_setxy(int x, int y, int transform) {}
 int dev_textheight(const char *text) { return 0; }
 int dev_textwidth(const char *text) { return 0; }
-void dev_trace_line(int lineNo) {}
+void dev_log_stack(const char *keyword, int type, int line) {}
+void dev_show_page() {}
+int dev_restore() {return 0;}
 
 // geo_ *functions - geometric calculations
 float geo_distfromline(int x1, int y1, int x2, int y2, int x, int y) { return 0.0f; }
@@ -119,17 +113,16 @@ char *getcwd(char *buffer, size_t size) { return buffer; }
 void graph_reset() {}
 int gra_x() { return 0; }
 int gra_y() { return 0; }
-void log_printf(const char *format, ...) {}
-void lwrite(const char *data) {}
 void net_print(const char *data) {}
 void net_send(const char *data) {}
-void panic(const char *fmt, ...) {}
 time_t sys_filetime(const char *filename) { return 0; }
 int sys_search_path(const char *path, const char *file, char *retbuf) { return 0; }
 void v_create_image(var_p_t var) {}
+void v_create_form(var_p_t var) {}
+void v_create_window(var_p_t var) {}
 int wc_match(const char *mask, char *name) { return 0; }
 
-// system calls not available on teensy
-int stat(const char *path, struct stat *buf) {return -1;}
-int open(const char *pathname, int flags, ...) {return -1;}
+// system calls not available
 clock_t _times(struct tms *buf) { return 0;}
+int stat(const char *path, struct stat *buf) { return -1; }
+int open(const char *path, int flags, ...) { return -1; }

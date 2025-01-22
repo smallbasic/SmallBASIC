@@ -12,8 +12,8 @@
 
 #define INT_STR_LEN 64
 
-#if defined(_TEENSY)
-#define VAR_POOL_SIZE 4192
+#if defined(_MCU)
+#define VAR_POOL_SIZE 512
 #else
 #define VAR_POOL_SIZE 8192
 #endif

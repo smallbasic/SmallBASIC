@@ -351,7 +351,7 @@ void cmd_chain(void) {
       if (h != -1) {
         struct stat st;
         if (fstat(h, &st) == 0) {
-          int len = st.st_size;
+          size_t len = st.st_size;
           code = (char *)malloc(len + 1);
           len = read(h, code, len);
           code[len] = '\0';

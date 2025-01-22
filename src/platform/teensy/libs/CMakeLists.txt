@@ -53,7 +53,6 @@ set(SOURCES
   ${TEENSY_DIR}/interrupt.c
   ${TEENSY_DIR}/keylayouts.c
   ${TEENSY_DIR}/libc.c
-  ${TEENSY_DIR}/main.cpp
   ${TEENSY_DIR}/new.cpp
   ${TEENSY_DIR}/nonstd.c
   ${TEENSY_DIR}/pwm.c

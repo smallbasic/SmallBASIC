@@ -7,7 +7,6 @@
 //
 // Copyright(C) 2000 Nicholas Christopoulos
 
-#include "config.h"
 #include "common/device.h"
 
 #include <stdio.h>
@@ -218,10 +217,7 @@ const char *dev_getenv_n(int n) {
 #endif
 
 uint64_t dev_get_millisecond_count(void) {
-#if defined(_TEENSY)
-  uint32_t millis(void);
-  return millis();
-#elif defined(__MACH__)
+#if defined(__MACH__)
   struct timeval t;
   gettimeofday(&t, NULL);
   return (uint64_t) (1000L * t.tv_sec + (t.tv_usec / 1000.0));

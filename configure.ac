@@ -389,13 +389,18 @@ function buildEmscripten() {
 function buildTEENSY() {
    TARGET="Building teensy version."
    BUILD_SUBDIRS="src/platform/teensy"
+   AC_CHECK_PROG(have_xxd, xxd, [yes], [no])
+   if test "${have_xxd}" = "no" ; then
+     AC_MSG_ERROR([xxd command not installed: configure failed.])
+   fi
    AM_CONDITIONAL(WITH_CYGWIN_CONSOLE, false)
    AC_DEFINE(_UnixOS, 1, [Building under Unix like systems.])
-   AC_DEFINE(_TEENSY, 1, [Defined when building teensy version])
+   AC_DEFINE(_MCU, 1, [Micro controller based builds])
    AC_DEFINE(USE_TERM_IO, 0, [dont use the termios library.])
    AC_DEFINE(IMPL_LOG_WRITE, 1, [Driver implements lwrite()])
    AC_DEFINE(IMPL_DEV_READ, 1, [Implement dev_read()])
    AC_SUBST(BUILD_SUBDIRS)
+   (cd src/platform/teensy && xxd -i main.bas > src/main_bas.h)
 }
 
 function buildFLTK() {
