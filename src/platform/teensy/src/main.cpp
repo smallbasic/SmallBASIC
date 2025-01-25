@@ -12,8 +12,42 @@
 #include "config.h"
 #include "common/sbapp.h"
 #include "main_bas.h"
+#include "module.h"
 
 #define MAIN_BAS "__main_bas__"
+
+void *plugin_lib_open(const char *name) {
+  void *result = nullptr;
+  if (strcmp(name, "teensy") == 0) {
+    result = get_teensy_module();
+  }
+  return result;
+}
+
+void *plugin_lib_address(void *handle, const char *name) {
+  auto *pModule = (s_module *)handle;
+  void *result = nullptr;
+  if (strcmp(name, "sblib_func_exec") == 0) {
+    result = (void *)pModule->_func_exec;
+  } else if (strcmp(name, "sblib_proc_exec") == 0) {
+    result = (void *)pModule->_proc_exec;
+  } else if (strcmp(name, "sblib_free") == 0) {
+    result = (void *)pModule->_free;
+  } else if (strcmp(name, "sblib_proc_count")  == 0){
+    result = (void *)pModule->_proc_count;
+  } else if (strcmp(name, "sblib_proc_getname") == 0) {
+    result = (void *)pModule->_proc_getname;
+  } else if (strcmp(name, "sblib_func_count") == 0) {
+    result = (void *)pModule->_func_count;
+  } else if (strcmp(name, "sblib_func_getname") == 0) {
+    result = (void *)pModule->_func_getname;
+  }
+  return result;
+}
+
+void plugin_lib_close(void *handle) {
+  // unused
+}
 
 char *dev_read(const char *fileName) {
   char *buffer;
@@ -22,7 +56,7 @@ char *dev_read(const char *fileName) {
     memcpy(buffer, main_bas, main_bas_len);
     buffer[main_bas_len] = '\0';
   } else {
-    buffer = NULL;
+    buffer = nullptr;
   }
   return buffer;
 }

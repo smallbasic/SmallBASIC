@@ -20,16 +20,15 @@
 #define WIN_EXTLIB
 #define LIB_EXT ".dll"
 #elif defined(_MCU)
-
+#define LIB_EXT ""
 #elif defined(_UnixOS)
 #include <dlfcn.h>
 #define LNX_EXTLIB
 #define LIB_EXT ".so"
 #endif
 
-#if defined(LNX_EXTLIB) || defined(WIN_EXTLIB)
+#if defined(LNX_EXTLIB) || defined(WIN_EXTLIB) || defined(_MCU)
 #include "common/plugins.h"
-#include <dirent.h>
 
 #define MAX_SLIBS 64
 #define MAX_PARAM 16
@@ -64,7 +63,29 @@ typedef struct {
 
 static slib_t *plugins[MAX_SLIBS];
 
-#if defined(LNX_EXTLIB)
+#if defined(_MCU)
+int slib_llopen(slib_t *lib) {
+  lib->_handle = plugin_lib_open(lib->_fullname);
+  if (lib->_handle == NULL) {
+    sc_raise("LIB: error on loading %s\n", lib->_name);
+  }
+  return (lib->_handle != NULL);
+}
+
+void *slib_getoptptr(slib_t *lib, const char *name) {
+  return plugin_lib_address(lib->_handle, name);
+}
+
+static int slib_llclose(slib_t *lib) {
+  if (!lib->_handle) {
+    return 0;
+  }
+  plugin_lib_close(lib->_handle);
+  lib->_handle = NULL;
+  return 1;
+}
+
+#elif defined(LNX_EXTLIB)
 int slib_llopen(slib_t *lib) {
   lib->_handle = dlopen(lib->_fullname, RTLD_NOW);
   if (lib->_handle == NULL) {

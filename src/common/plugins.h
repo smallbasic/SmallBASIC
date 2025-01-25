@@ -20,6 +20,22 @@ extern "C" {
 #endif
 
 //
+// lowlevel - open the named library
+//
+void *plugin_lib_open(const char *name);
+
+//
+// lowlevel -return a pointer to the give library function name
+// name could be one of the method names in module.h
+//
+void *plugin_lib_address(void *handle, const char *name);
+
+//
+// lowlevel -close the named library
+//
+void plugin_lib_close(void *handle);
+
+//
 // initialise the plugin system
 //
 void plugin_init();

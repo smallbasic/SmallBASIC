@@ -43,7 +43,7 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../..)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../../..)
 
 # Add executable with the list of source files
-add_executable(${TARGET}.elf src/noop.c src/device.cpp src/main.cpp)
+add_executable(${TARGET}.elf src/noop.c src/device.cpp src/main.cpp src/module.cpp src/teensy.cpp)
 
 # enable all warnings in main.cpp
 target_compile_options(${TARGET}.elf PRIVATE -Wall)

@@ -90,7 +90,7 @@ void dev_printf(const char *format, ...) {
   static char _buffer[1024];
   va_list args;
   va_start(args, format);
-  unsigned size = vsnprintf(NULL, 0, format, args);
+  unsigned size = vsnprintf(nullptr, 0, format, args);
   va_end(args);
 
   if (size < sizeof(_buffer)) {
@@ -107,7 +107,7 @@ void log_printf(const char *format, ...) {
   if (opt_verbose) {
     va_list args;
     va_start(args, format);
-    unsigned size = vsnprintf(NULL, 0, format, args);
+    unsigned size = vsnprintf(nullptr, 0, format, args);
     va_end(args);
 
     if (size) {
