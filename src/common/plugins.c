@@ -77,10 +77,6 @@ void *slib_getoptptr(slib_t *lib, const char *name) {
 }
 
 static int slib_llclose(slib_t *lib) {
-  if (!lib->_handle) {
-    return 0;
-  }
-  plugin_lib_close(lib->_handle);
   lib->_handle = NULL;
   return 1;
 }

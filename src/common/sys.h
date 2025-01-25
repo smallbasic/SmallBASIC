@@ -79,6 +79,8 @@ extern "C" {
   #define SB_STR_VER VERSION " FLTK " _FLTK_VERSION SB_VERSYS SB_BIT_SZ BUILD_DATE
 #elif defined (_EMCC)
   #define SB_STR_VER VERSION " Emscripten " BUILD_DATE
+#elif defined (_TEENSY)
+  #define SB_STR_VER VERSION " Teensy " BUILD_DATE
 #else
   #define SB_STR_VER VERSION " Console " SB_VERSYS SB_BIT_SZ BUILD_DATE
 #endif

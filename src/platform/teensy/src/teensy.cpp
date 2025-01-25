@@ -39,31 +39,6 @@ static int cmd_analoginput_read(var_s *self, int argc, slib_par_t *arg, var_s *r
   return result;
 }
 
-static int cmd_digitalinput_read(var_s *self, int argc, slib_par_t *arg, var_s *retval) {
-  int result = 0;
-  if (argc != 0 || !isObject(self)) {
-    error(retval, "DigitalInput.read", 0);
-  } else {
-    int pin = self->v.m.id;
-    v_setint(retval, digitalRead(pin));
-    result = 1;
-  }
-  return result;
-}
-
-static int cmd_digitaloutput_write(var_s *self, int argc, slib_par_t *arg, var_s *retval) {
-  int result = 0;
-  if (argc != 0 || !isObject(self)) {
-    error(retval, "DigitalOutput.write", 1);
-  } else {
-    int pin = self->v.m.id;
-    int value = get_param_int(argc, arg, 0, 0);
-    digitalWrite(pin, value);
-    result = 1;
-  }
-  return result;
-}
-
 static int cmd_openanaloginput(int argc, slib_par_t *params, var_t *retval) {
   int result = 1;
   int pin = get_param_int(argc, params, 0, -1);
@@ -72,6 +47,18 @@ static int cmd_openanaloginput(int argc, slib_par_t *params, var_t *retval) {
     v_create_callback(retval, "read", cmd_analoginput_read);
   } else {
     result = 0;
+  }
+  return result;
+}
+
+static int cmd_digitalinput_read(var_s *self, int argc, slib_par_t *arg, var_s *retval) {
+  int result = 0;
+  if (argc != 0 || !isObject(self)) {
+    error(retval, "DigitalInput.read", 0);
+  } else {
+    int pin = self->v.m.id;
+    v_setint(retval, digitalRead(pin));
+    result = 1;
   }
   return result;
 }
@@ -85,6 +72,19 @@ static int cmd_opendigitalinput(int argc, slib_par_t *params, var_t *retval) {
     result = 1;
   } else {
     result = 0;
+  }
+  return result;
+}
+
+static int cmd_digitaloutput_write(var_s *self, int argc, slib_par_t *arg, var_s *retval) {
+  int result = 0;
+  if (argc != 1 || !isObject(self)) {
+    error(retval, "DigitalOutput.write", 1);
+  } else {
+    int pin = self->v.m.id;
+    int value = get_param_int(argc, arg, 0, 0);
+    digitalWrite(pin, value);
+    result = 1;
   }
   return result;
 }

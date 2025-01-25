@@ -15,7 +15,7 @@ build/Makefile: build/modules/cores/teensy4/Makefile
 src/main_bas.h: main.bas
 	@xxd -i $< > $@
 
-build/smallbasic.elf : build/Makefile src/noop.c src/main.cpp src/device.cpp src/main_bas.h
+build/smallbasic.elf : build/Makefile src/noop.c src/main.cpp src/device.cpp src/teensy.cpp src/main_bas.h
 	@cd build && make -j 32
 
 all: build/smallbasic.elf

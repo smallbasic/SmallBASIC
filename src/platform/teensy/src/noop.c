@@ -116,7 +116,6 @@ int gra_y() { return 0; }
 void net_print(const char *data) {}
 void net_send(const char *data) {}
 time_t sys_filetime(const char *filename) { return 0; }
-int sys_search_path(const char *path, const char *file, char *retbuf) { return 0; }
 void v_create_image(var_p_t var) {}
 void v_create_form(var_p_t var) {}
 void v_create_window(var_p_t var) {}

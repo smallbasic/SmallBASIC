@@ -31,11 +31,6 @@ void *plugin_lib_open(const char *name);
 void *plugin_lib_address(void *handle, const char *name);
 
 //
-// lowlevel -close the named library
-//
-void plugin_lib_close(void *handle);
-
-//
 // initialise the plugin system
 //
 void plugin_init();

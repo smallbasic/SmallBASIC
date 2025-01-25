@@ -18,7 +18,7 @@
 
 void *plugin_lib_open(const char *name) {
   void *result = nullptr;
-  if (strcmp(name, "teensy") == 0) {
+  if (strcmp(name, "/libteensy") == 0) {
     result = get_teensy_module();
   }
   return result;
@@ -61,11 +61,13 @@ char *dev_read(const char *fileName) {
   return buffer;
 }
 
-void blink(int pauseMillis) {
-  digitalWriteFast(13, HIGH);
-  delay(pauseMillis);
-  digitalWriteFast(13, LOW);
-  delay(pauseMillis);
+int sys_search_path(const char *path, const char *file, char *retbuf) {
+  int result;
+  if (strcmp(file, "libteensy") == 0) {
+    strcpy(retbuf, "/");
+    result = 1;
+  }
+  return result;
 }
 
 void setup() {
@@ -90,16 +92,11 @@ void setup() {
 extern "C" int main(void) {
   setup();
   if (!sbasic_main(MAIN_BAS)) {
-    dev_print("run failed");
+    dev_print("Error: run failed\n");
+    opt_quiet = 0;
+    opt_verbose = 1;
+    sbasic_main(MAIN_BAS);
   } else {
     dev_print("main.bas ended");
   }
-
-  pinMode(13, OUTPUT);
-  while (1) {
-    dev_print("blink?");
-    blink(500);
-    yield();
-  }
 }
-
