@@ -56,6 +56,11 @@ int get_escape(const char *str, int begin, int end) {
 }
 
 void dev_print(const char *str) {
+  Serial.begin(115200);
+  while (!Serial) {
+    // wait
+  }
+
   static int column = 0;
   int len = strlen(str);
   if (len) {

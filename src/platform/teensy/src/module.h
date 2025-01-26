@@ -13,18 +13,19 @@ void error(var_p_t var, const char *field, int nMin, int nMax);
 void error(var_p_t var, const char *field, int n);
 void error(var_p_t var, const char *text);
 int get_param_int(int argc, slib_par_t *params, int n, int def);
+const char *get_param_str(int argc, slib_par_t *params, int n, const char *def);
 
-typedef struct API {
+typedef struct {
   const char *name;
   int (*command)(int, slib_par_t *, var_t *retval);
 } API;
 
-typedef struct FUNC_SIG {
+typedef struct {
   int _min;
   int _max;
   const char *_name;
   int (*_command)(int, slib_par_t *, var_t *retval);
-} FUNC_SIG;
+} FuncSpec;
 
 typedef int (*sblib_exec_fn)(int, int, slib_par_t *, var_t *);
 typedef int (*sblib_getname_fn) (int, char *);
@@ -41,7 +42,7 @@ typedef struct {
   sblib_count_fn _proc_count;
   sblib_getname_fn _proc_getname;
   sblib_free_fn _free;
-} s_module;
+} ModuleConfig;
 
-s_module *get_teensy_module();
-
+ModuleConfig *get_teensy_module();
+ModuleConfig *get_ssd1306_module();

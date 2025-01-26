@@ -20,12 +20,15 @@ void *plugin_lib_open(const char *name) {
   void *result = nullptr;
   if (strcmp(name, "/libteensy") == 0) {
     result = get_teensy_module();
+  } else if (strcmp(name, "/libssd1306") == 0) {
+    result = get_ssd1306_module();
   }
+
   return result;
 }
 
 void *plugin_lib_address(void *handle, const char *name) {
-  auto *pModule = (s_module *)handle;
+  auto *pModule = (ModuleConfig *)handle;
   void *result = nullptr;
   if (strcmp(name, "sblib_func_exec") == 0) {
     result = (void *)pModule->_func_exec;
@@ -63,7 +66,8 @@ char *dev_read(const char *fileName) {
 
 int sys_search_path(const char *path, const char *file, char *retbuf) {
   int result;
-  if (strcmp(file, "libteensy") == 0) {
+  if (strcmp(file, "libteensy") == 0 ||
+      strcmp(file, "libssd1306") == 0) {
     strcpy(retbuf, "/");
     result = 1;
   }
@@ -71,11 +75,6 @@ int sys_search_path(const char *path, const char *file, char *retbuf) {
 }
 
 void setup() {
-  Serial.begin(115200);
-  while (!Serial) {
-    // wait
-  }
-
   opt_autolocal = 0;
   opt_command[0] = '\0';
   opt_modpath[0] = '\0';

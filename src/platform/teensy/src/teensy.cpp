@@ -13,15 +13,15 @@
 #include "include/var_map.h"
 #include "module.h"
 
-bool isPin(int id) {
+static bool isPin(int id) {
   return id >= 0 && id < CORE_NUM_TOTAL_PINS;
 }
 
-bool isObject(var_p_t var) {
+static bool isObject(var_p_t var) {
   return var != nullptr && v_is_type(var, V_MAP) && isPin(var->v.m.id);
 }
 
-void setPin(var_p_t var, uint8_t pin, uint8_t mode) {
+static void setPin(var_p_t var, uint8_t pin, uint8_t mode) {
   map_init(var);
   var->v.m.id = pin;
   pinMode(pin, mode);
@@ -102,7 +102,7 @@ static int cmd_opendigitaloutput(int argc, slib_par_t *params, var_t *retval) {
   return result;
 }
 
-FUNC_SIG lib_func[] = {
+static FuncSpec lib_func[] = {
   {1, 1, "OPENANALOGINPUT", cmd_openanaloginput},
   {1, 1, "OPENDIGITALINPUT", cmd_opendigitalinput},
   {1, 1, "OPENDIGITALOUTPUT", cmd_opendigitaloutput},
@@ -143,7 +143,7 @@ static int teensy_func_exec(int index, int argc, slib_par_t *params, var_t *retv
   return result;
 }
 
-static s_module teensyModule = {
+static ModuleConfig teensyModule = {
   ._func_exec = teensy_func_exec,
   ._func_count = teensy_func_count,
   ._func_getname = teensy_func_getname,
@@ -153,6 +153,6 @@ static s_module teensyModule = {
   ._free = nullptr
 };
 
-s_module *get_teensy_module() {
+ModuleConfig *get_teensy_module() {
   return &teensyModule;
 }

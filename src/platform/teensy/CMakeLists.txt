@@ -37,13 +37,27 @@ add_subdirectory(common)
 
 # Add module includes
 include_directories(${TEENSY_SRC})
+include_directories(${MODULES}/ADC)
+include_directories(${MODULES}/Adafruit-GFX-Library)
+include_directories(${MODULES}/Adafruit_BusIO)
+include_directories(${MODULES}/SPI)
+include_directories(${MODULES}/Adafruit_SSD1306)
+include_directories(${MODULES}/USBHost_t36)
+include_directories(${MODULES}/Wire)
 
 # include config.h and common headers
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../..)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../../..)
 
 # Add executable with the list of source files
-add_executable(${TARGET}.elf src/noop.c src/device.cpp src/main.cpp src/module.cpp src/teensy.cpp)
+add_executable(${TARGET}.elf
+  src/noop.c
+  src/device.cpp
+  src/main.cpp
+  src/module.cpp
+  src/teensy.cpp
+  src/ssd1306.cpp
+)
 
 # enable all warnings in main.cpp
 target_compile_options(${TARGET}.elf PRIVATE -Wall)
