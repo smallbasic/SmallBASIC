@@ -21,9 +21,9 @@
 constexpr int32_t AUDIO_SAMPLE_RATE = 44100;
 constexpr float PI2 = 2.0f * M_PI;
 constexpr int SILENCE_BEFORE_STOP = kMillisPerSecond * 5;
-constexpr int MAX_RAMP = 250;
 constexpr int MAX_QUEUE_SIZE = 250;
-constexpr int RAMP_SCALE = 10;
+constexpr int MAX_RAMP = 200;
+constexpr int RAMP_SCALE = 20;
 int instances = 0;
 
 struct Sound {
@@ -87,6 +87,9 @@ float Sound::sample() {
   if (_fadeIn != 0 && _sampled < _fadeIn) {
     // fadeIn from silence
     result *= (float)(_sampled) / (float)_fadeIn;
+  } else if (_fadeOut != 0 && _samples - _sampled < _fadeOut) {
+    // fadeOut to silence
+    result *= (float)(_samples - _sampled) / (float)_fadeOut;
   } else if (_rest != 0) {
     if (_sampled < _rest) {
       // fadeOut the previous sound
@@ -97,9 +100,6 @@ float Sound::sample() {
     } else {
       result = 0;
     }
-  } else if (_fadeOut != 0 && _samples - _sampled < _fadeOut) {
-    // fadeOut to silence
-    result *= (float)(_samples - _sampled) / (float)_fadeOut;
   }
 
   return result;

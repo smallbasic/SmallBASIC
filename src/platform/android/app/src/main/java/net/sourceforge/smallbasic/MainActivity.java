@@ -133,7 +133,7 @@ public class MainActivity extends NativeActivity {
     intent.putExtra(Intent.EXTRA_SHORTCUT_NAME, name);
     intent.putExtra(Intent.EXTRA_SHORTCUT_ICON_RESOURCE,
                     Intent.ShortcutIconResource.fromContext(getApplicationContext(),
-                                                            R.drawable.ic_launcher));
+                                                            R.mipmap.ic_launcher));
     intent.putExtra("duplicate", false);
     intent.setAction("com.android.launcher.action.INSTALL_SHORTCUT");
     getApplicationContext().sendBroadcast(intent);
