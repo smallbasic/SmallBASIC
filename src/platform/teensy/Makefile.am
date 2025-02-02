@@ -5,6 +5,9 @@
 # Download the GNU Public License (GPL) from www.gnu.org
 #
 
+tidy:
+		@cd build && make tidy
+
 build/modules/cores/teensy4/Makefile:
 	./setup.sh
 
@@ -22,7 +25,11 @@ build/smallbasic.elf : \
 	src/device.cpp \
 	src/teensy.cpp \
 	src/ssd1306.cpp \
-	src/main_bas.h
+	src/editor.cpp \
+	src/main_bas.h \
+  ../../ui/strlib.cpp \
+  ../../ui/inputs.cpp \
+  ../../ui/textedit.cpp
 	@cd build && make -j 32
 
 all: build/smallbasic.elf

@@ -33,7 +33,7 @@ extern "C" {
 #if !defined(HAVE_STRLCPY)
 size_t strlcpy(char *dst, const char *src, size_t siz);
 #endif
-  
+
 /**
  * Appends src to string dst of size siz (unlike strncat, siz is the
  * full size of dst, not space left).  At most siz-1 characters
@@ -43,6 +43,10 @@ size_t strlcpy(char *dst, const char *src, size_t siz);
  */
 #if !defined(HAVE_STRLCAT)
 size_t strlcat(char *dst, const char *src, size_t siz);
+#endif
+
+#if defined(_MCU)
+char *strcasestr(const char *haystack, const char *needle);
 #endif
 
 #ifdef __cplusplus

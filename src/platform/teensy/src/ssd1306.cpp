@@ -31,7 +31,11 @@ static int cmd_init(int argc, slib_par_t *params, var_t *retval) {
     dev_print("SSD1306 initialization failed");
     for (;;);
   }
-  display.display();
+
+  display.clearDisplay();
+  display.setTextColor(SSD1306_WHITE);
+  display.fillScreen(SSD1306_BLACK);
+  display.setTextSize(1);
   return 1;
 }
 
@@ -195,7 +199,6 @@ static int cmd_invertdisplay(int argc, slib_par_t *params, var_t *retval) {
 // void print(uint8_t);
 static int cmd_print(int argc, slib_par_t *params, var_t *retval) {
   auto str = get_param_str(argc, params, 0, 0);
-  dev_print(str);
   display.print(str);
   return 1;
 }
@@ -204,14 +207,6 @@ static int cmd_print(int argc, slib_par_t *params, var_t *retval) {
 static int cmd_setrotation(int argc, slib_par_t *params, var_t *retval) {
   auto r = get_param_int(argc, params, 0, 0);
   display.setRotation(r);
-  return 1;
-}
-
-// void setTextColor(uint16_t c, uint16_t bg) {
-static int cmd_settextcolor(int argc, slib_par_t *params, var_t *retval) {
-  auto c = get_param_int(argc, params, 0, 0);
-  auto bg = get_param_int(argc, params, 1, 0);
-  display.setTextSize(c, bg);
   return 1;
 }
 
@@ -252,12 +247,11 @@ FuncSpec lib_proc[] = {
   {4, 4, "FILLCIRCLE", cmd_fillcircle},
   {5, 5, "FILLRECT", cmd_fillrect},
   {6, 6, "FILLROUNDRECT", cmd_fillroundrect},
-  {2, 2, "FILLSCREEN", cmd_fillscreen},
+  {1, 1, "FILLSCREEN", cmd_fillscreen},
   {7, 7, "FILLTRIANGLE", cmd_filltriangle},
   {1, 1, "INVERTDISPLAY", cmd_invertdisplay},
   {1, 1, "PRINT", cmd_print},
-  {2, 2, "SETROTATION", cmd_setrotation},
-  {2, 2, "SETTEXTCOLOR", cmd_settextcolor},
+  {1, 1, "SETROTATION", cmd_setrotation},
   {2, 2, "SETCURSOR", cmd_setcursor},
   {1, 1, "SETTEXTSIZE", cmd_settextsize},
   {1, 1, "SETTEXTWRAP", cmd_settextwrap},

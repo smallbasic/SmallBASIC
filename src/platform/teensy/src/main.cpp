@@ -13,6 +13,7 @@
 #include "common/sbapp.h"
 #include "main_bas.h"
 #include "module.h"
+#include "editor.h"
 
 #define MAIN_BAS "__main_bas__"
 
@@ -90,6 +91,11 @@ void setup() {
 
 extern "C" int main(void) {
   setup();
+
+#if WITH_EDITOR
+  editSource();
+#endif
+
   if (!sbasic_main(MAIN_BAS)) {
     dev_print("Error: run failed\n");
     opt_quiet = 0;

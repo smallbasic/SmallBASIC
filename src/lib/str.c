@@ -61,3 +61,32 @@ size_t strlcat(char *dst, const char *src, size_t siz) {
   return (dlen + (s - src));
 }
 #endif
+
+#if defined(_MCU)
+#include <ctype.h>
+char* strcasestr(const char *haystack, const char *needle) {
+  if (!*needle) {
+    // If needle is empty, return the haystack
+    return (char *)haystack;
+  }
+
+  for (; *haystack; haystack++) {
+    const char *h = haystack;
+    const char *n = needle;
+
+    // Compare characters case-insensitively
+    while (*h && *n && tolower((unsigned char)*h) == tolower((unsigned char)*n)) {
+      h++;
+      n++;
+    }
+
+    // If we have matched the entire needle
+    if (!*n) {
+      return (char *)haystack;
+    }
+  }
+   // Not found
+  return NULL;
+}
+
+#endif

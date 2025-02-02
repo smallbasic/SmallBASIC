@@ -49,8 +49,7 @@ include_directories(${MODULES}/Wire)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../..)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../../..)
 
-# Add executable with the list of source files
-add_executable(${TARGET}.elf
+set(SOURCES
   src/noop.c
   src/device.cpp
   src/main.cpp
@@ -58,6 +57,26 @@ add_executable(${TARGET}.elf
   src/teensy.cpp
   src/ssd1306.cpp
 )
+
+option(WITH_EDITOR "Whether to include the program editor" OFF)
+if (WITH_EDITOR)
+  set(SOURCES
+    ${SOURCES}
+    src/editor.cpp
+    ../../ui/strlib.cpp
+    ../../ui/inputs.cpp
+    ../../ui/textedit.cpp
+  )
+endif()
+
+# Add executable with the list of source files
+add_executable(${TARGET}.elf ${SOURCES})
+
+if (WITH_EDITOR)
+  target_compile_definitions(${TARGET}.elf PRIVATE WITH_EDITOR=1)
+else()
+  target_compile_definitions(${TARGET}.elf PRIVATE WITH_EDITOR=0)
+endif()
 
 # enable all warnings in main.cpp
 target_compile_options(${TARGET}.elf PRIVATE -Wall)

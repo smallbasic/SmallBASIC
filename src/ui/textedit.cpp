@@ -1122,7 +1122,11 @@ void TextEditInput::updateField(var_p_t form) {
 }
 
 bool TextEditInput::updateUI(var_p_t form, var_p_t field) {
+#if defined(_TEENSY)
+  bool updated = false;
+#else
   bool updated = (form && field) ? FormInput::updateUI(form, field) : false;
+#endif
   if (!_theme) {
     _theme = new EditTheme();
     updated = true;
@@ -1297,9 +1301,8 @@ void TextEditInput::drawLineNumber(int x, int y, int row, bool selected) {
     for (int n = row; n > 0; n /= 10) {
       places++;
     }
-    char rowBuffer[places + 1];
+    char rowBuffer[14];
     int offs = (_marginWidth - (_charWidth * places)) / 2;
-
     sprintf(rowBuffer, "%d", row);
     maDrawText(x + offs, y, rowBuffer, places);
   }

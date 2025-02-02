@@ -13,12 +13,18 @@
 #include "config.h"
 #include "common/device.h"
 #include "common/smbas.h"
+#include "common/keymap.h"
+#include "lib/maapi.h"
 
 void dev_delay(uint32_t timeout) {
   delay(timeout);
 }
 
 uint64_t dev_get_millisecond_count() {
+  return millis();
+}
+
+int maGetMilliSecondCount() {
   return millis();
 }
 
@@ -143,4 +149,86 @@ void lwrite(const char *buf) {
 void panic(const char *fmt, ...) {
   Serial.println("Fatal error");
   for (;;);
+}
+
+//
+// read the next set of characters following escape
+//
+int getEscape() {
+  int result = -1;
+  if (Serial.available()) {
+    char secondByte = Serial.read();
+    if (secondByte == '[') {
+      if (Serial.available()) {
+        int key = Serial.read();
+        switch (key) {
+        case 0x32:
+          result = SB_KEY_INSERT;
+          break;
+        case 0x33:
+          result = SB_KEY_DELETE;
+          break;
+        case 0x35:
+          result = SB_KEY_PGUP;
+          break;
+        case 0x36:
+          result = SB_KEY_PGDN;
+          break;
+        case 0x41:
+          result = SB_KEY_UP;
+          break;
+        case 0x42:
+          result = SB_KEY_DOWN;
+          break;
+        case 0x43:
+          result = SB_KEY_RIGHT;
+          break;
+        case 0x44:
+          result = SB_KEY_LEFT;
+          break;
+        case 0x46:
+          result = SB_KEY_END;
+          break;
+        case 0x48:
+          result = SB_KEY_HOME;
+          break;
+        default:
+          dev_printf("Unknown esc[ key [%x]\n", key);
+          break;
+        }
+      }
+    } else {
+      result = SB_KEY_ESCAPE;
+    }
+  }
+  return result;
+}
+
+//
+// read the next key from the serial device
+//
+int getKey() {
+  int result = -1;
+  if (Serial.available()) {
+    result = Serial.read();
+    switch (result) {
+    case 0x09:
+      result = SB_KEY_TAB;
+      break;
+    case 0x0d:
+      result = SB_KEY_ENTER;
+      break;
+    case 0x1b:
+      result = getEscape();
+      break;
+    case 0x7f:
+      result = SB_KEY_BACKSPACE;
+      break;
+    }
+    dev_printf("got key [%d]\n", result);
+  } else {
+    delay(500);
+    yield();
+  }
+  return result;
 }

@@ -1,3 +1,10 @@
+2025-02-02 (12.28)
+	TEENSY: added experimental runtime platform for teensy mcu
+
+2025-01-27 (12.28)
+	ANDROID: Updated app icon, thanks to bplus, j7m, round157, qube, baggey
+	Final design by j7m, rendered in blender by Orlano W-S
+
 2024-10-09 (12.28)
 	COMMON: Fix #232: TICKS stops working after 50 days
 	ANDROID: Fix delay accuracy

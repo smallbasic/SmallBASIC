@@ -15,6 +15,8 @@
 #include "ui/textedit.h"
 
 void reset_image_cache();
+bool system_is_running();
+void system_output_set_dirty();
 
 struct Cache : public strlib::Properties<String *> {
   Cache(int size) : Properties(size * 2), _index(0) {}
