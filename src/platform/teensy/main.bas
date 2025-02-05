@@ -3,20 +3,17 @@ import teensy
 import ssd1306 as display
 
 display.init()
-delay(1000)
-
-display.setTextSize(1)
-display.setTextColor(1, 2)
-display.setCursor(0, 0)
+display.dim(1)
 display.print("Hello SmallBASIC!")
 display.flush()
 
-print "display done!"
-
 out = teensy.openDigitalOutput(13)
+print "hello"
 
 while 1
-  print sbver
+  display.print(sbver)
+  display.flush()
+
   value = false
   for i = 0 to 5
     out.write(value)

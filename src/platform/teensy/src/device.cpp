@@ -16,87 +16,170 @@
 #include "common/keymap.h"
 #include "lib/maapi.h"
 
-void dev_delay(uint32_t timeout) {
-  delay(timeout);
-}
+#define SERIAL_BAUD_RATE 1000000
 
-uint64_t dev_get_millisecond_count() {
-  return millis();
-}
+const int keymap[][2] = {
+  {0x32, SB_KEY_INSERT},
+  {0x33, SB_KEY_DELETE},
+  {0x35, SB_KEY_PGUP},
+  {0x36, SB_KEY_PGDN},
+  {0x41, SB_KEY_UP},
+  {0x42, SB_KEY_DOWN},
+  {0x43, SB_KEY_RIGHT},
+  {0x44, SB_KEY_LEFT},
+  {0x46, SB_KEY_END},
+  {0x48, SB_KEY_HOME}
+};
 
-int maGetMilliSecondCount() {
-  return millis();
-}
+const int keymapLen = sizeof(keymap) / sizeof(keymap[0]);
 
-void dev_trace_line(int lineNo) {
-  dev_printf("<%d>", lineNo);
-}
-
-int dev_events(int dead_loop) {
-  yield();
-  return 0;
-}
-
-const char *dev_getcwd() {
-  return "/tmp";
-}
-
-int dev_init(int mode, int flags) {
-  os_graf_mx = opt_pref_width;
-  os_graf_my = opt_pref_height;
-  setsysvar_int(SYSVAR_XMAX, os_graf_mx);
-  setsysvar_int(SYSVAR_YMAX, os_graf_my);
-  return 1;
-}
-
-int get_escape(const char *str, int begin, int end) {
-  int result = 0;
-  for (int i = begin; i < end; i++) {
-    if (isdigit(str[i])) {
-      result = (result * 10) + (str[i] - '0');
+//
+// read the next set of characters following escape
+//
+int get_escape() {
+  int result = -1;
+  if (Serial.available()) {
+    char byte = Serial.read();
+    if (byte == '[') {
+      if (Serial.available()) {
+        int key = Serial.read();
+        for (int i = 0; i < keymapLen; i++) {
+          if (key == keymap[i][0]) {
+            result = keymap[i][1];
+            break;
+          }
+        }
+        if (result == -1) {
+          dev_printf("Unknown Esc[ key [%x]\n", key);
+        }
+      }
     } else {
-      break;
+      result = SB_KEY_ESCAPE;
     }
   }
   return result;
 }
 
+//
+// read the next key from the serial device
+//
+int get_key(void) {
+  int result = -1;
+  if (Serial.available()) {
+    result = Serial.read();
+    switch (result) {
+    case 0x09:
+      result = SB_KEY_TAB;
+      break;
+    case 0x0d:
+      result = SB_KEY_ENTER;
+      break;
+    case 0x1b:
+      result = get_escape();
+      break;
+    case 0x7e:
+      result = SB_KEY_DELETE;
+      break;
+    case 0x7f:
+      result = SB_KEY_BACKSPACE;
+      break;
+    }
+    //dev_printf("got key %x\n", result);
+  }
+  return result;
+}
+
+//
+// delay for the specified number of milliseconds
+//
+void dev_delay(uint32_t timeout) {
+  delay(timeout);
+}
+
+//
+// returns the millisecond count
+//
+uint64_t dev_get_millisecond_count() {
+  return millis();
+}
+
+//
+// returns the millisecond count (UI abstraction layer)
+//
+int maGetMilliSecondCount() {
+  return millis();
+}
+
+//
+// dispays the currently executing line number
+//
+void dev_trace_line(int lineNo) {
+  dev_printf("<%d>", lineNo);
+}
+
+//
+// process events
+//
+int dev_events(int wait_flag) {
+  int result;
+  if (wait_flag) {
+    delay(10);
+  }
+#if INTERACTIVE
+  // break when new code available
+  result = Serial.available() > 0 ? -2 : 0;
+#else
+  result = 0;
+  if (Serial) {
+    int key = get_key();
+    if (key != -1) {
+      dev_pushkey(key);
+    }
+  }
+#endif
+  yield();
+  return result;
+}
+
+//
+// returns hardcoded folder name '/tmp'
+//
+const char *dev_getcwd() {
+  return "/tmp";
+}
+
+//
+// logical dedvice initialisation
+//
+int dev_init(int mode, int flags) {
+  keymap_init();
+  return 1;
+}
+
+//
+// print assumming the desktop terminal can display ansi escapes
+//
 void dev_print(const char *str) {
-  Serial.begin(115200);
+  // only initialise Serial when PRINT statement is used
+  Serial.begin(SERIAL_BAUD_RATE);
   while (!Serial) {
     // wait
   }
-
-  static int column = 0;
-  int len = strlen(str);
-  if (len) {
-    int escape = 0;
-    for (int i = 0; i < len; i++) {
-      if (i + 1 < len && str[i] == '\033' && str[i + 1] == '[') {
-        i += 2;
-        escape = i;
-      } else if (escape && str[i] == 'G') {
-        // move to column
-        int escValue = get_escape(str, escape, i);
-        while (escValue > column) {
-          Serial.print(' ');
-          column++;
-        }
-        escape = 0;
-      } else if (escape && str[i] == 'm') {
-        escape = 0;
-      } else if (!escape) {
-        if (str[i] == '\n') {
-          Serial.println();
-        } else {
-          Serial.print(str[i]);
-        }
-        column = (str[i] == '\n') ? 0 : column + 1;
-      }
+  if (CrashReport) {
+    Serial.print(CrashReport);
+  }
+  if (str != nullptr && str[0] != '\0') {
+    Serial.printf("%s", str);
+    int len = strlen(str);
+    if (str[len - 1] == '\n') {
+      Serial.print('\r');
     }
   }
 }
 
+//
+// var-args version of dev_print
+//
 void dev_printf(const char *format, ...) {
   static char _buffer[1024];
   va_list args;
@@ -114,6 +197,9 @@ void dev_printf(const char *format, ...) {
   }
 }
 
+//
+// LOGPRINT statement implementation
+//
 void log_printf(const char *format, ...) {
   if (opt_verbose) {
     va_list args;
@@ -140,95 +226,20 @@ void log_printf(const char *format, ...) {
   }
 }
 
+//
+// print when opt_verbose enabled
+//
 void lwrite(const char *buf) {
   if (opt_verbose) {
     Serial.println(buf);
   }
 }
 
+//
+// unrecoverable error
+//
 void panic(const char *fmt, ...) {
   Serial.println("Fatal error");
   for (;;);
 }
 
-//
-// read the next set of characters following escape
-//
-int getEscape() {
-  int result = -1;
-  if (Serial.available()) {
-    char secondByte = Serial.read();
-    if (secondByte == '[') {
-      if (Serial.available()) {
-        int key = Serial.read();
-        switch (key) {
-        case 0x32:
-          result = SB_KEY_INSERT;
-          break;
-        case 0x33:
-          result = SB_KEY_DELETE;
-          break;
-        case 0x35:
-          result = SB_KEY_PGUP;
-          break;
-        case 0x36:
-          result = SB_KEY_PGDN;
-          break;
-        case 0x41:
-          result = SB_KEY_UP;
-          break;
-        case 0x42:
-          result = SB_KEY_DOWN;
-          break;
-        case 0x43:
-          result = SB_KEY_RIGHT;
-          break;
-        case 0x44:
-          result = SB_KEY_LEFT;
-          break;
-        case 0x46:
-          result = SB_KEY_END;
-          break;
-        case 0x48:
-          result = SB_KEY_HOME;
-          break;
-        default:
-          dev_printf("Unknown esc[ key [%x]\n", key);
-          break;
-        }
-      }
-    } else {
-      result = SB_KEY_ESCAPE;
-    }
-  }
-  return result;
-}
-
-//
-// read the next key from the serial device
-//
-int getKey() {
-  int result = -1;
-  if (Serial.available()) {
-    result = Serial.read();
-    switch (result) {
-    case 0x09:
-      result = SB_KEY_TAB;
-      break;
-    case 0x0d:
-      result = SB_KEY_ENTER;
-      break;
-    case 0x1b:
-      result = getEscape();
-      break;
-    case 0x7f:
-      result = SB_KEY_BACKSPACE;
-      break;
-    }
-    dev_printf("got key [%d]\n", result);
-  } else {
-    delay(500);
-    yield();
-  }
-  return result;
-}

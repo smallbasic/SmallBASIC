@@ -25,11 +25,7 @@ build/smallbasic.elf : \
 	src/device.cpp \
 	src/teensy.cpp \
 	src/ssd1306.cpp \
-	src/editor.cpp \
-	src/main_bas.h \
-  ../../ui/strlib.cpp \
-  ../../ui/inputs.cpp \
-  ../../ui/textedit.cpp
+	src/main_bas.h
 	@cd build && make -j 32
 
 all: build/smallbasic.elf

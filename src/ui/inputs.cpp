@@ -482,12 +482,12 @@ void FormEditInput::setFocus(bool focus) {
   if (!_noFocus && focus == (focusInput != this)) {
     focusInput = focus ? this : nullptr;
     focusEdit = focus ? this : nullptr;
-    system_output_set_dirty();
+    g_system->getOutput()->setDirty();
   }
 }
 
 void FormEditInput::clicked(int x, int y, bool pressed) {
-  if (pressed && system_is_running()) {
+  if (pressed && g_system->isRunning()) {
     dev_clrkb();
     setFocus(true);
     focusEdit = this;

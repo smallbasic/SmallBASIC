@@ -99,14 +99,6 @@
 
 System *g_system;
 
-bool system_is_running() {
-  return g_system->isRunning();
-}
-
-void system_output_set_dirty() {
-  g_system->getOutput()->setDirty();
-}
-
 void Cache::add(const char *key, const char *value) {
   if (_size == _count) {
     // overwrite at next index position

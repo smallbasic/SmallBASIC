@@ -13,9 +13,12 @@
 #include "common/sbapp.h"
 #include "main_bas.h"
 #include "module.h"
-#include "editor.h"
+#include "ui/strlib.h"
 
 #define MAIN_BAS "__main_bas__"
+#define SERIAL_BAS "__serial_bas__"
+
+strlib::String buffer;
 
 void *plugin_lib_open(const char *name) {
   void *result = nullptr;
@@ -49,20 +52,21 @@ void *plugin_lib_address(void *handle, const char *name) {
   return result;
 }
 
-void plugin_lib_close(void *handle) {
-  // unused
-}
-
 char *dev_read(const char *fileName) {
-  char *buffer;
+  char *data;
   if (strcmp(fileName, MAIN_BAS) == 0) {
-    buffer = (char *)malloc(main_bas_len + 1);
-    memcpy(buffer, main_bas, main_bas_len);
-    buffer[main_bas_len] = '\0';
+    data = (char *)malloc(main_bas_len + 1);
+    memcpy(data, main_bas, main_bas_len);
+    data[main_bas_len] = '\0';
+  } else if (strcmp(fileName, SERIAL_BAS) == 0) {
+    int len = buffer.length();
+    data = (char *)malloc(len + 1);
+    memcpy(data, buffer.c_str(), len);
+    data[len] = '\0';
   } else {
-    buffer = nullptr;
+    data = nullptr;
   }
-  return buffer;
+  return data;
 }
 
 int sys_search_path(const char *path, const char *file, char *retbuf) {
@@ -87,15 +91,99 @@ void setup() {
   opt_quiet = 1;
   opt_verbose = 0;
   opt_graphics = 0;
+  dev_init(0, 0);
+}
+
+void serial_read() {
+  bool eof = false;
+  int lastRead = -1;
+
+  dev_print("Waiting for program... ");
+  buffer.clear();
+
+  while (!eof) {
+    if (Serial.available()) {
+      char ch = (char)Serial.read();
+      if (ch != '\r' && ch != '\0') {
+        buffer.append(ch);
+      }
+      lastRead = millis();
+    } else if (lastRead != -1 && buffer.length() > 1 && millis() - lastRead > 1000) {
+      eof = true;
+    } else {
+      delay(250);
+    }
+  }
+  dev_printf("received %d bytes.\r\n", buffer.length());
+}
+
+void print_source_line(const char *text, int line, bool last) {
+  char lineMargin[32];
+  sprintf(lineMargin, "\033[7m%03d\033[0m ", line);
+  dev_print(lineMargin);
+  if (line == gsb_last_line && gsb_last_error) {
+    dev_print("\033[7m");
+    dev_print(text);
+    if (last) {
+      dev_print("\n");
+    }
+    dev_print("\033[27;31m  --^\n");
+    dev_print(gsb_last_errmsg);
+    dev_print("\033[0m\n");
+  } else {
+    dev_print(text);
+  }
+}
+
+void print_error(char *source) {
+  char *ch = source;
+  char *nextLine = source;
+  int errorLine = gsb_last_error ? gsb_last_line : -1;
+  int line = 1;
+  int pageLines = 25;
+
+  while (*ch) {
+    while (*ch && *ch != '\n') {
+      ch++;
+    }
+    if (*ch == '\n') {
+      ch++;
+      char end = *ch;
+      *ch = '\0';
+      print_source_line(nextLine, line, false);
+      *ch = end;
+      nextLine = ch;
+    } else {
+      print_source_line(nextLine, line, true);
+    }
+    line++;
+
+    if (errorLine != -1 && line == errorLine + pageLines) {
+      // avoid scrolling past the error line
+      if (*ch) {
+        dev_print("... \n");
+      }
+      break;
+    }
+  }
+}
+
+void interactive_main() {
+  while (true) {
+    serial_read();
+    if (!sbasic_main(SERIAL_BAS)) {
+      print_error((char *)buffer.c_str());
+    }
+  }
 }
 
 extern "C" int main(void) {
   setup();
 
-#if WITH_EDITOR
-  editSource();
-#endif
-
+#if INTERACTIVE
+  dev_print("Interactive mode enabled\r\n");
+  interactive_main();
+#else
   if (!sbasic_main(MAIN_BAS)) {
     dev_print("Error: run failed\n");
     opt_quiet = 0;
@@ -104,4 +192,5 @@ extern "C" int main(void) {
   } else {
     dev_print("main.bas ended");
   }
+#endif
 }
