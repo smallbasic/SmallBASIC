@@ -8,7 +8,8 @@
 //
 
 #include "config.h"
-#include "common/sbapp.h"
+#include <stdio.h>
+#include "include/var.h"
 
 void error(var_p_t var, const char *field, int nMin, int nMax) {
   char message[256];

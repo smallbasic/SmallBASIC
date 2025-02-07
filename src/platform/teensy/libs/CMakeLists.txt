@@ -119,6 +119,7 @@ set(SOURCES
 
 add_library(libs STATIC ${SOURCES})
 
+target_compile_options(libs PRIVATE -Wno-all -Wno-extra -Wno-pedantic)
 target_include_directories(libs PRIVATE ${ADC_DIR})
 target_include_directories(libs PRIVATE ${GFX_DIR})
 target_include_directories(libs PRIVATE ${MODULES_DIR}/Adafruit_BusIO)
@@ -126,3 +127,4 @@ target_include_directories(libs PRIVATE ${MODULES_DIR}/SdFat/src)
 target_include_directories(libs PRIVATE ${SPI_DIR})
 target_include_directories(libs PRIVATE ${TEENSY_DIR})
 target_include_directories(libs PRIVATE ${WIRE_DIR})
+

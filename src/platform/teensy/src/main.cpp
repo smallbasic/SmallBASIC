@@ -98,7 +98,7 @@ void serial_read() {
   bool eof = false;
   int lastRead = -1;
 
-  dev_print("Waiting for program... ");
+  dev_print("Waiting for data... ");
   buffer.clear();
 
   while (!eof) {

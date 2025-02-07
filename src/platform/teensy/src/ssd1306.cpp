@@ -25,17 +25,20 @@
 #define OLED_RESET    -1
 
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
+bool init_done = false;
 
 static int cmd_init(int argc, slib_par_t *params, var_t *retval) {
-  if (!display.begin(SSD1306_SWITCHCAPVCC, 0x3C, false, true)) {
-    dev_print("SSD1306 initialization failed");
-    for (;;);
+  if (!init_done) {
+    if (!display.begin(SSD1306_SWITCHCAPVCC, 0x3C, false, true)) {
+      dev_print("SSD1306 initialization failed");
+      for (;;);
+    }
+    display.clearDisplay();
+    display.setTextColor(SSD1306_WHITE);
+    display.fillScreen(SSD1306_BLACK);
+    display.setTextSize(1);
+    init_done = true;
   }
-
-  display.clearDisplay();
-  display.setTextColor(SSD1306_WHITE);
-  display.fillScreen(SSD1306_BLACK);
-  display.setTextSize(1);
   return 1;
 }
 
