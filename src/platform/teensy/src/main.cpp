@@ -142,6 +142,7 @@ void print_error(char *source) {
   int line = 1;
   int pageLines = 25;
 
+  dev_print("\007");
   while (*ch) {
     while (*ch && *ch != '\n') {
       ch++;

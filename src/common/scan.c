@@ -4654,6 +4654,10 @@ int comp_pass1(const char *section, const char *text) {
   }
 
   char *code_line = malloc(SB_SOURCELINE_SIZE + 1);
+  if (!code_line) {
+    panic("Failed to allocate %d bytes\n", SB_SOURCELINE_SIZE + 1);
+  }
+
   char *new_text = comp_format_text(text);
 
   comp_preproc_pass1(new_text);

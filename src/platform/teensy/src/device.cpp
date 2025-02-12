@@ -114,7 +114,7 @@ int maGetMilliSecondCount() {
 // dispays the currently executing line number
 //
 void dev_trace_line(int lineNo) {
-  dev_printf("<%d>", lineNo);
+  dev_printf("Line: %d\r\n", lineNo);
 }
 
 //

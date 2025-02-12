@@ -37,6 +37,7 @@ set(SOURCES
 
 add_library(common STATIC ${SOURCES})
 
+target_compile_definitions(common PRIVATE HAVE_CONFIG_H=1)
 target_include_directories(common PRIVATE ${COMMON_DIR})
 target_include_directories(common PRIVATE ${CMAKE_SOURCE_DIR}/../../..)
 target_include_directories(common PRIVATE ${CMAKE_SOURCE_DIR}/../..)

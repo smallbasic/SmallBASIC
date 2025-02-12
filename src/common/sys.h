@@ -86,7 +86,12 @@ extern "C" {
 #endif
 #define SB_ERRMSG_SIZE      2048
 #define SB_KEYWORD_SIZE     128
+
+#if defined (_MCU)
+#define SB_SOURCELINE_SIZE  8192  // compiler
+#else
 #define SB_SOURCELINE_SIZE  65536 // compiler
+#endif
 #define SB_TEXTLINE_SIZE    8192  // RTL
 #define SB_EXEC_STACK_SIZE  1024  // executor's stack size
 #define SB_EVAL_STACK_SIZE  16    // evaluation stack size

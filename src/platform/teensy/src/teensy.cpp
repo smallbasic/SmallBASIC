@@ -102,7 +102,19 @@ static int cmd_opendigitaloutput(int argc, slib_par_t *params, var_t *retval) {
   return result;
 }
 
+static int cmd_get_temperature(int argc, slib_par_t *params, var_t *retval) {
+  v_setint(retval, tempmonGetTemp());
+  return 1;
+}
+
+static int cmd_get_cpu_speed(int argc, slib_par_t *params, var_t *retval) {
+  v_setint(retval, F_CPU_ACTUAL/1000000);
+  return 1;
+}
+
 static FuncSpec lib_func[] = {
+  {0, 0, "GETTEMP", cmd_get_temperature},
+  {0, 0, "GETCPUSPEED", cmd_get_cpu_speed},
   {1, 1, "OPENANALOGINPUT", cmd_openanaloginput},
   {1, 1, "OPENDIGITALINPUT", cmd_opendigitalinput},
   {1, 1, "OPENDIGITALOUTPUT", cmd_opendigitaloutput},
