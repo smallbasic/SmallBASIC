@@ -1,4 +1,4 @@
-rem fuck
+rem
 rem see: https://www.pjrc.com/teensy/td_libs_SSD1306.html
 rem
 
@@ -18,14 +18,6 @@ display.setTextSize(1)
 display.print(SBVER)
 display.dim(10)
 display.flush()
-
-
-'for i = 0 to 360 step 45
-'  display.setRotation(i)
-'  display.flush()
-'  delay 1000
-'next
-
 display.drawCircle(screenWidth / 2, screenHeight / 2, 24)
 display.drawRect(1, 1, screenWidth - 2, screenHeight - 2)
 display.drawRoundRect(2, 2, screenWidth - 4, screenHeight - 4, 20)
@@ -42,7 +34,7 @@ display.stopScroll()
 
 while 1
   display.setCursor(30, 30)
-'  display.clear()
+  display.clear()
   display.print("Temp: " + teensy.getTemp() + "c")
   display.flush()
   delay 1000
