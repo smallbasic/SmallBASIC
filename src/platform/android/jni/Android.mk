@@ -5,18 +5,24 @@
 # Download the GNU Public License (GPL) from www.gnu.org
 # 
 
-JNI_PATH := $(call my-dir)
-SB_HOME := $(JNI_PATH)/../../../..
-SDK := $(HOME)/android-sdk
-FREETYPE_HOME := $(SDK)/freetype-2.13.3
-
 #
+# 1. Building oboe for audio support
 # modify build_all_android.sh > DBUILD_SHARED_LIBS=false
 # export ANDROID_NDK=~/android-sdk/sdk/ndk/27.0.12077973
 # ./build_all_android.sh
 #
-OBOE_LIB_DIR := $(SDK)/oboe/build/$(TARGET_ARCH_ABI)/staging/lib/$(TARGET_ARCH_ABI)
-OBOE_INCLUDE_PATH := $(SDK)/oboe/include
+# 2. Building freetype - see README.md
+#
+
+FREETYPE_VER=freetype-2.13.3
+OBOE_VER=oboe-1.9.3
+
+JNI_PATH := $(call my-dir)
+SB_HOME := $(JNI_PATH)/../../../..
+SDK := $(HOME)/android-sdk
+FREETYPE_HOME := $(SDK)/$(FREETYPE_VER)
+OBOE_LIB_DIR := $(SDK)/oboe/${OBOE_VER}/build/$(TARGET_ARCH_ABI)/staging/lib/$(TARGET_ARCH_ABI)
+OBOE_INCLUDE_PATH := $(SDK)/oboe/${OBOE_VER}/include
 
 include $(call all-subdir-makefiles)
 LOCAL_PATH := $(JNI_PATH)

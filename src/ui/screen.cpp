@@ -15,6 +15,15 @@
 #define MAX_HEIGHT 10000
 #define TEXT_ROWS 1000
 
+// for hit testing menu button press
+#if defined(_ANDROID)
+  #define MENU_WIDTH_SCALE 4
+  #define MENU_HEIGHT_SCALE 3
+#else
+  #define MENU_WIDTH_SCALE 3
+  #define MENU_HEIGHT_SCALE 2
+#endif
+
 #define DRAW_SHAPE \
   Shape *rect = (*it); \
   if (rect->_y >= _scrollY && \
@@ -307,8 +316,8 @@ bool Screen::overLabel(int px, int py) {
 
 // whether the point overlaps the menu widget
 bool Screen::overMenu(int px, int py) {
-  int w = _charWidth * 3;
-  int h = _charHeight * 2;
+  int w = _charWidth * MENU_HEIGHT_SCALE;
+  int h = _charHeight * MENU_WIDTH_SCALE;
   return (!OUTSIDE_RECT(px, py, _width - w, _height - h, w, h));
 }
 

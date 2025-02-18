@@ -1,3 +1,6 @@
+2025-02-18 (12.28)
+	ANDROID: added experimental usb communication support
+
 2025-02-02 (12.28)
 	TEENSY: added experimental runtime platform for teensy mcu
 

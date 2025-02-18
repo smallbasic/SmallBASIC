@@ -107,6 +107,7 @@ public class MainActivity extends NativeActivity {
   private LocationAdapter _locationAdapter = null;
   private TextToSpeechAdapter _tts;
   private Storage _storage;
+  private UsbConnection _usbConnection;
 
   static {
     System.loadLibrary("smallbasic");
@@ -209,6 +210,10 @@ public class MainActivity extends NativeActivity {
   public boolean closeLibHandlers() {
     if (_tts != null) {
       _tts.stop();
+    }
+    if (_usbConnection != null) {
+      _usbConnection.close();
+      _usbConnection = null;
     }
     return removeLocationUpdates();
   }
@@ -646,9 +651,37 @@ public class MainActivity extends NativeActivity {
     }
   }
 
+  public String usbConnect(int vendorId) {
+    String result;
+    try {
+      _usbConnection = new UsbConnection(getApplicationContext(), vendorId);
+      result = "connected";
+    } catch (IOException e) {
+      result = e.toString();
+    }
+    return result;
+  }
+
+  public String usbReceive() {
+    String result;
+    if (_usbConnection != null) {
+      result = _usbConnection.receive();
+    } else {
+      result = "not connected";
+    }
+    return result;
+  }
+
+  public void usbSend(final byte[] bytes) {
+    if (_usbConnection != null) {
+      _usbConnection.send(bytes);
+    }
+  }
+
   @Override
   protected void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
+    setImmersiveMode();
     setupStorageEnvironment();
     if (!libraryMode()) {
       processIntent();
@@ -666,6 +699,7 @@ public class MainActivity extends NativeActivity {
   @Override
   protected void onResume() {
     super.onResume();
+    setImmersiveMode();
     onActivityPaused(false);
   }
 
@@ -910,6 +944,19 @@ public class MainActivity extends NativeActivity {
     output.write(buffer);
     output.close();
     return outputFile.getAbsolutePath();
+  }
+
+  //
+  // Sets true full-screen on API 35+
+  //
+  private void setImmersiveMode() {
+    getWindow().getDecorView()
+      .setSystemUiVisibility(View.SYSTEM_UI_FLAG_LAYOUT_STABLE |
+                             View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION |
+                             View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN |
+                             View.SYSTEM_UI_FLAG_HIDE_NAVIGATION |
+                             View.SYSTEM_UI_FLAG_FULLSCREEN |
+                             View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY);
   }
 
   private void setupStorageEnvironment() {
