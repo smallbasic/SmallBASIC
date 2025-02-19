@@ -38,6 +38,7 @@ LOCAL_SRC_FILES  := main.cpp                   \
                     display.cpp                \
                     runtime.cpp                \
                     audio.cpp                  \
+                    module.cpp                 \
                     ../../../ui/screen.cpp     \
                     ../../../ui/ansiwidget.cpp \
                     ../../../ui/window.cpp     \

@@ -1,6 +1,6 @@
 // This file is part of SmallBASIC
 //
-// Copyright(C) 2001-2020 Chris Warren-Smith.
+// Copyright(C) 2001-2025 Chris Warren-Smith.
 //
 // This program is distributed under the terms of the GPL v2.0 or later
 // Download the GNU Public License (GPL) from www.gnu.org
@@ -39,6 +39,7 @@ struct Runtime : public System {
   void disableSensor();
   void enableCursor(bool enabled) override {}
   bool enableSensor(int sensorId);
+  android_app *getApp() { return _app; }
   jlong getActivity() { return (jlong)_app->activity->clazz; }
   bool getBoolean(const char *methodName);
   String getString(const char *methodName);
@@ -83,7 +84,6 @@ struct Runtime : public System {
   char *getClipboardText() override;
   void setFocus(bool focus) { _hasFocus = focus; }
   int  getFontId();
-  int  invokeRequest(int param_count, slib_par_t *params, var_t *retval);
 
 private:
   bool _keypadActive;

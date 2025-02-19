@@ -651,11 +651,18 @@ public class MainActivity extends NativeActivity {
     }
   }
 
+  public boolean usbClose() {
+    if (_usbConnection != null) {
+      _usbConnection.close();
+    }
+    return true;
+  }
+
   public String usbConnect(int vendorId) {
     String result;
     try {
       _usbConnection = new UsbConnection(getApplicationContext(), vendorId);
-      result = "connected";
+      result = "[connected]";
     } catch (IOException e) {
       result = e.toString();
     }
@@ -667,14 +674,14 @@ public class MainActivity extends NativeActivity {
     if (_usbConnection != null) {
       result = _usbConnection.receive();
     } else {
-      result = "not connected";
+      result = "";
     }
     return result;
   }
 
-  public void usbSend(final byte[] bytes) {
+  public void usbSend(final byte[] data) {
     if (_usbConnection != null) {
-      _usbConnection.send(bytes);
+      _usbConnection.send(data);
     }
   }
 
