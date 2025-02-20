@@ -13,15 +13,15 @@
 #include "include/var_map.h"
 #include "module.h"
 
-static bool isPin(int id) {
+static bool is_pin(int id) {
   return id >= 0 && id < CORE_NUM_TOTAL_PINS;
 }
 
-static bool isObject(var_p_t var) {
-  return var != nullptr && v_is_type(var, V_MAP) && isPin(var->v.m.id);
+static bool is_object(var_p_t var) {
+  return var != nullptr && v_is_type(var, V_MAP) && is_pin(var->v.m.id);
 }
 
-static void setPin(var_p_t var, uint8_t pin, uint8_t mode) {
+static void set_pin(var_p_t var, uint8_t pin, uint8_t mode) {
   map_init(var);
   var->v.m.id = pin;
   pinMode(pin, mode);
@@ -29,7 +29,7 @@ static void setPin(var_p_t var, uint8_t pin, uint8_t mode) {
 
 static int cmd_analoginput_read(var_s *self, int argc, slib_par_t *arg, var_s *retval) {
   int result = 0;
-  if (argc != 0 || !isObject(self)) {
+  if (argc != 0 || !is_object(self)) {
     error(retval, "AnalogInput.read", 0);
   } else {
     int pin = self->v.m.id;
@@ -42,8 +42,8 @@ static int cmd_analoginput_read(var_s *self, int argc, slib_par_t *arg, var_s *r
 static int cmd_openanaloginput(int argc, slib_par_t *params, var_t *retval) {
   int result = 1;
   int pin = get_param_int(argc, params, 0, -1);
-  if (isPin(pin)) {
-    setPin(retval, pin, INPUT);
+  if (is_pin(pin)) {
+    set_pin(retval, pin, INPUT);
     v_create_callback(retval, "read", cmd_analoginput_read);
   } else {
     result = 0;
@@ -53,7 +53,7 @@ static int cmd_openanaloginput(int argc, slib_par_t *params, var_t *retval) {
 
 static int cmd_digitalinput_read(var_s *self, int argc, slib_par_t *arg, var_s *retval) {
   int result = 0;
-  if (argc != 0 || !isObject(self)) {
+  if (argc != 0 || !is_object(self)) {
     error(retval, "DigitalInput.read", 0);
   } else {
     int pin = self->v.m.id;
@@ -66,8 +66,8 @@ static int cmd_digitalinput_read(var_s *self, int argc, slib_par_t *arg, var_s *
 static int cmd_opendigitalinput(int argc, slib_par_t *params, var_t *retval) {
   int result = 1;
   int pin = get_param_int(argc, params, 0, -1);
-  if (isPin(pin)) {
-    setPin(retval, pin, INPUT);
+  if (is_pin(pin)) {
+    set_pin(retval, pin, INPUT);
     v_create_callback(retval, "read", cmd_digitalinput_read);
     result = 1;
   } else {
@@ -78,7 +78,7 @@ static int cmd_opendigitalinput(int argc, slib_par_t *params, var_t *retval) {
 
 static int cmd_digitaloutput_write(var_s *self, int argc, slib_par_t *arg, var_s *retval) {
   int result = 0;
-  if (argc != 1 || !isObject(self)) {
+  if (argc != 1 || !is_object(self)) {
     error(retval, "DigitalOutput.write", 1);
   } else {
     int pin = self->v.m.id;
@@ -92,8 +92,8 @@ static int cmd_digitaloutput_write(var_s *self, int argc, slib_par_t *arg, var_s
 static int cmd_opendigitaloutput(int argc, slib_par_t *params, var_t *retval) {
   int result;
   int pin = get_param_int(argc, params, 0, -1);
-  if (isPin(pin)) {
-    setPin(retval, pin, OUTPUT);
+  if (is_pin(pin)) {
+    set_pin(retval, pin, OUTPUT);
     v_create_callback(retval, "write", cmd_digitaloutput_write);
     result = 1;
   } else {

@@ -462,11 +462,6 @@ void Runtime::setFloat(const char *methodName, float value) {
   _app->activity->vm->DetachCurrentThread();
 }
 
-void Runtime::setLocationData(var_t *retval) {
-  String location = getString("getLocation");
-  map_parse_str(location.c_str(), location.length(), retval);
-}
-
 void Runtime::setSensorData(var_t *retval) {
   v_init(retval);
   map_init(retval);

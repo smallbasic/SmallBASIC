@@ -58,7 +58,6 @@ struct Runtime : public System {
   MAEvent *popEvent();
   void pushEvent(MAEvent *event);
   void setFloat(const char *methodName, float value);
-  void setLocationData(var_t *retval);
   void setSensorData(var_t *retval);
   void setString(const char *methodName, const char *value);
   void speak(const char *text) { setString("speak", text); }

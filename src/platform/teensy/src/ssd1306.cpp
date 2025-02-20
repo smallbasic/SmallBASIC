@@ -7,7 +7,6 @@
 // Download the GNU Public License (GPL) from www.gnu.org
 //
 
-
 #include <SPI.h>
 #include <Wire.h>
 #include <Adafruit_GFX.h>

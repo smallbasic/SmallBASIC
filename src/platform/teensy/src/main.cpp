@@ -8,7 +8,6 @@
 //
 
 #include <Arduino.h>
-
 #include "config.h"
 #include "common/sbapp.h"
 #include "main_bas.h"

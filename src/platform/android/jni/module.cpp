@@ -135,17 +135,42 @@ static int cmd_request(int argc, slib_par_t *args, var_t *retval) {
   return result;
 }
 
-static int gps_on(int argc, slib_par_t *args, var_t *retval) {
+static int cmd_location(int argc, slib_par_t *args, var_t *retval) {
+  int result;
+  if (argc != 0) {
+    v_setstr(retval, ERR_PARAM);
+    result = 0;
+  } else {
+    String location = runtime->getString("getLocation");
+    map_parse_str(location.c_str(), location.length(), retval);
+    result = 1;
+  }
+  return result;
+}
+
+static int cmd_sensor(int argc, slib_par_t *args, var_t *retval) {
+  int result;
+  if (argc != 0) {
+    v_setstr(retval, ERR_PARAM);
+    result = 0;
+  } else {
+    runtime->setSensorData(retval);
+    result = 1;
+  }
+  return result;
+}
+
+static int cmd_gps_on(int argc, slib_par_t *args, var_t *retval) {
   runtime->getBoolean("requestLocationUpdates");
   return 1;
 }
 
-static int gps_off(int argc, slib_par_t *args, var_t *retval) {
+static int cmd_gps_off(int argc, slib_par_t *args, var_t *retval) {
   runtime->getBoolean("removeLocationUpdates");
   return 1;
 }
 
-static int sensor_on(int argc, slib_par_t *args, var_t *retval) {
+static int cmd_sensor_on(int argc, slib_par_t *args, var_t *retval) {
   int result = 0;
   if (argc == 1) {
     int sensor = v_getint(args[0].var_p);
@@ -159,12 +184,12 @@ static int sensor_on(int argc, slib_par_t *args, var_t *retval) {
   return result;
 }
 
-static int sensor_off(int argc, slib_par_t *args, var_t *retval) {
+static int cmd_sensor_off(int argc, slib_par_t *args, var_t *retval) {
   runtime->disableSensor();
   return 1;
 }
 
-static int tts_speak(int argc, slib_par_t *args, var_t *retval) {
+static int cmd_tts_speak(int argc, slib_par_t *args, var_t *retval) {
   int result;
   if (opt_mute_audio) {
     result = 1;
@@ -178,7 +203,7 @@ static int tts_speak(int argc, slib_par_t *args, var_t *retval) {
   return result;
 }
 
-static int tts_pitch(int argc, slib_par_t *args, var_t *retval) {
+static int cmd_tts_pitch(int argc, slib_par_t *args, var_t *retval) {
   int result;
   if (argc == 1 && (v_is_type(args[0].var_p, V_NUM) ||
                     v_is_type(args[0].var_p, V_INT))) {
@@ -191,7 +216,7 @@ static int tts_pitch(int argc, slib_par_t *args, var_t *retval) {
   return result;
 }
 
-static int tts_speech_rate(int argc, slib_par_t *args, var_t *retval) {
+static int cmd_tts_speech_rate(int argc, slib_par_t *args, var_t *retval) {
   int result;
   if (argc == 1 && (v_is_type(args[0].var_p, V_NUM) ||
                     v_is_type(args[0].var_p, V_INT))) {
@@ -204,7 +229,7 @@ static int tts_speech_rate(int argc, slib_par_t *args, var_t *retval) {
   return result;
 }
 
-static int tts_lang(int argc, slib_par_t *args, var_t *retval) {
+static int cmd_tts_lang(int argc, slib_par_t *args, var_t *retval) {
   int result;
   if (argc == 1 && v_is_type(args[0].var_p, V_STR)) {
     runtime->setString("setTtsLocale", v_getstr(args[0].var_p));
@@ -216,7 +241,7 @@ static int tts_lang(int argc, slib_par_t *args, var_t *retval) {
   return result;
 }
 
-static int tts_off(int argc, slib_par_t *args, var_t *retval) {
+static int cmd_tts_off(int argc, slib_par_t *args, var_t *retval) {
   runtime->getBoolean("setTtsQuiet");
   return 1;
 }
@@ -225,22 +250,25 @@ struct LibProcs {
   const char *name;
   int (*command)(int, slib_par_t *, var_t *retval);
 } lib_procs[] = {
-  {"GPS_ON", gps_on},
-  {"GPS_OFF", gps_off},
-  {"SENSOR_ON", sensor_on},
-  {"SENSOR_OFF", sensor_off},
-  {"TTS_PITCH", tts_pitch},
-  {"TTS_RATE", tts_speech_rate},
-  {"TTS_LANG", tts_lang},
-  {"TTS_OFF", tts_off},
-  {"SPEAK", tts_speak}
+  {"GPS_ON", cmd_gps_on},
+  {"GPS_OFF", cmd_gps_off},
+  {"SENSOR_ON", cmd_sensor_on},
+  {"SENSOR_OFF", cmd_sensor_off},
+  {"TTS_PITCH", cmd_tts_pitch},
+  {"TTS_RATE", cmd_tts_speech_rate},
+  {"TTS_LANG", cmd_tts_lang},
+  {"TTS_OFF", cmd_tts_off},
+  {"SPEAK", cmd_tts_speak}
 };
 
-const char *lib_funcs[] = {
-  "LOCATION",
-  "SENSOR",
-  "REQUEST",
-  "USBCONNECT"
+struct LibFuncs {
+  const char *name;
+  int (*command)(int, slib_par_t *, var_t *retval);
+} lib_funcs[] = {
+  {"LOCATION", cmd_location},
+  {"SENSOR", cmd_sensor},
+  {"REQUEST", cmd_request},
+  {"USBCONNECT", cmd_usb_connect}
 };
 
 extern "C" int sblib_proc_count(void) {
@@ -275,7 +303,7 @@ extern "C" int sblib_func_count(void) {
 extern "C" int sblib_func_getname(int index, char *proc_name) {
   int result;
   if (index < sblib_func_count()) {
-    strcpy(proc_name, lib_funcs[index]);
+    strcpy(proc_name, lib_funcs[index].name);
     result = 1;
   } else {
     result = 0;
@@ -285,24 +313,10 @@ extern "C" int sblib_func_getname(int index, char *proc_name) {
 
 extern "C" int sblib_func_exec(int index, int argc, slib_par_t *args, var_t *retval) {
   int result;
-  switch (index) {
-  case 0:
-    runtime->setLocationData(retval);
-    result = 1;
-    break;
-  case 1:
-    runtime->setSensorData(retval);
-    result = 1;
-    break;
-  case 2:
-    result = cmd_request(argc, args, retval);
-    break;
-  case 3:
-    result = cmd_usb_connect(argc, args, retval);
-    break;
-  default:
+  if (index < sblib_func_count()) {
+    result = lib_funcs[index].command(argc, args, retval);
+  } else {
     result = 0;
-    break;
   }
   return result;
 }
