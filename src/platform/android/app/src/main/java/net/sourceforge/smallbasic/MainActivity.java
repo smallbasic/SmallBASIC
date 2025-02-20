@@ -664,7 +664,7 @@ public class MainActivity extends NativeActivity {
       _usbConnection = new UsbConnection(getApplicationContext(), vendorId);
       result = "[connected]";
     } catch (IOException e) {
-      result = e.toString();
+      result = e.getLocalizedMessage();
     }
     return result;
   }

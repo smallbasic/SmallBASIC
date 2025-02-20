@@ -20,17 +20,13 @@ static bool is_object(var_p_t var) {
   return var != nullptr && v_is_type(var, V_MAP) && (var->v.m.id == USB_OBJECT_ID);
 }
 
-static bool usb_close() {
-  return runtime->getBoolean("usbClose");
-}
-
 static int cmd_usb_close(var_s *self, int argc, slib_par_t *args, var_s *retval) {
   int result;
   if (argc != 0 || !is_object(self)) {
     v_setstr(retval, ERR_PARAM);
     result = 0;
   } else {
-    usb_close();
+    runtime->getBoolean("usbClose");
     result = 1;
   }
   return result;
@@ -247,11 +243,11 @@ const char *lib_funcs[] = {
   "USBCONNECT"
 };
 
-int sblib_proc_count(void) {
+extern "C" int sblib_proc_count(void) {
   return (sizeof(lib_procs) / sizeof(lib_procs[0]));
 }
 
-int sblib_proc_getname(int index, char *proc_name) {
+extern "C" int sblib_proc_getname(int index, char *proc_name) {
   int result;
   if (index < sblib_proc_count()) {
     strcpy(proc_name, lib_procs[index].name);
@@ -262,7 +258,7 @@ int sblib_proc_getname(int index, char *proc_name) {
   return result;
 }
 
-int sblib_proc_exec(int index, int argc, slib_par_t *args, var_t *retval) {
+extern "C" int sblib_proc_exec(int index, int argc, slib_par_t *args, var_t *retval) {
   int result;
   if (index < sblib_proc_count()) {
     result = lib_procs[index].command(argc, args, retval);
@@ -272,11 +268,11 @@ int sblib_proc_exec(int index, int argc, slib_par_t *args, var_t *retval) {
   return result;
 }
 
-int sblib_func_count(void) {
+extern "C" int sblib_func_count(void) {
   return (sizeof(lib_funcs) / sizeof(lib_funcs[0]));
 }
 
-int sblib_func_getname(int index, char *proc_name) {
+extern "C" int sblib_func_getname(int index, char *proc_name) {
   int result;
   if (index < sblib_func_count()) {
     strcpy(proc_name, lib_funcs[index]);
@@ -287,7 +283,7 @@ int sblib_func_getname(int index, char *proc_name) {
   return result;
 }
 
-int sblib_func_exec(int index, int argc, slib_par_t *args, var_t *retval) {
+extern "C" int sblib_func_exec(int index, int argc, slib_par_t *args, var_t *retval) {
   int result;
   switch (index) {
   case 0:
@@ -311,14 +307,14 @@ int sblib_func_exec(int index, int argc, slib_par_t *args, var_t *retval) {
   return result;
 }
 
-void sblib_free(int cls_id, int id) {
+extern "C" void sblib_free(int cls_id, int id) {
   if (cls_id == USB_CLASS_ID && id == USB_OBJECT_ID) {
     // when the 'usb' variable falls out of scope
-    usb_close();
+    runtime->getBoolean("usbClose");
   }
 }
 
-void sblib_close() {
+extern "C" void sblib_close() {
   runtime->getBoolean("closeLibHandlers");
   runtime->disableSensor();
 }
