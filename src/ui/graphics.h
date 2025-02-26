@@ -54,7 +54,7 @@ struct Graphics {
   void drawRGB(const MAPoint2d *dstPoint, const void *src,
                const MARect *srcRect, int opacity, int bytesPerLine);
   void drawText(int left, int top, const char *str, int len);
-  pixel_t getDrawColor() { return _drawColor; }
+  pixel_t getDrawColor() const { return _drawColor; }
   Canvas *getDrawTarget() { return _drawTarget; }
   void getImageData(Canvas *canvas, uint8_t *image, 
                     const MARect *srcRect, int bytesPerLine);

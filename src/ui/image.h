@@ -27,10 +27,10 @@ struct ImageBuffer {
 struct ImageDisplay : public Shape {
   ImageDisplay();
   ImageDisplay(ImageDisplay &imageDisplay);
-  virtual ~ImageDisplay() {}
+  ~ImageDisplay() override = default;
 
   void copyImage(ImageDisplay &imageDisplay);
-  void draw(int x, int y, int bw, int bh, int cw);
+  void draw(int x, int y, int bw, int bh, int cw) override;
 
   int _offsetLeft;
   int _offsetTop;

@@ -9,11 +9,11 @@
 #ifndef STRINGLIB_H
 #define STRINGLIB_H
 
-#include <string.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <time.h>
-#include <ctype.h>
+#include <cstring>
+#include <cstdio>
+#include <cstdlib>
+#include <ctime>
+#include <cctype>
 
 #ifndef IS_WHITE
 #define IS_WHITE(c) (c == ' '|| c == '\n' || c == '\r' || c == '\t')
@@ -217,7 +217,7 @@ template<> bool List<String *>::contains(const char *s);
 template<typename T>
 struct Stack : public List<T> {
   Stack() : List<T>() {}
-  Stack(int growSize) : List<T>(growSize) {}
+  explicit Stack(int growSize) : List<T>(growSize) {}
   T peek() { return !this->_count ? (T)nullptr : this->_head[this->_count - 1]; }
   T pop() { return !this->_count ? (T)nullptr : this->_head[--this->_count]; }
   void push(T o) { this->add(o); }
@@ -228,7 +228,7 @@ struct Stack : public List<T> {
 template<typename T>
 struct Queue : public List<T> {
   Queue() : List<T>() {}
-  Queue(int growSize) : List<T>(growSize) {}
+  explicit Queue(int growSize) : List<T>(growSize) {}
   T front() { return !this->_count ? (T)nullptr : this->_head[0]; }
   void pop(bool free=true) {
     if (this->_count) {
@@ -246,8 +246,8 @@ struct Queue : public List<T> {
 template<typename T>
 struct Properties : public List<T> {
   Properties() : List<T>() {}
-  Properties(int growSize) : List<T>(growSize) {}
-  virtual ~Properties() {}
+  explicit Properties(int growSize) : List<T>(growSize) {}
+  ~Properties() override = default;
 
   /**
    * find the position of the key in the list
@@ -255,7 +255,7 @@ struct Properties : public List<T> {
   int find(const char *key) {
     int result = -1;
     for (int i = 0; i < this->_count; i++) {
-      String *nextKey = (String *)this->_head[i++];
+      auto *nextKey = (String *)this->_head[i++];
       if (nextKey == nullptr || i == this->_count) {
         break;
       }

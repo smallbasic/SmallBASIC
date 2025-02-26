@@ -52,19 +52,19 @@ struct AnsiWidget {
   int  getCharHeight()  { return _back->_charHeight; }
   int  getCharWidth()  { return _back->_charWidth; }
   int  getColor() { return _back->_fg; }
-  int  getFontSize() { return _fontSize; }
+  int  getFontSize() const { return _fontSize; }
   FormInput *getNextField(FormInput *field) { return _back->getNextField(field); }
   int  getPixel(int x, int y) { return _back->getPixel(x, y); }
   int  getScreenId(bool back);
   int  getScreenWidth()  { return _back->_width; }
   void getScroll(int &x, int &y) { _back->getScroll(x, y); }
-  int  getHeight() { return _height; }
-  int  getWidth()  { return _width; }
+  int  getHeight() const { return _height; }
+  int  getWidth() const  { return _width; }
   int  getX() { return _back->_curX; }
   int  getY() { return _back->_curY; }
   int  getMenuIndex() const { return _back->getIndex(_activeButton); }
-  bool hasActiveButton() const { return _activeButton != NULL; }
-  bool hasHover() const { return _hoverInput != NULL; }
+  bool hasActiveButton() const { return _activeButton != nullptr; }
+  bool hasHover() const { return _hoverInput != nullptr; }
   bool hasMenu() const { return _back == _screens[MENU_SCREEN]; }
   void handleMenu(bool up);
   void insetMenuScreen(int x, int y, int w, int h);
@@ -99,7 +99,7 @@ struct AnsiWidget {
   void setTextColor(long fg, long bg);
   void setXY(int x, int y);
   void setScrollSize(int scrollSize);
-  int  textHeight(void) { return _back->_charHeight; }
+  int  textHeight() { return _back->_charHeight; }
   void updateInputs(var_p_t form, bool setv) { _back->updateInputs(form, setv); }
 
 private:
