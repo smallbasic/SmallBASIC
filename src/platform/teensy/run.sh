@@ -5,7 +5,7 @@
 # When you save, the program is transferred to the teensy and run.
 #
 # This works with the INTERACTIVE mode build
-#   $ cd build && make .. -DINTERACTIVE=ON
+#   $ cd build && cmake .. -DINTERACTIVE=ON
 #
 # Requires inotify-tools available via:
 #   $ sudo apt install inotify-tools

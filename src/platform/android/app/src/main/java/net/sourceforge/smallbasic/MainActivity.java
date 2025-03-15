@@ -662,7 +662,7 @@ public class MainActivity extends NativeActivity {
     String result;
     try {
       _usbConnection = new UsbConnection(getApplicationContext(), vendorId);
-      result = "[connected]";
+      result = "[tag-connected]";
     } catch (IOException e) {
       result = e.getLocalizedMessage();
     }
@@ -679,10 +679,14 @@ public class MainActivity extends NativeActivity {
     return result;
   }
 
-  public void usbSend(final byte[] data) {
+  public int usbSend(final byte[] data) {
+    int result;
     if (_usbConnection != null) {
-      _usbConnection.send(data);
+      result = _usbConnection.send(getString(data));
+    } else {
+      result = -1;
     }
+    return result;
   }
 
   @Override

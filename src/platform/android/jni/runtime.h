@@ -45,6 +45,7 @@ struct Runtime : public System {
   String getString(const char *methodName);
   String getStringBytes(const char *methodName);
   int getInteger(const char *methodName);
+  int getIntegerFromString(const char *methodName, const char *value);
   int getUnicodeChar(int keyCode, int metaState);
   void redraw() { _graphics->redraw(); }
   void handleKeyEvent(MAEvent &event);

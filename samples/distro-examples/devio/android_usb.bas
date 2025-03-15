@@ -1,6 +1,6 @@
 import android
 
-usb = android.usbConnect(0x16C0)
+usb = android.openUsbSerial(0x16C0)
 
 while 1
   usb.send("hello");

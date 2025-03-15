@@ -50,7 +50,7 @@ static int cmd_usb_send(var_s *self, int argc, slib_par_t *args, var_s *retval) 
     v_setstr(retval, ERR_PARAM);
     result = 0;
   } else {
-    runtime->setString("usbSend", v_getstr(args[0].var_p));
+    v_setint(retval, runtime->getIntegerFromString("usbSend", v_getstr(args[0].var_p)));
     result = 1;
   }
   return result;
@@ -74,7 +74,7 @@ static int cmd_usb_connect(int argc, slib_par_t *args, var_t *retval) {
     auto jstr = (jstring)env->CallObjectMethod(app->activity->clazz, methodId, vendorId);
     const char *str = env->GetStringUTFChars(jstr, JNI_FALSE);
 
-    if (strncmp(str, "[connected]", 11) == 0) {
+    if (strncmp(str, "[tag-connected]", 15) == 0) {
       map_init(retval);
       retval->v.m.id = USB_OBJECT_ID;
       retval->v.m.cls_id = USB_CLASS_ID;
@@ -268,7 +268,7 @@ struct LibFuncs {
   {"LOCATION", cmd_location},
   {"SENSOR", cmd_sensor},
   {"REQUEST", cmd_request},
-  {"USBCONNECT", cmd_usb_connect}
+  {"OPENUSBSERIAL", cmd_usb_connect}
 };
 
 extern "C" int sblib_proc_count(void) {

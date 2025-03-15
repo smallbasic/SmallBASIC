@@ -411,6 +411,19 @@ int Runtime::getInteger(const char *methodName) {
   return result;
 }
 
+int Runtime::getIntegerFromString(const char *methodName, const char *value) {
+  JNIEnv *env;
+  _app->activity->vm->AttachCurrentThread(&env, nullptr);
+  jclass clazz = env->GetObjectClass(_app->activity->clazz);
+  jbyteArray valueByteArray = newByteArray(env, value);
+  jmethodID methodId = env->GetMethodID(clazz, methodName, "([B)I");
+  jint result = env->CallIntMethod(_app->activity->clazz, methodId, valueByteArray);
+  env->DeleteLocalRef(valueByteArray);
+  env->DeleteLocalRef(clazz);
+  _app->activity->vm->DetachCurrentThread();
+  return result;
+}
+
 int Runtime::getUnicodeChar(int keyCode, int metaState) {
   JNIEnv *env;
   _app->activity->vm->AttachCurrentThread(&env, nullptr);
