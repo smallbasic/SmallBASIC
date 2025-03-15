@@ -268,6 +268,22 @@ static int cmd_stopscroll(int argc, slib_par_t *params, var_t *retval) {
   return 1;
 }
 
+static int cmd_gettextsize(int argc, slib_par_t *params, var_t *retval) {
+  auto str = get_param_str(argc, params, 0, 0);
+  uint16_t w, h;
+  if (str && str[0] != '\0') {
+    int16_t x1, y1;
+    display.getTextBounds(str, 0, 0, &x1, &y1, &w, &h);
+  } else {
+    w = 0;
+    h = 0;
+  }
+  map_init(retval);
+  v_setint(map_add_var(retval, "width", 0), w);
+  v_setint(map_add_var(retval, "height", 0), h);
+  return 1;
+}
+
 FuncSpec lib_proc[] = {
   {0, 0, "INIT", cmd_init},
   {0, 0, "CLEAR", cmd_cleardisplay},
@@ -331,10 +347,49 @@ static int ssd1306_proc_exec(int index, int argc, slib_par_t *params, var_t *ret
   return result;
 }
 
+static FuncSpec lib_func[] = {
+  {1, 1, "GETTEXTSIZE", cmd_gettextsize}
+};
+
+static int ssd1306_func_count(void) {
+  return (sizeof(lib_func) / sizeof(lib_func[0]));
+}
+
+static int ssd1306_func_getname(int index, char *func_name) {
+  int result;
+  if (index < ssd1306_func_count()) {
+    strcpy(func_name, lib_func[index]._name);
+    result = 1;
+  } else {
+    result = 0;
+  }
+  return result;
+}
+
+static int ssd1306_func_exec(int index, int argc, slib_par_t *params, var_t *retval) {
+  int result;
+  if (index >= 0 && index < ssd1306_func_count()) {
+    if (argc < lib_func[index]._min || argc > lib_func[index]._max) {
+      if (lib_func[index]._min == lib_func[index]._max) {
+        error(retval, lib_func[index]._name, lib_func[index]._min);
+      } else {
+        error(retval, lib_func[index]._name, lib_func[index]._min, lib_func[index]._max);
+      }
+      result = 0;
+    } else {
+      result = lib_func[index]._command(argc, params, retval);
+    }
+  } else {
+    error(retval, "FUNC index error");
+    result = 0;
+  }
+  return result;
+}
+
 static ModuleConfig ssd1306Module = {
-  ._func_exec = nullptr,
-  ._func_count = nullptr,
-  ._func_getname = nullptr,
+  ._func_exec = ssd1306_func_exec,
+  ._func_count = ssd1306_func_count,
+  ._func_getname = ssd1306_func_getname,
   ._proc_exec = ssd1306_proc_exec,
   ._proc_count = ssd1306_proc_count,
   ._proc_getname = ssd1306_proc_getname,

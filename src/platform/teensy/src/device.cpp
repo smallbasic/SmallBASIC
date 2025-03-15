@@ -15,78 +15,21 @@
 #include "common/smbas.h"
 #include "common/keymap.h"
 #include "lib/maapi.h"
+#include "serial.h"
 
 #define SERIAL_BAUD_RATE 1000000
 
-const int keymap[][2] = {
-  {0x32, SB_KEY_INSERT},
-  {0x33, SB_KEY_DELETE},
-  {0x35, SB_KEY_PGUP},
-  {0x36, SB_KEY_PGDN},
-  {0x41, SB_KEY_UP},
-  {0x42, SB_KEY_DOWN},
-  {0x43, SB_KEY_RIGHT},
-  {0x44, SB_KEY_LEFT},
-  {0x46, SB_KEY_END},
-  {0x48, SB_KEY_HOME}
-};
-
-const int keymapLen = sizeof(keymap) / sizeof(keymap[0]);
-
 //
-// read the next set of characters following escape
+// setup the Serial device
 //
-int get_escape() {
-  int result = -1;
-  if (Serial.available()) {
-    char byte = Serial.read();
-    if (byte == '[') {
-      if (Serial.available()) {
-        int key = Serial.read();
-        for (int i = 0; i < keymapLen; i++) {
-          if (key == keymap[i][0]) {
-            result = keymap[i][1];
-            break;
-          }
-        }
-        if (result == -1) {
-          dev_printf("Unknown Esc[ key [%x]\n", key);
-        }
-      }
-    } else {
-      result = SB_KEY_ESCAPE;
-    }
+void serial_init() {
+  Serial.begin(SERIAL_BAUD_RATE);
+  while (!Serial) {
+    // wait
   }
-  return result;
-}
-
-//
-// read the next key from the serial device
-//
-int get_key(void) {
-  int result = -1;
-  if (Serial.available()) {
-    result = Serial.read();
-    switch (result) {
-    case 0x09:
-      result = SB_KEY_TAB;
-      break;
-    case 0x0d:
-      result = SB_KEY_ENTER;
-      break;
-    case 0x1b:
-      result = get_escape();
-      break;
-    case 0x7e:
-      result = SB_KEY_DELETE;
-      break;
-    case 0x7f:
-      result = SB_KEY_BACKSPACE;
-      break;
-    }
-    //dev_printf("got key %x\n", result);
+  if (CrashReport) {
+    Serial.print(CrashReport);
   }
-  return result;
 }
 
 //
@@ -130,12 +73,6 @@ int dev_events(int wait_flag) {
   result = Serial.available() > 0 ? -2 : 0;
 #else
   result = 0;
-  if (Serial) {
-    int key = get_key();
-    if (key != -1) {
-      dev_pushkey(key);
-    }
-  }
 #endif
   yield();
   return result;
@@ -161,13 +98,7 @@ int dev_init(int mode, int flags) {
 //
 void dev_print(const char *str) {
   // only initialise Serial when PRINT statement is used
-  Serial.begin(SERIAL_BAUD_RATE);
-  while (!Serial) {
-    // wait
-  }
-  if (CrashReport) {
-    Serial.print(CrashReport);
-  }
+  serial_init();
   if (str != nullptr && str[0] != '\0') {
     Serial.printf("%s", str);
     int len = strlen(str);
@@ -231,7 +162,7 @@ void log_printf(const char *format, ...) {
 //
 void lwrite(const char *buf) {
   if (opt_verbose) {
-    Serial.println(buf);
+    dev_print(buf);
   }
 }
 
@@ -239,7 +170,7 @@ void lwrite(const char *buf) {
 // unrecoverable error
 //
 void panic(const char *fmt, ...) {
-  Serial.println("Fatal error");
+  dev_print("Fatal error");
   for (;;);
 }
 
