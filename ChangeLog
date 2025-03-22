@@ -1,3 +1,24 @@
+2025-02-18 (12.28)
+	ANDROID: added experimental usb communication support
+
+2025-02-02 (12.28)
+	TEENSY: added experimental runtime platform for teensy mcu
+
+2025-01-27 (12.28)
+	ANDROID: Updated app icon, thanks to bplus, j7m, round157, qube, baggey
+	Final design by j7m
+
+2024-10-09 (12.28)
+	COMMON: Fix #232: TICKS stops working after 50 days
+	ANDROID: Fix delay accuracy
+	ANDROID: Fix location regression
+
+2024-10-06 (12.28)
+	ANDROID: Fix web UI regression
+
+2024-09-27 (12.28)
+	ANDROID: Fix issue with playing an audio file on android #231
+
 2024-04-14 (12.27)
 	COMMON: Fix bug #149: Problem with big hex numbers in windows
 	COMMON: Add new function TRANSPOSE()

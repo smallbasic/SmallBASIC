@@ -36,11 +36,14 @@ LOCAL_SRC_FILES:=                               \
   $(FREETYPE_HOME)/src/base/ftsystem.c          \
   $(FREETYPE_HOME)/src/base/ftinit.c            \
   $(FREETYPE_HOME)/src/base/ftgasp.c            \
+  $(FREETYPE_HOME)/src/base/ftmm.c              \
   $(FREETYPE_HOME)/src/raster/raster.c          \
+  $(FREETYPE_HOME)/src/sdf/sdf.c                \
   $(FREETYPE_HOME)/src/sfnt/sfnt.c              \
   $(FREETYPE_HOME)/src/smooth/smooth.c          \
   $(FREETYPE_HOME)/src/autofit/autofit.c        \
   $(FREETYPE_HOME)/src/truetype/truetype.c      \
+  $(FREETYPE_HOME)/src/svg/ftsvg.c              \
   $(FREETYPE_HOME)/src/cff/cff.c                \
   $(FREETYPE_HOME)/src/psnames/psnames.c        \
   $(FREETYPE_HOME)/src/pshinter/pshinter.c      \

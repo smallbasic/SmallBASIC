@@ -258,7 +258,7 @@ int reg_match_pcre(const char *p, char *t)
   re =
   pcre_compile(p, (opt_usepcre == 2) ? PCRE_CASELESS : 0, &error, &errofs, NULL);
   if (!re) {
-    rt_raise("REGULAR EXPRESSION SYNTAX ERROR (offset %d) -> %s", error, errofs);
+    rt_raise("REGULAR EXPRESSION SYNTAX ERROR (offset %d) -> %s", errofs, error);
     return reg_match_bad_pattern;
   }
   else {

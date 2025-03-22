@@ -73,7 +73,7 @@ var_num_t *mat_toc(var_t *v, int32_t *rows, int32_t *cols) {
 //
 // matrix: conv. double[nr][nc] to var_t
 //
-void mat_tov(var_t *v, var_num_t *m, int rows, int cols, int protect_col1) {
+void mat_tov(var_t *v, var_num_t *m, int32_t rows, int32_t cols, int protect_col1) {
   if (cols > 1 || protect_col1) {
     v_tomatrix(v, rows, cols);
   } else {
@@ -93,7 +93,7 @@ void mat_tov(var_t *v, var_num_t *m, int rows, int cols, int protect_col1) {
 // matrix: 1op
 //
 void mat_op1(var_t *l, int op, var_num_t n) {
-  int lr, lc;
+  int32_t lr, lc;
 
   var_num_t *m1 = mat_toc(l, &lr, &lc);
   if (m1) {
@@ -142,7 +142,7 @@ void mat_mulN(var_t *v, var_num_t N) {
 // matrix - add/sub
 //
 void mat_op2(var_t *l, var_t *r, int op) {
-  int lr, lc, rr, rc;
+  int32_t lr, lc, rr, rc;
 
   var_num_t *m1 = mat_toc(l, &lr, &lc);
   if (m1) {
@@ -221,7 +221,7 @@ void mat_dot(var_t *l, var_t *r) {
 // matrix: multiply
 //
 void mat_mul(var_t *l, var_t *r) {
-  int lr, lc, rr, rc;
+  int32_t lr, lc, rr, rc;
 
   var_num_t *m1 = mat_toc(l, &lr, &lc);
   if (m1) {

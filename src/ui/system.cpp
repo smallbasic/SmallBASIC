@@ -717,7 +717,7 @@ char *System::readSource(const char *fileName) {
       if (h != -1) {
         struct stat st{};
         if (fstat(h, &st) == 0) {
-          int len = st.st_size;
+          size_t len = st.st_size;
           buffer = (char *)malloc(len + 1);
           len = read(h, buffer, len);
           buffer[len] = '\0';

@@ -969,7 +969,7 @@ void dev_chdir(const char *dir);
  *
  * @return the current directory
  */
-char *dev_getcwd(void);
+const char *dev_getcwd(void);
 
 /**
  * @ingroup dev

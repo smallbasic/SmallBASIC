@@ -98,7 +98,7 @@ int xpm_decode32(uint8_t **image, unsigned *width, unsigned *height, const char 
     }
   }
 
-  *image = malloc((*width) * (*height) * sizeof(uint32_t));
+  *image = malloc((size_t)(*width) * (size_t)(*height) * sizeof(uint32_t));
 
   if (chars_per_pixel == 1) {
     for (int y = 0; y <* height; y++) {

@@ -19,8 +19,8 @@
 using namespace strlib;
 
 struct Graphics : ui::Graphics {
-  Graphics(android_app *app);
-  virtual ~Graphics();
+  explicit Graphics(android_app *app);
+  ~Graphics() override;
 
   bool construct(int fontId);
   void redraw();

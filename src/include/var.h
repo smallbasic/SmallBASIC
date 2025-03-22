@@ -80,7 +80,7 @@ typedef struct var_s {
 
     // associative array/map
     struct {
-      // pointer the map structure
+      // pointer to the map structure
       void *map;
 
       uint32_t count;
@@ -132,7 +132,7 @@ typedef struct var_s {
   // non-zero if constant
   uint8_t const_flag;
 
-  // whether help in pooled memory
+  // whether held in pooled memory
   uint8_t pooled;
 } var_t;
 
@@ -154,7 +154,7 @@ var_t *v_new(void);
  *
  * @return a newly created var_t array of the given size
  */
-void v_new_array(var_t *var, unsigned size);
+void v_new_array(var_t *var, uint32_t size);
 
 /**
  * @ingroup var

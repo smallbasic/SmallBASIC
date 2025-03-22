@@ -83,8 +83,6 @@ int textedit_move_to_word_next(EditBuffer *str, int c) {
 #define strcasestr StrStrI
 #endif
 
-extern "C" uint32_t dev_get_millisecond_count();
-
 unsigned g_themeId = 0;
 int g_lineMarker[MAX_MARKERS] = {
   -1, -1, -1, -1, -1, -1, -1, -1, -1, -1
@@ -1100,7 +1098,7 @@ void TextEditInput::clicked(int x, int y, bool pressed) {
   if (x < _marginWidth) {
     _ptY = -1;
   } else if (pressed) {
-    int tick = dev_get_millisecond_count();
+    int tick = maGetMilliSecondCount();
     if (_pressTick && tick - _pressTick < DOUBLE_CLICK_MS) {
       _state.select_start = wordStart();
       _state.select_end = wordEnd();
@@ -1297,9 +1295,8 @@ void TextEditInput::drawLineNumber(int x, int y, int row, bool selected) {
     for (int n = row; n > 0; n /= 10) {
       places++;
     }
-    char rowBuffer[places + 1];
+    char rowBuffer[14];
     int offs = (_marginWidth - (_charWidth * places)) / 2;
-
     sprintf(rowBuffer, "%d", row);
     maDrawText(x + offs, y, rowBuffer, places);
   }

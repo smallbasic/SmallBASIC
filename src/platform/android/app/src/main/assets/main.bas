@@ -120,7 +120,7 @@ sub do_about()
   color colText
   print "Version "; sbver
   print
-  print "Copyright (c) 2002-2023 Chris Warren-Smith"
+  print "Copyright (c) 2002-2025 Chris Warren-Smith"
   print "Copyright (c) 1999-2006 Nicholas Christopoulos" + chr(10)
 
   local bn_home
@@ -222,7 +222,7 @@ sub do_setup()
   rect x, y, w * 2, h + y * 2.5
   frm.inputs(0).label = "Extension modules:"
   frm.inputs(1).value = "Ignore|Load"
-  frm.inputs(1).selectedIndex = iff(loadModules == 1, 1, 0)
+  frm.inputs(1).selectedIndex = iff(loadModules >= 1, 1, 0)
   frm = form(frm)
   while 1
     frm.doEvents()

@@ -4,7 +4,12 @@ import eslint from 'vite-plugin-eslint'
 
 export default defineConfig({
   base: '/',
-  plugins: [react(), eslint()],
+  plugins: [react(), eslint({
+    exclude: ['/virtual:/**', 'node_modules/**'],
+    include: 'src/**/*.jsx',
+    overrideConfigFile: './eslint.config.js',
+  })],
+
   server: {
     open: true,
     port: 3000,

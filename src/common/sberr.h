@@ -76,6 +76,7 @@ void err_run_err(const char *file);
 void err_ref_var();
 void err_ref_circ_var();
 void err_array();
+void err_json(int pos);
 void err_form_input();
 void err_memory();
 void err_network();

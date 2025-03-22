@@ -49,11 +49,11 @@ struct Canvas {
   void drawRegion(Canvas *src, const MARect *srcRect, int dstx, int dsty);
   void fillRect(int x, int y, int w, int h, pixel_t color);
   void setClip(int x, int y, int w, int h);
-  pixel_t *getLine(int y) { return _pixels + (y * _w); }
-  int x() { return _clip ? _clip->left : 0; }
-  int y() { return _clip ? _clip->top : 0; }
-  int w() { return _clip ? _clip->right : _w; }
-  int h() { return _clip ? _clip->bottom : _h; }
+  pixel_t *getLine(int y) const { return _pixels + (y * _w); }
+  int x() const { return _clip ? _clip->left : 0; }
+  int y() const { return _clip ? _clip->top : 0; }
+  int w() const { return _clip ? _clip->right : _w; }
+  int h() const { return _clip ? _clip->bottom : _h; }
 
   int _w;
   int _h;
