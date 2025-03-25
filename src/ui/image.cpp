@@ -7,15 +7,18 @@
 //
 // Copyright(C) 2002-2019 Chris Warren-Smith.
 
+#include "common/sberr.h"
 #include "common/sys.h"
 #include "common/messages.h"
 #include "common/pproc.h"
 #include "common/fs_socket_client.h"
+#include "include/var.h"
 #include "lib/maapi.h"
 #include "lib/lodepng/lodepng.h"
 #include "ui/image.h"
 #include "ui/system.h"
 #include "ui/rgb.h"
+#include <cstdint>
 
 #define IMG_X "x"
 #define IMG_Y "y"
@@ -211,9 +214,46 @@ ImageBuffer *get_image(unsigned bid) {
   return result;
 }
 
+void scaleImage(ImageBuffer* image, var_num_t scaling) {
+  if(scaling == 1.0 || scaling <= 0.0) {
+    return;
+  }
+
+  uint16_t xx, yy, w, h;
+  uint32_t offsetImage, offsetScaledImage;
+
+  w = round((var_num_t)image->_width * scaling);
+  h = round((var_num_t)image->_height * scaling);
+
+  uint8_t* scaledImage = (uint8_t *)malloc(w * h * 4);
+  if(!scaledImage) {
+    err_throw(ERR_IMAGE_LOAD, "Failed to allocate RAM");
+  }
+
+  uint32_t* image32bit = (uint32_t*)image->_image;
+  uint32_t* scaledImage32bit = (uint32_t*)scaledImage;
+
+  for(yy = 0; yy < h; yy++) {
+    for(xx = 0; xx < w; xx++) {
+      offsetScaledImage = yy * w + xx;
+      offsetImage = floor((var_num_t)yy / scaling) * image->_width + floor((var_num_t)xx / scaling);
+      scaledImage32bit[offsetScaledImage] = image32bit[offsetImage];
+    }
+  }
+
+  free(image->_image);
+  image->_width = w;
+  image->_height = h;
+  image->_image = scaledImage;
+}
+
+//
+// Copy from screen
+//
 ImageBuffer *load_image(var_int_t x) {
   var_int_t y, w, h;
-  int count = par_massget("iii", &y, &w, &h);
+  var_num_t scaling = 1.0;
+  int count = par_massget("iiif", &y, &w, &h, &scaling);
   int width = g_system->getOutput()->getWidth();
   int height = g_system->getOutput()->getHeight();
   ImageBuffer *result = nullptr;
@@ -238,32 +278,63 @@ ImageBuffer *load_image(var_int_t x) {
       result->_height = h;
       result->_filename = nullptr;
       result->_image = image;
+      scaleImage(result, scaling);
       buffers.add(result);
     }
   }
   return result;
 }
 
+//
 // share image buffer from another image variable
+//
 ImageBuffer *load_image(var_t *var) {
   ImageBuffer *result = nullptr;
+  var_num_t scaling = 1.0;
+
+  if (code_peek() == kwTYPE_SEP) {
+    code_skipsep();
+    scaling = par_getnum();
+  }
+
   if (var->type == V_MAP) {
     int bid = map_get_int(var, IMG_BID, -1);
     if (bid != -1) {
-      result = get_image((unsigned)bid);
+      if(scaling == 1.0 || scaling <= 0.0) {
+        result = get_image((unsigned)bid);
+      } else {
+        ImageBuffer *inputImage = nullptr;
+        inputImage = get_image((unsigned)bid);
+        uint8_t* imageData = (uint8_t *)malloc(inputImage->_width * inputImage->_height * 4);
+        if(!imageData) {
+          err_throw(ERR_IMAGE_LOAD, "Failed to allocate RAM");
+        }
+        result = new ImageBuffer;
+        result->_bid = ++nextId;
+        result->_width = inputImage->_width;
+        result->_height = inputImage->_height;
+        result->_filename = nullptr;
+        memcpy(imageData, inputImage->_image, inputImage->_width * inputImage->_height * 4);
+        result->_image = imageData;
+        scaleImage(result, scaling);
+        buffers.add(result);
+      }
     }
   } else if (var->type == V_ARRAY && v_maxdim(var) == 2) {
     int h = ABS(v_ubound(var, 0) - v_lbound(var, 0)) + 1;
     int w = ABS(v_ubound(var, 1) - v_lbound(var, 1)) + 1;
     int size = w * h * 4;
-    auto image = (uint8_t *)malloc(size);
+    auto imageData = (uint8_t *)malloc(size);
+    if(!imageData) {
+      err_throw(ERR_IMAGE_LOAD, "Failed to allocate RAM");
+    }
     for (int y = 0; y < h; y++) {
       int yoffs = (y * w * 4);
       for (int x = 0; x < w; x++) {
         int pos = y * w + x;
         uint8_t a, r, g, b;
         v_get_argb(v_getint(v_elem(var, pos)), a, r, g, b);
-        SET_IMAGE_ARGB(image, yoffs + (x * 4), a, r, g, b);
+        SET_IMAGE_ARGB(imageData, yoffs + (x * 4), a, r, g, b);
       }
     }
     result = new ImageBuffer();
@@ -271,16 +342,26 @@ ImageBuffer *load_image(var_t *var) {
     result->_width = w;
     result->_height = h;
     result->_filename = nullptr;
-    result->_image = image;
+    result->_image = imageData;
+    scaleImage(result, scaling);
     buffers.add(result);
   }
   return result;
 }
 
+//
+// Load from file
+//
 ImageBuffer *load_image(const unsigned char *buffer, int32_t size) {
   ImageBuffer *result = nullptr;
   unsigned w, h;
   unsigned char *image;
+  var_num_t scaling = 1.0;
+
+  if (code_peek() == kwTYPE_SEP) {
+    code_skipsep();
+    scaling = par_getnum();
+  }
 
   unsigned error = decode_png(&image, &w, &h, buffer, size);
   if (!error) {
@@ -290,6 +371,7 @@ ImageBuffer *load_image(const unsigned char *buffer, int32_t size) {
     result->_height = h;
     result->_filename = nullptr;
     result->_image = image;
+    scaleImage(result, scaling);
     buffers.add(result);
   } else {
     err_throw(ERR_IMAGE_LOAD, lodepng_error_text(error));
@@ -297,19 +379,30 @@ ImageBuffer *load_image(const unsigned char *buffer, int32_t size) {
   return result;
 }
 
+//
+// Load from file
+//
 ImageBuffer *load_image(dev_file_t *filep) {
   ImageBuffer *result = nullptr;
-  List_each(ImageBuffer *, it, buffers) {
-    ImageBuffer *next = (*it);
-    if (next->_filename != nullptr && strcmp(next->_filename, filep->name) == 0) {
-      result = next;
-      break;
-    }
+  var_num_t scaling = 1.0;
+
+  if (code_peek() == kwTYPE_SEP) {
+    code_skipsep();
+    scaling = par_getnum();
   }
 
+  if(scaling == 1.0 || scaling <= 0.0) {
+    List_each(ImageBuffer *, it, buffers) {
+      ImageBuffer *next = (*it);
+      if (next->_filename != nullptr && strcmp(next->_filename, filep->name) == 0) {
+        result = next;
+        break;
+      }
+    }
+  }
   if (result == nullptr) {
     unsigned w, h;
-    unsigned char *image;
+    unsigned char *imageData;
     unsigned error = 0;
     unsigned network_error = 0;
     var_t *var_p;
@@ -322,13 +415,13 @@ ImageBuffer *load_image(dev_file_t *filep) {
       } else {
         var_p = v_new();
         http_read(filep, var_p);
-        error = decode_png(&image, &w, &h, (unsigned char *)var_p->v.p.ptr, var_p->v.p.length);
+        error = decode_png(&imageData, &w, &h, (unsigned char *)var_p->v.p.ptr, var_p->v.p.length);
         v_free(var_p);
         v_detach(var_p);
       }
       break;
     case ft_stream:
-      error = decode_png_file(&image, &w, &h, filep->name);
+      error = decode_png_file(&imageData, &w, &h, filep->name);
       break;
     default:
       error = 1;
@@ -344,18 +437,29 @@ ImageBuffer *load_image(dev_file_t *filep) {
       result->_width = w;
       result->_height = h;
       result->_filename = strdup(filep->name);
-      result->_image = image;
+      result->_image = imageData;
+      scaleImage(result, scaling);
       buffers.add(result);
     }
   }
   return result;
 }
 
+//
+// Create from XPM data
+//
 ImageBuffer *load_xpm_image(char **data) {
   unsigned w, h;
   unsigned char *image;
   unsigned error = xpm_decode32(&image, &w, &h, data);
   ImageBuffer *result = nullptr;
+  var_num_t scaling = 1.0;
+
+  if (code_peek() == kwTYPE_SEP) {
+    code_skipsep();
+    scaling = par_getnum();
+  }
+
   if (!error) {
     result = new ImageBuffer();
     result->_bid = ++nextId;
@@ -363,6 +467,7 @@ ImageBuffer *load_xpm_image(char **data) {
     result->_height = h;
     result->_filename = nullptr;
     result->_image = image;
+    scaleImage(result, scaling);
     buffers.add(result);
   } else {
     err_throw(ERR_IMAGE_LOAD, ERR_XPM_IMAGE);
@@ -480,7 +585,7 @@ void cmd_image_save(var_s *self, var_s *) {
       if (!prog_error &&
           !encode_png_file(str.v.p.ptr, image->_image, w, h)) {
         saved = true;
-      }      
+      }
       v_free(&str);
       break;
     default:
@@ -493,7 +598,7 @@ void cmd_image_save(var_s *self, var_s *) {
         uint32_t offsetTop = map_get_int(self, IMG_OFFSET_TOP, 0);
         uint32_t wClip = map_get_int(self, IMG_WIDTH, w);
         uint32_t hClip = map_get_int(self, IMG_HEIGHT, h);
-               
+
         if (offsetTop < h && offsetLeft < w) {
           if (offsetTop + hClip > h) {
             hClip = h - offsetTop;
@@ -512,7 +617,7 @@ void cmd_image_save(var_s *self, var_s *) {
               uint8_t a, r, g, b;
               GET_IMAGE_ARGB(image->_image, yoffs + (x * 4), a, r, g, b);
               pixel_t px = v_get_argb_px(a, r, g, b);
-              unsigned pos = (y - offsetTop ) * wClip + (x - offsetLeft);            
+              unsigned pos = (y - offsetTop ) * wClip + (x - offsetLeft);
               v_setint(v_elem(var, pos), px);
             }
           }
@@ -520,7 +625,7 @@ void cmd_image_save(var_s *self, var_s *) {
           v_tomatrix(var, hClip, wClip);
         }
         saved = true;
-      }    
+      }
     }
   }
   if (!saved) {
@@ -659,15 +764,15 @@ extern "C" void v_create_image(var_p_t var) {
       image = load_image(filep);
     }
     break;
-
   case kwTYPE_LINE:
   case kwTYPE_EOC:
     break;
-
   default:
     v_init(&arg);
     eval(&arg);
+
     if (arg.type == V_STR && !prog_error) {
+      // Img = Image(FileName)
       dev_file_t file;
       strlcpy(file.name, arg.v.p.ptr, sizeof(file.name));
       file.type = ft_stream;
@@ -675,6 +780,7 @@ extern "C" void v_create_image(var_p_t var) {
     } else if (arg.type == V_ARRAY && v_asize(&arg) > 0 && !prog_error) {
       var_p_t elem0 = v_elem(&arg, 0);
       if (elem0->type == V_STR) {
+        // Img = Image(PixmapData)
         char **data = new char*[v_asize(&arg)];
         for (unsigned i = 0; i < v_asize(&arg); i++) {
           var_p_t elem = v_elem(&arg, i);
@@ -683,9 +789,10 @@ extern "C" void v_create_image(var_p_t var) {
         image = load_xpm_image(data);
         delete [] data;
       } else if (v_maxdim(&arg) == 2) {
-        // load from 2d array
+        // Img = Image(Array2D)
         image = load_image(&arg);
       } else if (elem0->type == V_INT) {
+        // Create from buffer?
         auto *data = new unsigned char[v_asize(&arg)];
         for (unsigned i = 0; i < v_asize(&arg); i++) {
           var_p_t elem = v_elem(&arg, i);
@@ -695,8 +802,10 @@ extern "C" void v_create_image(var_p_t var) {
         delete [] data;
       }
     } else if (arg.type == V_INT && !prog_error) {
+      // Copy from screen
       image = load_image(arg.v.i);
     } else {
+      // Img2 = image(Img1)  ->  Img2 is pointer to existing buffer Img1
       image = load_image(&arg);
     }
     v_free(&arg);
