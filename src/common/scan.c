@@ -3937,7 +3937,7 @@ char *comp_load(const char *file_name) {
     buf = NULL;
     panic(MSG_CANT_OPEN_FILE, comp_file_name);
   } else {
-    int size;
+    size_t size;
 
     size = lseek(h, 0, SEEK_END);
     lseek(h, 0, SEEK_SET);
@@ -4654,6 +4654,10 @@ int comp_pass1(const char *section, const char *text) {
   }
 
   char *code_line = malloc(SB_SOURCELINE_SIZE + 1);
+  if (!code_line) {
+    panic("Failed to allocate %d bytes\n", SB_SOURCELINE_SIZE + 1);
+  }
+
   char *new_text = comp_format_text(text);
 
   comp_preproc_pass1(new_text);

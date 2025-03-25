@@ -116,7 +116,7 @@ int sblib_func_exec(int index, int param_count, slib_par_t *params, var_t *retva
  * @param cls_id the variable class identifier
  * @param id the variable instance identifier
  */
-void sblib_free(int cls_id, int id);
+int sblib_free(int cls_id, int id);
 
 /**
  * @ingroup modlib

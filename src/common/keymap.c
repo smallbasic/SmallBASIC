@@ -178,9 +178,9 @@ int dev_kbhit() {
  * returns the next key in keyboard buffer (and removes it)
  */
 long int dev_getch() {
-  while ((dev_kbhit() == 0) && (prog_error == 0)) {
+  while ((dev_kbhit() == 0) && (ctask && prog_error == 0)) {
     int evc = dev_events(2);
-    if (evc < 0 || prog_error) {
+    if (evc < 0 || (ctask && prog_error)) {
       return 0xFFFF;
     }
   }

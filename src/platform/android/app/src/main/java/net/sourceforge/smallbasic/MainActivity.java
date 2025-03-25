@@ -15,10 +15,8 @@ import android.content.pm.PackageManager;
 import android.content.res.Configuration;
 import android.content.res.Resources;
 import android.graphics.Rect;
-import android.location.Criteria;
 import android.location.Location;
 import android.location.LocationManager;
-import android.media.AudioManager;
 import android.media.MediaPlayer;
 import android.net.Uri;
 import android.os.Build;
@@ -26,6 +24,7 @@ import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
 import android.os.Looper;
+import android.provider.Settings;
 import android.util.Base64;
 import android.util.DisplayMetrics;
 import android.util.Log;
@@ -68,12 +67,11 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.Enumeration;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
-import java.util.Queue;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Semaphore;
@@ -98,18 +96,19 @@ public class MainActivity extends NativeActivity {
   private static final int REQUEST_LOCATION_PERMISSION = 2;
   private static final String FOLDER_NAME = "SmallBASIC";
   private static final int COPY_BUFFER_SIZE = 1024;
-  private static final String[] SAMPLES = {"welcome.bas"};
+  private static final String[] SAMPLES = {"welcome.bas", "sound.bas"};
   private String _startupBas = null;
   private boolean _untrusted = false;
   private final ExecutorService _audioExecutor = Executors.newSingleThreadExecutor();
-  private final Queue<Sound> _sounds = new ConcurrentLinkedQueue<>();
   private final Handler _keypadHandler = new Handler(Looper.getMainLooper());
   private final Map<String, Boolean> permittedHost = new ConcurrentHashMap<>();
+  private final Object _mediaPlayerLock = new Object();
   private String[] _options = null;
   private MediaPlayer _mediaPlayer = null;
   private LocationAdapter _locationAdapter = null;
   private TextToSpeechAdapter _tts;
   private Storage _storage;
+  private UsbConnection _usbConnection;
 
   static {
     System.loadLibrary("smallbasic");
@@ -136,7 +135,7 @@ public class MainActivity extends NativeActivity {
     intent.putExtra(Intent.EXTRA_SHORTCUT_NAME, name);
     intent.putExtra(Intent.EXTRA_SHORTCUT_ICON_RESOURCE,
                     Intent.ShortcutIconResource.fromContext(getApplicationContext(),
-                                                            R.drawable.ic_launcher));
+                                                            R.mipmap.ic_launcher));
     intent.putExtra("duplicate", false);
     intent.setAction("com.android.launcher.action.INSTALL_SHORTCUT");
     getApplicationContext().sendBroadcast(intent);
@@ -206,19 +205,16 @@ public class MainActivity extends NativeActivity {
   }
 
   public void clearSoundQueue() {
-    Log.i(TAG, "clearSoundQueue");
-    for (Sound sound : _sounds) {
-      sound.setSilent(true);
-    }
-    if (_mediaPlayer != null) {
-      _mediaPlayer.release();
-      _mediaPlayer = null;
-    }
+    releaseMediaPlayer();
   }
 
   public boolean closeLibHandlers() {
     if (_tts != null) {
       _tts.stop();
+    }
+    if (_usbConnection != null) {
+      _usbConnection.close();
+      _usbConnection = null;
     }
     return removeLocationUpdates();
   }
@@ -454,39 +450,32 @@ public class MainActivity extends NativeActivity {
     new Thread(new Runnable() {
       public void run() {
         try {
-          Uri uri = Uri.parse("file://" + new String(pathBytes, CP1252));
-          if (_mediaPlayer == null) {
-            _mediaPlayer = new MediaPlayer();
-          } else {
-            _mediaPlayer.reset();
+          synchronized (_mediaPlayerLock) {
+            if (_mediaPlayer == null) {
+              _mediaPlayer = new MediaPlayer();
+              _mediaPlayer.setOnErrorListener(new MediaPlayer.OnErrorListener() {
+                @Override
+                public boolean onError(MediaPlayer mp, int what, int extra) {
+                  Log.e(TAG, "MediaPlayer error: " + what + ", " + extra);
+                  releaseMediaPlayer();
+                  return true;
+                }
+              });
+            } else {
+              _mediaPlayer.reset();
+            }
+            String path = _storage.findPath(new String(pathBytes, CP1252));
+            _mediaPlayer.setDataSource(getApplicationContext(), Uri.parse("file://" + path));
+            _mediaPlayer.prepare();
+            _mediaPlayer.start();
           }
-          _mediaPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
-          _mediaPlayer.setDataSource(getApplicationContext(), uri);
-          _mediaPlayer.prepare();
-          _mediaPlayer.start();
         }
-        catch (IOException e) {
+        catch (Exception e) {
           Log.i(TAG, "playAudio failed: ", e);
+          releaseMediaPlayer();
         }
       }
     }).start();
-  }
-
-  public void playTone(int frq, int dur, int vol, boolean backgroundPlay) {
-    float volume = (vol / 100f);
-    final Sound sound = new Sound(frq, dur, volume);
-    if (backgroundPlay) {
-      _sounds.add(sound);
-      _audioExecutor.execute(new Runnable() {
-        @Override
-        public void run() {
-          sound.play();
-          _sounds.remove(sound);
-        }
-      });
-    } else {
-      sound.play();
-    }
   }
 
   public boolean removeLocationUpdates() {
@@ -494,8 +483,7 @@ public class MainActivity extends NativeActivity {
     if (_locationAdapter != null) {
       LocationManager locationService = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
       if (locationService != null) {
-        // requires coarse location permission
-        //locationService.removeUpdates(_locationAdapter);
+        locationService.removeUpdates(_locationAdapter);
         _locationAdapter = null;
         result = true;
       }
@@ -515,17 +503,16 @@ public class MainActivity extends NativeActivity {
     if (!locationPermitted()) {
       checkPermission(Manifest.permission.ACCESS_FINE_LOCATION, REQUEST_LOCATION_PERMISSION);
     } else if (locationService != null) {
-      final Criteria criteria = new Criteria();
-      final String provider = locationService.getBestProvider(criteria, true);
-      if (_locationAdapter == null && provider != null &&
-        locationService.isProviderEnabled(provider)) {
+      final List<String> providers = locationService.getProviders(true);
+      if (_locationAdapter == null) {
         _locationAdapter = new LocationAdapter();
         result = true;
         runOnUiThread(new Runnable() {
           @SuppressLint("MissingPermission")
           public void run() {
-            locationService.requestLocationUpdates(provider, LOCATION_INTERVAL,
-              LOCATION_DISTANCE, _locationAdapter);
+            for (String provider : providers) {
+              locationService.requestLocationUpdates(provider, LOCATION_INTERVAL, LOCATION_DISTANCE, _locationAdapter);
+            }
           }
         });
       }
@@ -665,9 +652,48 @@ public class MainActivity extends NativeActivity {
     }
   }
 
+  public boolean usbClose() {
+    if (_usbConnection != null) {
+      _usbConnection.close();
+    }
+    return true;
+  }
+
+  public String usbConnect(int vendorId) {
+    String result;
+    try {
+      _usbConnection = new UsbConnection(getApplicationContext(), vendorId);
+      result = "[tag-connected]";
+    } catch (IOException e) {
+      result = e.getLocalizedMessage();
+    }
+    return result;
+  }
+
+  public String usbReceive() {
+    String result;
+    if (_usbConnection != null) {
+      result = _usbConnection.receive();
+    } else {
+      result = "";
+    }
+    return result;
+  }
+
+  public int usbSend(final byte[] data) {
+    int result;
+    if (_usbConnection != null) {
+      result = _usbConnection.send(getString(data));
+    } else {
+      result = -1;
+    }
+    return result;
+  }
+
   @Override
   protected void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
+    setImmersiveMode();
     setupStorageEnvironment();
     if (!libraryMode()) {
       processIntent();
@@ -685,16 +711,14 @@ public class MainActivity extends NativeActivity {
   @Override
   protected void onResume() {
     super.onResume();
+    setImmersiveMode();
     onActivityPaused(false);
   }
 
   @Override
   protected void onStop() {
     super.onStop();
-    if (_mediaPlayer != null) {
-      _mediaPlayer.release();
-      _mediaPlayer = null;
-    }
+    releaseMediaPlayer();
     if (_tts != null) {
       _tts.close();
       _tts = null;
@@ -801,12 +825,25 @@ public class MainActivity extends NativeActivity {
       // only attempt with a clean destination folder
       try {
         for (String sample : SAMPLES) {
-          copy(getAssets().open("samples/" + sample), new FileOutputStream(new File(toDir, sample)));
+          OutputStream outputStream = new FileOutputStream(new File(toDir, sample));
+          copy(getAssets().open("samples/" + sample), outputStream);
+          outputStream.close();
         }
       } catch (IOException e) {
         Log.d(TAG, "Failed to copy sample: ", e);
       }
     }
+  }
+
+  private boolean isGestureNavigationEnabled() {
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+      try {
+        return Settings.Secure.getInt(getContentResolver(), "navigation_mode") == 2;
+      } catch (Settings.SettingNotFoundException e) {
+        Log.d(TAG, e.toString());
+      }
+    }
+    return false;
   }
 
   private boolean isHostDenied(String remoteHost) {
@@ -894,6 +931,15 @@ public class MainActivity extends NativeActivity {
     return b == -1 ? null : out.size() == 0 ? "" : out.toString();
   }
 
+  private void releaseMediaPlayer() {
+    synchronized (_mediaPlayerLock) {
+      if (_mediaPlayer != null) {
+        _mediaPlayer.release();
+        _mediaPlayer = null;
+      }
+    }
+  }
+
   private void requestHostPermission(String remoteHost) {
     final Activity activity = this;
     runOnUiThread(new Runnable() {
@@ -921,6 +967,21 @@ public class MainActivity extends NativeActivity {
     output.write(buffer);
     output.close();
     return outputFile.getAbsolutePath();
+  }
+
+  //
+  // Sets true full-screen on API 35+
+  //
+  private void setImmersiveMode() {
+    if (isGestureNavigationEnabled()) {
+      getWindow().getDecorView()
+                 .setSystemUiVisibility(View.SYSTEM_UI_FLAG_LAYOUT_STABLE |
+                                        View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION |
+                                        View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN |
+                                        View.SYSTEM_UI_FLAG_HIDE_NAVIGATION |
+                                        View.SYSTEM_UI_FLAG_FULLSCREEN |
+                                        View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY);
+    }
   }
 
   private void setupStorageEnvironment() {
@@ -982,6 +1043,26 @@ public class MainActivity extends NativeActivity {
       this._external = external;
       this._internal = getFilesDir().getAbsolutePath();
       this._media = media;
+    }
+
+    public String findPath(String file) {
+      String result;
+      if (file.startsWith("/")) {
+        result = file;
+      }
+      else {
+        result = getExternal() + "/" + file;
+        if (!new File(result).canRead()) {
+          result = getInternal() + "/" + file;
+          if (!new File(result).canRead()) {
+            result = getMedia() + "/" + file;
+            if (!new File(result).canRead()) {
+              result = file;
+            }
+          }
+        }
+      }
+      return result;
     }
 
     public String getExternal() {

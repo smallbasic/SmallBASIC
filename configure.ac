@@ -7,7 +7,7 @@ dnl This program is distributed under the terms of the GPL v2.0
 dnl Download the GNU Public License (GPL) from www.gnu.org
 dnl
 
-AC_INIT([smallbasic], [12.27])
+AC_INIT([smallbasic], [12.28])
 AC_CONFIG_SRCDIR([configure.ac])
 
 AC_CANONICAL_TARGET
@@ -52,6 +52,11 @@ AC_ARG_ENABLE(dist,
   AS_HELP_STRING([--enable-dist],[prepare to run make dist(default=no)]),
   [ac_build_dist="yes"],
   [ac_build_dist="no"])
+
+AC_ARG_ENABLE(teensy,
+  AS_HELP_STRING([--enable-teensy],[build teensy version(default=no)]),
+  [ac_build_teensy="yes"],
+  [ac_build_teensy="no"])
 
 function checkForWindows() {
    win32=no
@@ -126,6 +131,10 @@ function checkPCRE() {
      have_pcre="no"
    fi
 
+   if test x$ac_build_teensy = xyes; then
+     have_pcre="no"
+   fi
+
    if test "${have_pcre}" = "yes" ; then
      AC_DEFINE(USE_PCRE, 1, [match.c used with libpcre.])
      PACKAGE_LIBS="${PACKAGE_LIBS} `pcre-config --libs`"
@@ -141,6 +150,10 @@ function checkTermios() {
    esac
 
    if test x$ac_build_android = xyes; then
+     have_termios_h="no"
+   fi
+
+   if test x$ac_build_teensy = xyes; then
      have_termios_h="no"
    fi
 
@@ -373,6 +386,24 @@ function buildEmscripten() {
    (cd src/platform/android/app/src/main/assets && xxd -i main.bas > ../../../../../../../src/platform/emcc/main_bas.h)
 }
 
+function buildTEENSY() {
+   TARGET="Building teensy version."
+   BUILD_SUBDIRS="src/platform/teensy"
+   AC_CHECK_PROG(have_xxd, xxd, [yes], [no])
+   if test "${have_xxd}" = "no" ; then
+     AC_MSG_ERROR([xxd command not installed: configure failed.])
+   fi
+   AM_CONDITIONAL(WITH_CYGWIN_CONSOLE, false)
+   AC_DEFINE(_UnixOS, 1, [Building under Unix like systems.])
+   AC_DEFINE(_MCU, 1, [Micro controller based builds])
+   AC_DEFINE(_TEENSY, 1, [Teensy Micro controller based build])
+   AC_DEFINE(USE_TERM_IO, 0, [dont use the termios library.])
+   AC_DEFINE(IMPL_LOG_WRITE, 1, [Driver implements lwrite()])
+   AC_DEFINE(IMPL_DEV_READ, 1, [Implement dev_read()])
+   AC_SUBST(BUILD_SUBDIRS)
+   (cd src/platform/teensy && xxd -i main.bas > src/main_bas.h)
+}
+
 function buildFLTK() {
    TARGET="Building FLTK version."
 
@@ -444,6 +475,8 @@ elif test x$ac_build_fltk = xyes; then
    buildFLTK
 elif test x$ac_build_emcc = xyes; then
    buildEmscripten
+elif test x$ac_build_teensy = xyes; then
+   buildTEENSY
 else
    buildConsole
 fi
@@ -484,6 +517,7 @@ src/platform/emcc/Makefile
 src/platform/sdl/Makefile
 src/platform/web/Makefile
 src/platform/fltk/Makefile
+src/platform/teensy/Makefile
 ])
 AC_OUTPUT
 

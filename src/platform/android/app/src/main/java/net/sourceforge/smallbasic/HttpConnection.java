@@ -38,7 +38,7 @@ public class HttpConnection implements Runnable {
         result = buildError("timeout");
       }
     } catch (InterruptedException e) {
-      result = buildError(e.toString());
+      result = buildError(e.getLocalizedMessage());
     }
     return result;
   }
@@ -65,7 +65,7 @@ public class HttpConnection implements Runnable {
         result = buildError(String.valueOf(responseCode));
       }
     } catch (Exception e) {
-      result = buildError(e.toString());
+      result = buildError(e.getLocalizedMessage());
     } finally {
       if (conn != null) {
         conn.disconnect();

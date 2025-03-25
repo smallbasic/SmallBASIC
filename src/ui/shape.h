@@ -11,12 +11,12 @@
 
 struct Shape {
   Shape(int x, int y, int w, int h) : _x(x), _y(y), _width(w), _height(h) {}
-  virtual ~Shape() {}
+  virtual ~Shape() = default;
   virtual void draw(int x, int y, int w, int h, int cw) {}
   bool isFullScreen() const;
 
-  int w() { return _width; }
-  int h() { return _height; }
+  int w() const { return _width; }
+  int h() const { return _height; }
   int _x, _y, _width, _height;
 };
 

@@ -10,7 +10,7 @@
                android:hardwareAccelerated="true"
                android:usesCleartextTraffic="true"
                android:hasFragileUserData="true"
-               android:icon="@drawable/ic_launcher">
+               android:icon="@mipmap/ic_launcher">
     <!-- Our activity is based on the built-in NativeActivity framework class.
          This will take care of integrating with our NDK code. -->
     <activity android:name="net.sourceforge.smallbasic.MainActivity"
@@ -69,7 +69,8 @@
   <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
   <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
   <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
-  <uses-permission android:name="android.permission.ACCESS_COURSE_LOCATION" />
+  <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+  <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
   <uses-permission android:name="com.android.launcher.permission.INSTALL_SHORTCUT" />
 </manifest>
 

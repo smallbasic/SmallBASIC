@@ -8,6 +8,16 @@
   <string name="CANCEL">Cancel</string>
   <string name="YES">Yes</string>
   <string name="NO">No</string>
+  <string name="USB_DEVICE_NOT_FOUND">Usb device not found</string>
+  <string name="USB_CONTROL_NOT_FOUND">Usb control interface not found</string>
+  <string name="USB_CONNECTION_ERROR">Failed to obtain usb connection</string>
+  <string name="USB_CONTROL_NOT_CLAIMED">Failed to claim USB control interface</string>
+  <string name="USB_DATA_NOT_CLAIMED">Failed to claim USB data interface</string>
+  <string name="USB_ENCODING_ERROR">Error setting line encoding</string>
+  <string name="USB_LINE_STATE_ERROR">Error setting line state</string>
+  <string name="ENDPOINT_IN_ERROR">Input endpoint not found</string>
+  <string name="ENDPOINT_OUT_ERROR">Output endpoint not found</string>
+  <string name="PERMISSION_ERROR">Not permitted</string>
   <style name="SBTheme" parent="android:Theme.Holo.Light">
     <item name="android:windowActionBar">false</item>
     <item name="android:windowNoTitle">true</item>

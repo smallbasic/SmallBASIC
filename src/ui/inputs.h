@@ -43,8 +43,6 @@ using namespace strlib;
 #define BN_W 16
 #define LN_H 2
 #define CHOICE_BN_W 6
-#define GRAY_BG_COL    0x4e4c46
-#define LABEL_TEXT_COL 0xdfdbd2
 #define FOCUS_COLOR    0x444999
 
 #define FORM_VALUE "value"
@@ -73,13 +71,13 @@ using namespace strlib;
 
 namespace form_ui {
   bool optionSelected(int index);
-};
+}
 
 void set_input_defaults(int fg, int bg);
 int get_color(var_p_t value, int def);
 
 struct IFormWidgetListModel {
-  virtual ~IFormWidgetListModel() {}
+  virtual ~IFormWidgetListModel() = default;
   virtual const char *getTextAt(int index) = 0;
   virtual int getIndex(const char *label) = 0;
   virtual int rows() const = 0;
@@ -89,15 +87,15 @@ struct IFormWidgetListModel {
 
 struct ListModel : IFormWidgetListModel {
   ListModel(int selectedIndex, var_t *v);
-  virtual ~ListModel() { clear(); }
+  ~ListModel() override { clear(); }
 
   void clear();
   void create(var_t *v);
-  const char *getTextAt(int index);
-  int getIndex(const char *t);
-  int rows() const { return _list.size(); }
-  int selected() const { return _selectedIndex; }
-  void selected(int index) { _selectedIndex = index; }
+  const char *getTextAt(int index) override;
+  int getIndex(const char *t) override;
+  int rows() const override { return _list.size(); }
+  int selected() const override { return _selectedIndex; }
+  void selected(int index) override { _selectedIndex = index; }
 
 private:
   void fromArray(var_t *v);
@@ -107,10 +105,10 @@ private:
 
 struct FormInput : public Shape {
   FormInput(int x, int y, int w, int h);
-  virtual ~FormInput();
+  ~FormInput() override;
 
   virtual bool selected(MAPoint2d pt, int scrollX, int scrollY, bool &redraw);
-  virtual const char *getText() const { return NULL; }
+  virtual const char *getText() const { return nullptr; }
   virtual void setText(const char *text) {}
   virtual bool edit(int key, int screenWidth, int charWidth);
   virtual void updateField(var_p_t form) {};
@@ -128,16 +126,16 @@ struct FormInput : public Shape {
   void drawHover(int dx, int dy, bool selected);
   void drawLink(const char *caption, int x, int y, int sw, int chw);
   void drawText(const char *text, int x, int y, int sw, int chw);
-  void draw(int x, int y, int w, int h, int chw);
+  void draw(int x, int y, int w, int h, int chw) override;
   const char *getValue();
   bool overlaps(MAPoint2d pt, int scrollX, int scrollY);
   bool hasFocus() const;
   void hide() { _visible = false; }
-  int  getId() { return _id; }
+  int  getId() const { return _id; }
   var_p_t getField(var_p_t form) const;
-  bool isNoFocus() { return _noFocus; }
-  bool isResizable() { return _resizable; }
-  bool isVisible() { return _visible; }
+  bool isNoFocus() const { return _noFocus; }
+  bool isResizable() const { return _resizable; }
+  bool isVisible() const { return _visible; }
   void setColor(int bg, int fg) { _bg = bg; _fg = fg; }
   void setTextColor() const;
   void setHelpTextColor() const;
@@ -159,13 +157,13 @@ protected:
 
 struct FormButton : public FormInput {
   FormButton(const char *caption, int x, int y, int w, int h);
-  virtual ~FormButton() {}
+  ~FormButton() override = default;
 
-  const char *getText() const { return _label.c_str(); }
-  void draw(int x, int y, int w, int h, int chw) {
+  const char *getText() const override { return _label.c_str(); }
+  void draw(int x, int y, int w, int h, int chw) override {
     drawButton(_label.c_str(), x, y, _width, _height, _pressed);
   }
-  void setText(const char *text) { _label = text; }
+  void setText(const char *text) override { _label = text; }
 
 protected:
   String _label;
@@ -173,15 +171,15 @@ protected:
 
 struct FormLabel : public FormInput {
   FormLabel(const char *caption, int x, int y, int w, int h);
-  virtual ~FormLabel() {}
+  ~FormLabel() override = default;
 
-  bool updateUI(var_p_t form, var_p_t field);
-  const char *getText() const { return _label.c_str(); }
-  void draw(int x, int y, int w, int h, int chw);
-  void setText(const char *text) { _label = text; }
-  int padding(bool vert) const { return 0; }
-  void clicked(int x, int y, bool pressed) {}
-  bool selected(MAPoint2d pt, int scrollX, int scrollY, bool &redraw) { return false; }
+  bool updateUI(var_p_t form, var_p_t field) override;
+  const char *getText() const override { return _label.c_str(); }
+  void draw(int x, int y, int w, int h, int chw) override;
+  void setText(const char *text) override { _label = text; }
+  int padding(bool vert) const override { return 0; }
+  void clicked(int x, int y, bool pressed) override {}
+  bool selected(MAPoint2d pt, int scrollX, int scrollY, bool &redraw) override { return false; }
 
 private:
   String _label;
@@ -189,14 +187,14 @@ private:
 
 struct FormLink : public FormInput {
   FormLink(const char *link, bool external, int x, int y, int w, int h);
-  virtual ~FormLink() {}
+  ~FormLink() override = default;
 
-  void clicked(int x, int y, bool pressed);
-  const char *getText() const { return _link.c_str(); }
-  bool hasHover() { return true; }
+  void clicked(int x, int y, bool pressed) override;
+  const char *getText() const override { return _link.c_str(); }
+  bool hasHover() override { return true; }
 
-  void draw(int x, int y, int w, int h, int chw);
-  int padding(bool vert) const { return vert ? LN_H : 0; }
+  void draw(int x, int y, int w, int h, int chw) override ;
+  int padding(bool vert) const override { return vert ? LN_H : 0; }
 
 protected:
   String _link;
@@ -205,7 +203,7 @@ protected:
 
 struct FormEditInput : public FormInput {
   FormEditInput(int x, int y, int w, int h);
-  virtual ~FormEditInput();
+  ~FormEditInput() override;
 
   virtual char *copy(bool cut) = 0;
   virtual void paste(const char *text) = 0;
@@ -213,8 +211,8 @@ struct FormEditInput : public FormInput {
   virtual const char *completeKeyword(int index) = 0;
   virtual int getCompletions(StringList *list, int max) = 0;
 
-  void clicked(int x, int y, bool pressed);
-  void setFocus(bool focus);
+  void clicked(int x, int y, bool pressed) override;
+  void setFocus(bool focus) override;
   int  getControlKey(int key);
   bool getControlMode() const { return _controlMode; }
   void setControlMode(bool cursorMode) { _controlMode = cursorMode; }
@@ -226,24 +224,23 @@ protected:
 struct FormLineInput : public FormEditInput {
   FormLineInput(const char *text, const char *help,
                 int maxSize, bool grow, int x, int y, int w, int h);
-  virtual ~FormLineInput();
+  ~FormLineInput() override;
 
-  void close();
-  void draw(int x, int y, int w, int h, int chw);
-  bool edit(int key, int screenWidth, int charWidth);
-  const char *getText() const { return _buffer; }
-  void setText(const char *text) {}
-  void clicked(int x, int y, bool pressed);
-  void updateField(var_p_t form);
-  bool updateUI(var_p_t form, var_p_t field);
-  bool selected(MAPoint2d pt, int scrollX, int scrollY, bool &redraw);
-  int padding(bool) const { return 0; }
-  char *copy(bool cut);
-  void paste(const char *text);
+  void draw(int x, int y, int w, int h, int chw) override;
+  bool edit(int key, int screenWidth, int charWidth) override;
+  const char *getText() const override { return _buffer; }
+  void setText(const char *text) override {}
+  void clicked(int x, int y, bool pressed) override;
+  void updateField(var_p_t form)  override;
+  bool updateUI(var_p_t form, var_p_t field)  override;
+  bool selected(MAPoint2d pt, int scrollX, int scrollY, bool &redraw)  override;
+  int padding(bool) const override { return 0; }
+  char *copy(bool cut) override;
+  void paste(const char *text) override;
   void cut();
-  void selectAll();
-  const char *completeKeyword(int index) { return NULL; }
-  int getCompletions(StringList *list, int max) { return 0; }
+  void selectAll() override;
+  const char *completeKeyword(int index) override { return nullptr; }
+  int getCompletions(StringList *list, int max) override { return 0; }
 
 private:
   String _help;
@@ -257,13 +254,13 @@ private:
 
 struct FormList : public FormInput {
   FormList(ListModel *model, int x, int y, int w, int h);
-  virtual ~FormList();
+  ~FormList() override;
 
-  bool edit(int key, int screenWidth, int charWidth);
-  const char *getText() const { return _model->getTextAt(_model->selected()); }
-  void optionSelected(int index);
-  void updateForm(var_p_t form);
-  bool updateUI(var_p_t form, var_p_t field);
+  bool edit(int key, int screenWidth, int charWidth) override;
+  const char *getText() const override { return _model->getTextAt(_model->selected()); }
+  void optionSelected(int index) ;
+  void updateForm(var_p_t form) override;
+  bool updateUI(var_p_t form, var_p_t field) override;
   virtual int getListHeight() const { return _height; }
 
 protected:
@@ -278,14 +275,14 @@ protected:
 
 struct FormDropList : public FormList {
   FormDropList(ListModel *model, int x, int y, int w, int h);
-  virtual ~FormDropList() {}
+  ~FormDropList() override = default;
 
-  void clicked(int x, int y, bool pressed);
-  void draw(int dx, int dy, int w, int h, int chw);
-  bool selected(MAPoint2d pt, int scrollX, int scrollY, bool &redraw);
-  void updateForm(var_p_t form);
-  bool isDrawTop() { return _listActive; }
-  int getListHeight() const { return _listHeight; }
+  void clicked(int x, int y, bool pressed) override;
+  void draw(int dx, int dy, int w, int h, int chw) override;
+  bool selected(MAPoint2d pt, int scrollX, int scrollY, bool &redraw) override;
+  void updateForm(var_p_t form) override;
+  bool isDrawTop() override { return _listActive; }
+  int getListHeight() const override { return _listHeight; }
 
 private:
   void drawList(int dx, int dy, int sh);
@@ -297,18 +294,19 @@ private:
 
 struct FormListBox : public FormList {
   FormListBox(ListModel *model, const char *help, int x, int y, int w, int h);
-  void clicked(int x, int y, bool pressed);
-  void draw(int x, int y, int w, int h, int chw);
-  bool selected(MAPoint2d pt, int scrollX, int scrollY, bool &redraw);
-  virtual ~FormListBox() {}
+  void clicked(int x, int y, bool pressed) override;
+  void draw(int x, int y, int w, int h, int chw) override;
+  bool selected(MAPoint2d pt, int scrollX, int scrollY, bool &redraw) override;
+  ~FormListBox() override = default;
+
 private:
   String _help;
 };
 
 struct FormImage : public FormInput {
   FormImage(ImageDisplay *image, int x, int y);
-  virtual ~FormImage();
-  void draw(int x, int y, int w, int h, int chw);
+  ~FormImage() override;
+  void draw(int x, int y, int w, int h, int chw) override;
 
 private:
   ImageDisplay *_image;
@@ -317,8 +315,8 @@ private:
 struct MenuButton : public FormButton {
   MenuButton(int index, int &selectedIndex,
              const char *caption, int x, int y, int w, int h);
-  void clicked(int x, int y, bool pressed);
-  void draw(int x, int y, int w, int h, int chw);
+  void clicked(int x, int y, bool pressed) override;
+  void draw(int x, int y, int w, int h, int chw) override;
 
   int &_selectedIndex;
   int _index;

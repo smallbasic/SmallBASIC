@@ -124,6 +124,7 @@
 #define MSG_MISSING_ENDTRY      "TRY without END TRY"
 #define MSG_FUNC_NOT_ASSIGNED   "The value returned from %s was not assigned"
 #define MSG_RETURN_NOT_ASSIGNED "FUNC (line %d) - result not assigned"
+#define MSG_ERR_JSON            "JSON decode error. Error near position [%d]"
 
 // executor
 #define WORD_ERROR_AT           "ERROR AT"
