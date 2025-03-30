@@ -3,8 +3,9 @@ import android
 usb = android.openUsbSerial(0x16C0)
 
 while 1
-  usb.send("hello");
+  input k
+  n = usb.send(k);
+  print "sent "; n
   print usb.receive()
-  delay 1000
 wend
 

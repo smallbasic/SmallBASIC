@@ -53,7 +53,7 @@ public abstract class WebServer {
   /**
    * Runs the WebServer in a new thread
    */
-  public void run(final int portNum, final String token) {
+  public Thread run(final int portNum, final String token) {
     Thread socketThread = new Thread(new Runnable() {
       public void run() {
         try {
@@ -64,6 +64,7 @@ public abstract class WebServer {
       }
     });
     socketThread.start();
+    return socketThread;
   }
 
   protected abstract void deleteFile(String remoteHost, String fileName) throws IOException;

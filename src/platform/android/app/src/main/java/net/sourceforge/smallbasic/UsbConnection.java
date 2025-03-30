@@ -38,13 +38,15 @@ public class UsbConnection extends BroadcastReceiver {
   private UsbEndpoint _endpointIn;
   private UsbEndpoint _endpointOut;
   private final int _bufferSize;
+  private final int _timeoutMillis;
 
   /**
    * Constructs a new UsbConnection
    */
-  public UsbConnection(Context context, int vendorId) throws IOException {
+  public UsbConnection(Context context, int vendorId, int baud, int timeout) throws IOException {
     _usbManager = getUsbManager(context);
     _usbDevice = getDevice(_usbManager, vendorId);
+    _timeoutMillis = timeout > 0 ? timeout : TIMEOUT_MILLIS;
     if (_usbDevice == null) {
       throw getIoException(context, R.string.USB_DEVICE_NOT_FOUND);
     }
@@ -112,14 +114,26 @@ public class UsbConnection extends BroadcastReceiver {
       throw getIoException(context, R.string.USB_DATA_NOT_CLAIMED);
     }
 
+    byte baudLsb;
+    byte baudMsb;
+
+    if (baud > 0) {
+      baudLsb = (byte) (baud);
+      baudMsb = (byte) (baud >> 8 & 0xff);
+    } else {
+      // defaults to 19200 (little endian)
+      baudLsb = 0;
+      baudMsb = 0x4b;
+    }
+
     // Set line coding (19200 baud, 8N1)
     byte[] lineCoding = new byte[] {
-        (byte) 0x00, // 19200 baud rate (little endian)
-        (byte) 0x4B,
-        0, 0,
-        0, // 1 stop bit
-        0, // No parity
-        8  // 8 data bits
+      baudLsb,
+      baudMsb,
+      0, 0,
+      0, // 1 stop bit
+      0, // No parity
+      8  // 8 data bits
     };
 
     if (_connection.controlTransfer(
@@ -190,7 +204,7 @@ public class UsbConnection extends BroadcastReceiver {
   public String receive() {
     String result;
     byte[] dataIn = new byte[_bufferSize];
-    int bytesRead = _connection.bulkTransfer(_endpointIn, dataIn, dataIn.length, TIMEOUT_MILLIS);
+    int bytesRead = _connection.bulkTransfer(_endpointIn, dataIn, dataIn.length, _timeoutMillis);
     if (bytesRead > 0) {
       result = new String(dataIn, 0, bytesRead, StandardCharsets.UTF_8);
     } else {

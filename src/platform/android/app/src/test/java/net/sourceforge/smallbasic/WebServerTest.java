@@ -1,6 +1,7 @@
 package net.sourceforge.smallbasic;
 
-import sun.misc.IOUtils;
+import org.junit.Ignore;
+import org.junit.Test;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
@@ -18,13 +19,15 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Collection;
-import java.util.Objects;
 
-public class Server {
-  private static final String BASIC_HOME = "../basic/";
+public class WebServerTest {
+  private static final String APP_HOME = "../";
+  private static final String BASIC_HOME = APP_HOME + "webui/basic/";
+  private static final String ASSET_HOME = APP_HOME + "app/build/";
 
-  public static void main(String[] args ) throws IOException {
-    // ln -s ../../../../../../../../app/src/main/java/net/sourceforge/smallbasic/WebServer.java .
+  @Test
+  @Ignore("For separate MUI app testing, comment for app build")
+  public void serverTest() throws InterruptedException {
     WebServer webServer = new WebServer() {
       @Override
       protected byte[] decodeBase64(String data) {
@@ -39,7 +42,7 @@ public class Server {
       @Override
       protected void execStream(String remoteHost, InputStream inputStream) {
         try {
-          byte[] data = IOUtils.readAllBytes(inputStream);
+          byte[] data = inputStream.readAllBytes();
           log(new String(data));
         }
         catch (IOException e) {
@@ -49,7 +52,7 @@ public class Server {
 
       @Override
       protected Response getFile(String hostName, String path, boolean asset) throws IOException {
-        String prefix = asset ? "../build/" : BASIC_HOME;
+        String prefix = asset ? ASSET_HOME : BASIC_HOME;
         File file = new File(prefix + path);
         return new Response(Files.newInputStream(file.toPath()), file.length());
       }
@@ -58,7 +61,12 @@ public class Server {
       protected Collection<FileData> getFileData(String hostName) throws IOException {
         final File folder = new File(BASIC_HOME);
         Collection<FileData> result = new ArrayList<>();
-        for (final File fileEntry : Objects.requireNonNull(folder.listFiles())) {
+        File[] fileList = folder.listFiles();
+        if (fileList == null) {
+          log("Error: no files in: " + folder.getAbsolutePath());
+          fileList = new File[0];
+        }
+        for (final File fileEntry : fileList) {
           BasicFileAttributes attr = Files.readAttributes(fileEntry.toPath(), BasicFileAttributes.class);
           if (!attr.isDirectory()) {
             FileTime lastModifiedTime = attr.lastModifiedTime();
@@ -125,6 +133,6 @@ public class Server {
         }
       }
     };
-    webServer.run(8080, "ABC123");
+    webServer.run(8080, "ABC123").join();
   }
 }

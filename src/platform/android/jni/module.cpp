@@ -46,11 +46,18 @@ static int cmd_usb_receive(var_s *self, int argc, slib_par_t *args, var_s *retva
 
 static int cmd_usb_send(var_s *self, int argc, slib_par_t *args, var_s *retval) {
   int result;
-  if (argc != 1 || !is_object(self) || !v_is_type(args[0].var_p, V_STR)) {
+  if (argc != 1 || !is_object(self)) {
     v_setstr(retval, ERR_PARAM);
     result = 0;
   } else {
-    v_setint(retval, runtime->getIntegerFromString("usbSend", v_getstr(args[0].var_p)));
+    if (v_is_type(args[0].var_p, V_STR)) {
+      auto str = v_getstr(args[0].var_p);
+      v_setint(retval, runtime->getIntegerFromString("usbSend", str));
+    } else {
+      auto str = v_str(args[0].var_p);
+      v_setint(retval, runtime->getIntegerFromString("usbSend", str));
+      free(str);
+    }
     result = 1;
   }
   return result;
@@ -59,7 +66,7 @@ static int cmd_usb_send(var_s *self, int argc, slib_par_t *args, var_s *retval) 
 static int cmd_usb_connect(int argc, slib_par_t *args, var_t *retval) {
   int result = 0;
 
-  if (argc != 1 || !v_is_type(args[0].var_p, V_INT)) {
+  if (argc < 1 || argc > 3 || !v_is_type(args[0].var_p, V_INT)) {
     v_setstr(retval, "Expected: vendorId");
   } else {
     runtime->getOutput()->redraw();
@@ -68,10 +75,12 @@ static int cmd_usb_connect(int argc, slib_par_t *args, var_t *retval) {
     JNIEnv *env;
     app->activity->vm->AttachCurrentThread(&env, nullptr);
     int vendorId = v_getint(args[0].var_p);
+    int baud = argc >= 2 ? (int)v_getint(args[1].var_p) : 0;
+    int timeout = argc == 3 ? (int)v_getint(args[2].var_p) : 0;
     jclass clazz = env->GetObjectClass(app->activity->clazz);
-    const char *signature = "(I)Ljava/lang/String;";
+    const char *signature = "(III)Ljava/lang/String;";
     jmethodID methodId = env->GetMethodID(clazz, "usbConnect", signature);
-    auto jstr = (jstring)env->CallObjectMethod(app->activity->clazz, methodId, vendorId);
+    auto jstr = (jstring)env->CallObjectMethod(app->activity->clazz, methodId, vendorId, baud, timeout);
     const char *str = env->GetStringUTFChars(jstr, JNI_FALSE);
 
     if (strncmp(str, "[tag-connected]", 15) == 0) {

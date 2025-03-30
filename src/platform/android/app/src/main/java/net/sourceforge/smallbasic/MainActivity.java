@@ -655,14 +655,15 @@ public class MainActivity extends NativeActivity {
   public boolean usbClose() {
     if (_usbConnection != null) {
       _usbConnection.close();
+      _usbConnection = null;
     }
     return true;
   }
 
-  public String usbConnect(int vendorId) {
+  public String usbConnect(int vendorId, int baud, int timeout) {
     String result;
     try {
-      _usbConnection = new UsbConnection(getApplicationContext(), vendorId);
+      _usbConnection = new UsbConnection(getApplicationContext(), vendorId, baud, timeout);
       result = "[tag-connected]";
     } catch (IOException e) {
       result = e.getLocalizedMessage();
@@ -725,12 +726,12 @@ public class MainActivity extends NativeActivity {
     }
   }
 
-  private void checkPermission(final String permission, final int result) {
+  private void checkPermission(final String permission, final int requestCode) {
     runOnUiThread(new Runnable() {
       @Override
       public void run() {
         String[] permissions = {permission};
-        ActivityCompat.requestPermissions(MainActivity.this, permissions, result);
+        ActivityCompat.requestPermissions(MainActivity.this, permissions, requestCode);
       }
     });
   }
