@@ -1,5 +1,6 @@
 package net.sourceforge.smallbasic;
 
+import android.annotation.SuppressLint;
 import android.app.PendingIntent;
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -37,28 +38,32 @@ public class UsbConnection extends BroadcastReceiver {
   private UsbInterface _controlInterface;
   private UsbEndpoint _endpointIn;
   private UsbEndpoint _endpointOut;
+  private Context _context;
   private final int _bufferSize;
   private final int _timeoutMillis;
+  private final int _baud;
 
   /**
    * Constructs a new UsbConnection
    */
   public UsbConnection(Context context, int vendorId, int baud, int timeout) throws IOException {
+    _context = context;
     _usbManager = getUsbManager(context);
     _usbDevice = getDevice(_usbManager, vendorId);
-    _timeoutMillis = timeout > 0 ? timeout : TIMEOUT_MILLIS;
+    _timeoutMillis = timeout < 0 ? TIMEOUT_MILLIS : timeout;
+
     if (_usbDevice == null) {
-      throw getIoException(context, R.string.USB_DEVICE_NOT_FOUND);
+      throw createIoException(context, R.string.USB_DEVICE_NOT_FOUND);
     }
 
     if (!_usbManager.hasPermission(_usbDevice)) {
       requestPermission(context);
-      throw getIoException(context, R.string.PERMISSION_ERROR);
+      throw createIoException(context, R.string.PERMISSION_ERROR);
     }
 
     _connection = _usbManager.openDevice(_usbDevice);
     if (_connection == null) {
-      throw getIoException(context, R.string.USB_CONNECTION_ERROR);
+      throw createIoException(context, R.string.USB_CONNECTION_ERROR);
     }
 
     // Find the CDC interfaces and endpoints
@@ -91,13 +96,13 @@ public class UsbConnection extends BroadcastReceiver {
     }
 
     if (controlInterface == null) {
-      throw getIoException(context, R.string.USB_CONTROL_NOT_FOUND);
+      throw createIoException(context, R.string.USB_CONTROL_NOT_FOUND);
     }
     if (endpointIn == null) {
-      throw getIoException(context, R.string.ENDPOINT_IN_ERROR);
+      throw createIoException(context, R.string.ENDPOINT_IN_ERROR);
     }
     if (endpointOut == null) {
-      throw getIoException(context, R.string.ENDPOINT_OUT_ERROR);
+      throw createIoException(context, R.string.ENDPOINT_OUT_ERROR);
     }
 
     _endpointIn = endpointIn;
@@ -108,25 +113,27 @@ public class UsbConnection extends BroadcastReceiver {
 
     // Claim interfaces
     if (!_connection.claimInterface(controlInterface, true)) {
-      throw getIoException(context, R.string.USB_CONTROL_NOT_CLAIMED);
+      throw createIoException(context, R.string.USB_CONTROL_NOT_CLAIMED);
     }
     if (!_connection.claimInterface(dataInterface, true)) {
-      throw getIoException(context, R.string.USB_DATA_NOT_CLAIMED);
+      throw createIoException(context, R.string.USB_DATA_NOT_CLAIMED);
     }
 
     byte baudLsb;
     byte baudMsb;
 
-    if (baud > 0) {
+    if (baud >= 300) {
       baudLsb = (byte) (baud);
       baudMsb = (byte) (baud >> 8 & 0xff);
+      _baud = baud;
     } else {
       // defaults to 19200 (little endian)
       baudLsb = 0;
       baudMsb = 0x4b;
+      _baud = 19200;
     }
 
-    // Set line coding (19200 baud, 8N1)
+    // Set line coding (baud, 8N1)
     byte[] lineCoding = new byte[] {
       baudLsb,
       baudMsb,
@@ -144,7 +151,7 @@ public class UsbConnection extends BroadcastReceiver {
         lineCoding,
         lineCoding.length,
         TIMEOUT_MILLIS) < 0) {
-      throw getIoException(context, R.string.USB_ENCODING_ERROR);
+      throw createIoException(context, R.string.USB_ENCODING_ERROR);
     }
 
     if (_connection.controlTransfer(
@@ -155,7 +162,7 @@ public class UsbConnection extends BroadcastReceiver {
         null,
         0,
         TIMEOUT_MILLIS) < 0) {
-      throw getIoException(context, R.string.USB_LINE_STATE_ERROR);
+      throw createIoException(context, R.string.USB_LINE_STATE_ERROR);
     }
   }
 
@@ -163,6 +170,14 @@ public class UsbConnection extends BroadcastReceiver {
    * Closes the USB connection
    */
   public void close() {
+    if (_context != null) {
+      try {
+        _context.unregisterReceiver(this);
+      } catch (IllegalArgumentException e) {
+        // ignored
+      }
+      _context = null;
+    }
     if (_connection != null) {
       if (_controlInterface != null) {
         _connection.releaseInterface(_controlInterface);
@@ -178,6 +193,25 @@ public class UsbConnection extends BroadcastReceiver {
     _controlInterface = null;
     _endpointIn = null;
     _endpointOut = null;
+  }
+
+  /**
+   * Returns information about the connected USB device
+   */
+  @SuppressLint("DefaultLocale")
+  public String getDescription() {
+    String result;
+    if (_usbDevice != null) {
+      result = String.format("%s %s %s %s [%d bps]",
+                             _usbDevice.getDeviceName(),
+                             _usbDevice.getProductName(),
+                             _usbDevice.getManufacturerName(),
+                             _usbDevice.getSerialNumber(),
+                             _baud);
+    } else {
+      result = "";
+    }
+    return result;
   }
 
   /**
@@ -241,6 +275,11 @@ public class UsbConnection extends BroadcastReceiver {
     return result;
   }
 
+  @NonNull
+  private static IOException createIoException(Context context, int resourceId) {
+    return new IOException(context.getResources().getString(resourceId));
+  }
+
   /**
    * Returns the UsbDevice matching the given vendorId
    */
@@ -253,11 +292,6 @@ public class UsbConnection extends BroadcastReceiver {
       }
     }
     return result;
-  }
-
-  @NonNull
-  private static IOException getIoException(Context context, int resourceId) {
-    return new IOException(context.getResources().getString(resourceId));
   }
 
   /**
