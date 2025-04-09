@@ -215,7 +215,7 @@ ImageBuffer *get_image(unsigned bid) {
 }
 
 void scaleImage(ImageBuffer* image, var_num_t scaling) {
-  if(scaling == 1.0 || scaling <= 0.0) {
+  if (scaling == 1.0 || scaling <= 0.0) {
     return;
   }
 
@@ -226,15 +226,16 @@ void scaleImage(ImageBuffer* image, var_num_t scaling) {
   h = round((var_num_t)image->_height * scaling);
 
   uint8_t* scaledImage = (uint8_t *)malloc(w * h * 4);
-  if(!scaledImage) {
+  if (!scaledImage) {
     err_throw(ERR_IMAGE_LOAD, "Failed to allocate RAM");
+    return;
   }
 
   uint32_t* image32bit = (uint32_t*)image->_image;
   uint32_t* scaledImage32bit = (uint32_t*)scaledImage;
 
-  for(yy = 0; yy < h; yy++) {
-    for(xx = 0; xx < w; xx++) {
+  for (yy = 0; yy < h; yy++) {
+    for (xx = 0; xx < w; xx++) {
       offsetScaledImage = yy * w + xx;
       offsetImage = floor((var_num_t)yy / scaling) * image->_width + floor((var_num_t)xx / scaling);
       scaledImage32bit[offsetScaledImage] = image32bit[offsetImage];
@@ -300,14 +301,15 @@ ImageBuffer *load_image(var_t *var) {
   if (var->type == V_MAP) {
     int bid = map_get_int(var, IMG_BID, -1);
     if (bid != -1) {
-      if(scaling == 1.0 || scaling <= 0.0) {
+      if (scaling == 1.0 || scaling <= 0.0) {
         result = get_image((unsigned)bid);
       } else {
         ImageBuffer *inputImage = nullptr;
         inputImage = get_image((unsigned)bid);
         uint8_t* imageData = (uint8_t *)malloc(inputImage->_width * inputImage->_height * 4);
-        if(!imageData) {
+        if (!imageData) {
           err_throw(ERR_IMAGE_LOAD, "Failed to allocate RAM");
+          return result;
         }
         result = new ImageBuffer;
         result->_bid = ++nextId;
@@ -325,8 +327,9 @@ ImageBuffer *load_image(var_t *var) {
     int w = ABS(v_ubound(var, 1) - v_lbound(var, 1)) + 1;
     int size = w * h * 4;
     auto imageData = (uint8_t *)malloc(size);
-    if(!imageData) {
+    if (!imageData) {
       err_throw(ERR_IMAGE_LOAD, "Failed to allocate RAM");
+      return result;
     }
     for (int y = 0; y < h; y++) {
       int yoffs = (y * w * 4);
@@ -391,7 +394,7 @@ ImageBuffer *load_image(dev_file_t *filep) {
     scaling = par_getnum();
   }
 
-  if(scaling == 1.0 || scaling <= 0.0) {
+  if (scaling == 1.0 || scaling <= 0.0) {
     List_each(ImageBuffer *, it, buffers) {
       ImageBuffer *next = (*it);
       if (next->_filename != nullptr && strcmp(next->_filename, filep->name) == 0) {
@@ -751,6 +754,16 @@ void screen_dump() {
   }
 }
 
+/*
+ * I = Image(file [,scale])
+ * I = Image(image [,scale])
+ * I = Image(x1,y1,x2,y2 [,scale])
+ * I = Image(pixmap [,scale])
+ * I = Image(array [,scale])
+ * scale > 1: upscale
+ * scale < 1: downscale
+ * scale <=0: don't scale
+ */
 extern "C" void v_create_image(var_p_t var) {
   var_t arg;
   ImageBuffer *image = nullptr;
