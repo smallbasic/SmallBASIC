@@ -73,8 +73,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.Semaphore;
 import java.util.zip.GZIPInputStream;
 
@@ -102,7 +100,6 @@ public class MainActivity extends NativeActivity {
   private static final String[] SAMPLES = {"welcome.bas", "sound.bas"};
   private String _startupBas = null;
   private boolean _untrusted = false;
-  private final ExecutorService _audioExecutor = Executors.newSingleThreadExecutor();
   private final Handler _keypadHandler = new Handler(Looper.getMainLooper());
   private final Map<String, Boolean> permittedHost = new ConcurrentHashMap<>();
   private final Object _mediaPlayerLock = new Object();
@@ -1105,13 +1102,11 @@ public class MainActivity extends NativeActivity {
         }
       }
 
-      if (android.os.Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-        // https://commonsware.com/blog/2019/06/07/death-external-storage-end-saga.html
-        File[] dirs = getExternalMediaDirs();
-        path = dirs != null && dirs.length > 0 ? dirs[0].getAbsolutePath() : null;
-        if (isPublicStorage(path)) {
-          media = path;
-        }
+      // https://commonsware.com/blog/2019/06/07/death-external-storage-end-saga.html
+      File[] dirs = getExternalMediaDirs();
+      path = dirs != null && dirs.length > 0 ? dirs[0].getAbsolutePath() : null;
+      if (isPublicStorage(path)) {
+        media = path;
       }
 
       this._external = external;
