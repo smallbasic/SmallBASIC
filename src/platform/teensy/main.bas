@@ -11,7 +11,7 @@ display.setCursor(0, sz.height + 2)
 display.flush()
 
 const out = teensy.openDigitalOutput(13)
-const usb = teensy.openUsbSerial()
+const usb = teensy.openSerial()
 
 sub show_data(byref s)
   display.clear()

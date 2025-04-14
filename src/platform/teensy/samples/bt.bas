@@ -34,14 +34,15 @@ bt.send("AT+PSWD?\r\n")
 
 while 1
   if (bt.ready()) then
-    rx = bt.receive()
+    rx = bt.receive(100)
     display.setCursor(0, 0)
     display.clear()
     display.print("Rx: " + rx)
     display.flush()
     bt.send(rx)
+    print "received "; rx
   else
-    delay 1000
+    delay 1
   endif  
 wend
 
