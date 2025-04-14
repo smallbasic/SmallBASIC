@@ -182,17 +182,22 @@ static int cmd_serial_ready(var_s *self, int argc, slib_par_t *args, var_s *retv
 
 static int cmd_serial_receive(var_s *self, int argc, slib_par_t *args, var_s *retval) {
   int result;
-  if (argc != 0 || !is_serial_object(self)) {
+  if (argc > 1 || !is_serial_object(self)) {
     v_setstr(retval, ERR_PARAM);
     result = 0;
   } else {
-    char buffer[CDC_RX_SIZE_480];
+    auto bufferSize = get_param_int(argc, args, 0, CDC_RX_SIZE_480);
+    if (!bufferSize) {
+      bufferSize = CDC_RX_SIZE_480;
+    }
+    char buffer[bufferSize];
     int size;
     int serialNo = self->v.m.id;
+
     if (serialNo == 0) {
-      size = Serial.readBytes(buffer, CDC_RX_SIZE_480);
+      size = Serial.readBytes(buffer, bufferSize);
     } else {
-      size = getSerial(serialNo)->readBytes(buffer, CDC_RX_SIZE_480);
+      size = getSerial(serialNo)->readBytes(buffer, bufferSize);
     }
     buffer[size] = '\0';
     v_setstr(retval, buffer);
