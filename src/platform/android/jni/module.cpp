@@ -365,12 +365,19 @@ static int cmd_tts_speak(int argc, slib_par_t *args, var_t *retval) {
   int result;
   if (opt_mute_audio) {
     result = 1;
-  } else if (argc == 1 && v_is_type(args[0].var_p, V_STR)) {
-    runtime->speak(v_getstr(args[0].var_p));
-    result = 1;
-  } else {
+  } else if (argc != 1) {
     v_setstr(retval, ERR_PARAM);
     result = 0;
+  } else {
+    if (v_is_type(args[0].var_p, V_STR)) {
+      auto str = v_getstr(args[0].var_p);
+      runtime->speak(str);
+    } else {
+      auto str = v_str(args[0].var_p);
+      runtime->speak(str);
+      free(str);
+    }
+    result = 1;
   }
   return result;
 }
