@@ -76,7 +76,7 @@ template<typename T>
 struct List {
   typedef T *TP;
 
-  List(int growSize = 20) :
+  explicit List(int growSize = 20) :
     _head(0),
     _growSize(growSize),
     _count(0),
@@ -102,7 +102,7 @@ struct List {
   }
 
   /**
-   * Empties the list without deleteing the list objects
+   * Empties the list without deleting the list objects
    */
   void clear() {
     free(_head);
@@ -170,7 +170,7 @@ struct List {
   }
 
   /**
-   * Returns whether list of strings constains the string
+   * Returns whether list of strings contains the string
    */
   bool contains(const char *s);
 
@@ -230,6 +230,7 @@ struct Queue : public List<T> {
   Queue() : List<T>() {}
   explicit Queue(int growSize) : List<T>(growSize) {}
   T front() { return !this->_count ? (T)nullptr : this->_head[0]; }
+  T back() { return !this->_count ? (T)nullptr : this->_head[this->_count - 1]; }
   void pop(bool free=true) {
     if (this->_count) {
       if (free) {
