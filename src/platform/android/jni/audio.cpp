@@ -25,7 +25,7 @@ constexpr int MAX_RAMP = 512;
 constexpr int RAMP_SCALE = 20;
 constexpr int BUFFER_DURATION = 40;
 constexpr int FRAMES_PER_CALLBACK = AUDIO_SAMPLE_RATE * BUFFER_DURATION / 1000;
-constexpr int SILENCE_BEFORE_STOP = FRAMES_PER_CALLBACK;
+constexpr int SILENCE_BEFORE_STOP = AUDIO_SAMPLE_RATE * 60 / FRAMES_PER_CALLBACK;
 
 int instances = 0;
 float phase = 0;
@@ -112,10 +112,7 @@ Audio::Audio(): _silentTicks(0) {
     ->setUsage(oboe::Usage::Game)
     ->setFramesPerCallback(FRAMES_PER_CALLBACK)
     ->openStream(_stream);
-  if (result == oboe::Result::OK) {
-    // play silence to initialise the player
-    play(0, 1, 100, true);
-  } else {
+  if (result != oboe::Result::OK) {
     _stream = nullptr;
   }
 }
@@ -136,11 +133,13 @@ Audio::~Audio() {
 //
 void Audio::play(int frequency, int millis, int volume, bool background) {
   if (_stream != nullptr && millis > 0) {
-    add(frequency, millis, volume);
     if (_stream->getState() != StreamState::Started) {
       trace("Start audio");
+      // play silence to initialise the player
+      add(0, 250, 1);
       _stream->requestStart();
     }
+    add(frequency, millis, volume);
     if (!background || _queue.size() >= MAX_QUEUE_SIZE) {
       if (millis < kMillisPerSecond) {
         usleep(millis * kMillisPerSecond);
