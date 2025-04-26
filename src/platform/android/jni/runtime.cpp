@@ -205,7 +205,7 @@ extern "C" JNIEXPORT jlong JNICALL Java_net_sourceforge_smallbasic_MainActivity_
 extern "C" JNIEXPORT void JNICALL Java_net_sourceforge_smallbasic_MainActivity_consoleLog
   (JNIEnv *env, jclass clazz, jstring jstr) {
   if (jstr != nullptr) {
-    const char *str = env->GetStringUTFChars(jstr, 0);
+    const char *str = env->GetStringUTFChars(jstr, nullptr);
     runtime->systemLog(str);
     runtime->systemLog("\n");
     env->ReleaseStringUTFChars(jstr, str);
@@ -1000,17 +1000,8 @@ int Runtime::getFontId() {
 // System platform methods
 //
 bool System::getPen3() {
-  bool result = false;
-  if (_touchX != -1 && _touchY != -1) {
-    result = true;
-  } else {
-    // get mouse
-    processEvents(0);
-    if (_touchX != -1 && _touchY != -1) {
-      result = true;
-    }
-  }
-  return result;
+  processEvents(0);
+  return _buttonPressed;
 }
 
 void System::completeKeyword(int index) const {

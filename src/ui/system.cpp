@@ -530,8 +530,11 @@ void System::handleEvent(MAEvent &event) {
     }
     break;
   case EVENT_TYPE_POINTER_RELEASED:
+    _touchCurX = event.point.x;
+    _touchCurY = event.point.y;
+    _touchX = -1;
+    _touchY = -1;
     _buttonPressed = false;
-    _touchX = _touchY = _touchCurX = _touchCurY = -1;
     _output->pointerReleaseEvent(event);
     showCursor(get_focus_edit() != nullptr ? kIBeam : kArrow);
     break;
@@ -561,7 +564,7 @@ char *System::loadResource(const char *fileName) {
         if (http_read(f, var_p) == 0) {
           systemPrint("\nfailed to read %s\n", fileName);
         } else {
-          int len = var_p->v.p.length;
+          uint32_t len = var_p->v.p.length;
           buffer = (char *)malloc(len + 1);
           memcpy(buffer, var_p->v.p.ptr, len);
           buffer[len] = '\0';
@@ -948,7 +951,7 @@ bool System::setParentPath() {
   if (!path[0] || strcmp(path, "/") == 0) {
     result = false;
   } else {
-    int len = strlen(path);
+    size_t len = strlen(path);
     if (path[len - 1] == '/') {
       // eg /sdcard/bas/
       path[len - 1] = '\0';

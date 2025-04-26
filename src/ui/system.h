@@ -72,10 +72,13 @@ struct System {
   virtual char *getClipboardText() = 0;
 
   protected:
+  static bool fileExists(strlib::String &path);
+  static void formatOptions(StringList *items);
+  static void setupPath(String &loadPath);
+  static bool setParentPath();
+
   void editSource(strlib::String loadPath, bool restoreOnExit);
   bool execute(const char *bas);
-  bool fileExists(strlib::String &path);
-  void formatOptions(StringList *items);
   MAEvent getNextEvent() { return processEvents(1); }
   uint32_t getModifiedTime();
   void handleEvent(MAEvent &event);
@@ -91,8 +94,6 @@ struct System {
   void runMain(const char *mainBasPath);
   void runOnce(const char *startupBas, bool runWait);
   void saveFile(TextEditInput *edit, strlib::String &path);
-  void setupPath(String &loadpath);
-  bool setParentPath();
   void setDimensions();
   void showCompletion(bool success);
   void printErrorLine();
