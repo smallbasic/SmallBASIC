@@ -170,10 +170,7 @@ function buildSDL() {
    TARGET="Building SDL version."
    defaultConditionals
 
-   AC_CHECK_PROG(have_sdl, sdl2-config, [yes], [no])
-   if test "${have_sdl}" = "no" ; then
-     AC_MSG_ERROR([libsdl2-dev not installed: configure failed.])
-   fi
+   PKG_CHECK_MODULES([SDL3], [sdl3])
 
    SAVED_CPPFLAGS="$CPPFLAGS"
    CPPFLAGS="$CPPFLAGS `pkg-config freetype2 --cflags`"
@@ -197,7 +194,7 @@ function buildSDL() {
      PACKAGE_CFLAGS="${PACKAGE_CFLAGS} -mms-bitfields"
      PACKAGE_LIBS="${PACKAGE_LIBS} -lwsock32 -lws2_32 -static-libgcc -static-libstdc++"
      PACKAGE_LIBS="${PACKAGE_LIBS} -Wl,-Bstatic -Wl,-Map=output.map"
-     PACKAGE_LIBS="${PACKAGE_LIBS} `sdl2-config --static-libs` `pkg-config freetype2 --libs --static`"
+     PACKAGE_LIBS="${PACKAGE_LIBS} ${SDL3_LIBS} `pkg-config freetype2 --libs --static`"
      AC_DEFINE(_Win32, 1, [Windows build])
      ;;
 
@@ -212,7 +209,7 @@ function buildSDL() {
      dnl backlinking support for modules
      PACKAGE_LIBS="${PACKAGE_LIBS} -ldl"
      PACKAGE_LIBS="${PACKAGE_LIBS} ${FONTCONFIG_LIBS}"
-     PACKAGE_LIBS="${PACKAGE_LIBS} `sdl2-config --libs` `pkg-config freetype2 --libs`"
+     PACKAGE_LIBS="${PACKAGE_LIBS} ${SDL3_LIBS} `pkg-config freetype2 --libs`"
      ;;
 
      *)
@@ -225,32 +222,25 @@ function buildSDL() {
 
      (cd images && xxd -i sb-desktop-128x128.png > ../src/platform/sdl/icon.h)
 
-     HAVE_SDL2_STATIC=yes
-     AC_MSG_CHECKING([if installed SDL2 supports static libs])
-     AC_PATH_PROGS_FEATURE_CHECK([SDL2_STATIC_TMP], [sdl2-config],
-       AS_IF([`"$ac_path_SDL2_STATIC_TMP" --static-libs  2>&1 | sed '/Usage/!{q1};' > /dev/null`], [HAVE_SDL2_STATIC=no]))
-     AC_MSG_RESULT([$HAVE_SDL2_STATIC])
-
-     if test "x$HAVE_SDL2_STATIC" = "xno"; then
-        SDL_LIBS=`sdl2-config --libs`
-     else
-        SDL_LIBS=`sdl2-config --static-libs`
-     fi
+     AC_MSG_CHECKING([for SDL3 library linking])
+     SDL3_LIBS=`pkg-config sdl3 --libs --static`
+     AC_MSG_RESULT([$SDL3_LIBS])
 
      dnl backlinking support for modules
      PACKAGE_LIBS="${PACKAGE_LIBS} -ldl -no-pie"
      PACKAGE_LIBS="${PACKAGE_LIBS} ${FONTCONFIG_LIBS}"
-
-     PACKAGE_LIBS="-static-libgcc ${PACKAGE_LIBS} ${SDL_LIBS} `pkg-config freetype2 --libs`"
+     PACKAGE_LIBS="-static-libgcc ${PACKAGE_LIBS} ${SDL3_LIBS} `pkg-config freetype2 --libs`"
    esac
 
-   PACKAGE_CFLAGS="${PACKAGE_CFLAGS} `sdl2-config --cflags` `pkg-config freetype2 --cflags` -fno-exceptions"
+   SDL3_CFLAGS=`pkg-config sdl3 --cflags`
+   PACKAGE_CFLAGS="${PACKAGE_CFLAGS} ${SDL3_CFLAGS} `pkg-config freetype2 --cflags` -fno-exceptions"
    CXXFLAGS="${CXXFLAGS} -fno-rtti -std=c++14"
 
    dnl preconfigured values for SDL build
-   AC_DEFINE_UNQUOTED([_SDL_VERSION], ["`sdl2-config --version` "], [SDL library version])
+   SDL3_VERSION=`pkg-config sdl3 --modversion`
+   AC_DEFINE_UNQUOTED([_SDL_VERSION], ["${SDL3_VERSION} "], [SDL library version])
    AC_DEFINE(_SDL, 1, [Defined when building SDL version])
-   AC_DEFINE(_UnixOS, 1, [Building under Unix like systems.])
+   AC_DEFINE(_UnixOS, 1, [Building under Unix-like systems.])
    AC_DEFINE(IMPL_DEV_READ, 1, [Implement dev_read()])
    AC_DEFINE(IMPL_LOG_WRITE, 1, [Driver implements lwrite()])
 
@@ -529,8 +519,8 @@ echo "PACKAGE_LIBS=${PACKAGE_LIBS}"
 
 if test x$ac_build_sdl = xyes; then
    echo
-   echo "sdl2: `sdl2-config --version`"
-   echo "freetype: `pkg-config --version freetype2`"
+   echo "sdl3: `pkg-config sdl3 --modversion`"
+   echo "freetype: `pkg-config freetype2 --modversion`"
 fi
 
 echo

@@ -9,6 +9,7 @@
 #include "config.h"
 #include "platform/sdl/syswm.h"
 #include "lib/str.h"
+#include "ui/utils.h"
 
 #define DEFAULT_FONT_SIZE 12
 #define DEFAULT_FONT_SIZE_PTS 11
@@ -18,7 +19,7 @@ extern int g_debugPort;
 void appLog(const char *format, ...);
 
 #if defined(_Win32)
-#include <SDL_syswm.h>
+#include <SDL3/SDL_syswm.h>
 #include <shellapi.h>
 
 WCHAR g_appPath[MAX_PATH + 1];
@@ -106,16 +107,18 @@ void loadIcon(SDL_Window *window) {
   unsigned w, h;
   unsigned char *image;
   if (!lodepng_decode32(&image, &w, &h, sb_desktop_128x128_png, sb_desktop_128x128_png_len)) {
-    SDL_Surface *surf =
-      SDL_CreateRGBSurfaceFrom(image, w, h,
-                               32, w * 4,
-                               0x000000ff,
-                               0x0000ff00,
-                               0x00ff0000,
-                               0xff000000);
+    auto format = SDL_GetPixelFormatForMasks(32,
+                                             0x000000ff,
+                                             0x0000ff00,
+                                             0x00ff0000,
+                                             0xff000000);
+    auto surf = SDL_CreateSurfaceFrom(w, h, format, image, w * 4);
     SDL_SetWindowIcon(window, surf);
-    SDL_FreeSurface(surf);
+    SDL_DestroySurface(surf);
     free(image);
+    trace("icon loaded");
+  } else {
+    trace("icon not loaded");
   }
 }
 

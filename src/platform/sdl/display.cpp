@@ -19,19 +19,19 @@ extern ui::Graphics *graphics;
 Canvas::Canvas() :
   _w(0),
   _h(0),
-  _pixels(NULL),
-  _surface(NULL),
-  _clip(NULL),
+  _pixels(nullptr),
+  _surface(nullptr),
+  _clip(nullptr),
   _ownerSurface(false) {
 }
 
 Canvas::~Canvas() {
-  if (_surface != NULL && _ownerSurface) {
-    SDL_FreeSurface(_surface);
+  if (_surface != nullptr && _ownerSurface) {
+    SDL_DestroySurface(_surface);
   }
   delete _clip;
-  _surface = NULL;
-  _clip = NULL;
+  _surface = nullptr;
+  _clip = nullptr;
 }
 
 bool Canvas::create(int w, int h) {
@@ -40,11 +40,12 @@ bool Canvas::create(int w, int h) {
   _h = h;
   int bpp;
   Uint32 rmask, gmask, bmask, amask;
-  SDL_PixelFormatEnumToMasks(PIXELFORMAT, &bpp, &rmask, &gmask, &bmask, &amask);
+  SDL_GetMasksForPixelFormat(PIXELFORMAT, &bpp, &rmask, &gmask, &bmask, &amask);
+  auto format = SDL_GetPixelFormatForMasks(bpp, rmask, gmask, bmask, amask);
   _ownerSurface = true;
-  _surface = SDL_CreateRGBSurface(0, w, h, bpp, rmask, gmask, bmask, amask);
+  _surface = SDL_CreateSurface(w, h, format);
   bool result;
-  if (_surface != NULL) {
+  if (_surface != nullptr) {
     _pixels = (pixel_t *)_surface->pixels;
     result = true;
   } else {
@@ -75,7 +76,7 @@ void Canvas::fillRect(int x, int y, int w, int h, pixel_t color) {
   rect.y = y;
   rect.w = w;
   rect.h = h;
-  SDL_FillRect(_surface, &rect, color);
+  SDL_FillSurfaceRect(_surface, &rect, color);
 }
 
 void Canvas::setClip(int x, int y, int w, int h) {
@@ -87,7 +88,7 @@ void Canvas::setClip(int x, int y, int w, int h) {
     _clip->w = x + w;
     _clip->h = y + h;
   } else {
-    _clip = NULL;
+    _clip = nullptr;
   }
 }
 
@@ -104,7 +105,7 @@ void Canvas::setSurface(SDL_Surface *surface, int w, int h) {
 //
 Graphics::Graphics(SDL_Window *window) : ui::Graphics(),
   _window(window),
-  _surface(NULL) {
+  _surface(nullptr) {
 }
 
 Graphics::~Graphics() {
@@ -119,21 +120,18 @@ bool Graphics::construct(const char *font, const char *boldFont) {
   SDL_GetWindowSize(_window, &w, &h);
 
   SDL_Surface *surface = SDL_GetWindowSurface(_window);
-  if (surface == NULL) {
+  if (surface == nullptr) {
     fprintf(stderr, "SDL surface is null\n");
     result = false;
-  } else if (surface->format == NULL) {
-    fprintf(stderr, "SDL surface format is null\n");
-    result = false;
-  } else if (surface->format->format != PIXELFORMAT) {
-    deviceLog("Unexpected window surface format %x", surface->format->format);
+  } else if (surface->format != PIXELFORMAT) {
+    deviceLog("Unexpected window surface format %x", surface->format);
     _surface = surface;
   }
 
   if (result && loadFonts(font, boldFont)) {
     _screen = new Canvas();
-    if (_screen != NULL) {
-      if (_surface == NULL) {
+    if (_screen != nullptr) {
+      if (_surface == nullptr) {
         _screen->setSurface(SDL_GetWindowSurface(_window), w, h);
       } else {
         result = _screen->create(w, h);
@@ -150,9 +148,9 @@ bool Graphics::construct(const char *font, const char *boldFont) {
 }
 
 void Graphics::redraw() {
-  if (_surface != NULL) {
+  if (_surface != nullptr) {
     SDL_Surface *src = ((Canvas *)_screen)->_surface;
-    SDL_BlitSurface(src, NULL, _surface, NULL);
+    SDL_BlitSurface(src, nullptr, _surface, nullptr);
   }
   SDL_UpdateWindowSurface(_window);
 }
@@ -160,14 +158,14 @@ void Graphics::redraw() {
 void Graphics::resize(int w, int h) {
   logEntered();
   SDL_Surface *surface = SDL_GetWindowSurface(_window);
-  if (_surface == NULL) {
+  if (_surface == nullptr) {
     _screen->setSurface(surface, w, h);
   } else {
     bool drawScreen = (_drawTarget == _screen);
     delete _screen;
     _screen = new ::Canvas();
     _screen->create(w, h);
-    _drawTarget = drawScreen ? _screen : NULL;
+    _drawTarget = drawScreen ? _screen : nullptr;
     _surface = surface;
   }
 }

@@ -11,8 +11,8 @@
 
 #include "config.h"
 
-#include <SDL_keycode.h>
-#include <SDL_mouse.h>
+#include <SDL3/SDL_keycode.h>
+#include <SDL3/SDL_mouse.h>
 
 #include "lib/maapi.h"
 #include "ui/ansiwidget.h"

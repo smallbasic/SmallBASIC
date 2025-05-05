@@ -360,16 +360,19 @@ int main(int argc, char* argv[]) {
   }
 
   SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS);
+
   SDL_Window *window = SDL_CreateWindow("SmallBASIC",
-                                        rect.x, rect.y, rect.w, rect.h,
-                                        SDL_WINDOW_SHOWN |
+                                        rect.w, rect.h,
+                                        SDL_WINDOW_RESIZABLE |
+                                        SDL_WINDOW_HIGH_PIXEL_DENSITY |
+                                        SDL_WINDOW_OPENGL |
                                         SDL_WINDOW_RESIZABLE |
                                         SDL_WINDOW_INPUT_FOCUS |
                                         SDL_WINDOW_MOUSE_FOCUS);
   if (window != NULL) {
     String font, fontBold;
     if (getFontFiles(fontFamily, font, fontBold)) {
-      SDL_StartTextInput();
+      SDL_StartTextInput(window);
       loadIcon(window);
       Runtime *runtime = new Runtime(window);
       runtime->construct(font.c_str(), fontBold.c_str());

@@ -10,8 +10,8 @@
 #define UI_CANVAS
 
 #if defined(_SDL)
-#include <SDL_rect.h>
-#include <SDL_surface.h>
+#include <SDL3/SDL_rect.h>
+#include <SDL3/SDL_surface.h>
 #define MAX_CANVAS_SIZE 20
 
 struct Canvas {
