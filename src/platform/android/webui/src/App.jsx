@@ -64,8 +64,15 @@ const columns = [{
   renderCell: (params) => params.value.toLocaleDateString()
 }];
 
-function firstSelection(props) {
-  return props.selections.size > 0 ? props.selections.values().next().value: 0;
+function getSelectedFile(props) {
+  let result;
+  if (props.selections.size === 1) {
+    const index = props.selections.values().next().value;
+    result = props.rows[index].fileName;
+  } else {
+    result = "smallbasic-files.zip";
+  }
+  return result;
 }
 
 function getFetchHeader(body) {
@@ -174,7 +181,7 @@ function GridToolbarDelete(props) {
 
   const handleDelete = () => {
     setOpen(false);
-    deleteFile(props.rows[firstSelection(props)].fileName, (data) => {
+    deleteFile(getSelectedFile(props), (data) => {
       props.setRows(data);
       props.clearSelections();
     }, (error) => {
@@ -184,7 +191,7 @@ function GridToolbarDelete(props) {
 
   return props.selections.size !== 1 ? null : (
     <Fragment>
-      <ConfirmDeleteDialog open={open} name={props.rows[firstSelection(props)].fileName} handleClose={handleClose} handleDelete={handleDelete}/>
+      <ConfirmDeleteDialog open={open} name={getSelectedFile(props)} handleClose={handleClose} handleDelete={handleDelete}/>
       <ErrorMessage error={error} setError={setError} severity="error"/>
       <Button color="primary" size="small" component="label" sx={{marginLeft: '-4px'}} onClick={showPrompt}>
         <DeleteIcon />
@@ -196,7 +203,7 @@ function GridToolbarDelete(props) {
 
 function GridToolbarDownload(props) {
   const color = useTheme().palette.primary.main;
-  const download = props.selections.size === 1 ? props.rows[firstSelection(props)].fileName : "smallbasic-files.zip";
+  const download = getSelectedFile(props);
   let args = "";
   let join = "";
 
