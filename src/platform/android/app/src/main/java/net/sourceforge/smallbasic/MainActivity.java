@@ -194,7 +194,7 @@ public class MainActivity extends NativeActivity {
 
   public boolean bluetoothClose() {
     if (_bluetoothConnection != null) {
-      _bluetoothConnection.close();
+      _bluetoothConnection.close(this);
       _bluetoothConnection = null;
     }
     return true;

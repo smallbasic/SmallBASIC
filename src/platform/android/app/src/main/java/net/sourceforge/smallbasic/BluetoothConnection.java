@@ -1,6 +1,7 @@
 package net.sourceforge.smallbasic;
 
 import android.Manifest;
+import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
@@ -10,6 +11,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.PackageManager;
+import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
@@ -46,14 +48,21 @@ public class BluetoothConnection extends BroadcastReceiver {
       throw createIoException(activity, R.string.BLUETOOTH_ERROR);
     }
 
-    if (checkPermission(activity, Manifest.permission.BLUETOOTH_CONNECT)) {
-      requestPermission(activity, Manifest.permission.BLUETOOTH_CONNECT);
-      throw createIoException(activity, R.string.PERMISSION_ERROR);
-    }
-
-    if (checkPermission(activity, Manifest.permission.BLUETOOTH_SCAN)) {
-      requestPermission(activity, Manifest.permission.BLUETOOTH_SCAN);
-      throw createIoException(activity, R.string.PERMISSION_ERROR);
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+      if (!checkPermission(activity, Manifest.permission.BLUETOOTH_CONNECT)) {
+        requestPermission(activity, Manifest.permission.BLUETOOTH_CONNECT);
+        throw createIoException(activity, R.string.PERMISSION_ERROR);
+      }
+      if (!checkPermission(activity, Manifest.permission.BLUETOOTH_SCAN)) {
+        requestPermission(activity, Manifest.permission.BLUETOOTH_SCAN);
+        throw createIoException(activity, R.string.PERMISSION_ERROR);
+      }
+    } else {
+      // For Android 6 to 11, use ACCESS_FINE_LOCATION
+      if (!checkPermission(activity, Manifest.permission.ACCESS_FINE_LOCATION)) {
+        requestPermission(activity, Manifest.permission.ACCESS_FINE_LOCATION);
+        throw createIoException(activity, R.string.PERMISSION_ERROR);
+      }
     }
 
     if (!_bluetoothAdapter.isEnabled()) {
@@ -70,8 +79,10 @@ public class BluetoothConnection extends BroadcastReceiver {
   /**
    * Closes the connection
    */
-  public void close() {
-    _bluetoothAdapter.cancelDiscovery();
+  public void close(Activity activity) {
+    if (checkPermission(activity, Manifest.permission.BLUETOOTH_SCAN)) {
+      _bluetoothAdapter.cancelDiscovery();
+    }
     unregisterReceiver();
     closeSocket();
     stopTxThread();
@@ -82,6 +93,7 @@ public class BluetoothConnection extends BroadcastReceiver {
   /**
    * Returns information about the connected device
    */
+  @SuppressLint("HardwareIds")
   @RequiresPermission(Manifest.permission.BLUETOOTH_CONNECT)
   public String getDescription() {
     String result;
@@ -102,7 +114,7 @@ public class BluetoothConnection extends BroadcastReceiver {
    * Returns whether the bluetooth connection is open
    */
   public boolean isConnected() {
-    return _socket != null && _socket.isConnected();
+    return _socket != null && _socket.isConnected() && _rxThread.isRunning() && _txThread.isRunning();
   }
 
   /**
@@ -115,7 +127,8 @@ public class BluetoothConnection extends BroadcastReceiver {
   /**
    * Handles receiving the request permission response event
    */
-  @RequiresPermission(Manifest.permission.BLUETOOTH_CONNECT)
+  @RequiresPermission(allOf = { Manifest.permission.BLUETOOTH_CONNECT,
+                                Manifest.permission.BLUETOOTH_SCAN })
   @Override
   public void onReceive(Context context, Intent intent) {
     Log.d(TAG, "onReceive entered");
@@ -125,7 +138,7 @@ public class BluetoothConnection extends BroadcastReceiver {
       if (discoveredDevice != null) {
         String deviceName = discoveredDevice.getName();
         String deviceAddress = discoveredDevice.getAddress();
-        Log.d(TAG, "Found device: " + deviceName + " at " + deviceAddress);
+        Log.i(TAG, "Found device: " + deviceName + " at " + deviceAddress);
         if (_deviceName.equals(deviceName)) {
           _bluetoothAdapter.cancelDiscovery();
           unregisterReceiver();
@@ -165,7 +178,7 @@ public class BluetoothConnection extends BroadcastReceiver {
    * Returns whether the given permission is granted
    */
   private boolean checkPermission(Activity activity, String permission) {
-    return ActivityCompat.checkSelfPermission(activity, permission) != PackageManager.PERMISSION_GRANTED;
+    return ActivityCompat.checkSelfPermission(activity, permission) == PackageManager.PERMISSION_GRANTED;
   }
 
   /**
