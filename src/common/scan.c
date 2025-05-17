@@ -4576,6 +4576,8 @@ void comp_preproc_pass1(char *p) {
   comp_proc_level = 0;
   *comp_bc_proc = '\0';
 
+  SKIP_SPACES(p);
+
   while (*p) {
     if (strncmp(LCN_OPTION, p, LEN_OPTION) == 0) {
       // options
