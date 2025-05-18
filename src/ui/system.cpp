@@ -47,7 +47,8 @@
 #define MENU_SHORTCUT   22
 #define MENU_SHARE      23
 #define MENU_THEME      24
-#define MENU_SIZE       25
+#define MENU_FIND       25
+#define MENU_SIZE       26
 #define MENU_COMPLETION_0  (MENU_SIZE + 1)
 #define MENU_COMPLETION_1  (MENU_SIZE + 2)
 #define MENU_COMPLETION_2  (MENU_SIZE + 3)
@@ -96,6 +97,7 @@
 #define MENU_STR_SHARE   " Share "
 #define MENU_STR_SHORT   " Desktop Shortcut "
 #define MENU_STR_SOURCE  " View Source "
+#define MENU_STR_FIND    " Find "
 
 System *g_system;
 
@@ -447,6 +449,10 @@ void System::handleMenu(MAEvent &event) {
   case MENU_OUTPUT:
     event.type = EVENT_TYPE_KEY_PRESSED;
     event.key = SB_KEY_CTRL('o');
+    break;
+  case MENU_FIND:
+    event.type = EVENT_TYPE_KEY_PRESSED;
+    event.key = SB_KEY_CTRL('f');
     break;
   case MENU_HELP:
     event.type = EVENT_TYPE_KEY_PRESSED;
@@ -1060,6 +1066,8 @@ void System::showMenu() {
 #if defined(_SDL)
         items->add(new String(MENU_STR_DEBUG));
         items->add(new String(MENU_STR_OUTPUT));
+#elif defined(_ANDROID)
+        items->add(new String(MENU_STR_FIND));
 #endif
         items->add(new String(MENU_STR_HELP));
         for (int i = 0; i < completions; i++) {
@@ -1076,6 +1084,8 @@ void System::showMenu() {
 #if defined(_SDL)
         _systemMenu[index++] = MENU_DEBUG;
         _systemMenu[index++] = MENU_OUTPUT;
+#elif defined(_ANDROID)
+        _systemMenu[index++] = MENU_FIND;
 #endif
         _systemMenu[index++] = MENU_HELP;
       } else if (isRunning()) {
