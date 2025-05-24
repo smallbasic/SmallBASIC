@@ -2109,7 +2109,7 @@ void TextEditHelpWidget::clicked(int x, int y, bool pressed) {
   _ptY = -1;
   if (pressed) {
     stb_textedit_click(&_buf, &_state, 0, (y - _y) + (_scroll * _charHeight));
-    if (_mode == kHelpKeyword && (x - _x) <= _charWidth * 3) {
+    if (_mode == kHelpKeyword) {
       toggleKeyword();
     }
   }
@@ -2402,11 +2402,11 @@ void TextEditHelpWidget::buildKeywordIndex() {
         _buf.append("| ", 2);
       } else if (packageIndex == _packageIndex) {
         _buf.append("|+", 2);
+        _state.cursor = _buf._len + 1;
       } else {
         _buf.append("  ", 2);
       }
       if (_packageOpen && _packageIndex == packageIndex && _keywordIndex == -1) {
-        _state.cursor = _buf._len + 1;
         _buf.append(LEVEL1_CLOSE, LEVEL1_LEN);
       } else {
         _buf.append(LEVEL1_OPEN, LEVEL1_LEN);
@@ -2442,7 +2442,6 @@ void TextEditHelpWidget::buildKeywordIndex() {
   }
 
   _cursorRow = getCursorRow();
-  updateScroll();
 }
 
 void TextEditHelpWidget::showPopup(int cols, int rows) {
