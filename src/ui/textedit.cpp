@@ -70,7 +70,7 @@ int textedit_move_to_word_next(EditBuffer *str, int c) {
 #define LEVEL1_CLOSE "[v] "
 #define LEVEL1_OPEN  "[>] "
 #define LEVEL2_OPEN  "   +- "
-#define LEVEL2_CLOSE " +[v] "
+#define LEVEL2_CLOSE "  [*] "
 #define LEVEL1_LEN 4
 #define LEVEL1_OFFSET 6
 #define LEVEL2_LEN 6
@@ -2353,6 +2353,10 @@ void TextEditHelpWidget::toggleKeyword() {
   auto level2Open = (strstr(line, LEVEL2_OPEN) != nullptr);
   auto level2Close = (strstr(line, LEVEL2_CLOSE) != nullptr);
 
+  int keywordIndex = _keywordIndex;
+  int packageIndex = _packageIndex;
+  bool packageOpen = _packageOpen;
+
   keywordIterator([=](int index, int packageIndex, bool nextPackage) {
     bool result = true;
     if (nextPackage) {
@@ -2378,7 +2382,12 @@ void TextEditHelpWidget::toggleKeyword() {
   });
 
   free(line);
-  buildKeywordIndex();
+
+  if (keywordIndex != _keywordIndex ||
+      packageIndex != _packageIndex ||
+      packageOpen != _packageOpen) {
+    buildKeywordIndex();
+  }
 }
 
 void TextEditHelpWidget::buildKeywordIndex() {
