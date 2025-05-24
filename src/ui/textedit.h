@@ -175,6 +175,7 @@ protected:
   int _ymargin;
   bool _bottom;
   bool _dirty;
+  bool _comment;
 };
 
 struct TextEditHelpWidget : public TextEditInput {
@@ -225,17 +226,19 @@ struct TextEditHelpWidget : public TextEditInput {
   bool selected(MAPoint2d pt, int scrollX, int scrollY, bool &redraw) override;
   void showPopup(int cols, int rows);
   void showSidebar();
-  void toggleKeyword();
 
 private:
   void completeLine(int pos);
   void completeWord(int pos);
+  void buildKeywordIndex();
+  void toggleKeyword();
 
   HelpMode _mode;
   strlib::List<int *> _outline;
   TextEditInput *_editor;
-  const char *_openPackage;
-  int _openKeyword;
+  int _keywordIndex;
+  int _packageIndex;
+  bool _packageOpen;
   enum Layout {
     kLine,
     kSidebar,
