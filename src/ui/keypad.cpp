@@ -10,7 +10,7 @@
 #include "keypad.h"
 #include "lib/maapi.h"
 
-constexpr char cutIcon[] = {'\367', '\0'};
+constexpr char cutIcon[] = {'\346', '\0'};
 constexpr char copyIcon[] = {'\251', '\0'};
 constexpr char pasteIcon[] = {'\273', '\0'};
 constexpr char saveIcon[] = {'\247', '\0'};
@@ -18,12 +18,12 @@ constexpr char runIcon[] = {'\245', '\0'};
 constexpr char helpIcon[] = {'\277', '\0'};
 constexpr char shiftKey[] = "Shift";
 constexpr char backKey[] = "Back";
-constexpr char spaceKey[] = "SPACE";
+constexpr char spaceKey[] = "         ";
 constexpr char enterKey[] = "Enter";
 constexpr char toggleKey[] = "?123";
 
 constexpr RawKey letters[][10] = {
-  {{cutIcon, "Cut"}, {copyIcon, "Copy"}, {pasteIcon, "Paste"}, {saveIcon, "Save"}, {runIcon, "Run"}, {helpIcon, "Help"}},
+  {{cutIcon, cutIcon}, {copyIcon, copyIcon}, {pasteIcon, pasteIcon}, {saveIcon, saveIcon}, {runIcon, runIcon}, {helpIcon, helpIcon}},
   {{"q", "Q"}, {"w", "W"}, {"e", "E"}, {"r", "R"}, {"t", "T"}, {"y", "Y"}, {"u", "U"}, {"i", "I"}, {"o", "O"}, {"p", "P"}},
   {{"a", "A"}, {"s", "S"}, {"d", "D"}, {"f", "F"}, {"g", "G"}, {"h", "H"}, {"j", "J"}, {"k", "K"}, {"l", "L"}},
   {{shiftKey, shiftKey}, {"z", "Z"}, {"x", "X"}, {"c", "C"}, {"v", "V"}, {"b", "B"}, {"n", "N"}, {"m", "M"}, {backKey, backKey}},
@@ -31,14 +31,14 @@ constexpr RawKey letters[][10] = {
 };
 
 constexpr RawKey numbers[][10] = {
-  {{cutIcon, "Cut"}, {copyIcon, "Copy"}, {pasteIcon, "Paste"}, {saveIcon, "Save"}, {runIcon, "Run"}, {helpIcon, "Help"}},
+  {{cutIcon, cutIcon}, {copyIcon, copyIcon}, {pasteIcon, pasteIcon}, {saveIcon, saveIcon}, {runIcon, runIcon}, {helpIcon, helpIcon}},
   {{"1", "!"}, {"2", "@"}, {"3", "#"}, {"4", "$"}, {"5", "%"}, {"6", "^"}, {"7", "&"}, {"8", "*"}, {"9", "("}, {"0", ")"}},
   {{"-", "_"}, {"/", "\\"}, {":", ";"}, {"(", ")"}, {"$", "€"}, {"&", "|"}, {"@", "~"}, {"\"", "'"}, {backKey, backKey}},
   {{toggleKey, toggleKey}, {spaceKey, spaceKey}, {enterKey, enterKey}}
 };
 
 constexpr RawKey symbols[][10] = {
-  {{cutIcon, "Cut"}, {copyIcon, "Copy"}, {pasteIcon, "Paste"}, {saveIcon, "Save"}, {runIcon, "Run"}, {helpIcon, "Help"}},
+  {{cutIcon, cutIcon}, {copyIcon, copyIcon}, {pasteIcon, pasteIcon}, {saveIcon, saveIcon}, {runIcon, runIcon}, {helpIcon, helpIcon}},
   {{"[", "{"}, {"]", "}"}, {"{", "{"}, {"}", "}"}, {"#", "#"}, {"%", "%"}, {"^", "^"}, {"*", "*"}, {"+", "+"}, {"=", "="}},
   {{"_", "_"}, {"\\", "\\"}, {"|", "|"}, {"~", "~"}, {"<", "<"}, {">", ">"}, {"`", "`"}, {backKey, backKey}},
   {{toggleKey, toggleKey}, {spaceKey, spaceKey}, {enterKey, enterKey}}
@@ -50,46 +50,53 @@ constexpr int rowLengths[][5] = {
   {6, 10, 8, 3, 0}, // symbols
 };
 
+constexpr int rowCharLengths[][5] = {
+  {6, 10, 9, 16, 14},// letters
+  {6, 10, 9, 14, 0}, // numbers
+  {6, 10, 8, 14, 0}, // symbols
+};
+
 constexpr int maxRows = 5;
 constexpr int maxCols = 10;
-constexpr int numRows = 6;
-constexpr int keyMargin = 4;
+constexpr int defaultPadding = 16;
 
 Key::Key(const RawKey &k) :
   _label(k._normal),
   _altLabel(k._shifted) {
+  _labelLength = _label.length();
   _pressed = false;
-  _special = k._normal[0] > 128 || _label.length() > 1;
+  _special = k._normal[0] > 128 || _labelLength > 1;
+  _number = k._normal[0] >= '0' && k._normal[0] <= '9';
 }
 
-void Key::draw(EditTheme *theme, bool shiftActive, bool capsLockActive) {
-  int rx = _w / 2;
-  int ry = _h / 2;
-
-  int color = theme->_number_color;
+int Key::color(EditTheme *theme, bool shiftActive) {
+  int result;
   if (_pressed || (_label.equals(shiftKey) && shiftActive)) {
-    color = _special ? theme->_selection_background : theme->_number_selection_background;
+    result = _special ? theme->_selection_background : theme->_number_selection_background;
   } else if (_special) {
-    color = theme->_selection_color;
-  }
-
-  maSetColor(color);
-  maEllipse(_x + rx, _y + ry, rx, ry, 1);
-  maSetColor(theme->_row_marker);
-  maEllipse(_x + rx, _y + ry, rx, ry, 0);
-  maSetColor(theme->_syntax_text);
-
-  String label;
-  if (_special) {
-    label = _label;
+    result = theme->_selection_color;
+  } else if (_number) {
+    result = theme->_number_color;
   } else {
-    bool useShift = shiftActive ^ capsLockActive;
-    label = useShift ? _altLabel : _label;
+    result = theme->_syntax_text;
   }
+  return result;
+}
 
-  int textX = _x + _w / 4;
-  int textY = _y + _h / 4;
-  maDrawText(textX, textY, label.c_str(), label.length());
+void Key::drawButton(EditTheme *theme) {
+  int rc = 1;
+  int pad = 2;
+  int rx = _x + _w - pad; // right x
+  int by = _y + _h - pad; // bottom y
+  int lt = _x + rc + pad; // left top
+  int vt = _y + rc + pad; // vertical top
+  int rt = rx - rc; // right top
+
+  maSetColor(theme->_row_marker);
+  maFillRect(_x, _y, _w, _h);
+  maSetColor(theme->_cursor_color);
+  maLine(lt, by, rt, by); // bottom
+  maLine(rx, vt, rx, by); // right
 }
 
 bool Key::inside(int x, int y) const {
@@ -115,7 +122,7 @@ Keypad::Keypad(int charWidth, int charHeight)
 }
 
 int Keypad::outerHeight(int charHeight) const {
-  return !_visible ? 0 : numRows * ((keyMargin * 4) + charHeight);
+  return !_visible ? 0 : maxRows * ((defaultPadding * 2) + charHeight) + defaultPadding;
 }
 
 void Keypad::generateKeys() {
@@ -152,7 +159,7 @@ void Keypad::layout(int x, int y, int w, int h) {
   _height = h;
 
   // start with optimum padding, then reduce to fit width
-  int padding = 12;
+  int padding = defaultPadding;
   int width = maxCols * (_charWidth + (padding * 2));
 
   while (width > w && padding > 0) {
@@ -162,28 +169,38 @@ void Keypad::layout(int x, int y, int w, int h) {
 
   int keyW = _charWidth + (padding * 2);
   int keyH = _charHeight + (padding * 2);
-  int index = 0;
   int xStart = _posX + ((w - width) / 2);
   int yPos = _posY;
+  int index = 0;
 
   for (int row = 0; row < maxRows; ++row) {
     int cols = rowLengths[_currentLayout][row];
+    int chars = rowCharLengths[_currentLayout][row];
     int xPos = xStart;
     if (cols < maxCols) {
-      // 8/9th of width / 2
-      int xOffs = (cols * width / maxCols) / 2;
-      xPos += xOffs;
+      // center narrow row
+      int rowWidth = (chars * _charWidth) + (cols * padding * 2);
+      if (rowWidth > width) {
+        xPos -= (rowWidth - width) / 2;
+      } else {
+        xPos += (width - rowWidth) / 2;
+      }
     }
     for (int col = 0; col < cols; col++) {
       if (index >= (int)_keys.size()) {
         break;
       }
       Key *key = _keys[index++];
+      int length = key->_labelLength;
+      int keyWidth = keyW;
+      if (length > 1) {
+        keyWidth = (length * _charWidth) + (padding * 2);
+      }
       key->_x = xPos;
       key->_y = yPos;
-      key->_w = keyW;
+      key->_w = keyWidth;
       key->_h = keyH;
-      xPos += keyW;
+      xPos += keyWidth;
     }
     yPos += keyH;
   }
@@ -220,7 +237,22 @@ void Keypad::draw() {
   maSetColor(_theme->_background);
   maFillRect(_posX, _posY, _width, _height);
   for (const auto &key : _keys) {
-    key->draw(_theme, _shiftActive, _capsLockActive);
+    key->drawButton(_theme);
+
+    String label;
+    if (key->_special) {
+      label = key->_label;
+    } else {
+      bool useShift = _shiftActive ^ _capsLockActive;
+      label = useShift ? key->_altLabel : key->_label;
+    }
+
+    int labelLength = key->_labelLength;
+    int xOffset = (key->_w - (_charWidth * labelLength)) / 2;
+    int textX = key->_x + xOffset;
+    int textY = key->_y + key->_h / 4;
+    maSetColor(key->color(_theme, _shiftActive));
+    maDrawText(textX, textY, label.c_str(), labelLength);
   }
 }
 

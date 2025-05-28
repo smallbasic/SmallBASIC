@@ -25,7 +25,8 @@ struct RawKey {
 struct Key {
   Key(const RawKey &k);
 
-  void draw(EditTheme *theme, bool shiftActive, bool capsLockActive);
+  int color(EditTheme *theme, bool shiftActive);
+  void drawButton(EditTheme *theme);
   bool inside(int x, int y) const;
 
   String _label;
@@ -34,7 +35,9 @@ struct Key {
   int _y;
   int _w;
   int _h;
+  int _labelLength;
   bool _pressed;
+  bool _number;
   bool _special;
 };
 
