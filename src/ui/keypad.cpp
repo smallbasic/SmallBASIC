@@ -21,8 +21,45 @@ constexpr char backKey[] = "Back";
 constexpr char spaceKey[] = "         ";
 constexpr char enterKey[] = "Enter";
 constexpr char toggleKey[] = "?123";
+constexpr int maxRows = 5;
+constexpr int maxCols = 10;
+constexpr int defaultPadding = 16;
+constexpr double PI = 3.14159;
 
-constexpr RawKey letters[][10] = {
+KeypadTheme retroTheme = {
+  ._bg = 0x1e1e1e,          // Dark gray background
+  ._key = 0x2d2d2d,         // Darker key face
+  ._keyHighlight = 0x3d3d3d,// Key highlight: medium-dark gray
+  ._text = 0xffffff,        // White text
+  ._outline = 0x5e5e5e,     // Medium gray outlines
+  ._funcKeyBg = 0x4b0082,   // Dark purple (Indigo)
+  ._funcKeyHighlight = 0x000dad, // Vivid deep blue
+  ._funcText = 0xffffff,    // White function key text
+};
+
+KeypadTheme modernDarkTheme = {
+  ._bg = 0x121212,          // Very dark gray background
+  ._key = 0x1f1f1f,         // Slightly lighter dark gray keys
+  ._keyHighlight = 0x2c2c2c,// Highlighted key: a bit lighter
+  ._text = 0xe0e0e0,        // Soft light gray text (was wrongly blue)
+  ._outline = 0x3a3a3a,     // Subtle gray outlines
+  ._funcKeyBg = 0x2962ff,   // Vibrant Material blue
+  ._funcKeyHighlight = 0x448aff, // Lighter vibrant blue
+  ._funcText = 0xffffff,    // White function key text
+};
+
+KeypadTheme modernLightTheme = {
+  ._bg = 0xfafafa,          // Very light gray (off-white)
+  ._key = 0xffffff,         // White key background
+  ._keyHighlight = 0xe0e0e0,// Light gray for pressed keys
+  ._text = 0x212121,        // Dark gray text
+  ._outline = 0xcccccc,     // Soft gray outlines (corrected from teal-ish 0x00cccc)
+  ._funcKeyBg = 0x1976d2,   // Material Design blue
+  ._funcKeyHighlight = 0x63a4ff, // Lighter blue highlight
+  ._funcText = 0xffffff,    // White text
+};
+
+constexpr RawKey letters[][maxCols] = {
   {{cutIcon, cutIcon}, {copyIcon, copyIcon}, {pasteIcon, pasteIcon}, {saveIcon, saveIcon}, {runIcon, runIcon}, {helpIcon, helpIcon}},
   {{"q", "Q"}, {"w", "W"}, {"e", "E"}, {"r", "R"}, {"t", "T"}, {"y", "Y"}, {"u", "U"}, {"i", "I"}, {"o", "O"}, {"p", "P"}},
   {{"a", "A"}, {"s", "S"}, {"d", "D"}, {"f", "F"}, {"g", "G"}, {"h", "H"}, {"j", "J"}, {"k", "K"}, {"l", "L"}},
@@ -30,14 +67,14 @@ constexpr RawKey letters[][10] = {
   {{toggleKey, toggleKey}, {spaceKey, spaceKey}, {enterKey, enterKey}}
 };
 
-constexpr RawKey numbers[][10] = {
+constexpr RawKey numbers[][maxCols] = {
   {{cutIcon, cutIcon}, {copyIcon, copyIcon}, {pasteIcon, pasteIcon}, {saveIcon, saveIcon}, {runIcon, runIcon}, {helpIcon, helpIcon}},
   {{"1", "!"}, {"2", "@"}, {"3", "#"}, {"4", "$"}, {"5", "%"}, {"6", "^"}, {"7", "&"}, {"8", "*"}, {"9", "("}, {"0", ")"}},
   {{"-", "_"}, {"/", "\\"}, {":", ";"}, {"(", ")"}, {"$", "€"}, {"&", "|"}, {"@", "~"}, {"\"", "'"}, {backKey, backKey}},
   {{toggleKey, toggleKey}, {spaceKey, spaceKey}, {enterKey, enterKey}}
 };
 
-constexpr RawKey symbols[][10] = {
+constexpr RawKey symbols[][maxCols] = {
   {{cutIcon, cutIcon}, {copyIcon, copyIcon}, {pasteIcon, pasteIcon}, {saveIcon, saveIcon}, {runIcon, runIcon}, {helpIcon, helpIcon}},
   {{"[", "{"}, {"]", "}"}, {"{", "{"}, {"}", "}"}, {"#", "#"}, {"%", "%"}, {"^", "^"}, {"*", "*"}, {"+", "+"}, {"=", "="}},
   {{"_", "_"}, {"\\", "\\"}, {"|", "|"}, {"~", "~"}, {"<", "<"}, {">", ">"}, {"`", "`"}, {backKey, backKey}},
@@ -56,10 +93,6 @@ constexpr int rowCharLengths[][5] = {
   {6, 10, 8, 14, 0}, // symbols
 };
 
-constexpr int maxRows = 5;
-constexpr int maxCols = 10;
-constexpr int defaultPadding = 16;
-
 Key::Key(const RawKey &k) :
   _label(k._normal),
   _altLabel(k._shifted) {
@@ -69,34 +102,53 @@ Key::Key(const RawKey &k) :
   _number = k._normal[0] >= '0' && k._normal[0] <= '9';
 }
 
-int Key::color(EditTheme *theme, bool shiftActive) {
+int Key::color(KeypadTheme *theme, bool shiftActive) {
   int result;
   if (_pressed || (_label.equals(shiftKey) && shiftActive)) {
-    result = _special ? theme->_selection_background : theme->_number_selection_background;
+    result = _special ? theme->_funcKeyHighlight : theme->_keyHighlight;
   } else if (_special) {
-    result = theme->_selection_color;
+    result = theme->_funcKeyHighlight;
   } else if (_number) {
-    result = theme->_number_color;
+    result = theme->_funcKeyHighlight;
   } else {
-    result = theme->_syntax_text;
+    result = theme->_text;
   }
   return result;
 }
 
-void Key::drawButton(EditTheme *theme) {
-  int rc = 1;
+void Key::drawButton(KeypadTheme *theme) {
+  int rc = 5;
   int pad = 2;
   int rx = _x + _w - pad; // right x
   int by = _y + _h - pad; // bottom y
-  int lt = _x + rc + pad; // left top
-  int vt = _y + rc + pad; // vertical top
-  int rt = rx - rc; // right top
+  int lt = _x + rc + pad; // left x (after corner)
+  int vt = _y + rc + pad; // top y (after corner)
+  int rt = rx - rc;       // right x (before corner)
+  int bt = by - rc;       // bottom y (before corner)
+  int xcL = _x + rc + pad; // x center for left arcs
+  int xcR = rx - rc;       // x center for right arcs
+  int ycT = _y + rc + pad; // y center for top arcs
+  int ycB = by - rc;       // y center for bottom arcs
 
-  maSetColor(theme->_row_marker);
+  // Set background color
+  maSetColor(_special ? theme->_funcKeyBg : theme->_key);
   maFillRect(_x, _y, _w, _h);
-  maSetColor(theme->_cursor_color);
-  maLine(lt, by, rt, by); // bottom
-  maLine(rx, vt, rx, by); // right
+
+  maSetColor(_special ? theme->_funcKeyHighlight : theme->_keyHighlight);
+
+  // Draw edges (excluding the rounded corners)
+  maLine(lt, _y + pad, rt, _y + pad); // top edge
+  maLine(_x + pad, vt, _x + pad, bt); // left edge
+  maLine(lt, by, rt, by);             // bottom edge
+  maLine(rx, vt, rx, bt);            // right edge
+
+  // Draw rounded corners using arcs (quarter circles)
+  // Arcs: maArc(xc, yc, r, startAngle, endAngle, aspect)
+  double aspect = 1.0; // Circle
+  maArc(xcL, ycT, rc, PI, PI * 3 / 2, aspect); // Top-left corner
+  maArc(xcR, ycT, rc, PI * 3 / 2, 0, aspect);  // Top-right corner
+  maArc(xcR, ycB, rc, 0, PI / 2, aspect);      // Bottom-right corner
+  maArc(xcL, ycB, rc, PI / 2, PI, aspect);     // Bottom-left corner
 }
 
 bool Key::inside(int x, int y) const {
@@ -115,20 +167,19 @@ Keypad::Keypad(int charWidth, int charHeight)
     _charHeight(charHeight),
     _shiftActive(false),
     _capsLockActive(false),
-    _visible(true),
-    _theme(nullptr),
+    _theme(&modernDarkTheme),
     _currentLayout(LayoutLetters) {
   generateKeys();
 }
 
 int Keypad::outerHeight(int charHeight) const {
-  return !_visible ? 0 : maxRows * ((defaultPadding * 2) + charHeight) + defaultPadding;
+  return maxRows * ((defaultPadding * 2) + charHeight) + defaultPadding;
 }
 
 void Keypad::generateKeys() {
   _keys.clear();
 
-  const RawKey (*activeLayout)[10] = nullptr;
+  const RawKey (*activeLayout)[maxCols] = nullptr;
   switch (_currentLayout) {
   case LayoutLetters:
     activeLayout = letters;
@@ -234,7 +285,7 @@ void Keypad::toggleShift() {
 }
 
 void Keypad::draw() {
-  maSetColor(_theme->_background);
+  maSetColor(_theme->_bg);
   maFillRect(_posX, _posY, _width, _height);
   for (const auto &key : _keys) {
     key->drawButton(_theme);
@@ -249,8 +300,9 @@ void Keypad::draw() {
 
     int labelLength = key->_labelLength;
     int xOffset = (key->_w - (_charWidth * labelLength)) / 2;
+    int yOffset = (key->_h - _charHeight) / 2;
     int textX = key->_x + xOffset;
-    int textY = key->_y + key->_h / 4;
+    int textY = key->_y + yOffset;
     maSetColor(key->color(_theme, _shiftActive));
     maDrawText(textX, textY, label.c_str(), labelLength);
   }

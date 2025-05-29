@@ -9,9 +9,19 @@
 #pragma once
 
 #include "ui/strlib.h"
-#include "ui/theme.h"
 
 using namespace strlib;
+
+struct KeypadTheme {
+  int _bg;
+  int _key;
+  int _keyHighlight;
+  int _text;
+  int _outline;
+  int _funcKeyBg;
+  int _funcKeyHighlight;
+  int _funcText;
+};
 
 enum KeypadLayout {
   LayoutLetters = 0, LayoutNumbers = 1, LayoutSymbols = 2
@@ -25,8 +35,8 @@ struct RawKey {
 struct Key {
   Key(const RawKey &k);
 
-  int color(EditTheme *theme, bool shiftActive);
-  void drawButton(EditTheme *theme);
+  int color(KeypadTheme *theme, bool shiftActive);
+  void drawButton(KeypadTheme *theme);
   bool inside(int x, int y) const;
 
   String _label;
@@ -45,16 +55,12 @@ struct Keypad {
   Keypad(int charWidth, int charHeight);
   ~Keypad() = default;
 
-  bool visible() const { return _visible; }
   int  outerHeight(int ch) const;
   void clicked(int x, int y, bool pressed);
   void draw();
-  void hide() { _visible = false; }
   void layout(int x, int y, int w, int h);
-  void show() { _visible = true; }
-  void setTheme(EditTheme *theme) { _theme = theme; }
 
-  private:
+private:
   int _posX;
   int _posY;
   int _width;
@@ -64,8 +70,7 @@ struct Keypad {
   strlib::List<Key *> _keys;
   bool _shiftActive;
   bool _capsLockActive;
-  bool _visible;
-  EditTheme *_theme;
+  KeypadTheme *_theme;
   KeypadLayout _currentLayout;
 
   void generateKeys();

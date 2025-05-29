@@ -7,13 +7,14 @@
 //
 
 #include <cstdlib>
-#include <cstring>
+//#include <cstring>
 
 #include "ui/textedit.h"
 #include "ui/inputs.h"
 #include "ui/utils.h"
 #include "ui/strlib.h"
 #include "ui/kwp.h"
+#include "ui/keypad.h"
 
 void safe_memmove(void *dest, const void *src, size_t n) {
   if (n > 0 && dest != nullptr && src != nullptr) {
@@ -262,6 +263,11 @@ int shade(int c, float weight) {
   b = b < 255 ? b : 255;
   return (r << 16) + (g << 8) + (b);
 }
+
+//
+// TODO: move to keypad.cpp
+//
+Keypad *g_keypad = nullptr;
 
 //
 // EditTheme
@@ -528,7 +534,8 @@ TextEditInput::TextEditInput(const char *text, int chW, int chH,
   _ymargin(0),
   _bottom(false),
   _dirty(false),
-  _comment(true) {
+  _comment(true),
+  _showKeypad(false) {
   stb_textedit_initialize_state(&_state, false);
   _resizable = true;
 }
@@ -536,6 +543,9 @@ TextEditInput::TextEditInput(const char *text, int chW, int chH,
 TextEditInput::~TextEditInput() {
   delete _theme;
   _theme = nullptr;
+
+  delete g_keypad;
+  g_keypad = nullptr;
 }
 
 void TextEditInput::completeWord(const char *word) {
@@ -729,6 +739,10 @@ void TextEditInput::draw(int x, int y, int w, int h, int chw) {
       maSetColor(_theme->_cursor_color);
       maDrawText(cursorMatchX + _marginWidth, cursorMatchY, _buf._buffer + _matchingBrace, 1);
     }
+  }
+
+  if (_showKeypad && g_keypad != nullptr) {
+    g_keypad->draw();
   }
 }
 
@@ -1217,8 +1231,15 @@ void TextEditInput::layout(StbTexteditRow *row, int start) const {
 
 void TextEditInput::layout(int w, int h) {
   if (_resizable) {
-    _width = w - (_x + _xmargin);
-    _height = h - (_y + _ymargin);
+    if (_showKeypad && g_keypad != nullptr) {
+      int keypadHeight = g_keypad->outerHeight(_charHeight);
+      _width = w - (_x + _xmargin);
+      _height = h - (_y + _ymargin + keypadHeight);
+      g_keypad->layout(0, _height, w, keypadHeight);
+    } else {
+      _width = w - (_x + _xmargin);
+      _height = h - (_y + _ymargin);
+    }
   }
 }
 
@@ -1936,11 +1957,20 @@ int TextEditInput::wordStart() {
           textedit_move_to_word_previous(&_buf, _state.cursor));
 }
 
+int TextEditInput::showKeypad() {
+  if (!g_keypad) {
+    g_keypad = new Keypad(_charWidth, _charHeight);
+  }
+  _showKeypad = true;
+  layout(_width, _height);
+  return g_keypad->outerHeight(_charHeight);
+}
+
 //
 // KeywordIterator
 //
 template<typename KeywordIteratorFunc>
-  void keywordIterator(KeywordIteratorFunc &&callback) {
+void keywordIterator(KeywordIteratorFunc &&callback) {
   const char *package = keyword_help[0].package;
   int packageIndex = 0;
 

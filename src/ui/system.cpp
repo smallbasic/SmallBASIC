@@ -1372,6 +1372,25 @@ void System::systemPrint(const char *format, ...) {
   }
 }
 
+void System::showKeypad(TextEditInput *editor) {
+  if (!editor) {
+    editor = _editor;
+  }
+  if (editor) {
+    int height = editor->showKeypad();
+    _output->setStatusOffsetY(height);
+  }
+}
+
+void System::hideKeypad(TextEditInput *editor) {
+  if (!editor) {
+    editor = _editor;
+  }
+  if (editor) {
+    editor->hideKeypad();
+  }
+}
+
 //
 // common device implementation
 //
@@ -1491,10 +1510,18 @@ char *dev_read(const char *fileName) {
   return g_system->readSource(fileName);
 }
 
+void dev_log_stack(const char *keyword, int type, int line) {
+  return g_system->logStack(keyword, type, line);
+}
+
 int maGetMilliSecondCount() {
   return dev_get_millisecond_count();
 }
 
-void dev_log_stack(const char *keyword, int type, int line) {
-  return g_system->logStack(keyword, type, line);
+void maShowVirtualKeyboard(void) {
+  g_system->showKeypad(nullptr);
+}
+
+void maHideVirtualKeyboard(void) {
+  g_system->hideKeypad(nullptr);
 }

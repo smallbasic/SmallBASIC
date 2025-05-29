@@ -92,7 +92,6 @@ struct TextEditInput : public FormEditInput {
   void setCursorRow(int row);
   void setLineNumbers() { _marginWidth = 1 + (_charWidth * MARGIN_CHARS); }
   void setText(const char *text) override { _buf.clear(); _buf.append(text); }
-  void setTheme(EditTheme *theme) { _theme = theme; }
   void clicked(int x, int y, bool pressed) override;
   void updateField(var_p_t form) override;
   bool updateUI(var_p_t form, var_p_t field) override;
@@ -112,6 +111,8 @@ struct TextEditInput : public FormEditInput {
   int  getCompletions(StringList *list, int max) override;
   void selectNavigate(bool up);
   EditTheme *getTheme() { return _theme; }
+  int showKeypad();
+  void hideKeypad() { _showKeypad = false; }
 
 protected:
   enum SyntaxState {
@@ -176,6 +177,7 @@ protected:
   bool _bottom;
   bool _dirty;
   bool _comment;
+  bool _showKeypad;
 };
 
 struct TextEditHelpWidget : public TextEditInput {

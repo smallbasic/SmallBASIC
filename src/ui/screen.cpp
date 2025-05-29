@@ -55,7 +55,8 @@ Screen::Screen(int x, int y, int width, int height, int fontSize) :
   _curX(INITXY),
   _curY(INITXY),
   _dirty(0),
-  _linePadding(0) {
+  _linePadding(0),
+  _statusOffsetY(0) {
 }
 
 Screen::~Screen() {
@@ -121,7 +122,7 @@ void Screen::drawLabel() {
     int labelLen = _label.length();
     int w = _charWidth * (labelLen + 2);
     int h = _charHeight + 2;
-    int top = _height - h;
+    int top = _height - h - _statusOffsetY;
     int left = (_width - w) / 2;
     int textY = top + ((h - _charHeight) / 2);
 
@@ -141,7 +142,7 @@ void Screen::drawMenu() {
   static const char dot[] = {'\260', '\0'};
   int gap = _charHeight / 3;
   int left = _width - _charWidth - (_charWidth / 2);
-  int top = (_height - _charHeight) + gap;
+  int top = (_height - _charHeight - _statusOffsetY) + gap;
   maSetColor(_fg);
   maDrawText(left, top, dot, 1);
   maDrawText(left, top - gap, dot, 1);

@@ -96,6 +96,7 @@ struct AnsiWidget {
   void setPixel(int x, int y, int c);
   void setScroll(int x, int y) { _back->setScroll(x, y); }
   void setStatus(const char *label);
+  void setStatusOffsetY(int statusOffsetY) { _back->setStatusOffsetY(statusOffsetY); }
   void setTextColor(long fg, long bg);
   void setXY(int x, int y);
   void setScrollSize(int scrollSize);

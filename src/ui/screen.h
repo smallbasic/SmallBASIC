@@ -77,6 +77,7 @@ struct Screen : public Shape {
   void setFont(bool bold, bool italic, int size);
   void selectFont() const { if (_font != -1) maFontSetCurrent(_font); }
   void setScroll(int x, int y) { _scrollX = x; _scrollY = y; }
+  void setStatusOffsetY(int statusOffsetY) { _statusOffsetY = statusOffsetY; }
   void setTextColor(long fg, long bg);
   void updateInputs(var_p_t form, bool setVars);
 
@@ -92,6 +93,7 @@ struct Screen : public Shape {
   int _curY;
   int _dirty;
   int _linePadding;
+  int _statusOffsetY;
   String _label;
   strlib::List<Shape *> _shapes;
   strlib::List<FormInput *> _inputs;

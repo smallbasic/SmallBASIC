@@ -188,11 +188,3 @@ bool Graphics::loadFont(const char *filename, FT_Face &face) {
 void maUpdateScreen(void) {
   ((::Graphics *)graphics)->redraw();
 }
-
-void maShowVirtualKeyboard(void) {
-  // not implemented
-}
-
-void maHideVirtualKeyboard(void) {
-  // not implemented
-}
