@@ -9,6 +9,7 @@
 #pragma once
 
 #include "ui/strlib.h"
+#include "ui/inputs.h"
 
 using namespace strlib;
 
@@ -33,18 +34,18 @@ struct RawKey {
 };
 
 struct Key {
-  Key(const RawKey &k);
+  explicit Key(const RawKey &k);
 
-  int color(KeypadTheme *theme, bool shiftActive);
-  void drawButton(KeypadTheme *theme);
+  int color(KeypadTheme *theme, bool shiftActive) const;
+  void drawButton(KeypadTheme *theme) const;
   bool inside(int x, int y) const;
 
   String _label;
   String _altLabel;
-  int _x;
-  int _y;
-  int _w;
-  int _h;
+  int _x{};
+  int _y{};
+  int _w{};
+  int _h{};
   int _labelLength;
   bool _pressed;
   bool _number;
@@ -55,7 +56,7 @@ struct Keypad {
   Keypad(int charWidth, int charHeight);
   ~Keypad() = default;
 
-  int  outerHeight(int ch) const;
+  static int  outerHeight(int ch) ;
   void clicked(int x, int y, bool pressed);
   void draw();
   void layout(int x, int y, int w, int h);
@@ -75,4 +76,20 @@ private:
 
   void generateKeys();
   void toggleShift();
+};
+
+struct KeypadInput : public FormInput {
+  KeypadInput(bool floatTop, bool toolbar);
+  ~KeypadInput() override = default;
+
+  void clicked(int x, int y, bool pressed) override;
+  void draw(int x, int y, int w, int h, int chw) override;
+  bool floatTop() override { return _floatTop; }
+  bool floatBottom() override { return !_floatTop; }
+  void layout(int x, int y, int w, int h) override;
+
+private:  
+  bool _floatTop;
+  bool _toolbar;
+  //Keypad _keypad;
 };

@@ -119,7 +119,9 @@ struct FormInput : public Shape {
   virtual bool isDrawTop() { return false; }
   virtual bool hasHover() { return false; }
   virtual void setFocus(bool focus);
-  virtual void layout(int w, int h) {}
+  virtual void layout(int x, int y, int w, int h) {}
+  virtual bool floatBottom() { return false; }
+  virtual bool floatTop() { return false; }
 
   void construct(var_p_t form, var_p_t field, int id);
   void drawButton(const char *caption, int x, int y, int w, int h, bool pressed);

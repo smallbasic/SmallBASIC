@@ -109,6 +109,8 @@ Screen *AnsiWidget::createScreen(int screenId) {
   if (result == nullptr) {
     if (screenId == TEXT_SCREEN || screenId == MENU_SCREEN) {
       result = new TextScreen(_width, _height, _fontSize);
+    } else if (screenId == SOURCE_SCREEN) {
+      result = new FormInputScreen(_width, _height, _fontSize);
     } else {
       result = new GraphicScreen(_width, _height, _fontSize);
     }

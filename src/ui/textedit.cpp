@@ -7,14 +7,12 @@
 //
 
 #include <cstdlib>
-//#include <cstring>
 
 #include "ui/textedit.h"
 #include "ui/inputs.h"
 #include "ui/utils.h"
 #include "ui/strlib.h"
 #include "ui/kwp.h"
-#include "ui/keypad.h"
 
 void safe_memmove(void *dest, const void *src, size_t n) {
   if (n > 0 && dest != nullptr && src != nullptr) {
@@ -265,11 +263,6 @@ int shade(int c, float weight) {
 }
 
 //
-// TODO: move to keypad.cpp
-//
-Keypad *g_keypad = nullptr;
-
-//
 // EditTheme
 //
 EditTheme::EditTheme() :_plainText(false) {
@@ -373,7 +366,7 @@ EditBuffer::~EditBuffer() {
   clear();
 }
 
-void EditBuffer::convertTabs() {
+void EditBuffer::convertTabs() const {
   for (int i = 0; i < _len; i++) {
     if (_buffer[i] == '\t') {
       _buffer[i] = ' ';
@@ -534,8 +527,7 @@ TextEditInput::TextEditInput(const char *text, int chW, int chH,
   _ymargin(0),
   _bottom(false),
   _dirty(false),
-  _comment(true),
-  _showKeypad(false) {
+  _comment(true) {
   stb_textedit_initialize_state(&_state, false);
   _resizable = true;
 }
@@ -543,9 +535,6 @@ TextEditInput::TextEditInput(const char *text, int chW, int chH,
 TextEditInput::~TextEditInput() {
   delete _theme;
   _theme = nullptr;
-
-  delete g_keypad;
-  g_keypad = nullptr;
 }
 
 void TextEditInput::completeWord(const char *word) {
@@ -739,10 +728,6 @@ void TextEditInput::draw(int x, int y, int w, int h, int chw) {
       maSetColor(_theme->_cursor_color);
       maDrawText(cursorMatchX + _marginWidth, cursorMatchY, _buf._buffer + _matchingBrace, 1);
     }
-  }
-
-  if (_showKeypad && g_keypad != nullptr) {
-    g_keypad->draw();
   }
 }
 
@@ -1229,17 +1214,12 @@ void TextEditInput::layout(StbTexteditRow *row, int start) const {
   row->ymax = row->baseline_y_delta = _charHeight;
 }
 
-void TextEditInput::layout(int w, int h) {
+void TextEditInput::layout(int x, int y, int w, int h) {
   if (_resizable) {
-    if (_showKeypad && g_keypad != nullptr) {
-      int keypadHeight = g_keypad->outerHeight(_charHeight);
-      _width = w - (_x + _xmargin);
-      _height = h - (_y + _ymargin + keypadHeight);
-      g_keypad->layout(0, _height, w, keypadHeight);
-    } else {
-      _width = w - (_x + _xmargin);
-      _height = h - (_y + _ymargin);
-    }
+    _x = x;
+    _y = y;
+    _width = w - (_x + _xmargin);
+    _height = h - (_y + _ymargin);
   }
 }
 
@@ -1909,7 +1889,7 @@ void TextEditInput::setColor(SyntaxState &state) {
   }
 }
 
-void TextEditInput::toggleMarker() {
+void TextEditInput::toggleMarker() const {
   bool found = false;
   for (int i = 0; i < MAX_MARKERS && !found; i++) {
     if (_cursorLine == g_lineMarker[i]) {
@@ -1942,7 +1922,7 @@ void TextEditInput::updateScroll() {
   }
 }
 
-int TextEditInput::wordEnd() {
+int TextEditInput::wordEnd() const {
   int i = _state.cursor;
   while (i >= 0 && i < _buf._len && IS_VAR_CHAR(_buf._buffer[i])) {
     i++;
@@ -1955,15 +1935,6 @@ int TextEditInput::wordStart() {
   return ((cursor >= 0 && cursor < _buf._len && _buf._buffer[cursor] == '\n') ? _state.cursor :
           is_word_border(&_buf, _state.cursor) ? _state.cursor :
           textedit_move_to_word_previous(&_buf, _state.cursor));
-}
-
-int TextEditInput::showKeypad() {
-  if (!g_keypad) {
-    g_keypad = new Keypad(_charWidth, _charHeight);
-  }
-  _showKeypad = true;
-  layout(_width, _height);
-  return g_keypad->outerHeight(_charHeight);
 }
 
 //
@@ -2472,6 +2443,7 @@ void TextEditHelpWidget::buildKeywordIndex() {
   }
 
   _cursorRow = getCursorRow();
+  _scroll = 0;
 }
 
 void TextEditHelpWidget::showPopup(int cols, int rows) {
@@ -2526,7 +2498,7 @@ void TextEditHelpWidget::draw(int x, int y, int w, int h, int chw) {
   maFillRect(x + shadowW, y + _height, _width, shadowH);
 }
 
-void TextEditHelpWidget::layout(int w, int h) {
+void TextEditHelpWidget::layout(int x, int y, int w, int h) {
   if (_resizable) {
     int border;
     switch (_layout) {

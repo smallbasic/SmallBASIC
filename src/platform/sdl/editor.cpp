@@ -11,6 +11,7 @@
 #include "common/sbapp.h"
 #include "common/fs_socket_client.h"
 #include "ui/textedit.h"
+#include "ui/keypad.h"
 #include "platform/sdl/runtime.h"
 #include "platform/sdl/settings.h"
 #include "platform/sdl/syswm.h"
@@ -228,6 +229,10 @@ void System::editSource(String loadPath, bool restoreOnExit) {
   _output->clearScreen();
   _output->addInput(editWidget);
   _output->addInput(helpWidget);
+  _output->addInput(new KeypadInput(false, true));
+
+  // to layout inputs
+  _output->resize(w, h);
 
   if (isBreak() && g_returnToLine) {
     // break running program - position to last program line

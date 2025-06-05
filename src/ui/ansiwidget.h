@@ -19,7 +19,6 @@
 
 #define MAX_PENDING 250
 #define MAX_PENDING_GRAPHICS 25
-
 #define USER_SCREEN1   0
 #define USER_SCREEN2   1
 #define TEXT_SCREEN    2
@@ -38,7 +37,6 @@ struct AnsiWidget {
   void addInput(FormInput *input) { _back->_inputs.add(input); }
   void clearScreen();
   bool construct();
-  void draw();
   void drawArc(int xc, int yc, double r, double start, double end, double aspect);
   void drawEllipse(int xc, int yc, int rx, int ry, int fill);
   void drawImage(ImageDisplay &image);
@@ -55,8 +53,9 @@ struct AnsiWidget {
   int  getFontSize() const { return _fontSize; }
   FormInput *getNextField(FormInput *field) { return _back->getNextField(field); }
   int  getPixel(int x, int y) { return _back->getPixel(x, y); }
+  int  getStatusHeight() { return _back->_height - _back->_statusOffset; }
   int  getScreenId(bool back);
-  int  getScreenWidth()  { return _back->_width; }
+  int  getScreenWidth() { return _back->_width; }
   void getScroll(int &x, int &y) { _back->getScroll(x, y); }
   int  getHeight() const { return _height; }
   int  getWidth() const  { return _width; }
@@ -96,10 +95,8 @@ struct AnsiWidget {
   void setPixel(int x, int y, int c);
   void setScroll(int x, int y) { _back->setScroll(x, y); }
   void setStatus(const char *label);
-  void setStatusOffsetY(int statusOffsetY) { _back->setStatusOffsetY(statusOffsetY); }
   void setTextColor(long fg, long bg);
   void setXY(int x, int y);
-  void setScrollSize(int scrollSize);
   int  textHeight() { return _back->_charHeight; }
   void updateInputs(var_p_t form, bool setv) { _back->updateInputs(form, setv); }
 

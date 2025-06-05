@@ -102,7 +102,7 @@ Key::Key(const RawKey &k) :
   _number = k._normal[0] >= '0' && k._normal[0] <= '9';
 }
 
-int Key::color(KeypadTheme *theme, bool shiftActive) {
+int Key::color(KeypadTheme *theme, bool shiftActive) const {
   int result;
   if (_pressed || (_label.equals(shiftKey) && shiftActive)) {
     result = _special ? theme->_funcKeyHighlight : theme->_keyHighlight;
@@ -116,7 +116,7 @@ int Key::color(KeypadTheme *theme, bool shiftActive) {
   return result;
 }
 
-void Key::drawButton(KeypadTheme *theme) {
+void Key::drawButton(KeypadTheme *theme) const {
   int rc = 5;
   int pad = 2;
   int rx = _x + _w - pad; // right x
@@ -158,6 +158,9 @@ bool Key::inside(int x, int y) const {
           y <= _y + _h);
 }
 
+//
+// Keypad
+//
 Keypad::Keypad(int charWidth, int charHeight)
   : _posX(0),
     _posY(0),
@@ -172,14 +175,14 @@ Keypad::Keypad(int charWidth, int charHeight)
   generateKeys();
 }
 
-int Keypad::outerHeight(int charHeight) const {
-  return maxRows * ((defaultPadding * 2) + charHeight) + defaultPadding;
+int Keypad::outerHeight(int charHeight) {
+  return maxRows * ((defaultPadding * 2) + charHeight);
 }
 
 void Keypad::generateKeys() {
   _keys.clear();
 
-  const RawKey (*activeLayout)[maxCols] = nullptr;
+  const RawKey (*activeLayout)[maxCols];
   switch (_currentLayout) {
   case LayoutLetters:
     activeLayout = letters;
@@ -187,7 +190,7 @@ void Keypad::generateKeys() {
   case LayoutNumbers:
     activeLayout = numbers;
     break;
-  case LayoutSymbols:
+  default:
     activeLayout = symbols;
     break;
   }
@@ -308,3 +311,28 @@ void Keypad::draw() {
   }
 }
 
+//
+// KeypadInput
+//
+KeypadInput::KeypadInput(bool floatTop, bool toolbar) :
+  FormInput(0, 0, 0, 100),
+  _floatTop(floatTop),
+  _toolbar(toolbar) {
+}
+
+void KeypadInput::clicked(int x, int y, bool pressed) {
+  fprintf(stderr, "clicked %d %d %d\n", x, y, pressed);
+}
+
+void KeypadInput::draw(int x, int y, int w, int h, int chw) {
+  maSetColor(0xff3344);
+  maFillRect(_x, _y, _width, _height);
+  maSetColor(0x007744);
+  maDrawText(_x + 10, _y + 10, "keypad !", 8);
+}
+
+void KeypadInput::layout(int x, int y, int w, int h) {
+  _x = x;
+  _y = _floatTop ? 0 : h;  
+  _width = w;
+}

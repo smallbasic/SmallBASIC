@@ -49,8 +49,6 @@ struct System {
   void systemLog(const char *msg);
   void systemPrint(const char *msg, ...);
   AnsiWidget *getOutput() { return _output; }
-  void showKeypad(TextEditInput *editor);
-  void hideKeypad(TextEditInput *editor);
 
   enum CursorType {
     kHand, kArrow, kIBeam

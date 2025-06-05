@@ -619,6 +619,7 @@ void System::logStack(const char *keyword, int type, int line) {
 void System::optionsBox(StringList *items) {
   int backScreenId = _output->getScreenId(true);
   int frontScreenId = _output->getScreenId(false);
+  int screenHeight = _output->getStatusHeight();
   _output->selectBackScreen(MENU_SCREEN);
 
   int width = 0;
@@ -640,14 +641,14 @@ void System::optionsBox(StringList *items) {
     _menuX = _output->getWidth() - (width + charWidth * 2);
   }
   if (!_menuY) {
-    _menuY = _output->getHeight() - height;
+    _menuY = screenHeight - height;
   }
 
   if (_menuX + width >= _output->getWidth()) {
     _menuX = _output->getWidth() - width;
   }
-  if (_menuY + height >= _output->getHeight()) {
-    _menuY = _output->getHeight() - height;
+  if (_menuY + height >= screenHeight) {
+    _menuY = screenHeight - height;
   }
 
   int y = 0;
@@ -928,9 +929,7 @@ void System::setBack() {
     if (!_mainBas) {
       // remove the current item
       strlib::String *old = _history.pop();
-
-        delete old;
-
+      delete old;
       if (_history.peek() != nullptr) {
         _loadPath.clear();
         _loadPath.append(_history.peek());
@@ -1372,25 +1371,6 @@ void System::systemPrint(const char *format, ...) {
   }
 }
 
-void System::showKeypad(TextEditInput *editor) {
-  if (!editor) {
-    editor = _editor;
-  }
-  if (editor) {
-    int height = editor->showKeypad();
-    _output->setStatusOffsetY(height);
-  }
-}
-
-void System::hideKeypad(TextEditInput *editor) {
-  if (!editor) {
-    editor = _editor;
-  }
-  if (editor) {
-    editor->hideKeypad();
-  }
-}
-
 //
 // common device implementation
 //
@@ -1516,12 +1496,4 @@ void dev_log_stack(const char *keyword, int type, int line) {
 
 int maGetMilliSecondCount() {
   return dev_get_millisecond_count();
-}
-
-void maShowVirtualKeyboard(void) {
-  g_system->showKeypad(nullptr);
-}
-
-void maHideVirtualKeyboard(void) {
-  g_system->hideKeypad(nullptr);
 }
