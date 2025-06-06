@@ -522,7 +522,7 @@ void Runtime::runShell() {
   _app->activity->callbacks->onContentRectChanged = onContentRectChanged;
   loadConfig();
 
-  strcpy(opt_modpath, getString("getModulePath"));
+  strlcpy(opt_modpath, getString("getModulePath"), sizeof(opt_modpath));
 
 #if defined(_ANDROID_LIBRARY)
   runOnce(MAIN_BAS, true);

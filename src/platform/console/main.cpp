@@ -288,7 +288,7 @@ bool process_options(int argc, char *argv[], char **runFile, bool *tmpFile, bool
       break;
     case 'm':
       if (optarg) {
-        strcpy(opt_modpath, optarg);
+        strlcpy(opt_modpath, optarg, sizeof(opt_modpath));
       }
       break;
     case 's':
@@ -301,7 +301,7 @@ bool process_options(int argc, char *argv[], char **runFile, bool *tmpFile, bool
       }
       break;
     case 'o':
-      strcpy(opt_command, optarg);
+      strlcpy(opt_command, optarg, sizeof(opt_command));
       break;
     case 'c':
       if (setup_command_program(optarg, runFile)) {

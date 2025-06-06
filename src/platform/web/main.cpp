@@ -129,7 +129,7 @@ MHD_Response *execute(MHD_Connection *connection, const char *bas) {
     g_graphicText = atoi(graphicText) > 0;
   }
   if (command != nullptr) {
-    strcpy(opt_command, command);
+    strlcpy(opt_command, command, sizeof(opt_command));
   }
 
   log("%s dim:%dX%d [accept=%s, content-type=%s]", bas, os_graf_mx, os_graf_my, accept, contentType);
@@ -264,7 +264,7 @@ int main(int argc, char **argv) {
       os_graf_my = atoi(optarg);
       break;
     case 'c':
-      strcpy(opt_command, optarg);
+      strlcpy(opt_command, optarg, sizeof(opt_command));
       break;
     case 'g':
       g_graphicText = atoi(optarg) > 1;
@@ -288,7 +288,7 @@ int main(int argc, char **argv) {
       break;
     case 'm':
       if (optarg) {
-        strcpy(opt_modpath, optarg);
+        strlcpy(opt_modpath, optarg, sizeof(opt_modpath));
       }
       break;
     case 'i':

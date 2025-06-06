@@ -631,9 +631,11 @@ void Runtime::setWindowTitle(const char *title) {
     }
     int len = strlen(slash) + 16;
     char *buffer = new char[len];
-    sprintf(buffer, "%s - SmallBASIC", slash);
-    SDL_SetWindowTitle(_window, buffer);
-    delete [] buffer;
+    if (buffer) {
+      sprintf(buffer, "%s - SmallBASIC", slash);
+      SDL_SetWindowTitle(_window, buffer);
+      delete [] buffer;
+    }
   }
 }
 

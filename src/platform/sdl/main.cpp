@@ -52,7 +52,7 @@ int g_debugPort = 4000;
 void appLog(const char *format, ...) {
   va_list args;
   va_start(args, format);
-  unsigned size = vsnprintf(NULL, 0, format, args);
+  unsigned size = format ? vsnprintf(NULL, 0, format, args) : 0;
   va_end(args);
 
   if (size) {
@@ -68,7 +68,7 @@ void appLog(const char *format, ...) {
       buf[i--] = '\0';
     }
     strcat(buf, "\r\n");
-    
+
 #if defined(WIN32)
     OutputDebugString(buf);
 #else
@@ -274,7 +274,7 @@ int main(int argc, char* argv[]) {
                   || (strstr(s, "://") != NULL))) {
             runFile = strdup(s);
           } else if (chdir(s) != 0) {
-            strcpy(opt_command, s);
+            strlcpy(opt_command, s, sizeof(opt_command));
           }
         }
       }
@@ -297,7 +297,7 @@ int main(int argc, char* argv[]) {
       opt_quiet = false;
       break;
     case 'c':
-      strcpy(opt_command, optarg);
+      strlcpy(opt_command, optarg, sizeof(opt_command));
       break;
     case 'f':
       fontFamily = strdup(optarg);
@@ -323,7 +323,7 @@ int main(int argc, char* argv[]) {
       break;
     case 'm':
       if (optarg) {
-        strcpy(opt_modpath, optarg);
+        strlcpy(opt_modpath, optarg, sizeof(opt_modpath));
       }
       break;
     case 'd':

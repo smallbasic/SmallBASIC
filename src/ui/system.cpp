@@ -823,7 +823,7 @@ void System::runMain(const char *mainBasPath) {
   String activePath = mainBasPath;
   _loadPath = mainBasPath;
   _mainBas = true;
-  strcpy(opt_command, "welcome");
+  strlcpy(opt_command, "welcome", sizeof(opt_command));
 
   bool started = execute(_loadPath);
   if (!started) {
@@ -1356,7 +1356,7 @@ void System::systemPrint(const char *format, ...) {
   va_list args;
 
   va_start(args, format);
-  unsigned size = vsnprintf(nullptr, 0, format, args);
+  unsigned size = format ? vsnprintf(nullptr, 0, format, args) : 0;
   va_end(args);
 
   if (size) {

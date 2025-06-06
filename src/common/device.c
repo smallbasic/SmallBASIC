@@ -111,7 +111,7 @@ void dev_clear_sound_queue() {
 void dev_printf(const char *format, ...) {
   va_list args;
   va_start(args, format);
-  unsigned size = vsnprintf(NULL, 0, format, args);
+  unsigned size = format ? vsnprintf(NULL, 0, format, args) : 0;
   va_end(args);
 
   if (size) {
@@ -133,7 +133,7 @@ void dev_printf(const char *format, ...) {
 void log_printf(const char *format, ...) {
   va_list args;
   va_start(args, format);
-  unsigned size = vsnprintf(NULL, 0, format, args);
+  unsigned size = format ? vsnprintf(NULL, 0, format, args) : 0;
   va_end(args);
 
   if (size) {

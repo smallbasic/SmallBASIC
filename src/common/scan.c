@@ -4446,7 +4446,7 @@ char *comp_preproc_options(char *p) {
       char lc = *pe;
       *pe = '\0';
       if (strlen(p) < OPT_CMD_SZ) {
-        strcpy(opt_command, p);
+        strlcpy(opt_command, p, sizeof(opt_command));
       } else {
         memcpy(opt_command, p, OPT_CMD_SZ - 1);
         opt_command[OPT_CMD_SZ - 1] = '\0';

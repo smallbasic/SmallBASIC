@@ -150,8 +150,8 @@ int hashmap_destroy(var_p_t var_p) {
 }
 
 int hashmap_get_hash(const char *key, int length) {
-  int hash = 1, i;
-  for (i = 0; i < length && key[i] != '\0'; i++) {
+  uint64_t hash = 1;
+  for (int i = 0; i < length && key[i] != '\0'; i++) {
     hash += to_lower(key[i]);
     hash <<= 3;
     hash ^= (hash >> 3);

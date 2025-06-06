@@ -81,8 +81,10 @@ function checkDebugMode() {
    AC_MSG_RESULT([$with_debug])
    if test "$with_debug" = "yes" || test "$with_debug" = "full"
    then
-     CFLAGS="${CFLAGS} -g -O0 -fstack-protector-all"
-     CXXFLAGS="${CXXFLAGS} -g -O0 -fstack-protector-all"
+     DEBUG_FLAGS="-g -O1 -fstack-protector-all -fno-omit-frame-pointer"
+     #-fsanitize=address,undefined"
+     CFLAGS="${DEBUG_FLAGS}"
+     CXXFLAGS="${DEBUG_FLAGS}"
      AC_DEFINE(_DEBUG, 1, [debugging build enabled])
    fi
    AC_SUBST(CFLAGS)
