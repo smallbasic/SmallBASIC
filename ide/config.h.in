@@ -1,0 +1,31 @@
+// This file is part of SmallBASIC
+//
+// SmallBASIC module header
+//
+// This program is distributed under the terms of the GPL v2.0 or later
+// Download the GNU Public License (GPL) from www.gnu.org
+//
+// Copyright(C) 2025 Chris Warren-Smith
+
+#ifndef _INC_CONFIG_H
+#define _INC_CONFIG_H
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+#cmakedefine01 _SDL
+#cmakedefine01 _UnixOS
+#cmakedefine01 IMPL_DEV_READ
+#cmakedefine01 IMPL_LOG_WRITE
+
+#cmakedefine  _SDL_VERSION "@_SDL_VERSION@"
+#cmakedefine  VERSION "@VERSION@"
+#cmakedefine  BUILD_DATE @BUILD_DATE@
+#cmakedefine  SB_DWORD_VER @SB_DWORD_VER@
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif
