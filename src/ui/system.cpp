@@ -1101,9 +1101,9 @@ void System::showMenu() {
       items->add(new String(MENU_STR_BACK));
       _systemMenu[index++] = MENU_BACK;
 #else
-      items->add(new String(MENU_STR_KEYPAD));
-      _systemMenu[index++] = MENU_KEYPAD;
       if (!isEditing()) {
+        items->add(new String(MENU_STR_KEYPAD));
+        _systemMenu[index++] = MENU_KEYPAD;
         bool controlMode = get_focus_edit()->getControlMode();
         sprintf(buffer, MENU_STR_CONTROL, (controlMode ? MENU_STR_ON : MENU_STR_OFF));
         items->add(new String(buffer));

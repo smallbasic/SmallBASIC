@@ -56,7 +56,7 @@ struct Keypad {
   Keypad(int charWidth, int charHeight);
   ~Keypad() = default;
 
-  static int  outerHeight(int ch) ;
+  static int outerHeight(int ch) ;
   void clicked(int x, int y, bool pressed);
   void draw();
   void layout(int x, int y, int w, int h);
@@ -79,8 +79,8 @@ private:
 };
 
 struct KeypadInput : public FormInput {
-  KeypadInput(bool floatTop, bool toolbar);
-  ~KeypadInput() override = default;
+  KeypadInput(bool floatTop, bool toolbar, int charWidth, int charHeight);
+  ~KeypadInput() override;
 
   void clicked(int x, int y, bool pressed) override;
   void draw(int x, int y, int w, int h, int chw) override;
@@ -91,5 +91,5 @@ struct KeypadInput : public FormInput {
 private:  
   bool _floatTop;
   bool _toolbar;
-  //Keypad _keypad;
+  Keypad *_keypad;
 };

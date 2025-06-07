@@ -489,8 +489,8 @@ void AnsiWidget::pointerReleaseEvent(MAEvent &event) {
     _activeButton->clicked(event.point.x, event.point.y, false);
   } else if (_activeButton != nullptr && _activeButton->_pressed) {
     _activeButton->_pressed = false;
-    drawActiveButton();
     _activeButton->clicked(event.point.x, event.point.y, false);
+    drawActiveButton();
   } else if (_swipeExit) {
     _swipeExit = false;
   } else {

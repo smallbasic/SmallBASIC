@@ -9,6 +9,7 @@
 #include "config.h"
 #include "keypad.h"
 #include "lib/maapi.h"
+#include "common/device.h"
 
 constexpr char cutIcon[] = {'\346', '\0'};
 constexpr char copyIcon[] = {'\251', '\0'};
@@ -98,7 +99,7 @@ Key::Key(const RawKey &k) :
   _altLabel(k._shifted) {
   _labelLength = _label.length();
   _pressed = false;
-  _special = k._normal[0] > 128 || _labelLength > 1;
+  _special = (uint8_t )k._normal[0] > 128 || _labelLength > 1;
   _number = k._normal[0] >= '0' && k._normal[0] <= '9';
 }
 
@@ -274,11 +275,16 @@ void Keypad::clicked(int x, int y, bool pressed) {
         layout(_posX, _posY, _width, _height);
         break;
       } else {
+        bool useShift = _shiftActive ^ _capsLockActive;
+        String label = useShift ? key->_altLabel : key->_label;
+        fprintf(stderr, "pressed %s\n", label.c_str());
+
         if (_shiftActive && !key->_special) {
           _shiftActive = false;
         }
         // TODO: Output the key's character/command
       }
+      break;
     }
   }
 }
@@ -314,25 +320,41 @@ void Keypad::draw() {
 //
 // KeypadInput
 //
-KeypadInput::KeypadInput(bool floatTop, bool toolbar) :
-  FormInput(0, 0, 0, 100),
+KeypadInput::KeypadInput(bool floatTop, bool toolbar, int charWidth, int charHeight) :
+  FormInput(0, 0, 0, charHeight * 2),
   _floatTop(floatTop),
-  _toolbar(toolbar) {
+  _toolbar(toolbar),
+  _keypad(nullptr) {
+  if (!toolbar) {
+    _keypad = new Keypad(charWidth, charHeight);
+    _height = Keypad::outerHeight(charHeight);
+  }
+}
+
+KeypadInput::~KeypadInput() {
+  delete _keypad;
 }
 
 void KeypadInput::clicked(int x, int y, bool pressed) {
-  fprintf(stderr, "clicked %d %d %d\n", x, y, pressed);
+  if (_keypad) {
+    _keypad->clicked(x, y, pressed);
+  }
 }
 
 void KeypadInput::draw(int x, int y, int w, int h, int chw) {
-  maSetColor(0xff3344);
-  maFillRect(_x, _y, _width, _height);
-  maSetColor(0x007744);
-  maDrawText(_x + 10, _y + 10, "keypad !", 8);
+  if (_keypad) {
+    _keypad->draw();
+  } else {
+    maSetColor(modernDarkTheme._bg);
+    maFillRect(x, y, _width, _height);
+  }
 }
 
 void KeypadInput::layout(int x, int y, int w, int h) {
   _x = x;
-  _y = _floatTop ? 0 : h;  
+  _y = _floatTop ? 0 : h;
   _width = w;
+  if (_keypad) {
+    _keypad->layout(_x, _y, _width, _height);
+  }
 }
