@@ -158,13 +158,13 @@ void AnsiWidget::drawRect(int x1, int y1, int x2, int y2) {
 }
 
 // draw a filled rectangle onto the offscreen buffer
-void AnsiWidget::drawRectFilled(int x1, int y1, int x2, int y2) {
+void AnsiWidget::drawRectFilled(int x1, int y1, int x2, int y2) const {
   _back->drawRectFilled(x1, y1, x2, y2);
   flush(false, false, MAX_PENDING_GRAPHICS);
 }
 
 // display any pending images changed
-void AnsiWidget::flush(bool force, bool vscroll, int maxPending) {
+void AnsiWidget::flush(bool force, bool vscroll, int maxPending) const {
   if (_front != nullptr && _autoflush) {
     bool update = false;
     if (force) {
@@ -178,7 +178,7 @@ void AnsiWidget::flush(bool force, bool vscroll, int maxPending) {
   }
 }
 
-int AnsiWidget::getScreenId(bool back) {
+int AnsiWidget::getScreenId(bool back) const {
   int result = 0;
   for (int i = 0; i < MAX_SCREENS; i++) {
     if (_screens[i] == (back ? _back : _front)) {
@@ -347,18 +347,18 @@ void AnsiWidget::setFontSize(int fontSize) {
 }
 
 // sets the pixel to the given color at the given xy location
-void AnsiWidget::setPixel(int x, int y, int c) {
+void AnsiWidget::setPixel(int x, int y, int c) const {
   _back->setPixel(x, y, c);
   flush(false, false, MAX_PENDING_GRAPHICS);
 }
 
-void AnsiWidget::setStatus(const char *label) {
+void AnsiWidget::setStatus(const char *label) const {
   _back->_label = label;
   _back->setDirty();
 }
 
 // sets the current text drawing color
-void AnsiWidget::setTextColor(long fg, long bg) {
+void AnsiWidget::setTextColor(long fg, long bg) const {
   _back->setTextColor(fg, bg);
 }
 
@@ -484,7 +484,7 @@ bool AnsiWidget::pointerMoveEvent(MAEvent &event) {
 }
 
 // handler for pointer release events
-void AnsiWidget::pointerReleaseEvent(MAEvent &event) {
+void AnsiWidget::pointerReleaseEvent(const MAEvent &event) {
   if (_activeButton != nullptr && _front == _screens[MENU_SCREEN]) {
     _activeButton->clicked(event.point.x, event.point.y, false);
   } else if (_activeButton != nullptr && _activeButton->_pressed) {
@@ -531,7 +531,7 @@ void AnsiWidget::pointerReleaseEvent(MAEvent &event) {
 
 // handles the characters following the \e[ sequence. Returns whether a further call
 // is required to complete the process.
-bool AnsiWidget::doEscape(const char *&p, int textHeight) {
+bool AnsiWidget::doEscape(const char *&p, int textHeight) const {
   int escValue = 0;
 
   while (isdigit(*p)) {
@@ -594,7 +594,7 @@ void AnsiWidget::doSwipe(int start, bool moveDown, int distance, int maxScroll) 
 }
 
 // draws the focus screen's active button
-void AnsiWidget::drawActiveButton() {
+void AnsiWidget::drawActiveButton() const {
 #if defined(_SDL) || defined(_FLTK)
   if (_focus != nullptr && !_activeButton->hasHover()) {
     MAHandle currentHandle = maSetDrawTarget(HANDLE_SCREEN);
@@ -624,7 +624,7 @@ void AnsiWidget::drawActiveButton() {
 #endif
 }
 
-bool AnsiWidget::drawHoverLink(MAEvent &event) {
+bool AnsiWidget::drawHoverLink(const MAEvent &event) {
 #if defined(_SDL) || defined(_FLTK)
   if (_front != _screens[MENU_SCREEN]) {
     int dx = _front->_x;
@@ -704,7 +704,7 @@ void AnsiWidget::handleEscape(const char *&p, int lineHeight) {
 }
 
 // returns whether the event is over the given screen
-bool AnsiWidget::setActiveButton(MAEvent &event, Screen *screen) {
+bool AnsiWidget::setActiveButton(const MAEvent &event, Screen *screen) {
   bool result = false;
   if (_front != _screens[MENU_SCREEN] &&
       screen->overlaps(event.point.x, event.point.y)) {

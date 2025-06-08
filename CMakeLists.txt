@@ -7,12 +7,13 @@
 
 set(VERSION "12.29")
 cmake_minimum_required(VERSION 3.10)
-project(SmallBASIC_SDL VERSION ${VERSION} LANGUAGES C CXX)
+project(SmallBASIC VERSION ${VERSION} LANGUAGES C CXX)
 
 set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-find_package(SDL3 REQUIRED)
+# cmake -DWITH_DEBUG=ON
+option(WITH_DEBUG "Enable debug build" OFF)
 
 function(writeConfig)
   execute_process(
@@ -35,6 +36,15 @@ function(writeConfig)
   )
 endfunction()
 
+function(checkDebugMode)
+  if(WITH_DEBUG)
+    set(SANITIZER_FLAGS "-fstack-protector-all -fno-omit-frame-pointer -fsanitize=address,undefined")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${SANITIZER_FLAGS}")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${SANITIZER_FLAGS}")
+    message(STATUS "Debug mode enabled via --with-debug")
+  endif()
+endfunction()
+
 function(buildSDL)
   # Initialize variables
   set(TARGET "Building SDL version.")
@@ -42,6 +52,7 @@ function(buildSDL)
   set(PACKAGE_LIBS "")
 
   # check dependencies using pkg-config
+  find_package(SDL3 REQUIRED)
   find_package(PkgConfig REQUIRED)
 
   pkg_check_modules(SDL3 REQUIRED sdl3)
@@ -105,6 +116,12 @@ function(buildSDL)
   writeConfig()
 endfunction()
 
+message("generating kwp.h")
+execute_process(
+  COMMAND bash -c "(cd ../documentation && g++ -o build_kwp build_kwp.cpp && ./build_kwp > ../src/ui/kwp.h)"
+)
+
+checkDebugMode()
 buildSDL()
 
 set(COMMON_DIR ${CMAKE_SOURCE_DIR}/src/common)

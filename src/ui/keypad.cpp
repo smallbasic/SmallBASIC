@@ -7,9 +7,10 @@
 //
 
 #include "config.h"
-#include "keypad.h"
+#include "common/sbapp.h"
+#include "common/keymap.h"
 #include "lib/maapi.h"
-#include "common/device.h"
+#include "keypad.h"
 
 constexpr char cutIcon[] = {'\346', '\0'};
 constexpr char copyIcon[] = {'\251', '\0'};
@@ -99,11 +100,11 @@ Key::Key(const RawKey &k) :
   _altLabel(k._shifted) {
   _labelLength = _label.length();
   _pressed = false;
-  _special = (uint8_t )k._normal[0] > 128 || _labelLength > 1;
+  _special = static_cast<uint8_t>(k._normal[0]) > 128 || _labelLength > 1;
   _number = k._normal[0] >= '0' && k._normal[0] <= '9';
 }
 
-int Key::color(KeypadTheme *theme, bool shiftActive) const {
+int Key::color(const KeypadTheme *theme, bool shiftActive) const {
   int result;
   if (_pressed || (_label.equals(shiftKey) && shiftActive)) {
     result = _special ? theme->_funcKeyHighlight : theme->_keyHighlight;
@@ -117,7 +118,7 @@ int Key::color(KeypadTheme *theme, bool shiftActive) const {
   return result;
 }
 
-void Key::drawButton(KeypadTheme *theme) const {
+void Key::drawButton(const KeypadTheme *theme) const {
   int rc = 5;
   int pad = 2;
   int rx = _x + _w - pad; // right x
@@ -157,6 +158,48 @@ bool Key::inside(int x, int y) const {
           x <= _x + _w &&
           y >= _y &&
           y <= _y + _h);
+}
+
+void Key::onClick(bool useShift) {
+  String label = useShift ? _altLabel : _label;
+  auto *event = new MAEvent();
+  event->type = EVENT_TYPE_KEY_PRESSED;
+  event->nativeKey = 0;
+  char labelChar = label.c_str()[0];
+  if (!_special) {
+    event->key = labelChar;
+  } else if (label.equals(backKey)) {
+    event->key = SB_KEY_BACKSPACE;
+  } else if (label.equals(enterKey)) {
+    event->key = SB_KEY_ENTER;
+  } else if (label.equals(spaceKey)) {
+    event->key = SB_KEY_SPACE;
+  } else {
+    switch (labelChar) {
+    case cutIcon[0]:
+      event->key = SB_KEY_CTRL('x');
+      break;
+    case copyIcon[0]:
+      event->key = SB_KEY_CTRL('c');
+      break;
+    case pasteIcon[0]:
+      event->key = SB_KEY_CTRL('v');
+      break;
+    case saveIcon[0]:
+      event->key = SB_KEY_CTRL('s');
+      break;
+    case runIcon[0]:
+      event->key = SB_KEY_CTRL('r');
+      break;
+    case helpIcon[0]:
+      event->key = SB_KEY_F(1);
+      break;
+    default:
+      event->key = 0;
+      break;
+    }
+  }
+  maPushEvent(event);
 }
 
 //
@@ -276,13 +319,10 @@ void Keypad::clicked(int x, int y, bool pressed) {
         break;
       } else {
         bool useShift = _shiftActive ^ _capsLockActive;
-        String label = useShift ? key->_altLabel : key->_label;
-        fprintf(stderr, "pressed %s\n", label.c_str());
-
         if (_shiftActive && !key->_special) {
           _shiftActive = false;
         }
-        // TODO: Output the key's character/command
+        key->onClick(useShift);
       }
       break;
     }
@@ -293,7 +333,7 @@ void Keypad::toggleShift() {
   _shiftActive = !_shiftActive;
 }
 
-void Keypad::draw() {
+void Keypad::draw() const {
   maSetColor(_theme->_bg);
   maFillRect(_posX, _posY, _width, _height);
   for (const auto &key : _keys) {

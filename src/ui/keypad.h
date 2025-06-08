@@ -10,6 +10,7 @@
 
 #include "ui/strlib.h"
 #include "ui/inputs.h"
+#include "lib/maapi.h"
 
 using namespace strlib;
 
@@ -36,9 +37,10 @@ struct RawKey {
 struct Key {
   explicit Key(const RawKey &k);
 
-  int color(KeypadTheme *theme, bool shiftActive) const;
-  void drawButton(KeypadTheme *theme) const;
+  int color(const KeypadTheme *theme, bool shiftActive) const;
+  void drawButton(const KeypadTheme *theme) const;
   bool inside(int x, int y) const;
+  void onClick(bool useShift);
 
   String _label;
   String _altLabel;
@@ -58,7 +60,7 @@ struct Keypad {
 
   static int outerHeight(int ch) ;
   void clicked(int x, int y, bool pressed);
-  void draw();
+  void draw() const;
   void layout(int x, int y, int w, int h);
 
 private:
