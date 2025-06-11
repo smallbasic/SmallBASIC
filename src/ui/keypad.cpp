@@ -10,6 +10,8 @@
 #include "common/sbapp.h"
 #include "common/keymap.h"
 #include "lib/maapi.h"
+#include "ui/image_codec.h"
+#include "ui/keypad-icons.h"
 #include "keypad.h"
 
 constexpr char cutIcon[] = {'\346', '\0'};
@@ -95,6 +97,41 @@ constexpr int rowCharLengths[][5] = {
   {6, 10, 8, 14, 0}, // symbols
 };
 
+//
+// KeypadDrawContext
+//
+KeypadDrawContext::KeypadDrawContext(int charWidth, int charHeight) :
+  _charWidth(charWidth),
+  _charHeight(charHeight),
+  _shiftActive(false),
+  _capsLockActive(false) {
+  if (img_decode(img_cut, img_cut_len, &_cutImage) != 0 ||
+      img_decode(img_copy, img_copy_len, &_copyImage) != 0 ||
+      img_decode(img_clipboard_paste, img_clipboard_paste_len, &_pasteImage) != 0 ||
+      img_decode(img_save, img_save_len, &_saveImage) != 0 ||
+      img_decode(img_bug_play, img_bug_play_len, &_runImage) != 0 ||
+      img_decode(img_book_info_2, img_book_info_2_len, &_helpImage) != 0 ||
+      img_decode(img_backspace, img_backspace_len, &_backImage) != 0 ||
+      img_decode(img_arrow_enter, img_arrow_enter_len, &_enterImage) != 0) {
+    deviceLog("Failed to load image [%s]\n", img_get_last_error());
+  }
+}
+
+void KeypadDrawContext::toggleShift() {
+  _shiftActive = !_shiftActive;
+}
+
+bool KeypadDrawContext::useShift(bool specialKey) {
+  bool useShift = _shiftActive ^ _capsLockActive;
+  if (_shiftActive && !specialKey) {
+    _shiftActive = false;
+  }
+  return useShift;
+}
+
+//
+// Key
+//
 Key::Key(const RawKey &k) :
   _label(k._normal),
   _altLabel(k._shifted) {
@@ -118,7 +155,19 @@ int Key::color(const KeypadTheme *theme, bool shiftActive) const {
   return result;
 }
 
-void Key::drawButton(const KeypadTheme *theme) const {
+void Key::drawImage(const ImageData *image) const {
+  MAPoint2d dstPoint;
+  MARect srcRect;
+  dstPoint.x = _x;
+  dstPoint.y = _y;
+  srcRect.left = 0;
+  srcRect.top = 0;
+  srcRect.width = image->_width;
+  srcRect.height = image->_height;
+  maDrawRGB(&dstPoint, image->_pixels, &srcRect, 0, image->_width);
+}
+
+void Key::draw(const KeypadTheme *theme, const KeypadDrawContext *context) const {
   int rc = 5;
   int pad = 2;
   int rx = _x + _w - pad; // right x
@@ -151,6 +200,26 @@ void Key::drawButton(const KeypadTheme *theme) const {
   maArc(xcR, ycT, rc, PI * 3 / 2, 0, aspect);  // Top-right corner
   maArc(xcR, ycB, rc, 0, PI / 2, aspect);      // Bottom-right corner
   maArc(xcL, ycB, rc, PI / 2, PI, aspect);     // Bottom-left corner
+
+  String label;
+  if (_special) {
+    label = _label;
+  } else {
+    bool useShift = context->_shiftActive ^ context->_capsLockActive;
+    label = useShift ? _altLabel : _label;
+  }
+
+  int xOffset = (_w - (context->_charWidth * _labelLength)) / 2;
+  int yOffset = (_h - context->_charHeight) / 2;
+  int textX = _x + xOffset;
+  int textY = _y + yOffset;
+  maSetColor(color(theme, context->_shiftActive));
+
+  if (_special && _labelLength == 1) {
+    drawImage(&context->_enterImage);
+  } else {
+    maDrawText(textX, textY, label.c_str(), _labelLength);
+  }
 }
 
 bool Key::inside(int x, int y) const {
@@ -210,10 +279,7 @@ Keypad::Keypad(int charWidth, int charHeight)
     _posY(0),
     _width(0),
     _height(0),
-    _charWidth(charWidth),
-    _charHeight(charHeight),
-    _shiftActive(false),
-    _capsLockActive(false),
+    _context(charWidth, charHeight),
     _theme(&modernDarkTheme),
     _currentLayout(LayoutLetters) {
   generateKeys();
@@ -256,17 +322,20 @@ void Keypad::layout(int x, int y, int w, int h) {
   _width = w;
   _height = h;
 
+  const int charWidth = _context._charWidth;
+  const int charHeight = _context._charHeight;
+
   // start with optimum padding, then reduce to fit width
   int padding = defaultPadding;
-  int width = maxCols * (_charWidth + (padding * 2));
+  int width = maxCols * (charWidth + (padding * 2));
 
   while (width > w && padding > 0) {
     padding--;
-    width = maxCols * (_charWidth + (padding * 2));
+    width = maxCols * (charWidth + (padding * 2));
   }
 
-  int keyW = _charWidth + (padding * 2);
-  int keyH = _charHeight + (padding * 2);
+  int keyW = charWidth + (padding * 2);
+  int keyH = charHeight + (padding * 2);
   int xStart = _posX + ((w - width) / 2);
   int yPos = _posY;
   int index = 0;
@@ -277,7 +346,7 @@ void Keypad::layout(int x, int y, int w, int h) {
     int xPos = xStart;
     if (cols < maxCols) {
       // center narrow row
-      int rowWidth = (chars * _charWidth) + (cols * padding * 2);
+      int rowWidth = (chars * charWidth) + (cols * padding * 2);
       if (rowWidth > width) {
         xPos -= (rowWidth - width) / 2;
       } else {
@@ -292,7 +361,7 @@ void Keypad::layout(int x, int y, int w, int h) {
       int length = key->_labelLength;
       int keyWidth = keyW;
       if (length > 1) {
-        keyWidth = (length * _charWidth) + (padding * 2);
+        keyWidth = (length * charWidth) + (padding * 2);
       }
       key->_x = xPos;
       key->_y = yPos;
@@ -311,49 +380,25 @@ void Keypad::clicked(int x, int y, bool pressed) {
 
     if (pressed && inside) {
       if (key->_label.equals(shiftKey)) {
-        toggleShift();
+        _context.toggleShift();
       } else if (key->_label.equals(toggleKey)) {
         _currentLayout = static_cast<KeypadLayout>((_currentLayout + 1) % 3);
         generateKeys();
         layout(_posX, _posY, _width, _height);
         break;
       } else {
-        bool useShift = _shiftActive ^ _capsLockActive;
-        if (_shiftActive && !key->_special) {
-          _shiftActive = false;
-        }
-        key->onClick(useShift);
+        key->onClick(_context.useShift(key->_special));
       }
       break;
     }
   }
 }
 
-void Keypad::toggleShift() {
-  _shiftActive = !_shiftActive;
-}
-
 void Keypad::draw() const {
   maSetColor(_theme->_bg);
   maFillRect(_posX, _posY, _width, _height);
   for (const auto &key : _keys) {
-    key->drawButton(_theme);
-
-    String label;
-    if (key->_special) {
-      label = key->_label;
-    } else {
-      bool useShift = _shiftActive ^ _capsLockActive;
-      label = useShift ? key->_altLabel : key->_label;
-    }
-
-    int labelLength = key->_labelLength;
-    int xOffset = (key->_w - (_charWidth * labelLength)) / 2;
-    int yOffset = (key->_h - _charHeight) / 2;
-    int textX = key->_x + xOffset;
-    int textY = key->_y + yOffset;
-    maSetColor(key->color(_theme, _shiftActive));
-    maDrawText(textX, textY, label.c_str(), labelLength);
+    key->draw(_theme, &_context);
   }
 }
 

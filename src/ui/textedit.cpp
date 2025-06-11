@@ -2110,8 +2110,12 @@ void TextEditHelpWidget::clicked(int x, int y, bool pressed) {
   _ptY = -1;
   if (pressed) {
     stb_textedit_click(&_buf, &_state, 0, (y - _y) + (_scroll * _charHeight));
-    if (_mode == kHelpKeyword) {
+    if (_mode == kHelpKeyword && x < (_x + _charWidth * 10)) {
+      // allow scrolling from the right hand side
       toggleKeyword();
+    } else {
+      // position to [+]
+      _state.cursor += 3;
     }
   }
 }

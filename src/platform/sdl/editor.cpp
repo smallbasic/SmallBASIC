@@ -229,7 +229,7 @@ void System::editSource(String loadPath, bool restoreOnExit) {
   _output->clearScreen();
   _output->addInput(editWidget);
   _output->addInput(helpWidget);
-  _output->addInput(new KeypadInput(false, true));
+  _output->addInput(new KeypadInput(false, false, charWidth, charHeight));
 
   // to layout inputs
   _output->resize(w, h);

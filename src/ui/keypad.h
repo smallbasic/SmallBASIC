@@ -10,6 +10,7 @@
 
 #include "ui/strlib.h"
 #include "ui/inputs.h"
+#include "ui/image_codec.h"
 #include "lib/maapi.h"
 
 using namespace strlib;
@@ -25,6 +26,26 @@ struct KeypadTheme {
   int _funcText;
 };
 
+struct KeypadDrawContext {
+  explicit KeypadDrawContext(int charWidth, int charHeight);
+  void toggleShift();
+  bool useShift(bool specialKey);
+
+  bool _shiftActive;
+  bool _capsLockActive;
+  int _charWidth;
+  int _charHeight;
+
+  ImageData _cutImage;
+  ImageData _copyImage;
+  ImageData _pasteImage;
+  ImageData _saveImage;
+  ImageData _runImage;
+  ImageData _helpImage;
+  ImageData _backImage;
+  ImageData _enterImage;
+};
+
 enum KeypadLayout {
   LayoutLetters = 0, LayoutNumbers = 1, LayoutSymbols = 2
 };
@@ -38,7 +59,8 @@ struct Key {
   explicit Key(const RawKey &k);
 
   int color(const KeypadTheme *theme, bool shiftActive) const;
-  void drawButton(const KeypadTheme *theme) const;
+  void draw(const KeypadTheme *theme, const KeypadDrawContext *context) const;
+  void drawImage(const ImageData *image) const;
   bool inside(int x, int y) const;
   void onClick(bool useShift);
 
@@ -68,16 +90,12 @@ private:
   int _posY;
   int _width;
   int _height;
-  int _charWidth;
-  int _charHeight;
   strlib::List<Key *> _keys;
-  bool _shiftActive;
-  bool _capsLockActive;
   KeypadTheme *_theme;
+  KeypadDrawContext _context;
   KeypadLayout _currentLayout;
 
   void generateKeys();
-  void toggleShift();
 };
 
 struct KeypadInput : public FormInput {
