@@ -185,7 +185,7 @@ set(SOURCES
   ${UI_DIR}/textedit.cpp
   ${UI_DIR}/keypad.cpp
   ${UI_DIR}/image.cpp
-  ${UI_DIR}/lodepng_codec.cpp
+  ${UI_DIR}/image_codec.cpp
   ${UI_DIR}/strlib.cpp
   ${UI_DIR}/audio.cpp
   ${SDL_DIR}/main.cpp

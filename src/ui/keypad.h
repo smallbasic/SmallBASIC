@@ -11,7 +11,7 @@
 #include "ui/strlib.h"
 #include "ui/inputs.h"
 #include "ui/image_codec.h"
-#include "lib/maapi.h"
+#include "ui/keycode.h"
 
 using namespace strlib;
 
@@ -31,19 +31,20 @@ struct KeypadDrawContext {
   void toggleShift();
   bool useShift(bool specialKey);
 
-  bool _shiftActive;
-  bool _capsLockActive;
   int _charWidth;
   int _charHeight;
+  bool _shiftActive;
+  bool _capsLockActive;
 
-  ImageData _cutImage;
-  ImageData _copyImage;
-  ImageData _pasteImage;
-  ImageData _saveImage;
-  ImageData _runImage;
-  ImageData _helpImage;
-  ImageData _backImage;
-  ImageData _enterImage;
+  ImageCodec _cutImage;
+  ImageCodec _copyImage;
+  ImageCodec _pasteImage;
+  ImageCodec _saveImage;
+  ImageCodec _runImage;
+  ImageCodec _helpImage;
+  ImageCodec _backImage;
+  ImageCodec _enterImage;
+  ImageCodec _searchImage;
 };
 
 enum KeypadLayout {
@@ -51,8 +52,8 @@ enum KeypadLayout {
 };
 
 struct RawKey {
-  const char *_normal;
-  const char *_shifted;
+  const KeyCode _normal;
+  const KeyCode _shifted;
 };
 
 struct Key {
@@ -60,20 +61,19 @@ struct Key {
 
   int color(const KeypadTheme *theme, bool shiftActive) const;
   void draw(const KeypadTheme *theme, const KeypadDrawContext *context) const;
-  void drawImage(const ImageData *image) const;
+  void drawImage(const ImageCodec *image) const;
   bool inside(int x, int y) const;
   void onClick(bool useShift);
 
-  String _label;
-  String _altLabel;
   int _x{};
   int _y{};
   int _w{};
   int _h{};
-  int _labelLength;
+  KeyCode _key;
+  KeyCode _alt;
   bool _pressed;
   bool _number;
-  bool _special;
+  bool _printable;
 };
 
 struct Keypad {

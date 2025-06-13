@@ -6,47 +6,53 @@
 // Download the GNU Public License (GPL) from www.gnu.org
 //
 
-#ifndef IMG_CODEC_H
-#define IMG_CODEC_H
+#pragma once
 
 #include "config.h"
 #include <cstddef>
 #include <cstdint>
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+class ImageCodec {
+public:
+  //
+  // Decode IMG to raw RGBA image
+  //
+  ImageCodec(const uint8_t *data, size_t size);
+  virtual ~ImageCodec();
 
-struct ImageData {
-  ImageData();
-  ~ImageData();
+  // Prevent copy and move
+  ImageCodec(const ImageCodec &) = delete;
+  ImageCodec& operator=(const ImageCodec &) = delete;
 
+  //
+  // Encode the raw image RGBA data to png
+  // The function allocates *data which must be freed.
+  //
+  bool encode(uint8_t **data, size_t *size) const;
+
+  //
+  // resize the image to the given dimensions
+  //
+  void resize(unsigned width, unsigned height);
+
+  //
+  // Returns the last error
+  //
+  static const char *getLastError(void);
+
+  //
+  // Returns the image width
+  //
+  int getWidth() const { return _width; }
+
+  //
+  // Returns the image height
+  //
+  int getHeight() const { return _height; }
+
+protected:
   unsigned _width;
   unsigned _height;
   uint8_t *_pixels;
 };
 
-//
-// Decode IMG to raw RGBA image
-// Caller allocates and passes in imgData and its size.
-// The function allocates ImageData.pixels (must be freed with img_free).
-//
-int img_decode(const uint8_t *imgData, size_t imgSize, ImageData *outImage);
-
-//
-// Encode raw RGBA image to IMG
-// Caller allocates and passes in image.
-// The function allocates *outImgData which must be freed.
-//
-int img_encode(const ImageData *image, uint8_t **outImgData, size_t *outImgSize);
-
-//
-// Get last error string
-//
-const char *img_get_last_error(void);
-
-#ifdef __cplusplus
-}
-#endif
-
-#endif // IMG_CODEC_H
