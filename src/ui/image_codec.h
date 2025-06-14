@@ -17,12 +17,17 @@ public:
   //
   // Decode IMG to raw RGBA image
   //
-  ImageCodec(const uint8_t *data, size_t size);
+  ImageCodec();
   virtual ~ImageCodec();
 
   // Prevent copy and move
   ImageCodec(const ImageCodec &) = delete;
   ImageCodec& operator=(const ImageCodec &) = delete;
+
+  //
+  // decode the png image to a raw RGBA
+  //
+  bool decode(const uint8_t *data, size_t size);
 
   //
   // Encode the raw image RGBA data to png

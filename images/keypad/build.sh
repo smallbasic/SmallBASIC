@@ -1,23 +1,34 @@
 #!/bin/bash
 
 declare -a IMAGE_FILES=(\
- "proicons-cut.png"\
- "proicons-copy.png"\
- "proicons-clipboard-paste.png"\
- "proicons-save.png"\
- "proicons-bug-play.png"\
- "proicons-book-info-2.png"\
- "proicons-backspace.png"\
- "proicons-arrow-enter.png"\
- "proicons-search.png"\
+ "cut"\
+ "copy"\
+ "clipboard-paste"\
+ "save"\
+ "bug-play"\
+ "book-info-2"\
+ "backspace"\
+ "arrow-enter"\
+ "search"\
+ "keyboard-shift"\
+ "keyboard"\
 )
 
 echo "#pragma once" > keypad_icons.h
 echo "// https://procode-software.github.io/proicons/icons" >> keypad_icons.h
 for imageFile in "${IMAGE_FILES[@]}"
 do
-    name=`ls -1 ${imageFile} | sed -e 's/proicons-/img-/' | sed -e 's/\.png//'`
-    xxd -n ${name} -i ${imageFile}  >> keypad_icons.h
+    curl -sLO https://raw.githubusercontent.com/ProCode-Software/proicons/refs/heads/main/icons/svg/${imageFile}.svg
+
+    # set width, height, and fill
+    sed -i 's/width="24" height="24"/width="30" height="30"/' ${imageFile}.svg
+    sed -i 's/currentColor/#004455/' ${imageFile}.svg
+
+    # convert svg to png using ImageMagick
+    convert -background none ${imageFile}.svg ${imageFile}.png
+
+    # convert png to byte array
+    xxd -n img_${imageFile} -i proicons-${imageFile}.png  >> keypad_icons.h
 done
 
 cp keypad_icons.h ../../src/ui

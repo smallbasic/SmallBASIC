@@ -87,6 +87,24 @@ constexpr int rowCharLengths[][5] = {
 };
 
 //
+// KeypadImage
+//
+KeypadImage::KeypadImage() : ImageCodec() {
+}
+
+void KeypadImage::draw(int x, int y, int w, int h) const {
+  MAPoint2d dstPoint;
+  MARect srcRect;
+  dstPoint.x = x + (w - _width) / 2;
+  dstPoint.y = y + (h - _height) / 2;
+  srcRect.left = 0;
+  srcRect.top = 0;
+  srcRect.width = _width;
+  srcRect.height = _height;
+  maDrawRGB(&dstPoint, _pixels, &srcRect, 0, _width);
+}
+
+//
 // KeypadDrawContext
 //
 KeypadDrawContext::KeypadDrawContext(int charWidth, int charHeight) :
@@ -94,15 +112,30 @@ KeypadDrawContext::KeypadDrawContext(int charWidth, int charHeight) :
   _charHeight(charHeight),
   _shiftActive(false),
   _capsLockActive(false),
-  _cutImage(img_cut, img_cut_len),
-  _copyImage(img_copy, img_copy_len),
-  _pasteImage(img_clipboard_paste, img_clipboard_paste_len),
-  _saveImage(img_save, img_save_len),
-  _runImage(img_bug_play, img_bug_play_len),
-  _helpImage(img_book_info_2, img_book_info_2_len),
-  _backImage(img_backspace, img_backspace_len),
-  _enterImage(img_arrow_enter, img_arrow_enter_len),
-  _searchImage(img_search, img_search_len) {
+  _cutImage(),
+  _copyImage(),
+  _pasteImage(),
+  _saveImage(),
+  _runImage(),
+  _helpImage(),
+  _backImage(),
+  _enterImage(),
+  _searchImage(),
+  _shiftImage() {
+
+  if (!_cutImage.decode(img_cut, img_cut_len) ||
+      !_copyImage.decode(img_copy, img_copy_len) ||
+      !_pasteImage.decode(img_clipboard_paste, img_clipboard_paste_len) ||
+      !_saveImage.decode(img_save, img_save_len) ||
+      !_runImage.decode(img_bug_play, img_bug_play_len) ||
+      !_helpImage.decode(img_book_info_2, img_book_info_2_len) ||
+      !_backImage.decode(img_backspace, img_backspace_len) ||
+      !_enterImage.decode(img_arrow_enter, img_arrow_enter_len) ||
+      !_searchImage.decode(img_search, img_search_len) ||
+      !_shiftImage.decode(img_keyboard_shift, img_keyboard_shift_len) ||
+      !_toggleImage.decode(img_keyboard, img_keyboard_len)) {
+    deviceLog(_cutImage.getLastError());
+  }
 }
 
 void KeypadDrawContext::toggleShift() {
@@ -115,6 +148,25 @@ bool KeypadDrawContext::useShift(bool specialKey) {
     _shiftActive = false;
   }
   return useShift;
+}
+
+const KeypadImage *KeypadDrawContext::getImage(const KeyCode keycode) const {
+  const KeypadImage *result;
+  switch (keycode) {
+  case K_CUT: result = &_cutImage; break;
+  case K_COPY: result = &_copyImage; break;
+  case K_PASTE: result = &_pasteImage; break;
+  case K_SAVE: result = &_saveImage; break;
+  case K_RUN: result = &_runImage; break;
+  case K_HELP: result = &_helpImage; break;
+  case K_BACKSPACE: result = &_backImage;break;
+  case K_ENTER: result = &_enterImage; break;
+  case K_SEARCH: result = &_searchImage; break;
+  case K_SHIFT: result = &_shiftImage; break;
+  case K_TOGGLE: result = &_toggleImage; break;
+  default: result = nullptr; break;
+  }
+  return result;
 }
 
 //
@@ -140,18 +192,6 @@ int Key::color(const KeypadTheme *theme, bool shiftActive) const {
     result = theme->_text;
   }
   return result;
-}
-
-void Key::drawImage(const ImageCodec *image) const {
-  MAPoint2d dstPoint;
-  MARect srcRect;
-  dstPoint.x = _x;
-  dstPoint.y = _y;
-  srcRect.left = 0;
-  srcRect.top = 0;
-  // srcRect.width = image->_width;
-  // srcRect.height = image->_height;
-  //  maDrawRGB(&dstPoint, image->_pixels, &srcRect, 0, image->_width);
 }
 
 void Key::draw(const KeypadTheme *theme, const KeypadDrawContext *context) const {
@@ -198,7 +238,10 @@ void Key::draw(const KeypadTheme *theme, const KeypadDrawContext *context) const
     maSetColor(color(theme, context->_shiftActive));
     maDrawText(textX, textY, key, 1);
   } else {
-    drawImage(&context->_enterImage);
+    auto *image = context->getImage(_key);
+    if (image) {
+      image->draw(_x, _y, _w, _h);
+    }
   }
 }
 

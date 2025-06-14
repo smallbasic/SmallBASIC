@@ -9,8 +9,6 @@
 
 #include "image_codec.h"
 #include "lib/lodepng/lodepng.h"
-#include <cstdlib>
-#include <cstring>
 
 static char g_last_error[256] = {0};
 
@@ -18,14 +16,37 @@ static float lerp(float a, float b, float t) {
   return a + t * (b - a);
 }
 
-ImageCodec::ImageCodec(const uint8_t *data, size_t size) :
+static void to_argb(unsigned char *image, unsigned w, unsigned h) {
+#if defined(_SDL)
+  // convert from LCT_RGBA to ARGB
+  for (unsigned y = 0; y < h; y++) {
+    unsigned yoffs = (y * w * 4);
+    for (unsigned x = 0; x < w; x++) {
+      unsigned offs = yoffs + (x * 4);
+      uint8_t r = image[offs + 2];
+      uint8_t b = image[offs + 0];
+      image[offs + 2] = b;
+      image[offs + 0] = r;
+    }
+  }
+#endif
+}
+
+ImageCodec::ImageCodec() :
   _width(0),
   _height(0),
   _pixels(nullptr) {
+}
+
+bool ImageCodec::decode(const uint8_t *data, size_t size) {
   auto error = lodepng_decode32(&_pixels, &_width, &_height, data, size);
   if (error) {
     snprintf(g_last_error, sizeof(g_last_error), "%s", lodepng_error_text(error));
+  } else {
+    to_argb(_pixels, _width, _height);
   }
+
+  return !error;
 }
 
 ImageCodec::~ImageCodec() {
