@@ -57,7 +57,7 @@ struct KeypadDrawContext {
 };
 
 enum KeypadLayout {
-  LayoutLetters = 0, LayoutNumbers = 1, LayoutSymbols = 2
+  LayoutLetters = 0, LayoutSymbols = 1
 };
 
 struct RawKey {
@@ -115,6 +115,8 @@ struct KeypadInput : public FormInput {
   bool floatTop() override { return _floatTop; }
   bool floatBottom() override { return !_floatTop; }
   void layout(int x, int y, int w, int h) override;
+  bool hasHover() override { return true; }
+  void drawHover(int dx, int dy, bool selected) override {};
 
 private:  
   bool _floatTop;

@@ -596,7 +596,7 @@ void AnsiWidget::doSwipe(int start, bool moveDown, int distance, int maxScroll) 
 // draws the focus screen's active button
 void AnsiWidget::drawActiveButton() const {
 #if defined(_SDL) || defined(_FLTK)
-  if (_focus != nullptr && !_activeButton->hasHover()) {
+  if (_focus != nullptr && (!_activeButton->hasHover() || _activeButton->isFullScreen())) {
     MAHandle currentHandle = maSetDrawTarget(HANDLE_SCREEN);
     _focus->drawShape(_activeButton);
     _focus->drawLabel();

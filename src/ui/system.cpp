@@ -516,7 +516,11 @@ void System::handleEvent(MAEvent &event) {
     } else {
       dev_pushkey(SB_KEY_MK_PUSH);
       _buttonPressed = _output->pointerTouchEvent(event);
-      showCursor(get_focus_edit() != nullptr ? kIBeam : kHand);
+      if (_buttonPressed) {
+        showCursor(kHand);
+      } else {
+        showCursor(get_focus_edit() != nullptr ? kIBeam : kHand);
+      }
     }
     break;
   case EVENT_TYPE_POINTER_DRAGGED:
@@ -540,9 +544,11 @@ void System::handleEvent(MAEvent &event) {
     _touchCurY = event.point.y;
     _touchX = -1;
     _touchY = -1;
-    _buttonPressed = false;
     _output->pointerReleaseEvent(event);
-    showCursor(get_focus_edit() != nullptr ? kIBeam : kArrow);
+    if (!_buttonPressed) {
+      showCursor(get_focus_edit() != nullptr ? kIBeam : kArrow);
+    }
+    _buttonPressed = false;
     break;
   default:
     // no event

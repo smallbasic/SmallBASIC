@@ -19,37 +19,15 @@ constexpr int maxCols = 10;
 constexpr int defaultPadding = 16;
 constexpr double PI = 3.14159;
 
-KeypadTheme retroTheme = {
-  ._bg = 0x1e1e1e,          // Dark gray background
-  ._key = 0x2d2d2d,         // Darker key face
-  ._keyHighlight = 0x3d3d3d,// Key highlight: medium-dark gray
-  ._text = 0xffffff,        // White text
-  ._outline = 0x5e5e5e,     // Medium gray outlines
-  ._funcKeyBg = 0x4b0082,   // Dark purple (Indigo)
-  ._funcKeyHighlight = 0x000dad, // Vivid deep blue
-  ._funcText = 0xffffff,    // White function key text
-};
-
 KeypadTheme modernDarkTheme = {
-  ._bg = 0x121212,          // Very dark gray background
-  ._key = 0x1f1f1f,         // Slightly lighter dark gray keys
-  ._keyHighlight = 0x2c2c2c,// Highlighted key: a bit lighter
-  ._text = 0xe0e0e0,        // Soft light gray text (was wrongly blue)
-  ._outline = 0x3a3a3a,     // Subtle gray outlines
-  ._funcKeyBg = 0x2962ff,   // Vibrant Material blue
-  ._funcKeyHighlight = 0x448aff, // Lighter vibrant blue
-  ._funcText = 0xffffff,    // White function key text
-};
-
-KeypadTheme modernLightTheme = {
-  ._bg = 0xfafafa,          // Very light gray (off-white)
-  ._key = 0xffffff,         // White key background
-  ._keyHighlight = 0xe0e0e0,// Light gray for pressed keys
-  ._text = 0x212121,        // Dark gray text
-  ._outline = 0xcccccc,     // Soft gray outlines (corrected from teal-ish 0x00cccc)
-  ._funcKeyBg = 0x1976d2,   // Material Design blue
-  ._funcKeyHighlight = 0x63a4ff, // Lighter blue highlight
-  ._funcText = 0xffffff,    // White text
+  ._bg = 0x101114,           // Cool dark slate (true dark with a bluish tint)
+  ._key = 0x1c1e22,          // Cool gray keys
+  ._keyHighlight = 0x2b2e34, // Slightly brighter for key press
+  ._text = 0xe4e6ea,         // Icy white-gray text (bluish white)
+  ._outline = 0x2f3137,      // Subtle cool gray outlines
+  ._funcKeyBg = 0x8e88aa,    // Muted lavender-gray (soft cool purple)
+  ._funcKeyHighlight = 0xc6c2dc, // Light lavender highlight
+  ._funcText = 0xffffff,     // Crisp white function key text
 };
 
 constexpr RawKey letters[][maxCols] = {
@@ -60,30 +38,22 @@ constexpr RawKey letters[][maxCols] = {
   {{K_TOGGLE, K_TOGGLE}, {K_SPACE, K_SPACE}, {K_ENTER, K_ENTER}}
 };
 
-constexpr RawKey numbers[][maxCols] = {
-  {{K_CUT, K_CUT}, {K_COPY, K_COPY}, {K_PASTE, K_PASTE}, {K_SAVE, K_SAVE}, {K_RUN, K_RUN}, {K_HELP, K_HELP}},
-  {{K_1, K_EXCLAIM}, {K_2, K_AT}, {K_3, K_HASH}, {K_4, K_DOLLAR}, {K_5, K_PERCENT}, {K_6, K_CARET}, {K_7, K_AMPERSAND}, {K_8, K_ASTERISK}, {K_9, K_LPAREN}, {K_0, K_RPAREN}},
-  {{K_MINUS, K_UNDERSCORE}, {K_SLASH, K_BACKSLASH}, {K_COLON, K_SEMICOLON}, {K_LPAREN, K_RPAREN}, {K_DOLLAR, K_DOLLAR}, {K_AMPERSAND, K_PIPE}, {K_AT, K_TILDE}, {K_QUOTE, K_APOSTROPHE}, {K_BACKSPACE, K_BACKSPACE}},
-  {{K_TOGGLE, K_TOGGLE}, {K_SPACE, K_SPACE}, {K_ENTER, K_ENTER}}
-};
-
 constexpr RawKey symbols[][maxCols] = {
   {{K_CUT, K_CUT}, {K_COPY, K_COPY}, {K_PASTE, K_PASTE}, {K_SAVE, K_SAVE}, {K_RUN, K_RUN}, {K_HELP, K_HELP}},
-  {{K_LBRACKET, K_LBRACE}, {K_RBRACKET, K_RBRACE}, {K_LBRACE, K_LBRACE}, {K_RBRACE, K_RBRACE}, {K_HASH, K_HASH}, {K_PERCENT, K_PERCENT}, {K_CARET, K_CARET}, {K_ASTERISK, K_ASTERISK}, {K_PLUS, K_PLUS}, {K_EQUALS, K_EQUALS}},
-  {{K_UNDERSCORE, K_UNDERSCORE}, {K_BACKSLASH, K_BACKSLASH}, {K_PIPE, K_PIPE}, {K_TILDE, K_TILDE}, {K_LESS, K_LESS}, {K_GREATER, K_GREATER}, {K_BACKTICK, K_BACKTICK}, {K_BACKSPACE, K_BACKSPACE}},
+  {{K_1, K_EXCLAIM}, {K_2, K_AT}, {K_3, K_HASH}, {K_4, K_DOLLAR}, {K_5, K_PERCENT}, {K_6, K_CARET}, {K_7, K_AMPERSAND}, {K_8, K_ASTERISK}, {K_9, K_LPAREN}, {K_0, K_RPAREN}},
+  {{K_BACKTICK, K_TILDE}, {K_MINUS, K_UNDERSCORE}, {K_EQUALS, K_PLUS}, {K_LBRACKET, K_LBRACE}, {K_RBRACKET, K_RBRACE}, {K_BACKSLASH, K_PIPE}, {K_SEMICOLON, K_COLON}, {K_LPAREN, K_QUOTE}, {K_RPAREN, K_COMMA}},
+  {{K_SHIFT, K_SHIFT}, {K_LESS, K_COMMA}, {K_GREATER, K_PERIOD}, {K_QUESTION, K_SLASH}, {K_SEMICOLON, K_COLON}, {K_APOSTROPHE, K_QUOTE}, {K_LBRACKET, K_LBRACE}, {K_RBRACKET, K_RBRACE}, {K_BACKSPACE, K_BACKSPACE}},
   {{K_TOGGLE, K_TOGGLE}, {K_SPACE, K_SPACE}, {K_ENTER, K_ENTER}}
 };
 
 constexpr int rowLengths[][5] = {
   {6, 10, 9, 9, 3}, // letters
-  {6, 10, 9, 3, 0}, // numbers
-  {6, 10, 8, 3, 0}, // symbols
+  {6, 10, 9, 9, 3}, // symbols
 };
 
 constexpr int rowCharLengths[][5] = {
-  {6, 10, 9, 16, 14},// letters
-  {6, 10, 9, 14, 0}, // numbers
-  {6, 10, 8, 14, 0}, // symbols
+  {12, 10, 9, 12, 14},// letters
+  {12, 10, 9, 12, 14},// letters
 };
 
 //
@@ -186,8 +156,6 @@ int Key::color(const KeypadTheme *theme, bool shiftActive) const {
     result = !_printable ? theme->_funcKeyHighlight : theme->_keyHighlight;
   } else if (_number) {
     result = theme->_funcKeyHighlight;
-  } else if (_printable) {
-    result = theme->_funcKeyHighlight;
   } else {
     result = theme->_text;
   }
@@ -212,21 +180,23 @@ void Key::draw(const KeypadTheme *theme, const KeypadDrawContext *context) const
   maSetColor(_printable ? theme->_key : theme->_funcKeyBg);
   maFillRect(_x, _y, _w, _h);
 
-  maSetColor(_printable ? theme->_keyHighlight : theme->_funcKeyHighlight);
+  if (_printable || _pressed) {
+    maSetColor(_printable ? theme->_keyHighlight : theme->_funcKeyHighlight);
 
-  // Draw edges (excluding the rounded corners)
-  maLine(lt, _y + pad, rt, _y + pad); // top edge
-  maLine(_x + pad, vt, _x + pad, bt); // left edge
-  maLine(lt, by, rt, by);             // bottom edge
-  maLine(rx, vt, rx, bt);            // right edge
+    // Draw edges (excluding the rounded corners)
+    maLine(lt, _y + pad, rt, _y + pad); // top edge
+    maLine(_x + pad, vt, _x + pad, bt); // left edge
+    maLine(lt, by, rt, by);             // bottom edge
+    maLine(rx, vt, rx, bt);            // right edge
 
-  // Draw rounded corners using arcs (quarter circles)
-  // Arcs: maArc(xc, yc, r, startAngle, endAngle, aspect)
-  double aspect = 1.0; // Circle
-  maArc(xcL, ycT, rc, PI, PI * 3 / 2, aspect); // Top-left corner
-  maArc(xcR, ycT, rc, PI * 3 / 2, 0, aspect);  // Top-right corner
-  maArc(xcR, ycB, rc, 0, PI / 2, aspect);      // Bottom-right corner
-  maArc(xcL, ycB, rc, PI / 2, PI, aspect);     // Bottom-left corner
+    // Draw rounded corners using arcs (quarter circles)
+    // Arcs: maArc(xc, yc, r, startAngle, endAngle, aspect)
+    double aspect = 1.0; // Circle
+    maArc(xcL, ycT, rc, PI, PI * 3 / 2, aspect); // Top-left corner
+    maArc(xcR, ycT, rc, PI * 3 / 2, 0, aspect);  // Top-right corner
+    maArc(xcR, ycB, rc, 0, PI / 2, aspect);      // Bottom-right corner
+    maArc(xcL, ycB, rc, PI / 2, PI, aspect);     // Bottom-left corner
+  }
 
   if (_printable) {
     bool useShift = context->_shiftActive ^ context->_capsLockActive;
@@ -320,9 +290,6 @@ void Keypad::generateKeys() {
   case LayoutLetters:
     activeLayout = letters;
     break;
-  case LayoutNumbers:
-    activeLayout = numbers;
-    break;
   default:
     activeLayout = symbols;
     break;
@@ -383,6 +350,9 @@ void Keypad::layout(int x, int y, int w, int h) {
       Key *key = _keys[index++];
       int length = key->_printable ? 1 : 2;
       int keyWidth = keyW;
+      if (key->_key == K_SPACE) {
+        length = 12;
+      }
       if (length > 1) {
         keyWidth = (length * charWidth) + (padding * 2);
       }
@@ -405,7 +375,7 @@ void Keypad::clicked(int x, int y, bool pressed) {
       if (key->_key == K_SHIFT) {
         _context.toggleShift();
       } else if (key->_key == K_TOGGLE) {
-        _currentLayout = static_cast<KeypadLayout>((_currentLayout + 1) % 3);
+        _currentLayout = static_cast<KeypadLayout>((_currentLayout + 1) % 2);
         generateKeys();
         layout(_posX, _posY, _width, _height);
         break;

@@ -54,22 +54,22 @@ struct Screen : public Shape {
 
   void add(Shape *button);
   void addImage(ImageDisplay &image);
-  void drawLabel();
-  void drawMenu();
-  void drawShape(Shape *button);
-  void drawOverlay(bool vscroll);
-  int  getIndex(FormInput *input) const;
-  FormInput *getMenu(FormInput *prev, int px, int py);
-  FormInput *getNextMenu(FormInput *prev, bool up);
-  FormInput *getNextField(FormInput *field) const;
+  void drawLabel() const;
+  void drawMenu() const;
+  void drawShape(Shape *button) const;
+  void drawOverlay(bool vscroll) const;
+  int  getIndex(const FormInput *input) const;
+  FormInput *getMenu(FormInput *prev, int px, int py) const;
+  FormInput *getNextMenu(FormInput *prev, bool up) const;
+  FormInput *getNextField(const FormInput *field) const;
   void getScroll(int &x, int &y) const { x = _scrollX; y = _scrollY; }
   void layoutInputs(int newWidth, int newHeight);
-  bool overLabel(int px, int py);
-  bool overMenu(int px, int py);
-  bool overlaps(int px, int py);
+  bool overLabel(int px, int py) const;
+  bool overMenu(int px, int py) const;
+  bool overlaps(int px, int py) const;
   void remove(Shape *button);
   void removeImage(unsigned imageId);
-  bool removeInput(FormInput *input);
+  bool removeInput(const FormInput *input);
   void removeInputs() { _inputs.removeAll(); }
   void replaceFont(int type = FONT_TYPE_MONOSPACE);
   void resetScroll() { _scrollX = 0; _scrollY = 0; }
@@ -346,7 +346,7 @@ struct TextScreen : public Screen {
   int  getMaxHScroll() override { return (_cols * _charWidth) - w(); }
 
 private:
-  Row *getLine(int ndx);
+  Row *getLine(int ndx) const;
 
   // returns the number of display text rows held in the buffer
   int getTextRows() const {

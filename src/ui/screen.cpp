@@ -38,7 +38,8 @@ int compareZIndex(const void *p1, const void *p2) {
 
 bool Shape::isFullScreen() const {
   MAExtent screenSize = maGetScrSize();
-  return _width == EXTENT_X(screenSize) && _height == EXTENT_Y(screenSize);
+  // ignore height for keypad/toolbar placement
+  return _width == EXTENT_X(screenSize);
 }
 
 Screen::Screen(int x, int y, int width, int height, int fontSize) :
@@ -117,7 +118,7 @@ void Screen::clear() {
   _label.clear();
 }
 
-void Screen::drawLabel() {
+void Screen::drawLabel() const {
   if (!_label.empty()) {
     int labelLen = _label.length();
     int w = _charWidth * (labelLen + 2);
@@ -138,7 +139,7 @@ void Screen::drawLabel() {
   }
 }
 
-void Screen::drawMenu() {
+void Screen::drawMenu() const {
   static const char dot[] = {'\260', '\0'};
   int gap = _charHeight / 3;
   int left = _width - _charWidth - (_charWidth / 2);
@@ -149,7 +150,7 @@ void Screen::drawMenu() {
   maDrawText(left, top - gap - gap, dot, 1);
 }
 
-void Screen::drawShape(Shape *rect) {
+void Screen::drawShape(Shape *rect) const {
   if (rect != nullptr &&
       rect->_y >= _scrollY &&
       rect->_y + rect->_height <= _scrollY + _height) {
@@ -167,7 +168,7 @@ void Screen::drawShape(Shape *rect) {
   }
 }
 
-void Screen::drawOverlay(bool vscroll) {
+void Screen::drawOverlay(bool vscroll) const {
   // draw any visible shapes
   List_each(Shape *, it, _shapes) {
     DRAW_SHAPE;
@@ -227,7 +228,7 @@ void Screen::drawInto(bool background) {
   setDirty();
 }
 
-int Screen::getIndex(FormInput *input) const {
+int Screen::getIndex(const FormInput *input) const {
   int index;
   if (input == nullptr) {
     index = -1;
@@ -245,7 +246,7 @@ int Screen::getIndex(FormInput *input) const {
   return index;
 }
 
-FormInput *Screen::getMenu(FormInput *prev, int px, int py) {
+FormInput *Screen::getMenu(FormInput *prev, int px, int py) const {
   FormInput *result = _inputs[0];
   if (result != nullptr && overlaps(px, py)) {
     int item = (py - _y) / result->_height;
@@ -269,7 +270,7 @@ FormInput *Screen::getMenu(FormInput *prev, int px, int py) {
   return result;
 }
 
-FormInput *Screen::getNextMenu(FormInput *prev, bool up) {
+FormInput *Screen::getNextMenu(FormInput *prev, bool up) const {
   int index;
   if (prev == nullptr) {
     index = 0;
@@ -278,16 +279,18 @@ FormInput *Screen::getNextMenu(FormInput *prev, bool up) {
   }
   FormInput *next = prev;
   if (index > -1 && index < _inputs.size()) {
-    MAHandle currentHandle = maSetDrawTarget(HANDLE_SCREEN);
+    const MAHandle currentHandle = maSetDrawTarget(HANDLE_SCREEN);
     next = _inputs.get(index);
-    next->_pressed = true;
-    drawShape(next);
-    if (prev != nullptr) {
-      prev->_pressed = false;
-      drawShape(prev);
+    if (next != nullptr) {
+      next->_pressed = true;
+      drawShape(next);
+      if (prev != nullptr) {
+        prev->_pressed = false;
+        drawShape(prev);
+      }
+      maUpdateScreen();
+      maSetDrawTarget(currentHandle);
     }
-    maUpdateScreen();
-    maSetDrawTarget(currentHandle);
   }
   return next;
 }
@@ -313,7 +316,7 @@ void Screen::layoutInputs(int newWidth, int newHeight) {
 }
 
 // whether the point overlaps the label text
-bool Screen::overLabel(int px, int py) {
+bool Screen::overLabel(int px, int py) const {
   bool result;
   if (!_label.empty()) {
     int w = _charWidth * (_label.length() + 2);
@@ -328,14 +331,14 @@ bool Screen::overLabel(int px, int py) {
 }
 
 // whether the point overlaps the menu widget
-bool Screen::overMenu(int px, int py) {
+bool Screen::overMenu(int px, int py) const {
   int w = _charWidth * MENU_HEIGHT_SCALE;
   int h = _charHeight * MENU_WIDTH_SCALE;
   return (!OUTSIDE_RECT(px, py, _width - w, _height - h - _statusOffset, w, h));
 }
 
 // whether the given point overlaps with the screen rectangle
-bool Screen::overlaps(int px, int py) {
+bool Screen::overlaps(int px, int py) const {
   return (!OUTSIDE_RECT(px, py, _x, _y, _width, _height));
 }
 
@@ -373,7 +376,7 @@ void Screen::remove(Shape *button) {
 }
 
 // remove the image from the list
-bool Screen::removeInput(FormInput *input) {
+bool Screen::removeInput(const FormInput *input) {
   bool result = false;
   List_each(FormInput *, it, _inputs) {
     FormInput *next = (*it);
@@ -453,7 +456,7 @@ void Screen::setFont(bool bold, bool italic, int size) {
   }
 }
 
-FormInput *Screen::getNextField(FormInput *field) const {
+FormInput *Screen::getNextField(const FormInput *field) const {
   FormInput *result = nullptr;
   bool setNext = false;
   List_each(FormInput *, it, _inputs) {
@@ -1021,7 +1024,7 @@ void TextScreen::drawBase(bool vscroll, bool update) {
     _over->drawBase(vscroll, false);
   }
 
-  // setup the background colour
+  // set up the background colour
   MAHandle currentHandle = maSetDrawTarget(HANDLE_SCREEN_BUFFER);
   maSetColor(_bg);
   maFillRect(_x, _y, _width, _height);
@@ -1097,7 +1100,7 @@ void TextScreen::drawRectFilled(int x1, int y1, int x2, int y2) {
 //
 // return a pointer to the specified line of the display.
 //
-Row *TextScreen::getLine(int pos) {
+Row *TextScreen::getLine(int pos) const {
   if (pos < 0) {
     pos += _rows;
   }

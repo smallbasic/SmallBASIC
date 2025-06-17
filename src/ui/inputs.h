@@ -122,10 +122,10 @@ struct FormInput : public Shape {
   virtual void layout(int x, int y, int w, int h) {}
   virtual bool floatBottom() { return false; }
   virtual bool floatTop() { return false; }
+  virtual void drawHover(int dx, int dy, bool selected);
 
   void construct(var_p_t form, var_p_t field, int id);
   void drawButton(const char *caption, int x, int y, int w, int h, bool pressed);
-  void drawHover(int dx, int dy, bool selected);
   void drawLink(const char *caption, int x, int y, int sw, int chw);
   void drawText(const char *text, int x, int y, int sw, int chw);
   void draw(int x, int y, int w, int h, int chw) override;
