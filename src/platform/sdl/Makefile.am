@@ -21,7 +21,6 @@ sbasicg_SOURCES =           \
   ../../ui/form.cpp         \
   ../../ui/inputs.cpp       \
   ../../ui/textedit.cpp     \
-  ../../ui/keypad.cpp       \
   ../../ui/image.cpp        \
   ../../ui/strlib.cpp       \
   ../../ui/audio.cpp        \
