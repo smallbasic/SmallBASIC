@@ -101,7 +101,6 @@ function(buildSDL)
   )
 
   # message("SDL version: ${_SDL_VERSION}")
-  set(BUILD_DATE `date +"%a, %d %b %Y"`)
   set(_SDL_VERSION ${_SDL_VERSION})
   set(_SDL ON)
   set(_UnixOS ON)

@@ -23,19 +23,18 @@ struct KeypadTheme {
   int _outline;
   int _funcKeyBg;
   int _funcKeyHighlight;
-  int _funcText;
 };
 
 struct KeypadImage : ImageCodec {
   KeypadImage();
-  ~KeypadImage() = default;
+  ~KeypadImage() override = default;
   void draw(int x, int y, int w, int h) const;
 };
 
 struct KeypadDrawContext {
   explicit KeypadDrawContext(int charWidth, int charHeight);
   void toggleShift();
-  bool useShift(bool specialKey);
+  bool useShift() const;
   const KeypadImage *getImage(const KeyCode keycode) const;
 
   int _charWidth;
@@ -70,8 +69,9 @@ struct Key {
 
   int color(const KeypadTheme *theme, bool shiftActive) const;
   void draw(const KeypadTheme *theme, const KeypadDrawContext *context) const;
+  char getKey(bool useShift) const;
   bool inside(int x, int y) const;
-  void onClick(bool useShift);
+  void onClick(bool useShift) const;
 
   int _x{};
   int _y{};

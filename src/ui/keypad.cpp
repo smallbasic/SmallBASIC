@@ -14,46 +14,42 @@
 #include "ui/keypad_icons.h"
 #include "keypad.h"
 
-constexpr int maxRows = 5;
-constexpr int maxCols = 10;
-constexpr int defaultPadding = 16;
+constexpr int MAX_ROWS = 5;
+constexpr int MAX_COLS = 10;
+constexpr int NARROW_ROW = 2;
+constexpr int SPACE_COLS = 3;
+constexpr int DEFAULT_PADDING = 24;
 constexpr double PI = 3.14159;
 
-KeypadTheme modernDarkTheme = {
-  ._bg = 0x101114,           // Cool dark slate (true dark with a bluish tint)
-  ._key = 0x1c1e22,          // Cool gray keys
-  ._keyHighlight = 0x2b2e34, // Slightly brighter for key press
-  ._text = 0xe4e6ea,         // Icy white-gray text (bluish white)
-  ._outline = 0x2f3137,      // Subtle cool gray outlines
-  ._funcKeyBg = 0x8e88aa,    // Muted lavender-gray (soft cool purple)
-  ._funcKeyHighlight = 0xc6c2dc, // Light lavender highlight
-  ._funcText = 0xffffff,     // Crisp white function key text
+KeypadTheme MODERN_DARK_THEME = {
+  ._bg = 0x0d0d0d,           // Deep black background
+  ._key = 0x1a1a1a,          // Dark gray keys
+  ._keyHighlight = 0x333333, // Slightly lighter for key press
+  ._text = 0xe0e0e0,         // Soft white text
+  ._outline = 0x2a2a2a,      // Subtle key outlines
+  ._funcKeyBg = 0x9f7aea,    // Soft faint purple (Material Purple 300~400)
+  ._funcKeyHighlight = 0xd1c4e9, // Pale lavender for highlight effect
 };
 
-constexpr RawKey letters[][maxCols] = {
+constexpr RawKey LETTERS[][MAX_COLS] = {
   {{K_CUT, K_CUT}, {K_COPY, K_COPY}, {K_PASTE, K_PASTE}, {K_SAVE, K_SAVE}, {K_RUN, K_RUN}, {K_HELP, K_HELP}},
   {{K_q, K_Q}, {K_w, K_W}, {K_e, K_E}, {K_r, K_R}, {K_t, K_T}, {K_y, K_Y}, {K_u, K_U}, {K_i, K_I}, {K_o, K_O}, {K_p, K_P}},
   {{K_a, K_A}, {K_s, K_S}, {K_d, K_D}, {K_f, K_F}, {K_g, K_G}, {K_h, K_H}, {K_j, K_J}, {K_k, K_K}, {K_l, K_L}},
   {{K_SHIFT, K_SHIFT}, {K_z, K_Z}, {K_x, K_X}, {K_c, K_C}, {K_v, K_V}, {K_b, K_B}, {K_n, K_N}, {K_m, K_M}, {K_BACKSPACE, K_BACKSPACE}},
-  {{K_TOGGLE, K_TOGGLE}, {K_SPACE, K_SPACE}, {K_ENTER, K_ENTER}}
+  {{K_TOGGLE, K_TOGGLE}, {K_LBRACKET, K_LPAREN}, {K_SPACE, K_SPACE}, {K_RBRACKET, K_RPAREN}, {K_ENTER, K_ENTER}}
 };
 
-constexpr RawKey symbols[][maxCols] = {
+constexpr RawKey SYMBOLS[][MAX_COLS] = {
   {{K_CUT, K_CUT}, {K_COPY, K_COPY}, {K_PASTE, K_PASTE}, {K_SAVE, K_SAVE}, {K_RUN, K_RUN}, {K_HELP, K_HELP}},
   {{K_1, K_EXCLAIM}, {K_2, K_AT}, {K_3, K_HASH}, {K_4, K_DOLLAR}, {K_5, K_PERCENT}, {K_6, K_CARET}, {K_7, K_AMPERSAND}, {K_8, K_ASTERISK}, {K_9, K_LPAREN}, {K_0, K_RPAREN}},
-  {{K_BACKTICK, K_TILDE}, {K_MINUS, K_UNDERSCORE}, {K_EQUALS, K_PLUS}, {K_LBRACKET, K_LBRACE}, {K_RBRACKET, K_RBRACE}, {K_BACKSLASH, K_PIPE}, {K_SEMICOLON, K_COLON}, {K_LPAREN, K_QUOTE}, {K_RPAREN, K_COMMA}},
-  {{K_SHIFT, K_SHIFT}, {K_LESS, K_COMMA}, {K_GREATER, K_PERIOD}, {K_QUESTION, K_SLASH}, {K_SEMICOLON, K_COLON}, {K_APOSTROPHE, K_QUOTE}, {K_LBRACKET, K_LBRACE}, {K_RBRACKET, K_RBRACE}, {K_BACKSPACE, K_BACKSPACE}},
-  {{K_TOGGLE, K_TOGGLE}, {K_SPACE, K_SPACE}, {K_ENTER, K_ENTER}}
+  {{K_BACKTICK, K_TILDE}, {K_MINUS, K_UNDERSCORE}, {K_EQUALS, K_PLUS}, {K_LBRACKET, K_LBRACE}, {K_RBRACKET, K_RBRACE}, {K_BACKSLASH, K_PIPE}, {K_SEMICOLON, K_COLON}, {K_APOSTROPHE, K_QUOTE}, {K_HASH, K_EXT1}},
+  {{K_SHIFT, K_SHIFT}, {K_LESS, K_COMMA}, {K_GREATER, K_PERIOD}, {K_QUESTION, K_SLASH}, {K_PLUS, K_EXT2}, {K_ASTERISK, K_EXT3}, {K_LPAREN, K_EXT4}, {K_RPAREN, K_EXT5}, {K_BACKSPACE, K_BACKSPACE}},
+  {{K_TOGGLE, K_TOGGLE}, {K_LBRACKET, K_LPAREN}, {K_SPACE, K_SPACE}, {K_RBRACKET, K_RPAREN}, {K_ENTER, K_ENTER}}
 };
 
-constexpr int rowLengths[][5] = {
-  {6, 10, 9, 9, 3}, // letters
-  {6, 10, 9, 9, 3}, // symbols
-};
-
-constexpr int rowCharLengths[][5] = {
-  {12, 10, 9, 12, 14},// letters
-  {12, 10, 9, 12, 14},// letters
+constexpr int ROW_LENGTHS[][5] = {
+  {6, 10, 9, 9, 7}, // letters
+  {6, 10, 9, 9, 7}, // symbols
 };
 
 //
@@ -104,7 +100,7 @@ KeypadDrawContext::KeypadDrawContext(int charWidth, int charHeight) :
       !_searchImage.decode(img_search, img_search_len) ||
       !_shiftImage.decode(img_keyboard_shift, img_keyboard_shift_len) ||
       !_toggleImage.decode(img_keyboard, img_keyboard_len)) {
-    deviceLog(_cutImage.getLastError());
+    deviceLog("%s", _cutImage.getLastError());
   }
 }
 
@@ -112,12 +108,8 @@ void KeypadDrawContext::toggleShift() {
   _shiftActive = !_shiftActive;
 }
 
-bool KeypadDrawContext::useShift(bool specialKey) {
-  bool useShift = _shiftActive ^ _capsLockActive;
-  if (_shiftActive && !specialKey) {
-    _shiftActive = false;
-  }
-  return useShift;
+bool KeypadDrawContext::useShift() const {
+  return _shiftActive ^ _capsLockActive;
 }
 
 const KeypadImage *KeypadDrawContext::getImage(const KeyCode keycode) const {
@@ -147,17 +139,33 @@ Key::Key(const RawKey &k) :
   _alt(k._shifted) {
   _pressed = false;
   _number = isNumber(k._normal);
-  _printable = isPrintable(k._normal);
+  _printable = isPrintable(k._normal) || isExtended(k._normal);
 }
 
 int Key::color(const KeypadTheme *theme, bool shiftActive) const {
   int result;
-  if (_pressed || ((_key == K_SHIFT) && shiftActive)) {
+  if ((_key == K_SHIFT) && shiftActive) {
     result = !_printable ? theme->_funcKeyHighlight : theme->_keyHighlight;
   } else if (_number) {
     result = theme->_funcKeyHighlight;
   } else {
     result = theme->_text;
+  }
+  return result;
+}
+
+char Key::getKey(bool useShift) const {
+  char result;
+  KeyCode keyCode = useShift ? _alt : _key;
+  switch (keyCode) {
+  case K_EXT1: result = 164; break;
+  case K_EXT2: result = 172; break;
+  case K_EXT3: result = 182; break;
+  case K_EXT4: result = 222; break;
+  case K_EXT5: result = 223; break;
+  default:
+    result = keyCode;
+    break;
   }
   return result;
 }
@@ -177,10 +185,20 @@ void Key::draw(const KeypadTheme *theme, const KeypadDrawContext *context) const
   int ycB = by - rc;       // y center for bottom arcs
 
   // Set background color
-  maSetColor(_printable ? theme->_key : theme->_funcKeyBg);
-  maFillRect(_x, _y, _w, _h);
+  if (_printable) {
+    maSetColor(theme->_key);
+    maFillRect(_x, _y, _w, _h);
+  } else {
+    maSetColor(theme->_funcKeyBg);
+    maFillRect(_x + 1, _y + 1, _w - 2, _h - 2);
+  }
 
   if (_printable || _pressed) {
+    if (_printable && _pressed) {
+      maSetColor(theme->_outline);
+      maFillRect(_x + 4, _y + 4, _w - 8, _h - 8);
+    }
+    
     maSetColor(_printable ? theme->_keyHighlight : theme->_funcKeyHighlight);
 
     // Draw edges (excluding the rounded corners)
@@ -196,7 +214,7 @@ void Key::draw(const KeypadTheme *theme, const KeypadDrawContext *context) const
     maArc(xcR, ycT, rc, PI * 3 / 2, 0, aspect);  // Top-right corner
     maArc(xcR, ycB, rc, 0, PI / 2, aspect);      // Bottom-right corner
     maArc(xcL, ycB, rc, PI / 2, PI, aspect);     // Bottom-left corner
-  }
+  }    
 
   if (_printable) {
     bool useShift = context->_shiftActive ^ context->_capsLockActive;
@@ -205,6 +223,9 @@ void Key::draw(const KeypadTheme *theme, const KeypadDrawContext *context) const
     int yOffset = (_h - context->_charHeight) / 2;
     int textX = _x + xOffset;
     int textY = _y + yOffset;
+    if (isExtended(useShift ? _alt : _key)) {
+      key[0] = getKey(useShift);
+    }
     maSetColor(color(theme, context->_shiftActive));
     maDrawText(textX, textY, key, 1);
   } else {
@@ -222,7 +243,7 @@ bool Key::inside(int x, int y) const {
           y <= _y + _h);
 }
 
-void Key::onClick(bool useShift) {
+void Key::onClick(bool useShift) const {
   auto *event = new MAEvent();
   event->type = EVENT_TYPE_KEY_PRESSED;
   event->nativeKey = 0;
@@ -258,7 +279,7 @@ void Key::onClick(bool useShift) {
     event->key = SB_KEY_F(1);
     break;
   default:
-    event->key = _key;
+    event->key = getKey(useShift);
     break;
   }
   maPushEvent(event);
@@ -273,30 +294,30 @@ Keypad::Keypad(int charWidth, int charHeight)
     _width(0),
     _height(0),
     _context(charWidth, charHeight),
-    _theme(&modernDarkTheme),
+    _theme(&MODERN_DARK_THEME),
     _currentLayout(LayoutLetters) {
   generateKeys();
 }
 
 int Keypad::outerHeight(int charHeight) {
-  return maxRows * ((defaultPadding * 2) + charHeight);
+  return MAX_ROWS * ((DEFAULT_PADDING * 2) + charHeight);
 }
 
 void Keypad::generateKeys() {
   _keys.clear();
 
-  const RawKey (*activeLayout)[maxCols];
+  const RawKey (*activeLayout)[MAX_COLS];
   switch (_currentLayout) {
   case LayoutLetters:
-    activeLayout = letters;
+    activeLayout = LETTERS;
     break;
   default:
-    activeLayout = symbols;
+    activeLayout = SYMBOLS;
     break;
   }
 
-  for (int row = 0; row < maxRows; ++row) {
-    int cols = rowLengths[_currentLayout][row];
+  for (int row = 0; row < MAX_ROWS; ++row) {
+    int cols = ROW_LENGTHS[_currentLayout][row];
     for (int col = 0; col < cols; col++) {
       const RawKey &k = activeLayout[row][col];
       if (k._normal != K_NULL) {
@@ -316,27 +337,27 @@ void Keypad::layout(int x, int y, int w, int h) {
   const int charHeight = _context._charHeight;
 
   // start with optimum padding, then reduce to fit width
-  int padding = defaultPadding;
-  int width = maxCols * (charWidth + (padding * 2));
+  int padding = DEFAULT_PADDING;
+  int width = MAX_COLS * (charWidth + (padding * 2));
 
   while (width > w && padding > 0) {
-    padding--;
-    width = maxCols * (charWidth + (padding * 2));
+    padding -= 2;
+    width = MAX_COLS * (charWidth + (padding * 2));
   }
+  padding *= 2;
 
-  int keyW = charWidth + (padding * 2);
-  int keyH = charHeight + (padding * 2);
+  int keyW = charWidth + (padding);
+  int keyH = charHeight + (padding);
   int xStart = _posX + ((w - width) / 2);
   int yPos = _posY;
   int index = 0;
+  int boardWidth = (MAX_COLS * charWidth) + (MAX_COLS * padding);
 
-  for (int row = 0; row < maxRows; ++row) {
-    int cols = rowLengths[_currentLayout][row];
-    int chars = rowCharLengths[_currentLayout][row];
+  for (int row = 0; row < MAX_ROWS; ++row) {
+    int cols = ROW_LENGTHS[_currentLayout][row];
     int xPos = xStart;
-    if (cols < maxCols) {
-      // center narrow row
-      int rowWidth = (chars * charWidth) + (cols * padding * 2);
+    if (row == NARROW_ROW) {
+      int rowWidth = (cols * charWidth) + (cols * padding);
       if (rowWidth > width) {
         xPos -= (rowWidth - width) / 2;
       } else {
@@ -350,11 +371,18 @@ void Keypad::layout(int x, int y, int w, int h) {
       Key *key = _keys[index++];
       int length = key->_printable ? 1 : 2;
       int keyWidth = keyW;
-      if (key->_key == K_SPACE) {
-        length = 12;
-      }
-      if (length > 1) {
-        keyWidth = (length * charWidth) + (padding * 2);
+      if (row == 0) {
+        keyWidth = (boardWidth / cols);
+        if (col < 2 || col > 3) {
+          keyWidth += 1;
+        }
+      } else if (!key->_printable) {
+        int numKeys = 2;
+        keyWidth = (boardWidth - ((cols - numKeys) * keyW)) / numKeys;
+      } else if (key->_key == K_SPACE) {
+        keyWidth = (SPACE_COLS * keyW);
+      } else if (length > 1) {
+        keyWidth = (length * charWidth) + (padding);
       }
       key->_x = xPos;
       key->_y = yPos;
@@ -380,7 +408,7 @@ void Keypad::clicked(int x, int y, bool pressed) {
         layout(_posX, _posY, _width, _height);
         break;
       } else {
-        key->onClick(_context.useShift(!key->_printable));
+        key->onClick(_context.useShift());
       }
       break;
     }
@@ -423,7 +451,7 @@ void KeypadInput::draw(int x, int y, int w, int h, int chw) {
   if (_keypad) {
     _keypad->draw();
   } else {
-    maSetColor(modernDarkTheme._bg);
+    maSetColor(MODERN_DARK_THEME._bg);
     maFillRect(x, y, _width, _height);
   }
 }

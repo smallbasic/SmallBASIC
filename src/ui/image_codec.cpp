@@ -7,6 +7,9 @@
 //
 // Copyright(C) 2002-2025 Chris Warren-Smith.
 
+#include "config.h"
+#include <cstdio>
+#include <malloc.h>
 #include "image_codec.h"
 #include "lib/lodepng/lodepng.h"
 
@@ -79,7 +82,7 @@ bool ImageCodec::encode(uint8_t **data, size_t *size) const {
 }
 
 void ImageCodec::resize(unsigned width, unsigned height) {
-  uint8_t *pixels = new uint8_t[width * height * 4];
+  auto *pixels = new uint8_t[width * height * 4];
 
   for (int y = 0; y < height; y++) {
     float gy = ((float)y + 0.5f) * _height / height - 0.5f;
