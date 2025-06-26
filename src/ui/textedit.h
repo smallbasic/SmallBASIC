@@ -47,11 +47,12 @@ struct EditBuffer {
   EditBuffer(TextEditInput *in, const char *text);
   virtual ~EditBuffer();
 
+  static int countNewlines(const char *text, int num);
+
   void append(const char *text, int len) { insertChars(_len, text, len); }
   void append(const char *text) { insertChars(_len, text, strlen(text)); }
   void clear();
-  void convertTabs();
-  int  countNewlines(const char *text, int num);
+  void convertTabs() const;
   int  deleteChars(int pos, int num);
   char getChar(int pos) const;
   int  insertChars(int pos, const char *text, int num);
@@ -63,6 +64,8 @@ struct EditBuffer {
 struct TextEditInput : public FormEditInput {
   TextEditInput(const char *text, int chW, int chH, int x, int y, int w, int h);
   ~TextEditInput() override;
+
+  static int *getMarkers();
 
   void append(const char *text, int len) { _buf.append(text, len); }
   void completeWord(const char *word);
@@ -83,7 +86,6 @@ struct TextEditInput : public FormEditInput {
   const char *getText() const override { return _buf._buffer; }
   char *getTextSelection(bool selectAll);
   int  getTextLength() const { return _buf._len; }
-  int *getMarkers();
   void gotoLine(const char *buffer);
   void reload(const char *text);
   bool save(const char *filePath);
@@ -92,7 +94,6 @@ struct TextEditInput : public FormEditInput {
   void setCursorRow(int row);
   void setLineNumbers() { _marginWidth = 1 + (_charWidth * MARGIN_CHARS); }
   void setText(const char *text) override { _buf.clear(); _buf.append(text); }
-  void setTheme(EditTheme *theme) { _theme = theme; }
   void clicked(int x, int y, bool pressed) override;
   void updateField(var_p_t form) override;
   bool updateUI(var_p_t form, var_p_t field) override;
@@ -105,7 +106,7 @@ struct TextEditInput : public FormEditInput {
   void selectAll() override;
   bool isDirty() const { return _dirty && _state.undostate.undo_point > 0; }
   void setDirty(bool dirty) { _dirty = dirty; }
-  void layout(int w, int h) override;
+  void layout(int x, int y, int w, int h) override;
   const char *getNodeId();
   char *getWordBeforeCursor();
   bool replaceNext(const char *text, bool skip);
@@ -123,6 +124,11 @@ protected:
     kDigit,
   };
 
+  static bool endStatement(const char *buf);
+  static uint32_t getHash(const char *str, int offs, int &count);
+  static bool matchCommand(uint32_t hash);
+  static bool matchStatement(uint32_t hash);
+
   void dragPage(int y, bool &redraw);
   void drawText(int x, int y, const char *str, int length, SyntaxState &state);
   void calcMargin();
@@ -132,10 +138,8 @@ protected:
   void editDeleteLine();
   void editEnter();
   void editTab();
-  bool endStatement(const char *buf);
   void findMatchingBrace();
   int  getCursorRow();
-  uint32_t getHash(const char *str, int offs, int &count);
   int  getIndent(char *spaces, int len, int pos);
   int  getLineChars(StbTexteditRow *row, int pos) const;
   char *getSelection(int *start, int *end);
@@ -146,15 +150,13 @@ protected:
   int  lineEnd(int pos) { return linePos(pos, true); }
   int  linePos(int pos, bool end, bool excludeBreak=true);
   int  lineStart(int pos) { return linePos(pos, false); }
-  bool matchCommand(uint32_t hash);
-  bool matchStatement(uint32_t hash);
   void pageNavigate(bool pageDown, bool shift);
   void removeTrailingSpaces();
   void selectWord();
   void setColor(SyntaxState &state);
-  void toggleMarker();
+  void toggleMarker() const;
   void updateScroll();
-  int wordEnd();
+  int wordEnd() const;
   int wordStart();
 
   EditBuffer _buf;
@@ -175,6 +177,7 @@ protected:
   int _ymargin;
   bool _bottom;
   bool _dirty;
+  bool _comment;
 };
 
 struct TextEditHelpWidget : public TextEditInput {
@@ -216,7 +219,7 @@ struct TextEditHelpWidget : public TextEditInput {
   void cancelMode() { _mode = kNone; }
   bool closeOnEnter() const;
   bool searchMode() const { return _mode >= kSearch && _mode <= kReplaceDone; }
-  void layout(int w, int h) override;
+  void layout(int x, int y, int w, int h) override;
   bool lineEditMode() const { return _mode == kLineEdit; }
   bool messageMode() const { return _mode == kMessage; }
   bool replaceMode() const { return _mode == kReplace; }
@@ -225,17 +228,19 @@ struct TextEditHelpWidget : public TextEditInput {
   bool selected(MAPoint2d pt, int scrollX, int scrollY, bool &redraw) override;
   void showPopup(int cols, int rows);
   void showSidebar();
-  void toggleKeyword();
 
 private:
   void completeLine(int pos);
   void completeWord(int pos);
+  void buildKeywordIndex();
+  void toggleKeyword();
 
   HelpMode _mode;
   strlib::List<int *> _outline;
   TextEditInput *_editor;
-  const char *_openPackage;
-  int _openKeyword;
+  int _keywordIndex;
+  int _packageIndex;
+  bool _packageOpen;
   enum Layout {
     kLine,
     kSidebar,

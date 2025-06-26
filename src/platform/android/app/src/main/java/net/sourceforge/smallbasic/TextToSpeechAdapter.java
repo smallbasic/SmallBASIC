@@ -76,7 +76,7 @@ class TextToSpeechAdapter implements OnInitListener {
 
   public void speak(final String text) {
     if (_ready) {
-      _tts.speak(text, TextToSpeech.QUEUE_ADD, null);
+      _tts.speak(text, TextToSpeech.QUEUE_ADD, null, null);
     } else {
       _text = text;
     }

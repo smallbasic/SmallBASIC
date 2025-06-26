@@ -9,7 +9,7 @@
 #ifndef SETTINGS_H
 #define SETTINGS_H
 
-#include <SDL.h>
+#include <SDL3/SDL.h>
 
 void restoreSettings(SDL_Rect &rect, int &fontScale, bool debug, bool restoreDir);
 void saveRecentPosition(const char *fileName, unsigned cursorPos);

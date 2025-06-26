@@ -18,6 +18,8 @@
   <string name="ENDPOINT_IN_ERROR">Input endpoint not found</string>
   <string name="ENDPOINT_OUT_ERROR">Output endpoint not found</string>
   <string name="PERMISSION_ERROR">Not permitted</string>
+  <string name="BLUETOOTH_ERROR">Bluetooth is not supported on this device.</string>
+
   <style name="SBTheme" parent="android:Theme.Holo.Light">
     <item name="android:windowActionBar">false</item>
     <item name="android:windowNoTitle">true</item>

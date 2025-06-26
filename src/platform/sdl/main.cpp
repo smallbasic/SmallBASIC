@@ -52,7 +52,7 @@ int g_debugPort = 4000;
 void appLog(const char *format, ...) {
   va_list args;
   va_start(args, format);
-  unsigned size = vsnprintf(NULL, 0, format, args);
+  unsigned size = format ? vsnprintf(NULL, 0, format, args) : 0;
   va_end(args);
 
   if (size) {
@@ -68,7 +68,7 @@ void appLog(const char *format, ...) {
       buf[i--] = '\0';
     }
     strcat(buf, "\r\n");
-    
+
 #if defined(WIN32)
     OutputDebugString(buf);
 #else
@@ -274,7 +274,7 @@ int main(int argc, char* argv[]) {
                   || (strstr(s, "://") != NULL))) {
             runFile = strdup(s);
           } else if (chdir(s) != 0) {
-            strcpy(opt_command, s);
+            strlcpy(opt_command, s, sizeof(opt_command));
           }
         }
       }
@@ -297,7 +297,7 @@ int main(int argc, char* argv[]) {
       opt_quiet = false;
       break;
     case 'c':
-      strcpy(opt_command, optarg);
+      strlcpy(opt_command, optarg, sizeof(opt_command));
       break;
     case 'f':
       fontFamily = strdup(optarg);
@@ -323,7 +323,7 @@ int main(int argc, char* argv[]) {
       break;
     case 'm':
       if (optarg) {
-        strcpy(opt_modpath, optarg);
+        strlcpy(opt_modpath, optarg, sizeof(opt_modpath));
       }
       break;
     case 'd':
@@ -360,16 +360,19 @@ int main(int argc, char* argv[]) {
   }
 
   SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS);
+
   SDL_Window *window = SDL_CreateWindow("SmallBASIC",
-                                        rect.x, rect.y, rect.w, rect.h,
-                                        SDL_WINDOW_SHOWN |
+                                        rect.w, rect.h,
+                                        SDL_WINDOW_RESIZABLE |
+                                        SDL_WINDOW_HIGH_PIXEL_DENSITY |
+                                        SDL_WINDOW_OPENGL |
                                         SDL_WINDOW_RESIZABLE |
                                         SDL_WINDOW_INPUT_FOCUS |
                                         SDL_WINDOW_MOUSE_FOCUS);
   if (window != NULL) {
     String font, fontBold;
     if (getFontFiles(fontFamily, font, fontBold)) {
-      SDL_StartTextInput();
+      SDL_StartTextInput(window);
       loadIcon(window);
       Runtime *runtime = new Runtime(window);
       runtime->construct(font.c_str(), fontBold.c_str());

@@ -47,7 +47,8 @@
 #define MENU_SHORTCUT   22
 #define MENU_SHARE      23
 #define MENU_THEME      24
-#define MENU_SIZE       25
+#define MENU_FIND       25
+#define MENU_SIZE       26
 #define MENU_COMPLETION_0  (MENU_SIZE + 1)
 #define MENU_COMPLETION_1  (MENU_SIZE + 2)
 #define MENU_COMPLETION_2  (MENU_SIZE + 3)
@@ -96,6 +97,7 @@
 #define MENU_STR_SHARE   " Share "
 #define MENU_STR_SHORT   " Desktop Shortcut "
 #define MENU_STR_SOURCE  " View Source "
+#define MENU_STR_FIND    " Find "
 
 System *g_system;
 
@@ -448,6 +450,10 @@ void System::handleMenu(MAEvent &event) {
     event.type = EVENT_TYPE_KEY_PRESSED;
     event.key = SB_KEY_CTRL('o');
     break;
+  case MENU_FIND:
+    event.type = EVENT_TYPE_KEY_PRESSED;
+    event.key = SB_KEY_CTRL('f');
+    break;
   case MENU_HELP:
     event.type = EVENT_TYPE_KEY_PRESSED;
     event.key = SB_KEY_F(1);
@@ -510,7 +516,11 @@ void System::handleEvent(MAEvent &event) {
     } else {
       dev_pushkey(SB_KEY_MK_PUSH);
       _buttonPressed = _output->pointerTouchEvent(event);
-      showCursor(get_focus_edit() != nullptr ? kIBeam : kHand);
+      if (_buttonPressed) {
+        showCursor(kHand);
+      } else {
+        showCursor(get_focus_edit() != nullptr ? kIBeam : kHand);
+      }
     }
     break;
   case EVENT_TYPE_POINTER_DRAGGED:
@@ -530,10 +540,15 @@ void System::handleEvent(MAEvent &event) {
     }
     break;
   case EVENT_TYPE_POINTER_RELEASED:
-    _buttonPressed = false;
-    _touchX = _touchY = _touchCurX = _touchCurY = -1;
+    _touchCurX = event.point.x;
+    _touchCurY = event.point.y;
+    _touchX = -1;
+    _touchY = -1;
     _output->pointerReleaseEvent(event);
-    showCursor(get_focus_edit() != nullptr ? kIBeam : kArrow);
+    if (!_buttonPressed) {
+      showCursor(get_focus_edit() != nullptr ? kIBeam : kArrow);
+    }
+    _buttonPressed = false;
     break;
   default:
     // no event
@@ -561,7 +576,7 @@ char *System::loadResource(const char *fileName) {
         if (http_read(f, var_p) == 0) {
           systemPrint("\nfailed to read %s\n", fileName);
         } else {
-          int len = var_p->v.p.length;
+          uint32_t len = var_p->v.p.length;
           buffer = (char *)malloc(len + 1);
           memcpy(buffer, var_p->v.p.ptr, len);
           buffer[len] = '\0';
@@ -610,6 +625,7 @@ void System::logStack(const char *keyword, int type, int line) {
 void System::optionsBox(StringList *items) {
   int backScreenId = _output->getScreenId(true);
   int frontScreenId = _output->getScreenId(false);
+  int screenHeight = _output->getStatusHeight();
   _output->selectBackScreen(MENU_SCREEN);
 
   int width = 0;
@@ -631,14 +647,14 @@ void System::optionsBox(StringList *items) {
     _menuX = _output->getWidth() - (width + charWidth * 2);
   }
   if (!_menuY) {
-    _menuY = _output->getHeight() - height;
+    _menuY = screenHeight - height;
   }
 
   if (_menuX + width >= _output->getWidth()) {
     _menuX = _output->getWidth() - width;
   }
-  if (_menuY + height >= _output->getHeight()) {
-    _menuY = _output->getHeight() - height;
+  if (_menuY + height >= screenHeight) {
+    _menuY = screenHeight - height;
   }
 
   int y = 0;
@@ -813,7 +829,7 @@ void System::runMain(const char *mainBasPath) {
   String activePath = mainBasPath;
   _loadPath = mainBasPath;
   _mainBas = true;
-  strcpy(opt_command, "welcome");
+  strlcpy(opt_command, "welcome", sizeof(opt_command));
 
   bool started = execute(_loadPath);
   if (!started) {
@@ -919,9 +935,7 @@ void System::setBack() {
     if (!_mainBas) {
       // remove the current item
       strlib::String *old = _history.pop();
-
-        delete old;
-
+      delete old;
       if (_history.peek() != nullptr) {
         _loadPath.clear();
         _loadPath.append(_history.peek());
@@ -948,7 +962,7 @@ bool System::setParentPath() {
   if (!path[0] || strcmp(path, "/") == 0) {
     result = false;
   } else {
-    int len = strlen(path);
+    size_t len = strlen(path);
     if (path[len - 1] == '/') {
       // eg /sdcard/bas/
       path[len - 1] = '\0';
@@ -1057,6 +1071,8 @@ void System::showMenu() {
 #if defined(_SDL)
         items->add(new String(MENU_STR_DEBUG));
         items->add(new String(MENU_STR_OUTPUT));
+#elif defined(_ANDROID)
+        items->add(new String(MENU_STR_FIND));
 #endif
         items->add(new String(MENU_STR_HELP));
         for (int i = 0; i < completions; i++) {
@@ -1073,6 +1089,8 @@ void System::showMenu() {
 #if defined(_SDL)
         _systemMenu[index++] = MENU_DEBUG;
         _systemMenu[index++] = MENU_OUTPUT;
+#elif defined(_ANDROID)
+        _systemMenu[index++] = MENU_FIND;
 #endif
         _systemMenu[index++] = MENU_HELP;
       } else if (isRunning()) {
@@ -1089,9 +1107,9 @@ void System::showMenu() {
       items->add(new String(MENU_STR_BACK));
       _systemMenu[index++] = MENU_BACK;
 #else
-      items->add(new String(MENU_STR_KEYPAD));
-      _systemMenu[index++] = MENU_KEYPAD;
       if (!isEditing()) {
+        items->add(new String(MENU_STR_KEYPAD));
+        _systemMenu[index++] = MENU_KEYPAD;
         bool controlMode = get_focus_edit()->getControlMode();
         sprintf(buffer, MENU_STR_CONTROL, (controlMode ? MENU_STR_ON : MENU_STR_OFF));
         items->add(new String(buffer));
@@ -1344,7 +1362,7 @@ void System::systemPrint(const char *format, ...) {
   va_list args;
 
   va_start(args, format);
-  unsigned size = vsnprintf(nullptr, 0, format, args);
+  unsigned size = format ? vsnprintf(nullptr, 0, format, args) : 0;
   va_end(args);
 
   if (size) {
@@ -1478,10 +1496,10 @@ char *dev_read(const char *fileName) {
   return g_system->readSource(fileName);
 }
 
-int maGetMilliSecondCount() {
-  return dev_get_millisecond_count();
-}
-
 void dev_log_stack(const char *keyword, int type, int line) {
   return g_system->logStack(keyword, type, line);
+}
+
+int maGetMilliSecondCount() {
+  return dev_get_millisecond_count();
 }

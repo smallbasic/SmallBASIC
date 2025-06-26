@@ -24,6 +24,7 @@ struct EditTheme {
   void selectTheme(const int theme[]);
   void contrast(EditTheme *other);
 
+  bool _plainText{};
   int _color{};
   int _background{};
   int _selection_color{};

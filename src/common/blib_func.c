@@ -2003,9 +2003,7 @@ void cmd_numN(long funcCode, var_t *r) {
       int pw;
       if (code_peek() == kwTYPE_SEP) {
         par_getcomma();
-        if (!prog_error) {
-          pw = par_getint();
-        }
+        pw = prog_error ? 0 : par_getint();
       } else {
         pw = 0;
       }

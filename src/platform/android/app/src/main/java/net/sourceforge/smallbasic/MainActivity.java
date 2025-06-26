@@ -37,6 +37,7 @@ import android.view.View;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.Toast;
 
+import androidx.annotation.RequiresPermission;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.core.content.FileProvider;
@@ -72,8 +73,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.Semaphore;
 import java.util.zip.GZIPInputStream;
 
@@ -90,6 +89,8 @@ public class MainActivity extends NativeActivity {
   private static final String SCHEME_BAS = "qrcode.bas";
   private static final String SCHEME = "smallbasic://x/";
   private static final String CP1252 = "Cp1252";
+  private static final String TAG_CONNECTED = "[--tag-connected--]";
+  private static final String TAG_ERROR = "[--tag-error--]";
   private static final int BASE_FONT_SIZE = 18;
   private static final long LOCATION_INTERVAL = 1000;
   private static final float LOCATION_DISTANCE = 1;
@@ -99,7 +100,6 @@ public class MainActivity extends NativeActivity {
   private static final String[] SAMPLES = {"welcome.bas", "sound.bas"};
   private String _startupBas = null;
   private boolean _untrusted = false;
-  private final ExecutorService _audioExecutor = Executors.newSingleThreadExecutor();
   private final Handler _keypadHandler = new Handler(Looper.getMainLooper());
   private final Map<String, Boolean> permittedHost = new ConcurrentHashMap<>();
   private final Object _mediaPlayerLock = new Object();
@@ -109,6 +109,7 @@ public class MainActivity extends NativeActivity {
   private TextToSpeechAdapter _tts;
   private Storage _storage;
   private UsbConnection _usbConnection;
+  private BluetoothConnection _bluetoothConnection;
 
   static {
     System.loadLibrary("smallbasic");
@@ -191,6 +192,67 @@ public class MainActivity extends NativeActivity {
     return result.value;
   }
 
+  public boolean bluetoothClose() {
+    if (_bluetoothConnection != null) {
+      _bluetoothConnection.close(this);
+      _bluetoothConnection = null;
+    }
+    return true;
+  }
+
+  @RequiresPermission(Manifest.permission.BLUETOOTH_CONNECT)
+  public String bluetoothConnect(String deviceName) {
+    String result;
+    try {
+      _bluetoothConnection = new BluetoothConnection(this, deviceName);
+      result = TAG_CONNECTED;
+    } catch (IOException e) {
+      result = e.getLocalizedMessage();
+    }
+    return result;
+  }
+
+  public int bluetoothConnected() {
+    int result;
+    if (_bluetoothConnection == null || _bluetoothConnection.isError()) {
+      result = -1;
+    } else {
+      result = _bluetoothConnection.isConnected() ? 1 : 0;
+    }
+    return result;
+  }
+
+  @RequiresPermission(Manifest.permission.BLUETOOTH_CONNECT)
+  public String bluetoothDescription() {
+    String result;
+    if (_bluetoothConnection != null && !_bluetoothConnection.isError()) {
+      result = _bluetoothConnection.getDescription();
+    } else {
+      result = TAG_ERROR;
+    }
+    return result;
+  }
+
+  public String bluetoothReceive() {
+    String result;
+    if (_bluetoothConnection != null && !_bluetoothConnection.isError()) {
+      result = _bluetoothConnection.receive(TAG_ERROR);
+    } else {
+      result = TAG_ERROR;
+    }
+    return result;
+  }
+
+  public int bluetoothSend(final byte[] data) {
+    int result;
+    if (_bluetoothConnection != null && !_bluetoothConnection.isError()) {
+      result = _bluetoothConnection.send(getString(data)) ? 1 : 0;
+    } else {
+      result = -1;
+    }
+    return result;
+  }
+
   public void browseFile(final byte[] pathBytes) {
     try {
       String url = new String(pathBytes, CP1252);
@@ -212,10 +274,8 @@ public class MainActivity extends NativeActivity {
     if (_tts != null) {
       _tts.stop();
     }
-    if (_usbConnection != null) {
-      _usbConnection.close();
-      _usbConnection = null;
-    }
+    usbClose();
+    bluetoothClose();
     return removeLocationUpdates();
   }
 
@@ -655,17 +715,28 @@ public class MainActivity extends NativeActivity {
   public boolean usbClose() {
     if (_usbConnection != null) {
       _usbConnection.close();
+      _usbConnection = null;
     }
     return true;
   }
 
-  public String usbConnect(int vendorId) {
+  public String usbConnect(int vendorId, int baud, int timeout) {
     String result;
     try {
-      _usbConnection = new UsbConnection(getApplicationContext(), vendorId);
-      result = "[tag-connected]";
+      _usbConnection = new UsbConnection(getApplicationContext(), vendorId, baud, timeout);
+      result = TAG_CONNECTED;
     } catch (IOException e) {
       result = e.getLocalizedMessage();
+    }
+    return result;
+  }
+
+  public String usbDescription() {
+    String result;
+    if (_usbConnection != null) {
+      result = _usbConnection.getDescription();
+    } else {
+      result = TAG_ERROR;
     }
     return result;
   }
@@ -675,7 +746,7 @@ public class MainActivity extends NativeActivity {
     if (_usbConnection != null) {
       result = _usbConnection.receive();
     } else {
-      result = "";
+      result = TAG_ERROR;
     }
     return result;
   }
@@ -725,12 +796,12 @@ public class MainActivity extends NativeActivity {
     }
   }
 
-  private void checkPermission(final String permission, final int result) {
+  private void checkPermission(final String permission, final int requestCode) {
     runOnUiThread(new Runnable() {
       @Override
       public void run() {
         String[] permissions = {permission};
-        ActivityCompat.requestPermissions(MainActivity.this, permissions, result);
+        ActivityCompat.requestPermissions(MainActivity.this, permissions, requestCode);
       }
     });
   }
@@ -1031,13 +1102,11 @@ public class MainActivity extends NativeActivity {
         }
       }
 
-      if (android.os.Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-        // https://commonsware.com/blog/2019/06/07/death-external-storage-end-saga.html
-        File[] dirs = getExternalMediaDirs();
-        path = dirs != null && dirs.length > 0 ? dirs[0].getAbsolutePath() : null;
-        if (isPublicStorage(path)) {
-          media = path;
-        }
+      // https://commonsware.com/blog/2019/06/07/death-external-storage-end-saga.html
+      File[] dirs = getExternalMediaDirs();
+      path = dirs != null && dirs.length > 0 ? dirs[0].getAbsolutePath() : null;
+      if (isPublicStorage(path)) {
+        media = path;
       }
 
       this._external = external;

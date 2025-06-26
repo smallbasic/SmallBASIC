@@ -9,7 +9,7 @@
 #ifndef KEYMAP
 #define KEYMAP
 
-const int keymap[][2] = {
+const unsigned keymap[][2] = {
   {SDLK_RETURN, SB_KEY_ENTER},
   {SDLK_ESCAPE, SB_KEY_ESCAPE},
   {SDLK_KP_ENTER, SB_KEY_ENTER},

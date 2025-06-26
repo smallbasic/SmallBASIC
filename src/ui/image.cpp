@@ -214,7 +214,7 @@ ImageBuffer *get_image(unsigned bid) {
   return result;
 }
 
-void scaleImage(ImageBuffer* image, var_num_t scaling) {
+void scaleImage(ImageBuffer *image, var_num_t scaling) {
   if (scaling == 1.0 || scaling <= 0.0) {
     return;
   }
@@ -231,8 +231,8 @@ void scaleImage(ImageBuffer* image, var_num_t scaling) {
     return;
   }
 
-  uint32_t* image32bit = (uint32_t*)image->_image;
-  uint32_t* scaledImage32bit = (uint32_t*)scaledImage;
+  uint32_t *image32bit = (uint32_t *)image->_image;
+  uint32_t *scaledImage32bit = (uint32_t *)scaledImage;
 
   for (yy = 0; yy < h; yy++) {
     for (xx = 0; xx < w; xx++) {
@@ -269,7 +269,7 @@ ImageBuffer *load_image(var_int_t x) {
       w = MIN(w, width);
       h = MIN(h, height);
     }
-    uint8_t* image = get_image_data(x, y, w, h);
+    uint8_t *image = get_image_data(x, y, w, h);
     if (image == nullptr) {
       err_throw(ERR_IMAGE_LOAD, "Failed to load screen image");
     } else {
@@ -306,7 +306,7 @@ ImageBuffer *load_image(var_t *var) {
       } else {
         ImageBuffer *inputImage = nullptr;
         inputImage = get_image((unsigned)bid);
-        uint8_t* imageData = (uint8_t *)malloc(inputImage->_width * inputImage->_height * 4);
+        uint8_t *imageData = (uint8_t *)malloc(inputImage->_width * inputImage->_height * 4);
         if (!imageData) {
           err_throw(ERR_IMAGE_LOAD, "Failed to allocate RAM");
           return result;

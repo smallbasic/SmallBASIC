@@ -10,14 +10,11 @@
 #define RUNTIME_H
 
 #include "config.h"
-#include "lib/maapi.h"
-#include "ui/inputs.h"
 #include "ui/system.h"
 #include "platform/android/jni/display.h"
 #include "platform/android/jni/audio.h"
 
 #include <android_native_app_glue.h>
-#include <android/keycodes.h>
 #include <android/sensor.h>
 
 constexpr int MAX_SENSORS = 8;

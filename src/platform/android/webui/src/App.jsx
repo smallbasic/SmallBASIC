@@ -41,6 +41,11 @@ import {
   useTheme
 } from "@mui/material/styles";
 
+const emptySelection = {
+  type: 'include',
+  ids: new Set([]),
+};
+
 const columns = [{
   field: 'fileName',
   headerName: 'Name',
@@ -58,6 +63,17 @@ const columns = [{
   valueGetter: (value) => new Date(value),
   renderCell: (params) => params.value.toLocaleDateString()
 }];
+
+function getSelectedFile(props) {
+  let result;
+  if (props.selections.size === 1) {
+    const index = props.selections.values().next().value;
+    result = props.rows[index].fileName;
+  } else {
+    result = "smallbasic-files.zip";
+  }
+  return result;
+}
 
 function getFetchHeader(body) {
   return {
@@ -165,17 +181,17 @@ function GridToolbarDelete(props) {
 
   const handleDelete = () => {
     setOpen(false);
-    deleteFile(props.rows[props.selections[0]].fileName, (data) => {
+    deleteFile(getSelectedFile(props), (data) => {
       props.setRows(data);
-      props.setSelections([]);
+      props.clearSelections();
     }, (error) => {
       setError(error);
     });
   };
 
-  return props.selections.length !== 1 ? null : (
+  return props.selections.size !== 1 ? null : (
     <Fragment>
-      <ConfirmDeleteDialog open={open} name={props.rows[props.selections[0]].fileName} handleClose={handleClose} handleDelete={handleDelete}/>
+      <ConfirmDeleteDialog open={open} name={getSelectedFile(props)} handleClose={handleClose} handleDelete={handleDelete}/>
       <ErrorMessage error={error} setError={setError} severity="error"/>
       <Button color="primary" size="small" component="label" sx={{marginLeft: '-4px'}} onClick={showPrompt}>
         <DeleteIcon />
@@ -187,7 +203,7 @@ function GridToolbarDelete(props) {
 
 function GridToolbarDownload(props) {
   const color = useTheme().palette.primary.main;
-  const download = props.selections.length === 1 ? props.rows[props.selections[0]].fileName : "smallbasic-files.zip";
+  const download = getSelectedFile(props);
   let args = "";
   let join = "";
 
@@ -195,11 +211,11 @@ function GridToolbarDownload(props) {
     args += join + "f=" + encodeURIComponent(props.rows[i].fileName);
     join = "&";
   });
-  if (props.selections.length === props.rows.length) {
+  if (props.selections.size === props.rows.length) {
     args = "";
   }
 
-  return !props.selections.length ? null : (
+  return !props.selections.size ? null : (
     <a download={download} href={`./api/download?${args}`} style={{color: color, textDecoration: 'none'}}>
       <Box sx={{display: 'flex', marginTop: '1px', alignItems: 'center'}} >
         <DownloadIcon />
@@ -265,7 +281,7 @@ function GridToolbarUpload(props) {
 
 function AppToolbar(props) {
   return (
-    <GridToolbarContainer>
+    <GridToolbarContainer sx={{justifyContent: 'left'}}>
       <GridToolbarFilterButton />
       <GridToolbarColumnsButton />
       <GridToolbarExport />
@@ -292,12 +308,12 @@ function onCellEditCommit(props, params, setError) {
 }
 
 function FileList(props) {
-  const [selectionModel, setSelectionModel] = useState([]);
+  const [selectionModel, setSelectionModel] = useState(emptySelection);
   const [error, setError] = useState(null);
 
   const toolbarProps = {
-    selections: selectionModel,
-    setSelections: setSelectionModel,
+    selections: selectionModel.ids,
+    clearSelections: () => setSelectionModel(emptySelection),
     setRows: props.setRows,
     rows: props.rows
   };
@@ -322,7 +338,8 @@ function FileList(props) {
                 rowSelectionModel={selectionModel}
                 pageSizeOptions={[5]}
                 checkboxSelection
-                disableRowSelectionOnClick/>
+                disableRowSelectionOnClick
+                showToolbar />
     </Fragment>
   );
 }

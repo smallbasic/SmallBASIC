@@ -18,51 +18,46 @@
 #include "audio.h"
 
 //see: https://github.com/google/oboe/blob/main/docs/GettingStarted.md
-constexpr int32_t AUDIO_SAMPLE_RATE = 44100;
+constexpr int32_t AUDIO_SAMPLE_RATE = 48000;
 constexpr float PI2 = 2.0f * M_PI;
-constexpr int SILENCE_BEFORE_STOP = kMillisPerSecond * 5;
 constexpr int MAX_QUEUE_SIZE = 250;
-constexpr int MAX_RAMP = 200;
+constexpr int MAX_RAMP = 512;
 constexpr int RAMP_SCALE = 20;
+constexpr int BUFFER_DURATION = 40;
+constexpr int FRAMES_PER_CALLBACK = AUDIO_SAMPLE_RATE * BUFFER_DURATION / 1000;
+constexpr int SILENCE_BEFORE_STOP = AUDIO_SAMPLE_RATE * 60 / FRAMES_PER_CALLBACK;
+
 int instances = 0;
+float phase = 0;
 
 struct Sound {
-  Sound(bool fadeIn, int frequency, int millis, int volume);
+  Sound(int frequency, int millis, int volume);
   ~Sound();
 
   bool ready() const;
   float sample();
-  void sync(Sound *previous, bool lastSound);
+  void sync(Sound *previous);
 
 private:
   uint32_t _duration;
   uint32_t _samples;
   uint32_t _sampled;
-  uint32_t _rest;
-  uint32_t _fadeIn;
+  uint32_t _fadedIn;
   uint32_t _fadeOut;
   float _amplitude;
   float _increment;
-  float _phase;
 };
 
-Sound::Sound(bool fadeIn, int frequency, int millis, int volume) :
+Sound::Sound(int frequency, int millis, int volume) :
   _duration(millis),
   _samples(AUDIO_SAMPLE_RATE * millis / 1000),
   _sampled(0),
-  _rest(0),
-  _fadeIn(0),
+  _fadedIn(0),
   _fadeOut(0),
   _amplitude((float)volume / 100.0f),
-  _increment(PI2 * (float)frequency / AUDIO_SAMPLE_RATE),
-  _phase(0) {
+  _increment(PI2 * (float)frequency / AUDIO_SAMPLE_RATE) {
+  _fadedIn = _fadeOut = std::min((int)_samples / RAMP_SCALE, MAX_RAMP);
   instances++;
-
-  if (fadeIn) {
-    _fadeIn = std::min((int)_samples / RAMP_SCALE, MAX_RAMP);
-  } else if (frequency == 0) {
-    _rest = std::min((int)_samples / RAMP_SCALE, MAX_RAMP);
-  }
 }
 
 Sound::~Sound() {
@@ -80,50 +75,31 @@ bool Sound::ready() const {
 // Returns the next wave sample value
 //
 float Sound::sample() {
-  float result = sinf(_phase) * _amplitude;
+  float result = sinf(phase) * _amplitude;
   _sampled++;
-  _phase = fmod(_phase + _increment, PI2);
+  phase = fmod(phase + _increment, PI2);
 
-  if (_fadeIn != 0 && _sampled < _fadeIn) {
+  if (_fadedIn != 0 && _sampled < _fadedIn) {
     // fadeIn from silence
-    result *= (float)(_sampled) / (float)_fadeIn;
-  } else if (_fadeOut != 0 && _samples - _sampled < _fadeOut) {
+    result *= (float)(_sampled) / (float)_fadedIn;
+  } else if (_fadeOut != 0 && (_samples - _sampled) < _fadeOut) {
     // fadeOut to silence
     result *= (float)(_samples - _sampled) / (float)_fadeOut;
-  } else if (_rest != 0) {
-    if (_sampled < _rest) {
-      // fadeOut the previous sound
-      result *= (float)(_rest - _sampled) / (float)_rest;
-    } else if (_samples - _sampled < _rest && _fadeOut == 0) {
-      // fadeIn the next sound, but not when the final sound
-      result *= (float)(_rest - (_samples - _sampled)) / (float)_rest;
-    } else {
-      result = 0;
-    }
   }
-
   return result;
 }
 
 //
-// Continues the same phase for the previous sound
+// Skips fadeIn when continuing the same sound
 //
-void Sound::sync(Sound *previous, bool lastSound) {
-  _phase = previous->_phase;
-  if (_rest != 0) {
-    // for fadeOut/In for adjoining silence
-    _increment = previous->_increment;
-  }
-  if (lastSound) {
-    // fade out non-silent sound to silence
-    _fadeOut = _samples / RAMP_SCALE;
-    if (_fadeOut > MAX_RAMP) {
-      _fadeOut = MAX_RAMP;
-    }
+void Sound::sync(Sound *previous) {
+  if (previous->_increment == _increment) {
+    _fadedIn = 0;
+    previous->_fadeOut = 0;
   }
 }
 
-Audio::Audio() {
+Audio::Audio(): _silentTicks(0) {
   AudioStreamBuilder builder;
   Result result = builder.setDirection(Direction::Output)
     ->setChannelCount(ChannelCount::Mono)
@@ -131,14 +107,12 @@ Audio::Audio() {
     ->setFormat(AudioFormat::Float)
     ->setPerformanceMode(PerformanceMode::LowLatency)
     ->setSampleRate(AUDIO_SAMPLE_RATE)
-    ->setSampleRateConversionQuality(SampleRateConversionQuality::Medium)
+    ->setSampleRateConversionQuality(SampleRateConversionQuality::None)
     ->setSharingMode(SharingMode::Exclusive)
     ->setUsage(oboe::Usage::Game)
+    ->setFramesPerCallback(FRAMES_PER_CALLBACK)
     ->openStream(_stream);
-  if (result == oboe::Result::OK) {
-    // play silence to initialise the player
-    play(0, 1, 100, true);
-  } else {
+  if (result != oboe::Result::OK) {
     _stream = nullptr;
   }
 }
@@ -158,13 +132,15 @@ Audio::~Audio() {
 // Play a sound with the given specification
 //
 void Audio::play(int frequency, int millis, int volume, bool background) {
-  if (_stream != nullptr && millis > 0 && _queue.size() < MAX_QUEUE_SIZE) {
-    add(frequency, millis, volume);
+  if (_stream != nullptr && millis > 0) {
     if (_stream->getState() != StreamState::Started) {
       trace("Start audio");
+      // play silence to initialise the player
+      add(0, 250, 1);
       _stream->requestStart();
     }
-    if (!background) {
+    add(frequency, millis, volume);
+    if (!background || _queue.size() >= MAX_QUEUE_SIZE) {
       if (millis < kMillisPerSecond) {
         usleep(millis * kMillisPerSecond);
       } else {
@@ -201,7 +177,8 @@ DataCallbackResult Audio::onAudioReady(AudioStream *oboeStream, void *audioData,
   }
 
   DataCallbackResult result;
-  if (sound == nullptr && _startNoSound != 0 && maGetMilliSecondCount() - _startNoSound > SILENCE_BEFORE_STOP) {
+  if (sound == nullptr && ++_silentTicks > SILENCE_BEFORE_STOP) {
+    phase = 0;
     result = DataCallbackResult::Stop;
   } else {
     result = DataCallbackResult::Continue;
@@ -214,8 +191,13 @@ DataCallbackResult Audio::onAudioReady(AudioStream *oboeStream, void *audioData,
 //
 void Audio::add(int frequency, int millis, int volume) {
   std::lock_guard<std::mutex> lock(_lock);
-  _queue.push(new Sound(_queue.empty(), frequency, millis, volume));
-  _startNoSound = 0;
+  auto previous = _queue.back();
+  auto sound = new Sound(frequency, millis, volume);
+  _queue.push(sound);
+  _silentTicks = 0;
+  if (previous != nullptr) {
+    sound->sync(previous);
+  }
 }
 
 //
@@ -230,17 +212,8 @@ Sound *Audio::front() {
     if (result->ready()) {
       break;
     }
-
     _queue.pop();
-    auto *next = _queue.front();
-    if (next != nullptr) {
-      next->sync(result, _queue.size() == 1);
-    }
     result = nullptr;
-  }
-
-  if (result == nullptr && _startNoSound == 0) {
-    _startNoSound = maGetMilliSecondCount();
   }
 
   return result;

@@ -1,3 +1,12 @@
+2025-04-26 (12.29)
+	ANDROID: minor fix for PEN(3)
+
+2025-04-19 (12.29)
+	ANDROID: experimental bluetooth support
+	ANDROID: update SOUND implementation to avoid skips
+	ANDROID: update USB api to allow setting baud rate and timeout
+	ANDROID: allow android.speak to take additional non-string args
+
 2025-02-18 (12.28)
 	ANDROID: added experimental usb communication support
 

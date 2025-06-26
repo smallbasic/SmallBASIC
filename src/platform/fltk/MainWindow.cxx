@@ -396,7 +396,7 @@ void MainWindow::export_file(Fl_Widget *w, void *eventData) {
 void MainWindow::set_options(Fl_Widget *w, void *eventData) {
   const char *args = fl_input("Enter program command line", opt_command);
   if (args) {
-    strcpy(opt_command, args);
+    strlcpy(opt_command, args, sizeof(opt_command));
   }
 }
 
@@ -768,7 +768,7 @@ int arg_cb(int argc, char **argv, int &i) {
         return 1;
 
       case 'm':
-        strcpy(opt_modpath, argv[i + 1]);
+        strlcpy(opt_modpath, argv[i + 1], sizeof(opt_modpath));
         i += 2;
         return 1;
       }

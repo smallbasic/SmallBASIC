@@ -53,7 +53,7 @@ public abstract class WebServer {
   /**
    * Runs the WebServer in a new thread
    */
-  public void run(final int portNum, final String token) {
+  public Thread run(final int portNum, final String token) {
     Thread socketThread = new Thread(new Runnable() {
       public void run() {
         try {
@@ -64,6 +64,7 @@ public abstract class WebServer {
       }
     });
     socketThread.start();
+    return socketThread;
   }
 
   protected abstract void deleteFile(String remoteHost, String fileName) throws IOException;
@@ -121,7 +122,7 @@ public abstract class WebServer {
       this.headers = getHeaders();
       this.requestToken = getToken(headers);
       this.remoteHost = ((InetSocketAddress) socket.getRemoteSocketAddress()).getHostName();
-      String first = headers.size() > 0 ? headers.get(0) : null;
+      String first = !headers.isEmpty() ? headers.get(0) : null;
       String[] fields;
       if (first != null) {
         fields = first.split("\\s");
@@ -414,11 +415,11 @@ public abstract class WebServer {
      */
     private Response handleDownload(Map<String, Collection<String>> data) throws IOException {
       Collection<String> fileNames = data.get("f");
-      if (fileNames == null || fileNames.size() == 0) {
+      if (fileNames == null || fileNames.isEmpty()) {
         fileNames = getAllFileNames();
       }
       Response result;
-      if (fileNames.size() == 0) {
+      if (fileNames.isEmpty()) {
         result = handleStatus(false, "File list is empty");
       } else if (fileNames.size() == 1) {
         // plain text download single file
