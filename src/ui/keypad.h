@@ -88,7 +88,7 @@ struct Keypad {
   Keypad(int charWidth, int charHeight);
   ~Keypad() = default;
 
-  static int outerHeight(int ch) ;
+  static int outerHeight(int charHeight) ;
   void clicked(int x, int y, bool pressed);
   void draw() const;
   void layout(int x, int y, int w, int h);
@@ -115,10 +115,13 @@ struct KeypadInput : public FormInput {
   bool floatTop() override { return _floatTop; }
   bool floatBottom() override { return !_floatTop; }
   void layout(int x, int y, int w, int h) override;
-  bool hasHover() override { return true; }
   void drawHover(int dx, int dy, bool selected) override {};
+#if defined(_SDL)
+  // for cursor display
+  bool hasHover() override { return true; }
+#endif
 
-private:  
+private:
   bool _floatTop;
   bool _toolbar;
   Keypad *_keypad;

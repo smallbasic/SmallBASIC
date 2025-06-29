@@ -11,6 +11,7 @@
 #include "ui/textedit.h"
 #include "platform/android/jni/runtime.h"
 #include "common/device.h"
+#include "ui/keypad.h"
 
 extern Runtime *runtime;
 
@@ -59,6 +60,10 @@ void System::editSource(strlib::String loadPath, bool restoreOnExit) {
   _output->clearScreen();
   _output->addInput(editWidget);
   _output->addInput(helpWidget);
+  _output->addInput(new KeypadInput(false, false, charWidth, charHeight));
+
+  // to layout inputs
+  _output->resize(w, h);
 
   if (gsb_last_line && isBreak()) {
     String msg = "Break at line: ";
@@ -75,7 +80,6 @@ void System::editSource(strlib::String loadPath, bool restoreOnExit) {
   _output->setStatus(showStatus ? cleanFile : "");
   _output->redraw();
   _state = kEditState;
-  runtime->showKeypad(true);
 
   while (_state == kEditState) {
     MAEvent event = getNextEvent();
@@ -135,10 +139,10 @@ void System::editSource(strlib::String loadPath, bool restoreOnExit) {
           helpWidget->createKeywordIndex();
           helpWidget->showPopup(-4, -2);
           helpWidget->setFocus(true);
-          runtime->showKeypad(false);
           showStatus = false;
           break;
         case SB_KEY_F(9):
+        case SB_KEY_CTRL('r'):
           _state = kRunState;
           if (editWidget->isDirty()) {
             saveFile(editWidget, loadPath);
@@ -171,7 +175,6 @@ void System::editSource(strlib::String loadPath, bool restoreOnExit) {
           _output->redraw();
           _state = kActiveState;
           waitForBack();
-          runtime->showKeypad(true);
           _output->selectScreen(SOURCE_SCREEN);
           _state = kEditState;
           break;
@@ -189,7 +192,6 @@ void System::editSource(strlib::String loadPath, bool restoreOnExit) {
     }
 
     if (isBack() && widget == helpWidget) {
-      runtime->showKeypad(true);
       widget = editWidget;
       helpWidget->hide();
       editWidget->setFocus(true);
@@ -220,7 +222,6 @@ void System::editSource(strlib::String loadPath, bool restoreOnExit) {
     if (!_output->removeInput(editWidget)) {
       trace("Failed to remove editor input");
     }
-    runtime->showKeypad(false);
     _editor = editWidget;
     _editor->setFocus(false);
   } else {
