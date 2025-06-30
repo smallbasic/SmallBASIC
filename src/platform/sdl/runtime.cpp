@@ -85,10 +85,13 @@ Runtime::~Runtime() {
   delete _output;
   delete _eventQueue;
   delete _graphics;
+  delete _keypad;
+
   runtime = nullptr;
   _output = nullptr;
   _eventQueue = nullptr;
   _graphics = nullptr;
+  _keypad = nullptr;
 
   SDL_DestroyCursor(_cursorHand);
   SDL_DestroyCursor(_cursorArrow);

@@ -1970,6 +1970,8 @@ TextEditHelpWidget::TextEditHelpWidget(TextEditInput *editor, int chW, int chH, 
   _keywordIndex(-1),
   _packageIndex(0),
   _packageOpen(false),
+  _xBase(0),
+  _yBase(0),
   _layout(kPopup) {
   _theme = new EditTheme(HELP_FG, HELP_BG);
   _comment = false;
@@ -2341,6 +2343,11 @@ void TextEditHelpWidget::reset(HelpMode mode) {
   _buf.clear();
   _scroll = 0;
   _matchingBrace = -1;
+  if (mode == kHelpKeyword) {
+    _packageIndex = 0;
+    _keywordIndex = -1;
+    _packageOpen = false;
+  }
 }
 
 bool TextEditHelpWidget::selected(MAPoint2d pt, int scrollX, int scrollY, bool &redraw) {
@@ -2467,13 +2474,13 @@ void TextEditHelpWidget::showPopup(int cols, int rows) {
   if (_height > _editor->_height) {
     _height = _editor->_height;
   }
-  _x = (_editor->_width - _width) / 2;
+  _x = _xBase + ((_editor->_width - _width) / 2);
   if (rows == 1) {
     _layout = kLine;
-    _y = _editor->_height - (_charHeight * 2.5);
+    _y = _yBase + (int)(_editor->_height - (_charHeight * 2.5));
   } else {
     _layout = kPopup;
-    _y = (_editor->_height - _height) / 2;
+    _y = _yBase + ((_editor->_height - _height) / 2);
   }
   _theme->contrast(_editor->getTheme());
   calcMargin();
@@ -2484,8 +2491,8 @@ void TextEditHelpWidget::showSidebar() {
   int border = _charWidth * 2;
   _width = _charWidth * SIDE_BAR_WIDTH;
   _height = _editor->_height - (border * 2);
-  _x = _editor->_width - (_width + border);
-  _y = border;
+  _x = _xBase + (_editor->_width - (_width + border));
+  _y = _yBase + border;
   _theme->contrast(_editor->getTheme());
   _layout = kSidebar;
   calcMargin();
@@ -2503,21 +2510,26 @@ void TextEditHelpWidget::draw(int x, int y, int w, int h, int chw) {
 }
 
 void TextEditHelpWidget::layout(int x, int y, int w, int h) {
+  _xBase = x;
+  _yBase = y;
   if (_resizable) {
     int border;
     switch (_layout) {
     case kLine:
-      _x = (w - _width) / 2;
-      _y = h - (_charHeight * 2.5);
+      _x = _xBase + ((w - _width) / 2);
+      _y = _yBase + (h - (_charHeight * 2.5));
       break;
     case kSidebar:
       border = _charWidth * 2;
       _height = h - (border * 2);
-      _x = w - (_width + border);
+      _x = _xBase + (w - (_width + border));
+      _y = _yBase;
       break;
     case kPopup:
       _width = w - (_x + _xmargin);
       _height = h - (_y + _ymargin);
+      _x = _xBase;
+      _y = _yBase;
     }
   }
 }

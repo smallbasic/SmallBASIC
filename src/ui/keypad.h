@@ -15,6 +15,15 @@
 
 using namespace strlib;
 
+#if defined(_SDL)
+// for cursor display
+#define HAS_HOVER true
+#define PADDING 8
+#else
+#define HAS_HOVER false
+#define PADDING 16
+#endif
+
 struct KeypadTheme {
   int _bg;
   int _key;
@@ -85,10 +94,10 @@ struct Key {
 };
 
 struct Keypad {
-  Keypad(int charWidth, int charHeight);
+  Keypad(int charWidth, int charHeight, bool toolbar);
   ~Keypad() = default;
 
-  static int outerHeight(int charHeight) ;
+  int outerHeight(int charHeight) const;
   void clicked(int x, int y, bool pressed);
   void draw() const;
   void layout(int x, int y, int w, int h);
@@ -102,6 +111,7 @@ private:
   KeypadTheme *_theme;
   KeypadDrawContext _context;
   KeypadLayout _currentLayout;
+  bool _toolbar;
 
   void generateKeys();
 };
@@ -116,13 +126,9 @@ struct KeypadInput : public FormInput {
   bool floatBottom() override { return !_floatTop; }
   void layout(int x, int y, int w, int h) override;
   void drawHover(int dx, int dy, bool selected) override {};
-#if defined(_SDL)
-  // for cursor display
-  bool hasHover() override { return true; }
-#endif
+  bool hasHover() override { return HAS_HOVER; }
 
 private:
   bool _floatTop;
-  bool _toolbar;
   Keypad *_keypad;
 };

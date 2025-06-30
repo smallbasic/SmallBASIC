@@ -219,7 +219,8 @@ Runtime::Runtime(android_app *app) :
   _graphics(nullptr),
   _app(app),
   _eventQueue(nullptr),
-  _sensorEventQueue(nullptr) {
+  _sensorEventQueue(nullptr),
+  _keypad(nullptr) {
   _app->userData = nullptr;
   _app->onAppCmd = handleCommand;
   _app->onInputEvent = handleInput;
@@ -240,10 +241,12 @@ Runtime::~Runtime() {
   delete _output;
   delete _eventQueue;
   delete _graphics;
+  delete _keypad;
   runtime = nullptr;
   _output = nullptr;
   _eventQueue = nullptr;
   _graphics = nullptr;
+  _keypad = nullptr;
   pthread_mutex_destroy(&_mutex);
   disableSensor();
 }
@@ -770,7 +773,7 @@ void Runtime::handleKeyEvent(MAEvent &event) {
           break;
         }
       }
-    } else if (event.nativeKey < 127 && event.nativeKey != event.key) {
+    } else if (event.nativeKey != 0 && event.nativeKey < 127 && event.nativeKey != event.key) {
       // avoid translating keys send from onUnicodeChar
       event.key = getUnicodeChar(event.nativeKey, event.key);
     }
@@ -853,7 +856,9 @@ MAEvent Runtime::processEvents(int waitFlag) {
   case 1:
     // wait for an event
     _output->flush(true);
-    pollEvents(true);
+    if (!hasEvent()) {
+      pollEvents(true);
+    }
     break;
   case 2:
     _output->flush(false);

@@ -14,27 +14,27 @@
 #include "ui/keypad_icons.h"
 #include "keypad.h"
 
-constexpr int ROW_LENGTHS[] = {6, 10, 9, 9, 7};
+constexpr int ROW_LENGTHS[] = {7, 10, 9, 9, 7};
 constexpr int MAX_ROWS = 5;
 constexpr int MAX_COLS = 10;
 constexpr int QWERTY_ROW = 1;
 constexpr int ASDF_ROW = 2;
 constexpr int SPACE_COLS = 3;
-constexpr int PADDING = 16;
 constexpr double PI = 3.14159;
 
+// https://materialui.co/colors
 KeypadTheme MODERN_DARK_THEME = {
   ._bg = 0x0d0d0d,           // Deep black background
   ._key = 0x1a1a1a,          // Dark gray keys
   ._keyHighlight = 0x333333, // Slightly lighter for key press
   ._text = 0xe0e0e0,         // Soft white text
   ._outline = 0x2a2a2a,      // Subtle key outlines
-  ._funcKeyBg = 0x59422c,    // Soft faint purple (Material Purple 300~400)
+  ._funcKeyBg = 0x263238,    // Soft faint purple (Material Purple 300~400)
   ._funcKeyHighlight = 0xd1c4e9, // Pale lavender for highlight effect
 };
 
 constexpr RawKey LETTERS[][MAX_COLS] = {
-  {{K_CUT, K_CUT}, {K_COPY, K_COPY}, {K_PASTE, K_PASTE}, {K_SAVE, K_SAVE}, {K_RUN, K_RUN}, {K_HELP, K_HELP}},
+  {{K_CUT, K_CUT}, {K_COPY, K_COPY}, {K_PASTE, K_PASTE}, {K_SEARCH, K_SEARCH}, {K_SAVE, K_SAVE}, {K_RUN, K_RUN}, {K_HELP, K_HELP}},
   {{K_q, K_Q}, {K_w, K_W}, {K_e, K_E}, {K_r, K_R}, {K_t, K_T}, {K_y, K_Y}, {K_u, K_U}, {K_i, K_I}, {K_o, K_O}, {K_p, K_P}},
   {{K_a, K_A}, {K_s, K_S}, {K_d, K_D}, {K_f, K_F}, {K_g, K_G}, {K_h, K_H}, {K_j, K_J}, {K_k, K_K}, {K_l, K_L}},
   {{K_SHIFT, K_SHIFT}, {K_z, K_Z}, {K_x, K_X}, {K_c, K_C}, {K_v, K_V}, {K_b, K_B}, {K_n, K_N}, {K_m, K_M}, {K_BACKSPACE, K_BACKSPACE}},
@@ -42,7 +42,7 @@ constexpr RawKey LETTERS[][MAX_COLS] = {
 };
 
 constexpr RawKey SYMBOLS[][MAX_COLS] = {
-  {{K_CUT, K_CUT}, {K_COPY, K_COPY}, {K_PASTE, K_PASTE}, {K_SAVE, K_SAVE}, {K_RUN, K_RUN}, {K_HELP, K_HELP}},
+  {{K_CUT, K_CUT}, {K_COPY, K_COPY}, {K_PASTE, K_PASTE}, {K_SEARCH, K_SEARCH}, {K_SAVE, K_SAVE}, {K_RUN, K_RUN}, {K_HELP, K_HELP}},
   {{K_1, K_EXCLAIM}, {K_2, K_AT}, {K_3, K_HASH}, {K_4, K_DOLLAR}, {K_5, K_PERCENT}, {K_6, K_CARET}, {K_7, K_AMPERSAND}, {K_8, K_ASTERISK}, {K_9, K_LPAREN}, {K_0, K_RPAREN}},
   {{K_BACKTICK, K_TILDE}, {K_MINUS, K_UNDERSCORE}, {K_EQUALS, K_PLUS}, {K_LBRACKET, K_LBRACE}, {K_RBRACKET, K_RBRACE}, {K_BACKSLASH, K_PIPE}, {K_SEMICOLON, K_COLON}, {K_APOSTROPHE, K_QUOTE}, {K_HASH, K_EXT1}},
   {{K_SHIFT, K_SHIFT}, {K_LESS, K_COMMA}, {K_GREATER, K_PERIOD}, {K_QUESTION, K_SLASH}, {K_PLUS, K_EXT2}, {K_ASTERISK, K_EXT3}, {K_LPAREN, K_EXT4}, {K_RPAREN, K_EXT5}, {K_BACKSPACE, K_BACKSPACE}},
@@ -244,7 +244,7 @@ void Key::onClick(const bool useShift) const {
   case K_SPACE:
     event->key = SB_KEY_SPACE;
     break;
-  case K_FIND:
+  case K_SEARCH:
     event->key = SB_KEY_CTRL('f');
     break;
   case K_CUT:
@@ -275,19 +275,20 @@ void Key::onClick(const bool useShift) const {
 //
 // Keypad
 //
-Keypad::Keypad(int charWidth, int charHeight)
+Keypad::Keypad(int charWidth, int charHeight, bool toolbar)
   : _posX(0),
     _posY(0),
     _width(0),
     _height(0),
     _theme(&MODERN_DARK_THEME),
     _context(charWidth, charHeight),
-    _currentLayout(LayoutLetters) {
+    _currentLayout(LayoutLetters),
+    _toolbar(toolbar) {
   generateKeys();
 }
 
-int Keypad::outerHeight(int charHeight) {
-  return MAX_ROWS * ((PADDING * 2) + charHeight);
+int Keypad::outerHeight(int charHeight) const {
+  return (_toolbar ? 1 : MAX_ROWS) * ((PADDING * 2) + charHeight);
 }
 
 void Keypad::generateKeys() {
@@ -303,7 +304,9 @@ void Keypad::generateKeys() {
     break;
   }
 
-  for (int row = 0; row < MAX_ROWS; ++row) {
+  const int rows = _toolbar ? 1 : MAX_ROWS;
+
+  for (int row = 0; row < rows; ++row) {
     int cols = ROW_LENGTHS[row];
     for (int col = 0; col < cols; col++) {
       const RawKey &k = activeLayout[row][col];
@@ -324,10 +327,11 @@ void Keypad::layout(int x, int y, int w, int h) {
   const int keyW = width / ROW_LENGTHS[QWERTY_ROW];
   const int keyH = _context._charHeight + PADDING * 2;
   const int xStart = _posX + ((w - _width) / 2);
+  const int rows = _toolbar ? 1 : MAX_ROWS;
   int yPos = _posY;
   int index = 0;
 
-  for (int row = 0; row < MAX_ROWS; ++row) {
+  for (int row = 0; row < rows; ++row) {
     const int cols = ROW_LENGTHS[row];
     int xPos = xStart;
     if (row == QWERTY_ROW || row == ASDF_ROW) {
@@ -342,9 +346,6 @@ void Keypad::layout(int x, int y, int w, int h) {
       int keyWidth = keyW;
       if (row == 0) {
         keyWidth = _width / cols;
-        if (col < 2 || col > 3) {
-          keyWidth += 1;
-        }
       } else if (!key->_printable) {
         const int numKeys = 2;
         keyWidth = (_width - ((cols - numKeys) * keyW)) / numKeys;
@@ -395,17 +396,14 @@ void Keypad::draw() const {
 //
 KeypadInput::KeypadInput(bool floatTop, bool toolbar, int charWidth, int charHeight) :
   FormInput(0, 0, 0, charHeight * 2),
-  _floatTop(floatTop),
-  _toolbar(toolbar),
-  _keypad(nullptr) {
-  if (!toolbar) {
-    _keypad = new Keypad(charWidth, charHeight);
-    _height = Keypad::outerHeight(charHeight);
-  }
+  _floatTop(floatTop) {
+  _keypad = new Keypad(charWidth, charHeight, toolbar);
+  _height = _keypad->outerHeight(charHeight);
 }
 
 KeypadInput::~KeypadInput() {
   delete _keypad;
+  _keypad = nullptr;
 }
 
 void KeypadInput::clicked(int x, int y, bool pressed) {

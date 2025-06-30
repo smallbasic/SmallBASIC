@@ -13,13 +13,11 @@
 #include "common/device.h"
 #include "ui/keypad.h"
 
-extern Runtime *runtime;
-
 void showHelpLineInput(TextEditHelpWidget *helpWidget, int width = 35) {
   helpWidget->showPopup(width, 1);
 }
 
-void System::editSource(strlib::String loadPath, bool restoreOnExit) {
+void Runtime::editSource(strlib::String loadPath, bool restoreOnExit) {
   logEntered();
 
   strlib::String fileName;
@@ -60,7 +58,13 @@ void System::editSource(strlib::String loadPath, bool restoreOnExit) {
   _output->clearScreen();
   _output->addInput(editWidget);
   _output->addInput(helpWidget);
-  _output->addInput(new KeypadInput(false, false, charWidth, charHeight));
+
+  if (_keypad != nullptr) {
+    _output->addInput(_keypad);
+  } else {
+    _keypad = new KeypadInput(false, false, charWidth, charHeight);
+    _output->addInput(_keypad);
+  }
 
   // to layout inputs
   _output->resize(w, h);
@@ -68,11 +72,11 @@ void System::editSource(strlib::String loadPath, bool restoreOnExit) {
   if (gsb_last_line && isBreak()) {
     String msg = "Break at line: ";
     msg.append(gsb_last_line);
-    runtime->alert(msg);
+    alert(msg);
   } else if (gsb_last_error && !isBack()) {
     // program stopped with an error
     editWidget->setCursorRow(gsb_last_line + editWidget->getSelectionRow() - 1);
-    runtime->alert(gsb_last_errmsg);
+    alert(gsb_last_errmsg);
   }
 
   bool showStatus = !editWidget->getScroll();
@@ -89,11 +93,6 @@ void System::editSource(strlib::String loadPath, bool restoreOnExit) {
         _output->setStatus(editWidget->isDirty() ? dirtyFile : cleanFile);
         _output->redraw();
         showStatus = true;
-      } else if (widget == helpWidget && helpWidget->searchMode()) {
-        // end searching
-        widget = editWidget;
-        helpWidget->hide();
-        helpWidget->cancelMode();
       }
       break;
     case EVENT_TYPE_POINTER_RELEASED:
@@ -149,9 +148,18 @@ void System::editSource(strlib::String loadPath, bool restoreOnExit) {
           }
           break;
         case SB_KEY_CTRL('f'):
-          widget = helpWidget;
-          helpWidget->createSearch(false);
-          showHelpLineInput(helpWidget);
+          if (widget == helpWidget && helpWidget->searchMode()) {
+            // end searching
+            widget = editWidget;
+            helpWidget->hide();
+            helpWidget->cancelMode();
+            showStatus = false;
+          } else {
+            widget = helpWidget;
+            helpWidget->createSearch(false);
+            showHelpLineInput(helpWidget);
+            showStatus = true;
+          }
           break;
         case SB_KEY_CTRL('s'):
           saveFile(editWidget, loadPath);
@@ -222,13 +230,17 @@ void System::editSource(strlib::String loadPath, bool restoreOnExit) {
     if (!_output->removeInput(editWidget)) {
       trace("Failed to remove editor input");
     }
+    if (!_output->removeInput(_keypad)) {
+      trace("Failed to remove keypad input");
+    }
     _editor = editWidget;
     _editor->setFocus(false);
   } else {
     _editor = nullptr;
+    _keypad = nullptr;
   }
 
-  // deletes editWidget unless it has been removed
+  // deletes editWidget and _keypad unless it has been removed
   _output->removeInputs();
   if (!isClosing() && restoreOnExit) {
     _output->selectScreen(prevScreenId);

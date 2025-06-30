@@ -11,6 +11,7 @@
 
 #include "config.h"
 #include "ui/system.h"
+#include "ui/keypad.h"
 #include "platform/android/jni/display.h"
 #include "platform/android/jni/audio.h"
 
@@ -68,7 +69,7 @@ struct Runtime : public System {
   void share(const char *path) override { setString("share", path); }
   void showCursor(CursorType cursorType) override {}
   void showKeypad(bool show);
-  void onPaused(bool paused) { if (_graphics != NULL) _graphics->onPaused(paused); }
+  void onPaused(bool paused) { if (_graphics != nullptr) _graphics->onPaused(paused); }
   void onResize(int w, int h);
   void onRunCompleted() override;
   void onUnicodeChar(int ch);
@@ -83,6 +84,8 @@ struct Runtime : public System {
   int  getFontId();
 
 private:
+  void editSource(String loadPath, bool restoreOnExit) override;
+
   bool _keypadActive;
   bool _hasFocus;
   Graphics *_graphics;
@@ -94,6 +97,7 @@ private:
   const ASensor * _sensors[MAX_SENSORS]{};
   ASensorEventQueue *_sensorEventQueue;
   Audio _audio;
+  KeypadInput *_keypad;
 };
 
 #endif

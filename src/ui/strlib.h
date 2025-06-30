@@ -215,7 +215,7 @@ template<> bool List<String *>::contains(const char *s);
 //--Stack-----------------------------------------------------------------------
 
 template<typename T>
-struct Stack : public List<T> {
+struct Stack final : public List<T> {
   Stack() : List<T>() {}
   explicit Stack(int growSize) : List<T>(growSize) {}
   T peek() { return !this->_count ? (T)nullptr : this->_head[this->_count - 1]; }
@@ -226,7 +226,7 @@ struct Stack : public List<T> {
 //--Queue-----------------------------------------------------------------------
 
 template<typename T>
-struct Queue : public List<T> {
+struct Queue final : public List<T> {
   Queue() : List<T>() {}
   explicit Queue(int growSize) : List<T>(growSize) {}
   T front() { return !this->_count ? (T)nullptr : this->_head[0]; }

@@ -14,10 +14,8 @@
 #include "ui/ansiwidget.h"
 #include "ui/textedit.h"
 
-void reset_image_cache();
-
-struct Cache : public strlib::Properties<String *> {
-  Cache(int size) : Properties(size * 2), _index(0) {}
+struct Cache final : public strlib::Properties<String *> {
+  explicit Cache(int size) : Properties(size * 2), _index(0) {}
   void add(const char *key, const char *value);
   int _index;
 };
@@ -48,7 +46,7 @@ struct System {
   void setRunning(bool running);
   void systemLog(const char *msg);
   void systemPrint(const char *msg, ...);
-  AnsiWidget *getOutput() { return _output; }
+  AnsiWidget *getOutput() const { return _output; }
 
   enum CursorType {
     kHand, kArrow, kIBeam
@@ -77,7 +75,7 @@ struct System {
   static void setupPath(String &loadPath);
   static bool setParentPath();
 
-  void editSource(strlib::String loadPath, bool restoreOnExit);
+  virtual void editSource(strlib::String loadPath, bool restoreOnExit) = 0;
   bool execute(const char *bas);
   MAEvent getNextEvent() { return processEvents(1); }
   uint32_t getModifiedTime();

@@ -241,6 +241,8 @@ private:
   int _keywordIndex;
   int _packageIndex;
   bool _packageOpen;
+  int _xBase;
+  int _yBase;
   enum Layout {
     kLine,
     kSidebar,

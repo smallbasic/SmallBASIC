@@ -17,9 +17,10 @@
 #include "lib/maapi.h"
 #include "ui/ansiwidget.h"
 #include "ui/system.h"
+#include "ui/keypad.h"
 #include "platform/sdl/display.h"
 
-struct Runtime : public System {
+struct Runtime final : System {
   explicit Runtime(SDL_Window *window);
   ~Runtime() override;
 
@@ -35,10 +36,10 @@ struct Runtime : public System {
   void debugStop();
   void enableCursor(bool enabled) override;
   void exportRun(const char *path);
-  void redraw() { _graphics->redraw(); }
+  void redraw() const { _graphics->redraw(); }
   bool toggleFullscreen();
   void handleKeyEvent(MAEvent &event);
-  bool hasEvent() { return _eventQueue && _eventQueue->size() > 0; }
+  bool hasEvent() const { return _eventQueue && !_eventQueue->empty(); }
   void pause(int timeout);
   void pollEvents(bool blocking);
   MAEvent *popEvent() { return _eventQueue->pop(); }
@@ -61,15 +62,18 @@ struct Runtime : public System {
   SDL_Rect getWindowRect();
 
 private:
+  void editSource(String loadPath, bool restoreOnExit) override;
+
   bool _fullscreen;
-  SDL_Rect _windowRect;
-  SDL_Rect _saveRect;
+  SDL_Rect _windowRect{};
+  SDL_Rect _saveRect{};
   Graphics *_graphics;
   Stack<MAEvent *> *_eventQueue;
   SDL_Window *_window;
   SDL_Cursor *_cursorHand;
   SDL_Cursor *_cursorArrow;
   SDL_Cursor *_cursorIBeam;
+  KeypadInput *_keypad{};
 };
 
 #endif
