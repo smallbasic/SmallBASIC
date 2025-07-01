@@ -29,16 +29,16 @@ struct Runtime final : System {
   int ask(const char *title, const char *prompt, bool cancel) override;
   void browseFile(const char *url) override;
   void construct(const char *font, const char *boldFont);
-  bool debugActive();
+  static bool debugActive();
   bool debugOpen(const char *file);
   void debugStart(TextEditInput *edit, const char *file);
   void debugStep(TextEditInput *edit, TextEditHelpWidget *help, bool cont);
-  void debugStop();
+  static void debugStop();
   void enableCursor(bool enabled) override;
-  void exportRun(const char *path);
+  void exportRun(const char *path) const;
   void redraw() const { _graphics->redraw(); }
   bool toggleFullscreen();
-  void handleKeyEvent(MAEvent &event);
+  void handleKeyEvent(MAEvent &event) const;
   bool hasEvent() const { return _eventQueue && !_eventQueue->empty(); }
   void pause(int timeout);
   void pollEvents(bool blocking);
@@ -53,13 +53,12 @@ struct Runtime final : System {
   void showCursor(CursorType cursorType) override;
   int runShell(const char *startupBas, bool once, int fontScale, int debugPort);
   char *loadResource(const char *fileName) override;
-  void logStack(int line, bool subOrFunc);
   void onResize(int w, int h);
   void onRunCompleted() override;
   void setClipboardText(const char *text) override;
   char *getClipboardText() override;
-  void setWindowRect(SDL_Rect &rect);
-  SDL_Rect getWindowRect();
+  void setWindowRect(SDL_Rect &rect) const;
+  SDL_Rect getWindowRect() const;
 
 private:
   void editSource(String loadPath, bool restoreOnExit) override;
@@ -73,7 +72,7 @@ private:
   SDL_Cursor *_cursorHand;
   SDL_Cursor *_cursorArrow;
   SDL_Cursor *_cursorIBeam;
-  KeypadInput *_keypad{};
+  KeypadInput *_keypad;
 };
 
 #endif

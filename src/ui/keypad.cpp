@@ -20,17 +20,18 @@ constexpr int MAX_COLS = 10;
 constexpr int QWERTY_ROW = 1;
 constexpr int ASDF_ROW = 2;
 constexpr int SPACE_COLS = 3;
+constexpr int IMAGE_SIZE = 30;
 constexpr double PI = 3.14159;
 
 // https://materialui.co/colors
 KeypadTheme MODERN_DARK_THEME = {
-  ._bg = 0x0d0d0d,           // Deep black background
-  ._key = 0x1a1a1a,          // Dark gray keys
-  ._keyHighlight = 0x333333, // Slightly lighter for key press
-  ._text = 0xe0e0e0,         // Soft white text
-  ._outline = 0x2a2a2a,      // Subtle key outlines
-  ._funcKeyBg = 0x263238,    // Soft faint purple (Material Purple 300~400)
-  ._funcKeyHighlight = 0xd1c4e9, // Pale lavender for highlight effect
+  ._bg = 0x121212,           // Material UI standard dark background
+  ._key = 0x1e1e1e,          // Slightly raised surface color
+  ._keyHighlight = 0x2c2c2c, // Key press highlight (low elevation overlay)
+  ._text = 0xffffff,         // High contrast white text
+  ._outline = 0x2a2a2a,      // Subtle key outlines (very low elevation)
+  ._funcKeyBg = 0x263238,    // Blue Grey 800
+  ._funcKeyHighlight = 0x90a4ae, // Blue Grey 300 (matching accent highlight)
 };
 
 constexpr RawKey LETTERS[][MAX_COLS] = {
@@ -75,6 +76,7 @@ KeypadDrawContext::KeypadDrawContext(int charWidth, int charHeight) :
   _charHeight(charHeight),
   _shiftActive(false),
   _capsLockActive(false) {
+  const int imageSize = static_cast<int>(charHeight * 1.2);
 
   if (!_cutImage.decode(img_cut, img_cut_len) ||
       !_copyImage.decode(img_copy, img_copy_len) ||
@@ -88,6 +90,18 @@ KeypadDrawContext::KeypadDrawContext(int charWidth, int charHeight) :
       !_shiftImage.decode(img_keyboard_shift, img_keyboard_shift_len) ||
       !_toggleImage.decode(img_keyboard, img_keyboard_len)) {
     deviceLog("%s", _cutImage.getLastError());
+  } else if (imageSize < IMAGE_SIZE) {
+    _cutImage.resize(imageSize, imageSize);
+    _copyImage.resize(imageSize, imageSize);
+    _pasteImage.resize(imageSize, imageSize);
+    _saveImage.resize(imageSize, imageSize);
+    _runImage.resize(imageSize, imageSize);
+    _helpImage.resize(imageSize, imageSize);
+    _backImage.resize(imageSize, imageSize);
+    _enterImage.resize(imageSize, imageSize);
+    _searchImage.resize(imageSize, imageSize);
+    _shiftImage.resize(imageSize, imageSize);
+    _toggleImage.resize(imageSize, imageSize);
   }
 }
 

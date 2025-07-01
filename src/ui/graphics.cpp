@@ -96,7 +96,7 @@ Graphics::~Graphics() {
   _screen = nullptr;
 }
 
-Font *Graphics::createFont(int style, int size) {
+Font *Graphics::createFont(int style, int size) const {
   Font *result;
   bool italic = (style & FONT_STYLE_ITALIC);
   if (style & FONT_STYLE_BOLD) {
@@ -107,7 +107,7 @@ Font *Graphics::createFont(int style, int size) {
   return result;
 }
 
-void Graphics::deleteFont(Font *font) {
+void Graphics::deleteFont(const Font *font) {
   if (font == _font) {
     _font = nullptr;
   }
@@ -208,7 +208,7 @@ void Graphics::drawAaEllipse(int xc, int yc, int rx, int ry, bool fill) {
   }
 }
 
-void Graphics::drawLine(int startX, int startY, int endX, int endY) {
+void Graphics::drawLine(int startX, int startY, int endX, int endY) const {
   if (_drawTarget) {
     if (startY == endY) {
       // horizontal
@@ -271,13 +271,13 @@ void Graphics::drawLine(int startX, int startY, int endX, int endY) {
   }
 }
 
-void Graphics::drawPixel(int posX, int posY) {
+void Graphics::drawPixel(int posX, int posY) const {
   pixel_t *line = _drawTarget->getLine(posY);
   line[posX] = _drawColor;
 }
 
 void Graphics::drawRGB(const MAPoint2d *dstPoint, const void *src,
-                       const MARect *srcRect, int opacity, int stride) {
+                       const MARect *srcRect, int opacity, int stride) const {
   auto *image = (uint8_t *)src;
   float op = opacity / 100.0f;
   int top = srcRect->top;
@@ -316,7 +316,7 @@ void Graphics::drawRGB(const MAPoint2d *dstPoint, const void *src,
   }
 }
 
-void Graphics::drawChar(FT_Bitmap *bitmap, FT_Int x, FT_Int y) {
+void Graphics::drawChar(FT_Bitmap *bitmap, FT_Int x, FT_Int y) const {
   FT_Int xMax = x + bitmap->width;
   FT_Int yMax = y + bitmap->rows;
 
@@ -351,7 +351,7 @@ void Graphics::drawChar(FT_Bitmap *bitmap, FT_Int x, FT_Int y) {
   }
 }
 
-void Graphics::drawText(int left, int top, const char *str, int len) {
+void Graphics::drawText(int left, int top, const char *str, int len) const {
   if (_drawTarget && _font) {
     FT_Vector pen;
     pen.x = left;
@@ -367,7 +367,7 @@ void Graphics::drawText(int left, int top, const char *str, int len) {
   }
 }
 
-void Graphics::getImageData(Canvas *canvas, uint8_t *image, const MARect *srcRect, int stride) {
+void Graphics::getImageData(Canvas *canvas, uint8_t *image, const MARect *srcRect, int stride) const {
   size_t scale = 1;
   int x_end = srcRect->left + srcRect->width;
   int y_end = srcRect->top + srcRect->height;
@@ -389,7 +389,7 @@ void Graphics::getImageData(Canvas *canvas, uint8_t *image, const MARect *srcRec
   }
 }
 
-int Graphics::getPixel(Canvas *canvas, int posX, int posY) {
+int Graphics::getPixel(Canvas *canvas, int posX, int posY) const {
   int result = 0;
   if (canvas == HANDLE_SCREEN) {
     canvas = _screen;
@@ -411,7 +411,7 @@ int Graphics::getPixel(Canvas *canvas, int posX, int posY) {
   return result;
 }
 
-MAExtent Graphics::getTextSize(const char *str, int len) {
+MAExtent Graphics::getTextSize(const char *str, int len) const {
   int width = 0;
   int height = 0;
   if (_font) {
@@ -424,7 +424,7 @@ MAExtent Graphics::getTextSize(const char *str, int len) {
   return (MAExtent)((width << 16) + height);
 }
 
-void Graphics::setClip(int x, int y, int w, int h) {
+void Graphics::setClip(int x, int y, int w, int h) const {
   if (_drawTarget) {
     _drawTarget->setClip(x, y, w, h);
   }
@@ -444,7 +444,7 @@ MAHandle Graphics::setDrawTarget(MAHandle maHandle) {
 }
 
 // see: http://en.wikipedia.org/wiki/Xiaolin_Wu%27s_line_algorithm
-void Graphics::aaLine(int x0, int y0, int x1, int y1) {
+void Graphics::aaLine(int x0, int y0, int x1, int y1) const {
   int steep = abs(y1 - y0) > abs(x1 - x0);
 
   if (steep) {
@@ -507,7 +507,7 @@ void Graphics::aaLine(int x0, int y0, int x1, int y1) {
   }
 }
 
-void Graphics::aaPlot(int posX, int posY, double c) {
+void Graphics::aaPlot(int posX, int posY, double c) const {
   if (_drawTarget
       && posX >= _drawTarget->x()
       && posY >= _drawTarget->y()
@@ -527,7 +527,7 @@ void Graphics::aaPlot(int posX, int posY, double c) {
   }
 }
 
-void Graphics::aaPlotX8(int xc, int yc, int x, int y, double c, bool fill) {
+void Graphics::aaPlotX8(int xc, int yc, int x, int y, double c, bool fill) const {
   if (fill) {
     int x1 = xc + x;
     int x2 = xc - x;
@@ -548,7 +548,7 @@ void Graphics::aaPlotX8(int xc, int yc, int x, int y, double c, bool fill) {
 
 }
 
-void Graphics::aaPlotY8(int xc, int yc, int x, int y, double c, bool fill) {
+void Graphics::aaPlotY8(int xc, int yc, int x, int y, double c, bool fill) const {
   if (fill) {
     int x1 = xc + x;
     int x2 = xc - x;
@@ -575,7 +575,7 @@ void Graphics::plot4(int xc, int yc, int x, int y) {
   drawPixel(xc - x, yc - y);
 }
 
-void Graphics::line2(int xc, int yc, int x, int y) {
+void Graphics::line2(int xc, int yc, int x, int y) const {
   drawLine(xc - x, yc + y, xc + x, yc + y);
   drawLine(xc - x, yc - y, xc + x, yc - y);
 }

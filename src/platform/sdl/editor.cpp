@@ -232,7 +232,7 @@ void Runtime::editSource(String loadPath, bool restoreOnExit) {
   if (_keypad != nullptr) {
     _output->addInput(_keypad);
   } else {
-    _keypad = new KeypadInput(false, false, charWidth, charHeight);
+    _keypad = new KeypadInput(false, true, charWidth, charHeight);
     _output->addInput(_keypad);
   }
 
@@ -329,7 +329,7 @@ void Runtime::editSource(String loadPath, bool restoreOnExit) {
           helpWidget->hide();
           helpWidget->cancelMode();
           statusMessage.setDirty(editWidget);
-          ((Runtime *)this)->debugStop();
+          Runtime::debugStop();
           break;
         case SB_KEY_CTRL('s'):
           saveFile(editWidget, loadPath);

@@ -44,8 +44,8 @@ struct System {
   void setLoadBreak(const char *path);
   void setLoadPath(const char *path);
   void setRunning(bool running);
-  void systemLog(const char *msg);
-  void systemPrint(const char *msg, ...);
+  void systemLog(const char *msg) const;
+  void systemPrint(const char *msg, ...) const;
   AnsiWidget *getOutput() const { return _output; }
 
   enum CursorType {
@@ -78,7 +78,7 @@ struct System {
   virtual void editSource(strlib::String loadPath, bool restoreOnExit) = 0;
   bool execute(const char *bas);
   MAEvent getNextEvent() { return processEvents(1); }
-  uint32_t getModifiedTime();
+  uint32_t getModifiedTime() const;
   void handleEvent(MAEvent &event);
   void handleMenu(MAEvent &event);
   bool isEditEnabled() const {return opt_ide == IDE_INTERNAL || isScratchLoad();}
@@ -86,17 +86,17 @@ struct System {
   bool isNetworkLoad() const {return _loadPath.indexOf("://", 1) != -1;}
   bool isScratchLoad() const {return _loadPath.indexOf("scratch", 0) != -1;}
   bool loadSource(const char *fileName);
-  void resize();
+  void resize() const;
   void runEdit(const char *startupBas);
   void runLive(const char *startupBas);
   void runMain(const char *mainBasPath);
   void runOnce(const char *startupBas, bool runWait);
   void saveFile(TextEditInput *edit, strlib::String &path);
-  void setDimensions();
+  void setDimensions() const;
   void showCompletion(bool success);
-  void printErrorLine();
+  void printErrorLine() const;
   void printSource();
-  void printSourceLine(char *text, int line, bool last);
+  void printSourceLine(char *text, int line, bool last) const;
   void setRestart();
   void showMenu();
   void showSystemScreen(bool showSrc);
