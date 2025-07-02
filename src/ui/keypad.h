@@ -18,7 +18,7 @@ using namespace strlib;
 #if defined(_SDL)
 // for cursor display
 #define HAS_HOVER true
-#define PADDING 8
+#define PADDING 6
 #else
 #define HAS_HOVER false
 #define PADDING 16

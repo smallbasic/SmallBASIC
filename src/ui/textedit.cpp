@@ -425,9 +425,12 @@ char EditBuffer::getChar(int pos) const {
 }
 
 int EditBuffer::insertChars(int pos, const char *text, int num) {
+#if defined(_SDL)
   if (num == 1 && *text < 0) {
+    // avoid spurious keyboard characters
     return 0;
   }
+#endif
   int required = _len + num + 1;
   if (required >= _size) {
     _size += (required + GROW_SIZE);
@@ -542,7 +545,7 @@ void TextEditInput::completeWord(const char *word) {
     int start = wordStart();
     int end = _state.cursor;
     int len = end - start;
-    int insertLen = strlen(word) - len;
+    size_t insertLen = strlen(word) - len;
     int index = end == 0 ? 0 : end - 1;
     bool lastUpper = isupper(_buf._buffer[index]);
 
@@ -558,7 +561,7 @@ const char *TextEditInput::completeKeyword(int index) {
   const char *help = nullptr;
   char *selection = getWordBeforeCursor();
   if (selection != nullptr) {
-    int len = strlen(selection);
+    size_t len = strlen(selection);
     int count = 0;
     for (auto & i : keyword_help) {
       if (strncasecmp(selection, i.keyword, len) == 0 &&
@@ -1240,7 +1243,7 @@ void TextEditInput::calcMargin() {
 void TextEditInput::changeCase() {
   int start, end;
   char *selection = getSelection(&start, &end);
-  int len = strlen(selection);
+  size_t len = strlen(selection);
   enum { up, down, mixed } curcase = isupper(selection[0]) ? up : down;
 
   for (int i = 1; i < len; i++) {
@@ -1330,7 +1333,7 @@ void TextEditInput::editEnter() {
 
     // check whether the previous line was a comment
     char *buf = lineText(prevLineStart);
-    int length = strlen(buf);
+    size_t length = strlen(buf);
     int pos = 0;
     while (buf && (buf[pos] == ' ' || buf[pos] == '\t')) {
       pos++;
@@ -1498,7 +1501,7 @@ void TextEditInput::findMatchingBrace() {
 int TextEditInput::getCompletions(StringList *list, int max) {
   int count = 0;
   char *selection = getWordBeforeCursor();
-  unsigned len = selection != nullptr ? strlen(selection) : 0;
+  size_t len = selection != nullptr ? strlen(selection) : 0;
   if (len > 0) {
     for (int i = 0; i < keyword_help_len && count < max; i++) {
       if (strncasecmp(selection, keyword_help[i].keyword, len) == 0) {
@@ -2128,7 +2131,7 @@ void TextEditHelpWidget::createCompletionHelp() {
   reset(kCompletion);
 
   char *selection = _editor->getWordBeforeCursor();
-  int len = selection != nullptr ? strlen(selection) : 0;
+  size_t len = selection != nullptr ? strlen(selection) : 0;
   if (len > 0) {
     StringList words;
     for (auto & i : keyword_help) {
@@ -2353,7 +2356,7 @@ void TextEditHelpWidget::reset(HelpMode mode) {
 }
 
 bool TextEditHelpWidget::selected(MAPoint2d pt, int scrollX, int scrollY, bool &redraw) {
-  bool result = hasFocus();
+  bool result = hasFocus() && FormEditInput::overlaps(pt, scrollX, scrollY);
   if (result) {
     dragPage(pt.y, redraw);
   }

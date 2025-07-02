@@ -2,15 +2,15 @@ apply plugin: 'com.android.application'
 
 android {
   // app can use the API features included in this API level and lower.
-  compileSdk 34
+  compileSdk 36
 
   // can override some attributes in main/AndroidManifest.xml
   defaultConfig {
     applicationId 'net.sourceforge.smallbasic'
     minSdkVersion 21
-    targetSdkVersion 34
-    versionCode 78
-    versionName '12.29'
+    targetSdkVersion 36
+    versionCode 79
+    versionName '12.30'
     resourceConfigurations += ['en']
   }
 

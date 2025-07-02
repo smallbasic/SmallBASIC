@@ -134,11 +134,17 @@ void Runtime::editSource(strlib::String loadPath, bool restoreOnExit) {
           redraw = false;
           break;
         case SB_KEY_F(1):
-          widget = helpWidget;
-          helpWidget->createKeywordIndex();
-          helpWidget->showPopup(-4, -2);
-          helpWidget->setFocus(true);
-          showStatus = false;
+          if (widget == helpWidget) {
+            // end help mode
+            widget = editWidget;
+            helpWidget->hide();
+            helpWidget->cancelMode();
+          } else {
+            widget = helpWidget;
+            helpWidget->createKeywordIndex();
+            helpWidget->showPopup(-4, -2);
+            helpWidget->setFocus(true);
+          }
           break;
         case SB_KEY_F(9):
         case SB_KEY_CTRL('r'):
@@ -148,17 +154,15 @@ void Runtime::editSource(strlib::String loadPath, bool restoreOnExit) {
           }
           break;
         case SB_KEY_CTRL('f'):
-          if (widget == helpWidget && helpWidget->searchMode()) {
-            // end searching
+          if (widget == helpWidget) {
+            // end help mode
             widget = editWidget;
             helpWidget->hide();
             helpWidget->cancelMode();
-            showStatus = false;
           } else {
             widget = helpWidget;
             helpWidget->createSearch(false);
             showHelpLineInput(helpWidget);
-            showStatus = true;
           }
           break;
         case SB_KEY_CTRL('s'):

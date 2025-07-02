@@ -159,11 +159,11 @@ char Key::getKey(bool useShift) const {
   char result;
   KeyCode keyCode = useShift ? _alt : _key;
   switch (keyCode) {
-  case K_EXT1: result = 164; break;
-  case K_EXT2: result = 172; break;
-  case K_EXT3: result = 182; break;
-  case K_EXT4: result = 222; break;
-  case K_EXT5: result = 223; break;
+  case K_EXT1: result = (char)164; break;
+  case K_EXT2: result = (char)172; break;
+  case K_EXT3: result = (char)182; break;
+  case K_EXT4: result = (char)222; break;
+  case K_EXT5: result = (char)223; break;
   default:
     result = keyCode;
     break;
@@ -280,7 +280,7 @@ void Key::onClick(const bool useShift) const {
     event->key = SB_KEY_F(1);
     break;
   default:
-    event->key = getKey(useShift);
+    event->key = (unsigned char)getKey(useShift);
     break;
   }
   maPushEvent(event);
