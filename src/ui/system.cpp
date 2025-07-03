@@ -753,7 +753,7 @@ char *System::readSource(const char *fileName) {
   }
   if (buffer != nullptr) {
     delete [] _programSrc;
-    int len = strlen(buffer) + 1;
+    size_t len = strlen(buffer) + 1;
     _programSrc = new char[len];
     memcpy(_programSrc, buffer, len);
     _programSrc[len - 1] = '\0';

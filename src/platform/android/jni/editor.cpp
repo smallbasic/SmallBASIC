@@ -87,6 +87,7 @@ void Runtime::editSource(strlib::String loadPath, bool restoreOnExit) {
 
   while (_state == kEditState) {
     MAEvent event = getNextEvent();
+    bool exitHelp = false;
     switch (event.type) {
     case EVENT_TYPE_POINTER_PRESSED:
       if (!showStatus && widget == editWidget && event.point.x < editWidget->getMarginWidth()) {
@@ -135,14 +136,11 @@ void Runtime::editSource(strlib::String loadPath, bool restoreOnExit) {
           break;
         case SB_KEY_F(1):
           if (widget == helpWidget) {
-            // end help mode
-            widget = editWidget;
-            helpWidget->hide();
-            helpWidget->cancelMode();
+            exitHelp = true;
           } else {
             widget = helpWidget;
-            helpWidget->createKeywordIndex();
             helpWidget->showPopup(-4, -2);
+            helpWidget->createKeywordIndex();
             helpWidget->setFocus(true);
           }
           break;
@@ -155,10 +153,7 @@ void Runtime::editSource(strlib::String loadPath, bool restoreOnExit) {
           break;
         case SB_KEY_CTRL('f'):
           if (widget == helpWidget) {
-            // end help mode
-            widget = editWidget;
-            helpWidget->hide();
-            helpWidget->cancelMode();
+            exitHelp = true;
           } else {
             widget = helpWidget;
             helpWidget->createSearch(false);
@@ -203,7 +198,7 @@ void Runtime::editSource(strlib::String loadPath, bool restoreOnExit) {
       }
     }
 
-    if (isBack() && widget == helpWidget) {
+    if ((exitHelp || isBack()) && widget == helpWidget) {
       widget = editWidget;
       helpWidget->hide();
       editWidget->setFocus(true);

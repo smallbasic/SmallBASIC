@@ -2411,8 +2411,9 @@ void TextEditHelpWidget::buildKeywordIndex() {
   _buf.clear();
   _buf.append("SmallBASIC language reference\n\n");
   _buf.append("+ Select a category\n|\n");
+  int rows = 4;
 
-  keywordIterator([=](int index, int packageIndex, bool nextPackage) {
+  keywordIterator([&](int index, int packageIndex, bool nextPackage) {
     if (nextPackage) {
       const char *package = keyword_help[index].package;
       if (packageIndex < _packageIndex) {
@@ -2430,9 +2431,11 @@ void TextEditHelpWidget::buildKeywordIndex() {
       }
       _buf.append(package);
       _buf.append("\n", 1);
+      ++rows;
 
       if (_packageOpen && _packageIndex == packageIndex) {
         _buf.append("   |\n", 5);
+        ++rows;
       }
     }
 
@@ -2441,6 +2444,7 @@ void TextEditHelpWidget::buildKeywordIndex() {
       _buf.append(LEVEL2_OPEN, LEVEL2_LEN);
       _buf.append(keyword_help[index].keyword);
       _buf.append("\n", 1);
+      ++rows;
     }
 
     return true;
@@ -2456,10 +2460,15 @@ void TextEditHelpWidget::buildKeywordIndex() {
     _buf.append("\n\n", 2);
     _buf.append(keyword_help[_keywordIndex].help);
     _buf.append("\n\n", 2);
+    rows += 7;
+    int scroll = ((_charHeight * rows) - (_height - _y)) / _charHeight;
+    if (scroll > 0) {
+      _scroll = scroll;
+    }
+  } else {
+    _scroll = 0;
   }
-
   _cursorRow = getCursorRow();
-  _scroll = 0;
 }
 
 void TextEditHelpWidget::showPopup(int cols, int rows) {
