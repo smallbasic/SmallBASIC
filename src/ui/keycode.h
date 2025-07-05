@@ -17,13 +17,16 @@ enum KeyCode : char {
   K_SEARCH   = (char)-6,
   K_RUN      = (char)-7,
   K_TOGGLE   = (char)-8,
-  K_SHIFT    = (char)-9,
-  K_FIND     = (char)-10,
-  K_EXT1     = (char)-11,
-  K_EXT2     = (char)-12,
-  K_EXT3     = (char)-13,
-  K_EXT4     = (char)-14,
-  K_EXT5     = (char)-15,
+  K_FIND     = (char)-9,
+  K_LINE_UP  = (char)-10,
+  K_PAGE_UP  = (char)-11,
+  K_LINE_DOWN= (char)-12,
+  K_PAGE_DOWN= (char)-13,
+  K_EXT1     = (char)-14,
+  K_EXT2     = (char)-15,
+  K_EXT3     = (char)-16,
+  K_EXT4     = (char)-17,
+  K_EXT5     = (char)-18,
   K_NULL     = 0,
   K_BACKSPACE = 8,
   K_TAB      = 9,
@@ -92,3 +95,6 @@ inline bool isExtended(KeyCode key) {
   return key >= K_EXT5 && key <= K_EXT1;
 }
 
+inline bool isArrow(KeyCode key) {
+  return key == K_LINE_UP || key == K_PAGE_UP || key == K_LINE_DOWN || key == K_PAGE_DOWN;
+}

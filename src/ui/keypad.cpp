@@ -14,7 +14,7 @@
 #include "ui/keypad_icons.h"
 #include "keypad.h"
 
-constexpr int ROW_LENGTHS[] = {7, 10, 9, 9, 7};
+constexpr int ROW_LENGTHS[] = {7, 10, 9, 9, 8};
 constexpr int MAX_ROWS = 5;
 constexpr int MAX_COLS = 10;
 constexpr int QWERTY_ROW = 1;
@@ -34,20 +34,72 @@ KeypadTheme MODERN_DARK_THEME = {
   ._funcKeyHighlight = 0x90a4ae, // Blue Grey 300 (matching accent highlight)
 };
 
-constexpr RawKey LETTERS[][MAX_COLS] = {
-  {{K_CUT, K_CUT}, {K_COPY, K_COPY}, {K_PASTE, K_PASTE}, {K_SEARCH, K_SEARCH}, {K_SAVE, K_SAVE}, {K_RUN, K_RUN}, {K_HELP, K_HELP}},
-  {{K_q, K_Q}, {K_w, K_W}, {K_e, K_E}, {K_r, K_R}, {K_t, K_T}, {K_y, K_Y}, {K_u, K_U}, {K_i, K_I}, {K_o, K_O}, {K_p, K_P}},
-  {{K_a, K_A}, {K_s, K_S}, {K_d, K_D}, {K_f, K_F}, {K_g, K_G}, {K_h, K_H}, {K_j, K_J}, {K_k, K_K}, {K_l, K_L}},
-  {{K_SHIFT, K_SHIFT}, {K_z, K_Z}, {K_x, K_X}, {K_c, K_C}, {K_v, K_V}, {K_b, K_B}, {K_n, K_N}, {K_m, K_M}, {K_BACKSPACE, K_BACKSPACE}},
-  {{K_TOGGLE, K_TOGGLE}, {K_LPAREN, K_LBRACKET}, {K_SPACE, K_SPACE}, {K_RPAREN, K_RBRACKET}, {K_ENTER, K_ENTER}}
-};
-
-constexpr RawKey SYMBOLS[][MAX_COLS] = {
-  {{K_CUT, K_CUT}, {K_COPY, K_COPY}, {K_PASTE, K_PASTE}, {K_SEARCH, K_SEARCH}, {K_SAVE, K_SAVE}, {K_RUN, K_RUN}, {K_HELP, K_HELP}},
-  {{K_1, K_EXCLAIM}, {K_2, K_AT}, {K_3, K_HASH}, {K_4, K_DOLLAR}, {K_5, K_PERCENT}, {K_6, K_CARET}, {K_7, K_AMPERSAND}, {K_8, K_ASTERISK}, {K_9, K_LPAREN}, {K_0, K_RPAREN}},
-  {{K_BACKTICK, K_TILDE}, {K_MINUS, K_UNDERSCORE}, {K_EQUALS, K_PLUS}, {K_LBRACKET, K_LBRACE}, {K_RBRACKET, K_RBRACE}, {K_BACKSLASH, K_PIPE}, {K_SEMICOLON, K_COLON}, {K_APOSTROPHE, K_QUOTE}, {K_HASH, K_EXT1}},
-  {{K_SHIFT, K_SHIFT}, {K_LESS, K_COMMA}, {K_GREATER, K_PERIOD}, {K_QUESTION, K_SLASH}, {K_PLUS, K_EXT2}, {K_ASTERISK, K_EXT3}, {K_LPAREN, K_EXT4}, {K_RPAREN, K_EXT5}, {K_BACKSPACE, K_BACKSPACE}},
-  {{K_TOGGLE, K_TOGGLE}, {K_LPAREN, K_LBRACKET}, {K_SPACE, K_SPACE}, {K_RPAREN, K_RBRACKET}, {K_ENTER, K_ENTER}}
+constexpr RawKey KEYS[MAX_ROWS][MAX_COLS] = {
+  // Toolbar
+  {
+    {K_CUT, K_CUT, K_CUT, K_CUT},
+    {K_COPY, K_COPY, K_COPY, K_COPY},
+    {K_PASTE, K_PASTE, K_PASTE, K_PASTE},
+    {K_SEARCH, K_SEARCH, K_SEARCH, K_SEARCH},
+    {K_SAVE, K_SAVE, K_SAVE, K_SAVE},
+    {K_RUN, K_RUN, K_RUN, K_RUN},
+    {K_HELP, K_HELP, K_HELP, K_HELP},
+    {K_NULL},
+    {K_NULL},
+    {K_NULL}
+  },
+  // QWERTY
+  {
+    {K_q, K_Q, K_1, K_EXCLAIM},
+    {K_w, K_W, K_2, K_AT},
+    {K_e, K_E, K_3, K_HASH},
+    {K_r, K_R, K_4, K_DOLLAR},
+    {K_t, K_T, K_5, K_PERCENT},
+    {K_y, K_Y, K_6, K_CARET},
+    {K_u, K_U, K_7, K_AMPERSAND},
+    {K_i, K_I, K_8, K_ASTERISK},
+    {K_o, K_O, K_9, K_LPAREN},
+    {K_p, K_P, K_0, K_RPAREN}
+  },
+  // ASDF
+  {
+    {K_a, K_A, K_BACKTICK, K_TILDE},
+    {K_s, K_S, K_MINUS, K_UNDERSCORE},
+    {K_d, K_D, K_EQUALS, K_PLUS},
+    {K_f, K_F, K_LBRACKET, K_LBRACE},
+    {K_g, K_G, K_RBRACKET, K_RBRACE},
+    {K_h, K_H, K_BACKSLASH, K_PIPE},
+    {K_j, K_J, K_SEMICOLON, K_COLON},
+    {K_k, K_K, K_APOSTROPHE, K_QUOTE},
+    {K_l, K_L, K_HASH, K_EXT1},
+    {K_NULL}
+  },
+  // ZXC
+  {
+    {K_TOGGLE, K_TOGGLE, K_TOGGLE, K_TOGGLE},
+    {K_z, K_Z, K_LESS, K_COMMA},
+    {K_x, K_X, K_GREATER, K_PERIOD},
+    {K_c, K_C, K_QUESTION, K_SLASH},
+    {K_v, K_V, K_PLUS, K_EXT2},
+    {K_b, K_B, K_ASTERISK, K_EXT3},
+    {K_n, K_N, K_LPAREN, K_EXT4},
+    {K_m, K_M, K_RPAREN, K_EXT5},
+    {K_BACKSPACE, K_BACKSPACE, K_BACKSPACE, K_BACKSPACE},
+    {K_NULL}
+  },
+  // FUNCs, SPACE
+  {
+    {K_LINE_UP, K_PAGE_UP, K_LINE_UP, K_PAGE_UP},
+    {K_LINE_DOWN, K_PAGE_DOWN, K_LINE_DOWN, K_PAGE_DOWN},
+    {K_LPAREN, K_LBRACKET, K_LPAREN, K_LBRACKET},
+    {K_SPACE, K_SPACE, K_SPACE, K_SPACE},
+    {K_RPAREN, K_RBRACKET, K_RPAREN, K_RBRACKET},
+    {K_ENTER, K_ENTER, K_ENTER, K_ENTER},
+    {K_NULL},
+    {K_NULL},
+    {K_NULL},
+    {K_NULL}
+  }
 };
 
 //
@@ -74,9 +126,8 @@ void KeypadImage::draw(int x, int y, int w, int h) const {
 KeypadDrawContext::KeypadDrawContext(int charWidth, int charHeight) :
   _charWidth(charWidth),
   _charHeight(charHeight),
-  _shiftActive(false),
-  _capsLockActive(false) {
-  const int imageSize = static_cast<int>(charHeight * 1.2);
+  _keySet(kLower) {
+  const int imageSize = static_cast<int>(charHeight * 1.1);
 
   if (!_cutImage.decode(img_cut, img_cut_len) ||
       !_copyImage.decode(img_copy, img_copy_len) ||
@@ -87,10 +138,13 @@ KeypadDrawContext::KeypadDrawContext(int charWidth, int charHeight) :
       !_backImage.decode(img_backspace, img_backspace_len) ||
       !_enterImage.decode(img_arrow_enter, img_arrow_enter_len) ||
       !_searchImage.decode(img_search, img_search_len) ||
-      !_shiftImage.decode(img_keyboard_shift, img_keyboard_shift_len) ||
-      !_toggleImage.decode(img_keyboard, img_keyboard_len)) {
+      !_lineUpImage.decode(img_arrow_up, img_arrow_up_len) ||
+      !_pageUpImage.decode(img_arrow_upload, img_arrow_upload_len) ||
+      !_lineDownImage.decode(img_arrow_down, img_arrow_down_len) ||
+      !_pageDownImage.decode(img_arrow_download, img_arrow_download_len) ||
+      !_toggleImage.decode(img_layers, img_layers_len)) {
     deviceLog("%s", _cutImage.getLastError());
-  } else if (imageSize < IMAGE_SIZE) {
+  } else if (imageSize < IMAGE_SIZE - 2 || imageSize > IMAGE_SIZE + 2) {
     _cutImage.resize(imageSize, imageSize);
     _copyImage.resize(imageSize, imageSize);
     _pasteImage.resize(imageSize, imageSize);
@@ -100,22 +154,17 @@ KeypadDrawContext::KeypadDrawContext(int charWidth, int charHeight) :
     _backImage.resize(imageSize, imageSize);
     _enterImage.resize(imageSize, imageSize);
     _searchImage.resize(imageSize, imageSize);
-    _shiftImage.resize(imageSize, imageSize);
+    _lineUpImage.resize(imageSize, imageSize);
+    _pageUpImage.resize(imageSize, imageSize);
+    _lineDownImage.resize(imageSize, imageSize);
+    _pageDownImage.resize(imageSize, imageSize);
     _toggleImage.resize(imageSize, imageSize);
   }
 }
 
-void KeypadDrawContext::toggleShift() {
-  _shiftActive = !_shiftActive;
-}
-
-bool KeypadDrawContext::useShift() const {
-  return _shiftActive ^ _capsLockActive;
-}
-
-const KeypadImage *KeypadDrawContext::getImage(const KeyCode keycode) const {
+const KeypadImage *KeypadDrawContext::getImage(const RawKey &key) const {
   const KeypadImage *result;
-  switch (keycode) {
+  switch (key._lower) {
   case K_CUT: result = &_cutImage; break;
   case K_COPY: result = &_copyImage; break;
   case K_PASTE: result = &_pasteImage; break;
@@ -125,39 +174,50 @@ const KeypadImage *KeypadDrawContext::getImage(const KeyCode keycode) const {
   case K_BACKSPACE: result = &_backImage;break;
   case K_ENTER: result = &_enterImage; break;
   case K_SEARCH: result = &_searchImage; break;
-  case K_SHIFT: result = &_shiftImage; break;
   case K_TOGGLE: result = &_toggleImage; break;
+  case K_LINE_UP: result = &_lineUpImage; break;
+  case K_PAGE_UP: result = &_pageUpImage; break;
+  case K_LINE_DOWN: result = &_lineDownImage; break;
+  case K_PAGE_DOWN: result = &_pageDownImage; break;
   default: result = nullptr; break;
   }
   return result;
+}
+
+void KeypadDrawContext::toggle() {
+  _keySet = static_cast<Keyset>((_keySet + 1) % kSize);
 }
 
 //
 // Key
 //
 Key::Key(const RawKey &k) :
-  _key(k._normal),
-  _alt(k._shifted) {
+  _key(k) {
   _pressed = false;
-  _number = isNumber(k._normal);
-  _printable = isPrintable(k._normal) || isExtended(k._normal);
+  _number = isNumber(k._lower);
+  _printable = isPrintable(k._lower) || isExtended(k._lower);
 }
 
-int Key::color(const KeypadTheme *theme, bool shiftActive) const {
+int Key::color(const KeypadTheme *theme) const {
   int result;
-  if ((_key == K_SHIFT) && shiftActive) {
-    result = !_printable ? theme->_funcKeyHighlight : theme->_keyHighlight;
-  } else if (_number) {
-    result = theme->_funcKeyHighlight;
-  } else {
+  if (_printable) {
     result = theme->_text;
+  } else {
+    result = theme->_funcKeyHighlight;
   }
   return result;
 }
 
-char Key::getKey(bool useShift) const {
+char Key::getKey(const KeypadDrawContext *context) const {
   char result;
-  KeyCode keyCode = useShift ? _alt : _key;
+  KeyCode keyCode;
+
+  switch (context->_keySet) {
+  case kLower: keyCode = _key._lower; break;
+  case kUpper: keyCode = _key._upper; break;
+  case kNumber: keyCode = _key._number; break;
+  case kSymbol: keyCode = _key._symbol; break;
+  }
   switch (keyCode) {
   case K_EXT1: result = (char)164; break;
   case K_EXT2: result = (char)172; break;
@@ -218,16 +278,13 @@ void Key::draw(const KeypadTheme *theme, const KeypadDrawContext *context) const
   }
 
   if (_printable) {
-    bool useShift = context->_shiftActive ^ context->_capsLockActive;
-    char key[] = {useShift ? _alt : _key, '\0'};
+    char keyChar = getKey(context);
+    char key[] = {keyChar, '\0'};
     int xOffset = (_w - context->_charWidth) / 2;
     int yOffset = (_h - context->_charHeight) / 2;
     int textX = _x + xOffset;
     int textY = _y + yOffset;
-    if (isExtended(useShift ? _alt : _key)) {
-      key[0] = getKey(useShift);
-    }
-    maSetColor(color(theme, context->_shiftActive));
+    maSetColor(color(theme));
     maDrawText(textX, textY, key, 1);
   } else {
     auto *image = context->getImage(_key);
@@ -244,11 +301,11 @@ bool Key::inside(int x, int y) const {
           y <= _y + _h);
 }
 
-void Key::onClick(const bool useShift) const {
+void Key::onClick(const KeypadDrawContext *context) const {
   auto *event = new MAEvent();
   event->type = EVENT_TYPE_KEY_PRESSED;
   event->nativeKey = 0;
-  switch (_key) {
+  switch (_key._lower) {
   case K_BACKSPACE:
     event->key = SB_KEY_BACKSPACE;
     break;
@@ -279,8 +336,20 @@ void Key::onClick(const bool useShift) const {
   case K_HELP:
     event->key = SB_KEY_F(1);
     break;
+  case K_LINE_UP:
+    event->key = SB_KEY_UP;
+    break;
+  case K_PAGE_UP:
+    event->key = SB_KEY_PGUP;
+    break;
+  case K_LINE_DOWN:
+    event->key = SB_KEY_DOWN;
+    break;
+  case K_PAGE_DOWN:
+    event->key = SB_KEY_PGDN;
+    break;
   default:
-    event->key = (unsigned char)getKey(useShift);
+    event->key = (unsigned char)getKey(context);
     break;
   }
   maPushEvent(event);
@@ -296,7 +365,6 @@ Keypad::Keypad(int charWidth, int charHeight, bool toolbar)
     _height(0),
     _theme(&MODERN_DARK_THEME),
     _context(charWidth, charHeight),
-    _currentLayout(LayoutLetters),
     _toolbar(toolbar) {
   generateKeys();
 }
@@ -308,23 +376,12 @@ int Keypad::outerHeight(int charHeight) const {
 void Keypad::generateKeys() {
   _keys.clear();
 
-  const RawKey (*activeLayout)[MAX_COLS];
-  switch (_currentLayout) {
-  case LayoutLetters:
-    activeLayout = LETTERS;
-    break;
-  default:
-    activeLayout = SYMBOLS;
-    break;
-  }
-
   const int rows = _toolbar ? 1 : MAX_ROWS;
-
   for (int row = 0; row < rows; ++row) {
     int cols = ROW_LENGTHS[row];
     for (int col = 0; col < cols; col++) {
-      const RawKey &k = activeLayout[row][col];
-      if (k._normal != K_NULL) {
+      const RawKey &k = KEYS[row][col];
+      if (k._lower != K_NULL) {
         _keys.add(new Key(k));
       }
     }
@@ -358,12 +415,16 @@ void Keypad::layout(int x, int y, int w, int h) {
       }
       Key *key = _keys[index++];
       int keyWidth = keyW;
-      if (row == 0) {
+      if (key->_key._lower == K_ENTER || key->_key._lower == K_HELP || key->_key._lower == K_BACKSPACE) {
+        keyWidth = _width - xPos;
+      } else if (row == 0) {
         keyWidth = _width / cols;
+      } else if (isArrow(key->_key._lower)) {
+        keyWidth = static_cast<int>(keyWidth * 1.2);
       } else if (!key->_printable) {
         const int numKeys = 2;
         keyWidth = (_width - ((cols - numKeys) * keyW)) / numKeys;
-      } else if (key->_key == K_SPACE) {
+      } else if (key->_key._lower == K_SPACE) {
         keyWidth = (SPACE_COLS * keyW);
       }
       key->_x = xPos;
@@ -382,15 +443,11 @@ void Keypad::clicked(int x, int y, bool pressed) {
     key->_pressed = pressed && inside;
 
     if (pressed && inside) {
-      if (key->_key == K_SHIFT) {
-        _context.toggleShift();
-      } else if (key->_key == K_TOGGLE) {
-        _currentLayout = static_cast<KeypadLayout>((_currentLayout + 1) % 2);
-        generateKeys();
-        layout(_posX, _posY, _width, _height);
+      if (key->_key._lower == K_TOGGLE) {
+        _context.toggle();
         break;
       } else {
-        key->onClick(_context.useShift());
+        key->onClick(&_context);
       }
       break;
     }

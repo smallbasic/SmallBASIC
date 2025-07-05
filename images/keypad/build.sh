@@ -10,8 +10,11 @@ declare -a IMAGE_FILES=(\
  "backspace"\
  "arrow-enter"\
  "search"\
- "keyboard-shift"\
- "keyboard"\
+ "layers"\
+ "arrow-down"\
+ "arrow-download"\
+ "arrow-up" \
+ "arrow-upload"
 )
 
 echo "#pragma once" > keypad_icons.h

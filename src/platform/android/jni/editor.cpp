@@ -13,27 +13,88 @@
 #include "common/device.h"
 #include "ui/keypad.h"
 
-void showHelpLineInput(TextEditHelpWidget *helpWidget, int width = 35) {
-  helpWidget->showPopup(width, 1);
+struct StatusMessage {
+  explicit StatusMessage(const TextEditInput *editor) :
+    _dirty(editor->isDirty()),
+    _row(editor->getRow()),
+    _col(editor->getCol()) {
+  }
+
+  void setFilename(const String &loadPath) {
+    int i = loadPath.lastIndexOf('/', 0);
+    if (i != -1) {
+      _fileName = loadPath.substring(i + 1);
+    } else {
+      _fileName = loadPath;
+    }
+  }
+
+  bool update(TextEditInput *editor, const AnsiWidget *out, const bool force=false) {
+    bool result;
+    bool dirty = editor->isDirty();
+    if (force
+        || _dirty != dirty
+        || _row != editor->getRow()
+        || _col != editor->getCol()) {
+      String message;
+      result = true;
+      if (dirty) {
+        message.append(" * ");
+      } else {
+        message.append(" - ");
+      }
+      message.append(_fileName)
+        .append(" (")
+        .append(editor->getRow())
+        .append(",")
+        .append(editor->getCol())
+        .append(") ");
+      if (!editor->getScroll()) {
+        message.append("Top");
+      } else if (editor->getLines() - editor->getScroll() < editor->getPageRows()) {
+        message.append("Bot");
+      } else {
+        const int pos = editor->getRow() * 100 / editor->getLines();
+        message.append(pos).append("%");
+      }
+      out->setStatus(message);
+      _dirty = dirty;
+      resetCursor(editor);
+    } else {
+      result = false;
+    }
+    return result;
+  }
+
+  void resetCursor(const TextEditInput *editor) {
+    _row = editor->getRow();
+    _col = editor->getCol();
+  }
+
+  void setDirty(const TextEditInput *editor) {
+    _dirty = !editor->isDirty();
+  }
+
+  bool _dirty;
+  int _row;
+  int _col;
+  String _fileName;
+};
+
+void showFind(TextEditHelpWidget *helpWidget) {
+  helpWidget->showPopup(35, 1);
+  helpWidget->createSearch(false);
+  helpWidget->setFocus(true);
+}
+
+void showHelp(TextEditHelpWidget *helpWidget) {
+  helpWidget->showPopup(-4, -2);
+  helpWidget->createKeywordIndex();
+  helpWidget->setFocus(true);
 }
 
 void Runtime::editSource(strlib::String loadPath, bool restoreOnExit) {
   logEntered();
-
-  strlib::String fileName;
-  int i = loadPath.lastIndexOf('/', 0);
-  if (i != -1) {
-    fileName = loadPath.substring(i + 1);
-  } else {
-    fileName = loadPath;
-  }
-
-  strlib::String dirtyFile;
-  dirtyFile.append(" * ");
-  dirtyFile.append(fileName);
-  strlib::String cleanFile;
-  cleanFile.append(" - ");
-  cleanFile.append(fileName);
 
   int w = _output->getWidth();
   int h = _output->getHeight();
@@ -50,6 +111,9 @@ void Runtime::editSource(strlib::String loadPath, bool restoreOnExit) {
   }
   auto *helpWidget = new TextEditHelpWidget(editWidget, charWidth, charHeight, false);
   auto *widget = editWidget;
+  StatusMessage statusMessage(editWidget);
+  statusMessage.setFilename(loadPath);
+
   _modifiedTime = getModifiedTime();
   editWidget->updateUI(nullptr, nullptr);
   editWidget->setLineNumbers();
@@ -79,9 +143,9 @@ void Runtime::editSource(strlib::String loadPath, bool restoreOnExit) {
     alert(gsb_last_errmsg);
   }
 
+  statusMessage.update(editWidget, _output, true);
   bool showStatus = !editWidget->getScroll();
   _srcRendered = false;
-  _output->setStatus(showStatus ? cleanFile : "");
   _output->redraw();
   _state = kEditState;
 
@@ -91,13 +155,17 @@ void Runtime::editSource(strlib::String loadPath, bool restoreOnExit) {
     switch (event.type) {
     case EVENT_TYPE_POINTER_PRESSED:
       if (!showStatus && widget == editWidget && event.point.x < editWidget->getMarginWidth()) {
-        _output->setStatus(editWidget->isDirty() ? dirtyFile : cleanFile);
+        statusMessage.update(editWidget, _output, true);
         _output->redraw();
         showStatus = true;
       }
       break;
+    case EVENT_TYPE_POINTER_DRAGGED:
+      statusMessage.update(editWidget, _output);
+      break;
     case EVENT_TYPE_POINTER_RELEASED:
       if (showStatus && event.point.x < editWidget->getMarginWidth() && editWidget->getScroll()) {
+        statusMessage.update(editWidget, _output);
         _output->setStatus("");
         _output->redraw();
         showStatus = false;
@@ -105,14 +173,13 @@ void Runtime::editSource(strlib::String loadPath, bool restoreOnExit) {
       break;
     case EVENT_TYPE_OPTIONS_BOX_BUTTON_CLICKED:
       if (editWidget->isDirty() && !editWidget->getScroll()) {
-        _output->setStatus(dirtyFile);
+        statusMessage.update(editWidget, _output, true);
         _output->redraw();
       }
       break;
     case EVENT_TYPE_KEY_PRESSED:
       if (_userScreenId == -1) {
         dev_clrkb();
-        int sw = _output->getScreenWidth();
         bool redraw = true;
         bool dirty = editWidget->isDirty();
         char *text;
@@ -139,9 +206,7 @@ void Runtime::editSource(strlib::String loadPath, bool restoreOnExit) {
             exitHelp = true;
           } else {
             widget = helpWidget;
-            helpWidget->showPopup(-4, -2);
-            helpWidget->createKeywordIndex();
-            helpWidget->setFocus(true);
+            showHelp(helpWidget);
           }
           break;
         case SB_KEY_F(9):
@@ -153,11 +218,12 @@ void Runtime::editSource(strlib::String loadPath, bool restoreOnExit) {
           break;
         case SB_KEY_CTRL('f'):
           if (widget == helpWidget) {
+            _output->setStatus("");
             exitHelp = true;
           } else {
+            _output->setStatus("Search...");
             widget = helpWidget;
-            helpWidget->createSearch(false);
-            showHelpLineInput(helpWidget);
+            showFind(helpWidget);
           }
           break;
         case SB_KEY_CTRL('s'):
@@ -186,11 +252,11 @@ void Runtime::editSource(strlib::String loadPath, bool restoreOnExit) {
           _state = kEditState;
           break;
         default:
-          redraw = widget->edit(event.key, sw, charWidth);
+          redraw = widget->edit(event.key, _output->getScreenWidth(), charWidth);
           break;
         }
         if (editWidget->isDirty() != dirty && !editWidget->getScroll()) {
-          _output->setStatus(editWidget->isDirty() ? dirtyFile : cleanFile);
+          redraw |= statusMessage.update(editWidget, _output, true);
         }
         if (redraw) {
           _output->redraw();

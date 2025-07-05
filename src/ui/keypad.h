@@ -40,16 +40,25 @@ struct KeypadImage : ImageCodec {
   void draw(int x, int y, int w, int h) const;
 };
 
+enum Keyset {
+  kLower, kUpper, kNumber, kSymbol, kSize
+};
+
+struct RawKey {
+  const KeyCode _lower;
+  const KeyCode _upper;
+  const KeyCode _number;
+  const KeyCode _symbol;
+};
+
 struct KeypadDrawContext {
   explicit KeypadDrawContext(int charWidth, int charHeight);
-  void toggleShift();
-  bool useShift() const;
-  const KeypadImage *getImage(const KeyCode keycode) const;
+  const KeypadImage *getImage(const RawKey &keycode) const;
+  void toggle();
 
   int _charWidth;
   int _charHeight;
-  bool _shiftActive;
-  bool _capsLockActive;
+  Keyset _keySet;
 
   KeypadImage _cutImage;
   KeypadImage _copyImage;
@@ -60,34 +69,27 @@ struct KeypadDrawContext {
   KeypadImage _backImage;
   KeypadImage _enterImage;
   KeypadImage _searchImage;
-  KeypadImage _shiftImage;
   KeypadImage _toggleImage;
-};
-
-enum KeypadLayout {
-  LayoutLetters = 0, LayoutSymbols = 1
-};
-
-struct RawKey {
-  const KeyCode _normal;
-  const KeyCode _shifted;
+  KeypadImage _lineUpImage;
+  KeypadImage _pageUpImage;
+  KeypadImage _lineDownImage;  
+  KeypadImage _pageDownImage;
 };
 
 struct Key {
   explicit Key(const RawKey &k);
 
-  int color(const KeypadTheme *theme, bool shiftActive) const;
+  int color(const KeypadTheme *theme) const;
   void draw(const KeypadTheme *theme, const KeypadDrawContext *context) const;
-  char getKey(bool useShift) const;
+  char getKey(const KeypadDrawContext *context) const;
   bool inside(int x, int y) const;
-  void onClick(bool useShift) const;
+  void onClick(const KeypadDrawContext *context) const;
 
   int _x{};
   int _y{};
   int _w{};
   int _h{};
-  KeyCode _key;
-  KeyCode _alt;
+  RawKey _key;
   bool _pressed;
   bool _number;
   bool _printable;
@@ -110,7 +112,6 @@ private:
   strlib::List<Key *> _keys;
   KeypadTheme *_theme;
   KeypadDrawContext _context;
-  KeypadLayout _currentLayout;
   bool _toolbar;
 
   void generateKeys();

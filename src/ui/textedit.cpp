@@ -578,7 +578,7 @@ const char *TextEditInput::completeKeyword(int index) {
   return help;
 }
 
-void TextEditInput::draw(int x, int y, int w, int h, int chw) {
+void TextEditInput::draw(int x, int y, int, int, int chw) {
   SyntaxState syntax = kReset;
   StbTexteditRow r;
   int len = _buf._len;
@@ -1283,7 +1283,7 @@ void TextEditInput::cycleTheme() const {
 }
 
 void TextEditInput::drawLineNumber(int x, int y, int row, bool selected) const {
-  if (_marginWidth > 0) {
+  if (_marginWidth > 0 && y + _charHeight < _height) {
     bool markerRow = false;
     for (int i = 0; i < MAX_MARKERS && !markerRow; i++) {
       if (row == g_lineMarker[i]) {
