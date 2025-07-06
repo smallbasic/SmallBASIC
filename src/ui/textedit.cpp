@@ -2116,7 +2116,7 @@ void TextEditHelpWidget::clicked(int x, int y, bool pressed) {
   if (pressed && _buf._len > 0) {
     stb_textedit_click(&_buf, &_state, 0, (y - _y) + (_scroll * _charHeight));
     if (_mode == kHelpKeyword) {
-      if (x < (_x + _charWidth * 10)) {
+      if (x < (_x + _charWidth * 4)) {
         // allow scrolling from the right hand side
         toggleKeyword();
       } else {
@@ -2462,9 +2462,7 @@ void TextEditHelpWidget::buildKeywordIndex() {
     _buf.append("\n\n", 2);
     rows += 7;
     int scroll = ((_charHeight * rows) - (_height - _y)) / _charHeight;
-    if (scroll > 0) {
-      _scroll = scroll;
-    }
+    _scroll = scroll > 0 ? scroll : 0;
   } else {
     _scroll = 0;
   }

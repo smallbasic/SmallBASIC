@@ -54,6 +54,7 @@ struct RawKey {
 struct KeypadDrawContext {
   explicit KeypadDrawContext(int charWidth, int charHeight);
   const KeypadImage *getImage(const RawKey &keycode) const;
+  KeyCode getKey(RawKey rawKey) const;
   void toggle();
 
   int _charWidth;

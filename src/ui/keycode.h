@@ -98,3 +98,7 @@ inline bool isExtended(KeyCode key) {
 inline bool isArrow(KeyCode key) {
   return key == K_LINE_UP || key == K_PAGE_UP || key == K_LINE_DOWN || key == K_PAGE_DOWN;
 }
+
+inline bool isRightMargin(KeyCode key) {
+  return key == K_ENTER || key == K_HELP || key == K_BACKSPACE;
+}

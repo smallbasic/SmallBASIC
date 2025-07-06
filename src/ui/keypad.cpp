@@ -164,7 +164,7 @@ KeypadDrawContext::KeypadDrawContext(int charWidth, int charHeight) :
 
 const KeypadImage *KeypadDrawContext::getImage(const RawKey &key) const {
   const KeypadImage *result;
-  switch (key._lower) {
+  switch (getKey(key)) {
   case K_CUT: result = &_cutImage; break;
   case K_COPY: result = &_copyImage; break;
   case K_PASTE: result = &_pasteImage; break;
@@ -186,6 +186,18 @@ const KeypadImage *KeypadDrawContext::getImage(const RawKey &key) const {
 
 void KeypadDrawContext::toggle() {
   _keySet = static_cast<Keyset>((_keySet + 1) % kSize);
+}
+
+KeyCode KeypadDrawContext::getKey(RawKey key) const {
+  KeyCode keyCode;
+  switch (_keySet) {
+    case kLower: keyCode = key._lower; break;
+    case kUpper: keyCode = key._upper; break;
+    case kNumber: keyCode = key._number; break;
+    case kSymbol: keyCode = key._symbol; break;
+    case kSize: keyCode = K_NULL; break;
+  }
+  return keyCode;
 }
 
 //
@@ -210,14 +222,7 @@ int Key::color(const KeypadTheme *theme) const {
 
 char Key::getKey(const KeypadDrawContext *context) const {
   char result;
-  KeyCode keyCode;
-
-  switch (context->_keySet) {
-  case kLower: keyCode = _key._lower; break;
-  case kUpper: keyCode = _key._upper; break;
-  case kNumber: keyCode = _key._number; break;
-  case kSymbol: keyCode = _key._symbol; break;
-  }
+  KeyCode keyCode = context->getKey(_key);
   switch (keyCode) {
   case K_EXT1: result = (char)164; break;
   case K_EXT2: result = (char)172; break;
@@ -305,7 +310,7 @@ void Key::onClick(const KeypadDrawContext *context) const {
   auto *event = new MAEvent();
   event->type = EVENT_TYPE_KEY_PRESSED;
   event->nativeKey = 0;
-  switch (_key._lower) {
+  switch (context->getKey(_key)) {
   case K_BACKSPACE:
     event->key = SB_KEY_BACKSPACE;
     break;
@@ -415,7 +420,7 @@ void Keypad::layout(int x, int y, int w, int h) {
       }
       Key *key = _keys[index++];
       int keyWidth = keyW;
-      if (key->_key._lower == K_ENTER || key->_key._lower == K_HELP || key->_key._lower == K_BACKSPACE) {
+      if (isRightMargin(key->_key._lower)) {
         keyWidth = _width - xPos;
       } else if (row == 0) {
         keyWidth = _width / cols;
