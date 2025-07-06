@@ -75,6 +75,7 @@ struct KeypadDrawContext {
   KeypadImage _pageUpImage;
   KeypadImage _lineDownImage;  
   KeypadImage _pageDownImage;
+  KeypadImage _tagImage;
 };
 
 struct Key {

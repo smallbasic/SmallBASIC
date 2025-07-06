@@ -14,7 +14,8 @@ declare -a IMAGE_FILES=(\
  "arrow-down"\
  "arrow-download"\
  "arrow-up" \
- "arrow-upload"
+ "arrow-upload" \
+ "tag"
 )
 
 echo "#pragma once" > keypad_icons.h

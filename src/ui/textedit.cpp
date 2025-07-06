@@ -1110,6 +1110,7 @@ void TextEditInput::clicked(int x, int y, bool pressed) {
       _state.select_end = wordEnd();
     } else  {
       stb_textedit_click(&_buf, &_state, (x - _x) - _marginWidth, (y - _y) + (_scroll * _charHeight));
+      _cursorRow = getCursorRow();
     }
     _pressTick = tick;
   }

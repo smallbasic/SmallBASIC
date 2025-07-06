@@ -214,7 +214,7 @@ struct TextEditHelpWidget : public TextEditInput {
   void draw(int x, int y, int w, int h, int chw) override;
   bool edit(int key, int screenWidth, int charWidth) override;
   void paste(const char *text) override;
-  bool isDrawTop() const { return true; }
+  bool isDrawTop() override { return true; }
   void reset(HelpMode mode);
   void cancelMode() { _mode = kNone; }
   bool closeOnEnter() const;
