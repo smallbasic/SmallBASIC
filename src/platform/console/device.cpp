@@ -104,6 +104,7 @@ void default_write(const char *str) {
       }
     }
   }
+  fflush(stdout);
 }
 
 //
@@ -111,6 +112,7 @@ void default_write(const char *str) {
 //
 void vt100_write(const char *str) {
   printf("%s", str);
+  fflush(stdout);
 }
 
 void console_init() {
