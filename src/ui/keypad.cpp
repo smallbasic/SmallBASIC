@@ -127,7 +127,7 @@ KeypadDrawContext::KeypadDrawContext(int charWidth, int charHeight) :
   _charWidth(charWidth),
   _charHeight(charHeight),
   _keySet(kLower) {
-  const int imageSize = static_cast<int>(charHeight * 1.1);
+  const int imageSize = static_cast<int>(charHeight * 1.2);
 
   if (!_cutImage.decode(img_cut, img_cut_len) ||
       !_copyImage.decode(img_copy, img_copy_len) ||
@@ -452,15 +452,14 @@ void Keypad::layout(int x, int y, int w, int h) {
 
 void Keypad::clicked(int x, int y, bool pressed) {
   for (const auto key : _keys) {
-    const bool inside = key->inside(x, y);
-    key->_pressed = pressed && inside;
-
-    if (!pressed && inside) {
-      if (key->_key._lower == K_TOGGLE) {
-        _context.toggle();
-        break;
-      } else {
-        key->onClick(&_context);
+    if (key->inside(x, y)) {
+      key->_pressed = pressed;
+      if (!pressed) {
+        if (key->_key._lower == K_TOGGLE) {
+          _context.toggle();
+        } else {
+          key->onClick(&_context);
+        }
       }
       break;
     }

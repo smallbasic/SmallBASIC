@@ -2115,14 +2115,11 @@ void TextEditHelpWidget::completeWord(int pos) const {
 void TextEditHelpWidget::clicked(int x, int y, bool pressed) {
   _ptY = -1;
   if (pressed && _buf._len > 0) {
-    stb_textedit_click(&_buf, &_state, 0, (y - _y) + (_scroll * _charHeight));
+    stb_textedit_click(&_buf, &_state, (x - _x), (y - _y) + (_scroll * _charHeight));
     if (_mode == kHelpKeyword) {
       if (x < (_x + _charWidth * 4)) {
         // allow scrolling from the right hand side
         toggleKeyword();
-      } else {
-        // position to [+]
-        _state.cursor += 3;
       }
     }
   }

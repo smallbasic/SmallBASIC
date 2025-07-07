@@ -13,17 +13,16 @@
 #include "common/device.h"
 #include "ui/keypad.h"
 
+// whether to hide the status message
+bool statusEnabled = true;
+
 struct StatusMessage {
-  explicit StatusMessage(const TextEditInput *editor) :
+  explicit StatusMessage(const TextEditInput *editor, String &loadPath) :
     _dirty(!editor->isDirty()),
-    _enabled(true),
     _find(false),
     _scroll(-1),
     _row(editor->getRow()),
     _col(editor->getCol()) {
-  }
-
-  void setFilename(const String &loadPath) {
     int i = loadPath.lastIndexOf('/', 0);
     if (i != -1) {
       _fileName = loadPath.substring(i + 1);
@@ -38,66 +37,73 @@ struct StatusMessage {
     _scroll = editor->getScroll();
   }
 
-  bool toggleEnabled() {
-    _enabled = !_enabled;
-    _dirty = true;
-    return _enabled;
+  void toggleEnabled(const TextEditInput *editor) {
+    statusEnabled = !statusEnabled;
+    setDirty(editor);
   }
 
   void setDirty(const TextEditInput *editor) {
     _dirty = !editor->isDirty();
   }
 
-  void setFind(bool find) {
-    _find = find;
-    _dirty = true;
+  void setFind(bool find, const TextEditInput *editor) {
+    if (_find != find) {
+      _find = find;
+      setDirty(editor);
+    }
   }
 
   bool update(TextEditInput *editor, const AnsiWidget *out) {
     bool result;
     bool dirty = editor->isDirty();
-    if (_enabled &&
-        (_dirty != dirty
-         || _scroll != editor->getScroll()
-         || _row != editor->getRow()
-         || _col != editor->getCol())) {
-      String message;
-      result = true;
-      if (_find) {
-        message.append(" Search ");
+    if (_dirty != dirty
+        || _scroll != editor->getScroll()
+        || _row != editor->getRow()
+        || _col != editor->getCol()) {
+      if (statusEnabled) {
+        setMessage(editor, out, dirty);
       } else {
-        if (dirty) {
-          message.append(" * ");
-        } else {
-          message.append(" - ");
-        }
-        message.append(_fileName);
+        out->setStatus("");
       }
-      message.append(" (")
-        .append(editor->getRow())
-        .append(",")
-        .append(editor->getCol())
-        .append(") ");
-      if (!editor->getScroll()) {
-        message.append("Top");
-      } else if (editor->getLines() - editor->getScroll() < editor->getPageRows()) {
-        message.append("Bot");
-      } else {
-        const int pos = editor->getRow() * 100 / editor->getLines();
-        message.append(pos).append("%");
-      }
-      out->setStatus(message);
-      _dirty = dirty;
       resetCursor(editor);
+      result = true;
     } else {
       result = false;
     }
+    _dirty = dirty;
     return result;
+  }
+
+  void setMessage(TextEditInput *editor, const AnsiWidget *out, bool dirty) const {
+    String message;
+    if (_find) {
+      message.append(" Search ");
+    } else {
+      if (dirty) {
+        message.append(" * ");
+      } else {
+        message.append(" - ");
+      }
+      message.append(_fileName);
+    }
+    message.append(" (")
+      .append(editor->getRow())
+      .append(",")
+      .append(editor->getCol())
+      .append(") ");
+    if (!editor->getScroll()) {
+      message.append("Top");
+    } else if (editor->getLines() - editor->getScroll() < editor->getPageRows()) {
+      message.append("Bot");
+    } else {
+      const int pos = editor->getRow() * 100 / editor->getLines();
+      message.append(pos).append("%");
+    }
+    out->setStatus(message);
   }
 
 private:
   bool _dirty;
-  bool _enabled;
   bool _find;
   int _scroll;
   int _row;
@@ -135,8 +141,7 @@ void Runtime::editSource(strlib::String loadPath, bool restoreOnExit) {
   }
   auto *helpWidget = new TextEditHelpWidget(editWidget, charWidth, charHeight, false);
   auto *widget = editWidget;
-  StatusMessage statusMessage(editWidget);
-  statusMessage.setFilename(loadPath);
+  StatusMessage statusMessage(editWidget, loadPath);
 
   _modifiedTime = getModifiedTime();
   editWidget->updateUI(nullptr, nullptr);
@@ -213,11 +218,11 @@ void Runtime::editSource(strlib::String loadPath, bool restoreOnExit) {
         case SB_KEY_CTRL('f'):
           if (widget == helpWidget) {
             exitHelp = true;
-            statusMessage.setFind(false);
+            statusMessage.setFind(false, editWidget);
           } else {
             widget = helpWidget;
             showFind(helpWidget);
-            statusMessage.setFind(true);
+            statusMessage.setFind(true, editWidget);
           }
           redraw = true;
           break;
@@ -247,9 +252,7 @@ void Runtime::editSource(strlib::String loadPath, bool restoreOnExit) {
           _state = kEditState;
           break;
         case SB_KEY_CTRL('t'):
-          if (!statusMessage.toggleEnabled()) {
-            _output->setStatus("");
-          }
+          statusMessage.toggleEnabled(editWidget);
           redraw = true;
           break;
         default:
@@ -267,6 +270,7 @@ void Runtime::editSource(strlib::String loadPath, bool restoreOnExit) {
       widget = editWidget;
       helpWidget->hide();
       editWidget->setFocus(true);
+      statusMessage.setFind(false, editWidget);
       _state = kEditState;
       _output->redraw();
     }
