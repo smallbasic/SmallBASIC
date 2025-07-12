@@ -234,6 +234,7 @@ Runtime::Runtime(android_app *app) :
   _looper = ALooper_forThread();
   _sensorManager = ASensorManager_getInstance();
   memset(&_sensors, 0, sizeof(_sensors));
+  _density = getInteger("getDensity");
 }
 
 Runtime::~Runtime() {
@@ -855,8 +856,12 @@ MAEvent Runtime::processEvents(int waitFlag) {
   switch (waitFlag) {
   case 1:
     // wait for an event
-    _output->flush(true);
-    if (!hasEvent()) {
+    if (!hasEvent() || _eventQueue->peek()->type == EVENT_TYPE_POINTER_DRAGGED) {
+      // drain any motion events so we only return the latest
+      while (hasEvent()) {
+        delete popEvent();
+      }
+      _output->flush(true);
       pollEvents(true);
     }
     break;

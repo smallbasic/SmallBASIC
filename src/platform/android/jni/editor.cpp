@@ -8,9 +8,9 @@
 
 #include "config.h"
 
-#include "ui/textedit.h"
 #include "platform/android/jni/runtime.h"
 #include "common/device.h"
+#include "ui/textedit.h"
 #include "ui/keypad.h"
 
 // whether to hide the status message
@@ -126,11 +126,12 @@ void showHelp(TextEditHelpWidget *helpWidget) {
 void Runtime::editSource(strlib::String loadPath, bool restoreOnExit) {
   logEntered();
 
+  showKeypad(false);
   int w = _output->getWidth();
   int h = _output->getHeight();
   int charWidth = _output->getCharWidth();
   int charHeight = _output->getCharHeight();
-  int prevScreenId = _output->selectScreen(SOURCE_SCREEN);
+  int prevScreenId = _output->selectScreen(FORM_SCREEN);
   TextEditInput *editWidget;
   if (_editor != nullptr) {
     editWidget = _editor;
@@ -155,7 +156,7 @@ void Runtime::editSource(strlib::String loadPath, bool restoreOnExit) {
   if (_keypad != nullptr) {
     _output->addInput(_keypad);
   } else {
-    _keypad = new KeypadInput(false, false, charWidth, charHeight);
+    _keypad = new KeypadInput(false, false, charWidth, charHeight, _density);
     _output->addInput(_keypad);
   }
 
@@ -183,7 +184,7 @@ void Runtime::editSource(strlib::String loadPath, bool restoreOnExit) {
     switch (event.type) {
     case EVENT_TYPE_POINTER_RELEASED:
     case EVENT_TYPE_OPTIONS_BOX_BUTTON_CLICKED:
-      if (statusMessage.update(editWidget, _output)) {
+      if (widget == editWidget && statusMessage.update(editWidget, _output)) {
         _output->redraw();
       }
       break;
@@ -248,12 +249,11 @@ void Runtime::editSource(strlib::String loadPath, bool restoreOnExit) {
           _output->redraw();
           _state = kActiveState;
           waitForBack();
-          _output->selectScreen(SOURCE_SCREEN);
+          _output->selectScreen(FORM_SCREEN);
           _state = kEditState;
           break;
         case SB_KEY_CTRL('t'):
           statusMessage.toggleEnabled(editWidget);
-          redraw = true;
           break;
         default:
           redraw = widget->edit(event.key, _output->getScreenWidth(), charWidth);
@@ -271,6 +271,7 @@ void Runtime::editSource(strlib::String loadPath, bool restoreOnExit) {
       helpWidget->hide();
       editWidget->setFocus(true);
       statusMessage.setFind(false, editWidget);
+      statusMessage.update(editWidget, _output);
       _state = kEditState;
       _output->redraw();
     }

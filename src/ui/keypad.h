@@ -52,7 +52,7 @@ struct RawKey {
 };
 
 struct KeypadDrawContext {
-  explicit KeypadDrawContext(int charWidth, int charHeight);
+  explicit KeypadDrawContext(int charWidth, int charHeight, int padding);
   const KeypadImage *getImage(const RawKey &keycode) const;
   KeyCode getKey(RawKey rawKey) const;
   void toggle();
@@ -82,7 +82,7 @@ struct Key {
   explicit Key(const RawKey &k);
 
   int color(const KeypadTheme *theme) const;
-  void draw(const KeypadTheme *theme, const KeypadDrawContext *context) const;
+  void draw(const KeypadTheme *theme, const KeypadDrawContext *context, bool pressed) const;
   char getKey(const KeypadDrawContext *context) const;
   bool inside(int x, int y) const;
   void onClick(const KeypadDrawContext *context) const;
@@ -92,13 +92,11 @@ struct Key {
   int _w{};
   int _h{};
   RawKey _key;
-  bool _pressed;
-  bool _number;
   bool _printable;
 };
 
 struct Keypad {
-  Keypad(int charWidth, int charHeight, bool toolbar);
+  Keypad(int charWidth, int charHeight, bool toolbar, int density);
   ~Keypad() = default;
 
   int outerHeight(int charHeight) const;
@@ -107,20 +105,22 @@ struct Keypad {
   void layout(int x, int y, int w, int h);
 
 private:
+  void generateKeys();
+
   int _posX;
   int _posY;
   int _width;
   int _height;
+  int _padding;
+  bool _toolbar;
+  Key *_pressed;
   strlib::List<Key *> _keys;
   KeypadTheme *_theme;
   KeypadDrawContext _context;
-  bool _toolbar;
-
-  void generateKeys();
 };
 
 struct KeypadInput : public FormInput {
-  KeypadInput(bool floatTop, bool toolbar, int charWidth, int charHeight);
+  KeypadInput(bool floatTop, bool toolbar, int charWidth, int charHeight, int density = -1);
   ~KeypadInput() override;
 
   void clicked(int x, int y, bool pressed) override;

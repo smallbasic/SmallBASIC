@@ -21,6 +21,7 @@ constexpr int QWERTY_ROW = 1;
 constexpr int ASDF_ROW = 2;
 constexpr int SPACE_COLS = 3;
 constexpr int IMAGE_SIZE = 30;
+constexpr int MIN_DENSITY = 280;
 constexpr double PI = 3.14159;
 
 // https://materialui.co/colors
@@ -123,11 +124,11 @@ void KeypadImage::draw(int x, int y, int w, int h) const {
 //
 // KeypadDrawContext
 //
-KeypadDrawContext::KeypadDrawContext(int charWidth, int charHeight) :
+KeypadDrawContext::KeypadDrawContext(int charWidth, int charHeight, int padding) :
   _charWidth(charWidth),
   _charHeight(charHeight),
   _keySet(kLower) {
-  const int imageSize = static_cast<int>(charHeight * 1.2);
+  const int imageSize = static_cast<int>(MAX(padding * 1.5, charHeight) * 1.2);
 
   if (!_cutImage.decode(img_cut, img_cut_len) ||
       !_copyImage.decode(img_copy, img_copy_len) ||
@@ -208,8 +209,6 @@ KeyCode KeypadDrawContext::getKey(RawKey key) const {
 //
 Key::Key(const RawKey &k) :
   _key(k) {
-  _pressed = false;
-  _number = isNumber(k._lower);
   _printable = isPrintable(k._lower) || isExtended(k._lower);
 }
 
@@ -239,7 +238,7 @@ char Key::getKey(const KeypadDrawContext *context) const {
   return result;
 }
 
-void Key::draw(const KeypadTheme *theme, const KeypadDrawContext *context) const {
+void Key::draw(const KeypadTheme *theme, const KeypadDrawContext *context, bool pressed) const {
   int rc = 5;
   int pad = 2;
   int rx = _x + _w - pad; // right x
@@ -265,8 +264,8 @@ void Key::draw(const KeypadTheme *theme, const KeypadDrawContext *context) const
     maFillRect(_x + 1, _y + 1, _w - 2, _h - 2);
   }
 
-  if (printable || _pressed) {
-    if (printable && _pressed) {
+  if (printable || pressed) {
+    if (printable && pressed) {
       maSetColor(theme->_outline);
       maFillRect(_x + 4, _y + 4, _w - 7, _h - 7);
     }
@@ -371,19 +370,21 @@ void Key::onClick(const KeypadDrawContext *context) const {
 //
 // Keypad
 //
-Keypad::Keypad(int charWidth, int charHeight, bool toolbar)
+Keypad::Keypad(int charWidth, int charHeight, bool toolbar, int density)
   : _posX(0),
     _posY(0),
     _width(0),
     _height(0),
+    _padding(density < MIN_DENSITY ? PADDING : (PADDING * 2)),
     _theme(&MODERN_DARK_THEME),
-    _context(charWidth, charHeight),
-    _toolbar(toolbar) {
+    _context(charWidth, charHeight, _padding),
+    _toolbar(toolbar),
+    _pressed(nullptr) {
   generateKeys();
 }
 
 int Keypad::outerHeight(int charHeight) const {
-  return (_toolbar ? 1 : MAX_ROWS) * ((PADDING * 2) + charHeight);
+  return (_toolbar ? 1 : MAX_ROWS) * ((_padding * 2) + charHeight);
 }
 
 void Keypad::generateKeys() {
@@ -407,9 +408,9 @@ void Keypad::layout(int x, int y, int w, int h) {
   _width = w;
   _height = h;
 
-  const int width = _width - PADDING;
+  const int width = _width - _padding;
   const int keyW = width / ROW_LENGTHS[QWERTY_ROW];
-  const int keyH = _context._charHeight + PADDING * 2;
+  const int keyH = _context._charHeight + _padding * 2;
   const int xStart = _posX + ((w - _width) / 2);
   const int rows = _toolbar ? 1 : MAX_ROWS;
   int yPos = _posY;
@@ -451,15 +452,15 @@ void Keypad::layout(int x, int y, int w, int h) {
 }
 
 void Keypad::clicked(int x, int y, bool pressed) {
+  _pressed = nullptr;
   for (const auto key : _keys) {
     if (key->inside(x, y)) {
-      key->_pressed = pressed;
-      if (!pressed) {
-        if (key->_key._lower == K_TOGGLE) {
-          _context.toggle();
-        } else {
-          key->onClick(&_context);
-        }
+      if (pressed) {
+        _pressed = key;
+      } else if (key->_key._lower == K_TOGGLE) {
+        _context.toggle();
+      } else {
+        key->onClick(&_context);
       }
       break;
     }
@@ -470,17 +471,17 @@ void Keypad::draw() const {
   maSetColor(_theme->_bg);
   maFillRect(_posX, _posY, _width, _height);
   for (const auto &key : _keys) {
-    key->draw(_theme, &_context);
+    key->draw(_theme, &_context, key == _pressed);
   }
 }
 
 //
 // KeypadInput
 //
-KeypadInput::KeypadInput(bool floatTop, bool toolbar, int charWidth, int charHeight) :
+KeypadInput::KeypadInput(bool floatTop, bool toolbar, int charWidth, int charHeight, int density) :
   FormInput(0, 0, 0, charHeight * 2),
   _floatTop(floatTop) {
-  _keypad = new Keypad(charWidth, charHeight, toolbar);
+  _keypad = new Keypad(charWidth, charHeight, toolbar, density);
   _height = _keypad->outerHeight(charHeight);
 }
 

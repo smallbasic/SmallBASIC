@@ -86,6 +86,7 @@ struct Runtime : public System {
 private:
   void editSource(String loadPath, bool restoreOnExit) override;
 
+  int _density;
   bool _keypadActive;
   bool _hasFocus;
   Graphics *_graphics;

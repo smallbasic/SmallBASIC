@@ -326,6 +326,12 @@ public class MainActivity extends NativeActivity {
     return result;
   }
 
+  public int getDensity() {
+    DisplayMetrics metrics = new DisplayMetrics();
+    getWindowManager().getDefaultDisplay().getMetrics(metrics);
+    return metrics.densityDpi;
+  }
+
   public String getIpAddress() {
     String result = "";
     try {

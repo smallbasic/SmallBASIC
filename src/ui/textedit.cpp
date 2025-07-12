@@ -938,7 +938,7 @@ bool TextEditInput::edit(int key, int screenWidth, int charWidth) {
 bool TextEditInput::find(const char *word, bool next) {
   bool result = false;
   bool allUpper = true;
-  int len = word == nullptr ? 0 : strlen(word);
+  size_t len = word == nullptr ? 0 : strlen(word);
   for (int i = 0; i < len; i++) {
     if (islower(word[i])) {
       allUpper = false;
@@ -1101,8 +1101,8 @@ void TextEditInput::setCursorRow(int row) {
 
 void TextEditInput::clicked(int x, int y, bool pressed) {
   FormEditInput::clicked(x, y, pressed);
-  if (x < _marginWidth) {
-    _ptY = -1;
+  if (x < _marginWidth || _ptY != -1) {
+    _ptY = pressed ? y : -1;
   } else if (pressed) {
     int tick = maGetMilliSecondCount();
     if (_pressTick && tick - _pressTick < DOUBLE_CLICK_MS) {
@@ -1138,9 +1138,9 @@ bool TextEditInput::updateUI(var_p_t form, var_p_t field) {
 bool TextEditInput::selected(MAPoint2d pt, int scrollX, int scrollY, bool &redraw) {
   bool result = hasFocus() && FormEditInput::selected(pt, scrollX, scrollY, redraw);
   if (result) {
-    if (pt.x < _marginWidth) {
+    if (_ptY != -1) {
       dragPage(pt.y, redraw);
-    } else {
+    } else if (pt.x > _marginWidth) {
       stb_textedit_drag(&_buf, &_state, (pt.x - _x) - _marginWidth,
                         (pt.y - _y) + scrollY + (_scroll * _charHeight));
       redraw = true;

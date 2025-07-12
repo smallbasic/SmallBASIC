@@ -202,7 +202,7 @@ void Runtime::editSource(String loadPath, bool restoreOnExit) {
   int h = _output->getHeight();
   int charWidth = _output->getCharWidth();
   int charHeight = _output->getCharHeight();
-  int prevScreenId = _output->selectScreen(SOURCE_SCREEN);
+  int prevScreenId = _output->selectScreen(FORM_SCREEN);
   TextEditInput *editWidget;
   if (_editor != nullptr) {
     editWidget = _editor;
@@ -232,7 +232,7 @@ void Runtime::editSource(String loadPath, bool restoreOnExit) {
   if (_keypad != nullptr) {
     _output->addInput(_keypad);
   } else {
-    _keypad = new KeypadInput(false, true, charWidth, charHeight);
+    _keypad = new KeypadInput(false, true, charWidth, charHeight, 0);
     _output->addInput(_keypad);
   }
 
@@ -457,7 +457,7 @@ void Runtime::editSource(String loadPath, bool restoreOnExit) {
           _output->redraw();
           _state = kActiveState;
           waitForBack();
-          _output->selectScreen(SOURCE_SCREEN);
+          _output->selectScreen(FORM_SCREEN);
           _state = kEditState;
           break;
         case SB_KEY_ALT('0'):

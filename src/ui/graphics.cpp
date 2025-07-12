@@ -684,12 +684,12 @@ void maDestroyPlaceholder(MAHandle maHandle) {
 }
 
 void maGetImageData(MAHandle maHandle, void *dst,
-                    const MARect *srcRect, int stride) {
+                    const MARect *srcRect, int scanLength) {
   auto *holder = (Canvas *)maHandle;
   if (srcRect->width == 1 && srcRect->height == 1) {
     *((int *)dst) = graphics->getPixel(holder, srcRect->left, srcRect->top);
   } else {
-    graphics->getImageData(holder, (uint8_t *)dst, srcRect, stride);
+    graphics->getImageData(holder, (uint8_t *)dst, srcRect, scanLength);
   }
 }
 

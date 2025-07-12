@@ -25,7 +25,8 @@
 #define SOURCE_SCREEN  3
 #define CONSOLE_SCREEN 4
 #define MENU_SCREEN    5
-#define MAX_SCREENS    6
+#define FORM_SCREEN    6
+#define MAX_SCREENS    7
 
 using namespace strlib;
 
