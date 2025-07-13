@@ -234,7 +234,6 @@ Runtime::Runtime(android_app *app) :
   _looper = ALooper_forThread();
   _sensorManager = ASensorManager_getInstance();
   memset(&_sensors, 0, sizeof(_sensors));
-  _density = getInteger("getDensity");
 }
 
 Runtime::~Runtime() {

@@ -23,6 +23,7 @@ constexpr int SPACE_COLS = 3;
 constexpr int IMAGE_SIZE = 30;
 constexpr int MIN_DENSITY = 280;
 constexpr double PI = 3.14159;
+constexpr double PADDING_FACTOR = 0.95;
 
 // https://materialui.co/colors
 KeypadTheme MODERN_DARK_THEME = {
@@ -128,7 +129,7 @@ KeypadDrawContext::KeypadDrawContext(int charWidth, int charHeight, int padding)
   _charWidth(charWidth),
   _charHeight(charHeight),
   _keySet(kLower) {
-  const int imageSize = static_cast<int>(MAX(padding * 1.5, charHeight) * 1.2);
+  const int imageSize = static_cast<int>(MAX(padding * 1.4, charHeight) * 1.2);
 
   if (!_cutImage.decode(img_cut, img_cut_len) ||
       !_copyImage.decode(img_copy, img_copy_len) ||
@@ -370,21 +371,17 @@ void Key::onClick(const KeypadDrawContext *context) const {
 //
 // Keypad
 //
-Keypad::Keypad(int charWidth, int charHeight, bool toolbar, int density)
+Keypad::Keypad(int charWidth, int charHeight, bool toolbar)
   : _posX(0),
     _posY(0),
     _width(0),
     _height(0),
-    _padding(density < MIN_DENSITY ? PADDING : (PADDING * 2)),
+    _padding(static_cast<int>(charHeight * PADDING_FACTOR)),
     _theme(&MODERN_DARK_THEME),
     _context(charWidth, charHeight, _padding),
     _toolbar(toolbar),
     _pressed(nullptr) {
   generateKeys();
-}
-
-int Keypad::outerHeight(int charHeight) const {
-  return (_toolbar ? 1 : MAX_ROWS) * ((_padding * 2) + charHeight);
 }
 
 void Keypad::generateKeys() {
@@ -451,7 +448,23 @@ void Keypad::layout(int x, int y, int w, int h) {
   }
 }
 
+int Keypad::layoutHeight(int screenHeight) {
+  int charHeight = _context._charHeight;
+  int maxHeight = static_cast<int>(screenHeight * 0.45);
+  int padding = static_cast<int>(charHeight * PADDING_FACTOR);
+  int rows = _toolbar ? 1 : MAX_ROWS;
+  int height = rows * ((padding * 2) + charHeight);
+  if (height > maxHeight) {
+    // h = r(ch + 2p) -> p = (h - r * ch) / (2 * r)
+    height = maxHeight;
+    padding = ((height - (rows * charHeight)) / (rows * 2));
+  }
+  _padding = padding;
+  return height;
+}
+
 void Keypad::clicked(int x, int y, bool pressed) {
+  Key *down = _pressed;
   _pressed = nullptr;
   for (const auto key : _keys) {
     if (key->inside(x, y)) {
@@ -459,7 +472,7 @@ void Keypad::clicked(int x, int y, bool pressed) {
         _pressed = key;
       } else if (key->_key._lower == K_TOGGLE) {
         _context.toggle();
-      } else {
+      } else if (key == down) {
         key->onClick(&_context);
       }
       break;
@@ -478,11 +491,10 @@ void Keypad::draw() const {
 //
 // KeypadInput
 //
-KeypadInput::KeypadInput(bool floatTop, bool toolbar, int charWidth, int charHeight, int density) :
+KeypadInput::KeypadInput(bool floatTop, bool toolbar, int charWidth, int charHeight) :
   FormInput(0, 0, 0, charHeight * 2),
   _floatTop(floatTop) {
-  _keypad = new Keypad(charWidth, charHeight, toolbar, density);
-  _height = _keypad->outerHeight(charHeight);
+  _keypad = new Keypad(charWidth, charHeight, toolbar);
 }
 
 KeypadInput::~KeypadInput() {
@@ -503,4 +515,9 @@ void KeypadInput::layout(int x, int y, int w, int h) {
   _y = _floatTop ? 0 : h;
   _width = w;
   _keypad->layout(_x, _y, _width, _height);
+}
+
+int KeypadInput::layoutHeight(int screenHeight) {
+  _height = _keypad->layoutHeight(screenHeight);
+  return _height;
 }

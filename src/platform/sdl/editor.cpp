@@ -232,7 +232,7 @@ void Runtime::editSource(String loadPath, bool restoreOnExit) {
   if (_keypad != nullptr) {
     _output->addInput(_keypad);
   } else {
-    _keypad = new KeypadInput(false, true, charWidth, charHeight, 0);
+    _keypad = new KeypadInput(false, true, charWidth, charHeight);
     _output->addInput(_keypad);
   }
 

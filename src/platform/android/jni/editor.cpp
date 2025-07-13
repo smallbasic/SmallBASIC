@@ -37,7 +37,7 @@ struct StatusMessage {
     _scroll = editor->getScroll();
   }
 
-  void toggleEnabled(const TextEditInput *editor) {
+  void toggleStatus(const TextEditInput *editor) {
     statusEnabled = !statusEnabled;
     setDirty(editor);
   }
@@ -156,7 +156,7 @@ void Runtime::editSource(strlib::String loadPath, bool restoreOnExit) {
   if (_keypad != nullptr) {
     _output->addInput(_keypad);
   } else {
-    _keypad = new KeypadInput(false, false, charWidth, charHeight, _density);
+    _keypad = new KeypadInput(false, false, charWidth, charHeight);
     _output->addInput(_keypad);
   }
 
@@ -197,7 +197,7 @@ void Runtime::editSource(strlib::String loadPath, bool restoreOnExit) {
         switch (event.key) {
         case SB_KEY_F(2): case SB_KEY_F(3): case SB_KEY_F(4): case SB_KEY_F(5): case SB_KEY_F(6):
         case SB_KEY_F(7): case SB_KEY_F(8): case SB_KEY_F(10): case SB_KEY_F(11): case SB_KEY_F(12):
-        case SB_KEY_MENU: case SB_KEY_ESCAPE: case SB_KEY_BREAK:
+        case SB_KEY_MENU: case SB_KEY_ESCAPE: case SB_KEY_BREAK: case SB_KEY_CTRL('o'):
           // unhandled keys
           redraw = false;
           break;
@@ -243,17 +243,8 @@ void Runtime::editSource(strlib::String loadPath, bool restoreOnExit) {
           widget->paste(text);
           free(text);
           break;
-        case SB_KEY_CTRL('o'):
-          _output->selectScreen(USER_SCREEN1);
-          showCompletion(true);
-          _output->redraw();
-          _state = kActiveState;
-          waitForBack();
-          _output->selectScreen(FORM_SCREEN);
-          _state = kEditState;
-          break;
         case SB_KEY_CTRL('t'):
-          statusMessage.toggleEnabled(editWidget);
+          statusMessage.toggleStatus(editWidget);
           break;
         default:
           redraw = widget->edit(event.key, _output->getScreenWidth(), charWidth);
