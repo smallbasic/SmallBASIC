@@ -50,13 +50,15 @@ struct RawKey {
 };
 
 struct KeypadDrawContext {
-  explicit KeypadDrawContext(int charWidth, int charHeight, int padding);
+  explicit KeypadDrawContext(int charWidth, int charHeight);
   const KeypadImage *getImage(const RawKey &keycode) const;
   KeyCode getKey(RawKey rawKey) const;
+  void layoutHeight(int padding);
   void toggle();
 
   int _charWidth;
   int _charHeight;
+  int _imageSize;
   Keyset _keySet;
 
   KeypadImage _cutImage;
@@ -89,6 +91,8 @@ struct Key {
   int _y{};
   int _w{};
   int _h{};
+  int _xEnd{};
+  int _yEnd{};
   RawKey _key;
   bool _printable;
 };

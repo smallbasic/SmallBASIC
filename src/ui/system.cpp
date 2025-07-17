@@ -59,7 +59,7 @@
 
 #define FONT_SCALE_INTERVAL 10
 #define FONT_MIN 80
-#define FONT_MAX 200
+#define FONT_MAX 160
 
 #define OPTIONS_BOX_WIDTH_EXTRA 1
 #define OPTIONS_BOX_BG 0xd2d1d0

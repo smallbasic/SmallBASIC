@@ -21,9 +21,16 @@ constexpr int QWERTY_ROW = 1;
 constexpr int ASDF_ROW = 2;
 constexpr int SPACE_COLS = 3;
 constexpr int IMAGE_SIZE = 30;
-constexpr int MIN_DENSITY = 280;
 constexpr double PI = 3.14159;
-constexpr double PADDING_FACTOR = 0.95;
+
+// padding size based on character height
+constexpr double PADDING_FACTOR = 1.1;
+
+// maximum keyboard height as based on screen height
+constexpr double MAX_HEIGHT_FACTOR = 0.48;
+
+// image height based on available rectangle
+constexpr double IMAGE_SIZE_FACTOR = 0.65;
 
 // https://materialui.co/colors
 KeypadTheme MODERN_DARK_THEME = {
@@ -113,11 +120,19 @@ KeypadImage::KeypadImage() : ImageCodec() {
 void KeypadImage::draw(int x, int y, int w, int h) const {
   MAPoint2d dstPoint;
   MARect srcRect;
-  dstPoint.x = x + (w - _width) / 2;
+  // buttons become narrow with larger font sizes
+  int width = MIN(w, _width);
+  dstPoint.x = x + (w - width) / 2;
   dstPoint.y = y + (h - _height) / 2;
+  if (dstPoint.x < 0) {
+    dstPoint.x = x;
+  }
+  if (dstPoint.y < 0) {
+    dstPoint.y = y;
+  }
   srcRect.left = 0;
   srcRect.top = 0;
-  srcRect.width = _width;
+  srcRect.width = width;
   srcRect.height = _height;
   maDrawRGB(&dstPoint, _pixels, &srcRect, 0, _width);
 }
@@ -125,12 +140,11 @@ void KeypadImage::draw(int x, int y, int w, int h) const {
 //
 // KeypadDrawContext
 //
-KeypadDrawContext::KeypadDrawContext(int charWidth, int charHeight, int padding) :
+KeypadDrawContext::KeypadDrawContext(int charWidth, int charHeight) :
   _charWidth(charWidth),
   _charHeight(charHeight),
+  _imageSize(IMAGE_SIZE),
   _keySet(kLower) {
-  const int imageSize = static_cast<int>(MAX(padding * 1.4, charHeight) * 1.2);
-
   if (!_cutImage.decode(img_cut, img_cut_len) ||
       !_copyImage.decode(img_copy, img_copy_len) ||
       !_pasteImage.decode(img_clipboard_paste, img_clipboard_paste_len) ||
@@ -147,22 +161,6 @@ KeypadDrawContext::KeypadDrawContext(int charWidth, int charHeight, int padding)
       !_tagImage.decode(img_tag, img_tag_len) ||
       !_toggleImage.decode(img_layers, img_layers_len)) {
     deviceLog("%s", _cutImage.getLastError());
-  } else if (imageSize < IMAGE_SIZE - 2 || imageSize > IMAGE_SIZE + 2) {
-    _cutImage.resize(imageSize, imageSize);
-    _copyImage.resize(imageSize, imageSize);
-    _pasteImage.resize(imageSize, imageSize);
-    _saveImage.resize(imageSize, imageSize);
-    _runImage.resize(imageSize, imageSize);
-    _helpImage.resize(imageSize, imageSize);
-    _backImage.resize(imageSize, imageSize);
-    _enterImage.resize(imageSize, imageSize);
-    _searchImage.resize(imageSize, imageSize);
-    _lineUpImage.resize(imageSize, imageSize);
-    _pageUpImage.resize(imageSize, imageSize);
-    _lineDownImage.resize(imageSize, imageSize);
-    _pageDownImage.resize(imageSize, imageSize);
-    _toggleImage.resize(imageSize, imageSize);
-    _tagImage.resize(imageSize, imageSize);
   }
 }
 
@@ -189,10 +187,6 @@ const KeypadImage *KeypadDrawContext::getImage(const RawKey &key) const {
   return result;
 }
 
-void KeypadDrawContext::toggle() {
-  _keySet = static_cast<Keyset>((_keySet + 1) % kSize);
-}
-
 KeyCode KeypadDrawContext::getKey(RawKey key) const {
   KeyCode keyCode;
   switch (_keySet) {
@@ -203,6 +197,32 @@ KeyCode KeypadDrawContext::getKey(RawKey key) const {
     case kSize: keyCode = K_NULL; break;
   }
   return keyCode;
+}
+
+void KeypadDrawContext::layoutHeight(int padding) {
+  const int imageSize = static_cast<int>((padding * 2 + _charHeight) * IMAGE_SIZE_FACTOR);
+  if (imageSize < _imageSize - 2 || imageSize > _imageSize + 2) {
+    _cutImage.resize(imageSize, imageSize);
+    _copyImage.resize(imageSize, imageSize);
+    _pasteImage.resize(imageSize, imageSize);
+    _saveImage.resize(imageSize, imageSize);
+    _runImage.resize(imageSize, imageSize);
+    _helpImage.resize(imageSize, imageSize);
+    _backImage.resize(imageSize, imageSize);
+    _enterImage.resize(imageSize, imageSize);
+    _searchImage.resize(imageSize, imageSize);
+    _lineUpImage.resize(imageSize, imageSize);
+    _pageUpImage.resize(imageSize, imageSize);
+    _lineDownImage.resize(imageSize, imageSize);
+    _pageDownImage.resize(imageSize, imageSize);
+    _toggleImage.resize(imageSize, imageSize);
+    _tagImage.resize(imageSize, imageSize);
+    _imageSize = imageSize;
+  }
+}
+
+void KeypadDrawContext::toggle() {
+  _keySet = static_cast<Keyset>((_keySet + 1) % kSize);
 }
 
 //
@@ -306,9 +326,9 @@ void Key::draw(const KeypadTheme *theme, const KeypadDrawContext *context, bool 
 
 bool Key::inside(int x, int y) const {
   return (x >= _x &&
-          x <= _x + _w &&
+          x <= _xEnd &&
           y >= _y &&
-          y <= _y + _h);
+          y <= _yEnd);
 }
 
 void Key::onClick(const KeypadDrawContext *context) const {
@@ -378,7 +398,7 @@ Keypad::Keypad(int charWidth, int charHeight, bool toolbar)
     _height(0),
     _padding(static_cast<int>(charHeight * PADDING_FACTOR)),
     _theme(&MODERN_DARK_THEME),
-    _context(charWidth, charHeight, _padding),
+    _context(charWidth, charHeight),
     _toolbar(toolbar),
     _pressed(nullptr) {
   generateKeys();
@@ -442,6 +462,8 @@ void Keypad::layout(int x, int y, int w, int h) {
       key->_y = yPos;
       key->_w = keyWidth;
       key->_h = keyH;
+      key->_xEnd = key->_x + key->_w;
+      key->_yEnd = key->_y + key->_h;
       xPos += keyWidth;
     }
     yPos += keyH;
@@ -450,16 +472,17 @@ void Keypad::layout(int x, int y, int w, int h) {
 
 int Keypad::layoutHeight(int screenHeight) {
   int charHeight = _context._charHeight;
-  int maxHeight = static_cast<int>(screenHeight * 0.45);
+  int maxHeight = static_cast<int>(screenHeight * MAX_HEIGHT_FACTOR);
   int padding = static_cast<int>(charHeight * PADDING_FACTOR);
   int rows = _toolbar ? 1 : MAX_ROWS;
   int height = rows * ((padding * 2) + charHeight);
   if (height > maxHeight) {
-    // h = r(ch + 2p) -> p = (h - r * ch) / (2 * r)
-    height = maxHeight;
-    padding = ((height - (rows * charHeight)) / (rows * 2));
+    // h = r(ch + 2p) -> p = (h - r * ch) / (r * 2)
+    padding = ((maxHeight - (rows * charHeight)) / (rows * 2));
+    height = rows * ((padding * 2) + charHeight);
   }
   _padding = padding;
+  _context.layoutHeight(_padding);
   return height;
 }
 

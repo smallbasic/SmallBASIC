@@ -160,7 +160,9 @@ void Runtime::editSource(strlib::String loadPath, bool restoreOnExit) {
     _output->addInput(_keypad);
   }
 
-  // to layout inputs
+  statusMessage.update(editWidget, _output);
+
+  // layout inputs and redraw
   _output->resize(w, h);
 
   if (gsb_last_line && isBreak()) {
@@ -173,9 +175,7 @@ void Runtime::editSource(strlib::String loadPath, bool restoreOnExit) {
     alert(gsb_last_errmsg);
   }
 
-  statusMessage.update(editWidget, _output);
   _srcRendered = false;
-  _output->redraw();
   _state = kEditState;
 
   while (_state == kEditState) {
