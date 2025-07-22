@@ -39,14 +39,14 @@ struct KeypadImage : ImageCodec {
 };
 
 enum Keyset {
-  kLower, kUpper, kNumber, kSymbol, kSize
+  kLower, kNumber, kSymbol, kUpper, kSize
 };
 
 struct RawKey {
   const KeyCode _lower;
-  const KeyCode _upper;
   const KeyCode _number;
   const KeyCode _symbol;
+  const KeyCode _upper;
 };
 
 struct KeypadDrawContext {
@@ -54,11 +54,13 @@ struct KeypadDrawContext {
   const KeypadImage *getImage(const RawKey &keycode) const;
   KeyCode getKey(RawKey rawKey) const;
   void layoutHeight(int padding);
+  void onClick(RawKey key);
   void toggle();
 
   int _charWidth;
   int _charHeight;
   int _imageSize;
+  bool _punctuation;
   Keyset _keySet;
 
   KeypadImage _cutImage;
@@ -83,9 +85,8 @@ struct Key {
 
   int color(const KeypadTheme *theme) const;
   void draw(const KeypadTheme *theme, const KeypadDrawContext *context, bool pressed) const;
-  char getKey(const KeypadDrawContext *context) const;
   bool inside(int x, int y) const;
-  void onClick(const KeypadDrawContext *context) const;
+  void onClick(KeypadDrawContext *context) const;
 
   int _x{};
   int _y{};

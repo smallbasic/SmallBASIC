@@ -14,7 +14,7 @@
 #include "ui/keypad_icons.h"
 #include "keypad.h"
 
-constexpr int ROW_LENGTHS[] = {7, 10, 9, 9, 8};
+constexpr int ROW_LENGTHS[] = {7, 10, 9, 9, 9};
 constexpr int MAX_ROWS = 5;
 constexpr int MAX_COLS = 10;
 constexpr int QWERTY_ROW = 1;
@@ -31,6 +31,12 @@ constexpr double MAX_HEIGHT_FACTOR = 0.48;
 
 // image height based on available rectangle
 constexpr double IMAGE_SIZE_FACTOR = 0.65;
+
+// IMAGE_SIZE_FACTOR for the tag image
+constexpr double TAG_IMAGE_SIZE_FACTOR = 0.42;
+
+// IMAGE_SIZE_FACTOR for the page up/down images
+constexpr double PAGE_IMAGE_SIZE_FACTOR = 0.52;
 
 // https://materialui.co/colors
 KeypadTheme MODERN_DARK_THEME = {
@@ -59,40 +65,40 @@ constexpr RawKey KEYS[MAX_ROWS][MAX_COLS] = {
   },
   // QWERTY
   {
-    {K_q, K_Q, K_1, K_EXCLAIM},
-    {K_w, K_W, K_2, K_AT},
-    {K_e, K_E, K_3, K_HASH},
-    {K_r, K_R, K_4, K_DOLLAR},
-    {K_t, K_T, K_5, K_PERCENT},
-    {K_y, K_Y, K_6, K_CARET},
-    {K_u, K_U, K_7, K_AMPERSAND},
-    {K_i, K_I, K_8, K_ASTERISK},
-    {K_o, K_O, K_9, K_LPAREN},
-    {K_p, K_P, K_0, K_RPAREN}
+    {K_q, K_1, K_1, K_Q},
+    {K_w, K_2, K_2, K_W},
+    {K_e, K_3, K_3, K_E},
+    {K_r, K_4, K_4, K_R},
+    {K_t, K_5, K_5, K_T},
+    {K_y, K_6, K_6, K_Y},
+    {K_u, K_7, K_7, K_U},
+    {K_i, K_8, K_8, K_I},
+    {K_o, K_9, K_9, K_O},
+    {K_p, K_0, K_0, K_P}
   },
   // ASDF
   {
-    {K_a, K_A, K_BACKTICK, K_TILDE},
-    {K_s, K_S, K_MINUS, K_UNDERSCORE},
-    {K_d, K_D, K_EQUALS, K_PLUS},
-    {K_f, K_F, K_LBRACKET, K_LBRACE},
-    {K_g, K_G, K_RBRACKET, K_RBRACE},
-    {K_h, K_H, K_BACKSLASH, K_PIPE},
-    {K_j, K_J, K_SEMICOLON, K_COLON},
-    {K_k, K_K, K_APOSTROPHE, K_QUOTE},
-    {K_l, K_L, K_HASH, K_TAG},
+    {K_a, K_COMMA, K_SLASH, K_A},
+    {K_s, K_EQUALS, K_HASH, K_S},
+    {K_d, K_LPAREN, K_SEMICOLON, K_D},
+    {K_f, K_RPAREN, K_QUESTION, K_F},
+    {K_g, K_QUOTE, K_AMPERSAND, K_G},
+    {K_h, K_APOSTROPHE, K_DOLLAR, K_H},
+    {K_j, K_PERIOD, K_EXCLAIM, K_J},
+    {K_k, K_MINUS, K_AT, K_K},
+    {K_l, K_ASTERISK, K_BACKSLASH, K_L},
     {K_NULL}
   },
   // ZXC
   {
     {K_TOGGLE, K_TOGGLE, K_TOGGLE, K_TOGGLE},
-    {K_z, K_Z, K_LESS, K_COMMA},
-    {K_x, K_X, K_GREATER, K_PERIOD},
-    {K_c, K_C, K_QUESTION, K_SLASH},
-    {K_v, K_V, K_PLUS, K_EXT2},
-    {K_b, K_B, K_ASTERISK, K_EXT3},
-    {K_n, K_N, K_LPAREN, K_EXT4},
-    {K_m, K_M, K_RPAREN, K_EXT5},
+    {K_z, K_UNDERSCORE, K_CARET, K_Z},
+    {K_x, K_PLUS, K_LBRACE, K_X},
+    {K_c, K_COLON, K_RBRACE, K_C},
+    {K_v, K_LBRACKET, K_PIPE, K_V},
+    {K_b, K_RBRACKET, K_PERCENT, K_B},
+    {K_n, K_LESS, K_BACKTICK, K_N},
+    {K_m, K_GREATER, K_TILDE, K_M},
     {K_BACKSPACE, K_BACKSPACE, K_BACKSPACE, K_BACKSPACE},
     {K_NULL}
   },
@@ -100,14 +106,14 @@ constexpr RawKey KEYS[MAX_ROWS][MAX_COLS] = {
   {
     {K_LINE_UP, K_PAGE_UP, K_LINE_UP, K_PAGE_UP},
     {K_LINE_DOWN, K_PAGE_DOWN, K_LINE_DOWN, K_PAGE_DOWN},
-    {K_LPAREN, K_LBRACKET, K_LPAREN, K_LBRACKET},
+    {K_LPAREN, K_SLASH, K_COMMA, K_LBRACKET},
     {K_SPACE, K_SPACE, K_SPACE, K_SPACE},
-    {K_RPAREN, K_RBRACKET, K_RPAREN, K_RBRACKET},
+    {K_RPAREN, K_HASH, K_EQUALS, K_RBRACKET},
+    {K_TAG, K_TAG, K_TAG, K_TAG},
     {K_ENTER, K_ENTER, K_ENTER, K_ENTER},
     {K_NULL},
     {K_NULL},
     {K_NULL},
-    {K_NULL}
   }
 };
 
@@ -144,6 +150,7 @@ KeypadDrawContext::KeypadDrawContext(int charWidth, int charHeight) :
   _charWidth(charWidth),
   _charHeight(charHeight),
   _imageSize(IMAGE_SIZE),
+  _punctuation(false),
   _keySet(kLower) {
   if (!_cutImage.decode(img_cut, img_cut_len) ||
       !_copyImage.decode(img_copy, img_copy_len) ||
@@ -200,8 +207,11 @@ KeyCode KeypadDrawContext::getKey(RawKey key) const {
 }
 
 void KeypadDrawContext::layoutHeight(int padding) {
-  const int imageSize = static_cast<int>((padding * 2 + _charHeight) * IMAGE_SIZE_FACTOR);
+  const int baseSize = padding * 2 + _charHeight;
+  const int imageSize = static_cast<int>(baseSize * IMAGE_SIZE_FACTOR);
   if (imageSize < _imageSize - 2 || imageSize > _imageSize + 2) {
+    const int tagImageSize = static_cast<int>(baseSize * TAG_IMAGE_SIZE_FACTOR);
+    const int pageImageSize = static_cast<int>(baseSize * PAGE_IMAGE_SIZE_FACTOR);
     _cutImage.resize(imageSize, imageSize);
     _copyImage.resize(imageSize, imageSize);
     _pasteImage.resize(imageSize, imageSize);
@@ -211,18 +221,38 @@ void KeypadDrawContext::layoutHeight(int padding) {
     _backImage.resize(imageSize, imageSize);
     _enterImage.resize(imageSize, imageSize);
     _searchImage.resize(imageSize, imageSize);
-    _lineUpImage.resize(imageSize, imageSize);
-    _pageUpImage.resize(imageSize, imageSize);
-    _lineDownImage.resize(imageSize, imageSize);
-    _pageDownImage.resize(imageSize, imageSize);
     _toggleImage.resize(imageSize, imageSize);
-    _tagImage.resize(imageSize, imageSize);
+    _lineUpImage.resize(pageImageSize, pageImageSize);
+    _lineDownImage.resize(pageImageSize, pageImageSize);
+    _pageDownImage.resize(pageImageSize, pageImageSize);
+    _pageUpImage.resize(pageImageSize, pageImageSize);
+    _tagImage.resize(tagImageSize, tagImageSize);
     _imageSize = imageSize;
   }
 }
 
+void KeypadDrawContext::onClick(RawKey key) {
+  switch (getKey(key)) {
+  case K_ENTER:
+  case K_RPAREN:
+  case K_RBRACKET:
+  case K_RBRACE:
+    _keySet = kLower;
+    _punctuation = false;
+    break;
+  default:
+    _punctuation = (_keySet == kSymbol || _keySet == kNumber);
+    break;
+  }
+}
+
 void KeypadDrawContext::toggle() {
-  _keySet = static_cast<Keyset>((_keySet + 1) % kSize);
+  if (_punctuation) {
+    _keySet = kLower;
+    _punctuation = false;
+  } else {
+    _keySet = static_cast<Keyset>((_keySet + 1) % kSize);
+  }
 }
 
 //
@@ -230,7 +260,7 @@ void KeypadDrawContext::toggle() {
 //
 Key::Key(const RawKey &k) :
   _key(k) {
-  _printable = isPrintable(k._lower) || isExtended(k._lower);
+  _printable = isPrintable(k._lower);
 }
 
 int Key::color(const KeypadTheme *theme) const {
@@ -239,22 +269,6 @@ int Key::color(const KeypadTheme *theme) const {
     result = theme->_text;
   } else {
     result = theme->_funcKeyHighlight;
-  }
-  return result;
-}
-
-char Key::getKey(const KeypadDrawContext *context) const {
-  char result;
-  KeyCode keyCode = context->getKey(_key);
-  switch (keyCode) {
-  case K_EXT1: result = (char)164; break;
-  case K_EXT2: result = (char)172; break;
-  case K_EXT3: result = (char)182; break;
-  case K_EXT4: result = (char)222; break;
-  case K_EXT5: result = (char)223; break;
-  default:
-    result = keyCode;
-    break;
   }
   return result;
 }
@@ -273,7 +287,7 @@ void Key::draw(const KeypadTheme *theme, const KeypadDrawContext *context, bool 
   int ycT = _y + rc + pad; // y center for top arcs
   int ycB = by - rc;       // y center for bottom arcs
 
-  char keyChar = getKey(context);
+  char keyChar = context->getKey(_key);
   bool printable = _printable && keyChar != K_TAG;
 
   // Set background color
@@ -331,7 +345,7 @@ bool Key::inside(int x, int y) const {
           y <= _yEnd);
 }
 
-void Key::onClick(const KeypadDrawContext *context) const {
+void Key::onClick(KeypadDrawContext *context) const {
   auto *event = new MAEvent();
   event->type = EVENT_TYPE_KEY_PRESSED;
   event->nativeKey = 0;
@@ -341,6 +355,7 @@ void Key::onClick(const KeypadDrawContext *context) const {
     break;
   case K_ENTER:
     event->key = SB_KEY_ENTER;
+    context->onClick(_key);
     break;
   case K_SPACE:
     event->key = SB_KEY_SPACE;
@@ -382,7 +397,8 @@ void Key::onClick(const KeypadDrawContext *context) const {
     event->key = SB_KEY_CTRL('t');
     break;
   default:
-    event->key = (unsigned char)getKey(context);
+    event->key = (unsigned char)context->getKey(_key);
+    context->onClick(_key);
     break;
   }
   maPushEvent(event);
@@ -452,7 +468,7 @@ void Keypad::layout(int x, int y, int w, int h) {
         keyWidth = _width / cols;
       } else if (isArrow(key->_key._lower)) {
         keyWidth = static_cast<int>(keyWidth * 1.2);
-      } else if (!key->_printable) {
+      } else if (!key->_printable && key->_key._lower != K_TAG) {
         const int numKeys = 2;
         keyWidth = (_width - ((cols - numKeys) * keyW)) / numKeys;
       } else if (key->_key._lower == K_SPACE) {
