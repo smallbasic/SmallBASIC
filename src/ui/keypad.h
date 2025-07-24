@@ -18,8 +18,10 @@ using namespace strlib;
 #if defined(_SDL)
 // for cursor display
 #define HAS_HOVER true
+#define PLATFORM_PADDING 0.5
 #else
 #define HAS_HOVER false
+#define PLATFORM_PADDING 1.1
 #endif
 
 struct KeypadTheme {

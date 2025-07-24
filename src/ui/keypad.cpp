@@ -24,7 +24,7 @@ constexpr int IMAGE_SIZE = 30;
 constexpr double PI = 3.14159;
 
 // padding size based on character height
-constexpr double PADDING_FACTOR = 1.1;
+constexpr double PADDING_FACTOR = PLATFORM_PADDING;
 
 // maximum keyboard height as based on screen height
 constexpr double MAX_HEIGHT_FACTOR = 0.48;
@@ -78,14 +78,14 @@ constexpr RawKey KEYS[MAX_ROWS][MAX_COLS] = {
   },
   // ASDF
   {
-    {K_a, K_COMMA, K_SLASH, K_A},
-    {K_s, K_EQUALS, K_HASH, K_S},
-    {K_d, K_LPAREN, K_SEMICOLON, K_D},
-    {K_f, K_RPAREN, K_QUESTION, K_F},
-    {K_g, K_QUOTE, K_AMPERSAND, K_G},
-    {K_h, K_APOSTROPHE, K_DOLLAR, K_H},
-    {K_j, K_PERIOD, K_EXCLAIM, K_J},
-    {K_k, K_MINUS, K_AT, K_K},
+    {K_a, K_COMMA, K_HASH, K_A},
+    {K_s, K_EQUALS, K_SEMICOLON, K_S},
+    {K_d, K_LPAREN, K_QUESTION, K_D},
+    {K_f, K_RPAREN, K_AMPERSAND, K_F},
+    {K_g, K_QUOTE, K_DOLLAR, K_G},
+    {K_h, K_APOSTROPHE, K_EXCLAIM, K_H},
+    {K_j, K_PERIOD, K_AT, K_J},
+    {K_k, K_MINUS, K_SLASH, K_K},
     {K_l, K_ASTERISK, K_BACKSLASH, K_L},
     {K_NULL}
   },
@@ -276,16 +276,17 @@ int Key::color(const KeypadTheme *theme) const {
 void Key::draw(const KeypadTheme *theme, const KeypadDrawContext *context, bool pressed) const {
   int rc = 5;
   int pad = 2;
+  int pad_rc = pad + rc;
   int rx = _x + _w - pad; // right x
   int by = _y + _h - pad; // bottom y
-  int lt = _x + rc + pad; // left x (after corner)
-  int vt = _y + rc + pad; // top y (after corner)
+  int lt = _x + pad_rc;   // left x (after corner)
+  int vt = _y + pad_rc;   // top y (after corner)
   int rt = rx - rc;       // right x (before corner)
   int bt = by - rc;       // bottom y (before corner)
-  int xcL = _x + rc + pad; // x center for left arcs
-  int xcR = rx - rc;       // x center for right arcs
-  int ycT = _y + rc + pad; // y center for top arcs
-  int ycB = by - rc;       // y center for bottom arcs
+  int xcL = _x + pad_rc;  // x center for left arcs
+  int xcR = rx - rc;      // x center for right arcs
+  int ycT = _y + pad_rc;  // y center for top arcs
+  int ycB = by - rc;      // y center for bottom arcs
 
   char keyChar = context->getKey(_key);
   bool printable = _printable && keyChar != K_TAG;
