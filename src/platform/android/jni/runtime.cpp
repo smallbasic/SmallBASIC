@@ -30,6 +30,9 @@
 
 Runtime *runtime = nullptr;
 
+// Pipe file descriptors: g_backPipe[0] is read-end, g_backPipe[1] is write-end
+static int g_backPipe[2] = {-1, -1};
+
 // the sensorTypes corresponding to _sensors[] positions
 constexpr int SENSOR_TYPES[MAX_SENSORS] = {
   ASENSOR_TYPE_ACCELEROMETER,
@@ -106,6 +109,48 @@ void handleCommand(android_app *app, int32_t cmd) {
   }
 }
 
+static void pushBackEvent() {
+  auto *maEvent = new MAEvent();
+  maEvent->nativeKey = AKEYCODE_BACK;
+  maEvent->type = EVENT_TYPE_KEY_PRESSED;
+  runtime->pushEvent(maEvent);
+}
+
+//
+// Callback registered with ALooper that is triggered when the pipe receives data.
+// This is what wakes the blocked ALooper_pollOnce() and lets us run pushBackEvent().
+//
+static int pipeCallback(int fd, int events, void *data) {
+  // clear the byte that woke the pipe, then return 1 to stay registered
+  logEntered();
+  char buf[1];
+  read(fd, buf, 1);
+  pushBackEvent();
+  return 1;
+}
+
+//
+// Set up the pipe and register its read-end (g_backPipe[0]) with the ALooper.
+// This allows us to wake the looper from Java code by writing to the pipe.
+//
+static void setupBackWakePipe(ALooper *looper) {
+  if (pipe(g_backPipe) == 0) {
+    // Make read-end non-blocking to avoid stalling the loop
+    fcntl(g_backPipe[0], F_SETFL, O_NONBLOCK);
+
+    // Register the pipe with the looper so it wakes up when there's input
+    ALooper_addFd(looper,
+                  g_backPipe[0],       // fd to watch
+                  0,                   // arbitrary/unused identifier
+                  ALOOPER_EVENT_INPUT, // watch for input readiness
+                  pipeCallback,        // callback to run on wake
+                  nullptr);            // no additional data
+    trace("Back pipe registered with looper");
+  } else {
+    trace("Failed to create back pipe");
+  }
+}
+
 // see http://stackoverflow.com/questions/15913080
 static void process_input(android_app *app, android_poll_source *source) {
   AInputEvent* event = nullptr;
@@ -114,16 +159,24 @@ static void process_input(android_app *app, android_poll_source *source) {
         AKeyEvent_getKeyCode(event) == AKEYCODE_BACK) {
       // prevent AInputQueue_preDispatchEvent from attempting to close
       // the keypad here to avoid a crash in android 4.2 + 4.3.
-      if (AKeyEvent_getAction(event) == AKEY_EVENT_ACTION_DOWN &&
-          runtime->isActive()) {
-        auto *maEvent = new MAEvent();
-        maEvent->nativeKey = AKEYCODE_BACK;
-        maEvent->type = EVENT_TYPE_KEY_PRESSED;
-        runtime->pushEvent(maEvent);
+      if (AKeyEvent_getAction(event) == AKEY_EVENT_ACTION_DOWN && runtime->isActive()) {
+        pushBackEvent();
       }
       AInputQueue_finishEvent(app->inputQueue, event, true);
     } else if (!AInputQueue_preDispatchEvent(app->inputQueue, event)) {
       AInputQueue_finishEvent(app->inputQueue, event, handleInput(app, event));
+    }
+  }
+}
+
+extern "C" JNIEXPORT void JNICALL Java_net_sourceforge_smallbasic_MainActivity_onBack
+  (JNIEnv *env, jclass clazz) {
+  if (runtime != nullptr) {
+    logEntered();
+    if (g_backPipe[1] >= 0) {
+      // write a placeholder byte to trigger the read and wake ALooper_pollOnce
+      char buf = 'x';
+      write(g_backPipe[1], &buf, 1);
     }
   }
 }
@@ -234,6 +287,7 @@ Runtime::Runtime(android_app *app) :
   _looper = ALooper_forThread();
   _sensorManager = ASensorManager_getInstance();
   memset(&_sensors, 0, sizeof(_sensors));
+  setupBackWakePipe(_looper);
 }
 
 Runtime::~Runtime() {
@@ -1075,4 +1129,3 @@ void osd_beep(void) {
   osd_sound(1000, 30, 100, 0);
   osd_sound(500, 30, 100, 0);
 }
-

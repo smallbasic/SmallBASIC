@@ -36,6 +36,8 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.Toast;
+import android.window.OnBackInvokedCallback;
+import android.window.OnBackInvokedDispatcher;
 
 import androidx.annotation.RequiresPermission;
 import androidx.core.app.ActivityCompat;
@@ -118,6 +120,7 @@ public class MainActivity extends NativeActivity {
   public static native void consoleLog(String value);
   public static native boolean libraryMode();
   public static native void onActivityPaused(boolean paused);
+  public static native void onBack();
   public static native void onResize(int width, int height);
   public static native void onUnicodeChar(int ch);
   public static native boolean optionSelected(int index);
@@ -766,6 +769,7 @@ public class MainActivity extends NativeActivity {
     super.onCreate(savedInstanceState);
     setImmersiveMode();
     setupStorageEnvironment();
+    setupPredictiveBack();
     if (!libraryMode()) {
       processIntent();
       processSettings();
@@ -1052,6 +1056,24 @@ public class MainActivity extends NativeActivity {
                                         View.SYSTEM_UI_FLAG_HIDE_NAVIGATION |
                                         View.SYSTEM_UI_FLAG_FULLSCREEN |
                                         View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY);
+    }
+  }
+
+  //
+  // Hook into Predictive Back (Android 13+)
+  //
+  private void setupPredictiveBack() {
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+      getOnBackInvokedDispatcher().registerOnBackInvokedCallback(
+          OnBackInvokedDispatcher.PRIORITY_DEFAULT,
+          new OnBackInvokedCallback() {
+            @Override
+            public void onBackInvoked() {
+              Log.d(TAG, "onBackInvoked");
+              onBack();
+            }
+          }
+      );
     }
   }
 

@@ -57,7 +57,7 @@ ImageCodec::~ImageCodec() {
   _pixels = nullptr;
 }
 
-const char *ImageCodec::getLastError(void) {
+const char *ImageCodec::getLastError() {
   return g_last_error;
 }
 
