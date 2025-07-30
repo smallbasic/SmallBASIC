@@ -384,7 +384,6 @@ struct FormInputScreen : public Screen {
   void drawRectFilled(int x1, int y1, int x2, int y2) override {}
   int  getPixel(int x, int y) override { return 0; }
   void newLine(int lineHeight) override {};
-  int  print(const char *p, int lineHeight, bool allChars=false) override { return 0; }
   void resize(int newWidth, int newHeight, int oldWidth, int oldHeight, int lineHeight) override;
   bool setGraphicsRendition(const char c, int escValue, int lineHeight) override { return true; }
   void setPixel(int x, int y, int c) override {}

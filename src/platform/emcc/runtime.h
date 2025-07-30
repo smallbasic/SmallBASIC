@@ -21,6 +21,7 @@ struct Runtime : public System {
   void browseFile(const char *url);
   char *getClipboardText();
   int  getFontSize() { return _output->getFontSize(); }
+  void editSource(String loadPath, bool restoreOnExit) override;
   void enableCursor(bool enabled) {}
   int  handle(int event);
   char *loadResource(const char *fileName);

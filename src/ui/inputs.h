@@ -120,6 +120,7 @@ struct FormInput : public Shape {
   virtual bool hasHover() { return false; }
   virtual void setFocus(bool focus);
   virtual void layout(int x, int y, int w, int h) {}
+  virtual int layoutHeight(int screenHeight) { return 0; }
   virtual bool floatBottom() { return false; }
   virtual bool floatTop() { return false; }
   virtual void drawHover(int dx, int dy, bool selected);

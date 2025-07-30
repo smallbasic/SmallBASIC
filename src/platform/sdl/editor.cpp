@@ -11,6 +11,7 @@
 #include "common/sbapp.h"
 #include "common/fs_socket_client.h"
 #include "ui/textedit.h"
+#include "ui/keypad.h"
 #include "platform/sdl/runtime.h"
 #include "platform/sdl/settings.h"
 #include "platform/sdl/syswm.h"
@@ -27,14 +28,14 @@ bool g_macro_record;
 bool g_returnToLine;
 
 struct StatusMessage {
-  explicit StatusMessage(TextEditInput *editor) :
+  explicit StatusMessage(const TextEditInput *editor) :
     _dirty(editor->isDirty()),
     _insert(true),
     _row(editor->getRow()),
     _col(editor->getCol()) {
   }
 
-  void setFilename(String &loadPath) {
+  void setFilename(const String &loadPath) {
     int i = loadPath.lastIndexOf('/', 0);
     if (i != -1) {
       _fileName = loadPath.substring(i + 1);
@@ -43,7 +44,7 @@ struct StatusMessage {
     }
   }
 
-  bool update(TextEditInput *editor, AnsiWidget *out, bool force=false) {
+  bool update(TextEditInput *editor, const AnsiWidget *out, const bool force=false) {
     bool result;
     bool dirty = editor->isDirty();
     if (force
@@ -66,7 +67,7 @@ struct StatusMessage {
       if (!_insert) {
         message.append("Ovwrt");
       }
-      int digits = snprintf(NULL, 0, "%d%d",
+      int digits = snprintf(nullptr, 0, "%d%d",
                             editor->getRow(), editor->getCol());
       int spaces = 6 - digits;
       for (int i = 0; i < spaces; i++) {
@@ -77,7 +78,7 @@ struct StatusMessage {
       } else if (editor->getLines() - editor->getScroll() < editor->getPageRows()) {
         message.append("Bot");
       } else {
-        int pos = editor->getRow() * 100 / editor->getLines();
+        const int pos = editor->getRow() * 100 / editor->getLines();
         message.append(pos).append("%");
       }
       out->setStatus(message);
@@ -89,12 +90,12 @@ struct StatusMessage {
     return result;
   }
 
-  void resetCursor(TextEditInput *editor) {
+  void resetCursor(const TextEditInput *editor) {
     _row = editor->getRow();
     _col = editor->getCol();
   }
 
-  void setDirty(TextEditInput *editor) {
+  void setDirty(const TextEditInput *editor) {
     _dirty = !editor->isDirty();
   }
 
@@ -112,7 +113,7 @@ struct StatusMessage {
 void onlineHelp(Runtime *runtime, TextEditInput *widget) {
   char path[100];
   const char *nodeId = widget->getNodeId();
-  if (nodeId != NULL && nodeId[0] != '0') {
+  if (nodeId != nullptr && nodeId[0] != '0') {
     sprintf(path, "http://smallbasic.github.io/reference/%s.html", nodeId);
   } else {
     sprintf(path, "https://smallbasic.github.io");
@@ -128,20 +129,20 @@ void showHelpLineInput(TextEditHelpWidget *helpWidget, int width = 35) {
   helpWidget->showPopup(width, 1);
 }
 
-void showHelpSideabar(TextEditHelpWidget *helpWidget) {
+void showHelpSidebar(TextEditHelpWidget *helpWidget) {
   helpWidget->showSidebar();
 }
 
 void showRecentFiles(TextEditHelpWidget *helpWidget, String &loadPath) {
   String fileList;
   helpWidget->createMessage();
-  helpWidget->reload(NULL);
+  helpWidget->reload(nullptr);
   getRecentFileList(fileList, loadPath);
   helpWidget->setText(fileList);
   showHelpPopup(helpWidget);
 }
 
-void showSelectionCount(AnsiWidget *out, TextEditInput *widget) {
+void showSelectionCount(const AnsiWidget *out, TextEditInput *widget) {
   int lines, chars;
   widget->getSelectionCounts(&lines, &chars);
   String label = "Region has ";
@@ -160,10 +161,9 @@ void showSelectionCount(AnsiWidget *out, TextEditInput *widget) {
   out->setStatus(label);
 }
 
-void exportBuffer(AnsiWidget *out, const char *text, String &dest, String &token) {
+void exportBuffer(const AnsiWidget *out, const char *text, const String &dest, const String &token) {
   char buffer[PATH_MAX];
-  dev_file_t f;
-  memset(&f, 0, sizeof(dev_file_t));
+  dev_file_t f = {};
 
   sprintf(f.name, "SOCL:%s\n", dest.c_str());
   if (dest.indexOf(':', 0) != -1 && sockcl_open(&f)) {
@@ -181,7 +181,7 @@ void exportBuffer(AnsiWidget *out, const char *text, String &dest, String &token
   out->setStatus(buffer);
 }
 
-bool externalExec(AnsiWidget *out, TextEditInput *editWidget, String &loadPath) {
+bool externalExec(const AnsiWidget *out, const TextEditInput *editWidget, const String &loadPath) {
   bool result;
   if (editWidget->getTextLength() && !g_exportAddr.empty() && g_exportAddr.indexOf("sbasic", 0) != -1) {
     launch(g_exportAddr, loadPath);
@@ -195,23 +195,23 @@ bool externalExec(AnsiWidget *out, TextEditInput *editWidget, String &loadPath) 
   return result;
 }
 
-void System::editSource(String loadPath, bool restoreOnExit) {
+void Runtime::editSource(String loadPath, bool restoreOnExit) {
   logEntered();
 
   int w = _output->getWidth();
   int h = _output->getHeight();
   int charWidth = _output->getCharWidth();
   int charHeight = _output->getCharHeight();
-  int prevScreenId = _output->selectScreen(SOURCE_SCREEN);
+  int prevScreenId = _output->selectScreen(FORM_SCREEN);
   TextEditInput *editWidget;
-  if (_editor != NULL) {
+  if (_editor != nullptr) {
     editWidget = _editor;
     editWidget->_width = w;
     editWidget->_height = h;
   } else {
     editWidget = new TextEditInput(_programSrc, charWidth, charHeight, 0, 0, w, h);
   }
-  TextEditHelpWidget *helpWidget = new TextEditHelpWidget(editWidget, charWidth, charHeight);
+  auto *helpWidget = new TextEditHelpWidget(editWidget, charWidth, charHeight);
   TextEditInput *widget = editWidget;
   String recentFile;
   StatusMessage statusMessage(editWidget);
@@ -220,7 +220,7 @@ void System::editSource(String loadPath, bool restoreOnExit) {
   } inputMode = kInit;
 
   _modifiedTime = getModifiedTime();
-  editWidget->updateUI(NULL, NULL);
+  editWidget->updateUI(nullptr, nullptr);
   editWidget->setLineNumbers();
   editWidget->setFocus(true);
   statusMessage.setFilename(loadPath);
@@ -228,6 +228,16 @@ void System::editSource(String loadPath, bool restoreOnExit) {
   _output->clearScreen();
   _output->addInput(editWidget);
   _output->addInput(helpWidget);
+
+  if (_keypad != nullptr) {
+    _output->addInput(_keypad);
+  } else {
+    _keypad = new KeypadInput(false, true, charWidth, charHeight);
+    _output->addInput(_keypad);
+  }
+
+  // to layout inputs
+  _output->resize(w, h);
 
   if (isBreak() && g_returnToLine) {
     // break running program - position to last program line
@@ -241,17 +251,17 @@ void System::editSource(String loadPath, bool restoreOnExit) {
         *nl = '\0';
       }
     }
-    String lastFile(gsb_last_file);
+    const String lastFile(gsb_last_file);
     if (lastFile.endsWith(".sbu")) {
       _output->setStatus(!gsb_last_errmsg[0] ? "Unit error" : gsb_last_errmsg);
     } else {
       // program stopped with an error
       editWidget->setCursorRow(gsb_last_line + editWidget->getSelectionRow() - 1);
-      if (_stackTrace.size()) {
+      if (!_stackTrace.empty()) {
         helpWidget->setText(gsb_last_errmsg);
         helpWidget->createStackTrace(gsb_last_errmsg, gsb_last_line, _stackTrace);
         widget = helpWidget;
-        showHelpSideabar(helpWidget);
+        showHelpSidebar(helpWidget);
         _output->setStatus("Error. Esc=Close, Up/Down=Caller");
       } else {
         _output->setStatus(!gsb_last_errmsg[0] ? "Error" : gsb_last_errmsg);
@@ -319,7 +329,7 @@ void System::editSource(String loadPath, bool restoreOnExit) {
           helpWidget->hide();
           helpWidget->cancelMode();
           statusMessage.setDirty(editWidget);
-          ((Runtime *)this)->debugStop();
+          Runtime::debugStop();
           break;
         case SB_KEY_CTRL('s'):
           saveFile(editWidget, loadPath);
@@ -349,7 +359,7 @@ void System::editSource(String loadPath, bool restoreOnExit) {
           if (externalExec(_output, editWidget, loadPath)) {
             break;
           }
-          // else fallthru to F3 handler
+          // else fallthrough to F3 handler
         case SB_KEY_F(3):
           if (editWidget->getTextLength()) {
             saveFile(editWidget, loadPath);
@@ -367,18 +377,18 @@ void System::editSource(String loadPath, bool restoreOnExit) {
           _output->setStatus("Debug. F6=Step, F7=Continue, Esc=Close");
           widget = helpWidget;
           helpWidget->createMessage();
-          showHelpSideabar(helpWidget);
-          ((Runtime *)this)->debugStart(editWidget, loadPath.c_str());
+          showHelpSidebar(helpWidget);
+          debugStart(editWidget, loadPath.c_str());
           statusMessage.resetCursor(editWidget);
           break;
         case SB_KEY_F(6):
-          ((Runtime *)this)->debugStep(editWidget, helpWidget, false);
+          debugStep(editWidget, helpWidget, false);
           break;
         case SB_KEY_F(7):
-          ((Runtime *)this)->debugStep(editWidget, helpWidget, true);
+          debugStep(editWidget, helpWidget, true);
           break;
         case SB_KEY_F(8):
-          ((Runtime *)this)->exportRun(loadPath);
+          exportRun(loadPath);
           break;
         case SB_KEY_F(9):
         case SB_KEY_CTRL('r'):
@@ -395,13 +405,13 @@ void System::editSource(String loadPath, bool restoreOnExit) {
           _output->setStatus("Keystroke help. Esc=Close");
           widget = helpWidget;
           helpWidget->createHelp();
-          showHelpSideabar(helpWidget);
+          showHelpSidebar(helpWidget);
           break;
         case SB_KEY_CTRL('l'):
           _output->setStatus("Outline. Esc=Close");
           widget = helpWidget;
           helpWidget->createOutline();
-          showHelpSideabar(helpWidget);
+          showHelpSidebar(helpWidget);
           break;
         case SB_KEY_CTRL('f'):
           _output->setStatus("Find in buffer. Esc=Close");
@@ -427,7 +437,7 @@ void System::editSource(String loadPath, bool restoreOnExit) {
           _output->setStatus("Auto-complete. Esc=Close");
           widget = helpWidget;
           helpWidget->createCompletionHelp();
-          showHelpSideabar(helpWidget);
+          showHelpSidebar(helpWidget);
           break;
         case SB_KEY_INSERT:
           statusMessage.setInsert();
@@ -447,7 +457,7 @@ void System::editSource(String loadPath, bool restoreOnExit) {
           _output->redraw();
           _state = kActiveState;
           waitForBack();
-          _output->selectScreen(SOURCE_SCREEN);
+          _output->selectScreen(FORM_SCREEN);
           _state = kEditState;
           break;
         case SB_KEY_ALT('0'):
@@ -568,9 +578,8 @@ void System::editSource(String loadPath, bool restoreOnExit) {
       }
     }
     if ((isBack() || isClosing()) && editWidget->isDirty()) {
-      const char *message = "The current file has not been saved.\n"
-                            "Would you like to save it now?";
-      int choice = ask("Save changes?", message, isBack());
+      const auto message = "The current file has not been saved.\nWould you like to save it now?";
+      const int choice = ask("Save changes?", message, isBack());
       if (choice == 0) {
         saveFile(editWidget, loadPath);
         saveRecentPosition(loadPath, editWidget->getCursorPos());
@@ -586,13 +595,17 @@ void System::editSource(String loadPath, bool restoreOnExit) {
     if (!_output->removeInput(editWidget)) {
       trace("Failed to remove editor input");
     }
+    if (!_output->removeInput(_keypad)) {
+      trace("Failed to remove keypad input");
+    }
     _editor = editWidget;
     _editor->setFocus(false);
   } else {
-    _editor = NULL;
+    _editor = nullptr;
+    _keypad = nullptr;
   }
 
-  // deletes editWidget unless it has been removed
+  // deletes editWidget and _keypad unless it has been removed
   _output->removeInputs();
   if (!isClosing() && restoreOnExit) {
     _output->selectScreen(prevScreenId, false);

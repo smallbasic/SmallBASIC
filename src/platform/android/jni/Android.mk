@@ -47,6 +47,8 @@ LOCAL_SRC_FILES  := main.cpp                   \
                     ../../../ui/image.cpp      \
                     ../../../ui/inputs.cpp     \
                     ../../../ui/textedit.cpp   \
+                    ../../../ui/keypad.cpp     \
+                    ../../../ui/image_codec.cpp\
                     ../../../ui/strlib.cpp     \
                     ../../../ui/graphics.cpp   \
                     ../../../ui/system.cpp

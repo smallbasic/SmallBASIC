@@ -383,7 +383,7 @@ void Runtime::showCursor(CursorType cursorType) {
   }
 }
 
-void System::editSource(strlib::String loadPath, bool restoreOnExit) {
+void Runtime::editSource(strlib::String loadPath, bool restoreOnExit) {
   logEntered();
 
   strlib::String fileName;

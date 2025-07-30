@@ -9,26 +9,19 @@
 #pragma once
 
 enum KeyCode : char {
-  K_UP       = -1,
-  K_DOWN     = -2,
-  K_LEFT     = -3,
-  K_RIGHT    = -4,
-  K_HOME     = -5,
-  K_END      = -6,
-  K_PAGE_UP  = -7,
-  K_PAGE_DOWN = -8,
-  K_INSERT   = -9,
-  K_DELETE   = -10,
-  K_CUT      = -11,
-  K_COPY     = -12,
-  K_PASTE    = -13,
-  K_SAVE     = -14,
-  K_HELP     = -15,
-  K_SEARCH   = -16,
-  K_RUN      = -17,
-  K_TOGGLE   = -18,
-  K_SHIFT    = -19,
-  K_FIND     = -20,
+  K_CUT      = (char)-1,
+  K_COPY     = (char)-2,
+  K_PASTE    = (char)-3,
+  K_SAVE     = (char)-4,
+  K_HELP     = (char)-5,
+  K_SEARCH   = (char)-6,
+  K_RUN      = (char)-7,
+  K_TOGGLE   = (char)-8,
+  K_LINE_UP  = (char)-9,
+  K_PAGE_UP  = (char)-10,
+  K_LINE_DOWN= (char)-11,
+  K_PAGE_DOWN= (char)-12,
+  K_TAG      = (char)-13,
   K_NULL     = 0,
   K_BACKSPACE = 8,
   K_TAB      = 9,
@@ -89,7 +82,10 @@ inline bool isPrintable(KeyCode key) {
   return key >= K_SPACE && key <= K_TILDE;
 }
 
-inline bool isNumber(KeyCode key) {
-  return key >= K_0 && key <= K_9;
+inline bool isArrow(KeyCode key) {
+  return key == K_LINE_UP || key == K_PAGE_UP || key == K_LINE_DOWN || key == K_PAGE_DOWN;
 }
 
+inline bool isRightMargin(KeyCode key) {
+  return key == K_ENTER || key == K_HELP || key == K_BACKSPACE;
+}

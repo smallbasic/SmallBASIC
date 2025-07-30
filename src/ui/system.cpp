@@ -58,8 +58,8 @@
 #define CHANGE_WAIT_SLEEP 1000
 
 #define FONT_SCALE_INTERVAL 10
-#define FONT_MIN 20
-#define FONT_MAX 200
+#define FONT_MIN 80
+#define FONT_MAX 160
 
 #define OPTIONS_BOX_WIDTH_EXTRA 1
 #define OPTIONS_BOX_BG 0xd2d1d0
@@ -336,7 +336,7 @@ char *System::getText(char *dest, int maxSize) {
   return dest;
 }
 
-uint32_t System::getModifiedTime() {
+uint32_t System::getModifiedTime() const {
   uint32_t result = 0;
   if (!_activeFile.empty()) {
     struct stat st_file{};
@@ -753,7 +753,7 @@ char *System::readSource(const char *fileName) {
   }
   if (buffer != nullptr) {
     delete [] _programSrc;
-    int len = strlen(buffer) + 1;
+    size_t len = strlen(buffer) + 1;
     _programSrc = new char[len];
     memcpy(_programSrc, buffer, len);
     _programSrc[len - 1] = '\0';
@@ -763,7 +763,7 @@ char *System::readSource(const char *fileName) {
   return buffer;
 }
 
-void System::resize() {
+void System::resize() const {
   MAExtent screenSize = maGetScrSize();
   logEntered();
   _output->resize(EXTENT_X(screenSize), EXTENT_Y(screenSize));
@@ -1006,7 +1006,7 @@ void System::setupPath(String &loadPath) {
   }
 }
 
-void System::setDimensions() {
+void System::setDimensions() const {
   dev_resize(_output->getWidth(), _output->getHeight());
 }
 
@@ -1219,7 +1219,7 @@ void System::waitForChange(bool error) {
   }
 }
 
-void System::printErrorLine() {
+void System::printErrorLine() const {
   if (_programSrc) {
     int line = 1;
     char *errLine = _programSrc;
@@ -1257,7 +1257,7 @@ void System::printErrorLine() {
   }
 }
 
-void System::printSourceLine(char *text, int line, bool last) {
+void System::printSourceLine(char *text, int line, bool last) const {
   char lineMargin[32];
   sprintf(lineMargin, "\033[7m%03d\033[0m ", line);
   _output->print(lineMargin);
@@ -1350,7 +1350,7 @@ void System::setRestart() {
   _state = kRestartState;
 }
 
-void System::systemLog(const char *buf) {
+void System::systemLog(const char *buf) const {
   deviceLog("%s", buf);
   int prevScreenId = _output->getScreenId(true);
   _output->selectBackScreen(CONSOLE_SCREEN);
@@ -1358,7 +1358,7 @@ void System::systemLog(const char *buf) {
   _output->selectBackScreen(prevScreenId);
 }
 
-void System::systemPrint(const char *format, ...) {
+void System::systemPrint(const char *format, ...) const {
   va_list args;
 
   va_start(args, format);

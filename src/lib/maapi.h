@@ -16,10 +16,8 @@
   02111-1307, USA.
 */
 
-#if !defined(MAAPI_H)
-#define MAAPI_H
-
-#include <stdint.h>
+#pragma once
+#include <cstdint>
 
 #define EXTENT_Y(e) ((short)(e))
 #define EXTENT_X(e) ((short)((e) >> 16))
@@ -27,17 +25,12 @@
 #define FONT_TYPE_SERIF 0
 #define FONT_TYPE_SANS_SERIF 1
 #define FONT_TYPE_MONOSPACE 2
-// same values as tizen enum FontStyle
 #define FONT_STYLE_NORMAL 0x0001
 #define FONT_STYLE_BOLD 0x0002
 #define FONT_STYLE_ITALIC 0x0004
-#define HANDLE_LOCAL 0
-#define RES_OUT_OF_MEMORY -1
-#define RES_BAD_INPUT -2
 #define RES_OK 1
 #define HANDLE_SCREEN 0
 #define RES_FONT_OK 1
-#define MAK_MENU 293
 #define EVENT_TYPE_POINTER_PRESSED 8
 #define EVENT_TYPE_POINTER_RELEASED 9
 #define EVENT_TYPE_POINTER_DRAGGED 10
@@ -45,19 +38,7 @@
 #define EVENT_TYPE_OPTIONS_BOX_BUTTON_CLICKED 41
 #define EVENT_TYPE_SCREEN_CHANGED 21
 
-#ifndef _WCHAR_DEFINED
-#define _WCHAR_DEFINED
-typedef wchar_t wchar;
-#endif  //_WCHAR_DEFINED
-
-#ifndef _SYSV_TYPES_DEFINED
-#define _SYSV_TYPES_DEFINED
-typedef unsigned short ushort;
-typedef unsigned int uint;
-#endif  //_SYSV_TYPES_DEFINED
-
 typedef int MAExtent;
-typedef void* MAAddress;
 typedef intptr_t MAHandle;
 
 typedef struct MARect {
@@ -170,7 +151,7 @@ void maDrawText(int left, int top, const char *str, int length);
 /**
  * Copies the back buffer to the physical screen.
  */
-void maUpdateScreen(void);
+void maUpdateScreen();
 
 /**
  * Returns the size in pixels of Latin-1 text as it would appear on-screen.
@@ -181,7 +162,7 @@ MAExtent maGetTextSize(const char *str);
  * Returns the screen size.
  * Returns the screen size.
  */
-MAExtent maGetScrSize(void);
+MAExtent maGetScrSize();
 
 /**
  * Returns a handle to one of the default fonts of the device, in the style and size you specify.
@@ -231,14 +212,14 @@ void maDrawImageRegion(MAHandle image, const MARect *srcRect, const MAPoint2d *d
  * \param width Width, in pixels, of the new image. Must be \> 0.
  * \param height Height, in pixels, of the new image. Must be \> 0.
  * \see maSetDrawTarget()
- * \returns #RES_OK if succeded and #RES_OUT_OF_MEMORY if failed.
+ * \returns #RES_OK if succeeded and #RES_OUT_OF_MEMORY if failed.
  */
 int maCreateDrawableImage(MAHandle placeholder, int width, int height);
 
 /**
  *  Creates a new placeholder and returns the handle to it.
  */
-MAHandle maCreatePlaceholder(void);
+MAHandle maCreatePlaceholder();
 
 /**
  * Releases a handle returned by maCreatePlaceholder().
@@ -264,13 +245,13 @@ void maDestroyPlaceholder(MAHandle handle);
  * The destination rectangle is defined as { 0,0, \a srcRect.width, \a srcRect.height }.
  * Parts of the destination array that are outside the destination rectangle are not modified.
  * If \a srcRect is outside the bounds of the source image,
- * or if \a srcRect.width is greater than \a scanlength, a MoSync Panic is thrown.
+ * or if \a srcRect.width is greater than \a scanLength, a MoSync Panic is thrown.
  * \param image The handle to the source image.
  * \param dst The address of the destination array.
- * \param scanlength The width of the image, in pixels, represented by the destination array.
+ * \param scanLength The width of the image, in pixels, represented by the destination array.
  * \param srcRect The portion of the source image to be copied.
  */
-void maGetImageData(MAHandle image, void *dst, const MARect *srcRect, int scanlength);
+void maGetImageData(MAHandle image, void *dst, const MARect *srcRect, int scanLength);
 
 /**
  * Sets the current draw target.
@@ -287,17 +268,17 @@ MAHandle maSetDrawTarget(MAHandle image);
  * Returns the number of milliseconds that has passed since some unknown point in time.
  * Accuracy is platform-specific, but should be better than 20 ms.
  */
-int maGetMilliSecondCount(void);
+int maGetMilliSecondCount();
 
 /**
  * Shows the virtual keyboard.
  */
-void maShowVirtualKeyboard(void);
+void maShowVirtualKeyboard();
 
 /**
  * Hides the virtual keyboard.
  */
-void maHideVirtualKeyboard(void);
+void maHideVirtualKeyboard();
 
 /**
  * There is a FIFO buffer that contains up to #EVENT_BUFFER_SIZE events.
@@ -339,4 +320,3 @@ void maPushEvent(MAEvent *event);
  */
 void maWait(int timeout);
 
-#endif

@@ -20,6 +20,7 @@ struct Runtime : public System {
   void alert(const char *title, const char *message);
   int ask(const char *title, const char *prompt, bool cancel=true);
   void browseFile(const char *url);
+  void editSource(String loadPath, bool restoreOnExit) override {}
   char *getClipboardText();
   int  getFontSize() { return _output->getFontSize(); }
   void enableCursor(bool enabled);

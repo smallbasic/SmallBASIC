@@ -79,12 +79,12 @@ struct TextEditInput : public FormEditInput {
   int  getPageRows() const { return _height / _charHeight; }
   int  getLines() { return _buf.lineCount(); }
   int  getMarginWidth() const { return _marginWidth; }
-  void getSelectionCounts(int *lines, int *chars);
-  int  getSelectionRow();
+  void getSelectionCounts(int *lines, int *chars) const;
+  int  getSelectionRow() const;
   int  getSelectionStart() const { return _state.select_start; }
   int  getScroll() const { return _scroll; }
   const char *getText() const override { return _buf._buffer; }
-  char *getTextSelection(bool selectAll);
+  char *getTextSelection(bool selectAll) const;
   int  getTextLength() const { return _buf._len; }
   void gotoLine(const char *buffer);
   void reload(const char *text);
@@ -107,8 +107,8 @@ struct TextEditInput : public FormEditInput {
   bool isDirty() const { return _dirty && _state.undostate.undo_point > 0; }
   void setDirty(bool dirty) { _dirty = dirty; }
   void layout(int x, int y, int w, int h) override;
-  const char *getNodeId();
-  char *getWordBeforeCursor();
+  const char *getNodeId() const;
+  char *getWordBeforeCursor() const;
   bool replaceNext(const char *text, bool skip);
   int  getCompletions(StringList *list, int max) override;
   void selectNavigate(bool up);
@@ -130,34 +130,34 @@ protected:
   static bool matchStatement(uint32_t hash);
 
   void dragPage(int y, bool &redraw);
-  void drawText(int x, int y, const char *str, int length, SyntaxState &state);
+  void drawText(int x, int y, const char *str, int length, SyntaxState &state) const;
   void calcMargin();
   void changeCase();
-  void cycleTheme();
-  void drawLineNumber(int x, int y, int row, bool selected);
+  void cycleTheme() const;
+  void drawLineNumber(int x, int y, int row, bool selected) const;
   void editDeleteLine();
   void editEnter();
   void editTab();
   void findMatchingBrace();
   int  getCursorRow();
-  int  getIndent(char *spaces, int len, int pos);
-  int  getLineChars(StbTexteditRow *row, int pos) const;
-  char *getSelection(int *start, int *end);
+  int  getIndent(char *spaces, int len, int pos) const;
+  int  getLineChars(const StbTexteditRow *row, int pos) const;
+  char *getSelection(int *start, int *end) const;
   void gotoNextMarker();
   void killWord();
   void lineNavigate(bool lineDown);
-  char *lineText(int pos);
+  char *lineText(int pos) const;
   int  lineEnd(int pos) { return linePos(pos, true); }
-  int  linePos(int pos, bool end, bool excludeBreak=true);
+  int  linePos(int pos, bool end, bool excludeBreak=true) const;
   int  lineStart(int pos) { return linePos(pos, false); }
   void pageNavigate(bool pageDown, bool shift);
   void removeTrailingSpaces();
   void selectWord();
-  void setColor(SyntaxState &state);
+  void setColor(const SyntaxState &state) const;
   void toggleMarker() const;
   void updateScroll();
   int wordEnd() const;
-  int wordStart();
+  int wordStart() const;
 
   EditBuffer _buf;
   STB_TexteditState _state{};
@@ -210,11 +210,11 @@ struct TextEditHelpWidget : public TextEditInput {
   void createMessage() { reset(kMessage); }
   void createOutline();
   void createSearch(bool replace);
-  void createStackTrace(const char *error, int line, StackTrace &trace);
+  void createStackTrace(const char *error, int line, const StackTrace &trace);
   void draw(int x, int y, int w, int h, int chw) override;
   bool edit(int key, int screenWidth, int charWidth) override;
   void paste(const char *text) override;
-  bool isDrawTop() const { return true; }
+  bool isDrawTop() override { return true; }
   void reset(HelpMode mode);
   void cancelMode() { _mode = kNone; }
   bool closeOnEnter() const;
@@ -230,8 +230,8 @@ struct TextEditHelpWidget : public TextEditInput {
   void showSidebar();
 
 private:
-  void completeLine(int pos);
-  void completeWord(int pos);
+  void completeLine(int pos) const;
+  void completeWord(int pos) const;
   void buildKeywordIndex();
   void toggleKeyword();
 
@@ -241,6 +241,8 @@ private:
   int _keywordIndex;
   int _packageIndex;
   bool _packageOpen;
+  int _xBase;
+  int _yBase;
   enum Layout {
     kLine,
     kSidebar,

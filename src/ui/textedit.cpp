@@ -26,13 +26,13 @@ void safe_memmove(void *dest, const void *src, size_t n) {
 #define STB_TEXTEDIT_memmove safe_memmove
 #define STB_TEXTEDIT_IMPLEMENTATION
 
-int is_word_border(EditBuffer *_str, int _idx) {
+int is_word_border(const EditBuffer *_str, int _idx) {
   return _idx > 0 ? ((STB_TEXTEDIT_IS_SPACE(STB_TEXTEDIT_GETCHAR(_str,_idx-1)) ||
                       STB_TEXTEDIT_IS_PUNCT(STB_TEXTEDIT_GETCHAR(_str,_idx-1))) &&
                      !STB_TEXTEDIT_IS_SPACE(STB_TEXTEDIT_GETCHAR(_str, _idx))) : 1;
 }
 
-int textedit_move_to_word_previous(EditBuffer *str, int c) {
+int textedit_move_to_word_previous(const EditBuffer *str, int c) {
   --c; // always move at least one character
   while (c >= 0 && !is_word_border(str, c)) {
     --c;
@@ -43,7 +43,7 @@ int textedit_move_to_word_previous(EditBuffer *str, int c) {
   return c;
 }
 
-int textedit_move_to_word_next(EditBuffer *str, int c) {
+int textedit_move_to_word_next(const EditBuffer *str, int c) {
   const int len = str->_len;
   ++c; // always move at least one character
   while (c < len && !is_word_border(str, c)) {
@@ -321,7 +321,7 @@ void EditTheme::selectTheme(const int theme[]) {
   _row_marker = theme[16];
 }
 
-void EditTheme::contrast(EditTheme *other) {
+void EditTheme::contrast(const EditTheme *other) {
   int fg = shade(other->_color, .65);
   int bg = shade(other->_background, .65);
   _color = fg;
@@ -425,9 +425,12 @@ char EditBuffer::getChar(int pos) const {
 }
 
 int EditBuffer::insertChars(int pos, const char *text, int num) {
+#if defined(_SDL)
   if (num == 1 && *text < 0) {
+    // avoid spurious keyboard characters
     return 0;
   }
+#endif
   int required = _len + num + 1;
   if (required >= _size) {
     _size += (required + GROW_SIZE);
@@ -542,7 +545,7 @@ void TextEditInput::completeWord(const char *word) {
     int start = wordStart();
     int end = _state.cursor;
     int len = end - start;
-    int insertLen = strlen(word) - len;
+    size_t insertLen = strlen(word) - len;
     int index = end == 0 ? 0 : end - 1;
     bool lastUpper = isupper(_buf._buffer[index]);
 
@@ -558,7 +561,7 @@ const char *TextEditInput::completeKeyword(int index) {
   const char *help = nullptr;
   char *selection = getWordBeforeCursor();
   if (selection != nullptr) {
-    int len = strlen(selection);
+    size_t len = strlen(selection);
     int count = 0;
     for (auto & i : keyword_help) {
       if (strncasecmp(selection, i.keyword, len) == 0 &&
@@ -575,7 +578,7 @@ const char *TextEditInput::completeKeyword(int index) {
   return help;
 }
 
-void TextEditInput::draw(int x, int y, int w, int h, int chw) {
+void TextEditInput::draw(int x, int y, int, int, int chw) {
   SyntaxState syntax = kReset;
   StbTexteditRow r;
   int len = _buf._len;
@@ -743,7 +746,7 @@ void TextEditInput::dragPage(int y, bool &redraw) {
   }
 }
 
-void TextEditInput::drawText(int x, int y, const char *str, int length, SyntaxState &state) {
+void TextEditInput::drawText(int x, int y, const char *str, int length, SyntaxState &state) const {
   int i = 0;
   int offs = 0;
   SyntaxState nextState = state;
@@ -935,7 +938,7 @@ bool TextEditInput::edit(int key, int screenWidth, int charWidth) {
 bool TextEditInput::find(const char *word, bool next) {
   bool result = false;
   bool allUpper = true;
-  int len = word == nullptr ? 0 : strlen(word);
+  size_t len = word == nullptr ? 0 : strlen(word);
   for (int i = 0; i < len; i++) {
     if (islower(word[i])) {
       allUpper = false;
@@ -965,7 +968,7 @@ bool TextEditInput::find(const char *word, bool next) {
   return result;
 }
 
-void TextEditInput::getSelectionCounts(int *lines, int *chars) {
+void TextEditInput::getSelectionCounts(int *lines, int *chars) const {
   *lines = 1;
   *chars = 0;
   if (_state.select_start != _state.select_end) {
@@ -989,7 +992,7 @@ void TextEditInput::getSelectionCounts(int *lines, int *chars) {
   }
 }
 
-int TextEditInput::getSelectionRow() {
+int TextEditInput::getSelectionRow() const {
   int result;
   if (_state.select_start != _state.select_end) {
     int pos = MIN(_state.select_start, _state.select_end);
@@ -1009,7 +1012,7 @@ int TextEditInput::getSelectionRow() {
   return result;
 }
 
-char *TextEditInput::getTextSelection(bool selectAll) {
+char *TextEditInput::getTextSelection(bool selectAll) const {
   char *result;
   if (_state.select_start != _state.select_end) {
     int start, end;
@@ -1098,8 +1101,8 @@ void TextEditInput::setCursorRow(int row) {
 
 void TextEditInput::clicked(int x, int y, bool pressed) {
   FormEditInput::clicked(x, y, pressed);
-  if (x < _marginWidth) {
-    _ptY = -1;
+  if (x < _marginWidth || _ptY != -1) {
+    _ptY = pressed ? y : -1;
   } else if (pressed) {
     int tick = maGetMilliSecondCount();
     if (_pressTick && tick - _pressTick < DOUBLE_CLICK_MS) {
@@ -1107,6 +1110,7 @@ void TextEditInput::clicked(int x, int y, bool pressed) {
       _state.select_end = wordEnd();
     } else  {
       stb_textedit_click(&_buf, &_state, (x - _x) - _marginWidth, (y - _y) + (_scroll * _charHeight));
+      _cursorRow = getCursorRow();
     }
     _pressTick = tick;
   }
@@ -1134,9 +1138,9 @@ bool TextEditInput::updateUI(var_p_t form, var_p_t field) {
 bool TextEditInput::selected(MAPoint2d pt, int scrollX, int scrollY, bool &redraw) {
   bool result = hasFocus() && FormEditInput::selected(pt, scrollX, scrollY, redraw);
   if (result) {
-    if (pt.x < _marginWidth) {
+    if (_ptY != -1) {
       dragPage(pt.y, redraw);
-    } else {
+    } else if (pt.x > _marginWidth) {
       stb_textedit_drag(&_buf, &_state, (pt.x - _x) - _marginWidth,
                         (pt.y - _y) + scrollY + (_scroll * _charHeight));
       redraw = true;
@@ -1240,7 +1244,7 @@ void TextEditInput::calcMargin() {
 void TextEditInput::changeCase() {
   int start, end;
   char *selection = getSelection(&start, &end);
-  int len = strlen(selection);
+  size_t len = strlen(selection);
   enum { up, down, mixed } curcase = isupper(selection[0]) ? up : down;
 
   for (int i = 1; i < len; i++) {
@@ -1274,13 +1278,13 @@ void TextEditInput::changeCase() {
   free(selection);
 }
 
-void TextEditInput::cycleTheme() {
+void TextEditInput::cycleTheme() const {
   g_themeId = (g_themeId + 1) % NUM_THEMES;
   _theme->selectTheme(themes[g_themeId]);
 }
 
-void TextEditInput::drawLineNumber(int x, int y, int row, bool selected) {
-  if (_marginWidth > 0) {
+void TextEditInput::drawLineNumber(int x, int y, int row, bool selected) const {
+  if (_marginWidth > 0 && y + _charHeight < _height) {
     bool markerRow = false;
     for (int i = 0; i < MAX_MARKERS && !markerRow; i++) {
       if (row == g_lineMarker[i]) {
@@ -1330,7 +1334,7 @@ void TextEditInput::editEnter() {
 
     // check whether the previous line was a comment
     char *buf = lineText(prevLineStart);
-    int length = strlen(buf);
+    size_t length = strlen(buf);
     int pos = 0;
     while (buf && (buf[pos] == ' ' || buf[pos] == '\t')) {
       pos++;
@@ -1443,7 +1447,7 @@ void TextEditInput::findMatchingBrace() {
   char cursorMatch = '\0';
   int pair = -1;
   int iter = -1;
-  int pos;
+  int pos = 0;
 
   switch (cursorChar) {
   case ']':
@@ -1498,7 +1502,7 @@ void TextEditInput::findMatchingBrace() {
 int TextEditInput::getCompletions(StringList *list, int max) {
   int count = 0;
   char *selection = getWordBeforeCursor();
-  unsigned len = selection != nullptr ? strlen(selection) : 0;
+  size_t len = selection != nullptr ? strlen(selection) : 0;
   if (len > 0) {
     for (int i = 0; i < keyword_help_len && count < max; i++) {
       if (strncasecmp(selection, keyword_help[i].keyword, len) == 0) {
@@ -1562,7 +1566,7 @@ uint32_t TextEditInput::getHash(const char *str, int offs, int &count) {
   return result;
 }
 
-int TextEditInput::getIndent(char *spaces, int len, int pos) {
+int TextEditInput::getIndent(char *spaces, int len, int pos) const {
   // count the indent level and find the start of text
   char *buf = lineText(pos);
   int i = 0;
@@ -1615,7 +1619,7 @@ int TextEditInput::getIndent(char *spaces, int len, int pos) {
   return i;
 }
 
-int TextEditInput::getLineChars(StbTexteditRow *row, int pos) const {
+int TextEditInput::getLineChars(const StbTexteditRow *row, int pos) const {
   int numChars = row->num_chars;
   if (numChars > 0 && _buf._buffer[pos + numChars - 1] == '\n') {
     numChars--;
@@ -1626,7 +1630,7 @@ int TextEditInput::getLineChars(StbTexteditRow *row, int pos) const {
   return numChars;
 }
 
-char *TextEditInput::getSelection(int *start, int *end) {
+char *TextEditInput::getSelection(int *start, int *end) const {
   char *result;
 
   if (_state.select_start != _state.select_end) {
@@ -1641,7 +1645,7 @@ char *TextEditInput::getSelection(int *start, int *end) {
   return result;
 }
 
-const char *TextEditInput::getNodeId() {
+const char *TextEditInput::getNodeId() const {
   char *selection = getWordBeforeCursor();
   const char *result = nullptr;
   size_t len = selection != nullptr ? strlen(selection) : 0;
@@ -1656,7 +1660,7 @@ const char *TextEditInput::getNodeId() {
   return result;
 }
 
-char *TextEditInput::getWordBeforeCursor() {
+char *TextEditInput::getWordBeforeCursor() const {
   char *result;
   if (_state.select_start == _state.select_end && _buf._len > 0) {
     int start, end;
@@ -1748,7 +1752,7 @@ void TextEditInput::lineNavigate(bool arrowDown) {
   }
 }
 
-char *TextEditInput::lineText(int pos) {
+char *TextEditInput::lineText(int pos) const {
   StbTexteditRow r;
   int len = _buf._len;
   int start = 0;
@@ -1764,7 +1768,7 @@ char *TextEditInput::lineText(int pos) {
   return _buf.textRange(start, end);
 }
 
-int TextEditInput::linePos(int pos, bool end, bool excludeBreak) {
+int TextEditInput::linePos(int pos, bool end, bool excludeBreak) const {
   StbTexteditRow r;
   int len = _buf._len;
   int start = 0;
@@ -1866,7 +1870,7 @@ void TextEditInput::selectWord() {
   }
 }
 
-void TextEditInput::setColor(SyntaxState &state) {
+void TextEditInput::setColor(const SyntaxState &state) const {
   switch (state) {
   case kComment:
     maSetColor(_theme->_syntax_comments);
@@ -1930,7 +1934,7 @@ int TextEditInput::wordEnd() const {
   return i;
 }
 
-int TextEditInput::wordStart() {
+int TextEditInput::wordStart() const {
   int cursor = _state.cursor == 0 ? 0 : _state.cursor - 1;
   return ((cursor >= 0 && cursor < _buf._len && _buf._buffer[cursor] == '\n') ? _state.cursor :
           is_word_border(&_buf, _state.cursor) ? _state.cursor :
@@ -1970,6 +1974,8 @@ TextEditHelpWidget::TextEditHelpWidget(TextEditInput *editor, int chW, int chH, 
   _keywordIndex(-1),
   _packageIndex(0),
   _packageOpen(false),
+  _xBase(0),
+  _yBase(0),
   _layout(kPopup) {
   _theme = new EditTheme(HELP_FG, HELP_BG);
   _comment = false;
@@ -2086,7 +2092,7 @@ bool TextEditHelpWidget::edit(int key, int screenWidth, int charWidth) {
   return result;
 }
 
-void TextEditHelpWidget::completeLine(int pos) {
+void TextEditHelpWidget::completeLine(int pos) const {
   int end = pos;
   while (end < _buf._len && _buf._buffer[end] != '\n') {
     end++;
@@ -2098,7 +2104,7 @@ void TextEditHelpWidget::completeLine(int pos) {
   free(text);
 }
 
-void TextEditHelpWidget::completeWord(int pos) {
+void TextEditHelpWidget::completeWord(int pos) const {
   char *text = lineText(pos);
   if (text[0] != '\0' && text[0] != '[') {
     _editor->completeWord(text);
@@ -2108,14 +2114,13 @@ void TextEditHelpWidget::completeWord(int pos) {
 
 void TextEditHelpWidget::clicked(int x, int y, bool pressed) {
   _ptY = -1;
-  if (pressed) {
-    stb_textedit_click(&_buf, &_state, 0, (y - _y) + (_scroll * _charHeight));
-    if (_mode == kHelpKeyword && x < (_x + _charWidth * 10)) {
-      // allow scrolling from the right hand side
-      toggleKeyword();
-    } else {
-      // position to [+]
-      _state.cursor += 3;
+  if (pressed && _buf._len > 0) {
+    stb_textedit_click(&_buf, &_state, (x - _x), (y - _y) + (_scroll * _charHeight));
+    if (_mode == kHelpKeyword) {
+      if (x < (_x + _charWidth * 4)) {
+        // allow scrolling from the right hand side
+        toggleKeyword();
+      }
     }
   }
 }
@@ -2124,7 +2129,7 @@ void TextEditHelpWidget::createCompletionHelp() {
   reset(kCompletion);
 
   char *selection = _editor->getWordBeforeCursor();
-  int len = selection != nullptr ? strlen(selection) : 0;
+  size_t len = selection != nullptr ? strlen(selection) : 0;
   if (len > 0) {
     StringList words;
     for (auto & i : keyword_help) {
@@ -2300,7 +2305,7 @@ void TextEditHelpWidget::createSearch(bool replace) {
   }
 }
 
-void TextEditHelpWidget::createStackTrace(const char *error, int line, StackTrace &trace) {
+void TextEditHelpWidget::createStackTrace(const char *error, int line, const StackTrace &trace) {
   reset(kStacktrace);
 
   _outline.add((int *)(intptr_t)line);
@@ -2341,10 +2346,15 @@ void TextEditHelpWidget::reset(HelpMode mode) {
   _buf.clear();
   _scroll = 0;
   _matchingBrace = -1;
+  if (mode == kHelpKeyword) {
+    _packageIndex = 0;
+    _keywordIndex = -1;
+    _packageOpen = false;
+  }
 }
 
 bool TextEditHelpWidget::selected(MAPoint2d pt, int scrollX, int scrollY, bool &redraw) {
-  bool result = hasFocus();
+  bool result = hasFocus() && FormEditInput::overlaps(pt, scrollX, scrollY);
   if (result) {
     dragPage(pt.y, redraw);
   }
@@ -2399,8 +2409,9 @@ void TextEditHelpWidget::buildKeywordIndex() {
   _buf.clear();
   _buf.append("SmallBASIC language reference\n\n");
   _buf.append("+ Select a category\n|\n");
+  int rows = 4;
 
-  keywordIterator([=](int index, int packageIndex, bool nextPackage) {
+  keywordIterator([&](int index, int packageIndex, bool nextPackage) {
     if (nextPackage) {
       const char *package = keyword_help[index].package;
       if (packageIndex < _packageIndex) {
@@ -2418,9 +2429,11 @@ void TextEditHelpWidget::buildKeywordIndex() {
       }
       _buf.append(package);
       _buf.append("\n", 1);
+      ++rows;
 
       if (_packageOpen && _packageIndex == packageIndex) {
         _buf.append("   |\n", 5);
+        ++rows;
       }
     }
 
@@ -2429,6 +2442,7 @@ void TextEditHelpWidget::buildKeywordIndex() {
       _buf.append(LEVEL2_OPEN, LEVEL2_LEN);
       _buf.append(keyword_help[index].keyword);
       _buf.append("\n", 1);
+      ++rows;
     }
 
     return true;
@@ -2444,10 +2458,13 @@ void TextEditHelpWidget::buildKeywordIndex() {
     _buf.append("\n\n", 2);
     _buf.append(keyword_help[_keywordIndex].help);
     _buf.append("\n\n", 2);
+    rows += 7;
+    int scroll = ((_charHeight * rows) - (_height - _y)) / _charHeight;
+    _scroll = scroll > 0 ? scroll : 0;
+  } else {
+    _scroll = 0;
   }
-
   _cursorRow = getCursorRow();
-  _scroll = 0;
 }
 
 void TextEditHelpWidget::showPopup(int cols, int rows) {
@@ -2467,13 +2484,13 @@ void TextEditHelpWidget::showPopup(int cols, int rows) {
   if (_height > _editor->_height) {
     _height = _editor->_height;
   }
-  _x = (_editor->_width - _width) / 2;
+  _x = _xBase + ((_editor->_width - _width) / 2);
   if (rows == 1) {
     _layout = kLine;
-    _y = _editor->_height - (_charHeight * 2.5);
+    _y = _yBase + (int)(_editor->_height - (_charHeight * 2.5));
   } else {
     _layout = kPopup;
-    _y = (_editor->_height - _height) / 2;
+    _y = _yBase + ((_editor->_height - _height) / 2);
   }
   _theme->contrast(_editor->getTheme());
   calcMargin();
@@ -2484,8 +2501,8 @@ void TextEditHelpWidget::showSidebar() {
   int border = _charWidth * 2;
   _width = _charWidth * SIDE_BAR_WIDTH;
   _height = _editor->_height - (border * 2);
-  _x = _editor->_width - (_width + border);
-  _y = border;
+  _x = _xBase + (_editor->_width - (_width + border));
+  _y = _yBase + border;
   _theme->contrast(_editor->getTheme());
   _layout = kSidebar;
   calcMargin();
@@ -2503,21 +2520,26 @@ void TextEditHelpWidget::draw(int x, int y, int w, int h, int chw) {
 }
 
 void TextEditHelpWidget::layout(int x, int y, int w, int h) {
+  _xBase = x;
+  _yBase = y;
   if (_resizable) {
     int border;
     switch (_layout) {
     case kLine:
-      _x = (w - _width) / 2;
-      _y = h - (_charHeight * 2.5);
+      _x = _xBase + ((w - _width) / 2);
+      _y = _yBase + (h - (_charHeight * 2.5));
       break;
     case kSidebar:
       border = _charWidth * 2;
       _height = h - (border * 2);
-      _x = w - (_width + border);
+      _x = _xBase + (w - (_width + border));
+      _y = _yBase;
       break;
     case kPopup:
       _width = w - (_x + _xmargin);
       _height = h - (_y + _ymargin);
+      _x = _xBase;
+      _y = _yBase;
     }
   }
 }

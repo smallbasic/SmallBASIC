@@ -28,9 +28,7 @@
 #include <SDL3/SDL_messagebox.h>
 #include <SDL3/SDL_mutex.h>
 #include <SDL3/SDL_thread.h>
-#include <SDL3/SDL_timer.h>
-#include <math.h>
-#include <wchar.h>
+#include <cmath>
 
 #define WAIT_INTERVAL 5
 #define COND_WAIT_TIME 250
@@ -52,8 +50,8 @@ extern int g_debugPort;
 
 int debugThread(void *data);
 
-MAEvent *getMotionEvent(int type, SDL_Event *event) {
-  MAEvent *result = new MAEvent();
+MAEvent *getMotionEvent(int type, const SDL_Event *event) {
+  auto *result = new MAEvent();
   result->type = type;
   result->point.x = event->motion.x;
   result->point.y = event->motion.y;
@@ -61,7 +59,7 @@ MAEvent *getMotionEvent(int type, SDL_Event *event) {
 }
 
 MAEvent *getKeyPressedEvent(int keycode, int nativeKey) {
-  MAEvent *result = new MAEvent();
+  auto *result = new MAEvent();
   result->type = EVENT_TYPE_KEY_PRESSED;
   result->key = keycode;
   result->nativeKey = nativeKey;
@@ -76,7 +74,8 @@ Runtime::Runtime(SDL_Window *window) :
   _window(window),
   _cursorHand(nullptr),
   _cursorArrow(nullptr),
-  _cursorIBeam(nullptr) {
+  _cursorIBeam(nullptr),
+  _keypad(nullptr) {
   runtime = this;
 }
 
@@ -85,10 +84,13 @@ Runtime::~Runtime() {
   delete _output;
   delete _eventQueue;
   delete _graphics;
+  delete _keypad;
+
   runtime = nullptr;
   _output = nullptr;
   _eventQueue = nullptr;
   _graphics = nullptr;
+  _keypad = nullptr;
 
   SDL_DestroyCursor(_cursorHand);
   SDL_DestroyCursor(_cursorArrow);
@@ -116,8 +118,7 @@ int Runtime::ask(const char *title, const char *prompt, bool cancel) {
     buttons[2].buttonID = 2;
   }
 
-  SDL_MessageBoxData data;
-  memset(&data, 0, sizeof(SDL_MessageBoxData));
+  SDL_MessageBoxData data = {};
   data.window = _window;
   data.title = title;
   data.message = prompt;
@@ -191,9 +192,9 @@ void Runtime::debugStart(TextEditInput *editWidget, const char *file) {
     if (g_debugee != -1) {
       net_print(g_debugee, "l\n");
       char buf[OS_PATHNAME_SIZE + 1];
-      int size = net_input(g_debugee, buf, sizeof(buf), "\n");
+      const int size = net_input(g_debugee, buf, sizeof(buf), "\n");
       if (size > 0) {
-        int *marker = editWidget->getMarkers();
+        int *marker = TextEditInput::getMarkers();
         for (int i = 0; i < MAX_MARKERS; i++) {
           if (marker[i] != -1) {
             net_printf(g_debugee, "b %d\n", marker[i]);
@@ -255,7 +256,7 @@ void Runtime::enableCursor(bool enabled) {
   }
 }
 
-void Runtime::exportRun(const char *file) {
+void Runtime::exportRun(const char *file) const {
   launchExec(file);
   SDL_RaiseWindow(_window);
 }
@@ -344,7 +345,7 @@ char *Runtime::loadResource(const char *fileName) {
   return buffer;
 }
 
-void Runtime::handleKeyEvent(MAEvent &event) {
+void Runtime::handleKeyEvent(MAEvent &event) const {
   // handle keypad keys
   if (event.key != -1) {
     if (event.key == SDLK_NUMLOCKCLEAR) {
@@ -412,7 +413,7 @@ void Runtime::pause(int timeout) {
     }
   } else {
     int slept = 0;
-    while (1) {
+    while (true) {
       pollEvents(false);
       if (isBreak()) {
         break;
@@ -629,7 +630,7 @@ void Runtime::setWindowTitle(const char *title) {
     } else {
       slash++;
     }
-    int len = strlen(slash) + 16;
+    const int len = strlen(slash) + 16;
     char *buffer = new char[len];
     if (buffer) {
       sprintf(buffer, "%s - SmallBASIC", slash);
@@ -666,7 +667,7 @@ void Runtime::onResize(int width, int height) {
   }
 }
 
-SDL_Rect Runtime::getWindowRect() {
+SDL_Rect Runtime::getWindowRect() const {
   SDL_Rect result;
   if (_fullscreen) {
     result = _windowRect;
@@ -682,7 +683,7 @@ SDL_Rect Runtime::getWindowRect() {
   return result;
 }
 
-void Runtime::setWindowRect(SDL_Rect &rc) {
+void Runtime::setWindowRect(SDL_Rect &rc) const {
   SDL_GetWindowPosition(_window, &rc.x, &rc.y);
   SDL_GetWindowSize(_window, &rc.w, &rc.h);
 }
@@ -844,15 +845,15 @@ void restart() {
   g_debugTrace = false;
   g_breakPoints.removeAll();
 
-  MAEvent *event = new MAEvent();
+  auto *event = new MAEvent();
   event->type = EVENT_TYPE_RESTART;
   runtime->pushEvent(event);
   if (runtime->isThreadActive()) {
     // break out of waitForBack()
-    SDL_Event event;
-    event.type = SDL_EVENT_KEY_DOWN;
-    event.key.key = SDLK_BACKSPACE;
-    SDL_PushEvent(&event);
+    SDL_Event sdlEvent;
+    sdlEvent.type = SDL_EVENT_KEY_DOWN;
+    sdlEvent.key.key = SDLK_BACKSPACE;
+    SDL_PushEvent(&sdlEvent);
   }
 
   SDL_SignalCondition(g_cond);
@@ -955,7 +956,7 @@ extern "C" void dev_trace_line(int lineNo) {
         break;
       }
     }
-  } else if (!g_breakPoints.size() && g_debugTrace) {
+  } else if (g_breakPoints.empty() && g_debugTrace) {
     runtime->systemPrint("Trace line: %d", lineNo);
   }
   SDL_UnlockMutex(g_lock);

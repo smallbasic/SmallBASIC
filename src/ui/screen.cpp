@@ -302,9 +302,9 @@ void Screen::layoutInputs(int newWidth, int newHeight) {
   List_each(FormInput *, it, _inputs) {
     FormInput *input = (*it);
     if (input->floatBottom()) {
-      offsBottom = input->_height;
+      offsBottom = input->layoutHeight(newHeight);
     } else if (input->floatTop()) {
-      offsTop = input->_height;
+      offsTop = input->layoutHeight(newHeight);
     }
   }
   List_each(FormInput *, it, _inputs) {

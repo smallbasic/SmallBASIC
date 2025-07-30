@@ -269,10 +269,6 @@ void Runtime::showCursor(CursorType cursorType) {
 //
 // System platform methods
 //
-void System::editSource(strlib::String loadPath, bool restoreOnExit) {
-  // empty
-}
-
 bool System::getPen3() {
   Fl::check();
   bool result = Fl::event_state(FL_BUTTON1);

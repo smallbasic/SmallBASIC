@@ -9,8 +9,8 @@
 #define MINIAUDIO_IMPLEMENTATION
 
 #include "config.h"
-#include <stdio.h>
-#include <stdint.h>
+#include <cstdio>
+#include <cstdint>
 #include <unistd.h>
 #include "include/osd.h"
 #include "ui/strlib.h"
@@ -153,7 +153,7 @@ bool audio_open() {
     ma_backend_dsound,
 #endif
   };
-  if (ma_context_init(backends, sizeof(backends)/sizeof(backends[0]), NULL, &context) != MA_SUCCESS) {
+  if (ma_context_init(backends, sizeof(backends)/sizeof(backends[0]), nullptr, &context) != MA_SUCCESS) {
     result = false;
   } else {
     queuePos = 0;
@@ -170,7 +170,7 @@ void audio_close() {
 }
 
 void osd_audio(const char *path) {
-  Sound *sound = new Sound();
+  auto *sound = new Sound();
   ma_result result = sound->construct(path);
   if (result != MA_SUCCESS) {
     delete sound;
@@ -197,7 +197,7 @@ void osd_clear_sound_queue() {
   // remove any cached sounds from the queue
   List_each(Sound *, it, queue) {
     Sound *next = *it;
-    if (next != NULL && next->_decoder != nullptr) {
+    if (next != nullptr && next->_decoder != nullptr) {
       queue.remove(it);
       it--;
     }

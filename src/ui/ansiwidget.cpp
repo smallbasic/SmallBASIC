@@ -109,7 +109,7 @@ Screen *AnsiWidget::createScreen(int screenId) {
   if (result == nullptr) {
     if (screenId == TEXT_SCREEN || screenId == MENU_SCREEN) {
       result = new TextScreen(_width, _height, _fontSize);
-    } else if (screenId == SOURCE_SCREEN) {
+    } else if (screenId == FORM_SCREEN) {
       result = new FormInputScreen(_width, _height, _fontSize);
     } else {
       result = new GraphicScreen(_width, _height, _fontSize);
@@ -494,6 +494,11 @@ void AnsiWidget::pointerReleaseEvent(const MAEvent &event) {
   } else if (_swipeExit) {
     _swipeExit = false;
   } else {
+    if (_activeButton && (_activeButton->floatTop() || _activeButton->floatBottom())) {
+      // release keypad/toolbar button
+      _activeButton->clicked(event.point.x, event.point.y, false);
+      drawActiveButton();
+    }
     int maxScroll = (_front->_curY - _front->_height) + (2 * _fontSize);
     if (_yMove != -1 && maxScroll > 0) {
       _front->drawInto();

@@ -15,6 +15,15 @@
 
 using namespace strlib;
 
+#if defined(_SDL)
+// for cursor display
+#define HAS_HOVER true
+#define PLATFORM_PADDING 0.5
+#else
+#define HAS_HOVER false
+#define PLATFORM_PADDING 1.1
+#endif
+
 struct KeypadTheme {
   int _bg;
   int _key;
@@ -23,25 +32,38 @@ struct KeypadTheme {
   int _outline;
   int _funcKeyBg;
   int _funcKeyHighlight;
-  int _funcText;
 };
 
 struct KeypadImage : ImageCodec {
   KeypadImage();
-  ~KeypadImage() = default;
+  ~KeypadImage() override = default;
   void draw(int x, int y, int w, int h) const;
+};
+
+enum Keyset {
+  kLower, kNumber, kSymbol, kUpper, kSize
+};
+
+struct RawKey {
+  const KeyCode _lower;
+  const KeyCode _number;
+  const KeyCode _symbol;
+  const KeyCode _upper;
 };
 
 struct KeypadDrawContext {
   explicit KeypadDrawContext(int charWidth, int charHeight);
-  void toggleShift();
-  bool useShift(bool specialKey);
-  const KeypadImage *getImage(const KeyCode keycode) const;
+  const KeypadImage *getImage(const RawKey &keycode) const;
+  KeyCode getKey(RawKey rawKey) const;
+  void layoutHeight(int padding);
+  void onClick(RawKey key);
+  void toggle();
 
   int _charWidth;
   int _charHeight;
-  bool _shiftActive;
-  bool _capsLockActive;
+  int _imageSize;
+  bool _punctuation;
+  Keyset _keySet;
 
   KeypadImage _cutImage;
   KeypadImage _copyImage;
@@ -52,58 +74,54 @@ struct KeypadDrawContext {
   KeypadImage _backImage;
   KeypadImage _enterImage;
   KeypadImage _searchImage;
-  KeypadImage _shiftImage;
   KeypadImage _toggleImage;
-};
-
-enum KeypadLayout {
-  LayoutLetters = 0, LayoutSymbols = 1
-};
-
-struct RawKey {
-  const KeyCode _normal;
-  const KeyCode _shifted;
+  KeypadImage _lineUpImage;
+  KeypadImage _pageUpImage;
+  KeypadImage _lineDownImage;  
+  KeypadImage _pageDownImage;
+  KeypadImage _tagImage;
 };
 
 struct Key {
   explicit Key(const RawKey &k);
 
-  int color(const KeypadTheme *theme, bool shiftActive) const;
-  void draw(const KeypadTheme *theme, const KeypadDrawContext *context) const;
+  int color(const KeypadTheme *theme) const;
+  void draw(const KeypadTheme *theme, const KeypadDrawContext *context, bool pressed) const;
   bool inside(int x, int y) const;
-  void onClick(bool useShift);
+  void onClick(KeypadDrawContext *context) const;
 
   int _x{};
   int _y{};
   int _w{};
   int _h{};
-  KeyCode _key;
-  KeyCode _alt;
-  bool _pressed;
-  bool _number;
+  int _xEnd{};
+  int _yEnd{};
+  RawKey _key;
   bool _printable;
 };
 
 struct Keypad {
-  Keypad(int charWidth, int charHeight);
+  Keypad(int charWidth, int charHeight, bool toolbar);
   ~Keypad() = default;
 
-  static int outerHeight(int ch) ;
   void clicked(int x, int y, bool pressed);
   void draw() const;
   void layout(int x, int y, int w, int h);
+  int layoutHeight(int screenHeight);
 
 private:
+  void generateKeys();
+
   int _posX;
   int _posY;
   int _width;
   int _height;
+  int _padding;
+  bool _toolbar;
+  Key *_pressed;
   strlib::List<Key *> _keys;
   KeypadTheme *_theme;
   KeypadDrawContext _context;
-  KeypadLayout _currentLayout;
-
-  void generateKeys();
 };
 
 struct KeypadInput : public FormInput {
@@ -115,11 +133,11 @@ struct KeypadInput : public FormInput {
   bool floatTop() override { return _floatTop; }
   bool floatBottom() override { return !_floatTop; }
   void layout(int x, int y, int w, int h) override;
-  bool hasHover() override { return true; }
+  int  layoutHeight(int screenHeight) override;
   void drawHover(int dx, int dy, bool selected) override {};
+  bool hasHover() override { return HAS_HOVER; }
 
-private:  
+private:
   bool _floatTop;
-  bool _toolbar;
   Keypad *_keypad;
 };
