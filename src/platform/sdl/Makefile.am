@@ -24,6 +24,8 @@ sbasicg_SOURCES =           \
   ../../ui/image.cpp        \
   ../../ui/strlib.cpp       \
   ../../ui/audio.cpp        \
+  ../../ui/keypad.cpp       \
+  ../../ui/image_codec.cpp  \
   main.cpp                  \
   display.cpp               \
   runtime.cpp               \
