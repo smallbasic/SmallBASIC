@@ -33,6 +33,9 @@ Runtime *runtime = nullptr;
 // Pipe file descriptors: g_backPipe[0] is read-end, g_backPipe[1] is write-end
 static int g_backPipe[2] = {-1, -1};
 
+// whether native back key handling is active
+static bool g_predictiveBack = false;
+
 // the sensorTypes corresponding to _sensors[] positions
 constexpr int SENSOR_TYPES[MAX_SENSORS] = {
   ASENSOR_TYPE_ACCELEROMETER,
@@ -159,7 +162,7 @@ static void process_input(android_app *app, android_poll_source *source) {
         AKeyEvent_getKeyCode(event) == AKEYCODE_BACK) {
       // prevent AInputQueue_preDispatchEvent from attempting to close
       // the keypad here to avoid a crash in android 4.2 + 4.3.
-      if (AKeyEvent_getAction(event) == AKEY_EVENT_ACTION_DOWN && runtime->isActive()) {
+      if (AKeyEvent_getAction(event) == AKEY_EVENT_ACTION_DOWN && runtime->isActive() && !g_predictiveBack) {
         pushBackEvent();
       }
       AInputQueue_finishEvent(app->inputQueue, event, true);
@@ -287,7 +290,10 @@ Runtime::Runtime(android_app *app) :
   _looper = ALooper_forThread();
   _sensorManager = ASensorManager_getInstance();
   memset(&_sensors, 0, sizeof(_sensors));
-  setupBackWakePipe(_looper);
+  g_predictiveBack = getBoolean("isPredictiveBack");
+  if (g_predictiveBack) {
+    setupBackWakePipe(_looper);
+  }
 }
 
 Runtime::~Runtime() {

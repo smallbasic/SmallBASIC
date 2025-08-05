@@ -9,7 +9,7 @@ SmallBASIC is a fast and easy to learn BASIC language interpreter ideal for ever
 Ubuntu
 
 ```
-sudo apt-get install git autotools-dev automake gcc g++ libsdl2-dev libfreetype6-dev libfontconfig1-dev xxd
+sudo apt-get install git autotools-dev automake gcc g++ libsdl2-dev libfreetype6-dev libfontconfig1-dev xxd make
 ```
 
 Manjaro (Arch)

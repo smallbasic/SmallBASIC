@@ -429,6 +429,10 @@ public class MainActivity extends NativeActivity {
     return rect.height();
   }
 
+  public boolean isPredictiveBack() {
+    return Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU;
+  }
+
   public boolean loadModules() {
     Log.i(TAG, "loadModules: " + getActivity());
     boolean result;
@@ -1063,7 +1067,7 @@ public class MainActivity extends NativeActivity {
   // Hook into Predictive Back (Android 13+)
   //
   private void setupPredictiveBack() {
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+    if (isPredictiveBack()) {
       getOnBackInvokedDispatcher().registerOnBackInvokedCallback(
           OnBackInvokedDispatcher.PRIORITY_DEFAULT,
           new OnBackInvokedCallback() {
