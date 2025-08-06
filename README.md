@@ -6,16 +6,16 @@ SmallBASIC is a fast and easy to learn BASIC language interpreter ideal for ever
 
 #### Install packages
 
-Ubuntu
+Ubuntu (25.04)
 
 ```
-sudo apt-get install git autotools-dev automake gcc g++ libsdl2-dev libfreetype6-dev libfontconfig1-dev xxd make
+sudo apt install git autotools-dev automake make gcc g++ libsdl3-dev libfreetype-dev libfontconfig-dev xxd make
 ```
 
 Manjaro (Arch)
 
 ```
-sudo pacman -S gcc make autoconf automake sdl2 freetype2 fontconfig pkgconf vim
+sudo pacman -S gcc make autoconf automake sdl3 freetype2 fontconfig pkgconf vim
 ```
 
 #### Initial setup
@@ -23,7 +23,6 @@ sudo pacman -S gcc make autoconf automake sdl2 freetype2 fontconfig pkgconf vim
 ```
  $ git clone https://github.com/smallbasic/SmallBASIC.git
  $ cd SmallBASIC
- $ git submodule update --init
  $ sh autogen.sh
 ```
 
@@ -95,7 +94,6 @@ $ brew install autoconf
 ```
 $ git clone https://github.com/smallbasic/SmallBASIC.git
 $ cd SmallBASIC
-$ git submodule update --init
 $ sh autogen.sh
 ```
 
