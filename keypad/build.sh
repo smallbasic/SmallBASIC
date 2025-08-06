@@ -35,5 +35,5 @@ do
     xxd -n img_${imageFile} -i ${imageFile}.png  >> keypad_icons.h
 done
 
-mv keypad_icons.h ../../src/ui
+mv keypad_icons.h ../src/ui
 
