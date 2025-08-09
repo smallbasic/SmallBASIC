@@ -8,6 +8,7 @@
 
 #pragma once
 
+#include <memory>
 #include "ui/strlib.h"
 #include "ui/inputs.h"
 #include "ui/image_codec.h"
@@ -100,6 +101,16 @@ struct Key {
   bool _printable;
 };
 
+struct KeypadLayout {
+  virtual ~KeypadLayout();
+  virtual RawKey getRawKey(int row, int col) const = 0;
+  virtual int getMaxRowLength() const = 0;
+  virtual int getMaxRows() const = 0;
+  virtual int getRowLength(int row) const = 0;
+  virtual int getSpaceCols() const = 0;
+  virtual bool isWideRow(int row) const = 0;
+};
+
 struct Keypad {
   Keypad(int charWidth, int charHeight, bool toolbar);
   ~Keypad() = default;
@@ -108,6 +119,7 @@ struct Keypad {
   void draw() const;
   void layout(int x, int y, int w, int h);
   int layoutHeight(int screenHeight);
+  void selectLayout();
 
 private:
   void generateKeys();
@@ -122,6 +134,7 @@ private:
   strlib::List<Key *> _keys;
   KeypadTheme *_theme;
   KeypadDrawContext _context;
+  std::unique_ptr<KeypadLayout> _layout;
 };
 
 struct KeypadInput : public FormInput {
