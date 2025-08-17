@@ -156,7 +156,7 @@ void Runtime::editSource(strlib::String loadPath, bool restoreOnExit) {
   if (_keypad != nullptr) {
     _output->addInput(_keypad);
   } else {
-    _keypad = new KeypadInput(false, false, charWidth, charHeight);
+    _keypad = new KeypadInput(w, false, false, charWidth, charHeight);
     _output->addInput(_keypad);
   }
 

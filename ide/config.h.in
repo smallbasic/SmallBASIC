@@ -1,6 +1,6 @@
 // This file is part of SmallBASIC
 //
-// SmallBASIC module header
+// SmallBASIC module header used with CMake
 //
 // This program is distributed under the terms of the GPL v2.0 or later
 // Download the GNU Public License (GPL) from www.gnu.org
@@ -18,7 +18,8 @@ extern "C" {
 #cmakedefine01 _UnixOS
 #cmakedefine01 IMPL_DEV_READ
 #cmakedefine01 IMPL_LOG_WRITE
-#cmakedefine   _SDL_VERSION "@_SDL_VERSION@"
+#cmakedefine01 _DEBUG
+#cmakedefine   _SDL_VERSION "@_SDL_VERSION@ "
 #cmakedefine   VERSION "@VERSION@"
 #cmakedefine   BUILD_DATE @BUILD_DATE@
 #cmakedefine   SB_DWORD_VER @SB_DWORD_VER@

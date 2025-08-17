@@ -11,6 +11,8 @@ declare -a IMAGE_FILES=(\
  "arrow-enter"\
  "search"\
  "layers"\
+ "arrow-left"\
+ "arrow-right"\
  "arrow-down"\
  "arrow-download"\
  "arrow-up" \
