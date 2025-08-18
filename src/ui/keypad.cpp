@@ -15,7 +15,7 @@
 #include "keypad.h"
 
 // the size at which the tablet layout is selected
-constexpr int WIDE_LAYOUT = 600;
+constexpr int WIDE_LAYOUT = 1100;
 
 // the size of PNGs as defined in keypad/build.sh
 constexpr int IMAGE_SIZE = 30;
@@ -222,10 +222,10 @@ namespace TabletKeypadLayout {
     {
       {K_LINE_UP, K_PAGE_UP, K_LINE_UP, K_PAGE_UP},
       {K_LINE_DOWN, K_PAGE_DOWN, K_LINE_DOWN, K_PAGE_DOWN},
+      {K_LEFT, K_LEFT, K_LEFT, K_LEFT},
       {K_LPAREN, K_SLASH, K_COMMA, K_LBRACKET},
       {K_SPACE, K_SPACE, K_SPACE, K_SPACE},
       {K_RPAREN, K_HASH, K_EQUALS, K_RBRACKET},
-      {K_LEFT, K_LEFT, K_LEFT, K_LEFT},
       {K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT},
       {K_ENTER, K_ENTER, K_ENTER, K_ENTER},
       {K_NULL},
@@ -602,7 +602,7 @@ void Key::onClick(KeypadDrawContext *context) const {
     event->key = SB_KEY_RIGHT;
     break;
   default:
-    event->key = (unsigned char)context->getKey(_key);
+    event->key = static_cast<unsigned char>(context->getKey(_key));
     context->onClick(_key);
     break;
   }
@@ -692,7 +692,7 @@ void Keypad::layout(int x, int y, int w, int h) {
       } else if (isArrow(key->_key._lower)) {
         keyWidth = static_cast<int>(keyWidth * 1.2);
       } else if (!key->_printable && key->_key._lower != K_TAG) {
-        const int numKeys = 2;
+        constexpr int numKeys = 2;
         keyWidth = (_width - ((cols - numKeys) * keyW)) / numKeys;
       } else if (key->_key._lower == K_SPACE) {
         keyWidth = (_layout->getSpaceCols() * keyW);
@@ -726,7 +726,7 @@ int Keypad::layoutHeight(int screenHeight) {
 }
 
 void Keypad::clicked(int x, int y, bool pressed) {
-  Key *down = _pressed;
+  const Key *down = _pressed;
   _pressed = nullptr;
   for (const auto key : _keys) {
     if (key->inside(x, y)) {
