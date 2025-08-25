@@ -18,7 +18,7 @@
 constexpr int WIDE_LAYOUT = 1100;
 
 // the size of PNGs as defined in keypad/build.sh
-constexpr int IMAGE_SIZE = 30;
+constexpr int IMAGE_SIZE = 50;
 
 // PI
 constexpr double PI = 3.14159;

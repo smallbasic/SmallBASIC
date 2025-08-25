@@ -211,11 +211,11 @@ function GridToolbarDownload(props) {
     args += join + "f=" + encodeURIComponent(props.rows[i].fileName);
     join = "&";
   });
-  if (props.selections.size === props.rows.length) {
-    args = "";
+  if (props.selections.size === props.rows.length || props.selectAll) {
+    args = "all=t";
   }
 
-  return !props.selections.size ? null : (
+  return !props.selections.size && !props.selectAll ? null : (
     <a download={download} href={`./api/download?${args}`} style={{color: color, textDecoration: 'none'}}>
       <Box sx={{display: 'flex', marginTop: '1px', alignItems: 'center'}} >
         <DownloadIcon />
@@ -313,6 +313,7 @@ function FileList(props) {
 
   const toolbarProps = {
     selections: selectionModel.ids,
+    selectAll: (!selectionModel.ids.length && selectionModel.type === "exclude"),
     clearSelections: () => setSelectionModel(emptySelection),
     setRows: props.setRows,
     rows: props.rows
