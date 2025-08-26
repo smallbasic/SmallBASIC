@@ -1,0 +1,277 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: #f5f5f5;
+  height: 100vh;
+}
+
+.app-bar {
+  background: #1976d2;
+  color: white;
+  padding: 1rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.app-bar h1 {
+  font-size: 1.25rem;
+  font-weight: 500;
+}
+
+.app-bar a {
+  color: white;
+  text-decoration: none;
+  font-size: 1.25rem;
+}
+
+.app-bar a:hover {
+  text-decoration: underline;
+}
+
+.main-content {
+  height: calc(100vh - 88px);
+  width: 100%;
+  overflow: auto;
+}
+
+.login-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+}
+
+.login-form {
+  background: white;
+  padding: 2rem;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  min-width: 320px;
+}
+
+.form-group {
+  margin-bottom: 1rem;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+}
+
+.form-group input {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 1rem;
+}
+
+.form-group input:focus {
+  outline: none;
+  border-color: #1976d2;
+  box-shadow: 0 0 0 2px rgba(25, 118, 210, 0.2);
+}
+
+.form-group input.error {
+  border-color: #d32f2f;
+}
+
+.helper-text {
+  font-size: 0.875rem;
+  color: #666;
+  margin-top: 0.25rem;
+}
+
+.helper-text.error {
+  color: #d32f2f;
+}
+
+.btn {
+  background: #1976d2;
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 1rem;
+  transition: background 0.2s;
+}
+
+.btn:hover {
+  background: #1565c0;
+}
+
+.btn:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+}
+
+.btn-small {
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+}
+
+.btn-icon {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.toolbar {
+  background: white;
+  padding: 1rem;
+  border-bottom: 1px solid #ddd;
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.table-container {
+  background: white;
+  margin: 0;
+  overflow: auto;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th, td {
+  padding: 1rem;
+  text-align: left;
+  border-bottom: 1px solid #eee;
+}
+
+th {
+  background: #f5f5f5;
+  font-weight: 600;
+  position: sticky;
+  top: 0;
+}
+
+tr:hover {
+  background: #f9f9f9;
+}
+
+.selected {
+  background: #e3f2fd !important;
+}
+
+.editable {
+  cursor: text;
+}
+
+.editable:hover {
+  background: #f0f0f0;
+}
+
+.edit-input {
+  width: 100%;
+  padding: 0.25rem;
+  border: 1px solid #1976d2;
+  border-radius: 2px;
+  font-size: inherit;
+}
+
+.snackbar {
+  position: fixed;
+  bottom: 1rem;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #323232;
+  color: white;
+  padding: 1rem 1.5rem;
+  border-radius: 4px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  z-index: 1000;
+  min-width: 300px;
+  text-align: center;
+}
+
+.snackbar.success {
+  background: #4caf50;
+}
+
+.snackbar.error {
+  background: #f44336;
+}
+
+.dialog-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0,0,0,0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.dialog {
+  background: white;
+  border-radius: 8px;
+  padding: 1.5rem;
+  min-width: 320px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+}
+
+.dialog h2 {
+  margin-bottom: 1rem;
+  font-size: 1.25rem;
+}
+
+.dialog p {
+  margin-bottom: 1.5rem;
+  color: #666;
+}
+
+.dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+}
+
+.checkbox {
+  width: 18px;
+  height: 18px;
+  margin-right: 0.5rem;
+}
+
+.hidden {
+  display: none;
+}
+
+.loading {
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  border: 3px solid #f3f3f3;
+  border-top: 3px solid #1976d2;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.sort-indicator {
+  margin-left: 0.5rem;
+  opacity: 0.5;
+}
+
+.sort-indicator.active {
+  opacity: 1;
+}
