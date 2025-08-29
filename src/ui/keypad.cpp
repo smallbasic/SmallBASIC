@@ -14,13 +14,13 @@
 #include "ui/keypad_icons.h"
 #include "keypad.h"
 
-constexpr int ROW_LENGTHS[] = {7, 10, 9, 9, 9};
-constexpr int MAX_ROWS = 5;
-constexpr int MAX_COLS = 10;
-constexpr int QWERTY_ROW = 1;
-constexpr int ASDF_ROW = 2;
-constexpr int SPACE_COLS = 3;
-constexpr int IMAGE_SIZE = 30;
+// the size at which the tablet layout is selected
+constexpr int WIDE_LAYOUT = 1100;
+
+// the size of PNGs as defined in keypad/build.sh
+constexpr int IMAGE_SIZE = 50;
+
+// PI
 constexpr double PI = 3.14159;
 
 // padding size based on character height
@@ -49,73 +49,247 @@ KeypadTheme MODERN_DARK_THEME = {
   ._funcKeyHighlight = 0x90a4ae, // Blue Grey 300 (matching accent highlight)
 };
 
-constexpr RawKey KEYS[MAX_ROWS][MAX_COLS] = {
-  // Toolbar
-  {
-    {K_CUT, K_CUT, K_CUT, K_CUT},
-    {K_COPY, K_COPY, K_COPY, K_COPY},
-    {K_PASTE, K_PASTE, K_PASTE, K_PASTE},
-    {K_SEARCH, K_SEARCH, K_SEARCH, K_SEARCH},
-    {K_SAVE, K_SAVE, K_SAVE, K_SAVE},
-    {K_RUN, K_RUN, K_RUN, K_RUN},
-    {K_HELP, K_HELP, K_HELP, K_HELP},
-    {K_NULL},
-    {K_NULL},
-    {K_NULL}
-  },
-  // QWERTY
-  {
-    {K_q, K_1, K_1, K_Q},
-    {K_w, K_2, K_2, K_W},
-    {K_e, K_3, K_3, K_E},
-    {K_r, K_4, K_4, K_R},
-    {K_t, K_5, K_5, K_T},
-    {K_y, K_6, K_6, K_Y},
-    {K_u, K_7, K_7, K_U},
-    {K_i, K_8, K_8, K_I},
-    {K_o, K_9, K_9, K_O},
-    {K_p, K_0, K_0, K_P}
-  },
-  // ASDF
-  {
-    {K_a, K_COMMA, K_HASH, K_A},
-    {K_s, K_EQUALS, K_SEMICOLON, K_S},
-    {K_d, K_LPAREN, K_QUESTION, K_D},
-    {K_f, K_RPAREN, K_AMPERSAND, K_F},
-    {K_g, K_QUOTE, K_DOLLAR, K_G},
-    {K_h, K_APOSTROPHE, K_EXCLAIM, K_H},
-    {K_j, K_PERIOD, K_AT, K_J},
-    {K_k, K_MINUS, K_SLASH, K_K},
-    {K_l, K_ASTERISK, K_BACKSLASH, K_L},
-    {K_NULL}
-  },
-  // ZXC
-  {
-    {K_TOGGLE, K_TOGGLE, K_TOGGLE, K_TOGGLE},
-    {K_z, K_UNDERSCORE, K_CARET, K_Z},
-    {K_x, K_PLUS, K_LBRACE, K_X},
-    {K_c, K_COLON, K_RBRACE, K_C},
-    {K_v, K_LBRACKET, K_PIPE, K_V},
-    {K_b, K_RBRACKET, K_PERCENT, K_B},
-    {K_n, K_LESS, K_BACKTICK, K_N},
-    {K_m, K_GREATER, K_TILDE, K_M},
-    {K_BACKSPACE, K_BACKSPACE, K_BACKSPACE, K_BACKSPACE},
-    {K_NULL}
-  },
-  // FUNCs, SPACE
-  {
-    {K_LINE_UP, K_PAGE_UP, K_LINE_UP, K_PAGE_UP},
-    {K_LINE_DOWN, K_PAGE_DOWN, K_LINE_DOWN, K_PAGE_DOWN},
-    {K_LPAREN, K_SLASH, K_COMMA, K_LBRACKET},
-    {K_SPACE, K_SPACE, K_SPACE, K_SPACE},
-    {K_RPAREN, K_HASH, K_EQUALS, K_RBRACKET},
-    {K_TAG, K_TAG, K_TAG, K_TAG},
-    {K_ENTER, K_ENTER, K_ENTER, K_ENTER},
-    {K_NULL},
-    {K_NULL},
-    {K_NULL},
-  }
+// compact layout for mobile devices in portrait mode
+namespace MobileKeypadLayout {
+  constexpr int ROW_LENGTHS[] = {7, 10, 9, 9, 9};
+  constexpr int MAX_ROWS = 5;
+  constexpr int MAX_COLS = 10;
+  constexpr int QWERTY_ROW = 1;
+  constexpr int ASDF_ROW = 2;
+  constexpr int SPACE_COLS = 3;
+  constexpr RawKey KEYS[MAX_ROWS][MAX_COLS] = {
+    // Toolbar (mobile)
+    {
+      {K_CUT, K_CUT, K_CUT, K_CUT},
+      {K_COPY, K_COPY, K_COPY, K_COPY},
+      {K_PASTE, K_PASTE, K_PASTE, K_PASTE},
+      {K_SEARCH, K_SEARCH, K_SEARCH, K_SEARCH},
+      {K_SAVE, K_SAVE, K_SAVE, K_SAVE},
+      {K_RUN, K_RUN, K_RUN, K_RUN},
+      {K_HELP, K_HELP, K_HELP, K_HELP},
+      {K_NULL},
+      {K_NULL},
+      {K_NULL}
+    },
+    // QWERTY (mobile)
+    {
+      {K_q, K_1, K_1, K_Q},
+      {K_w, K_2, K_2, K_W},
+      {K_e, K_3, K_3, K_E},
+      {K_r, K_4, K_4, K_R},
+      {K_t, K_5, K_5, K_T},
+      {K_y, K_6, K_6, K_Y},
+      {K_u, K_7, K_7, K_U},
+      {K_i, K_8, K_8, K_I},
+      {K_o, K_9, K_9, K_O},
+      {K_p, K_0, K_0, K_P}
+    },
+    // ASDF (mobile)
+    {
+      {K_a, K_COMMA, K_HASH, K_A},
+      {K_s, K_EQUALS, K_SEMICOLON, K_S},
+      {K_d, K_LPAREN, K_QUESTION, K_D},
+      {K_f, K_RPAREN, K_AMPERSAND, K_F},
+      {K_g, K_QUOTE, K_DOLLAR, K_G},
+      {K_h, K_APOSTROPHE, K_EXCLAIM, K_H},
+      {K_j, K_PERIOD, K_AT, K_J},
+      {K_k, K_MINUS, K_SLASH, K_K},
+      {K_l, K_ASTERISK, K_BACKSLASH, K_L},
+      {K_NULL}
+    },
+    // ZXC (mobile)
+    {
+      {K_TOGGLE, K_TOGGLE, K_TOGGLE, K_TOGGLE},
+      {K_z, K_UNDERSCORE, K_CARET, K_Z},
+      {K_x, K_PLUS, K_LBRACE, K_X},
+      {K_c, K_COLON, K_RBRACE, K_C},
+      {K_v, K_LBRACKET, K_PIPE, K_V},
+      {K_b, K_RBRACKET, K_PERCENT, K_B},
+      {K_n, K_LESS, K_BACKTICK, K_N},
+      {K_m, K_GREATER, K_TILDE, K_M},
+      {K_BACKSPACE, K_BACKSPACE, K_BACKSPACE, K_BACKSPACE},
+      {K_NULL}
+    },
+    // FUNCs, SPACE (mobile)
+    {
+      {K_LINE_UP, K_PAGE_UP, K_LINE_UP, K_PAGE_UP},
+      {K_LINE_DOWN, K_PAGE_DOWN, K_LINE_DOWN, K_PAGE_DOWN},
+      {K_LPAREN, K_SLASH, K_COMMA, K_LBRACKET},
+      {K_SPACE, K_SPACE, K_SPACE, K_SPACE},
+      {K_RPAREN, K_HASH, K_EQUALS, K_RBRACKET},
+      {K_TAG, K_TAG, K_TAG, K_TAG},
+      {K_ENTER, K_ENTER, K_ENTER, K_ENTER},
+      {K_NULL},
+      {K_NULL},
+      {K_NULL},
+    }
+  };
+
+  // mobile
+  struct Impl : public KeypadLayout {
+    KeypadLayoutStyle getKeypadLayoutStyle() const override {
+      return kNarrow;
+    }
+    
+    RawKey getRawKey(int row, int col) const override {
+      return MobileKeypadLayout::KEYS[row][col];
+    }
+
+    int getMaxCols() const override {
+      return MAX_COLS;
+    }
+
+    int getMaxRows() const override {
+      return MAX_ROWS;
+    }
+
+    int getRowLength(int row) const override {
+      return ROW_LENGTHS[row];
+    };
+
+    int getSpaceCols() const override {
+      return SPACE_COLS;
+    }
+
+    bool isCentered(int row) const override {
+      return row == QWERTY_ROW || row == ASDF_ROW;
+    }
+  };
 };
+
+// layout for tablet devices
+namespace TabletKeypadLayout {
+  constexpr int ROW_LENGTHS[] = {7, 10, 9, 10, 9};
+  constexpr int MAX_ROWS = 5;
+  constexpr int MAX_COLS = 10;
+  constexpr int QWERTY_ROW = 1;
+  constexpr int ASDF_ROW = 2;
+  constexpr int SPACE_COLS = 2;
+  constexpr RawKey KEYS[MAX_ROWS][MAX_COLS] = {
+    // Toolbar (tablet)
+    {
+      {K_CUT, K_CUT, K_CUT, K_CUT},
+      {K_COPY, K_COPY, K_COPY, K_COPY},
+      {K_PASTE, K_PASTE, K_PASTE, K_PASTE},
+      {K_SEARCH, K_SEARCH, K_SEARCH, K_SEARCH},
+      {K_SAVE, K_SAVE, K_SAVE, K_SAVE},
+      {K_RUN, K_RUN, K_RUN, K_RUN},
+      {K_HELP, K_HELP, K_HELP, K_HELP},
+      {K_NULL},
+      {K_NULL},
+      {K_NULL}
+    },
+    // QWERTY (tablet)
+    {
+      {K_q, K_1, K_1, K_Q},
+      {K_w, K_2, K_2, K_W},
+      {K_e, K_3, K_3, K_E},
+      {K_r, K_4, K_4, K_R},
+      {K_t, K_5, K_5, K_T},
+      {K_y, K_6, K_6, K_Y},
+      {K_u, K_7, K_7, K_U},
+      {K_i, K_8, K_8, K_I},
+      {K_o, K_9, K_9, K_O},
+      {K_p, K_0, K_0, K_P}
+    },
+    // ASDF (tablet)
+    {
+      {K_a, K_COMMA, K_HASH, K_A},
+      {K_s, K_EQUALS, K_SEMICOLON, K_S},
+      {K_d, K_LPAREN, K_QUESTION, K_D},
+      {K_f, K_RPAREN, K_AMPERSAND, K_F},
+      {K_g, K_QUOTE, K_DOLLAR, K_G},
+      {K_h, K_APOSTROPHE, K_EXCLAIM, K_H},
+      {K_j, K_PERIOD, K_AT, K_J},
+      {K_k, K_MINUS, K_SLASH, K_K},
+      {K_l, K_ASTERISK, K_BACKSLASH, K_L},
+      {K_NULL}
+    },
+    // ZXC (tablet)
+    {
+      {K_TOGGLE, K_TOGGLE, K_TOGGLE, K_TOGGLE},
+      {K_UPPER, K_UPPER, K_UPPER, K_UPPER},
+      {K_z, K_UNDERSCORE, K_CARET, K_Z},
+      {K_x, K_PLUS, K_LBRACE, K_X},
+      {K_c, K_COLON, K_RBRACE, K_C},
+      {K_v, K_LBRACKET, K_PIPE, K_V},
+      {K_b, K_RBRACKET, K_PERCENT, K_B},
+      {K_n, K_LESS, K_BACKTICK, K_N},
+      {K_m, K_GREATER, K_TILDE, K_M},
+      {K_BACKSPACE, K_BACKSPACE, K_BACKSPACE, K_BACKSPACE},
+    },
+    // FUNCs, SPACE (tablet)
+    {
+      {K_LINE_UP, K_PAGE_UP, K_LINE_UP, K_PAGE_UP},
+      {K_LINE_DOWN, K_PAGE_DOWN, K_LINE_DOWN, K_PAGE_DOWN},
+      {K_LEFT, K_LEFT, K_LEFT, K_LEFT},
+      {K_LPAREN, K_SLASH, K_COMMA, K_LBRACKET},
+      {K_SPACE, K_SPACE, K_SPACE, K_SPACE},
+      {K_RPAREN, K_HASH, K_EQUALS, K_RBRACKET},
+      {K_RIGHT, K_RIGHT, K_RIGHT, K_RIGHT},
+      {K_ENTER, K_ENTER, K_ENTER, K_ENTER},
+      {K_NULL},
+    }
+  };
+
+  // tablet
+  struct Impl : public KeypadLayout {
+    KeypadLayoutStyle getKeypadLayoutStyle() const override {
+      return kWide;
+    }
+
+    RawKey getRawKey(int row, int col) const override {
+      return TabletKeypadLayout::KEYS[row][col];
+    }
+
+    int getMaxCols() const override {
+      return ROW_LENGTHS[QWERTY_ROW];
+    }
+
+    int getMaxRows() const override {
+      return MAX_ROWS;
+    }
+
+    int getRowLength(int row) const override {
+      return ROW_LENGTHS[row];
+    };
+
+    int getSpaceCols() const override {
+      return SPACE_COLS;
+    }
+
+    bool isCentered(int row) const override {
+      return row == QWERTY_ROW || row == ASDF_ROW;
+    }
+  };
+};
+
+bool isPrintable(KeyCode key) {
+  return key >= K_SPACE && key <= K_TILDE;
+}
+
+bool isArrow(KeyCode key) {
+  bool result;
+  switch (key) {
+  case K_LEFT:
+  case K_LINE_DOWN:
+  case K_LINE_UP:
+  case K_PAGE_DOWN:
+  case K_PAGE_UP:
+  case K_RIGHT:
+    result = true;
+    break;
+  default:
+    result = false;
+  }
+  return result;
+}
+
+bool isRightMargin(KeyCode key) {
+  return key == K_ENTER || key == K_HELP || key == K_BACKSPACE;
+}
+
+KeypadLayout::~KeypadLayout() = default;
 
 //
 // KeypadImage
@@ -166,7 +340,9 @@ KeypadDrawContext::KeypadDrawContext(int charWidth, int charHeight) :
       !_lineDownImage.decode(img_arrow_down, img_arrow_down_len) ||
       !_pageDownImage.decode(img_arrow_download, img_arrow_download_len) ||
       !_tagImage.decode(img_tag, img_tag_len) ||
-      !_toggleImage.decode(img_layers, img_layers_len)) {
+      !_toggleImage.decode(img_layers, img_layers_len) ||
+      !_leftImage.decode(img_arrow_left, img_arrow_left_len) ||
+      !_rightImage.decode(img_arrow_right, img_arrow_right_len)) {
     deviceLog("%s", _cutImage.getLastError());
   }
 }
@@ -189,6 +365,8 @@ const KeypadImage *KeypadDrawContext::getImage(const RawKey &key) const {
   case K_LINE_DOWN: result = &_lineDownImage; break;
   case K_PAGE_DOWN: result = &_pageDownImage; break;
   case K_TAG: result = &_tagImage; break;
+  case K_LEFT: result = &_leftImage; break;
+  case K_RIGHT: result = &_rightImage; break;
   default: result = nullptr; break;
   }
   return result;
@@ -197,11 +375,12 @@ const KeypadImage *KeypadDrawContext::getImage(const RawKey &key) const {
 KeyCode KeypadDrawContext::getKey(RawKey key) const {
   KeyCode keyCode;
   switch (_keySet) {
-    case kLower: keyCode = key._lower; break;
-    case kUpper: keyCode = key._upper; break;
-    case kNumber: keyCode = key._number; break;
-    case kSymbol: keyCode = key._symbol; break;
-    case kSize: keyCode = K_NULL; break;
+  case kLower: keyCode = key._lower; break;
+  case kUpper: keyCode = key._upper; break;
+  case kNumber: keyCode = key._number; break;
+  case kSymbol: keyCode = key._symbol; break;
+  case kSize: keyCode = K_NULL; break;
+  default: keyCode = K_NULL; break;
   }
   return keyCode;
 }
@@ -226,6 +405,8 @@ void KeypadDrawContext::layoutHeight(int padding) {
     _lineDownImage.resize(pageImageSize, pageImageSize);
     _pageDownImage.resize(pageImageSize, pageImageSize);
     _pageUpImage.resize(pageImageSize, pageImageSize);
+    _leftImage.resize(pageImageSize, pageImageSize);
+    _rightImage.resize(pageImageSize, pageImageSize);
     _tagImage.resize(tagImageSize, tagImageSize);
     _imageSize = imageSize;
   }
@@ -253,6 +434,10 @@ void KeypadDrawContext::toggle() {
   } else {
     _keySet = static_cast<Keyset>((_keySet + 1) % kSize);
   }
+}
+
+void KeypadDrawContext::upper() {
+  _keySet = _keySet == kLower ? kUpper : kLower;
 }
 
 //
@@ -331,6 +516,19 @@ void Key::draw(const KeypadTheme *theme, const KeypadDrawContext *context, bool 
     int textY = _y + yOffset;
     maSetColor(color(theme));
     maDrawText(textX, textY, key, 1);
+  } else if (keyChar == K_UPPER) {
+    int xOffset = (_w - (context->_charWidth * 3)) / 2;
+    int yOffset = (_h - context->_charHeight) / 2;
+    int textX = _x + xOffset;
+    int textY = _y + yOffset;
+    maSetColor(color(theme));
+    if (context->_keySet == kLower) {
+      char key[] = {'A', 'B', 'C', '\0'};
+      maDrawText(textX, textY, key, 3);
+    } else {
+      char key[] = {'a', 'b', 'c', '\0'};
+      maDrawText(textX, textY, key, 3);
+    }
   } else {
     auto *image = context->getImage(_key);
     if (image) {
@@ -397,8 +595,14 @@ void Key::onClick(KeypadDrawContext *context) const {
   case K_TAG:
     event->key = SB_KEY_CTRL('t');
     break;
+  case K_LEFT:
+    event->key = SB_KEY_LEFT;
+    break;
+  case K_RIGHT:
+    event->key = SB_KEY_RIGHT;
+    break;
   default:
-    event->key = (unsigned char)context->getKey(_key);
+    event->key = static_cast<unsigned char>(context->getKey(_key));
     context->onClick(_key);
     break;
   }
@@ -408,31 +612,43 @@ void Key::onClick(KeypadDrawContext *context) const {
 //
 // Keypad
 //
-Keypad::Keypad(int charWidth, int charHeight, bool toolbar)
+Keypad::Keypad(int screenWidth, int charWidth, int charHeight, bool toolbar)
   : _posX(0),
     _posY(0),
-    _width(0),
+    _width(screenWidth),
     _height(0),
     _padding(static_cast<int>(charHeight * PADDING_FACTOR)),
-    _theme(&MODERN_DARK_THEME),
-    _context(charWidth, charHeight),
     _toolbar(toolbar),
-    _pressed(nullptr) {
-  generateKeys();
+    _pressed(nullptr),
+    _theme(&MODERN_DARK_THEME),
+    _context(charWidth, charHeight) {
+  selectLayout();
 }
 
 void Keypad::generateKeys() {
   _keys.clear();
 
-  const int rows = _toolbar ? 1 : MAX_ROWS;
+  const int rows = _toolbar ? 1 : _layout->getMaxRows();
   for (int row = 0; row < rows; ++row) {
-    int cols = ROW_LENGTHS[row];
+    int cols = _layout->getRowLength(row);
     for (int col = 0; col < cols; col++) {
-      const RawKey &k = KEYS[row][col];
+      const RawKey &k = _layout->getRawKey(row, col);
       if (k._lower != K_NULL) {
         _keys.add(new Key(k));
       }
     }
+  }
+}
+
+void Keypad::selectLayout() {
+  if (_width >= WIDE_LAYOUT) {
+    if (_layout == nullptr || _layout->getKeypadLayoutStyle() != kWide) {
+      _layout = std::make_unique<TabletKeypadLayout::Impl>();
+      generateKeys();
+    }
+  } else if (_layout == nullptr || _layout->getKeypadLayoutStyle() != kNarrow) {
+    _layout = std::make_unique<MobileKeypadLayout::Impl>();
+    generateKeys();
   }
 }
 
@@ -442,18 +658,22 @@ void Keypad::layout(int x, int y, int w, int h) {
   _width = w;
   _height = h;
 
+  if (!_toolbar) {
+    selectLayout();
+  }
+
   const int width = _width - _padding;
-  const int keyW = width / ROW_LENGTHS[QWERTY_ROW];
+  const int keyW = width / _layout->getMaxCols();
   const int keyH = _context._charHeight + _padding * 2;
   const int xStart = _posX + ((w - _width) / 2);
-  const int rows = _toolbar ? 1 : MAX_ROWS;
+  const int rows = _toolbar ? 1 : _layout->getMaxRows();
   int yPos = _posY;
   int index = 0;
 
   for (int row = 0; row < rows; ++row) {
-    const int cols = ROW_LENGTHS[row];
+    const int cols = _layout->getRowLength(row);
     int xPos = xStart;
-    if (row == QWERTY_ROW || row == ASDF_ROW) {
+    if (_layout->isCentered(row)) {
       const int rowWidth = keyW * cols;
       xPos += (_width - rowWidth) / 2;
     }
@@ -467,13 +687,15 @@ void Keypad::layout(int x, int y, int w, int h) {
         keyWidth = _width - xPos;
       } else if (row == 0) {
         keyWidth = _width / cols;
+      } else if (key->_key._lower == K_UPPER) {
+        keyWidth = static_cast<int>(keyWidth * .8);
       } else if (isArrow(key->_key._lower)) {
         keyWidth = static_cast<int>(keyWidth * 1.2);
       } else if (!key->_printable && key->_key._lower != K_TAG) {
-        const int numKeys = 2;
+        constexpr int numKeys = 2;
         keyWidth = (_width - ((cols - numKeys) * keyW)) / numKeys;
       } else if (key->_key._lower == K_SPACE) {
-        keyWidth = (SPACE_COLS * keyW);
+        keyWidth = (_layout->getSpaceCols() * keyW);
       }
       key->_x = xPos;
       key->_y = yPos;
@@ -491,7 +713,7 @@ int Keypad::layoutHeight(int screenHeight) {
   int charHeight = _context._charHeight;
   int maxHeight = static_cast<int>(screenHeight * MAX_HEIGHT_FACTOR);
   int padding = static_cast<int>(charHeight * PADDING_FACTOR);
-  int rows = _toolbar ? 1 : MAX_ROWS;
+  int rows = _toolbar ? 1 : _layout->getMaxRows();
   int height = rows * ((padding * 2) + charHeight);
   if (height > maxHeight) {
     // h = r(ch + 2p) -> p = (h - r * ch) / (r * 2)
@@ -504,7 +726,7 @@ int Keypad::layoutHeight(int screenHeight) {
 }
 
 void Keypad::clicked(int x, int y, bool pressed) {
-  Key *down = _pressed;
+  const Key *down = _pressed;
   _pressed = nullptr;
   for (const auto key : _keys) {
     if (key->inside(x, y)) {
@@ -512,6 +734,8 @@ void Keypad::clicked(int x, int y, bool pressed) {
         _pressed = key;
       } else if (key->_key._lower == K_TOGGLE) {
         _context.toggle();
+      } else if (key->_key._lower == K_UPPER) {
+        _context.upper();
       } else if (key == down) {
         key->onClick(&_context);
       }
@@ -531,10 +755,10 @@ void Keypad::draw() const {
 //
 // KeypadInput
 //
-KeypadInput::KeypadInput(bool floatTop, bool toolbar, int charWidth, int charHeight) :
+KeypadInput::KeypadInput(int screenWidth, bool floatTop, bool toolbar, int charWidth, int charHeight) :
   FormInput(0, 0, 0, charHeight * 2),
   _floatTop(floatTop) {
-  _keypad = new Keypad(charWidth, charHeight, toolbar);
+  _keypad = new Keypad(screenWidth, charWidth, charHeight, toolbar);
 }
 
 KeypadInput::~KeypadInput() {

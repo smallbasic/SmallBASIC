@@ -22,6 +22,9 @@ enum KeyCode : char {
   K_LINE_DOWN= (char)-11,
   K_PAGE_DOWN= (char)-12,
   K_TAG      = (char)-13,
+  K_LEFT     = (char)-14,
+  K_RIGHT    = (char)-15,
+  K_UPPER    = (char)-16,
   K_NULL     = 0,
   K_BACKSPACE = 8,
   K_TAB      = 9,
@@ -77,15 +80,3 @@ enum KeyCode : char {
   K_TILDE    = 126, // ~
   K_DEL      = 127  // DEL
 };
-
-inline bool isPrintable(KeyCode key) {
-  return key >= K_SPACE && key <= K_TILDE;
-}
-
-inline bool isArrow(KeyCode key) {
-  return key == K_LINE_UP || key == K_PAGE_UP || key == K_LINE_DOWN || key == K_PAGE_DOWN;
-}
-
-inline bool isRightMargin(KeyCode key) {
-  return key == K_ENTER || key == K_HELP || key == K_BACKSPACE;
-}

@@ -84,22 +84,24 @@ bool ImageCodec::encode(uint8_t **data, size_t *size) const {
 void ImageCodec::resize(unsigned width, unsigned height) {
   auto *pixels = new uint8_t[width * height * 4];
 
-  for (int y = 0; y < height; y++) {
+  for (unsigned y = 0; y < height; y++) {
     float gy = ((float)y + 0.5f) * _height / height - 0.5f;
-    int y0 = (int)gy, y1 = y0 + 1;
+    unsigned y0 = (unsigned)gy;
+    unsigned y1 = y0 + 1;
     float fy = gy - y0;
     y0 = y0 < 0 ? 0 : (y0 >= _height ? _height - 1 : y0);
     y1 = y1 < 0 ? 0 : (y1 >= _height ? _height - 1 : y1);
 
-    for (int x = 0; x < width; x++) {
+    for (unsigned x = 0; x < width; x++) {
       float gx = ((float)x + 0.5f) * _width / width - 0.5f;
-      int x0 = (int)gx, x1 = x0 + 1;
+      unsigned x0 = (unsigned)gx;
+      unsigned x1 = x0 + 1;
       float fx = gx - x0;
       x0 = x0 < 0 ? 0 : (x0 >= _width ? _width - 1 : x0);
       x1 = x1 < 0 ? 0 : (x1 >= _width ? _width - 1 : x1);
 
       int offset = 4 * (y * width + x);
-      for (int c = 0; c < 4; c++) {
+      for (unsigned c = 0; c < 4; c++) {
         // A, R, G, B
         float tl = _pixels[4 * (y0 * _width + x0) + c];
         float tr = _pixels[4 * (y0 * _width + x1) + c];

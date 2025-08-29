@@ -8,6 +8,7 @@
 
 #pragma once
 
+#include <memory>
 #include "ui/strlib.h"
 #include "ui/inputs.h"
 #include "ui/image_codec.h"
@@ -58,6 +59,7 @@ struct KeypadDrawContext {
   void layoutHeight(int padding);
   void onClick(RawKey key);
   void toggle();
+  void upper();
 
   int _charWidth;
   int _charHeight;
@@ -77,9 +79,11 @@ struct KeypadDrawContext {
   KeypadImage _toggleImage;
   KeypadImage _lineUpImage;
   KeypadImage _pageUpImage;
-  KeypadImage _lineDownImage;  
+  KeypadImage _lineDownImage;
   KeypadImage _pageDownImage;
   KeypadImage _tagImage;
+  KeypadImage _leftImage;
+  KeypadImage _rightImage;
 };
 
 struct Key {
@@ -100,16 +104,32 @@ struct Key {
   bool _printable;
 };
 
+enum KeypadLayoutStyle {
+  kNarrow, kWide
+};
+
+struct KeypadLayout {
+  virtual ~KeypadLayout();
+  virtual RawKey getRawKey(int row, int col) const = 0;
+  virtual KeypadLayoutStyle getKeypadLayoutStyle() const = 0;
+  virtual int getMaxCols() const = 0;
+  virtual int getMaxRows() const = 0;
+  virtual int getRowLength(int row) const = 0;
+  virtual int getSpaceCols() const = 0;
+  virtual bool isCentered(int row) const = 0;
+};
+
 struct Keypad {
-  Keypad(int charWidth, int charHeight, bool toolbar);
+  Keypad(int screenWidth, int charWidth, int charHeight, bool toolbar);
   ~Keypad() = default;
 
   void clicked(int x, int y, bool pressed);
   void draw() const;
   void layout(int x, int y, int w, int h);
   int layoutHeight(int screenHeight);
+  void selectLayout();
 
-private:
+  private:
   void generateKeys();
 
   int _posX;
@@ -122,10 +142,11 @@ private:
   strlib::List<Key *> _keys;
   KeypadTheme *_theme;
   KeypadDrawContext _context;
+  std::unique_ptr<KeypadLayout> _layout;
 };
 
 struct KeypadInput : public FormInput {
-  KeypadInput(bool floatTop, bool toolbar, int charWidth, int charHeight);
+  KeypadInput(int screenWidth, bool floatTop, bool toolbar, int charWidth, int charHeight);
   ~KeypadInput() override;
 
   void clicked(int x, int y, bool pressed) override;
@@ -137,7 +158,7 @@ struct KeypadInput : public FormInput {
   void drawHover(int dx, int dy, bool selected) override {};
   bool hasHover() override { return HAS_HOVER; }
 
-private:
+  private:
   bool _floatTop;
   Keypad *_keypad;
 };

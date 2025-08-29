@@ -430,7 +430,7 @@ public class MainActivity extends NativeActivity {
   }
 
   public boolean isPredictiveBack() {
-    return Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU;
+    return Build.VERSION.SDK_INT >= Build.VERSION_CODES.BAKLAVA;
   }
 
   public boolean loadModules() {

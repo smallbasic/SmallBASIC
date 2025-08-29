@@ -445,6 +445,7 @@ FormEditInput::~FormEditInput() {
 int FormEditInput::getControlKey(int key) {
   int result = key;
   if (_controlMode) {
+    char *text;
     switch (key) {
     case 'x':
       g_system->setClipboardText(copy(true));
@@ -455,7 +456,9 @@ int FormEditInput::getControlKey(int key) {
       result = -1;
       break;
     case 'v':
-      paste(g_system->getClipboardText());
+      text = g_system->getClipboardText();
+      paste(text);
+      free(text);
       result = -1;
       break;
     case 'h':

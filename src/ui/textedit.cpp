@@ -550,7 +550,7 @@ void TextEditInput::completeWord(const char *word) {
     bool lastUpper = isupper(_buf._buffer[index]);
 
     paste(word + len);
-    for (int i = 0; i < insertLen; i++) {
+    for (size_t i = 0; i < insertLen; i++) {
       char c = _buf._buffer[i + end];
       _buf._buffer[i + end] = lastUpper ? toupper(c) : tolower(c);
     }
@@ -939,7 +939,7 @@ bool TextEditInput::find(const char *word, bool next) {
   bool result = false;
   bool allUpper = true;
   size_t len = word == nullptr ? 0 : strlen(word);
-  for (int i = 0; i < len; i++) {
+  for (size_t i = 0; i < len; i++) {
     if (islower(word[i])) {
       allUpper = false;
       break;
@@ -1247,7 +1247,7 @@ void TextEditInput::changeCase() {
   size_t len = strlen(selection);
   enum { up, down, mixed } curcase = isupper(selection[0]) ? up : down;
 
-  for (int i = 1; i < len; i++) {
+  for (size_t i = 1; i < len; i++) {
     if (isalpha(selection[i])) {
       bool isup = isupper(selection[i]);
       if ((curcase == up && isup == false) || (curcase == down && isup)) {
@@ -1258,13 +1258,13 @@ void TextEditInput::changeCase() {
   }
 
   // transform pattern: Foo -> FOO, FOO -> foo, foo -> Foo
-  for (int i = 0; i < len; i++) {
+  for (size_t i = 0; i < len; i++) {
     selection[i] = curcase == mixed ? toupper(selection[i]) : tolower(selection[i]);
   }
   if (curcase == down) {
     selection[0] = toupper(selection[0]);
     // upcase chars following non-alpha chars
-    for (int i = 1; i < len; i++) {
+    for (size_t i = 1; i < len; i++) {
       if (isalpha(selection[i]) == false && i + 1 < len) {
         selection[i + 1] = toupper(selection[i + 1]);
       }
@@ -2147,7 +2147,7 @@ void TextEditHelpWidget::createCompletionHelp() {
       while (IS_VAR_CHAR(*end) && *end != '\0') {
         end++;
       }
-      if (end - found > len && (IS_WHITE(pre) || pre == '.')) {
+      if ((size_t)(end - found) > len && (IS_WHITE(pre) || pre == '.')) {
         String next;
         next.append(found, end - found);
         if (!words.contains(next)) {
