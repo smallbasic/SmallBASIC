@@ -81,7 +81,7 @@ struct System {
   uint32_t getModifiedTime() const;
   void handleEvent(MAEvent &event);
   void handleMenu(MAEvent &event);
-  bool isEditEnabled() const {return opt_ide == IDE_INTERNAL || isScratchLoad();}
+  bool isEditEnabled() const {return opt_ide == IDE_INTERNAL || opt_ide == IDE_EXTERNAL || isScratchLoad();}
   bool isEditReady() const {return !isRestart() && isEditEnabled() && !isNetworkLoad();}
   bool isNetworkLoad() const {return _loadPath.indexOf("://", 1) != -1;}
   bool isScratchLoad() const {return _loadPath.indexOf("scratch", 0) != -1;}
