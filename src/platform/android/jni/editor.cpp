@@ -130,7 +130,8 @@ void Runtime::editSource(strlib::String loadPath, bool restoreOnExit) {
   int h = _output->getHeight();
   int charWidth = _output->getCharWidth();
   int charHeight = _output->getCharHeight();
-  int prevScreenId = _output->selectScreen(FORM_SCREEN);
+  int screenId = opt_ide == IDE_EXTERNAL ? SOURCE_SCREEN : FORM_SCREEN;
+  int prevScreenId = _output->selectScreen(screenId);
   TextEditInput *editWidget;
   if (_editor != nullptr) {
     editWidget = _editor;
