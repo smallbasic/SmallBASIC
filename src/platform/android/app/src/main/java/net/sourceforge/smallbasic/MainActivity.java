@@ -1084,16 +1084,18 @@ public class MainActivity extends NativeActivity {
         @NonNull
         @Override
         public WindowInsetsCompat onApplyWindowInsets(@NonNull View view, @NonNull WindowInsetsCompat insets) {
-          Log.d(TAG, "onApplyWindowInsets");
           Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
           Insets navInsets = insets.getInsets(WindowInsetsCompat.Type.navigationBars());
           Insets ime = insets.getInsets(WindowInsetsCompat.Type.ime());
           boolean imeVisible = insets.isVisible(WindowInsetsCompat.Type.ime());
-          view.setPadding(0, 0, navInsets.right, navInsets.bottom);
           int bottomInset = Math.max(systemBars.bottom, ime.bottom);
-          int width = view.getWidth();
-          int height = view.getHeight() - systemBars.top - bottomInset;
-          onResize(width, height, imeVisible ? 1 : -1);
+          int width = view.getWidth() - navInsets.right;
+          int height = view.getHeight() - (systemBars.top + bottomInset);
+          view.setPadding(0, 0, navInsets.right, navInsets.bottom);
+          if (width > 0 && height > 0) {
+            // ignore spurious transitional values
+            onResize(width, height, imeVisible ? 1 : -1);
+          }
           return insets;
         }
       });
