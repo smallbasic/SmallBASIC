@@ -14,6 +14,8 @@ void error(var_p_t var, const char *field, int n);
 void error(var_p_t var, const char *text);
 int get_param_int(int argc, slib_par_t *params, int n, int def);
 const char *get_param_str(int argc, slib_par_t *params, int n, const char *def);
+int get_int(var_t *v);
+int get_array_elem_int(var_p_t array, int index);
 
 typedef struct {
   const char *name;

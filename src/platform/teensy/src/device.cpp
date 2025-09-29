@@ -17,17 +17,16 @@
 #include "lib/maapi.h"
 #include "serial.h"
 
-#define SERIAL_BAUD_RATE 1000000
-
 //
 // setup the Serial device
+// Teensy 4.x uses USB serial. Setup is done at startup. Communication
+// is always at full USB speed. Either 12 or 480 Mbit/s.
 //
 void serial_init() {
-  Serial.begin(SERIAL_BAUD_RATE);
-  while (!Serial) {
-    // wait
-  }
   if (CrashReport) {
+    while(!Serial) {
+      delay(10);
+    }
     Serial.print(CrashReport);
   }
 }

@@ -97,7 +97,12 @@ void serial_read() {
   bool eof = false;
   int lastRead = -1;
 
+  while(!Serial){
+    delay(10);
+  }
+
   dev_print("Waiting for data... ");
+
   buffer.clear();
 
   while (!eof) {

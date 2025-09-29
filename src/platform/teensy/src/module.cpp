@@ -73,3 +73,30 @@ const char *get_param_str(int argc, slib_par_t *params, int n, const char *def) 
   }
   return result;
 }
+
+int get_int(var_t *v) {
+  int result;
+  switch (v ? v->type : -1) {
+  case V_INT:
+    result = v->v.i;
+    break;
+  case V_NUM:
+    result = v->v.n;
+    break;
+  default:
+    result = 0;
+    break;
+  }
+  return result;
+}
+
+int get_array_elem_int(var_p_t array, int index) {
+  int result;
+  int size = v_asize(array);
+  if (index >= 0 && index < size) {
+    result = get_int(v_elem(array, index));
+  } else {
+    result = 0;
+  }
+  return result;
+}
