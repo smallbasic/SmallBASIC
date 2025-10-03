@@ -5,6 +5,11 @@
 # Download the GNU Public License (GPL) from www.gnu.org
 #
 
+#
+# For investigating crash reports in play-studio, for example:
+# aarch64-linux-android-addr2line -e symbols/v12.31-87/arm64-v8a/libsmallbasic.so.dbg -f -C 0x00000000000d2dd0
+#
+
 all-am: Makefile
 
 build-test: ndk-build-test
@@ -32,6 +37,18 @@ ndk-build-release:
 
 release:
 	(./gradlew clean :app:bundle)
+	@echo "Saving debug symbols..."
+	@VERSION_CODE=$$(sed -n 's/^[[:space:]]*versionCode[[:space:]]*\([0-9]*\).*/\1/p' app/build.gradle); \
+	VERSION_NAME=$$(sed -n "s/^[[:space:]]*versionName[[:space:]]*['\"]\\([^'\"]*\\)['\"].*/\\1/p" app/build.gradle); \
+	SYMBOL_DIR="symbols/v$${VERSION_NAME}-$${VERSION_CODE}"; \
+	mkdir -p "$${SYMBOL_DIR}"; \
+	if [ -d app/build/intermediates/native_debug_metadata/release/extractReleaseNativeDebugMetadata/out ]; then \
+		cp -r app/build/intermediates/native_debug_metadata/release/extractReleaseNativeDebugMetadata/out/* "$${SYMBOL_DIR}/"; \
+		echo "Symbols saved to $${SYMBOL_DIR}/"; \
+		ls -lh "$${SYMBOL_DIR}"/*/*.dbg; \
+	else \
+		echo "Warning: debug symbols not found"; \
+	fi
 
 library:
 	(./gradlew clean assemble)
