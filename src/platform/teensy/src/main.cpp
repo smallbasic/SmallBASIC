@@ -96,13 +96,6 @@ void setup() {
 void serial_read() {
   bool eof = false;
   int lastRead = -1;
-
-  while(!Serial){
-    delay(10);
-  }
-
-  dev_print("Waiting for data... ");
-
   buffer.clear();
 
   while (!eof) {
@@ -116,6 +109,7 @@ void serial_read() {
       eof = true;
     } else {
       delay(250);
+      dev_print("\rInteractive mode - waiting for data...");
     }
   }
   dev_printf("received %d bytes.\r\n", buffer.length());
@@ -186,7 +180,6 @@ extern "C" int main(void) {
   setup();
 
 #if INTERACTIVE
-  dev_print("Interactive mode enabled\r\n");
   interactive_main();
 #else
   if (!sbasic_main(MAIN_BAS)) {

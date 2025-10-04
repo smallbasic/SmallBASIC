@@ -48,6 +48,26 @@ int get_param_int(int argc, slib_par_t *params, int n, int def) {
   return result;
 }
 
+double get_param_num(int argc, slib_par_t *params, int n, double def) {
+  double result;
+  if (n >= 0 && n < argc) {
+    switch (params[n].var_p->type) {
+    case V_INT:
+      result = params[n].var_p->v.i;
+      break;
+    case V_NUM:
+      result = params[n].var_p->v.n;
+      break;
+    default:
+      result = def;
+      break;
+    }
+  } else {
+    result = def;
+  }
+  return result;
+}
+
 const char *get_param_str(int argc, slib_par_t *params, int n, const char *def) {
   const char *result;
   static char buf[256];

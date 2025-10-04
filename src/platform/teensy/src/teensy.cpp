@@ -138,8 +138,14 @@ static int cmd_digitalinput_read(var_s *self, int argc, slib_par_t *arg, var_s *
 static int cmd_opendigitalinput(int argc, slib_par_t *args, var_t *retval) {
   int result = 1;
   int pin = get_param_int(argc, args, 0, -1);
+  uint8_t mode = get_param_int(argc, args, 1, 1);
+  if(mode) {
+    mode = INPUT_PULLUP;
+  } else {
+    mode = INPUT;
+  }
   if (is_pin(pin)) {
-    set_pin(retval, pin, INPUT);
+    set_pin(retval, pin, mode);
     v_create_callback(retval, "read", cmd_digitalinput_read);
     result = 1;
   } else {
@@ -167,6 +173,56 @@ static int cmd_opendigitaloutput(int argc, slib_par_t *args, var_t *retval) {
   if (is_pin(pin)) {
     set_pin(retval, pin, OUTPUT);
     v_create_callback(retval, "write", cmd_digitaloutput_write);
+    result = 1;
+  } else {
+    result = 0;
+  }
+  return result;
+}
+
+static int cmd_analogoutput_write(var_s *self, int argc, slib_par_t *arg, var_s *retval) {
+  if (argc != 1 || !is_pin_object(self)) {
+    error(retval, "AnalogOutput.write", 1);
+    return 0;
+  } else {
+    int pin = self->v.m.id;
+    int value = get_param_int(argc, arg, 0, 0);
+    analogWrite(pin, value);
+  }
+  return 1;
+}
+
+static int cmd_analogoutput_frequency(var_s *self, int argc, slib_par_t *arg, var_s *retval) {
+  if (argc != 1 || !is_pin_object(self)) {
+    error(retval, "AnalogOutput.frequency", 1);
+    return 0;
+  } else {
+    int pin = self->v.m.id;
+    double value = get_param_num(argc, arg, 0, 0.0);
+    analogWriteFrequency(pin, value);
+  }
+  return 1;
+}
+
+static int cmd_analogoutput_resolution(var_s *self, int argc, slib_par_t *arg, var_s *retval) {
+  if (argc != 1 || !is_pin_object(self)) {
+    error(retval, "AnalogOutput.resolution", 1);
+    return 0;
+  } else {
+    int value = get_param_int(argc, arg, 0, 0);
+    analogWriteResolution(value);
+  }
+  return 1;
+}
+
+static int cmd_openanalogoutput(int argc, slib_par_t *args, var_t *retval) {
+  int result;
+  int pin = get_param_int(argc, args, 0, -1);
+  if (is_pin(pin)) {
+    set_pin(retval, pin, OUTPUT);
+    v_create_callback(retval, "write", cmd_analogoutput_write);
+    v_create_callback(retval, "frequency", cmd_analogoutput_frequency);
+    v_create_callback(retval, "resolution", cmd_analogoutput_resolution);
     result = 1;
   } else {
     result = 0;
@@ -406,10 +462,11 @@ static FuncSpec lib_func[] = {
   {0, 0, "GETTEMP", cmd_get_temperature},
   {0, 0, "GETCPUSPEED", cmd_get_cpu_speed},
   {1, 1, "OPENANALOGINPUT", cmd_openanaloginput},
+  {1, 1, "OPENANALOGOUTPUT", cmd_openanalogoutput},
   {1, 1, "OPENDIGITALINPUT", cmd_opendigitalinput},
   {1, 1, "OPENDIGITALOUTPUT", cmd_opendigitaloutput},
   {0, 1, "OPENSERIAL", cmd_openserial},
-  {0, 1, "OPENI2C", cmd_openi2c}
+  {0, 3, "OPENI2C", cmd_openi2c}
 };
 
 static int teensy_func_count(void) {

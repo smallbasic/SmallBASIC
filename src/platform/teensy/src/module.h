@@ -13,6 +13,7 @@ void error(var_p_t var, const char *field, int nMin, int nMax);
 void error(var_p_t var, const char *field, int n);
 void error(var_p_t var, const char *text);
 int get_param_int(int argc, slib_par_t *params, int n, int def);
+double get_param_num(int argc, slib_par_t *params, int n, double def);
 const char *get_param_str(int argc, slib_par_t *params, int n, const char *def);
 int get_int(var_t *v);
 int get_array_elem_int(var_p_t array, int index);
