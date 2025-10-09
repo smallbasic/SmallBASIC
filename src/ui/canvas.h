@@ -46,8 +46,8 @@ struct Canvas {
   virtual ~Canvas();
 
   bool create(int w, int h);
-  void drawRegion(Canvas *src, const MARect *srcRect, int dstx, int dsty);
-  void fillRect(int x, int y, int w, int h, pixel_t color);
+  void drawRegion(Canvas *src, const MARect *srcRect, int dstx, int dsty) const;
+  void fillRect(int x, int y, int w, int h, pixel_t color) const;
   void setClip(int x, int y, int w, int h);
   pixel_t *getLine(int y) const { return _pixels + (y * _w); }
   int x() const { return _clip ? _clip->left : 0; }

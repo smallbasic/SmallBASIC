@@ -102,7 +102,7 @@ struct StatusMessage {
     out->setStatus(message);
   }
 
-private:
+  private:
   bool _dirty;
   bool _find;
   int _scroll;
@@ -126,7 +126,6 @@ void showHelp(TextEditHelpWidget *helpWidget) {
 void Runtime::editSource(strlib::String loadPath, bool restoreOnExit) {
   logEntered();
 
-  showKeypad(false);
   int w = _output->getWidth();
   int h = _output->getHeight();
   int charWidth = _output->getCharWidth();
@@ -153,11 +152,16 @@ void Runtime::editSource(strlib::String loadPath, bool restoreOnExit) {
   _output->addInput(editWidget);
   _output->addInput(helpWidget);
 
-  if (_keypad != nullptr) {
-    _output->addInput(_keypad);
+  if (opt_ide == IDE_EXTERNAL) {
+    showKeypad(true);
   } else {
-    _keypad = new KeypadInput(w, false, false, charWidth, charHeight);
-    _output->addInput(_keypad);
+    showKeypad(false);
+    if (_keypad != nullptr) {
+      _output->addInput(_keypad);
+    } else {
+      _keypad = new KeypadInput(w, false, false, charWidth, charHeight);
+      _output->addInput(_keypad);
+    }
   }
 
   statusMessage.update(editWidget, _output);
@@ -207,6 +211,7 @@ void Runtime::editSource(strlib::String loadPath, bool restoreOnExit) {
           } else {
             widget = helpWidget;
             showHelp(helpWidget);
+            showKeypad(false);
           }
           break;
         case SB_KEY_F(9):
@@ -258,6 +263,9 @@ void Runtime::editSource(strlib::String loadPath, bool restoreOnExit) {
     }
 
     if ((exitHelp || isBack()) && widget == helpWidget) {
+      if (opt_ide == IDE_EXTERNAL) {
+        showKeypad(true);
+      }
       widget = editWidget;
       helpWidget->hide();
       editWidget->setFocus(true);
@@ -293,6 +301,7 @@ void Runtime::editSource(strlib::String loadPath, bool restoreOnExit) {
     if (!_output->removeInput(_keypad)) {
       trace("Failed to remove keypad input");
     }
+    showKeypad(false);
     _editor = editWidget;
     _editor->setFocus(false);
   } else {

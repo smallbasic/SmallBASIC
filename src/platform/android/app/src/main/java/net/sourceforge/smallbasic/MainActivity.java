@@ -39,10 +39,15 @@ import android.widget.Toast;
 import android.window.OnBackInvokedCallback;
 import android.window.OnBackInvokedDispatcher;
 
+import androidx.annotation.NonNull;
 import androidx.annotation.RequiresPermission;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.core.content.FileProvider;
+import androidx.core.graphics.Insets;
+import androidx.core.view.OnApplyWindowInsetsListener;
+import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowInsetsCompat;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -121,7 +126,7 @@ public class MainActivity extends NativeActivity {
   public static native boolean libraryMode();
   public static native void onActivityPaused(boolean paused);
   public static native void onBack();
-  public static native void onResize(int width, int height);
+  public static native void onResize(int width, int height, int imeState);
   public static native void onUnicodeChar(int ch);
   public static native boolean optionSelected(int index);
   public static native void runFile(String fileName);
@@ -429,6 +434,10 @@ public class MainActivity extends NativeActivity {
     return rect.height();
   }
 
+  public boolean isInsetBasedOnResize() {
+    return Build.VERSION.SDK_INT >= Build.VERSION_CODES.BAKLAVA;
+  }
+
   public boolean isPredictiveBack() {
     return Build.VERSION.SDK_INT >= Build.VERSION_CODES.BAKLAVA;
   }
@@ -452,10 +461,11 @@ public class MainActivity extends NativeActivity {
   @Override
   public void onGlobalLayout() {
     super.onGlobalLayout();
-    // find the visible coordinates of our view
-    Rect rect = new Rect();
-    findViewById(android.R.id.content).getWindowVisibleDisplayFrame(rect);
-    onResize(rect.width(), rect.height());
+    if (!isInsetBasedOnResize()) {
+      Rect rect = new Rect();
+      findViewById(android.R.id.content).getWindowVisibleDisplayFrame(rect);
+      onResize(rect.width(), rect.height(), 0);
+    }
   }
 
   @Override
@@ -774,6 +784,7 @@ public class MainActivity extends NativeActivity {
     setImmersiveMode();
     setupStorageEnvironment();
     setupPredictiveBack();
+    setupInsetBaseOnResize();
     if (!libraryMode()) {
       processIntent();
       processSettings();
@@ -1063,14 +1074,42 @@ public class MainActivity extends NativeActivity {
     }
   }
 
+  /**
+   * onResize() handler for android 16+
+   */
+  private void setupInsetBaseOnResize() {
+    if (isInsetBasedOnResize()) {
+      View view = getWindow().getDecorView();
+      ViewCompat.setOnApplyWindowInsetsListener(view, new OnApplyWindowInsetsListener() {
+        @NonNull
+        @Override
+        public WindowInsetsCompat onApplyWindowInsets(@NonNull View view, @NonNull WindowInsetsCompat insets) {
+          Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
+          Insets navInsets = insets.getInsets(WindowInsetsCompat.Type.navigationBars());
+          Insets ime = insets.getInsets(WindowInsetsCompat.Type.ime());
+          boolean imeVisible = insets.isVisible(WindowInsetsCompat.Type.ime());
+          int bottomInset = Math.max(systemBars.bottom, ime.bottom);
+          int width = view.getWidth() - navInsets.right;
+          int height = view.getHeight() - (systemBars.top + bottomInset);
+          view.setPadding(0, 0, navInsets.right, navInsets.bottom);
+          if (width > 0 && height > 0) {
+            // ignore spurious transitional values
+            onResize(width, height, imeVisible ? 1 : -1);
+          }
+          return insets;
+        }
+      });
+      view.post(() -> ViewCompat.requestApplyInsets(view));
+    }
+  }
+
   //
   // Hook into Predictive Back (Android 13+)
   //
   private void setupPredictiveBack() {
     if (isPredictiveBack()) {
       getOnBackInvokedDispatcher().registerOnBackInvokedCallback(
-          OnBackInvokedDispatcher.PRIORITY_DEFAULT,
-          new OnBackInvokedCallback() {
+          OnBackInvokedDispatcher.PRIORITY_OVERLAY, new OnBackInvokedCallback() {
             @Override
             public void onBackInvoked() {
               Log.d(TAG, "onBackInvoked");
@@ -1226,7 +1265,8 @@ public class MainActivity extends NativeActivity {
         String name = "webui/" + path;
         long length = getFileLength(name);
         log("Opened " + name + " " + length + " bytes");
-        String contentType = path.endsWith("js") ? "text/javascript" : "text/html";
+        String contentType = path.endsWith("js") ? "text/javascript" :
+                             path.endsWith("css") ? "text/css": "text/html";
         result = new Response(getAssets().open(name), length, contentType);
         if ("index.html".equals(path) && isHostNotPermitted(remoteHost)) {
           requestHostPermission(remoteHost);
