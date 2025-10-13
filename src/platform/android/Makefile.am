@@ -56,3 +56,6 @@ library:
 	(cp -R app/build/intermediates/stripped_native_libs/release/out/lib/ dist)
 	(cp app/build/intermediates/dex/release/minifyReleaseWithR8/classes.dex dist)
 
+# launch WebServerTest in intellij
+start-ui:
+	(cd app/src/main/assets/webui && valgrind ../../../../../../web/sbasicw -p 3000 -a 'api' -o 'http://localhost:8080')

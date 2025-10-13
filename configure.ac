@@ -7,7 +7,7 @@ dnl This program is distributed under the terms of the GPL v2.0
 dnl Download the GNU Public License (GPL) from www.gnu.org
 dnl
 
-AC_INIT([smallbasic], [12.31])
+AC_INIT([smallbasic], [12.32])
 AC_CONFIG_SRCDIR([configure.ac])
 
 AC_CANONICAL_TARGET
@@ -271,7 +271,6 @@ function buildAndroid() {
    TEST_DIR="src/platform/android"
    AC_SUBST(TEST_DIR)
    if test $with_library = no; then
-      (cd src/platform/android/webui && npm run build)
       TARGET="Building for Android."
    else
       TARGET="Building for Android library."
@@ -351,6 +350,14 @@ function buildWeb() {
      PACKAGE_LIBS="${PACKAGE_LIBS} -lm -ldl -lpthread -lmicrohttpd"
      AC_CHECK_HEADERS([microhttpd.h], [], [AC_MSG_ERROR([microhttpd is not installed])])
    fi
+
+   AC_CHECK_HEADERS([curl/curl.h], [have_curl_h=yes; break;])
+
+   if test "x${have_curl_h}" = "xyes" ; then
+      AC_DEFINE(USE_LIB_CURL, 1, [use the curl library.])
+      PACKAGE_LIBS="${PACKAGE_LIBS} -lcurl"
+   fi
+
    BUILD_SUBDIRS="src/common src/platform/web"
    AM_CONDITIONAL(WITH_CYGWIN_CONSOLE, false)
    AC_DEFINE(_UnixOS, 1, [Building under Unix like systems.])
@@ -482,7 +489,7 @@ checkProfiling
 checkForWindows
 
 CFLAGS="${CFLAGS} -std=gnu11"
-PACKAGE_CFLAGS="${PACKAGE_CFLAGS} -Wall -Wno-unused-result"
+PACKAGE_CFLAGS="${PACKAGE_CFLAGS} -Wall -Werror -Wno-unused-result"
 BUILD_DATE=`date +"%a, %d %b %Y"`
 AC_DEFINE_UNQUOTED([BUILD_DATE],["$BUILD_DATE"],[Build date])
 

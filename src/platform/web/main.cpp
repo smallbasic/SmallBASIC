@@ -1,6 +1,6 @@
 // This file is part of SmallBASIC
 //
-// Copyright(C) 2001-2017 Chris Warren-Smith.
+// Copyright(C) 2001-2025 Chris Warren-Smith.
 //
 // This program is distributed under the terms of the GPL v2.0 or later
 // Download the GNU Public License (GPL) from www.gnu.org
@@ -10,27 +10,27 @@
 
 #include <microhttpd.h>
 #include <getopt.h>
-#include <stdlib.h>
-#include <string.h>
-#include <stdio.h>
-#include <string.h>
+#include <cstdlib>
+#include <cstring>
+#include <cstdio>
 
 #include "include/osd.h"
 #include "common/sbapp.h"
 #include "common/device.h"
 #include "platform/web/canvas.h"
+#include "platform/web/proxy.h"
 
-Canvas g_canvas;
-uint32_t g_start = 0;
-uint32_t g_maxTime = 2000;
-bool g_graphicText = true;
-bool g_noExecute = false;
-bool g_json = false;
-char *execBas = nullptr;
-MHD_Connection *g_connection;
-StringList g_cookies;
-String g_path;
-String g_data;
+static Canvas g_canvas;
+static uint32_t g_start = 0;
+static uint32_t g_maxTime = 2000;
+static bool g_graphicText = true;
+static bool g_noExecute = false;
+static bool g_json = false;
+static char *execBas = nullptr;
+static MHD_Connection *g_connection;
+static StringList g_cookies;
+static String g_path;
+static String g_data;
 
 static struct option OPTIONS[] = {
   {"file-permitted", no_argument,       nullptr, 'f'},
@@ -47,6 +47,8 @@ static struct option OPTIONS[] = {
   {"port",           optional_argument, nullptr, 'p'},
   {"run",            optional_argument, nullptr, 'r'},
   {"width",          optional_argument, nullptr, 'w'},
+  {"proxy-path",     optional_argument, nullptr, 'a'},
+  {"proxy-host",     optional_argument, nullptr, 'o'},
   {0, 0, 0, 0}
 };
 
@@ -170,13 +172,15 @@ MHD_Response *serve_file(const char *path) {
   return response;
 }
 
-MHD_Response *get_response(MHD_Connection *connection, const char *path) {
+MHD_Response *get_response(MHD_Connection *connection, const char *path, const char *method) {
   MHD_Response *response = nullptr;
   struct stat stbuf;
 
   g_path = path;
 
-  if (execBas && stat(execBas, &stbuf) != -1 && S_ISREG(stbuf.st_mode)) {
+  if (proxy_accept(connection, path)) {
+    response = proxy_request(connection, path, method, g_data.c_str());
+  } else if (execBas && stat(execBas, &stbuf) != -1 && S_ISREG(stbuf.st_mode)) {
     response = execute(connection, execBas);
   } else if (path[0] == '\0') {
     if (stat("index.bas", &stbuf) != -1 && S_ISREG(stbuf.st_mode)) {
@@ -231,7 +235,7 @@ MHD_Result access_cb(void *cls,
   }
 
   MHD_Result result;
-  MHD_Response *response = get_response(connection, url + 1);
+  MHD_Response *response = get_response(connection, url + 1, method);
   if (response != nullptr) {
     int code = g_canvas.getPage().length() ? MHD_HTTP_OK : MHD_HTTP_NO_CONTENT;
     result = MHD_queue_response(connection, code, response);
@@ -250,10 +254,12 @@ int main(int argc, char **argv) {
   init();
   int port = 8080;
   char *runBas = nullptr;
+  char *proxyPath = nullptr;
+  char *proxyHost = nullptr;
 
   while (1) {
     int option_index = 0;
-    int c = getopt_long(argc, argv, "hvfxjp:t:m::r:w:e:c:g:i:", OPTIONS, &option_index);
+    int c = getopt_long(argc, argv, "hvfxjp:t:m::r:w:e:c:g:i:a:o:", OPTIONS, &option_index);
     if (c == -1) {
       break;
     }
@@ -310,12 +316,24 @@ int main(int argc, char **argv) {
     case 'j':
       g_json = true;
       break;
+    case 'a':
+      if (optarg) {
+        proxyPath = strdup(optarg);
+      }
+      break;
+    case 'o':
+      if (optarg) {
+        proxyHost = strdup(optarg);
+      }
+      break;
     default:
       show_help();
       exit(1);
       break;
     }
   }
+
+  proxy_init(proxyPath, proxyHost);
 
   if (runBas != nullptr) {
     g_canvas.reset();
@@ -339,7 +357,11 @@ int main(int argc, char **argv) {
 
     MHD_stop_daemon(d);
   }
+
+  proxy_cleanup();
   free(execBas);
+  free(proxyPath);
+  free(proxyHost);
   return 0;
 }
 

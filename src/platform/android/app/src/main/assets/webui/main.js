@@ -13,7 +13,6 @@
     const mainContent = document.getElementById('main-content');
     if (token) {
       renderFileList(mainContent);
-      setupFileListEventListeners();
     } else {
       renderTokenInput(mainContent);
     }
@@ -90,6 +89,7 @@
 
     renderTableRows();
     updateToolbarState();
+    setupFileListEventListeners();
   }
 
   function renderTableRows() {
@@ -322,6 +322,7 @@
       rows = data;
       renderContent();
     } catch (error) {
+      console.log(error);
       tokenInput.classList.add('error');
       helperText.textContent = 'Invalid token. Enter the access token displayed on the SmallBASIC [About] screen.';
       helperText.classList.add('error');
@@ -342,8 +343,7 @@
       for (let i = 0; i < files.length; i++) {
         const file = files[i];
         const dataUrl = await fileToDataURL(file);
-        await callApi('/api/upload',
-                           `fileName=${encodeURIComponent(file.name)}&data=${dataUrl}`);
+        await callApi('/api/upload', `fileName=${encodeURIComponent(file.name)}&data=${dataUrl}`);
 
         if (files.length > 1) {
           showSnackbar(`Uploaded ${i + 1}/${files.length} files`, 'info');
@@ -413,8 +413,7 @@
       `Are you sure you want to permanently delete ${selectedRow.fileName}? You cannot undo `
     )) {
       try {
-        const data = await callApi('/api/delete',
-                                        `fileName=${encodeURIComponent(selectedRow.fileName)}`);
+        const data = await callApi('/api/delete', `fileName=${encodeURIComponent(selectedRow.fileName)}`);
         rows = data;
         selectedRows.clear();
         renderTableRows();
@@ -434,8 +433,7 @@
     if (oldName === newName) return;
 
     try {
-      await callApi('/api/rename',
-                         `from=${encodeURIComponent(oldName)}&to=${encodeURIComponent(newName)}`);
+      await callApi('/api/rename', `from=${encodeURIComponent(oldName)}&to=${encodeURIComponent(newName)}`);
       row.fileName = newName;
       showSnackbar('File renamed successfully', 'success');
     } catch (error) {
@@ -454,6 +452,7 @@
 
     const data = await response.json();
     if (data.error) {
+      console.log(data);
       throw new Error(data.error);
     }
     return data;
