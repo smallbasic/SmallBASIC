@@ -58,4 +58,4 @@ library:
 
 # launch WebServerTest in intellij
 start-ui:
-	(cd app/src/main/assets/webui && valgrind ../../../../../../web/sbasicw -p 3000 -a 'api' -o 'http://localhost:8080')
+	(cd app/src/main/assets/webui && valgrind --leak-check=full ../../../../../../web/sbasicw -p 3000 -a 'api' -o 'http://localhost:8080')

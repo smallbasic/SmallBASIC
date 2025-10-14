@@ -13,12 +13,15 @@
 #include <cstdlib>
 #include <cstring>
 #include <cstdio>
+#include <string>
 
 #include "include/osd.h"
 #include "common/sbapp.h"
 #include "common/device.h"
 #include "platform/web/canvas.h"
 #include "platform/web/proxy.h"
+
+using namespace std;
 
 static Canvas g_canvas;
 static uint32_t g_start = 0;
@@ -29,8 +32,8 @@ static bool g_json = false;
 static char *execBas = nullptr;
 static MHD_Connection *g_connection;
 static StringList g_cookies;
-static String g_path;
-static String g_data;
+static string g_path;
+static string g_data;
 
 static struct option OPTIONS[] = {
   {"file-permitted", no_argument,       nullptr, 'f'},

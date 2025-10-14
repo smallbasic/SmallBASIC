@@ -50,18 +50,6 @@
 
   function renderFileList(container) {
     container.innerHTML = `
-      <div class="toolbar">
-        <button class="btn btn-small btn-icon" id="upload-btn">
-          📤 UPLOAD
-        </button>
-        <button class="btn btn-small btn-icon" id="download-btn" disabled>
-          📥 DOWNLOAD
-        </button>
-        <button class="btn btn-small btn-icon" id="delete-btn" disabled>
-          🗑️ DELETE
-        </button>
-        <div id="selection-info" style="margin-left: auto; color: #666;"></div>
-      </div>
       <div class="table-container">
         <table>
           <thead>
@@ -86,6 +74,9 @@
         </table>
       </div>
     `;
+
+    const toolbar = document.getElementById('toolbar');
+    toolbar.classList.remove('hidden');
 
     renderTableRows();
     updateToolbarState();
@@ -396,7 +387,7 @@
       params = fileParams.join('&');
     }
 
-    const link = document.createElement('a');
+    const link = document.getElementById('file-download');
     link.href = `./api/download?${params}`;
     link.download = filename;
     link.click();

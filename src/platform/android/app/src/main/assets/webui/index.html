@@ -14,7 +14,20 @@
       <h1>SmallBASIC</h1>
       <a href="https://smallbasic.github.io" target="_blank">smallbasic.github.io</a>
     </div>
+    <div class="toolbar hidden" id="toolbar">
+      <button class="btn btn-small btn-icon" id="upload-btn">
+        📤 UPLOAD
+      </button>
+      <button class="btn btn-small btn-icon" id="download-btn" disabled>
+        📥 DOWNLOAD
+      </button>
+      <button class="btn btn-small btn-icon" id="delete-btn" disabled>
+        🗑️ DELETE
+      </button>
+      <div id="selection-info" style="margin-left: auto; color: #666;"></div>
+    </div>
     <div class="main-content" id="main-content"></div>
     <input type="file" id="file-upload" multiple class="hidden">
+    <a class="hidden" id="file-download"></a>
   </body>
 </html>

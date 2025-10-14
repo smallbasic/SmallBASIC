@@ -8,12 +8,12 @@
 
 #include <config.h>
 
+#include <microhttpd.h>
+#include <curl/curl.h>
 #include <cstring>
 #include <string>
 #include <vector>
 #include <sstream>
-#include <microhttpd.h>
-#include <curl/curl.h>
 
 constexpr int BUFFER_SIZE = 128;
 static const char *g_path = nullptr;
@@ -39,6 +39,20 @@ static MHD_Result get_cookies(void *cls, enum MHD_ValueKind kind, const char *ke
       *cookie_header += "; ";
     }
     *cookie_header += value;
+  }
+  return MHD_YES;
+}
+
+// reads the microhttpd request URL args
+static MHD_Result get_url_arg(void *cls, enum MHD_ValueKind kind, const char *key, const char *value) {
+  auto *args = static_cast<string*>(cls);
+  if (key && value) {
+    if (!(*args).empty()) {
+      *args += "&";
+    }
+    *args += key;
+    *args += "=";
+    *args += value;
   }
   return MHD_YES;
 }
@@ -108,6 +122,12 @@ MHD_Response *proxy_request(MHD_Connection *connection, const char *path, const 
   string url;
   url.append(g_host).append("/").append(path);
 
+  string url_args;
+  MHD_get_connection_values(connection, MHD_GET_ARGUMENT_KIND, get_url_arg, &url_args);
+  if (!url_args.empty()) {
+    url.append("?").append(url_args);
+  }
+
   string response;
   curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_callback);
   curl_easy_setopt(curl, CURLOPT_WRITEDATA, &response);
@@ -131,6 +151,9 @@ MHD_Response *proxy_request(MHD_Connection *connection, const char *path, const 
     set_cookies(result, receiveCookies);
   }
 
+  if (receiveCookies) {
+    curl_slist_free_all(receiveCookies);
+  }
   return result;
 }
 
