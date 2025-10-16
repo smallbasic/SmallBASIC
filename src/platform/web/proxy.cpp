@@ -14,6 +14,9 @@
 #include <string>
 #include <vector>
 #include <sstream>
+#include <map>
+#include <unordered_set>
+#include <algorithm>
 
 constexpr int BUFFER_SIZE = 128;
 static const char *g_path = nullptr;
@@ -23,6 +26,19 @@ using namespace std;
 
 void log(const char *format, ...);
 
+// headers to skip
+const unordered_set<string> SKIP_HEADERS = {
+  "host",                // curl sets this from the URL
+  "content-length",      // curl calculates this
+  "transfer-encoding",   // curl handles this
+  "connection",          // hop-by-hop header
+  "keep-alive",          // hop-by-hop header
+  "proxy-connection",    // hop-by-hop header
+  "upgrade",             // hop-by-hop header
+  "te",                  // hop-by-hop header except "trailers"
+  "trailer"              // hop-by-hop header
+};
+
 // handles the response from libcurl.
 static size_t write_callback(void *ptr, size_t size, size_t nmemb, void *userdata) {
   size_t total_size = size * nmemb;
@@ -31,14 +47,16 @@ static size_t write_callback(void *ptr, size_t size, size_t nmemb, void *userdat
   return total_size;
 }
 
-// read cookies from the microhttpd request to forward with the curl proxy
-static MHD_Result get_cookies(void *cls, enum MHD_ValueKind kind, const char *key, const char *value) {
-  if (key && strcmp(key, "Cookie") == 0 && value) {
-    auto *cookie_header = static_cast<string*>(cls);
-    if (!cookie_header->empty()) {
-      *cookie_header += "; ";
+// read headers from the microhttpd request to forward with the curl proxy
+static MHD_Result get_headers(void *cls, enum MHD_ValueKind kind, const char *key, const char *value) {
+  if (key && value) {
+    // lowercase for comparison
+    string key_lower(key);
+    std::transform(key_lower.begin(), key_lower.end(), key_lower.begin(), ::tolower);
+    if (!SKIP_HEADERS.count(key_lower)) {
+      vector<string>* headers = static_cast<vector<string> *>(cls);
+      headers->push_back(string(key) + ": " + value);
     }
-    *cookie_header += value;
   }
   return MHD_YES;
 }
@@ -100,7 +118,7 @@ bool proxy_accept(MHD_Connection *connection, const char *path) {
   return path && g_path && g_host && strncmp(g_path, path, strlen(g_path)) == 0;
 }
 
-MHD_Response *proxy_request(MHD_Connection *connection, const char *path, const char *method, const char *body) {
+MHD_Response *proxy_request(MHD_Connection *connection, const char *path, const char *method, string &body) {
   auto curl = curl_easy_init();
 
   if (!curl) {
@@ -108,15 +126,21 @@ MHD_Response *proxy_request(MHD_Connection *connection, const char *path, const 
     return nullptr;
   }
 
-  string sendCookies;
-  MHD_get_connection_values(connection, MHD_HEADER_KIND, get_cookies, &sendCookies);
-  if (!sendCookies.empty()) {
-    curl_easy_setopt(curl, CURLOPT_COOKIE, sendCookies.c_str());
+  vector<string> headers;
+  MHD_get_connection_values(connection, MHD_HEADER_KIND, &get_headers, &headers);
+
+  curl_slist* curl_headers = nullptr;
+  for (const auto &h : headers) {
+    curl_headers = curl_slist_append(curl_headers, h.c_str());
   }
 
+  curl_easy_setopt(curl, CURLOPT_HTTPHEADER, curl_headers);
+
   // If it's a POST request, add the body
-  if (body != nullptr && strlen(body) > 0) {
-    curl_easy_setopt(curl, CURLOPT_POSTFIELDS, body);
+  if (!body.empty()) {
+    log("post [%d] bytes", body.length());
+    curl_easy_setopt(curl, CURLOPT_POSTFIELDS, body.c_str());
+    curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, body.length());
   }
 
   string url;
@@ -151,6 +175,10 @@ MHD_Response *proxy_request(MHD_Connection *connection, const char *path, const 
     set_cookies(result, receiveCookies);
   }
 
+  if (curl_headers) {
+    curl_slist_free_all(curl_headers);
+  }
+ 
   if (receiveCookies) {
     curl_slist_free_all(receiveCookies);
   }

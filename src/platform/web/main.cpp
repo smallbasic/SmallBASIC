@@ -182,7 +182,7 @@ MHD_Response *get_response(MHD_Connection *connection, const char *path, const c
   g_path = path;
 
   if (proxy_accept(connection, path)) {
-    response = proxy_request(connection, path, method, g_data.c_str());
+    response = proxy_request(connection, path, method, g_data);
   } else if (execBas && stat(execBas, &stbuf) != -1 && S_ISREG(stbuf.st_mode)) {
     response = execute(connection, execBas);
   } else if (path[0] == '\0') {
@@ -227,12 +227,8 @@ MHD_Result access_cb(void *cls,
 
   if (upload_data != nullptr) {
     // curl -H "Accept: application/json" -d '{"productId": 123456, "quantity": 100}' http://localhost:8080/foo
-    size_t size = OPT_CMD_SZ - 1;
-    if (*upload_data_size < size) {
-      size = *upload_data_size;
-    }
     g_data.clear();
-    g_data.append(upload_data, size);
+    g_data.append(upload_data, *upload_data_size);
     *upload_data_size = 0;
     return MHD_YES;
   }

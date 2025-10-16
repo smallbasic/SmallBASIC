@@ -8,6 +8,8 @@
 
 #include <config.h>
 
+#include "proxy.h"
+
 #if defined(USE_LIB_CURL)
 #include "proxy.cpp"
 #else
@@ -15,5 +17,5 @@
 void proxy_init(const char *path, const char *host) {}
 void proxy_cleanup() {}
 bool proxy_accept(MHD_Connection *connection, const char *path) { return false; }
-MHD_Response *proxy_request(MHD_Connection *connection, const char *path, const char *method, const char *body) { return nullptr; }
+MHD_Response *proxy_request(MHD_Connection *connection, const char *path, const char *method, string &body) { return nullptr; }
 #endif

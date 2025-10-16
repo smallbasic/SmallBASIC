@@ -6,6 +6,11 @@
 // Download the GNU Public License (GPL) from www.gnu.org
 //
 
+#pragma once
+
+#include <microhttpd.h>
+#include <string>
+
 //
 // called during startup
 //
@@ -24,5 +29,5 @@ bool proxy_accept(MHD_Connection *connection, const char *path);
 //
 // Proxy the request to another backend service
 //
-MHD_Response *proxy_request(MHD_Connection *connection, const char *path, const char *method, const char *body);
+MHD_Response *proxy_request(MHD_Connection *connection, const char *path, const char *method, std::string &body);
 

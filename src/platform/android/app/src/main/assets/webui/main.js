@@ -10,32 +10,18 @@
   setupEventListeners();
 
   function renderContent() {
-    const mainContent = document.getElementById('main-content');
     if (token) {
-      renderFileList(mainContent);
+      renderFileList();
     } else {
-      renderTokenInput(mainContent);
+      renderTokenInput();
     }
   }
 
-  function renderTokenInput(container) {
-    container.innerHTML = `
-      <div class="login-container">
-        <div class="login-form">
-          <div class="form-group">
-            <label for="token-input">Enter your access token</label>
-            <input type="text" id="token-input" autofocus>
-            <div class="helper-text" id="helper-text">
-              Enter the access token displayed on the SmallBASIC [About] screen.
-            </div>
-          </div>
-          <button class="btn" id="submit-btn">Submit</button>
-        </div>
-      </div>
-    `;
-
+  function renderTokenInput() {
     const tokenInput = document.getElementById('token-input');
     const submitBtn = document.getElementById('submit-btn');
+
+    showLoginView(true);
 
     tokenInput.addEventListener('keypress', (e) => {
       if (e.key === 'Enter') {
@@ -49,35 +35,7 @@
   }
 
   function renderFileList(container) {
-    container.innerHTML = `
-      <div class="table-container">
-        <table>
-          <thead>
-            <tr>
-              <th>
-                <input type="checkbox" class="checkbox" id="select-all">
-              </th>
-              <th data-field="fileName" class="sortable" style="cursor: pointer;">
-                Name <span class="sort-indicator active">↑</span>
-              </th>
-              <th data-field="size" class="sortable" style="cursor: pointer;">
-                Size <span class="sort-indicator">↕</span>
-              </th>
-              <th data-field="date" class="sortable" style="cursor: pointer;">
-                Modified <span class="sort-indicator">↕</span>
-              </th>
-            </tr>
-          </thead>
-          <tbody id="file-table-body">
-            <!-- Rows will be inserted here -->
-          </tbody>
-        </table>
-      </div>
-    `;
-
-    const toolbar = document.getElementById('toolbar');
-    toolbar.classList.remove('hidden');
-
+    showLoginView(false);
     renderTableRows();
     updateToolbarState();
     setupFileListEventListeners();
@@ -85,7 +43,10 @@
 
   function renderTableRows() {
     const tbody = document.getElementById('file-table-body');
-    if (!tbody) return;
+    if (!tbody) {
+      console.err("file-table-body not found");
+      return;
+    }
 
     // Sort rows
     const sortedRows = [...rows].sort((a, b) => {
@@ -274,6 +235,7 @@
       if (!editingCell) return;
 
       const newValue = input.value.trim();
+      // this overwrites 'input' thus removing from the DOM and GCd
       editingCell.textContent = save ? newValue : currentValue;
 
       if (save && newValue !== currentValue && newValue) {
@@ -327,38 +289,59 @@
   async function handleFileUpload(event) {
     const files = Array.from(event.target.files);
     if (files.length === 0) return;
+    let result = null;
 
     showSnackbar('Uploading files...', 'info');
 
     try {
       for (let i = 0; i < files.length; i++) {
         const file = files[i];
-        const dataUrl = await fileToDataURL(file);
-        await callApi('/api/upload', `fileName=${encodeURIComponent(file.name)}&data=${dataUrl}`);
+
+        // Send raw file bytes
+        const response = await fetch('/api/upload', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/octet-stream',
+            'X-File-Name': encodeURIComponent(file.name),
+            'X-File-Size': file.size
+          },
+          body: file
+        });
+
+        if (!response.ok) {
+          throw new Error('Upload failed');
+        }
+
+        result = await response.json()
+        if (result.error) {
+          throw new Error(result.error);
+        }
 
         if (files.length > 1) {
           showSnackbar(`Uploaded ${i + 1}/${files.length} files`, 'info');
         }
       }
 
-      const data = await callApi('/api/files', '');
-      rows = data;
-      selectedRows.clear();
-      renderTableRows();
-      updateToolbarState();
-      showSnackbar(`Successfully uploaded ${files.length} file(s)`, 'success');
-    } catch (error) {
-      showSnackbar(error, 'error');
-      // Refresh to show any partial uploads
-      try {
-        const data = await callApi('/api/files', '');
-        rows = data;
-        renderTableRows();
-      } catch (e) {}
-    }
+      // refresh file list
+      rows = await callApi('/api/files', '');
 
-    // Reset file input
+      if (result?.success && files.length === 1) {
+        showSnackbar(result.success, 'success');
+      } else {
+        showSnackbar(`Successfully uploaded ${files.length} file(s)`, 'success');
+      }
+    } catch (error) {
+      // refresh to show any partial uploads
+      try {
+        rows = await callApi('/api/files', '');
+      } catch (e) {}
+      showSnackbar(error.message, 'error');
+    }
     event.target.value = '';
+
+    selectedRows.clear();
+    renderTableRows();
+    updateToolbarState();
   }
 
   function handleDownload() {
@@ -404,8 +387,7 @@
       `Are you sure you want to permanently delete ${selectedRow.fileName}? You cannot undo `
     )) {
       try {
-        const data = await callApi('/api/delete', `fileName=${encodeURIComponent(selectedRow.fileName)}`);
-        rows = data;
+        rows = await callApi('/api/delete', `fileName=${encodeURIComponent(selectedRow.fileName)}`);
         selectedRows.clear();
         renderTableRows();
         updateToolbarState();
@@ -443,9 +425,10 @@
 
     const data = await response.json();
     if (data.error) {
-      console.log(data);
+      console.error(data);
       throw new Error(data.error);
     }
+
     return data;
   }
 
@@ -520,4 +503,20 @@
     div.textContent = text;
     return div.innerHTML;
   }
+
+  function showLoginView(show) {
+    showView('login', show);
+    showView('toolbar', !show);
+    showView('content', !show);
+  }
+
+  function showView(name, show = true) {
+    const view = document.getElementById(`view-${name}`);
+    if (show) {
+      view.classList.remove('hidden');
+    } else {
+      view.classList.add('hidden');
+    }
+  }
+
 }());

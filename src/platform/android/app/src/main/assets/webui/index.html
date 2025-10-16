@@ -14,7 +14,21 @@
       <h1>SmallBASIC</h1>
       <a href="https://smallbasic.github.io" target="_blank">smallbasic.github.io</a>
     </div>
-    <div class="toolbar hidden" id="toolbar">
+
+    <div id="view-login" class="login-container">
+      <div class="login-form">
+        <div class="form-group">
+          <label for="token-input">Enter your access token</label>
+          <input type="text" id="token-input" autofocus>
+          <div class="helper-text" id="helper-text">
+            Enter the access token displayed on the SmallBASIC [About] screen.
+          </div>
+        </div>
+        <button class="btn" id="submit-btn">Submit</button>
+      </div>
+    </div>
+
+    <div id="view-toolbar" class="toolbar hidden">
       <button class="btn btn-small btn-icon" id="upload-btn">
         📤 UPLOAD
       </button>
@@ -26,7 +40,32 @@
       </button>
       <div id="selection-info" style="margin-left: auto; color: #666;"></div>
     </div>
-    <div class="main-content" id="main-content"></div>
+
+    <div id="view-content" class="main-content hidden">
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>
+                <input type="checkbox" class="checkbox" id="select-all">
+              </th>
+              <th data-field="fileName" class="sortable" style="cursor: pointer;">
+                Name <span class="sort-indicator active">↑</span>
+              </th>
+              <th data-field="size" class="sortable" style="cursor: pointer;">
+                Size <span class="sort-indicator">↕</span>
+              </th>
+              <th data-field="date" class="sortable" style="cursor: pointer;">
+                Modified <span class="sort-indicator">↕</span>
+              </th>
+            </tr>
+          </thead>
+          <tbody id="file-table-body">
+            <!-- Rows will be inserted here -->
+          </tbody>
+        </table>
+      </div>
+    </div>
     <input type="file" id="file-upload" multiple class="hidden">
     <a class="hidden" id="file-download"></a>
   </body>

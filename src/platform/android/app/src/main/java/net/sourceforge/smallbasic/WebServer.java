@@ -26,6 +26,7 @@ import java.util.TimeZone;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
 
 /**
@@ -67,11 +68,11 @@ public abstract class WebServer {
     return socketThread;
   }
 
+  protected abstract byte[] decodeBase64(String data);
   protected abstract void deleteFile(String remoteHost, String fileName) throws IOException;
   protected abstract void execStream(String remoteHost, InputStream inputStream) throws IOException;
   protected abstract Response getFile(String remoteHost, String path, boolean asset) throws IOException;
   protected abstract Collection<FileData> getFileData(String remoteHost) throws IOException;
-  protected abstract byte[] decodeBase64(String data);
   protected abstract void log(String message);
   protected abstract void log(String message, Exception exception);
   protected abstract void renameFile(String remoteHost, String from, String to) throws IOException;
@@ -279,6 +280,11 @@ public abstract class WebServer {
     private final String string;
     private final byte[] bytes;
 
+    public FormField(InputStream inputStream) throws IOException {
+      this.string = null;
+      this.bytes = readAllBytes(inputStream);
+    }
+
     public FormField(String key, String value) throws IOException {
       int index = value.indexOf(BASE_64_PREFIX);
       if (index != -1 && "data".equals(key)) {
@@ -293,13 +299,21 @@ public abstract class WebServer {
       }
     }
 
+    public byte[] toByteArray() {
+      return bytes;
+    }
+
     @Override
     public String toString() {
       return string;
     }
 
-    public byte[] toByteArray() {
-      return bytes;
+    private byte[] readAllBytes(InputStream stream) throws IOException {
+      ByteArrayOutputStream out = new ByteArrayOutputStream();
+      while (stream.available() != 0) {
+        out.write(stream.read());
+      }
+      return out.toByteArray();
     }
   }
 
@@ -360,7 +374,11 @@ public abstract class WebServer {
           if ("GET".equals(method)) {
             handleGet(getParameters(url));
           } else if ("POST".equals(method)) {
-            handlePost(getPostData(inputStream));
+            if (isOctetStream()) {
+              handlePost(getOctetPostData(inputStream));
+            } else {
+              handlePost(getPostData(inputStream));
+            }
           } else if ("RUN".equals(method)) {
             handleRun(inputStream);
           } else {
@@ -405,9 +423,47 @@ public abstract class WebServer {
       return field == null ? null : field.toByteArray();
     }
 
+    private String getHeader(String prefix) {
+      String result = null;
+      for (String header: headers) {
+        if (header.startsWith(prefix)) {
+          result = header;
+          break;
+        }
+      }
+      return result;
+    }
+
+    private Map<String, FormField> getOctetPostData(InputStream inputStream) throws IOException {
+      Map<String, FormField> result = new HashMap<>();
+      String key = "X-File-Name: ";
+      String fileName = getHeader(key);
+      if (fileName != null) {
+        result.put("fileName", new FormField("fileName", fileName.substring(key.length())));
+      }
+      result.put("data", new FormField(inputStream));
+      return result;
+    }
+
     private String getString(Map<String, FormField> data, String key) {
       FormField field = data.get(key);
       return field == null ? null : field.toString();
+    }
+
+    /**
+     * Handler for File delete
+     */
+    private Response handleDelete(Map<String, FormField> data) throws IOException {
+      String fileName = getString(data, "fileName");
+      Response result;
+      try {
+        deleteFile(remoteHost, fileName);
+        log("Deleted " + fileName);
+        result = handleFileList();
+      } catch (Exception e) {
+        result = handleStatus(false, e.getMessage());
+      }
+      return result;
     }
 
     /**
@@ -539,22 +595,6 @@ public abstract class WebServer {
     }
 
     /**
-     * Handler for File delete
-     */
-    private Response handleDelete(Map<String, FormField> data) throws IOException {
-      String fileName = getString(data, "fileName");
-      Response result;
-      try {
-        deleteFile(remoteHost, fileName);
-        log("Deleted " + fileName);
-        result = handleFileList();
-      } catch (Exception e) {
-        result = handleStatus(false, e.getMessage());
-      }
-      return result;
-    }
-
-    /**
      * Handler for File rename operations
      */
     private Response handleRename(Map<String, FormField> data) throws IOException {
@@ -603,12 +643,15 @@ public abstract class WebServer {
       try {
         if (fileName == null || content == null) {
           result = handleStatus(false, "Invalid input");
+        } else if (fileName.endsWith("zip")) {
+          String status = saveZipFile(remoteHost, content);
+          result = handleStatus(true, status);
         } else {
           saveFile(remoteHost, fileName, content);
-          result = handleStatus(true, "File saved");
+          result = handleStatus(true, "File uploaded successfully");
         }
       } catch (Exception e) {
-        result = handleStatus(false, e.getMessage());
+       result = handleStatus(false, e.getMessage());
       }
       return result;
     }
@@ -633,6 +676,45 @@ public abstract class WebServer {
         result = null;
       }
       return result != null ? result : new Response(SC_NOT_FOUND);
+    }
+
+    private boolean isOctetStream() {
+      String header = getHeader("Content-Type");
+      return header.equals("Content-Type: application/octet-stream");
+    }
+
+    private String saveZipFile(String remoteHost, byte[] content) throws IOException {
+      byte[] buf = new byte[8192];
+      int success = 0;
+      int total = 0;
+      log("zip file has " + content.length + " bytes");
+      try (ZipInputStream zis = new ZipInputStream(new ByteArrayInputStream(content))) {
+        for (ZipEntry entry = zis.getNextEntry(); entry != null; entry = zis.getNextEntry()) {
+          if (!entry.isDirectory()) {
+            total++;
+            String fileName = entry.getName();
+            ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+            int len;
+            while ((len = zis.read(buf)) > 0) {
+              outputStream.write(buf, 0, len);
+            }
+            try {
+              saveFile(remoteHost, fileName, outputStream.toByteArray());
+              success++;
+            }
+            catch (IOException e) {
+              // continue with next file
+            }
+          }
+        }
+      }
+      String result;
+      if (success > 0) {
+        result = String.format(Locale.ENGLISH, "Successfully expanded %d of %d files", success, total);
+      } else {
+        result = String.format(Locale.ENGLISH, "Failed to expand %d files", total);
+      }
+      return result;
     }
   }
 
