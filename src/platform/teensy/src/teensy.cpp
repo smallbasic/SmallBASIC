@@ -8,7 +8,6 @@
 //
 
 #include <Arduino.h>
-
 #include "config.h"
 #include "languages/messages.en.h"
 #include "include/var_map.h"

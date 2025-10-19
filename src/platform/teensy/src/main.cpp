@@ -8,6 +8,9 @@
 //
 
 #include <Arduino.h>
+#include <SPI.h>
+#include <SD.h>
+#include "common/device.h"
 #include "config.h"
 #include "common/sbapp.h"
 #include "main_bas.h"
@@ -15,7 +18,7 @@
 #include "ui/strlib.h"
 
 #define MAIN_BAS "__main_bas__"
-#define SERIAL_BAS "__serial_bas__"
+#define SERIAL_SD_BAS "__serial_sd_bas__"
 
 strlib::String buffer;
 
@@ -57,7 +60,7 @@ char *dev_read(const char *fileName) {
     data = (char *)malloc(main_bas_len + 1);
     memcpy(data, main_bas, main_bas_len);
     data[main_bas_len] = '\0';
-  } else if (strcmp(fileName, SERIAL_BAS) == 0) {
+  } else if (strcmp(fileName, SERIAL_SD_BAS) == 0) {
     int len = buffer.length();
     data = (char *)malloc(len + 1);
     memcpy(data, buffer.c_str(), len);
@@ -109,10 +112,10 @@ void serial_read() {
       eof = true;
     } else {
       delay(250);
-      dev_print("\rInteractive mode - waiting for data...");
     }
   }
-  dev_printf("received %d bytes.\r\n", buffer.length());
+
+  dev_printf("Received %d bytes.\r\n", buffer.length());
 }
 
 void print_source_line(const char *text, int line, bool last) {
@@ -169,8 +172,14 @@ void print_error(char *source) {
 
 void interactive_main() {
   while (true) {
+    while (!Serial) {
+      delay(250);
+    }
+
+    dev_print("Interactive mode - waiting for data...\r\n");
+
     serial_read();
-    if (!sbasic_main(SERIAL_BAS)) {
+    if (!sbasic_main(SERIAL_SD_BAS)) {
       print_error((char *)buffer.c_str());
     }
   }
@@ -179,16 +188,41 @@ void interactive_main() {
 extern "C" int main(void) {
   setup();
 
-#if INTERACTIVE
-  interactive_main();
-#else
-  if (!sbasic_main(MAIN_BAS)) {
-    dev_print("Error: run failed\n");
-    opt_quiet = 0;
-    opt_verbose = 1;
-    sbasic_main(MAIN_BAS);
+  if (SD.begin(BUILTIN_SDCARD)) {
+    File sdFile = SD.open("/MAIN.BAS", FILE_READ);
+    if (sdFile) {
+      uint32_t fileSize = sdFile.available();
+      char *bufferSD = new char[fileSize + 1];
+
+      sdFile.read(bufferSD, fileSize);
+      bufferSD[fileSize] = '\0';
+      buffer.clear();
+      buffer.append(bufferSD);
+
+      delete[] bufferSD;
+      sdFile.close();
+
+      if (!sbasic_main(SERIAL_SD_BAS)) {
+        while (!Serial) {
+          delay(250);
+        }
+        dev_print("Error executing main.bas from SD card:\n");
+        print_error((char *)buffer.c_str());
+      } else {
+        dev_print("main.bas from SD card ended\n");
+      }
+    }
+  } else if (main_bas_len > 0) {
+    if (!sbasic_main(MAIN_BAS)) {
+      while (!Serial) {
+        delay(250);
+      }
+      dev_print("Error executing main.bas from memory:\n");
+      print_error((char *) main_bas);
+    } else {
+      dev_print("main.bas ended");
+    }
   } else {
-    dev_print("main.bas ended");
+    interactive_main();
   }
-#endif
 }

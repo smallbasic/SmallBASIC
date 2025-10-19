@@ -44,6 +44,8 @@ include_directories(${MODULES}/SPI)
 include_directories(${MODULES}/Adafruit_SSD1306)
 include_directories(${MODULES}/USBHost_t36)
 include_directories(${MODULES}/Wire)
+include_directories(${MODULES}/SD/src)
+include_directories(${MODULES}/SdFat/src)
 
 # include config.h and common headers
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../..)

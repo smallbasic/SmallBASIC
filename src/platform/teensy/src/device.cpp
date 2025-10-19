@@ -24,8 +24,8 @@
 //
 void serial_init() {
   if (CrashReport) {
-    while(!Serial) {
-      delay(10);
+    while (!Serial) {
+      delay(250);
     }
     Serial.print(CrashReport);
   }
@@ -67,12 +67,12 @@ int dev_events(int wait_flag) {
   if (wait_flag) {
     delay(10);
   }
-#if INTERACTIVE
+// #if INTERACTIVE
   // break when new code available
   result = Serial.available() > 0 ? -2 : 0;
-#else
-  result = 0;
-#endif
+// #else
+//  result = 0;
+//#endif
   yield();
   return result;
 }
