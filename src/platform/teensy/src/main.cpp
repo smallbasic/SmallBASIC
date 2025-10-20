@@ -176,7 +176,7 @@ void interactive_main() {
       delay(250);
     }
 
-    dev_print("Interactive mode - waiting for data...\r\n");
+    dev_print("\r\n\033[30;47mInteractive mode - waiting for data...\033[0m\r\n");
 
     serial_read();
     if (!sbasic_main(SERIAL_SD_BAS)) {

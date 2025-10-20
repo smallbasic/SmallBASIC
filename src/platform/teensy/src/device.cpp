@@ -17,6 +17,8 @@
 #include "lib/maapi.h"
 #include "serial.h"
 
+uint32_t serialDataTimer = 0;
+
 //
 // setup the Serial device
 // Teensy 4.x uses USB serial. Setup is done at startup. Communication
@@ -63,16 +65,26 @@ void dev_trace_line(int lineNo) {
 // process events
 //
 int dev_events(int wait_flag) {
-  int result;
+  int result = 0;
+
   if (wait_flag) {
     delay(10);
   }
-// #if INTERACTIVE
-  // break when new code available
-  result = Serial.available() > 0 ? -2 : 0;
-// #else
-//  result = 0;
-//#endif
+
+  if (Serial) {
+    if (Serial.available()) {
+      if (serialDataTimer == 0) {
+        serialDataTimer = millis();
+      }
+      if (millis() - serialDataTimer > 1000) {
+        serialDataTimer = 0;
+        result = -2;    // end program
+      }
+    } else {
+      serialDataTimer = 0;
+    }
+  }
+
   yield();
   return result;
 }
