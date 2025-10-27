@@ -13,6 +13,7 @@
 #include "include/var_map.h"
 #include "common/var.h"
 #include "common/device.h"
+#include "device.h"
 #include "module.h"
 #include "serial.h"
 #include <Wire.h>
@@ -70,7 +71,6 @@ static TwoWire *getI2C(int interfaceNumber) {
   }
   return result;
 }
-
 
 static void set_pin(var_p_t var, uint8_t pin, uint8_t mode) {
   map_init(var);
@@ -359,13 +359,13 @@ static int cmd_i2c_write(var_s *self, int argc, slib_par_t *args, var_s *retval)
     break;
     case V_ARRAY: {
       var_p_t array = args[1].var_p;  //Get array
-      if(array->maxdim > 1) {
+      if (array->maxdim > 1) {
         v_setstr(retval, "ERROR: I2C: Write requires 1D-array");
         return 0;
       }
       uint32_t bytes  = v_ubound(array, 0) - v_lbound(array, 0) + 1;
       uint8_t *buffer = new uint8_t[bytes];
-      for(uint32_t ii = 0; ii < bytes; ii++) {
+      for (uint32_t ii = 0; ii < bytes; ii++) {
         buffer[ii] = get_array_elem_int(array, ii);
       }
       ptrWire->write(buffer, bytes);
@@ -383,9 +383,9 @@ static int cmd_i2c_write(var_s *self, int argc, slib_par_t *args, var_s *retval)
 }
 
 static int cmd_i2c_read(var_s *self, int argc, slib_par_t *args, var_s *retval) {
-  uint8_t  address = get_param_int(argc, args, 0,  0);
-  uint32_t bytes   = get_param_int(argc, args, 1,  1);
-  uint8_t  stop    = get_param_int(argc, args, 2,  1);
+  uint8_t  address = get_param_int(argc, args, 0, 0);
+  uint32_t bytes   = get_param_int(argc, args, 1, 1);
+  uint8_t  stop    = get_param_int(argc, args, 2, 1);
 
   if (address == 0) {
     v_setstr(retval, ERR_PARAM);
@@ -400,9 +400,9 @@ static int cmd_i2c_read(var_s *self, int argc, slib_par_t *args, var_s *retval) 
   ptrWire->requestFrom(address, bytes, stop);
   ptrWire->readBytes(buffer, bytes);
 
-  if(bytes > 1) {
+  if (bytes > 1) {
     v_toarray1(retval, bytes);
-    for(uint32_t ii = 0; ii < bytes; ii++) {
+    for (uint32_t ii = 0; ii < bytes; ii++) {
       v_setint(v_elem(retval, ii), buffer[ii]);
     }
   }
@@ -417,7 +417,7 @@ static int cmd_i2c_read(var_s *self, int argc, slib_par_t *args, var_s *retval) 
 static int cmd_i2c_setClock(var_s *self, int argc, slib_par_t *args, var_s *retval) {
   uint32_t  clockFrequency = get_param_int(argc, args, 0,  100000);
 
-  if(clockFrequency != 100000 && clockFrequency != 400000 && clockFrequency != 1000000) {
+  if (clockFrequency != 100000 && clockFrequency != 400000 && clockFrequency != 1000000) {
     v_setstr(retval, "ERROR I2C: Clock freuqency not supported");
     return 0;
   }
@@ -429,9 +429,9 @@ static int cmd_i2c_setClock(var_s *self, int argc, slib_par_t *args, var_s *retv
 }
 
 static int cmd_openi2c(int argc, slib_par_t *args, var_t *retval) {
-  uint8_t  interfaceNumber = get_param_int(argc, args, 0,  0);
-  uint8_t  pinSDA = get_param_int(argc, args, 1,  0);
-  uint8_t  pinSCL = get_param_int(argc, args, 2,  0);
+  uint8_t  interfaceNumber = get_param_int(argc, args, 0, 0);
+  uint8_t  pinSDA = get_param_int(argc, args, 1, 0);
+  uint8_t  pinSCL = get_param_int(argc, args, 2, 0);
 
   if (interfaceNumber > 2) {
     v_setstr(retval, ERR_PARAM);
@@ -447,12 +447,24 @@ static int cmd_openi2c(int argc, slib_par_t *args, var_t *retval) {
   TwoWire *ptrWire;
   ptrWire = getI2C(interfaceNumber);
 
-  if(pinSDA > 0 && pinSCL > 0) {
+  if (pinSDA > 0 && pinSCL > 0) {
     ptrWire->setSDA(pinSDA);
     ptrWire->setSCL(pinSCL);
   }
 
   ptrWire->begin();
+
+  return 1;
+}
+
+static int cmd_set_interactive(int argc, slib_par_t *args, var_t *retval) {
+  uint8_t  mode = get_param_int(argc, args, 0, 1);
+
+  if (mode > 0) {
+    setInteractive(1);
+  } else {
+    setInteractive(0);
+  }
 
   return 1;
 }
@@ -468,14 +480,33 @@ static FuncSpec lib_func[] = {
   {0, 3, "OPENI2C", cmd_openi2c}
 };
 
+static FuncSpec lib_proc[] = {
+  {0, 1, "SETINTERACTIVE", cmd_set_interactive}
+};
+
 static int teensy_func_count(void) {
   return (sizeof(lib_func) / sizeof(lib_func[0]));
+}
+
+static int teensy_proc_count(void) {
+  return (sizeof(lib_proc) / sizeof(lib_proc[0]));
 }
 
 static int teensy_func_getname(int index, char *func_name) {
   int result;
   if (index < teensy_func_count()) {
     strcpy(func_name, lib_func[index]._name);
+    result = 1;
+  } else {
+    result = 0;
+  }
+  return result;
+}
+
+static int teensy_proc_getname(int index, char *proc_name) {
+  int result;
+  if (index < teensy_proc_count()) {
+    strcpy(proc_name, lib_proc[index]._name);
     result = 1;
   } else {
     result = 0;
@@ -503,13 +534,33 @@ static int teensy_func_exec(int index, int argc, slib_par_t *args, var_t *retval
   return result;
 }
 
+static int teensy_proc_exec(int index, int argc, slib_par_t *args, var_t *retval) {
+  int result;
+  if (index >= 0 && index < teensy_proc_count()) {
+    if (argc < lib_proc[index]._min || argc > lib_proc[index]._max) {
+      if (lib_proc[index]._min == lib_proc[index]._max) {
+        error(retval, lib_proc[index]._name, lib_proc[index]._min);
+      } else {
+        error(retval, lib_proc[index]._name, lib_proc[index]._min, lib_proc[index]._max);
+      }
+      result = 0;
+    } else {
+      result = lib_proc[index]._command(argc, args, retval);
+    }
+  } else {
+    error(retval, "PROC index error");
+    result = 0;
+  }
+  return result;
+}
+
 static ModuleConfig teensyModule = {
   ._func_exec = teensy_func_exec,
   ._func_count = teensy_func_count,
   ._func_getname = teensy_func_getname,
-  ._proc_exec = nullptr,
-  ._proc_count = nullptr,
-  ._proc_getname = nullptr,
+  ._proc_exec = teensy_proc_exec,
+  ._proc_count = teensy_proc_count,
+  ._proc_getname = teensy_proc_getname,
   ._free = nullptr
 };
 

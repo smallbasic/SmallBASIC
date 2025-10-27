@@ -18,6 +18,7 @@
 #include "serial.h"
 
 uint32_t serialDataTimer = 0;
+uint8_t  interactive = 1;
 
 //
 // setup the Serial device
@@ -31,6 +32,10 @@ void serial_init() {
     }
     Serial.print(CrashReport);
   }
+}
+
+void setInteractive(uint8_t mode) {
+  interactive = mode;
 }
 
 //
@@ -71,7 +76,7 @@ int dev_events(int wait_flag) {
     delay(10);
   }
 
-  if (Serial) {
+  if (interactive) {
     if (Serial.available()) {
       if (serialDataTimer == 0) {
         serialDataTimer = millis();

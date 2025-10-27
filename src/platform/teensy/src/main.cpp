@@ -172,12 +172,7 @@ void print_error(char *source) {
 
 void interactive_main() {
   while (true) {
-    while (!Serial) {
-      delay(250);
-    }
-
     dev_print("\r\n\033[30;47mInteractive mode - waiting for data...\033[0m\r\n");
-
     serial_read();
     if (!sbasic_main(SERIAL_SD_BAS)) {
       print_error((char *)buffer.c_str());

@@ -61,16 +61,8 @@ set(SOURCES
   src/ssd1306.cpp
 )
 
-option(INTERACTIVE "Whether to run programs via serial" OFF)
-
 # Add executable with the list of source files
 add_executable(${TARGET}.elf ${SOURCES})
-
-if (INTERACTIVE)
-  target_compile_definitions(${TARGET}.elf PRIVATE INTERACTIVE=1)
-else()
-  target_compile_definitions(${TARGET}.elf PRIVATE INTERACTIVE=0)
-endif()
 
 # enable all warnings in main.cpp
 target_compile_options(${TARGET}.elf PRIVATE -Wall)

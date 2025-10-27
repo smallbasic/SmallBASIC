@@ -4,9 +4,6 @@
 # Allows you to edit your SmallBASIC code in your favourite editor.
 # When you save, the program is transferred to the teensy and run.
 #
-# This works with the INTERACTIVE mode build
-#   $ cd build && cmake .. -DINTERACTIVE=ON
-#
 # Requires inotify-tools available via:
 #   $ sudo apt install inotify-tools
 #
