@@ -68,6 +68,21 @@ appImage:
 	~/apps/linuxdeploy-x86_64.AppImage --appdir=AppDir --executable=./src/platform/fltk/sbasici && \
 	~/apps/appimagetool-x86_64.AppImage AppDir
 
+#
+# flatpak install flathub org.flatpak.Builder
+# sudo apt install flatpak-builder
+# https://docs.flathub.org/docs/for-app-authors/submission
+#
+
+flatpak-build:
+	flatpak-builder build-dir io.github.smallbasic.json --force-clean
+
+flatpak-test:
+	flatpak-builder --run build-dir io.github.smallbasic.json sbasicg
+
+flatpak-install:
+	flatpak-builder --user --install --force-clean build-dir io.github.smallbasic.json
+
 EXTRA_DIST =                                                 \
 documentation/build_kwp.cpp                                  \
 documentation/sbasic_ref.csv                                 \
