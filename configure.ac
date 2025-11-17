@@ -392,6 +392,17 @@ function buildTEENSY() {
    if test "${have_xxd}" = "no" ; then
      AC_MSG_ERROR([xxd command not installed: configure failed.])
    fi
+   AC_CHECK_PROG([ARM_GCC], [arm-none-eabi-gcc], [yes], [no])
+   AC_CHECK_PROG([ARM_GXX], [arm-none-eabi-g++], [yes], [no])
+   if test "$ARM_GCC" = "no"; then
+     AC_MSG_ERROR([arm-none-eabi-gcc not found in PATH. Please install gcc-arm-none-eabi.])
+   fi
+   if test "$ARM_GXX" = "no"; then
+     AC_MSG_ERROR([arm-none-eabi-g++ not found in PATH. Please install g++-arm-none-eabi.])
+   fi
+   PKG_CHECK_MODULES([LIBUSB], [libusb], [],
+     [AC_MSG_ERROR([libusb not found. Please install libusb-dev])]
+   )
    AM_CONDITIONAL(WITH_CYGWIN_CONSOLE, false)
    AC_DEFINE(_UnixOS, 1, [Building under Unix like systems.])
    AC_DEFINE(_MCU, 1, [Micro controller based builds])
