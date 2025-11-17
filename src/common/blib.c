@@ -1002,7 +1002,7 @@ bcip_t cmd_push_args(int cmd, bcip_t goto_addr, bcip_t rvid) {
 
         prog_ip = ofs;       // back to the start of the expression
         // now we are sure, this parameter is not a single variable
-        // no 'break' here
+        // fallthrough
 
       default:
         // default: the parameter is an expression
@@ -1096,7 +1096,7 @@ void cmd_call_unit_udp(int cmd, int udp_tid, bcip_t goto_addr, bcip_t rvid) {
 
         prog_ip = ofs;       // back to the start of the expression
         // now we are sure, this parameter is not a single variable
-        // no 'break' here
+        // fallthrough
 
       default:
         // default: the parameter is an expression

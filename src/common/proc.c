@@ -878,8 +878,8 @@ int par_getpartable(par_t **ptable_pp, const char *valid_sep, unsigned max_items
       // Its no a single variable, its an expression
       // restore IP
       prog_ip = ofs;
+      // fallthrough
 
-      // no 'break' here
     default:
       // default --- expression (BYVAL ONLY)
       par = v_new();
@@ -1026,6 +1026,7 @@ int par_massget(const char *fmt, ...) {
           va_arg(ap, char **);
           break;
         }
+        // fallthrough
       case 'S':
         // string
         s = va_arg(ap, char **);
@@ -1038,6 +1039,7 @@ int par_massget(const char *fmt, ...) {
           va_arg(ap, var_int_t *);
           break;
         }
+        // fallthrough
       case 'I':
         // integer
         i = va_arg(ap, var_int_t *);
@@ -1050,6 +1052,7 @@ int par_massget(const char *fmt, ...) {
           va_arg(ap, var_num_t *);
           break;
         }
+        // fallthrough
       case 'F':
         // real (var_num_t)
         f = va_arg(ap, var_num_t *);
@@ -1062,6 +1065,7 @@ int par_massget(const char *fmt, ...) {
           va_arg(ap, var_t **);
           break;
         }
+        // fallthrough
       case 'P':
         // variable
         vt = va_arg(ap, var_t **);

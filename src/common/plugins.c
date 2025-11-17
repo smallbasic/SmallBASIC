@@ -443,7 +443,7 @@ int plugin_import(const char *name, const char *alias) {
     for (int i = 0; i < MAX_SLIBS; i++) {
       if (!plugins[i]) {
         // found free slot
-        slib_t *lib = plugins[i] = (slib_t *)calloc(sizeof(slib_t), 1);
+        slib_t *lib = plugins[i] = (slib_t *)calloc(1, sizeof(slib_t));
         if (!lib) {
           sc_raise("LIB: plugin_import failed");
           break;
@@ -465,7 +465,7 @@ int plugin_import(const char *name, const char *alias) {
 void plugin_open(const char *name, int lib_id) {
   slib_t *lib = get_lib(lib_id);
   if (!lib && lib_id >= 0 && lib_id < MAX_SLIBS) {
-    lib = plugins[lib_id] = (slib_t *)calloc(sizeof(slib_t), 1);
+    lib = plugins[lib_id] = (slib_t *)calloc(1, sizeof(slib_t));
     if (lib) {
       char path[PATH_SIZE];
       char file[PATH_SIZE];
@@ -622,7 +622,8 @@ int plugin_build_ptable(slib_par_t *ptable, int size) {
 
         // restore IP
         prog_ip = ofs;
-        // no 'break' here
+        // fallthrough
+
       default:
         // default --- expression (BYVAL ONLY)
         arg = v_new();

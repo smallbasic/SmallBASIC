@@ -2574,7 +2574,8 @@ void cmd_genfunc(long funcCode, var_t *r) {
           }
         }
         prog_ip = ofs;
-        // no 'break' here
+        // fallthrough
+
       default:
         // default --- expression
         v_init(&arg);
@@ -2646,7 +2647,8 @@ void cmd_genfunc(long funcCode, var_t *r) {
           }
         }
         prog_ip = ofs;
-        // no 'break' here
+        // fallthrough
+
       default:
         // default --- expression
         v_init(&arg);

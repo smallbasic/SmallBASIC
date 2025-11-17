@@ -198,9 +198,11 @@ void cev_prim() {
   case kwTYPE_CALLEXTF:        // [lib][index]
     bc_add_n(bc_out, bc_in->ptr + bc_in->cp, ADDRSZ);
     IP += ADDRSZ;              // no break here
+    // fallthrough
   case kwTYPE_CALLF:           // [code]
     bc_add_n(bc_out, bc_in->ptr + bc_in->cp, ADDRSZ);
     IP += ADDRSZ;              // no break here
+    // fallthrough
   default:
     if (CODE_PEEK() == kwTYPE_LEVEL_BEGIN) {
       if (CODE(IP + 1) == kwTYPE_LEVEL_END) {
