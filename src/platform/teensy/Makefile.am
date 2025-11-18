@@ -31,6 +31,6 @@ build/smallbasic.elf : \
 all: build/smallbasic.elf
 
 install: build/smallbasic.elf
-	@build/modules/teensy_loader_cli/teensy_loader_cli --mcu=IMXRT1062 -w -v build/smallbasic.hex && \
+	@build/modules/teensy_loader_cli/teensy_loader_cli --mcu=TEENSY41 -w -v -s build/smallbasic.hex && \
 	sleep 1 && \
 	lsusb | grep -i teensy

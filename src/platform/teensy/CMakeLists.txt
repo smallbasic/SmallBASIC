@@ -12,15 +12,24 @@ set(CMAKE_SYSTEM_NAME Generic)
 set(TARGET "smallbasic")
 
 # settings for teensy 4.0
+#set(MODULES ${CMAKE_CURRENT_SOURCE_DIR}/build/modules)
+#set(TEENSY_SRC ${MODULES}/cores/teensy4)
+#set(MCU "IMXRT1062")
+#set(MCU_LD ${TEENSY_SRC}/imxrt1062.ld)
+#set(MCU_DEF "ARDUINO_TEENSY4")
+#set(CPU_OPTIONS "-mcpu=cortex-m7 -mfloat-abi=hard -mfpu=fpv5-d16 -mthumb")
+
+# settings for teensy 4.1
 set(MODULES ${CMAKE_CURRENT_SOURCE_DIR}/build/modules)
 set(TEENSY_SRC ${MODULES}/cores/teensy4)
 set(MCU "IMXRT1062")
-set(MCU_LD ${TEENSY_SRC}/imxrt1062.ld)
+set(MCU_LD ${TEENSY_SRC}/imxrt1062_t41.ld)
+set(MCU_DEF "ARDUINO_TEENSY41")
 set(CPU_OPTIONS "-mcpu=cortex-m7 -mfloat-abi=hard -mfpu=fpv5-d16 -mthumb")
 
 # Preprocessor flags for both C and C++
 add_compile_options(-g -O2 -ffunction-sections -fdata-sections -DENABLE_LOGGING
-  -DF_CPU=600000000 -DUSB_SERIAL -DLAYOUT_US_ENGLISH -D__${MCU}__ -DARDUINO=10813 -DTEENSYDUINO=159 -DARDUINO_TEENSY40)
+  -DF_CPU=600000000 -DUSB_SERIAL -DLAYOUT_US_ENGLISH -D__${MCU}__ -DARDUINO=10813 -DTEENSYDUINO=159 -D${MCU_DEF})
 
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${CPU_OPTIONS}")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${CPU_OPTIONS} -std=gnu++17 -felide-constructors -fno-exceptions -fpermissive -fno-rtti -Wno-error=narrowing")
