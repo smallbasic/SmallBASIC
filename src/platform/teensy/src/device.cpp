@@ -18,7 +18,7 @@
 #include "serial.h"
 
 uint32_t serialDataTimer = 0;
-uint8_t  interactive = 1;
+uint8_t interactive = 1;
 
 //
 // setup the Serial device
@@ -189,4 +189,3 @@ void panic(const char *fmt, ...) {
   dev_print("Fatal error");
   for (;;);
 }
-

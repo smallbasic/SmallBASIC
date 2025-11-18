@@ -34,7 +34,7 @@ void *plugin_lib_open(const char *name) {
 }
 
 void *plugin_lib_address(void *handle, const char *name) {
-  auto *pModule = (ModuleConfig *)handle;
+  auto *pModule = (ModuleConfig *) handle;
   void *result = nullptr;
   if (strcmp(name, "sblib_func_exec") == 0) {
     result = (void *)pModule->_func_exec;
@@ -42,7 +42,7 @@ void *plugin_lib_address(void *handle, const char *name) {
     result = (void *)pModule->_proc_exec;
   } else if (strcmp(name, "sblib_free") == 0) {
     result = (void *)pModule->_free;
-  } else if (strcmp(name, "sblib_proc_count")  == 0){
+  } else if (strcmp(name, "sblib_proc_count") == 0) {
     result = (void *)pModule->_proc_count;
   } else if (strcmp(name, "sblib_proc_getname") == 0) {
     result = (void *)pModule->_proc_getname;
@@ -73,8 +73,7 @@ char *dev_read(const char *fileName) {
 
 int sys_search_path(const char *path, const char *file, char *retbuf) {
   int result;
-  if (strcmp(file, "libteensy") == 0 ||
-      strcmp(file, "libssd1306") == 0) {
+  if (strcmp(file, "libteensy") == 0 || strcmp(file, "libssd1306") == 0) {
     strcpy(retbuf, "/");
     result = 1;
   }
@@ -194,7 +193,7 @@ extern "C" int main(void) {
       buffer.clear();
       buffer.append(bufferSD);
 
-      delete[] bufferSD;
+      delete[]bufferSD;
       sdFile.close();
 
       if (!sbasic_main(SERIAL_SD_BAS)) {
@@ -213,7 +212,7 @@ extern "C" int main(void) {
         delay(250);
       }
       dev_print("Error executing main.bas from memory:\n");
-      print_error((char *) main_bas);
+      print_error((char *)main_bas);
     } else {
       dev_print("main.bas ended");
     }
