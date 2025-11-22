@@ -415,8 +415,12 @@ void System::handleMenu(MAEvent &event) {
     }
     break;
   case MENU_EDITMODE:
+#if defined(_ANDROID)
     opt_ide = (opt_ide == IDE_NONE ? IDE_INTERNAL :
                opt_ide == IDE_INTERNAL ? IDE_EXTERNAL : IDE_NONE);
+#else
+    opt_ide = (opt_ide == IDE_NONE ? IDE_INTERNAL : IDE_NONE);
+#endif
     break;
   case MENU_THEME:
     g_themeId = (g_themeId + 1) % NUM_THEMES;
