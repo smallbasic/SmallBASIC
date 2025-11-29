@@ -19,6 +19,7 @@
 #include <unistd.h>
 #include <sys/select.h>
 #include <errno.h>
+#include <sys/ioctl.h>
 
 /**
  * terminal speed
@@ -129,20 +130,9 @@ int serial_read(dev_file_t *f, byte *data, uint32_t size) {
 
 // Returns the number of the available data on serial port
 uint32_t serial_length(dev_file_t *f) {
-  fd_set readfs;
-  struct timeval tv;
-
-  FD_ZERO(&readfs);
-  FD_SET(f->handle, &readfs);
-
-  tv.tv_usec = 250; // milliseconds
-  tv.tv_sec = 0; // seconds
-
-  select(f->handle + 1, &readfs, NULL, NULL, &tv);
-  if (FD_ISSET(f->handle, &readfs)) {
-    return 1;
-  }
-  return 0;
+  uint32_t bytes;
+  ioctl(f->handle, FIONREAD, &bytes);
+  return bytes;
 }
 
 #elif defined(_Win32)
