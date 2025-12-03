@@ -23,11 +23,6 @@ while(1)
       end select
     endif
   else
-    delay(50)
+    delay(10)
   endif
-  
-  BuiltInLED.write(1)
-  delay(25)
-  BuiltInLED.write(0)
-  delay(25)
 wend

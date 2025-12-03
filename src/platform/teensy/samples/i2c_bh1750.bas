@@ -24,5 +24,5 @@ while(1)
   ii++  
   print ii, "High resolution: " + valueHighRes + " lx"
 
-  delay(500)
+  delay(100)
 wend
