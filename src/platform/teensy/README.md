@@ -2,52 +2,41 @@
 
 ## Build SmallBASIC
 
+Teensy 4.0 and Teensy 4.1 are supported. Both using the same processor and running at the same speed.
+But Teensy 4.1 offers more features than Teensy 4.0. The standard build is for Teensy 4.1.
+
 Download and build SmallBASIC as described [here](https://github.com/smallbasic/SmallBASIC).
 
-## Configure Tennsy version
+## Build Teensy firmware
 
-Tennsy 4 and Tennsy 4.1 are supported. Both using the same processor and running at the same speed.
-But Tennsy 4.1 offers more features than Tennsy 4. Currently, you have to configure two files depending
-which MCU you use.
+### Initial setup
 
-1. `src/platform/teensy/Makefile.am` 
-   `--mcu=TENNSY4` or `--mcu=TENNSY41`
-
-   ```
-   install: build/smallbasic.elf
-     @build/modules/teensy_loader_cli/teensy_loader_cli --mcu=TEENSY41 -w -v -s build/smallbasic.hex && \
-     sleep 1 && \
-     lsusb | grep -i teensy
-   ```
-
-2. `src/platform/teensy/CMakeLists.txt`
-   Comment/Uncomment settings for Teensy 4 / Tennsy 4.1
-
-   ```
-   # settings for teensy 4.0
-   #set(MODULES ${CMAKE_CURRENT_SOURCE_DIR}/build/modules)
-   #set(TEENSY_SRC ${MODULES}/cores/teensy4)
-   #set(MCU "IMXRT1062")
-   #set(MCU_LD ${TEENSY_SRC}/imxrt1062.ld)
-   #set(MCU_DEF "ARDUINO_TEENSY4")
-   #set(CPU_OPTIONS "-mcpu=cortex-m7 -mfloat-abi=hard -mfpu=fpv5-d16 -mthumb")
-
-   # settings for teensy 4.1
-   set(MODULES ${CMAKE_CURRENT_SOURCE_DIR}/build/modules)
-   set(TEENSY_SRC ${MODULES}/cores/teensy4)
-   set(MCU "IMXRT1062")
-   set(MCU_LD ${TEENSY_SRC}/imxrt1062_t41.ld)
-   set(MCU_DEF "ARDUINO_TEENSY41")
-   set(CPU_OPTIONS "-mcpu=cortex-m7 -mfloat-abi=hard -mfpu=fpv5-d16 -mthumb")
-   ```
-
-## Build firmware in Manjaro (arch)
+Install the following packages (Manjaro (arch)):
 
 ```
 $ sudo pacman -S arm-none-eabi-binutils arm-none-eabi-gcc arm-none-eabi-newlib libusb-compat
+```
+
+Add udev rules for serial USB:
+
+```
+curl -sLO https://www.pjrc.com/teensy/00-teensy.rules
+sudo cp 00-teensy.rules /etc/udev/rules.d/
+```
+
+Download and build core libraries:
+
+```
 $ ./configure --enable-teensy
 $ cd src/platform/teensy
 $ ./setup.sh
+```
+
+### Build firmware for Teensy 4.1
+
+The following instructions will build and install the firmware for Teensy 4.1.
+
+```
 $ make
 ```
 
@@ -55,7 +44,7 @@ $ make
 > open `build/modules/CMSIS-DSP/CMakeLists.txt`
 > and add in the beginning of the file `cmake_minimum_required(VERSION 4.1)`
 
-## Upload the firmware
+Upload firmware:
 
 ```
 make install
@@ -65,6 +54,38 @@ or
 
 ```
 build/modules/teensy_loader_cli/teensy_loader_cli --mcu=TEENSY41 -w -v -s build/smallbasic.hex
+```
+
+### Build firmware for Tennsy 4.0
+
+If you want to build the firmware for Tennsy 4.0, you have to run the following commands after
+initial setup:
+
+```
+cd build
+cmake .. -DTEENSY40=ON
+```
+
+and run `./configure --enable-teensy` again. Next you can build the firmware:
+
+```
+$ make
+```
+
+> If setup.sh displays an error massage that cmake minimum version is not set,
+> open `build/modules/CMSIS-DSP/CMakeLists.txt`
+> and add in the beginning of the file `cmake_minimum_required(VERSION 4.1)`
+
+Upload firmware:
+
+```
+make install40
+```
+
+or
+
+```
+build/modules/teensy_loader_cli/teensy_loader_cli --mcu=TEENSY40 -w -v -s build/smallbasic.hex
 ```
 
 # Run your SMALLBASIC program
@@ -100,3 +121,13 @@ called, the program is terminated and the next section in the above list is perf
 The `PRINT` command can be used to print to the USB-serial port. To access the output, connect to the serial
 port using, i.e. `PUTTY` or any other serial-port monitor / terminal. Using Linux, the easiest way is to run
 `cat /dev/ttyACM0`
+
+# Debugging the Teensy crash screen
+
+To find the line that failed (but no stack) run:
+
+```
+arm-none-eabi-addr2line -e smallbasic.elf ADDRESS
+```
+
+Where `ADDRESS` is the address shown in the crash screen, for example `0x17D04`

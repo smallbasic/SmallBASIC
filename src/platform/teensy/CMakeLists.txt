@@ -6,26 +6,29 @@
 #
 
 cmake_minimum_required(VERSION 3.10)
+option(TEENSY40 "Build for teensy 4.0 instead of 4.1" OFF)
 project(SmallBASIC)
 include(ExternalProject)
 set(CMAKE_SYSTEM_NAME Generic)
 set(TARGET "smallbasic")
 
-# settings for teensy 4.0
-#set(MODULES ${CMAKE_CURRENT_SOURCE_DIR}/build/modules)
-#set(TEENSY_SRC ${MODULES}/cores/teensy4)
-#set(MCU "IMXRT1062")
-#set(MCU_LD ${TEENSY_SRC}/imxrt1062.ld)
-#set(MCU_DEF "ARDUINO_TEENSY4")
-#set(CPU_OPTIONS "-mcpu=cortex-m7 -mfloat-abi=hard -mfpu=fpv5-d16 -mthumb")
-
-# settings for teensy 4.1
-set(MODULES ${CMAKE_CURRENT_SOURCE_DIR}/build/modules)
-set(TEENSY_SRC ${MODULES}/cores/teensy4)
-set(MCU "IMXRT1062")
-set(MCU_LD ${TEENSY_SRC}/imxrt1062_t41.ld)
-set(MCU_DEF "ARDUINO_TEENSY41")
-set(CPU_OPTIONS "-mcpu=cortex-m7 -mfloat-abi=hard -mfpu=fpv5-d16 -mthumb")
+if(TEENSY40)
+  message("Building for TEENSY 4.0")
+  set(MODULES ${CMAKE_CURRENT_SOURCE_DIR}/build/modules)
+  set(TEENSY_SRC ${MODULES}/cores/teensy4)
+  set(MCU "IMXRT1062")
+  set(MCU_LD ${TEENSY_SRC}/imxrt1062.ld)
+  set(MCU_DEF "ARDUINO_TEENSY40")
+  set(CPU_OPTIONS "-mcpu=cortex-m7 -mfloat-abi=hard -mfpu=fpv5-d16 -mthumb")
+else()
+  message("Building for TEENSY 4.1")
+  set(MODULES ${CMAKE_CURRENT_SOURCE_DIR}/build/modules)
+  set(TEENSY_SRC ${MODULES}/cores/teensy4)
+  set(MCU "IMXRT1062")
+  set(MCU_LD ${TEENSY_SRC}/imxrt1062_t41.ld)
+  set(MCU_DEF "ARDUINO_TEENSY41")
+  set(CPU_OPTIONS "-mcpu=cortex-m7 -mfloat-abi=hard -mfpu=fpv5-d16 -mthumb")
+endif()
 
 # Preprocessor flags for both C and C++
 add_compile_options(-g -O2 -ffunction-sections -fdata-sections -DENABLE_LOGGING
