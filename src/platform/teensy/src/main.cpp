@@ -8,6 +8,9 @@
 //
 
 #include <Arduino.h>
+#include <SPI.h>
+#include <SD.h>
+#include "common/device.h"
 #include "config.h"
 #include "common/sbapp.h"
 #include "main_bas.h"
@@ -15,7 +18,7 @@
 #include "ui/strlib.h"
 
 #define MAIN_BAS "__main_bas__"
-#define SERIAL_BAS "__serial_bas__"
+#define SERIAL_SD_BAS "__serial_sd_bas__"
 
 strlib::String buffer;
 
@@ -31,7 +34,7 @@ void *plugin_lib_open(const char *name) {
 }
 
 void *plugin_lib_address(void *handle, const char *name) {
-  auto *pModule = (ModuleConfig *)handle;
+  auto *pModule = (ModuleConfig *) handle;
   void *result = nullptr;
   if (strcmp(name, "sblib_func_exec") == 0) {
     result = (void *)pModule->_func_exec;
@@ -39,7 +42,7 @@ void *plugin_lib_address(void *handle, const char *name) {
     result = (void *)pModule->_proc_exec;
   } else if (strcmp(name, "sblib_free") == 0) {
     result = (void *)pModule->_free;
-  } else if (strcmp(name, "sblib_proc_count")  == 0){
+  } else if (strcmp(name, "sblib_proc_count") == 0) {
     result = (void *)pModule->_proc_count;
   } else if (strcmp(name, "sblib_proc_getname") == 0) {
     result = (void *)pModule->_proc_getname;
@@ -57,7 +60,7 @@ char *dev_read(const char *fileName) {
     data = (char *)malloc(main_bas_len + 1);
     memcpy(data, main_bas, main_bas_len);
     data[main_bas_len] = '\0';
-  } else if (strcmp(fileName, SERIAL_BAS) == 0) {
+  } else if (strcmp(fileName, SERIAL_SD_BAS) == 0) {
     int len = buffer.length();
     data = (char *)malloc(len + 1);
     memcpy(data, buffer.c_str(), len);
@@ -70,8 +73,7 @@ char *dev_read(const char *fileName) {
 
 int sys_search_path(const char *path, const char *file, char *retbuf) {
   int result;
-  if (strcmp(file, "libteensy") == 0 ||
-      strcmp(file, "libssd1306") == 0) {
+  if (strcmp(file, "libteensy") == 0 || strcmp(file, "libssd1306") == 0) {
     strcpy(retbuf, "/");
     result = 1;
   }
@@ -96,8 +98,6 @@ void setup() {
 void serial_read() {
   bool eof = false;
   int lastRead = -1;
-
-  dev_print("Waiting for data... ");
   buffer.clear();
 
   while (!eof) {
@@ -113,7 +113,8 @@ void serial_read() {
       delay(250);
     }
   }
-  dev_printf("received %d bytes.\r\n", buffer.length());
+
+  dev_printf("Received %d bytes.\r\n", buffer.length());
 }
 
 void print_source_line(const char *text, int line, bool last) {
@@ -170,8 +171,9 @@ void print_error(char *source) {
 
 void interactive_main() {
   while (true) {
+    dev_print("\r\n\033[30;47mInteractive mode - waiting for data...\033[0m\r\n");
     serial_read();
-    if (!sbasic_main(SERIAL_BAS)) {
+    if (!sbasic_main(SERIAL_SD_BAS)) {
       print_error((char *)buffer.c_str());
     }
   }
@@ -180,17 +182,41 @@ void interactive_main() {
 extern "C" int main(void) {
   setup();
 
-#if INTERACTIVE
-  dev_print("Interactive mode enabled\r\n");
-  interactive_main();
-#else
-  if (!sbasic_main(MAIN_BAS)) {
-    dev_print("Error: run failed\n");
-    opt_quiet = 0;
-    opt_verbose = 1;
-    sbasic_main(MAIN_BAS);
+  if (SD.begin(BUILTIN_SDCARD)) {
+    File sdFile = SD.open("/MAIN.BAS", FILE_READ);
+    if (sdFile) {
+      uint32_t fileSize = sdFile.available();
+      char *bufferSD = new char[fileSize + 1];
+
+      sdFile.read(bufferSD, fileSize);
+      bufferSD[fileSize] = '\0';
+      buffer.clear();
+      buffer.append(bufferSD);
+
+      delete[]bufferSD;
+      sdFile.close();
+
+      if (!sbasic_main(SERIAL_SD_BAS)) {
+        while (!Serial) {
+          delay(250);
+        }
+        dev_print("Error executing main.bas from SD card:\n");
+        print_error((char *)buffer.c_str());
+      } else {
+        dev_print("main.bas from SD card ended\n");
+      }
+    }
+  } else if (main_bas_len > 0) {
+    if (!sbasic_main(MAIN_BAS)) {
+      while (!Serial) {
+        delay(250);
+      }
+      dev_print("Error executing main.bas from memory:\n");
+      print_error((char *)main_bas);
+    } else {
+      dev_print("main.bas ended");
+    }
   } else {
-    dev_print("main.bas ended");
+    interactive_main();
   }
-#endif
 }

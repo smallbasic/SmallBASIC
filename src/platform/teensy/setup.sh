@@ -7,6 +7,7 @@ DIR=`pwd`
 	git clone https://github.com/PaulStoffregen/SPI.git && \
 	git clone https://github.com/PaulStoffregen/Wire.git && \
 	git clone https://github.com/PaulStoffregen/USBHost_t36.git && \
+  git clone https://github.com/PaulStoffregen/SD.git && \
 	git clone https://github.com/PaulStoffregen/SdFat.git && \
 	git clone https://github.com/PaulStoffregen/teensy_loader_cli.git && \
 	git clone https://github.com/pedvide/ADC && \

@@ -6,7 +6,7 @@
 #
 
 tidy:
-		@cd build && make tidy
+	@cd build && make tidy
 
 build/modules/cores/teensy4/Makefile:
 	./setup.sh
@@ -31,6 +31,11 @@ build/smallbasic.elf : \
 all: build/smallbasic.elf
 
 install: build/smallbasic.elf
-	@build/modules/teensy_loader_cli/teensy_loader_cli --mcu=IMXRT1062 -w -v build/smallbasic.hex && \
+	@build/modules/teensy_loader_cli/teensy_loader_cli --mcu=TEENSY41 -w -v -s build/smallbasic.hex && \
+	sleep 1 && \
+	lsusb | grep -i teensy
+
+install40: build/smallbasic.elf
+	@build/modules/teensy_loader_cli/teensy_loader_cli --mcu=TEENSY40 -w -v -s build/smallbasic.hex && \
 	sleep 1 && \
 	lsusb | grep -i teensy

@@ -14,6 +14,8 @@ set(SPI_DIR ${MODULES_DIR}/SPI)
 set(SSD_DIR ${MODULES_DIR}/Adafruit_SSD1306)
 set(USB_DIR ${MODULES_DIR}/USBHost_t36)
 set(WIRE_DIR ${MODULES_DIR}/Wire)
+set(SD_DIR ${MODULES_DIR}/SD/src)
+set(SDFAT_DIR ${MODULES_DIR}/SdFat/src)
 
 set(SOURCES
   ${ADC_DIR}/ADC.cpp
@@ -115,6 +117,51 @@ set(SOURCES
   ${WIRE_DIR}/Wire.cpp
   ${WIRE_DIR}/WireIMXRT.cpp
   ${WIRE_DIR}/WireKinetis.cpp
+  ${SD_DIR}/SD.cpp  
+  ${SDFAT_DIR}/SdCard/SdCardInfo.cpp
+  ${SDFAT_DIR}/SdCard/SdioTeensy.cpp
+  ${SDFAT_DIR}/SdCard/SdSpiCard.cpp
+  ${SDFAT_DIR}/SpiDriver/SdSpiChipSelect.cpp
+  ${SDFAT_DIR}/SpiDriver/SdSpiArtemis.cpp
+  ${SDFAT_DIR}/SpiDriver/SdSpiDue.cpp
+  ${SDFAT_DIR}/SpiDriver/SdSpiESP.cpp
+  ${SDFAT_DIR}/SpiDriver/SdSpiParticle.cpp
+  ${SDFAT_DIR}/SpiDriver/SdSpiSTM32.cpp
+  ${SDFAT_DIR}/SpiDriver/SdSpiSTM32Core.cpp
+  ${SDFAT_DIR}/SpiDriver/SdSpiTeensy3.cpp
+  ${SDFAT_DIR}/iostream/istream.cpp
+  ${SDFAT_DIR}/iostream/ostream.cpp
+  ${SDFAT_DIR}/iostream/StdioStream.cpp
+  ${SDFAT_DIR}/iostream/StreamBaseClass.cpp
+  ${SDFAT_DIR}/FsLib/FsFile.cpp
+  ${SDFAT_DIR}/FsLib/FsNew.cpp
+  ${SDFAT_DIR}/FsLib/FsVolume.cpp
+  ${SDFAT_DIR}/FatLib/FatDbg.cpp
+  ${SDFAT_DIR}/FatLib/FatFile.cpp
+  ${SDFAT_DIR}/FatLib/FatFileLFN.cpp
+  ${SDFAT_DIR}/FatLib/FatFilePrint.cpp
+  ${SDFAT_DIR}/FatLib/FatFileSFN.cpp
+  ${SDFAT_DIR}/FatLib/FatFormatter.cpp
+  ${SDFAT_DIR}/FatLib/FatName.cpp
+  ${SDFAT_DIR}/FatLib/FatPartition.cpp
+  ${SDFAT_DIR}/FatLib/FatVolume.cpp
+  ${SDFAT_DIR}/ExFatLib/ExFatDbg.cpp
+  ${SDFAT_DIR}/ExFatLib/ExFatFile.cpp
+  ${SDFAT_DIR}/ExFatLib/ExFatFilePrint.cpp
+  ${SDFAT_DIR}/ExFatLib/ExFatFileWrite.cpp
+  ${SDFAT_DIR}/ExFatLib/ExFatFormatter.cpp
+  ${SDFAT_DIR}/ExFatLib/ExFatName.cpp
+  ${SDFAT_DIR}/ExFatLib/ExFatPartition.cpp
+  ${SDFAT_DIR}/ExFatLib/ExFatVolume.cpp
+  ${SDFAT_DIR}/ExFatLib/upcase.cpp
+  ${SDFAT_DIR}/common/FmtNumber.cpp
+  ${SDFAT_DIR}/common/FsCache.cpp
+  ${SDFAT_DIR}/common/FsDateTime.cpp
+  ${SDFAT_DIR}/common/FsName.cpp
+  ${SDFAT_DIR}/common/FsStructs.cpp
+  ${SDFAT_DIR}/common/FsUtf.cpp
+  ${SDFAT_DIR}/common/PrintBasic.cpp
+  ${SDFAT_DIR}/common/upcase.cpp
 )
 
 add_library(libs STATIC ${SOURCES})
@@ -127,4 +174,6 @@ target_include_directories(libs PRIVATE ${MODULES_DIR}/SdFat/src)
 target_include_directories(libs PRIVATE ${SPI_DIR})
 target_include_directories(libs PRIVATE ${TEENSY_DIR})
 target_include_directories(libs PRIVATE ${WIRE_DIR})
+target_include_directories(libs PRIVATE ${SD_DIR})
+target_include_directories(libs PRIVATE ${SDFAT_DIR})
 

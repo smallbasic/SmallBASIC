@@ -23,6 +23,8 @@ var_p_t v_get_tmp(var_p_t map) {
   var_p_t result = map_get(map, MAP_TMP_FIELD);
   if (result == NULL) {
     result = map_add_var(map, MAP_TMP_FIELD, 0);
+  } else {
+    v_free(result);
   }
   return result;
 }

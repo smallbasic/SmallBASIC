@@ -17,19 +17,25 @@
 #include "lib/maapi.h"
 #include "serial.h"
 
-#define SERIAL_BAUD_RATE 1000000
+uint32_t serialDataTimer = 0;
+uint8_t interactive = 1;
 
 //
 // setup the Serial device
+// Teensy 4.x uses USB serial. Setup is done at startup. Communication
+// is always at full USB speed. Either 12 or 480 Mbit/s.
 //
 void serial_init() {
-  Serial.begin(SERIAL_BAUD_RATE);
-  while (!Serial) {
-    // wait
-  }
   if (CrashReport) {
+    while (!Serial) {
+      delay(250);
+    }
     Serial.print(CrashReport);
   }
+}
+
+void setInteractive(uint8_t mode) {
+  interactive = mode;
 }
 
 //
@@ -64,16 +70,26 @@ void dev_trace_line(int lineNo) {
 // process events
 //
 int dev_events(int wait_flag) {
-  int result;
+  int result = 0;
+
   if (wait_flag) {
     delay(10);
   }
-#if INTERACTIVE
-  // break when new code available
-  result = Serial.available() > 0 ? -2 : 0;
-#else
-  result = 0;
-#endif
+
+  if (interactive) {
+    if (Serial.available()) {
+      if (serialDataTimer == 0) {
+        serialDataTimer = millis();
+      }
+      if (millis() - serialDataTimer > 1000) {
+        serialDataTimer = 0;
+        result = -2;    // end program
+      }
+    } else {
+      serialDataTimer = 0;
+    }
+  }
+
   yield();
   return result;
 }
@@ -173,4 +189,3 @@ void panic(const char *fmt, ...) {
   dev_print("Fatal error");
   for (;;);
 }
-
