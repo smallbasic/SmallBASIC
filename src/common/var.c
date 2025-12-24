@@ -529,6 +529,7 @@ void v_set(var_t *dest, const var_t *src) {
     break;
   case V_FUNC:
     dest->v.fn.cb = src->v.fn.cb;
+    dest->v.fn.mcb = src->v.fn.mcb;
     dest->v.fn.id = src->v.fn.id;
     break;
   case V_NIL:
