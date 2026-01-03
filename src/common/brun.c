@@ -288,7 +288,9 @@ void exec_setup_predefined_variables() {
     }
   }
 #elif defined(_UnixOS)
-  if (getenv("HOME")) {
+  if (getenv("XDG_DATA_HOME")) {
+    strlcpy(homedir, getenv("XDG_DATA_HOME"), sizeof(homedir));
+  } else if (getenv("HOME")) {
     strlcpy(homedir, getenv("HOME"), sizeof(homedir));
   } else {
     strcpy(homedir, "/tmp/");

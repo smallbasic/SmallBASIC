@@ -174,6 +174,9 @@ function buildSDL() {
 
    PKG_CHECK_MODULES([SDL3], [sdl3])
 
+   AC_MSG_CHECKING([for SDL3 library linking])
+   SDL3_LIBS=`pkg-config sdl3 --libs --static`
+
    SAVED_CPPFLAGS="$CPPFLAGS"
    CPPFLAGS="$CPPFLAGS `pkg-config freetype2 --cflags`"
    AC_CHECK_HEADERS([ft2build.h], [], [AC_MSG_ERROR([libfreetype6-dev not installed: configure failed.])])
@@ -223,10 +226,6 @@ function buildSDL() {
      PACKAGE_CFLAGS="${PACKAGE_CFLAGS} ${FONTCONFIG_CFLAGS}"
 
      (cd images && xxd -i sb-desktop-128x128.png > ../src/platform/sdl/icon.h)
-
-     AC_MSG_CHECKING([for SDL3 library linking])
-     SDL3_LIBS=`pkg-config sdl3 --libs --static`
-     AC_MSG_RESULT([$SDL3_LIBS])
 
      dnl backlinking support for modules
      PACKAGE_LIBS="${PACKAGE_LIBS} -ldl -no-pie"

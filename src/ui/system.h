@@ -59,6 +59,7 @@ struct System {
   virtual void browseFile(const char *url) = 0;
   virtual MAEvent processEvents(int waitFlag) = 0;
   virtual char *loadResource(const char *fileName);
+  virtual void openFolder() = 0;
   virtual void optionsBox(StringList *items);
   virtual void onRunCompleted() = 0;
   virtual void saveWindowRect() = 0;

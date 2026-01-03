@@ -111,6 +111,8 @@ void FormLink::clicked(int x, int y, bool pressed) {
   if (!pressed && _external && form != nullptr && g_system->isRunning()) {
     const char *value = getValue();
     g_system->browseFile(value != nullptr ? value : _link.c_str());
+  } else if (!pressed && _folder) {
+    g_system->openFolder();
   } else {
     FormInput::clicked(x, y, pressed);
   }
@@ -221,7 +223,9 @@ FormInput *create_input(var_p_t v_field) {
     widget = new FormLabel(label, x, y, w, h);
   } else if (strcasecmp("link", type) == 0) {
     bool external = map_get_int(v_field, FORM_INPUT_IS_EXTERNAL, 0);
-    widget = new FormLink(label, external, x, y, w, h);
+    widget = new FormLink(label, external, false, x, y, w, h);
+  } else if (strcasecmp("folder-dialog", type) == 0) {
+    widget = new FormLink(label, false, true, x, y, w, h);
   } else if (strcasecmp("listbox", type) == 0 ||
              strcasecmp("list", type) == 0) {
     ListModel *model = new ListModel(get_selected_index(v_field), value);

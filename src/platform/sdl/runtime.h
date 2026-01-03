@@ -40,6 +40,8 @@ struct Runtime final : System {
   bool toggleFullscreen();
   void handleKeyEvent(MAEvent &event) const;
   bool hasEvent() const { return _eventQueue && !_eventQueue->empty(); }
+  void onFolderSelected(const char *folder);
+  void openFolder() override;
   void pause(int timeout);
   void pollEvents(bool blocking);
   MAEvent *popEvent() { return _eventQueue->pop(); }

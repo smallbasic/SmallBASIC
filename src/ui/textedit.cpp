@@ -2196,7 +2196,7 @@ void TextEditHelpWidget::createKeywordIndex() {
   reset(kHelpKeyword);
 
   if (keyword != nullptr) {
-    keywordIterator([=](int index, int packageIndex, bool) {
+    keywordIterator([=,this](int index, int packageIndex, bool) {
       bool result = true;
       if (strcasecmp(keyword, keyword_help[index].keyword) == 0) {
         // found keyword at cursor
@@ -2372,7 +2372,7 @@ void TextEditHelpWidget::toggleKeyword() {
   int packageIndex = _packageIndex;
   bool packageOpen = _packageOpen;
 
-  keywordIterator([=](int index, int packageIndex, bool nextPackage) {
+  keywordIterator([=,this](int index, int packageIndex, bool nextPackage) {
     bool result = true;
     if (nextPackage) {
       const char *package = keyword_help[index].package;

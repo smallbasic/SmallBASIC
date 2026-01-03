@@ -74,14 +74,18 @@ appImage:
 # https://docs.flathub.org/docs/for-app-authors/submission
 #
 
-flatpak-build:
-	flatpak-builder build-dir io.github.smallbasic.json --force-clean
+flatpak-build-all:
+	flatpak-builder --force-clean build-dir io.github.smallbasic.json
 
-flatpak-test:
+flatpak-build:
+	flatpak-builder --build-only --force-clean --disable-download --disable-updates build-dir io.github.smallbasic.json && \
 	flatpak-builder --run build-dir io.github.smallbasic.json sbasicg
 
 flatpak-install:
 	flatpak-builder --user --install --force-clean build-dir io.github.smallbasic.json
+
+flatpak-run:
+	flatpak run io.github.smallbasic
 
 EXTRA_DIST =                                                 \
 documentation/build_kwp.cpp                                  \

@@ -413,14 +413,6 @@ sub listFiles(byref frm, path, sortDir, byref basList)
     return bn
   end
 
-  sub mk_label(labText, labCol, x, y)
-    local bn = mk_bn(0, labText, labCol)
-    bn.type = "label"
-    bn.x = x
-    bn.y = y
-    frm.inputs << bn
-  end
-
   sub mk_link(value, labText, labCol, x, y)
     local bn = mk_bn(value, labText, labCol)
     bn.type = "link"
@@ -429,10 +421,24 @@ sub listFiles(byref frm, path, sortDir, byref basList)
     frm.inputs << bn
   end
 
+  sub mk_folder_link(path)
+    local bn_label = mk_bn(0, "Files in ", colText2)
+    bn_label.x = 3
+    bn_label.y = -lineSpacing
+    bn_label.type = "label"
+    frm.inputs << bn_label
+
+    local bn = mk_bn(0, "[" + path + "]", colText)
+    bn.type = "folder-dialog"
+    bn.x = -1
+    bn.y = -1
+    frm.inputs << bn
+  end
+
   if (is_android) then
     mk_link(sortNameId, "[Name]", name_col, 0, -linespacing)
   else
-    mk_label("Files in " + path, colText, 3, -lineSpacing)
+    mk_folder_link(path)
     mk_link(backId, "[Go up]", colNav, 0, -linespacing)
     mk_link(sortNameId, "[Name]", name_col, -(char_w * 8), -1)
   endif

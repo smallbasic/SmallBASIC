@@ -47,6 +47,7 @@ struct Runtime : public System {
   int getUnicodeChar(int keyCode, int metaState);
   void redraw() { _graphics->redraw(); }
   void handleKeyEvent(MAEvent &event);
+  void openFolder() override {}
   void pause(int timeout);
   MAEvent processEvents(int waitFlag) override;
   void processEvent(MAEvent &event);

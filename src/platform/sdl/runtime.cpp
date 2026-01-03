@@ -1,6 +1,6 @@
 // This file is part of SmallBASIC
 //
-// Copyright(C) 2001-2019 Chris Warren-Smith.
+// Copyright(C) 2001-2026 Chris Warren-Smith.
 //
 // This program is distributed under the terms of the GPL v2.0 or later
 // Download the GNU Public License (GPL) from www.gnu.org
@@ -28,6 +28,7 @@
 #include <SDL3/SDL_messagebox.h>
 #include <SDL3/SDL_mutex.h>
 #include <SDL3/SDL_thread.h>
+#include <SDL3/SDL_dialog.h>
 #include <cmath>
 
 #define WAIT_INTERVAL 5
@@ -380,7 +381,7 @@ void Runtime::handleKeyEvent(MAEvent &event) const {
       // ignore ALT press without modifier key
       event.key = -1;
     } else if ((event.nativeKey & SDL_KMOD_CTRL) &&
-        (event.nativeKey & SDL_KMOD_ALT)) {
+               (event.nativeKey & SDL_KMOD_ALT)) {
       event.key = SB_KEY_CTRL_ALT(event.key);
     } else if ((event.nativeKey & SDL_KMOD_CTRL) &&
                (event.nativeKey & SDL_KMOD_SHIFT)) {
@@ -564,6 +565,23 @@ void Runtime::pollEvents(bool blocking) {
       }
     }
   }
+}
+
+void openFolderCallBack(void *userdata, const char *const *filelist, int filter) {
+  if (filelist && filelist[0]) {
+    Runtime *runtime = (Runtime *)userdata;
+    runtime->onFolderSelected(filelist[0]);
+  }
+}
+
+void Runtime::onFolderSelected(const char *folder) {
+  chdir(folder);
+  setRestart();
+}
+
+void Runtime::openFolder() {
+  // when running inside flatpak, this will grant access to selected folder
+  SDL_ShowOpenFolderDialog(openFolderCallBack, this, _window, nullptr, false);
 }
 
 MAEvent Runtime::processEvents(int waitFlag) {
