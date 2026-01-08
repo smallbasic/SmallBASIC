@@ -187,6 +187,15 @@ function buildSDL() {
      AC_MSG_ERROR([xxd command not installed: configure failed.])
    fi
 
+   AC_ARG_WITH(flatpak,
+   [  --with-flatpak  Build the flatpak version default=no],
+       [with_flatpak=$withval],
+       [with_flatpak=no])
+   if test "$with_flatpak" = "yes" || test "$with_flatpak" = "full"
+   then
+     AC_DEFINE(_FLATPAK, 1, [flatpak build enabled])
+   fi
+
    case "${host_os}" in
      *mingw* | cygwin*)
      dnl avoid using MSCRT versions of printf for long double

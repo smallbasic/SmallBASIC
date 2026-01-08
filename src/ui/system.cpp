@@ -151,22 +151,19 @@ System::~System() {
 
 bool System::execute(const char *bas) {
   _stackTrace.removeAll();
-  _output->reset();
   reset_image_cache();
 
   // reset program controlled options
-  opt_antialias = 1;
-  opt_show_page = 0;
-
+  opt_antialias = true;
+  opt_show_page = false;
   opt_pref_width = _output->getWidth();
   opt_pref_height = _output->getHeight();
   opt_base = 0;
-  opt_usepcre = 0;
-  opt_autolocal = 0;
+  opt_usepcre = false;
+  opt_autolocal = false;
 
   _state = kRunState;
   setWindowTitle(bas);
-  showCursor(kArrow);
   saveWindowRect();
 
   int result = ::sbasic_main(bas);
@@ -178,15 +175,8 @@ bool System::execute(const char *bas) {
     opt_command[0] = '\0';
   }
 
-  if (!_mainBas) {
-    onRunCompleted();
-  }
-
-  enableCursor(true);
+  onRunCompleted();
   opt_file_permitted = 1;
-  _output->selectScreen(USER_SCREEN1);
-  _output->resetFont();
-  _output->flush(true);
   _userScreenId = -1;
   return result != 0;
 }
@@ -1022,12 +1012,23 @@ void System::setRunning(bool running) {
     dev_bgcolor = -DEFAULT_BACKGROUND;
     setDimensions();
     dev_clrkb();
+
+    // setup output screen
+    showCursor(kArrow);
     _output->setAutoflush(!opt_show_page);
+    _output->reset();
+
     if (_mainBas || isNetworkLoad() || !isEditEnabled()) {
       _loadPath.clear();
     }
     _userScreenId = -1;
   } else {
+    // restore output screen
+    _output->selectScreen(isEditReady() ? FORM_SCREEN : USER_SCREEN1);
+    _output->resetFont();
+    _output->flush(false);
+
+    enableCursor(true);
     osd_clear_sound_queue();
     if (!isClosing() && !isRestart() && !isBack()) {
       _state = kActiveState;

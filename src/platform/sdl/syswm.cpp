@@ -25,13 +25,13 @@ void appLog(const char *format, ...);
 WCHAR g_appPath[MAX_PATH + 1];
 
 void setupAppPath(const char *path) {
-  GetModuleFileNameW(NULL, g_appPath, MAX_PATH);
+  GetModuleFileNameW(nullptr, g_appPath, MAX_PATH);
 }
 
 void loadIcon(SDL_Window *window) {
-  HINSTANCE handle = ::GetModuleHandle(NULL);
+  HINSTANCE handle = ::GetModuleHandle(nullptr);
   HICON icon = ::LoadIcon(handle, MAKEINTRESOURCE(101));
-  if (icon != NULL) {
+  if (icon != nullptr) {
     SDL_SysWMinfo wminfo;
     SDL_VERSION(&wminfo.version);
     if (SDL_GetWindowWMInfo(window, &wminfo) == 1) {
@@ -55,23 +55,37 @@ int getStartupFontSize(SDL_Window *window) {
   return result;
 }
 
+static void launch(const char *command, const char *file) {
+  STARTUPINFO info = {sizeof(info)};
+  PROCESS_INFORMATION processInfo;
+  char cmd[MAX_PATH + 1];
+  sprintf(cmd, "%s -x %s", command, file);
+  if (!CreateProcess(command, cmd, nullptr, nullptr, TRUE, 0, nullptr, nullptr, &info, &processInfo)) {
+    appLog("failed to start %d %s %s\n", GetLastError(), command, cmd);
+  }
+}
+
+void launchConsole(const char *file) {
+  launch("sbasic", file);
+}
+
 void launchDebug(const char *file) {
   STARTUPINFOW info = {sizeof(info)};
   PROCESS_INFORMATION processInfo;
   WCHAR cmd[MAX_PATH + 1];
   swprintf(cmd, MAX_PATH, L"-p %d -d %s", g_debugPort, file);
-  if (!CreateProcessW(g_appPath, cmd, NULL, NULL, TRUE, 0, NULL, NULL, &info, &processInfo)) {
+  if (!CreateProcessW(g_appPath, cmd, nullptr, nullptr, TRUE, 0, nullptr, nullptr, &info, &processInfo)) {
     appLog("failed to start %d %s %s\n", GetLastError(), g_appPath, cmd);
   }
 }
 
-void launch(const char *command, const char *file) {
-  STARTUPINFO info = {sizeof(info)};
+void launchExec(const char *file) {
+  STARTUPINFOW info = {sizeof(info)};
   PROCESS_INFORMATION processInfo;
-  char cmd[MAX_PATH + 1];
-  sprintf(cmd, "%s -x %s", command, file);
-  if (!CreateProcess(command, cmd, NULL, NULL, TRUE, 0, NULL, NULL, &info, &processInfo)) {
-    appLog("failed to start %d %s %s\n", GetLastError(), command, cmd);
+  WCHAR cmd[MAX_PATH + 1];
+  swprintf(cmd, MAX_PATH, L"%s -x %s", g_appPath, file);
+  if (!CreateProcessW(g_appPath, cmd, nullptr, nullptr, TRUE, 0, nullptr, nullptr, &info, &processInfo)) {
+    appLog("failed to start %d %s %s\n", GetLastError(), g_appPath, cmd);
   }
 }
 
@@ -84,20 +98,11 @@ void browseFile(SDL_Window *window, const char *url) {
   }
 }
 
-void launchExec(const char *file) {
-  STARTUPINFOW info = {sizeof(info)};
-  PROCESS_INFORMATION processInfo;
-  WCHAR cmd[MAX_PATH + 1];
-  swprintf(cmd, MAX_PATH, L"%s -x %s", g_appPath, file);
-  if (!CreateProcessW(g_appPath, cmd, NULL, NULL, TRUE, 0, NULL, NULL, &info, &processInfo)) {
-    appLog("failed to start %d %s %s\n", GetLastError(), g_appPath, cmd);
-  }
-}
-
 #else
 #include <unistd.h>
 #include <errno.h>
 #include <limits.h>
+#include <spawn.h>
 #include "icon.h"
 #include "lib/lodepng/lodepng.h"
 
@@ -126,6 +131,29 @@ int getStartupFontSize(SDL_Window *window) {
   return DEFAULT_FONT_SIZE;
 }
 
+//
+// launch the given exec command
+//
+static void launch(const char *command, const char *argument, const char *file) {
+  extern char **environ;
+  pid_t pid = 0;
+  char *argv[] = {(char *)command, (char *)argument, (char *)file, nullptr};
+  int status = posix_spawnp(&pid, command, nullptr, nullptr, argv, environ);
+  if (status != 0) {
+    fprintf(stderr, "exec failed [%d] %s\n", status, command);
+  }
+}
+
+//
+// invoke sbasic console build to run external GUI based modules
+//
+void launchConsole(const char *file) {
+  launch("sbasic", "", file);
+}
+
+//
+// invoke sbasicg with runLive() along with a debug thread
+//
 void launchDebug(const char *file) {
   pid_t pid = fork();
   char port[20];
@@ -148,24 +176,11 @@ void launchDebug(const char *file) {
   }
 }
 
-void launch(const char *command, const char *file) {
-  pid_t pid = fork();
-
-  switch (pid) {
-  case -1:
-    // failed
-    break;
-  case 0:
-    // child process
-    if (execl(command, command, "-x", file, (char *)0) == -1) {
-      fprintf(stderr, "exec failed [%s] %s\n", strerror(errno), command);
-      exit(1);
-    }
-    break;
-  default:
-    // parent process - continue
-    break;
-  }
+//
+// invoke sbasicg with runLive()
+//
+void launchExec(const char *file) {
+  launch(g_appPath, "-x", file);
 }
 
 void browseFile(SDL_Window *window, const char *url) {
@@ -177,10 +192,10 @@ void browseFile(SDL_Window *window, const char *url) {
       "htmlview",
       "firefox",
       "google-chrome",
-      NULL
+      nullptr
     };
-    for (int i = 0; browser[i] != NULL; i++) {
-      execlp(browser[i], browser[i], url, NULL);
+    for (int i = 0; browser[i] != nullptr; i++) {
+      execlp(browser[i], browser[i], url, nullptr);
     }
     fprintf(stderr, "exec browser failed for %s\n", url);
     ::exit(1);
@@ -212,10 +227,6 @@ void setupAppPath(const char *path) {
     }
 #endif
   }
-}
-
-void launchExec(const char *file) {
-  launch(g_appPath, file);
 }
 
 #endif

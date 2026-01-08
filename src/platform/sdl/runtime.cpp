@@ -575,8 +575,25 @@ void openFolderCallBack(void *userdata, const char *const *filelist, int filter)
 }
 
 void Runtime::onFolderSelected(const char *folder) {
-  chdir(folder);
-  setRestart();
+  for (int i = 0; i < 5; i++) {
+    if (chdir(folder) == 0) {
+      if (isRunning()) {
+        setRestart();
+        dev_chdir(folder);
+        _graphics->redraw();
+      }
+      break;
+    }
+
+    if (errno == EAGAIN || errno == EBUSY) {
+      // FUSE not ready yet, wait a bit
+      pause(100);
+      continue;
+    }
+
+    alert("Failed to select", strerror(errno));
+    break;
+  }
 }
 
 void Runtime::openFolder() {
@@ -723,9 +740,11 @@ char *Runtime::getClipboardText() {
 }
 
 void Runtime::onRunCompleted() {
-  SDL_SetWindowPosition(_window, _saveRect.x, _saveRect.y);
-  SDL_SetWindowSize(_window, _saveRect.w, _saveRect.h);
-  setWindowRect(_saveRect.x, _saveRect.y, _saveRect.w, _saveRect.h);
+  if (!_mainBas) {
+    SDL_SetWindowPosition(_window, _saveRect.x, _saveRect.y);
+    SDL_SetWindowSize(_window, _saveRect.w, _saveRect.h);
+    setWindowRect(_saveRect.x, _saveRect.y, _saveRect.w, _saveRect.h);
+  }
 }
 
 void Runtime::saveWindowRect() {
@@ -950,32 +969,34 @@ int debugThread(void *data) {
 }
 
 extern "C" void dev_trace_line(int lineNo) {
-  SDL_LockMutex(g_lock);
-  g_debugLine = lineNo;
+  if (g_lock != nullptr) {
+    SDL_LockMutex(g_lock);
+    g_debugLine = lineNo;
 
-  if (!g_debugBreak) {
-    List_each(int *, it, g_breakPoints) {
-      int breakPoint = *(*it);
-      if (breakPoint == lineNo) {
-        runtime->systemPrint("Break point hit at line: %d", lineNo);
-        g_debugBreak = true;
-        break;
+    if (!g_debugBreak) {
+      List_each(int *, it, g_breakPoints) {
+        int breakPoint = *(*it);
+        if (breakPoint == lineNo) {
+          runtime->systemPrint("Break point hit at line: %d", lineNo);
+          g_debugBreak = true;
+          break;
+        }
       }
     }
-  }
-  if (g_debugBreak) {
-    runtime->getOutput()->redraw();
-    g_debugPause = true;
-    while (g_debugPause) {
-      // wait for g_debugPause condition to be signalled via signalTrace()
-      SDL_WaitConditionTimeout(g_cond, g_lock, COND_WAIT_TIME);
-      runtime->processEvents(0);
-      if (!runtime->isRunning()) {
-        break;
+    if (g_debugBreak) {
+      runtime->getOutput()->redraw();
+      g_debugPause = true;
+      while (g_debugPause) {
+        // wait for g_debugPause condition to be signalled via signalTrace()
+        SDL_WaitConditionTimeout(g_cond, g_lock, COND_WAIT_TIME);
+        runtime->processEvents(0);
+        if (!runtime->isRunning()) {
+          break;
+        }
       }
+    } else if (g_breakPoints.empty() && g_debugTrace) {
+      runtime->systemPrint("Trace line: %d", lineNo);
     }
-  } else if (g_breakPoints.empty() && g_debugTrace) {
-    runtime->systemPrint("Trace line: %d", lineNo);
+    SDL_UnlockMutex(g_lock);
   }
-  SDL_UnlockMutex(g_lock);
 }

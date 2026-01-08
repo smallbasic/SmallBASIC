@@ -1643,6 +1643,7 @@ int sbasic_exec(const char *file) {
   opt_show_page = 0;
 
   // setup global values
+  gsb_err_mod_perm = 0;
   gsb_last_line = gsb_last_error = 0;
   strlcpy(gsb_last_file, file, sizeof(gsb_last_file));
   strcpy(gsb_last_errmsg, "");
@@ -1656,6 +1657,8 @@ int sbasic_exec(const char *file) {
   } else if (!success) {        // there was some errors; do not continue
     exec_rq = 0;
     gsb_last_error = 1;
+  } else if (gsb_err_mod_perm) {
+    exec_rq = 0;                // a module is not permitted to be run
   }
 
   if (exec_rq) {                // we will run it

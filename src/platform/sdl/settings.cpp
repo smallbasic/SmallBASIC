@@ -22,7 +22,7 @@
 using namespace strlib;
 
 static const char *ENV_VARS[] = {
-  "APPDATA", "HOME", "TMP", "TEMP", "TMPDIR", ""
+  "XDG_DATA_HOME", "APPDATA", "HOME", "TMP", "TEMP", "TMPDIR", ""
 };
 
 #if !defined(FILENAME_MAX)
@@ -48,7 +48,7 @@ enum Settings {k_window, k_debug, k_export};
 
 void createConfigPath(const char *var, const char *home, char *path, size_t size) {
   strlcpy(path, home, size);
-  if (strcmp(var, "HOME") == 0) {
+  if (strcmp(var, "HOME") == 0 || strcmp(var, "XDG_DATA_HOME") == 0) {
     // unix path
     strlcat(path, "/.config", size);
     makedir(path);
@@ -199,6 +199,11 @@ void restoreSettings(SDL_Rect &rect, int &fontScale, bool debug, bool restoreDir
     opt_mute_audio = 0;
     opt_ide = IDE_INTERNAL;
     g_themeId = 0;
+  }
+
+  // start in the flatpak sandbox home
+  if (getenv("XDG_DATA_HOME")) {
+    chdir(getenv("XDG_DATA_HOME"));
   }
 
   // restore export settings

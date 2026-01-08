@@ -73,19 +73,24 @@ appImage:
 # sudo apt install flatpak-builder
 # https://docs.flathub.org/docs/for-app-authors/submission
 #
-
-flatpak-build-all:
-	flatpak-builder --force-clean build-dir io.github.smallbasic.json
+# inspect build-dir/files (or /app from flatpack-shell) for additional "cleanup" items
+#
 
 flatpak-build:
-	flatpak-builder --build-only --force-clean --disable-download --disable-updates build-dir io.github.smallbasic.json && \
-	flatpak-builder --run build-dir io.github.smallbasic.json sbasicg
-
-flatpak-install:
-	flatpak-builder --user --install --force-clean build-dir io.github.smallbasic.json
+	flatpak-builder --force-clean --ccache build-dir io.github.smallbasic.json
 
 flatpak-run:
+	make -s -j$(nproc) && \
+  flatpak-builder --user --install --force-clean --ccache --disable-download build-dir io.github.smallbasic.json && \
 	flatpak run io.github.smallbasic
+
+flatpak-debug:
+	make -s -j$(nproc) && \
+	flatpak-builder --build-only --force-clean --ccache --disable-download --disable-updates build-dir io.github.smallbasic.json && \
+	flatpak-builder --run build-dir io.github.smallbasic.json gdb sbasicg
+
+flatpak-shell:
+	flatpak-builder --build-shell=sbasicg build-dir io.github.smallbasic.json
 
 EXTRA_DIST =                                                 \
 documentation/build_kwp.cpp                                  \

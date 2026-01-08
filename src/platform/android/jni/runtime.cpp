@@ -1013,13 +1013,15 @@ void Runtime::onResize(int width, int height, int imeState) {
 }
 
 void Runtime::onRunCompleted() {
-  const char *storage = getenv("EXTERNAL_DIR");
-  if (!storage) {
-    storage = getenv("INTERNAL_DIR");
-  }
-  if (storage) {
-    setenv("HOME_DIR", storage, 1);
-    chdir(storage);
+  if (!_mainBas) {
+    const char *storage = getenv("EXTERNAL_DIR");
+    if (!storage) {
+      storage = getenv("INTERNAL_DIR");
+    }
+    if (storage) {
+      setenv("HOME_DIR", storage, 1);
+      chdir(storage);
+    }
   }
 }
 

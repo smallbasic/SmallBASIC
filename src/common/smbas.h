@@ -129,6 +129,7 @@ EXTERN int gsb_last_error; /**< error code, 0 = no error,  < 0 = local messages 
 EXTERN char gsb_last_file[OS_PATHNAME_SIZE + 1]; /**< source code file-name of the last error     */
 EXTERN char gsb_bas_dir[OS_PATHNAME_SIZE + 1]; /**< source code home dir     */
 EXTERN char gsb_last_errmsg[SB_ERRMSG_SIZE + 1]; /**< last error message     */
+EXTERN byte gsb_err_mod_perm; /**< whether a module was not permitted to run */
 
 #include "common/units.h"
 #include "common/tasks.h"

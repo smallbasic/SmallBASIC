@@ -40,6 +40,7 @@ typedef int (*sblib_exec_fn)(int, int, slib_par_t *, var_t *);
 typedef int (*sblib_getname_fn) (int, char *);
 typedef int (*sblib_count_fn) (void);
 typedef int (*sblib_init_fn) (const char *);
+typedef int (*sblib_has_window_ui_fn) (void);
 typedef int (*sblib_free_fn) (int, int);
 typedef void (*sblib_close_fn) (void);
 
@@ -371,6 +372,13 @@ static void slib_import_routines(slib_t *lib, int comp) {
       }
     }
   }
+
+#if !defined(_CONSOLE)
+  sblib_has_window_ui_fn has_window_ui = slib_getoptptr(lib, "sblib_has_window_ui");
+  if (has_window_ui && has_window_ui()) {
+    gsb_err_mod_perm = 1;
+  }
+#endif
 
   if (!total) {
     log_printf("LIB: module '%s' has no exports\n", lib->_name);
