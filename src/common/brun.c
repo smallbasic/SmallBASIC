@@ -1658,7 +1658,7 @@ int sbasic_exec(const char *file) {
     exec_rq = 0;
     gsb_last_error = 1;
   } else if (gsb_err_mod_perm) {
-    exec_rq = 0;                // a module is not permitted to be run
+    exec_rq = 0;                // a module was not permitted to run
   }
 
   if (exec_rq) {                // we will run it

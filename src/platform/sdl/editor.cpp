@@ -199,7 +199,7 @@ void Runtime::editSource(String loadPath, bool restoreOnExit) {
   int h = _output->getHeight();
   int charWidth = _output->getCharWidth();
   int charHeight = _output->getCharHeight();
-  int prevScreenId = _output->selectScreen(FORM_SCREEN);
+  _output->selectScreen(FORM_SCREEN);
 
   TextEditInput *editWidget;
   if (_editor != nullptr) {
@@ -267,10 +267,6 @@ void Runtime::editSource(String loadPath, bool restoreOnExit) {
         _output->setStatus(!gsb_last_errmsg[0] ? "Error" : gsb_last_errmsg);
       }
     }
-  } else if (gsb_err_mod_perm) {
-    _output->setStatus("Running ...");
-    saveFile(editWidget, loadPath);
-    launchConsole(loadPath);
   } else {
     statusMessage.update(editWidget, _output, true);
   }
@@ -604,9 +600,6 @@ void Runtime::editSource(String loadPath, bool restoreOnExit) {
 
   // deletes editWidget and _keypad unless it has been removed
   _output->removeInputs();
-  if (!isClosing() && restoreOnExit) {
-    _output->selectScreen(prevScreenId, false);
-  }
   logLeaving();
 }
 

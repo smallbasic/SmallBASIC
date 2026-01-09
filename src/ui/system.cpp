@@ -135,7 +135,8 @@ System::System() :
   _mainBas(false),
   _buttonPressed(false),
   _srcRendered(false),
-  _menuActive(false) {
+  _menuActive(false),
+  _compileError(false) {
   g_system = this;
 }
 
@@ -150,6 +151,7 @@ System::~System() {
 }
 
 bool System::execute(const char *bas) {
+  _compileError = true;
   _stackTrace.removeAll();
   reset_image_cache();
 
@@ -167,6 +169,22 @@ bool System::execute(const char *bas) {
   saveWindowRect();
 
   int result = ::sbasic_main(bas);
+
+  if (isExternalLaunch()) {
+    if (_editor != nullptr) {
+      // returning to the editor
+      String path(bas);
+      saveFile(_editor, path);
+    }
+    //executeConsole(bas); TODO
+  }
+
+  if (_editor == nullptr) {
+    _output->selectScreen(USER_SCREEN1);
+  }
+  _output->resetFont();
+  _output->flush(false);
+
   if (isRunning()) {
     _state = kActiveState;
   }
@@ -864,6 +882,15 @@ void System::runMain(const char *mainBasPath) {
 
     bool success = execute(_loadPath);
     bool networkFile = isNetworkLoad();
+
+    if (isExternalLaunch()) {
+      if (_editor == nullptr) {
+        _loadPath.clear();
+        _state = kActiveState;
+      }
+      continue;
+    }
+
     if (!isBack() && !isClosing() &&
         (success || networkFile || !isEditEnabled())) {
       // when editing, only pause here when successful, otherwise the editor shows
@@ -1010,24 +1037,18 @@ void System::setRunning(bool running) {
   if (running) {
     dev_fgcolor = -DEFAULT_FOREGROUND;
     dev_bgcolor = -DEFAULT_BACKGROUND;
-    setDimensions();
     dev_clrkb();
 
-    // setup output screen
+    setDimensions();
     showCursor(kArrow);
-    _output->setAutoflush(!opt_show_page);
     _output->reset();
-
+    _output->setAutoflush(!opt_show_page);
+    _userScreenId = -1;
+    _compileError = false;
     if (_mainBas || isNetworkLoad() || !isEditEnabled()) {
       _loadPath.clear();
     }
-    _userScreenId = -1;
   } else {
-    // restore output screen
-    _output->selectScreen(isEditReady() ? FORM_SCREEN : USER_SCREEN1);
-    _output->resetFont();
-    _output->flush(false);
-
     enableCursor(true);
     osd_clear_sound_queue();
     if (!isClosing() && !isRestart() && !isBack()) {
@@ -1041,8 +1062,11 @@ void System::showCompletion(bool success) {
   if (success) {
     _output->setStatus("Done - press back [<-]");
   } else {
-    printErrorLine();
+    if (_compileError) {
+      _output->reset();
+    }
     _output->setStatus("Error - see console");
+    printErrorLine();
     showSystemScreen(true);
   }
   _output->flush(true);

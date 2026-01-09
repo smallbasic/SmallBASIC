@@ -86,6 +86,7 @@ struct System {
   bool isEditReady() const {return !isRestart() && isEditEnabled() && !isNetworkLoad();}
   bool isNetworkLoad() const {return _loadPath.indexOf("://", 1) != -1;}
   bool isScratchLoad() const {return _loadPath.indexOf("scratch", 0) != -1;}
+  bool isExternalLaunch() const { return !gsb_last_error && gsb_err_mod_perm; }
   bool loadSource(const char *fileName);
   void resize() const;
   void runEdit(const char *startupBas);
@@ -144,6 +145,7 @@ struct System {
   bool _buttonPressed;
   bool _srcRendered;
   bool _menuActive;
+  bool _compileError;
   strlib::String _loadPath;
   strlib::String _activeFile;
 };
