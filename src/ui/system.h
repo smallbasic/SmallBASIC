@@ -77,6 +77,7 @@ struct System {
   static bool setParentPath();
 
   virtual void editSource(strlib::String loadPath, bool restoreOnExit) = 0;
+  virtual void externalExecute(const char *bas) const = 0;
   bool execute(const char *bas);
   MAEvent getNextEvent() { return processEvents(1); }
   uint32_t getModifiedTime() const;

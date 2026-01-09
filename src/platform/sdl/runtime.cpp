@@ -262,6 +262,10 @@ void Runtime::exportRun(const char *file) const {
   SDL_RaiseWindow(_window);
 }
 
+void Runtime::externalExecute(const char *bas) const {
+  launchConsole(bas);
+}
+
 bool Runtime::toggleFullscreen() {
   if (!_fullscreen) {
     setWindowRect(_windowRect);

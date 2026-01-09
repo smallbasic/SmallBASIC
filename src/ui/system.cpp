@@ -176,7 +176,7 @@ bool System::execute(const char *bas) {
       String path(bas);
       saveFile(_editor, path);
     }
-    //executeConsole(bas); TODO
+    externalExecute(bas);
   }
 
   if (_editor == nullptr) {
