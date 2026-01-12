@@ -71,8 +71,10 @@ extern "C" {
 #endif
 
 // SB's constants
-#if defined(_SDL)
- #define SB_STR_VER VERSION " SDL " _SDL_VERSION SB_VERSYS SB_BIT_SZ BUILD_DATE
+#if defined(_SDL) && defined(_FLATPAK)
+  #define SB_STR_VER VERSION " FLATPAK SDL " _SDL_VERSION SB_VERSYS SB_BIT_SZ BUILD_DATE
+#elif defined(_SDL)
+  #define SB_STR_VER VERSION " SDL " _SDL_VERSION SB_VERSYS SB_BIT_SZ BUILD_DATE
 #elif defined (_ANDROID)
   #define SB_STR_VER VERSION " Android " BUILD_DATE
 #elif defined (_FLTK)

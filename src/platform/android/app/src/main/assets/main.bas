@@ -15,6 +15,7 @@ const colNav   = theme.text1
 const colNav2  = theme.text6
 const menu_gap = -(char_w / 2)
 const is_android = instr(sbver, "Android") != 0
+const is_sandboxed_fs = len(env("SANDBOXED_FS")) > 0
 const is_sdl = instr(sbver, "SDL") != 0
 const path_sep = iff(instr(sbver, "Win_") != 0, "\\", "/")
 const onlineUrl = "http://smallbasic.github.io/samples/index.bas"
@@ -366,6 +367,8 @@ sub loadFileList(path, byref basList)
     if (len(path) > 0) then
       dirwalk path, "", use androidWalker(x)
     endif
+  else if (is_sandboxed_fs) then
+    dirwalk path, "", use androidWalker(x)
   else
     dirwalk path, "", use walker(x)
   endif
@@ -435,7 +438,10 @@ sub listFiles(byref frm, path, sortDir, byref basList)
     frm.inputs << bn
   end
 
-  if (is_android) then
+  if (is_sandboxed_fs) then
+    mk_folder_link(path)
+    mk_link(sortNameId, "[Name]", name_col, 0, -linespacing)
+  else if (is_android) then
     mk_link(sortNameId, "[Name]", name_col, 0, -linespacing)
   else
     mk_folder_link(path)

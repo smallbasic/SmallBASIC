@@ -201,10 +201,13 @@ void restoreSettings(SDL_Rect &rect, int &fontScale, bool debug, bool restoreDir
     g_themeId = 0;
   }
 
+#if defined(_FLATPAK)
   // start in the flatpak sandbox home
-  if (getenv("XDG_DATA_HOME")) {
-    chdir(getenv("XDG_DATA_HOME"));
-  }
+  chdir(getenv("XDG_DATA_HOME"));
+
+  // for main.bas handling is_sandboxed_fs
+  setenv("SANDBOXED_FS", "true", 1);
+#endif
 
   // restore export settings
   if (!debug) {

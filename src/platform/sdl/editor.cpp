@@ -387,9 +387,11 @@ void Runtime::editSource(String loadPath, bool restoreOnExit) {
         case SB_KEY_F(7):
           debugStep(editWidget, helpWidget, true);
           break;
+#if !defined(_FLATPAK)
         case SB_KEY_F(8):
           exportRun(loadPath);
           break;
+#endif
         case SB_KEY_F(9):
         case SB_KEY_CTRL('r'):
           _state = kRunState;
