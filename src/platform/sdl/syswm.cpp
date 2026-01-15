@@ -65,8 +65,9 @@ static void launch(const char *command, const char *file) {
   }
 }
 
-void launchConsole(const char *file) {
+int launchConsole(const char *file) {
   launch("sbasic", file);
+  return 0;
 }
 
 void launchDebug(const char *file) {
@@ -99,10 +100,16 @@ void browseFile(SDL_Window *window, const char *url) {
 }
 
 #else
-#include <unistd.h>
 #include <errno.h>
+#include <fcntl.h>
 #include <limits.h>
 #include <spawn.h>
+#include <sys/wait.h>
+#include <unistd.h>
+
+#include <SDL3/SDL_events.h>
+#include <SDL3/SDL_timer.h>
+
 #include "icon.h"
 #include "lib/lodepng/lodepng.h"
 
@@ -140,15 +147,48 @@ static void launch(const char *command, const char *argument, const char *file) 
   char *argv[] = {(char *)command, (char *)argument, (char *)file, nullptr};
   int status = posix_spawnp(&pid, command, nullptr, nullptr, argv, environ);
   if (status != 0) {
-    fprintf(stderr, "exec failed [%d] %s\n", status, command);
+    fprintf(stderr, "%s failed [%s]\n", command, strerror(status));
   }
 }
 
 //
 // invoke sbasic console build to run external GUI based modules
 //
-void launchConsole(const char *file) {
-  launch("sbasic", "", file);
+int launchConsole(const char *file) {
+  pid_t pid;
+  char *argv[] = {(char*)"sbasic", (char *)file, nullptr};
+  int status = posix_spawnp(&pid, "sbasic", nullptr, nullptr, argv, environ);
+  if (status != 0) {
+    fprintf(stderr, "sbasic failed [%s]\n", strerror(status));
+    return 1;
+  }
+
+  bool running = true;
+  int result = 0;
+  while (running) {
+    SDL_Event event;
+    while (SDL_PollEvent(&event)) {
+      if (event.type == SDL_EVENT_QUIT) {
+        kill(pid, SIGTERM);
+        running = false;
+        break;
+      }
+    }
+    int wait_status;
+    pid_t wait_result = waitpid(pid, &wait_status, WNOHANG);
+    if (wait_result > 0) {
+      running = false;
+      if (WIFEXITED(wait_status)) {
+        // normal exit
+        result = WEXITSTATUS(wait_status);
+      } else if (WIFSIGNALED(wait_status)) {
+        // crashed
+        result = -1;
+      }
+    }
+    SDL_Delay(16);
+  }
+  return result;
 }
 
 //

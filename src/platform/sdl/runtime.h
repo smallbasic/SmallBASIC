@@ -64,7 +64,7 @@ struct Runtime final : System {
 
 private:
   void editSource(String loadPath, bool restoreOnExit) override;
-  void externalExecute(const char *bas) const override;
+  int externalExecute(const char *bas) const override;
 
   bool _fullscreen;
   SDL_Rect _windowRect{};

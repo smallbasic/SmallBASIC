@@ -176,7 +176,10 @@ bool System::execute(const char *bas) {
       String path(bas);
       saveFile(_editor, path);
     }
-    externalExecute(bas);
+    int result = externalExecute(bas);
+    if (_editor != nullptr && result > 0) {
+      _editor->setErrorAtLine(result);
+    }
   }
 
   if (_editor == nullptr) {

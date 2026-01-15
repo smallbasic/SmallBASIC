@@ -528,6 +528,7 @@ TextEditInput::TextEditInput(const char *text, int chW, int chH,
   _pressTick(0),
   _xmargin(0),
   _ymargin(0),
+  _errorAtLine(-1),
   _bottom(false),
   _dirty(false),
   _comment(true) {

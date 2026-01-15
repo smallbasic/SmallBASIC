@@ -86,7 +86,7 @@ struct Runtime : public System {
 
 private:
   void editSource(String loadPath, bool restoreOnExit) override;
-  void externalExecute(const char *bas) const override {}
+  int externalExecute(const char *bas) const override { return 0;}
 
   bool _keypadActive;
   bool _hasFocus;

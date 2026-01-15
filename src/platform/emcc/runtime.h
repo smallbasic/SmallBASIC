@@ -22,7 +22,7 @@ struct Runtime : public System {
   char *getClipboardText();
   int  getFontSize() { return _output->getFontSize(); }
   void editSource(String loadPath, bool restoreOnExit) override;
-  void externalExecute(const char *bas) const override {}
+  int externalExecute(const char *bas) const override { return 0;}
   void enableCursor(bool enabled) {}
   int  handle(int event);
   char *loadResource(const char *fileName);

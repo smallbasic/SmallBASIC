@@ -267,6 +267,12 @@ void Runtime::editSource(String loadPath, bool restoreOnExit) {
         _output->setStatus(!gsb_last_errmsg[0] ? "Error" : gsb_last_errmsg);
       }
     }
+  } else if (editWidget->getErrorAtLine() != -1) {
+    String message("Error at line: ");
+    message.append(editWidget->getErrorAtLine());
+    _output->setStatus(message);
+    editWidget->setCursorRow(editWidget->getErrorAtLine() - 1);
+    editWidget->setErrorAtLine(-1);
   } else {
     statusMessage.update(editWidget, _output, true);
   }

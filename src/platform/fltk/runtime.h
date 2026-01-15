@@ -21,7 +21,7 @@ struct Runtime : public System {
   int ask(const char *title, const char *prompt, bool cancel=true);
   void browseFile(const char *url);
   void editSource(String loadPath, bool restoreOnExit) override {}
-  void externalExecute(const char *bas) const override {}
+  int externalExecute(const char *bas) const override { return 0;}
   char *getClipboardText();
   int  getFontSize() { return _output->getFontSize(); }
   void enableCursor(bool enabled);
