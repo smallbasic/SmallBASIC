@@ -53,7 +53,7 @@ bool Canvas::create(int w, int h) {
   return result;
 }
 
-void Canvas::drawRegion(Canvas *src, const MARect *srcRect, int destX, int destY) {
+void Canvas::drawRegion(Canvas *src, const MARect *srcRect, int destX, int destY) const {
   int srcH = srcRect->height;
   if (srcRect->top + srcRect->height > src->_h) {
     srcH = src->_h - srcRect->top;
@@ -65,7 +65,7 @@ void Canvas::drawRegion(Canvas *src, const MARect *srcRect, int destX, int destY
   }
 }
 
-void Canvas::fillRect(int left, int top, int width, int height, pixel_t drawColor) {
+void Canvas::fillRect(int left, int top, int width, int height, pixel_t drawColor) const {
   int dtX = x();
   int dtY = y();
   uint8_t dR, dG, dB;

@@ -1,3 +1,11 @@
+2025-09-11 (12.31)
+	ANDROID: Implemented support for editing with the system keypad
+
+2025-08-31 (12.30)
+	ANDROID: Implemented a replacement editor keypad
+	ANDROID: Implemented editor find command
+	ANDROID: Updated editor help
+
 2025-04-26 (12.29)
 	ANDROID: minor fix for PEN(3)
 

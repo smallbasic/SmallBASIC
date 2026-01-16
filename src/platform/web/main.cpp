@@ -156,6 +156,14 @@ MHD_Response *serve_file(const char *path) {
   int fd = open(path, O_RDONLY | O_BINARY);
   if (!fstat(fd, &stbuf)) {
     response = MHD_create_response_from_fd(stbuf.st_size, fd);
+
+    // add the content-type headers for browsing
+    unsigned len = strlen(path);
+    if (len > 4 && strcmp(path + len - 4, ".css") == 0) {
+      MHD_add_response_header(response, MHD_HTTP_HEADER_CONTENT_TYPE, "text/css");
+    } else if (len > 3 && strcmp(path + len - 3, ".js") == 0) {
+      MHD_add_response_header(response, MHD_HTTP_HEADER_CONTENT_TYPE, "application/javascript");
+    }
   } else {
     response = nullptr;
   }

@@ -219,9 +219,9 @@ extern "C" JNIEXPORT void JNICALL Java_net_sourceforge_smallbasic_MainActivity_s
 }
 
 extern "C" JNIEXPORT void JNICALL Java_net_sourceforge_smallbasic_MainActivity_onResize
-  (JNIEnv *env, jclass jclazz, jint width, jint height) {
+  (JNIEnv *env, jclass jclazz, jint width, jint height, jint imeState) {
   if (runtime != nullptr && !runtime->isClosing() && runtime->isActive() && os_graphics) {
-    runtime->onResize(width, height);
+    runtime->onResize(width, height, imeState);
   }
 }
 
@@ -258,7 +258,7 @@ extern "C" JNIEXPORT void JNICALL Java_net_sourceforge_smallbasic_MainActivity_c
 
 void onContentRectChanged(ANativeActivity *activity, const ARect *rect) {
   logEntered();
-  runtime->onResize(rect->right, rect->bottom);
+  runtime->onResize(rect->right, rect->bottom, 0);
 }
 
 jbyteArray newByteArray(JNIEnv *env, const char *str) {
@@ -619,7 +619,7 @@ void Runtime::loadConfig() {
   int height = getInteger("getWindowHeight");
   if (height !=  _graphics->getHeight()) {
     // height adjustment for bottom virtual navigation bar
-    onResize(_graphics->getWidth(), height);
+    onResize(_graphics->getWidth(), height, 0);
   }
 
   _output->setTextColor(DEFAULT_FOREGROUND, DEFAULT_BACKGROUND);
@@ -994,14 +994,18 @@ void Runtime::showKeypad(bool show) {
   _app->activity->vm->DetachCurrentThread();
 }
 
-void Runtime::onResize(int width, int height) {
+void Runtime::onResize(int width, int height, int imeState) {
   logEntered();
   if (_graphics != nullptr) {
     int w = _graphics->getWidth();
     int h = _graphics->getHeight();
     if (w != width || h != height) {
-      trace("Resized from %d %d to %d %d", w, h, width, height);
+      trace("Resized from %d %d to %d %d [ime=%d]", w, h, width, height, imeState);
       ALooper_acquire(_app->looper);
+      if (imeState != 0) {
+        // in android 16+ when resize also knows whether the ime (keypad) is active
+        _keypadActive = (imeState > 0);
+      }
       _graphics->setSize(width, height);
       auto *maEvent = new MAEvent();
       maEvent->type = EVENT_TYPE_SCREEN_CHANGED;

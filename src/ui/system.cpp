@@ -83,6 +83,7 @@
 #define MENU_STR_SELECT  MK_MENU("Select All", "^a")
 #define MENU_STR_OFF     "OFF"
 #define MENU_STR_ON      "ON"
+#define MENU_STR_EXT     "SYSTEM"
 #define MENU_STR_AUDIO   " Audio  [%s] "
 #define MENU_STR_EDITOR  " Editor [%s] "
 #define MENU_STR_THEME   " Theme  [%s] "
@@ -414,7 +415,8 @@ void System::handleMenu(MAEvent &event) {
     }
     break;
   case MENU_EDITMODE:
-    opt_ide = (opt_ide == IDE_NONE ? IDE_INTERNAL : IDE_NONE);
+    opt_ide = (opt_ide == IDE_NONE ? IDE_INTERNAL :
+               opt_ide == IDE_INTERNAL ? IDE_EXTERNAL : IDE_NONE);
     break;
   case MENU_THEME:
     g_themeId = (g_themeId + 1) % NUM_THEMES;
@@ -1072,7 +1074,9 @@ void System::showMenu() {
         items->add(new String(MENU_STR_DEBUG));
         items->add(new String(MENU_STR_OUTPUT));
 #elif defined(_ANDROID)
-        items->add(new String(MENU_STR_FIND));
+        if (opt_ide == IDE_INTERNAL) {
+          items->add(new String(MENU_STR_FIND));
+        }
 #endif
         items->add(new String(MENU_STR_HELP));
         for (int i = 0; i < completions; i++) {
@@ -1090,7 +1094,9 @@ void System::showMenu() {
         _systemMenu[index++] = MENU_DEBUG;
         _systemMenu[index++] = MENU_OUTPUT;
 #elif defined(_ANDROID)
-        _systemMenu[index++] = MENU_FIND;
+        if (opt_ide == IDE_INTERNAL) {
+          _systemMenu[index++] = MENU_FIND;
+        }
 #endif
         _systemMenu[index++] = MENU_HELP;
       } else if (isRunning()) {
@@ -1107,9 +1113,11 @@ void System::showMenu() {
       items->add(new String(MENU_STR_BACK));
       _systemMenu[index++] = MENU_BACK;
 #else
-      if (!isEditing()) {
+      if (!isEditing() || opt_ide == IDE_EXTERNAL) {
         items->add(new String(MENU_STR_KEYPAD));
         _systemMenu[index++] = MENU_KEYPAD;
+      }
+      if (!isEditing()) {
         bool controlMode = get_focus_edit()->getControlMode();
         sprintf(buffer, MENU_STR_CONTROL, (controlMode ? MENU_STR_ON : MENU_STR_OFF));
         items->add(new String(buffer));
@@ -1141,7 +1149,17 @@ void System::showMenu() {
         _systemMenu[index++] = MENU_ZOOM_DN;
 #endif
 #if !defined(_ANDROID_LIBRARY)
-        sprintf(buffer, MENU_STR_EDITOR, opt_ide == IDE_NONE ? MENU_STR_OFF : MENU_STR_ON);
+        switch (opt_ide) {
+        case IDE_NONE:
+          sprintf(buffer, MENU_STR_EDITOR, MENU_STR_OFF);
+          break;
+        case IDE_INTERNAL:
+          sprintf(buffer, MENU_STR_EDITOR, MENU_STR_ON);
+          break;
+        case IDE_EXTERNAL:
+          sprintf(buffer, MENU_STR_EDITOR, MENU_STR_EXT);
+          break;
+        }
         items->add(new String(buffer));
         _systemMenu[index++] = MENU_EDITMODE;
 #endif

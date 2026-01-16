@@ -70,7 +70,7 @@ struct Runtime : public System {
   void showCursor(CursorType cursorType) override {}
   void showKeypad(bool show);
   void onPaused(bool paused) { if (_graphics != nullptr) _graphics->onPaused(paused); }
-  void onResize(int w, int h);
+  void onResize(int w, int h, int imeState);
   void onRunCompleted() override;
   void onUnicodeChar(int ch);
   void loadConfig();

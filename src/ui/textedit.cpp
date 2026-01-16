@@ -2538,8 +2538,10 @@ void TextEditHelpWidget::layout(int x, int y, int w, int h) {
     case kPopup:
       _width = w - (_x + _xmargin);
       _height = h - (_y + _ymargin);
-      _x = _xBase;
-      _y = _yBase;
+#if !defined(_ANDROID)
+     _x = _xBase;
+     _y = _yBase;
+#endif
     }
   }
 }
