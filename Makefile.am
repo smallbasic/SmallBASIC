@@ -112,7 +112,7 @@ flatpak-create-repo:
 	flatpak-builder --repo=repo build-dir io.github.smallbasic.SmallBASIC.json
 
 # extra step 2 preparing for release
-flatpak-lint-lint3:
+flatpak-lint3:
 		flatpak run --command=flatpak-builder-lint org.flatpak.Builder repo repo
 
 EXTRA_DIST =                                                 \
