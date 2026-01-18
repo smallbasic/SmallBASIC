@@ -38,7 +38,7 @@ sbasicg_LDADD = -L$(top_srcdir)/src/common -lsb_common @PACKAGE_LIBS@
 sbasicg_DEPENDENCIES = $(top_srcdir)/src/common/libsb_common.a
 
 iconsdir = $(datadir)/icons/hicolor/128x128/apps
-icons_DATA = ../../../images/io.github.smallbasic.png
+icons_DATA = ../../../images/io.github.smallbasic.SmallBASIC.png
 
 desktopdir = $(datadir)/applications
 desktop_DATA = io.github.smallbasic.SmallBASIC.desktop

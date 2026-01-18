@@ -234,7 +234,7 @@ function buildSDL() {
 
      PACKAGE_CFLAGS="${PACKAGE_CFLAGS} ${FONTCONFIG_CFLAGS}"
 
-     (cd images && xxd -i sb-desktop-128x128.png > ../src/platform/sdl/icon.h)
+     (cd images && xxd -i io.github.smallbasic.SmallBASIC.png > ../src/platform/sdl/icon.h)
 
      dnl backlinking support for modules
      PACKAGE_LIBS="${PACKAGE_LIBS} -ldl -no-pie"
