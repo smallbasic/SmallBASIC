@@ -268,7 +268,7 @@ void Runtime::editSource(String loadPath, bool restoreOnExit) {
       }
     }
   } else if (editWidget->getErrorAtLine() != -1) {
-    String message("Error at line: ");
+    String message("Error at line:");
     message.append(editWidget->getErrorAtLine());
     _output->setStatus(message);
     editWidget->setCursorRow(editWidget->getErrorAtLine() - 1);

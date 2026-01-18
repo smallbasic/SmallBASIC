@@ -1,5 +1,5 @@
 # SmallBASIC for SDL
-# Copyright(C) 2001-2015 Chris Warren-Smith.
+# Copyright(C) 2001-2026 Chris Warren-Smith.
 #
 # This program is distributed under the terms of the GPL v2.0 or later
 # Download the GNU Public License (GPL) from www.gnu.org
@@ -39,8 +39,12 @@ sbasicg_DEPENDENCIES = $(top_srcdir)/src/common/libsb_common.a
 
 iconsdir = $(datadir)/icons/hicolor/128x128/apps
 icons_DATA = ../../../images/io.github.smallbasic.png
+
 desktopdir = $(datadir)/applications
-desktop_DATA = io.github.smallbasic.desktop
+desktop_DATA = io.github.smallbasic.SmallBASIC.desktop
+
+metainfodir = $(datadir)/metainfo
+metainfo_DATA = io.github.smallbasic.SmallBASIC.metainfo.xml
 
 if WITH_WIN32
 sbasicg_LDADD += win.res

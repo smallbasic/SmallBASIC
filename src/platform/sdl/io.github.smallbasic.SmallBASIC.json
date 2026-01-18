@@ -1,5 +1,5 @@
 {
-  "app-id": "io.github.smallbasic",
+  "app-id": "io.github.smallbasic.SmallBASIC",
   "runtime": "org.freedesktop.Platform",
   "runtime-version": "25.08",
   "sdk": "org.freedesktop.Sdk",
@@ -11,19 +11,18 @@
   },
   "finish-args": [
     "--socket=wayland",
-    "--socket=x11",
     "--socket=pulseaudio",
     "--device=dri",
     "--share=ipc",
-    "--talk-name=org.freedesktop.portal.Desktop",
     "--env=SBASICPATH=/app/lib/smallbasic/plugins"
   ],
   "cleanup": [
     "/include",
     "/lib/pkgconfig",
     "/lib/cmake",
-    "/lib/debug"
-    /*"/bin/xxd"*/
+    "/bin/xxd",
+    "*.a",
+    "*.la"
   ],
   "modules": [
     {

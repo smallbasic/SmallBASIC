@@ -76,21 +76,44 @@ appImage:
 # inspect build-dir/files (or /app from flatpack-shell) for additional "cleanup" items
 #
 
+# starting from scratch, download and build all dependencies
 flatpak-build:
-	flatpak-builder --force-clean --ccache build-dir io.github.smallbasic.json
+	flatpak-builder --force-clean --ccache build-dir io.github.smallbasic.SmallBASIC.json
 
+# development workflow
 flatpak-run:
 	make -s -j$(nproc) && \
-  flatpak-builder --user --install --force-clean --ccache --disable-download build-dir io.github.smallbasic.json && \
-	flatpak run io.github.smallbasic
+  flatpak-builder --user --install --force-clean --ccache --disable-download build-dir io.github.smallbasic.SmallBASIC.json && \
+	flatpak run io.github.smallbasic.SmallBASIC
 
+# debugging specific flatpak issues
 flatpak-debug:
 	make -s -j$(nproc) && \
-	flatpak-builder --build-only --force-clean --ccache --disable-download --disable-updates build-dir io.github.smallbasic.json && \
-	flatpak-builder --run build-dir io.github.smallbasic.json gdb sbasicg
+	flatpak-builder --build-only --force-clean --ccache --disable-download --disable-updates build-dir io.github.smallbasic.SmallBASIC.json && \
+	flatpak-builder --run build-dir io.github.smallbasic.SmallBASIC.json gdb sbasicg
 
+# to inspect the built components - requires commenting deletion of xxd
 flatpak-shell:
-	flatpak-builder --build-shell=sbasicg build-dir io.github.smallbasic.json
+	flatpak-builder --build-shell=sbasicg build-dir io.github.smallbasic.SmallBASIC.json
+
+# how to invoke the command line sbasic
+flatpak-command:
+	flatpak run --filesystem=`pwd` --command=sbasic io.github.smallbasic.SmallBASIC $1
+
+# preparing for release
+flatpak-lint1:
+	flatpak run --command=flatpak-builder-lint org.flatpak.Builder manifest io.github.smallbasic.SmallBASIC.json
+
+flatpak-lint2:
+	flatpak run --command=flatpak-builder-lint org.flatpak.Builder builddir build-dir
+
+# extra step 1 preparing for release
+flatpak-create-repo:
+	flatpak-builder --repo=repo build-dir io.github.smallbasic.SmallBASIC.json
+
+# extra step 2 preparing for release
+flatpak-lint-lint3:
+		flatpak run --command=flatpak-builder-lint org.flatpak.Builder repo repo
 
 EXTRA_DIST =                                                 \
 documentation/build_kwp.cpp                                  \
