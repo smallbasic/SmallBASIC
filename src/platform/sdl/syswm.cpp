@@ -118,7 +118,7 @@ char g_appPath[PATH_MAX + 1];
 void loadIcon(SDL_Window *window) {
   unsigned w, h;
   unsigned char *image;
-  if (!lodepng_decode32(&image, &w, &h, sb_desktop_128x128_png, sb_desktop_128x128_png_len)) {
+  if (!lodepng_decode32(&image, &w, &h, io_github_smallbasic_SmallBASIC_png, io_github_smallbasic_SmallBASIC_png_len)) {
     auto format = SDL_GetPixelFormatForMasks(32,
                                              0x000000ff,
                                              0x0000ff00,
