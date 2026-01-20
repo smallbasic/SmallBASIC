@@ -88,6 +88,7 @@
     }, {
       "name": "sbasicg",
       "buildsystem": "autotools",
+      "autogen": true,
       "config-opts": [
         "--prefix=/app",
         "--enable-sdl",

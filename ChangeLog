@@ -1,3 +1,6 @@
+2026-01-20 (12.32)
+	SDL: Created flatpak based build
+
 2025-10-14 (12.32)
 	ANDROID: replace react/mui based portal with native javascript solution
 
