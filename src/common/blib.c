@@ -2046,11 +2046,13 @@ void cmd_randomize() {
  * DELAY
  */
 void cmd_delay() {
-  uint32_t ms = par_getint();
+  int32_t ms = par_getint();
   if (prog_error) {
     return;
   }
-  dev_delay(ms);
+  if (ms > 0) {
+    dev_delay(ms);
+  }
 }
 
 /**

@@ -880,7 +880,8 @@ void Runtime::pause(int timeout) {
       delete event;
     }
   } else {
-    uint32_t startTime = dev_get_millisecond_count();
+    int slept;
+    int now = dev_get_millisecond_count();
     while (true) {
       pollEvents(false);
       if (isBreak()) {
@@ -890,8 +891,11 @@ void Runtime::pause(int timeout) {
         processEvent(*event);
         delete event;
       }
-      usleep(1000);
-      if (timeout > 0 && (dev_get_millisecond_count() - startTime) > timeout) {
+      slept = dev_get_millisecond_count() - now;
+      if (timeout - slept > WAIT_INTERVAL) {
+        usleep(WAIT_INTERVAL * 1000);
+      } else {
+        usleep((timeout - slept) * 1000);
         break;
       }
     }

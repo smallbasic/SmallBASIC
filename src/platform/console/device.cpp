@@ -444,18 +444,17 @@ int osd_textheight(const char *str) {
 // delay while pumping events
 //
 void dev_delay(uint32_t timeout) {
-  uint32_t slept = 0;
+  uint32_t slept;
   uint32_t now = dev_get_millisecond_count();
   while (1) {
     if (osd_events(0) < 0) {
       break;
     }
-    if (dev_get_millisecond_count() - now > timeout) {
-      break;
-    }
-    usleep(WAIT_INTERVAL * 1000);
-    slept += WAIT_INTERVAL;
-    if (timeout > 0 && slept > timeout) {
+    slept = dev_get_millisecond_count() - now;
+    if (timeout - slept > WAIT_INTERVAL) {
+      usleep(WAIT_INTERVAL * 1000);
+    } else {
+      usleep((timeout - slept) * 1000);
       break;
     }
   }
