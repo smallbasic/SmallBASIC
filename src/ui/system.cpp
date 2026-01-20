@@ -135,7 +135,8 @@ System::System() :
   _mainBas(false),
   _buttonPressed(false),
   _srcRendered(false),
-  _menuActive(false) {
+  _menuActive(false),
+  _compileError(false) {
   g_system = this;
 }
 
@@ -150,26 +151,43 @@ System::~System() {
 }
 
 bool System::execute(const char *bas) {
+  _compileError = true;
   _stackTrace.removeAll();
-  _output->reset();
   reset_image_cache();
 
   // reset program controlled options
-  opt_antialias = 1;
-  opt_show_page = 0;
-
+  opt_antialias = true;
+  opt_show_page = false;
   opt_pref_width = _output->getWidth();
   opt_pref_height = _output->getHeight();
   opt_base = 0;
-  opt_usepcre = 0;
-  opt_autolocal = 0;
+  opt_usepcre = false;
+  opt_autolocal = false;
 
   _state = kRunState;
   setWindowTitle(bas);
-  showCursor(kArrow);
   saveWindowRect();
 
   int result = ::sbasic_main(bas);
+
+  if (isExternalLaunch()) {
+    if (_editor != nullptr) {
+      // returning to the editor
+      String path(bas);
+      saveFile(_editor, path);
+    }
+    int result = externalExecute(bas);
+    if (_editor != nullptr && result > 0) {
+      _editor->setErrorAtLine(result);
+    }
+  }
+
+  if (_editor == nullptr) {
+    _output->selectScreen(USER_SCREEN1);
+  }
+  _output->resetFont();
+  _output->flush(false);
+
   if (isRunning()) {
     _state = kActiveState;
   }
@@ -178,15 +196,8 @@ bool System::execute(const char *bas) {
     opt_command[0] = '\0';
   }
 
-  if (!_mainBas) {
-    onRunCompleted();
-  }
-
-  enableCursor(true);
+  onRunCompleted();
   opt_file_permitted = 1;
-  _output->selectScreen(USER_SCREEN1);
-  _output->resetFont();
-  _output->flush(true);
   _userScreenId = -1;
   return result != 0;
 }
@@ -415,8 +426,12 @@ void System::handleMenu(MAEvent &event) {
     }
     break;
   case MENU_EDITMODE:
+#if defined(_ANDROID)
     opt_ide = (opt_ide == IDE_NONE ? IDE_INTERNAL :
                opt_ide == IDE_INTERNAL ? IDE_EXTERNAL : IDE_NONE);
+#else
+    opt_ide = (opt_ide == IDE_NONE ? IDE_INTERNAL : IDE_NONE);
+#endif
     break;
   case MENU_THEME:
     g_themeId = (g_themeId + 1) % NUM_THEMES;
@@ -870,6 +885,15 @@ void System::runMain(const char *mainBasPath) {
 
     bool success = execute(_loadPath);
     bool networkFile = isNetworkLoad();
+
+    if (isExternalLaunch()) {
+      if (_editor == nullptr) {
+        _loadPath.clear();
+        _state = kActiveState;
+      }
+      continue;
+    }
+
     if (!isBack() && !isClosing() &&
         (success || networkFile || !isEditEnabled())) {
       // when editing, only pause here when successful, otherwise the editor shows
@@ -1016,14 +1040,19 @@ void System::setRunning(bool running) {
   if (running) {
     dev_fgcolor = -DEFAULT_FOREGROUND;
     dev_bgcolor = -DEFAULT_BACKGROUND;
-    setDimensions();
     dev_clrkb();
+
+    setDimensions();
+    showCursor(kArrow);
+    _output->reset();
     _output->setAutoflush(!opt_show_page);
+    _userScreenId = -1;
+    _compileError = false;
     if (_mainBas || isNetworkLoad() || !isEditEnabled()) {
       _loadPath.clear();
     }
-    _userScreenId = -1;
   } else {
+    enableCursor(true);
     osd_clear_sound_queue();
     if (!isClosing() && !isRestart() && !isBack()) {
       _state = kActiveState;
@@ -1036,8 +1065,11 @@ void System::showCompletion(bool success) {
   if (success) {
     _output->setStatus("Done - press back [<-]");
   } else {
-    printErrorLine();
+    if (_compileError) {
+      _output->reset();
+    }
     _output->setStatus("Error - see console");
+    printErrorLine();
     showSystemScreen(true);
   }
   _output->flush(true);

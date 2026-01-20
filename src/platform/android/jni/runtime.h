@@ -47,6 +47,7 @@ struct Runtime : public System {
   int getUnicodeChar(int keyCode, int metaState);
   void redraw() { _graphics->redraw(); }
   void handleKeyEvent(MAEvent &event);
+  void openFolder() override {}
   void pause(int timeout);
   MAEvent processEvents(int waitFlag) override;
   void processEvent(MAEvent &event);
@@ -85,6 +86,7 @@ struct Runtime : public System {
 
 private:
   void editSource(String loadPath, bool restoreOnExit) override;
+  int externalExecute(const char *bas) const override { return 0;}
 
   bool _keypadActive;
   bool _hasFocus;

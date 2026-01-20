@@ -183,10 +183,7 @@ void exportBuffer(const AnsiWidget *out, const char *text, const String &dest, c
 
 bool externalExec(const AnsiWidget *out, const TextEditInput *editWidget, const String &loadPath) {
   bool result;
-  if (editWidget->getTextLength() && !g_exportAddr.empty() && g_exportAddr.indexOf("sbasic", 0) != -1) {
-    launch(g_exportAddr, loadPath);
-    result = true;
-  } else if (editWidget->getTextLength() && !g_exportAddr.empty() && !g_exportToken.empty()) {
+  if (editWidget->getTextLength() && !g_exportAddr.empty() && !g_exportToken.empty()) {
     exportBuffer(out, editWidget->getText(), g_exportAddr, g_exportToken);
     result = true;
   } else {
@@ -202,7 +199,8 @@ void Runtime::editSource(String loadPath, bool restoreOnExit) {
   int h = _output->getHeight();
   int charWidth = _output->getCharWidth();
   int charHeight = _output->getCharHeight();
-  int prevScreenId = _output->selectScreen(FORM_SCREEN);
+  _output->selectScreen(FORM_SCREEN);
+
   TextEditInput *editWidget;
   if (_editor != nullptr) {
     editWidget = _editor;
@@ -211,10 +209,12 @@ void Runtime::editSource(String loadPath, bool restoreOnExit) {
   } else {
     editWidget = new TextEditInput(_programSrc, charWidth, charHeight, 0, 0, w, h);
   }
+
   auto *helpWidget = new TextEditHelpWidget(editWidget, charWidth, charHeight);
   TextEditInput *widget = editWidget;
   String recentFile;
   StatusMessage statusMessage(editWidget);
+
   enum InputMode {
     kInit, kExportAddr, kExportToken, kCommand
   } inputMode = kInit;
@@ -267,6 +267,12 @@ void Runtime::editSource(String loadPath, bool restoreOnExit) {
         _output->setStatus(!gsb_last_errmsg[0] ? "Error" : gsb_last_errmsg);
       }
     }
+  } else if (editWidget->getErrorAtLine() != -1) {
+    String message("Error at line:");
+    message.append(editWidget->getErrorAtLine());
+    _output->setStatus(message);
+    editWidget->setCursorRow(editWidget->getErrorAtLine() - 1);
+    editWidget->setErrorAtLine(-1);
   } else {
     statusMessage.update(editWidget, _output, true);
   }
@@ -329,7 +335,7 @@ void Runtime::editSource(String loadPath, bool restoreOnExit) {
           helpWidget->hide();
           helpWidget->cancelMode();
           statusMessage.setDirty(editWidget);
-          Runtime::debugStop();
+          debugStop();
           break;
         case SB_KEY_CTRL('s'):
           saveFile(editWidget, loadPath);
@@ -364,7 +370,7 @@ void Runtime::editSource(String loadPath, bool restoreOnExit) {
           if (editWidget->getTextLength()) {
             saveFile(editWidget, loadPath);
             saveRecentPosition(loadPath, editWidget->getCursorPos());
-            _output->setStatus("Export to SmallBASIC. Enter <IP>:<Port> | <sbasic>");
+            _output->setStatus("Export to SmallBASIC. Enter <IP>:<Port>");
             widget = helpWidget;
             helpWidget->createLineEdit(g_exportAddr);
             showHelpLineInput(helpWidget, 60);
@@ -387,9 +393,11 @@ void Runtime::editSource(String loadPath, bool restoreOnExit) {
         case SB_KEY_F(7):
           debugStep(editWidget, helpWidget, true);
           break;
+#if !defined(_FLATPAK)
         case SB_KEY_F(8):
           exportRun(loadPath);
           break;
+#endif
         case SB_KEY_F(9):
         case SB_KEY_CTRL('r'):
           _state = kRunState;
@@ -524,16 +532,9 @@ void Runtime::editSource(String loadPath, bool restoreOnExit) {
             switch (inputMode) {
             case kExportAddr:
               g_exportAddr = helpWidget->getText();
-              if (g_exportAddr.indexOf("sbasic", 0) == -1) {
-                inputMode = kExportToken;
-                helpWidget->createLineEdit(g_exportToken);
-                _output->setStatus("Enter token. Esc=Close");
-              } else {
-                inputMode = kInit;
-                widget = editWidget;
-                helpWidget->hide();
-                launch(g_exportAddr, loadPath);
-              }
+              inputMode = kExportToken;
+              helpWidget->createLineEdit(g_exportToken);
+              _output->setStatus("Enter token. Esc=Close");
               break;
             case kExportToken:
               g_exportToken = helpWidget->getText();
@@ -607,9 +608,6 @@ void Runtime::editSource(String loadPath, bool restoreOnExit) {
 
   // deletes editWidget and _keypad unless it has been removed
   _output->removeInputs();
-  if (!isClosing() && restoreOnExit) {
-    _output->selectScreen(prevScreenId, false);
-  }
   logLeaving();
 }
 

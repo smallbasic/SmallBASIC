@@ -228,6 +228,7 @@ int reg_match_jk(const char *p, char *t) {
        */
       if (*p == '\0')
         return reg_match_bad_pattern;
+      // fallthrough
 
       /*
        * must match this character exactly 

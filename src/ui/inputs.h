@@ -189,7 +189,7 @@ private:
 };
 
 struct FormLink : public FormInput {
-  FormLink(const char *link, bool external, int x, int y, int w, int h);
+  FormLink(const char *link, bool external, bool folder, int x, int y, int w, int h);
   ~FormLink() override = default;
 
   void clicked(int x, int y, bool pressed) override;
@@ -202,6 +202,7 @@ struct FormLink : public FormInput {
 protected:
   String _link;
   bool _external;
+  bool _folder;
 };
 
 struct FormEditInput : public FormInput {

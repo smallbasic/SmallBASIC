@@ -59,6 +59,7 @@ struct System {
   virtual void browseFile(const char *url) = 0;
   virtual MAEvent processEvents(int waitFlag) = 0;
   virtual char *loadResource(const char *fileName);
+  virtual void openFolder() = 0;
   virtual void optionsBox(StringList *items);
   virtual void onRunCompleted() = 0;
   virtual void saveWindowRect() = 0;
@@ -76,6 +77,7 @@ struct System {
   static bool setParentPath();
 
   virtual void editSource(strlib::String loadPath, bool restoreOnExit) = 0;
+  virtual int externalExecute(const char *bas) const = 0;
   bool execute(const char *bas);
   MAEvent getNextEvent() { return processEvents(1); }
   uint32_t getModifiedTime() const;
@@ -85,6 +87,7 @@ struct System {
   bool isEditReady() const {return !isRestart() && isEditEnabled() && !isNetworkLoad();}
   bool isNetworkLoad() const {return _loadPath.indexOf("://", 1) != -1;}
   bool isScratchLoad() const {return _loadPath.indexOf("scratch", 0) != -1;}
+  bool isExternalLaunch() const { return !gsb_last_error && gsb_err_mod_perm; }
   bool loadSource(const char *fileName);
   void resize() const;
   void runEdit(const char *startupBas);
@@ -143,6 +146,7 @@ struct System {
   bool _buttonPressed;
   bool _srcRendered;
   bool _menuActive;
+  bool _compileError;
   strlib::String _loadPath;
   strlib::String _activeFile;
 };

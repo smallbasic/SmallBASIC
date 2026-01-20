@@ -57,6 +57,8 @@ void v_eval_func(var_p_t self, var_p_t v_func, var_p_t result) {
         } else {
           err_throw("Undefined");
         }
+      } else if (v_is_type(result, V_MAP)) {
+        map_set_lib_id(result, self->v.m.lib_id);
       }
     }
     if (ptable) {

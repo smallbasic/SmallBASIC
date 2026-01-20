@@ -28,6 +28,15 @@ int sblib_init(const char *sourceFile);
 /**
  * @ingroup modstd
  *
+ * Returns whether the module is compatible with IDE builds
+ *
+ * @return non-zero on success
+ */
+int sblib_has_window_ui(void);
+
+/**
+ * @ingroup modstd
+ *
  * Closes the library. Called by module manager on unload.
  */
 void sblib_close(void);

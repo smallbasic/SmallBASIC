@@ -78,6 +78,7 @@ struct TextEditInput : public FormEditInput {
   int  getRow() const { return _cursorRow + 1; }
   int  getPageRows() const { return _height / _charHeight; }
   int  getLines() { return _buf.lineCount(); }
+  int  getErrorAtLine() const { return _errorAtLine; }
   int  getMarginWidth() const { return _marginWidth; }
   void getSelectionCounts(int *lines, int *chars) const;
   int  getSelectionRow() const;
@@ -92,6 +93,7 @@ struct TextEditInput : public FormEditInput {
   void setCursor(int pos);
   void setCursorPos(int pos);
   void setCursorRow(int row);
+  void setErrorAtLine(int line) { _errorAtLine = line; }
   void setLineNumbers() { _marginWidth = 1 + (_charWidth * MARGIN_CHARS); }
   void setText(const char *text) override { _buf.clear(); _buf.append(text); }
   void clicked(int x, int y, bool pressed) override;
@@ -175,6 +177,7 @@ protected:
   int _pressTick;
   int _xmargin;
   int _ymargin;
+  int _errorAtLine;
   bool _bottom;
   bool _dirty;
   bool _comment;

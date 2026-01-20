@@ -7,7 +7,7 @@ dnl This program is distributed under the terms of the GPL v2.0
 dnl Download the GNU Public License (GPL) from www.gnu.org
 dnl
 
-AC_INIT([smallbasic], [12.31])
+AC_INIT([smallbasic], [12.32])
 AC_CONFIG_SRCDIR([configure.ac])
 
 AC_CANONICAL_TARGET
@@ -174,6 +174,9 @@ function buildSDL() {
 
    PKG_CHECK_MODULES([SDL3], [sdl3])
 
+   AC_MSG_CHECKING([for SDL3 library linking])
+   SDL3_LIBS=`pkg-config sdl3 --libs --static`
+
    SAVED_CPPFLAGS="$CPPFLAGS"
    CPPFLAGS="$CPPFLAGS `pkg-config freetype2 --cflags`"
    AC_CHECK_HEADERS([ft2build.h], [], [AC_MSG_ERROR([libfreetype6-dev not installed: configure failed.])])
@@ -182,6 +185,15 @@ function buildSDL() {
    AC_CHECK_PROG(have_xxd, xxd, [yes], [no])
    if test "${have_xxd}" = "no" ; then
      AC_MSG_ERROR([xxd command not installed: configure failed.])
+   fi
+
+   AC_ARG_WITH(flatpak,
+   [  --with-flatpak  Build the flatpak version default=no],
+       [with_flatpak=$withval],
+       [with_flatpak=no])
+   if test "$with_flatpak" = "yes" || test "$with_flatpak" = "full"
+   then
+     AC_DEFINE(_FLATPAK, 1, [flatpak build enabled])
    fi
 
    case "${host_os}" in
@@ -222,11 +234,7 @@ function buildSDL() {
 
      PACKAGE_CFLAGS="${PACKAGE_CFLAGS} ${FONTCONFIG_CFLAGS}"
 
-     (cd images && xxd -i sb-desktop-128x128.png > ../src/platform/sdl/icon.h)
-
-     AC_MSG_CHECKING([for SDL3 library linking])
-     SDL3_LIBS=`pkg-config sdl3 --libs --static`
-     AC_MSG_RESULT([$SDL3_LIBS])
+     (cd images && xxd -i io.github.smallbasic.SmallBASIC.png > ../src/platform/sdl/icon.h)
 
      dnl backlinking support for modules
      PACKAGE_LIBS="${PACKAGE_LIBS} -ldl -no-pie"
@@ -271,7 +279,6 @@ function buildAndroid() {
    TEST_DIR="src/platform/android"
    AC_SUBST(TEST_DIR)
    if test $with_library = no; then
-      (cd src/platform/android/webui && npm run build)
       TARGET="Building for Android."
    else
       TARGET="Building for Android library."
@@ -351,6 +358,14 @@ function buildWeb() {
      PACKAGE_LIBS="${PACKAGE_LIBS} -lm -ldl -lpthread -lmicrohttpd"
      AC_CHECK_HEADERS([microhttpd.h], [], [AC_MSG_ERROR([microhttpd is not installed])])
    fi
+
+   AC_CHECK_HEADERS([curl/curl.h], [have_curl_h=yes; break;])
+
+   if test "x${have_curl_h}" = "xyes" ; then
+      AC_DEFINE(USE_LIB_CURL, 1, [use the curl library.])
+      PACKAGE_LIBS="${PACKAGE_LIBS} -lcurl"
+   fi
+
    BUILD_SUBDIRS="src/common src/platform/web"
    AM_CONDITIONAL(WITH_CYGWIN_CONSOLE, false)
    AC_DEFINE(_UnixOS, 1, [Building under Unix like systems.])
@@ -385,6 +400,17 @@ function buildTEENSY() {
    if test "${have_xxd}" = "no" ; then
      AC_MSG_ERROR([xxd command not installed: configure failed.])
    fi
+   AC_CHECK_PROG([ARM_GCC], [arm-none-eabi-gcc], [yes], [no])
+   AC_CHECK_PROG([ARM_GXX], [arm-none-eabi-g++], [yes], [no])
+   if test "$ARM_GCC" = "no"; then
+     AC_MSG_ERROR([arm-none-eabi-gcc not found in PATH. Please install gcc-arm-none-eabi.])
+   fi
+   if test "$ARM_GXX" = "no"; then
+     AC_MSG_ERROR([arm-none-eabi-g++ not found in PATH. Please install g++-arm-none-eabi.])
+   fi
+   PKG_CHECK_MODULES([LIBUSB], [libusb], [],
+     [AC_MSG_ERROR([libusb not found. Please install libusb-dev])]
+   )
    AM_CONDITIONAL(WITH_CYGWIN_CONSOLE, false)
    AC_DEFINE(_UnixOS, 1, [Building under Unix like systems.])
    AC_DEFINE(_MCU, 1, [Micro controller based builds])
@@ -482,7 +508,7 @@ checkProfiling
 checkForWindows
 
 CFLAGS="${CFLAGS} -std=gnu11"
-PACKAGE_CFLAGS="${PACKAGE_CFLAGS} -Wall -Wno-unused-result"
+PACKAGE_CFLAGS="${PACKAGE_CFLAGS} -Wall -Werror -Wno-unused-result"
 BUILD_DATE=`date +"%a, %d %b %Y"`
 AC_DEFINE_UNQUOTED([BUILD_DATE],["$BUILD_DATE"],[Build date])
 

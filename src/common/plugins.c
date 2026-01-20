@@ -40,6 +40,7 @@ typedef int (*sblib_exec_fn)(int, int, slib_par_t *, var_t *);
 typedef int (*sblib_getname_fn) (int, char *);
 typedef int (*sblib_count_fn) (void);
 typedef int (*sblib_init_fn) (const char *);
+typedef int (*sblib_has_window_ui_fn) (void);
 typedef int (*sblib_free_fn) (int, int);
 typedef void (*sblib_close_fn) (void);
 
@@ -372,6 +373,13 @@ static void slib_import_routines(slib_t *lib, int comp) {
     }
   }
 
+#if !defined(_CONSOLE)
+  sblib_has_window_ui_fn has_window_ui = slib_getoptptr(lib, "sblib_has_window_ui");
+  if (has_window_ui && has_window_ui()) {
+    gsb_err_mod_perm = 1;
+  }
+#endif
+
   if (!total) {
     log_printf("LIB: module '%s' has no exports\n", lib->_name);
   }
@@ -443,7 +451,7 @@ int plugin_import(const char *name, const char *alias) {
     for (int i = 0; i < MAX_SLIBS; i++) {
       if (!plugins[i]) {
         // found free slot
-        slib_t *lib = plugins[i] = (slib_t *)calloc(sizeof(slib_t), 1);
+        slib_t *lib = plugins[i] = (slib_t *)calloc(1, sizeof(slib_t));
         if (!lib) {
           sc_raise("LIB: plugin_import failed");
           break;
@@ -465,7 +473,7 @@ int plugin_import(const char *name, const char *alias) {
 void plugin_open(const char *name, int lib_id) {
   slib_t *lib = get_lib(lib_id);
   if (!lib && lib_id >= 0 && lib_id < MAX_SLIBS) {
-    lib = plugins[lib_id] = (slib_t *)calloc(sizeof(slib_t), 1);
+    lib = plugins[lib_id] = (slib_t *)calloc(1, sizeof(slib_t));
     if (lib) {
       char path[PATH_SIZE];
       char file[PATH_SIZE];
@@ -622,7 +630,8 @@ int plugin_build_ptable(slib_par_t *ptable, int size) {
 
         // restore IP
         prog_ip = ofs;
-        // no 'break' here
+        // fallthrough
+
       default:
         // default --- expression (BYVAL ONLY)
         arg = v_new();

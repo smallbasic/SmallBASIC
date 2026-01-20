@@ -9,7 +9,9 @@ set(VERSION "12.29")
 cmake_minimum_required(VERSION 3.10)
 project(SmallBASIC VERSION ${VERSION} LANGUAGES C CXX)
 
-set(CMAKE_CXX_STANDARD 14)
+# clang-check ../*.cpp
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # cmake -DWITH_DEBUG=ON
@@ -85,7 +87,7 @@ function(buildSDL)
     include_directories(${FONTCONFIG_INCLUDE_DIRS})
     add_compile_options(${FONTCONFIG_CFLAGS_OTHER})
     execute_process(
-      COMMAND ${XXD_EXECUTABLE} -i images/sb-desktop-128x128.png
+      COMMAND ${XXD_EXECUTABLE} -i ${CMAKE_SOURCE_DIR}/images/io.github.smallbasic.png
       OUTPUT_FILE ${CMAKE_BINARY_DIR}/src/platform/sdl/icon.h
     )
   endif()
@@ -109,8 +111,9 @@ function(buildSDL)
   set(IMPL_LOG_WRITE ON)
 
   # Process assets
+  message("generating main_bas.h")
   execute_process(
-    COMMAND ${XXD_EXECUTABLE} -i src/platform/android/app/src/main/assets/main.bas
+    COMMAND ${XXD_EXECUTABLE} -i ${CMAKE_SOURCE_DIR}/src/platform/android/app/src/main/assets/main.bas
     OUTPUT_FILE ${CMAKE_BINARY_DIR}/src/platform/sdl/main_bas.h
   )
   writeConfig()

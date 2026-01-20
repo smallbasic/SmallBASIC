@@ -558,9 +558,9 @@ void MainWindow::editor_plugin(Fl_Widget *w, void *eventData) {
         editWidget->getRowCol(&row, &col);
         editWidget->getSelStartRowCol(&s1r, &s1c);
         editWidget->getSelEndRowCol(&s2r, &s2c);
-        strlcpy(opt_command, filename, PATH_MAX);
+        strlcpy(opt_command, filename, OPT_CMD_SZ);
         snprintf(path, sizeof(path), "|%d|%d|%d|%d|%d|%d", row - 1, col, s1r - 1, s1c, s2r - 1, s2c);
-        strlcat(opt_command, path, PATH_MAX);
+        strlcat(opt_command, path, OPT_CMD_SZ);
         runMode = run_state;
         editWidget->runState(rs_run);
         snprintf(path, sizeof(path), "%s/%s", packageHome, (const char *)eventData);
