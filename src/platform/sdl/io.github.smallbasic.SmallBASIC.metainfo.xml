@@ -12,7 +12,7 @@
       modules: raylib, nuklear, websocket, glfw, clipboard
     </p>
   </description>
-  <developer id="com.github.smallbasic">
+  <developer id="io.github.smallbasic">
     <name>Chris Warren-Smith</name>
   </developer>
   <launchable type="desktop-id">io.github.smallbasic.SmallBASIC.desktop</launchable>
