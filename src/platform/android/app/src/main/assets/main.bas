@@ -121,7 +121,7 @@ sub do_about()
   color colText
   print "Version "; sbver
   print
-  print "Copyright (c) 2002-2025 Chris Warren-Smith"
+  print "Copyright (c) 2002-2026 Chris Warren-Smith"
   print "Copyright (c) 1999-2006 Nicholas Christopoulos" + chr(10)
 
   local bn_home
@@ -815,5 +815,13 @@ sub main
     fi
   wend
 end
+
+const info_file = "/.flatpak-info"
+if (is_sandboxed_fs and exist(info_file)) then
+  tload info_file, inf, 1
+  if "filesystems=home" in inf then
+    is_sandboxed_fs = false
+  endif
+endif
 
 main
