@@ -1,3 +1,6 @@
+2026-01-23 (12.33)
+	SDL: Fix issue with flatpak release
+
 2026-01-20 (12.32)
 	SDL: Created flatpak based build
 

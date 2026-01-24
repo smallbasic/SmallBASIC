@@ -451,7 +451,9 @@ void dev_delay(uint32_t timeout) {
       break;
     }
     slept = dev_get_millisecond_count() - now;
-    if (timeout - slept > WAIT_INTERVAL) {
+    if (slept > timeout) {
+      break;
+    } else if (timeout - slept > WAIT_INTERVAL) {
       usleep(WAIT_INTERVAL * 1000);
     } else {
       usleep((timeout - slept) * 1000);

@@ -1,0 +1,70 @@
+{
+  "app-id": "io.github.smallbasic.SmallBASIC",
+  "runtime": "org.freedesktop.Platform",
+  "runtime-version": "25.08",
+  "sdk": "org.freedesktop.Sdk",
+  "command": "sbasicg",
+  "finish-args": [
+    "--socket=wayland",
+    "--socket=fallback-x11",
+    "--socket=pulseaudio",
+    "--device=dri",
+    "--share=ipc",
+    "--env=SBASICPATH=/app/lib/smallbasic"
+  ],
+  "modules": [
+    {
+      "name": "xxd",
+      "buildsystem": "simple",
+      "build-commands": [
+        "cd src/xxd && make",
+        "install -D src/xxd/xxd /app/bin/xxd"
+      ],
+      "sources": [
+        {
+          "type": "git",
+          "url": "https://github.com/vim/vim.git",
+          "tag": "v9.1.0",
+          "commit": "b4ddc6c11e95cef4b372e239871fae1c8d4f72b6"
+        }
+      ]
+    },
+    {
+      "name": "sbasic",
+      "sources": [
+        {
+          "type": "git",
+          "url": "https://github.com/smallbasic/SmallBASIC.git",
+          "tag": "12_32_FLATPAK_3",
+          "commit": "8341454f4f6208c33165ca1caf8c23fca5d1ef75"
+        }
+      ]
+    },
+    {
+      "name": "smallbasic-plugins",
+      "sources": [
+        {
+          "type": "git",
+          "url": "https://github.com/smallbasic/smallbasic.plugins.git",
+          "tag": "12_32_FLATPAK_3",
+          "commit": "0967b93b86c24901f3ad5638492f0127db894d9c"
+        }
+      ]
+    },
+    {
+      "name": "sbasicg",
+      "config-opts": [
+        "--enable-sdl",
+        "--with-flatpak"
+      ],
+      "sources": [
+        {
+          "type": "git",
+          "url": "https://github.com/smallbasic/SmallBASIC.git",
+          "tag": "12_32_FLATPAK_3",
+          "commit": "8341454f4f6208c33165ca1caf8c23fca5d1ef75"
+        }
+      ]
+    }
+  ]
+}
