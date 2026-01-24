@@ -26,9 +26,9 @@
   <url type="bugtracker">https://github.com/smallbasic/SmallBASIC/issues</url>
   <url type="vcs-browser">https://github.com/smallbasic/SmallBASIC</url>
   <releases>
-    <release version="12.32" date="2026-01-15">
+    <release version="12.33" date="2026-01-24">
       <description>
-        <p>Initial Flatpak release</p>
+        <p>Resolved an issue when returning from the online screen</p>
       </description>
     </release>
   </releases>
