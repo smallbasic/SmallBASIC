@@ -126,7 +126,7 @@ public class MainActivity extends NativeActivity {
   public static native boolean libraryMode();
   public static native void onActivityPaused(boolean paused);
   public static native void onBack();
-  public static native void onResize(int width, int height, int imeState);
+  public static native void onResize(int top, int width, int height, int imeState);
   public static native void onUnicodeChar(int ch);
   public static native boolean optionSelected(int index);
   public static native void runFile(String fileName);
@@ -434,6 +434,21 @@ public class MainActivity extends NativeActivity {
     return rect.height();
   }
 
+  /**
+   * Check if traditional 3-button navigation is enabled
+   * @return true if 3-button navigation is active
+   */
+  public boolean isThreeButtonNavigationEnabled() {
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+      try {
+        return Settings.Secure.getInt(getContentResolver(), "navigation_mode") == 0;
+      } catch (Settings.SettingNotFoundException e) {
+        Log.d(TAG, e.toString());
+      }
+    }
+    return false;
+  }
+
   public boolean isInsetBasedOnResize() {
     return Build.VERSION.SDK_INT >= Build.VERSION_CODES.BAKLAVA;
   }
@@ -464,7 +479,7 @@ public class MainActivity extends NativeActivity {
     if (!isInsetBasedOnResize()) {
       Rect rect = new Rect();
       findViewById(android.R.id.content).getWindowVisibleDisplayFrame(rect);
-      onResize(rect.width(), rect.height(), 0);
+      onResize(rect.top, rect.width(), rect.height(), 0);
     }
   }
 
@@ -781,7 +796,6 @@ public class MainActivity extends NativeActivity {
   @Override
   protected void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
-    setImmersiveMode();
     setupStorageEnvironment();
     setupPredictiveBack();
     setupInsetBaseOnResize();
@@ -801,7 +815,6 @@ public class MainActivity extends NativeActivity {
   @Override
   protected void onResume() {
     super.onResume();
-    setImmersiveMode();
     onActivityPaused(false);
   }
 
@@ -923,17 +936,6 @@ public class MainActivity extends NativeActivity {
         Log.d(TAG, "Failed to copy sample: ", e);
       }
     }
-  }
-
-  private boolean isGestureNavigationEnabled() {
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-      try {
-        return Settings.Secure.getInt(getContentResolver(), "navigation_mode") == 2;
-      } catch (Settings.SettingNotFoundException e) {
-        Log.d(TAG, e.toString());
-      }
-    }
-    return false;
   }
 
   private boolean isHostDenied(String remoteHost) {
@@ -1059,23 +1061,9 @@ public class MainActivity extends NativeActivity {
     return outputFile.getAbsolutePath();
   }
 
-  //
-  // Sets true full-screen on API 35+
-  //
-  private void setImmersiveMode() {
-    if (isGestureNavigationEnabled()) {
-      getWindow().getDecorView()
-                 .setSystemUiVisibility(View.SYSTEM_UI_FLAG_LAYOUT_STABLE |
-                                        View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION |
-                                        View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN |
-                                        View.SYSTEM_UI_FLAG_HIDE_NAVIGATION |
-                                        View.SYSTEM_UI_FLAG_FULLSCREEN |
-                                        View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY);
-    }
-  }
-
   /**
    * onResize() handler for android 16+
+   * Modified to work non-fullscreen with visible system UI
    */
   private void setupInsetBaseOnResize() {
     if (isInsetBasedOnResize()) {
@@ -1085,18 +1073,25 @@ public class MainActivity extends NativeActivity {
         @Override
         public WindowInsetsCompat onApplyWindowInsets(@NonNull View view, @NonNull WindowInsetsCompat insets) {
           Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
-          Insets navInsets = insets.getInsets(WindowInsetsCompat.Type.navigationBars());
           Insets ime = insets.getInsets(WindowInsetsCompat.Type.ime());
           boolean imeVisible = insets.isVisible(WindowInsetsCompat.Type.ime());
+
+          // Calculate the drawable area excluding system bars
+          int topInset = systemBars.top;
           int bottomInset = Math.max(systemBars.bottom, ime.bottom);
-          int width = view.getWidth() - navInsets.right;
-          int height = view.getHeight() - (systemBars.top + bottomInset);
-          view.setPadding(0, 0, navInsets.right, navInsets.bottom);
+          int leftInset = systemBars.left;
+          int rightInset = systemBars.right;
+
+          // Calculate available width and height for NDK drawing
+          int width = view.getWidth() - leftInset - rightInset;
+          int height = view.getHeight() - topInset - bottomInset;
+
           if (width > 0 && height > 0) {
-            // ignore spurious transitional values
-            onResize(width, height, imeVisible ? 1 : -1);
+            // Graphics::redraw() should draw starting at topInset pixels from the top
+            onResize(topInset, width, height, imeVisible ? 1 : -1);
           }
-          return insets;
+
+          return WindowInsetsCompat.CONSUMED;
         }
       });
       view.post(() -> ViewCompat.requestApplyInsets(view));

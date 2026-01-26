@@ -36,6 +36,9 @@ static int g_backPipe[2] = {-1, -1};
 // whether native back key handling is active
 static bool g_predictiveBack = false;
 
+// the logical top of the screen
+static int g_top = 0;
+
 // the sensorTypes corresponding to _sensors[] positions
 constexpr int SENSOR_TYPES[MAX_SENSORS] = {
   ASENSOR_TYPE_ACCELEROMETER,
@@ -52,7 +55,7 @@ MAEvent *getMotionEvent(int type, AInputEvent *event) {
   auto *result = new MAEvent();
   result->type = type;
   result->point.x = (int)AMotionEvent_getX(event, 0);
-  result->point.y = (int)AMotionEvent_getY(event, 0);
+  result->point.y = (int)AMotionEvent_getY(event, 0) - g_top;
   return result;
 }
 
@@ -219,7 +222,11 @@ extern "C" JNIEXPORT void JNICALL Java_net_sourceforge_smallbasic_MainActivity_s
 }
 
 extern "C" JNIEXPORT void JNICALL Java_net_sourceforge_smallbasic_MainActivity_onResize
-  (JNIEnv *env, jclass jclazz, jint width, jint height, jint imeState) {
+  (JNIEnv *env, jclass jclazz, jint top, jint width, jint height, jint imeState) {
+  g_top = top;
+  if (runtime != nullptr) {
+    runtime->setTop(top);
+  }
   if (runtime != nullptr && !runtime->isClosing() && runtime->isActive() && os_graphics) {
     runtime->onResize(width, height, imeState);
   }
@@ -269,9 +276,9 @@ jbyteArray newByteArray(JNIEnv *env, const char *str) {
 }
 
 Runtime::Runtime(android_app *app) :
-  System(),
   _keypadActive(false),
   _hasFocus(false),
+  _threeButtonNavigation(getBoolean("isThreeButtonNavigationEnabled")),
   _graphics(nullptr),
   _app(app),
   _eventQueue(nullptr),
@@ -358,13 +365,13 @@ void Runtime::construct() {
   logEntered();
   _state = kClosingState;
   _graphics = new Graphics(_app);
-  if (_graphics && _graphics->construct(getFontId())) {
+  if (_graphics != nullptr && _graphics->construct(getFontId())) {
     int w = ANativeWindow_getWidth(_app->window);
     int h = ANativeWindow_getHeight(_app->window);
     _output = new AnsiWidget(w, h);
-    if (_output && _output->construct()) {
+    if (_output != nullptr && _output->construct()) {
       _eventQueue = new Stack<MAEvent *>();
-      if (_eventQueue) {
+      if (_eventQueue != nullptr) {
         _state = kActiveState;
       }
     }

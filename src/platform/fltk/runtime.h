@@ -26,6 +26,7 @@ struct Runtime : public System {
   int  getFontSize() { return _output->getFontSize(); }
   void enableCursor(bool enabled);
   int handle(int event);
+  bool hasBackMenu() const override { return true; }
   void optionsBox(StringList *items);
   void openFolder() override {}
   void onRunCompleted() {}

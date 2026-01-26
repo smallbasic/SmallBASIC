@@ -57,6 +57,7 @@ struct System {
   virtual void alert(const char *title, const char *message) = 0;
   virtual int ask(const char *title, const char *prompt, bool cancel=true) = 0;
   virtual void browseFile(const char *url) = 0;
+  virtual bool hasBackMenu() const = 0;
   virtual MAEvent processEvents(int waitFlag) = 0;
   virtual char *loadResource(const char *fileName);
   virtual void openFolder() = 0;
