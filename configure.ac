@@ -480,7 +480,7 @@ buildFLTK() {
    AC_SUBST(desktopentrydir)
 
    dnl generate kwp.h
-   (cd src/platform/fltk && g++ -o build_kwp build_kwp.cxx && ./build_kwp)
+   (cd src/platform/fltk && ${CXX} -o build_kwp build_kwp.cxx && ./build_kwp)
 }
 
 if test x$ac_build_sdl = xyes; then
@@ -499,7 +499,7 @@ else
    buildConsole
 fi
 
-(cd documentation && g++ -o build_kwp build_kwp.cpp && ./build_kwp > ../src/ui/kwp.h)
+(cd documentation && ${CXX} -o build_kwp build_kwp.cpp && ./build_kwp > ../src/ui/kwp.h)
 
 checkPCRE
 checkTermios
