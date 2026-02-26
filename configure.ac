@@ -58,7 +58,7 @@ AC_ARG_ENABLE(teensy,
   [ac_build_teensy="yes"],
   [ac_build_teensy="no"])
 
-function checkForWindows() {
+checkForWindows() {
    win32=no
    case "${host_os}" in
      *mingw* | pw32* | cygwin*)
@@ -72,7 +72,7 @@ function checkForWindows() {
    AM_CONDITIONAL(WITH_WIN32, test x"$win32" = "xyes")
 }
 
-function checkDebugMode() {
+checkDebugMode() {
    AC_MSG_CHECKING([if debug mode is enabled])
    AC_ARG_WITH(debug,
    [  --with-debug            Build the debug version default=no],
@@ -90,7 +90,7 @@ function checkDebugMode() {
    AC_SUBST(CFLAGS)
 }
 
-function checkProfiling() {
+checkProfiling() {
    AC_MSG_CHECKING([if profile generate is enabled])
    AC_ARG_WITH(profile-generate,
    [  --with-profile-generate          Build the profile generate default=no],
@@ -116,7 +116,7 @@ function checkProfiling() {
    fi
 }
 
-function checkPCRE() {
+checkPCRE() {
    AC_CHECK_PROG(have_pcre, pcre-config, [yes], [no])
 
    dnl supported under linux only for now
@@ -143,7 +143,7 @@ function checkPCRE() {
    fi
 }
 
-function checkTermios() {
+checkTermios() {
    AC_CHECK_HEADERS([termios.h], [have_termios_h=yes; break;])
 
    case "${host_os}" in
@@ -164,11 +164,11 @@ function checkTermios() {
    fi
 }
 
-function defaultConditionals() {
+defaultConditionals() {
    AM_CONDITIONAL(WITH_CYGWIN_CONSOLE, false)
 }
 
-function buildSDL() {
+buildSDL() {
    TARGET="Building SDL version."
    defaultConditionals
 
@@ -259,7 +259,7 @@ function buildSDL() {
    (cd src/platform/android/app/src/main/assets && xxd -i main.bas > ../../../../../../../src/platform/sdl/main_bas.h)
 }
 
-function buildAndroid() {
+buildAndroid() {
    defaultConditionals
 
    AC_MSG_CHECKING([if library mode is enabled])
@@ -286,7 +286,7 @@ function buildAndroid() {
    fi
 }
 
-function buildConsole() {
+buildConsole() {
    win32=no
    case "${host_os}" in
      *mingw* | pw32* | cygwin*)
@@ -345,7 +345,7 @@ function buildConsole() {
    AC_SUBST(BUILD_SUBDIRS)
 }
 
-function buildWeb() {
+buildWeb() {
    if test $host_os = 'mingw32'; then
      TARGET="Building Ming32 Web server version."
      AC_DEFINE(__MINGW32__, 1, [as above])
@@ -375,7 +375,7 @@ function buildWeb() {
    AC_SUBST(BUILD_SUBDIRS)
 }
 
-function buildEmscripten() {
+buildEmscripten() {
    TARGET="Building Emscripten version."
    BUILD_SUBDIRS="src/common src/platform/emcc"
    AC_CHECK_PROG(have_xxd, xxd, [yes], [no])
@@ -393,7 +393,7 @@ function buildEmscripten() {
    (cd src/platform/android/app/src/main/assets && xxd -i main.bas > ../../../../../../../src/platform/emcc/main_bas.h)
 }
 
-function buildTEENSY() {
+buildTEENSY() {
    TARGET="Building teensy version."
    BUILD_SUBDIRS="src/platform/teensy"
    AC_CHECK_PROG(have_xxd, xxd, [yes], [no])
@@ -422,7 +422,7 @@ function buildTEENSY() {
    (cd src/platform/teensy && xxd -i main.bas > src/main_bas.h)
 }
 
-function buildFLTK() {
+buildFLTK() {
    TARGET="Building FLTK version."
 
    dnl Checks for FLTK 1.x
@@ -480,7 +480,7 @@ function buildFLTK() {
    AC_SUBST(desktopentrydir)
 
    dnl generate kwp.h
-   (cd src/platform/fltk && g++ -o build_kwp build_kwp.cxx && ./build_kwp)
+   (cd src/platform/fltk && ${CXX} -o build_kwp build_kwp.cxx && ./build_kwp)
 }
 
 if test x$ac_build_sdl = xyes; then
@@ -499,7 +499,7 @@ else
    buildConsole
 fi
 
-(cd documentation && g++ -o build_kwp build_kwp.cpp && ./build_kwp > ../src/ui/kwp.h)
+(cd documentation && ${CXX} -o build_kwp build_kwp.cpp && ./build_kwp > ../src/ui/kwp.h)
 
 checkPCRE
 checkTermios
@@ -512,7 +512,8 @@ PACKAGE_CFLAGS="${PACKAGE_CFLAGS} -Wall -Werror -Wno-unused-result"
 BUILD_DATE=`date +"%a, %d %b %Y"`
 AC_DEFINE_UNQUOTED([BUILD_DATE],["$BUILD_DATE"],[Build date])
 
-SB_DWORD_VER=`awk -F "." '{printf "0x%02d%02d%02d", $1,$2,$3}' <<< ${PACKAGE_VERSION}`
+SB_DWORD_VER=$(printf '%s' "$PACKAGE_VERSION" | awk -F. '{printf "0x%02d%02d%02d", $1,$2,$3}')
+
 AC_DEFINE_UNQUOTED([SB_DWORD_VER],[$SB_DWORD_VER],[SB_DWORD_VER])
 
 AC_SUBST(PACKAGE_CFLAGS)

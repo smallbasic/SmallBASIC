@@ -1,3 +1,6 @@
+2026-02-26 (12.33)
+	COMMON: Fix build for FreeBSD
+
 2026-01-23 (12.33)
 	SDL: Fix issue with flatpak release
 
