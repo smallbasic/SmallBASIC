@@ -147,7 +147,7 @@ print "FIX:" + FIX (x)
 print "FLOOR:" + FLOOR (x)
 print "FORMAT:" + FORMAT ("XXXX", 9999)
 print "FRAC:" + FRAC (x)
-print "FRE:" '+ FRE (x)
+print "FRE:" + FRE (1000)
 print "FREEFILE:" + FREEFILE
 print "HEX:" + HEX (x)
 print "IFF:" + IFF (1+1==2, "1+1=2", "1+1<>2")
