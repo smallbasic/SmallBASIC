@@ -15,7 +15,7 @@ inva=[1,-1,1;2,-1,2;3,2,-1]
 def expression(x) = x * 0.1
 DATA 1,"a"
 
-print "ACCESS:" +IFF(ACCESS ("/etc/hostname") != 0, "<> 0", "0")
+print "ACCESS:" +IFF(ACCESS ("/etc/hosts") != 0, "<> 0", "0")
 print "APPEND:"; : APPEND c, "1", "2", "3", "4": PRINT c
 print "ARC:" ':ARC [STEP] x,y,r,astart,aend [,aspect [,color]] [COLOR color]
 print "AT:" ':AT x, y
