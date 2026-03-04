@@ -39,7 +39,7 @@ UNIT_TESTS=array break byref eval-test iifs matrices metaa ongoto \
 
 test: ${bin_PROGRAMS}
 	@for utest in $(UNIT_TESTS); do                             \
-    ./${bin_PROGRAMS} ${TEST_DIR}/$${utest}.bas > test.out;   \
+    ./${bin_PROGRAMS} ${TEST_DIR}/$${utest}.bas > test.out || true;   \
     if cmp -s test.out ${TEST_DIR}/output/$${utest}.out; then \
       echo $${utest} ✓;                                      \
     else                                                      \

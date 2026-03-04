@@ -20,6 +20,7 @@ static int inetlib_init = 0;
 #else
 #include <arpa/inet.h>
 #include <sys/ioctl.h>
+#include <sys/socket.h>
 #include <netdb.h>
 #include <netinet/in.h>
 #include <signal.h>

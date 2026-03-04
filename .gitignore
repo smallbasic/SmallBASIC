@@ -1,0 +1,119 @@
+# SmallBasic build related
+# ------------------------
+# SmallBasic dynamically generates a lot of files when
+# built from source.  This list should help declutter the
+# `git status` output
+Makefile
+Makefile.in
+INSTALL
+README
+.dirstamp
+build_kwp
+*.sbu
+acinclude.m4
+aclocal.m4
+autom4te.cache
+compile
+config.guess
+config.h
+config.h.in
+config.status
+config.sub
+configure
+depcomp
+install-sh
+missing
+*.dat
+src/common/libsb_common.a
+src/platform/console/sbasic
+src/ui/kwp.h
+stamp-h1
+tsave.txt
+Test-Results
+
+# C/C++/Obj-C
+# -----------
+*.o
+*.deps
+
+# Gradle
+# ------
+.gradle/*
+**/build/*
+/buildSrc/build
+/subprojects/*/build
+/subprojects/docs/src/samples/*/*/build
+/subprojects/internal-android-performance-testing/build-android-libs
+
+# Maven
+# -----
+**/target/*
+
+# IDEA
+# ----
+.idea
+.shelf
+/*.iml
+/*.ipr
+/*.iws
+/buildSrc/*.iml
+/buildSrc/*.ipr
+/buildSrc/*.iws
+/buildSrc/out
+/out
+/subprojects/*/*.iml
+/subprojects/*/out
+
+# Eclipse
+# -------
+*.classpath
+*.project
+*.settings
+/bin
+/subprojects/*/bin
+atlassian-ide-plugin.xml
+
+# NetBeans
+# --------
+.nb-gradle
+.nb-gradle-properties
+
+# Vim
+# ---
+*.sw[op]
+
+# Emacs
+# -----
+*~
+
+# Textmate
+# --------
+.textmate
+
+# Sublime Text
+# ------------
+*.sublime-*
+
+# jEnv
+# ----
+.java-version
+
+# OS X
+# ----
+.DS_Store
+
+# HPROF
+# -----
+*.hprof
+
+# Work dirs
+# ---------
+/incoming-distributions
+/intTestHomeDir
+
+# Logs
+# ----
+/*.log
+
+# oh-my-zsh gradle plugin
+.gradletasknamecache
