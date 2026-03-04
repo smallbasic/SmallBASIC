@@ -1141,10 +1141,11 @@ void System::showMenu() {
         _systemMenu[index++] = MENU_PASTE;
         _systemMenu[index++] = MENU_SELECT_ALL;
       }
+      if (hasBackMenu()) {
+        items->add(new String(MENU_STR_BACK));
+        _systemMenu[index++] = MENU_BACK;
+      }
 #if defined(_SDL) || defined(_FLTK) || defined(_EMCC)
-      items->add(new String(MENU_STR_BACK));
-      _systemMenu[index++] = MENU_BACK;
-#else
       if (!isEditing() || opt_ide == IDE_EXTERNAL) {
         items->add(new String(MENU_STR_KEYPAD));
         _systemMenu[index++] = MENU_KEYPAD;
@@ -1214,10 +1215,10 @@ void System::showMenu() {
       items->add(new String(MENU_STR_SCREEN));
       _systemMenu[index++] = MENU_SCREENSHOT;
 #endif
-#if defined(_SDL) || defined(_FLTK) || defined(_EMCC)
-      items->add(new String(MENU_STR_BACK));
-      _systemMenu[index++] = MENU_BACK;
-#endif
+      if (hasBackMenu()) {
+        items->add(new String(MENU_STR_BACK));
+        _systemMenu[index++] = MENU_BACK;
+      }
     }
 
     formatOptions(items);

@@ -9,8 +9,8 @@ android {
     applicationId 'net.sourceforge.smallbasic'
     minSdkVersion 21
     targetSdkVersion 36
-    versionCode 88
-    versionName '12.31'
+    versionCode 89
+    versionName '12.33'
     resourceConfigurations += ['en']
   }
 
@@ -53,7 +53,6 @@ android {
 }
 
 dependencies {
-  implementation 'androidx.core:core:1.12.0'
-  implementation files('libs/ioio-release.aar')
+  implementation 'androidx.core:core:1.17.0'
   testImplementation 'junit:junit:4.13.2'
 }

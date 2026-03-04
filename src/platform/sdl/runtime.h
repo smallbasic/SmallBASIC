@@ -39,6 +39,7 @@ struct Runtime final : System {
   void redraw() const { _graphics->redraw(); }
   bool toggleFullscreen();
   void handleKeyEvent(MAEvent &event) const;
+  bool hasBackMenu() const override { return true; }
   bool hasEvent() const { return _eventQueue && !_eventQueue->empty(); }
   void onFolderSelected(const char *folder);
   void openFolder() override;

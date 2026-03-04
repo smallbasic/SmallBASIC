@@ -19,8 +19,10 @@ extern int g_debugPort;
 void appLog(const char *format, ...);
 
 #if defined(_Win32)
-#include <SDL3/SDL_syswm.h>
+#include <SDL3/SDL_properties.h>
+#include <windows.h>
 #include <shellapi.h>
+#include <cstdio>
 
 WCHAR g_appPath[MAX_PATH + 1];
 
@@ -28,14 +30,21 @@ void setupAppPath(const char *path) {
   GetModuleFileNameW(nullptr, g_appPath, MAX_PATH);
 }
 
+HWND getHWND(SDL_Window *window) {
+  HWND result = nullptr;
+  SDL_PropertiesID props = SDL_GetWindowProperties(window);
+  if (props && SDL_GetPropertyType(props, SDL_PROP_WINDOW_WIN32_HWND_POINTER) != SDL_PROPERTY_TYPE_POINTER) {
+    result = (HWND) SDL_GetPointerProperty(props, SDL_PROP_WINDOW_WIN32_HWND_POINTER, NULL);
+  }
+  return result;
+}
+
 void loadIcon(SDL_Window *window) {
   HINSTANCE handle = ::GetModuleHandle(nullptr);
   HICON icon = ::LoadIcon(handle, MAKEINTRESOURCE(101));
   if (icon != nullptr) {
-    SDL_SysWMinfo wminfo;
-    SDL_VERSION(&wminfo.version);
-    if (SDL_GetWindowWMInfo(window, &wminfo) == 1) {
-      HWND hwnd = wminfo.info.win.window;
+    HWND hwnd = getHWND(window);
+    if (hwnd) {
       ::SendMessage(hwnd, WM_SETICON, 0, (LPARAM)icon);
       ::SendMessage(hwnd, WM_SETICON, 1, (LPARAM)icon);
     }
@@ -44,10 +53,9 @@ void loadIcon(SDL_Window *window) {
 
 int getStartupFontSize(SDL_Window *window) {
   int result = DEFAULT_FONT_SIZE;
-  SDL_SysWMinfo wminfo;
-  SDL_VERSION(&wminfo.version);
-  if (SDL_GetWindowWMInfo(window, &wminfo) == 1) {
-    HWND hwnd = wminfo.info.win.window;
+
+  HWND hwnd = getHWND(window);
+  if (hwnd) {
     HDC hdc = GetDC(hwnd);
     result = MulDiv(DEFAULT_FONT_SIZE_PTS, GetDeviceCaps(hdc, LOGPIXELSY), 72);
     ReleaseDC(hwnd, hdc);
@@ -91,10 +99,8 @@ void launchExec(const char *file) {
 }
 
 void browseFile(SDL_Window *window, const char *url) {
-  SDL_SysWMinfo wminfo;
-  SDL_VERSION(&wminfo.version);
-  if (SDL_GetWindowWMInfo(window, &wminfo) == 1) {
-    HWND hwnd = wminfo.info.win.window;
+  HWND hwnd = getHWND(window);
+  if (hwnd) {
     ::ShellExecute(hwnd, "open", url, 0, 0, SW_SHOWNORMAL);
   }
 }

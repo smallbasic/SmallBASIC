@@ -32,6 +32,7 @@ struct Runtime : public System {
   bool handleKeyboard(int eventType, const EmscriptenKeyboardEvent *e);
   bool handleMouse(int eventType, const EmscriptenMouseEvent *e);
   bool hasEvent() { return _eventQueue && _eventQueue->size() > 0; }
+  bool hasBackMenu() const override { return true; }
   void pause(int timeout);
   void pushEvent(MAEvent *event) { _eventQueue->push(event); }
   MAEvent *popEvent() { return _eventQueue->pop(); }

@@ -14,8 +14,9 @@
 #include "proxy.cpp"
 #else
 #include <microhttpd.h>
+#include <string>
 void proxy_init(const char *path, const char *host) {}
 void proxy_cleanup() {}
 bool proxy_accept(MHD_Connection *connection, const char *path) { return false; }
-MHD_Response *proxy_request(MHD_Connection *connection, const char *path, const char *method, string &body) { return nullptr; }
+MHD_Response *proxy_request(MHD_Connection *connection, const char *path, const char *method, std::string &body) { return nullptr; }
 #endif
