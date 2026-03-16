@@ -246,7 +246,8 @@ enum proc_keywords {
   kwDEFINEKEY,
   kwSHOWPAGE,
   kwTHROW,
-  kwNULLPROC
+  kwNULLPROC,
+  kwTICKSP
 };
 
 /**

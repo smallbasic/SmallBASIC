@@ -495,6 +495,9 @@ static inline void bc_loop_call_proc() {
   case kwAT:
     cmd_at();
     break;
+  case kwTICKSP:
+    cmd_ticks();
+    break;
   case kwPEN:
     cmd_pen();
     break;
