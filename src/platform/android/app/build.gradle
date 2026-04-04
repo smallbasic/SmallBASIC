@@ -7,9 +7,9 @@ android {
   // can override some attributes in main/AndroidManifest.xml
   defaultConfig {
     applicationId 'net.sourceforge.smallbasic'
-    minSdkVersion 21
+    minSdkVersion 23
     targetSdkVersion 36
-    versionCode 89
+    versionCode 90
     versionName '12.33'
     resourceConfigurations += ['en']
   }
@@ -53,6 +53,6 @@ android {
 }
 
 dependencies {
-  implementation 'androidx.core:core:1.17.0'
+  implementation 'androidx.core:core:1.18.0'
   testImplementation 'junit:junit:4.13.2'
 }
