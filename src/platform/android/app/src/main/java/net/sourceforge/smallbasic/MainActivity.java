@@ -808,8 +808,15 @@ public class MainActivity extends NativeActivity {
 
   @Override
   protected void onPause() {
-    super.onPause();
     onActivityPaused(true);
+    // wait for Graphics::redraw() to complete
+    try {
+      Thread.sleep(10);
+    }
+    catch (Exception e) {
+      // ignored
+    }
+    super.onPause();
   }
 
   @Override
