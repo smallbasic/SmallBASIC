@@ -9,6 +9,7 @@
 
 #include "common/sys.h"
 #include "common/sberr.h"
+#include "common/plugins.h"
 
 #define INT_STR_LEN 64
 
@@ -571,9 +572,9 @@ void v_move(var_t *dest, const var_t *src) {
     dest->v.m.map = src->v.m.map;
     dest->v.m.count = src->v.m.count;
     dest->v.m.size = src->v.m.size;
-    dest->v.m.id = src->v.m.id;
     dest->v.m.lib_id = src->v.m.lib_id;
     dest->v.m.cls_id = src->v.m.cls_id;
+    dest->v.m.id = plugin_refresh_id(src->v.m.lib_id, src->v.m.cls_id, src->v.m.id);
     break;
   case V_REF:
     dest->v.ref = src->v.ref;

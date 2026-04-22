@@ -72,6 +72,11 @@ int plugin_funcexec(int lib_id, int index, var_t *ret);
 void plugin_free(int lib_id, int cls_id, int id);
 
 //
+// in v_move and plugin_free later called on source, dest remains registered
+//
+int plugin_refresh_id(int lib_id, int cls_id, int id);
+
+//
 // closes the plugin system
 //
 void plugin_close();

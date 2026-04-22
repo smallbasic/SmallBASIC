@@ -120,12 +120,22 @@ int sblib_func_exec(int index, int param_count, slib_par_t *params, var_t *retva
 /**
  * @ingroup modlib
  *
- * executes a function
+ * free resources associated with the variable
  *
  * @param cls_id the variable class identifier
  * @param id the variable instance identifier
  */
 int sblib_free(int cls_id, int id);
+
+/**
+ * @ingroup modlib
+ *
+ * registers a fresh id to replace the given id
+ *
+ * @param cls_id the variable class identifier
+ * @param id the variable instance identifier
+ */
+int sblib_refresh_id(int cls_id, int id);
 
 /**
  * @ingroup modlib
