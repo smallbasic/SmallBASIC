@@ -33,9 +33,6 @@ Runtime *runtime = nullptr;
 // Pipe file descriptors: g_backPipe[0] is read-end, g_backPipe[1] is write-end
 static int g_backPipe[2] = {-1, -1};
 
-// whether native back key handling is active
-static bool g_predictiveBack = false;
-
 // the logical top of the screen
 static int g_top = 0;
 
@@ -115,23 +112,18 @@ void handleCommand(android_app *app, int32_t cmd) {
   }
 }
 
-static void pushBackEvent() {
-  auto *maEvent = new MAEvent();
-  maEvent->nativeKey = AKEYCODE_BACK;
-  maEvent->type = EVENT_TYPE_KEY_PRESSED;
-  runtime->pushEvent(maEvent);
-}
-
 //
 // Callback registered with ALooper that is triggered when the pipe receives data.
 // This is what wakes the blocked ALooper_pollOnce() and lets us run pushBackEvent().
 //
 static int pipeCallback(int fd, int events, void *data) {
   // clear the byte that woke the pipe, then return 1 to stay registered
-  logEntered();
-  char buf[1];
-  read(fd, buf, 1);
-  pushBackEvent();
+  if (runtime != nullptr && runtime->isActive()) {
+    logEntered();
+    char buf[1];
+    read(fd, buf, 1);
+    runtime->onBack();
+  }
   return 1;
 }
 
@@ -165,8 +157,9 @@ static void process_input(android_app *app, android_poll_source *source) {
         AKeyEvent_getKeyCode(event) == AKEYCODE_BACK) {
       // prevent AInputQueue_preDispatchEvent from attempting to close
       // the keypad here to avoid a crash in android 4.2 + 4.3.
-      if (AKeyEvent_getAction(event) == AKEY_EVENT_ACTION_DOWN && runtime->isActive() && !g_predictiveBack) {
-        pushBackEvent();
+      if (AKeyEvent_getAction(event) == AKEY_EVENT_ACTION_DOWN && runtime != nullptr && runtime->isActive()) {
+        trace("AKEYCODE_BACK event");
+        runtime->onBack();
       }
       AInputQueue_finishEvent(app->inputQueue, event, true);
     } else if (!AInputQueue_preDispatchEvent(app->inputQueue, event)) {
@@ -297,8 +290,7 @@ Runtime::Runtime(android_app *app) :
   _looper = ALooper_forThread();
   _sensorManager = ASensorManager_getInstance();
   memset(&_sensors, 0, sizeof(_sensors));
-  g_predictiveBack = getBoolean("isPredictiveBack");
-  if (g_predictiveBack) {
+  if (getBoolean("isPredictiveBack")) {
     setupBackWakePipe(_looper);
   }
 }
@@ -512,7 +504,7 @@ char *Runtime::loadResource(const char *fileName) {
 
 MAEvent *Runtime::popEvent() {
   pthread_mutex_lock(&_mutex);
-  MAEvent *result = _eventQueue->pop();
+  auto *result = _eventQueue->pop();
   pthread_mutex_unlock(&_mutex);
   return result;
 }
@@ -1003,6 +995,21 @@ void Runtime::showKeypad(bool show) {
   _app->activity->vm->DetachCurrentThread();
 }
 
+void Runtime::onBack() {
+  pthread_mutex_lock(&_mutex);
+  auto *current = _eventQueue->peek();
+  if (current == nullptr || current->nativeKey != AKEYCODE_BACK) {
+    trace("pushing back event to the queue");
+    auto *event = new MAEvent();
+    event->nativeKey = AKEYCODE_BACK;
+    event->type = EVENT_TYPE_KEY_PRESSED;
+    _eventQueue->push(event);
+  } else {
+    trace("skipping duplicate back event");
+  }
+  pthread_mutex_unlock(&_mutex);
+}
+
 void Runtime::onResize(int width, int height, int imeState) {
   logEntered();
   if (_graphics != nullptr) {
@@ -1051,7 +1058,7 @@ void Runtime::onUnicodeChar(int ch) {
 
 char *Runtime::getClipboardText() {
   char *result;
-  String text = getStringBytes("getClipboardText");
+  auto text = getStringBytes("getClipboardText");
   if (!text.empty()) {
     result = strdup(text.c_str());
   } else {
@@ -1096,7 +1103,7 @@ void System::completeKeyword(int index) const {
 int maGetEvent(MAEvent *event) {
   int result;
   if (runtime->hasEvent()) {
-    MAEvent *nextEvent = runtime->popEvent();
+    auto *nextEvent = runtime->popEvent();
     event->point = nextEvent->point;
     event->type = nextEvent->type;
     delete nextEvent;
