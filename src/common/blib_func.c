@@ -30,6 +30,9 @@ static char *date_wdN_table[] = TABLE_WEEKDAYS_FULL;
 static char *date_m3_table[] = TABLE_MONTH_3C;
 static char *date_mN_table[] = TABLE_MONTH_FULL;
 
+// ticks()
+var_int_t tickOffset = 0;
+
 #define BUF_LEN 64
 #define BIN_LEN 32  // Number of max bits (digits) kwBIN creates
 
@@ -752,7 +755,7 @@ var_int_t cmd_imath0(long funcCode) {
     //
     // int <- TICKS // clock()
     //
-    r = dev_get_millisecond_count();
+    r = dev_get_millisecond_count() - tickOffset;
     break;
   case kwPROGLINE:
     //

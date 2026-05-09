@@ -89,6 +89,7 @@ void cmd_datedmy(void);
 void cmd_timehms(void);
 void cmd_deriv(void);
 void cmd_diffeq(void);
+void cmd_ticks(void);
 
 // not basic, but speed is needed
 void graph_reset(void);

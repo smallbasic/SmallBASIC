@@ -29,7 +29,7 @@ print "CHDIR:" ':CHDIR dir
 print "CHMOD:" ':CHMOD file, mode
 print "CIRCLE:" ':CIRCLE [STEP] x,y,r [,aspect [, color]] [COLOR color] [FILLED]
 print "CLOSE:" ':CLOSE #fileN
-print "CLS:" :CLS
+print "CLS:"' :CLS
 print "COLOR:" :COLOR 1,2
 print "COPY:" ':COPY "file", "newfile"
 print "DATEDMY:";: DATEDMY(2459590,jd,jm,jy): print jd;jm;jy
@@ -230,7 +230,7 @@ print "TAN:" + TAN (x)
 print "TANH:" + TANH (x)
 print "TEXTHEIGHT:" + TEXTHEIGHT (s)
 print "TEXTWIDTH:" + TEXTWIDTH (s)
-print "TICKS:"' + TICKS
+print "TICKS:": TICKS(0): if(TICKS()) then throw "Ticks failed"
 print "TIME:"' + TIME
 print "TIMER:"' + TIMER
 print "TIMESTAMP:" '+ TIMESTAMP filename

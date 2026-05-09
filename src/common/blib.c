@@ -16,6 +16,9 @@
 #define STR_INIT_SIZE 256
 #define PKG_INIT_SIZE 5
 
+// ticks(n)
+extern var_int_t tickOffset;
+
 /**
  * LET v[(x)] = any
  * CONST v[(x)] = any
@@ -2372,6 +2375,20 @@ void cmd_environ() {
     }
   }
   v_free(&str);
+}
+
+/**
+ * TICKS int
+ */
+void cmd_ticks(void) {
+  var_int_t offset;
+
+  offset = par_getint();
+  if (prog_error) {
+    return;
+  }
+
+  tickOffset = dev_get_millisecond_count() - offset;
 }
 
 /**
