@@ -10,6 +10,7 @@
 #include <Arduino.h>
 #include <SPI.h>
 #include <SD.h>
+#include <LittleFS.h>
 #include "common/device.h"
 #include "config.h"
 #include "common/sbapp.h"
@@ -19,8 +20,10 @@
 
 #define MAIN_BAS "__main_bas__"
 #define SERIAL_SD_BAS "__serial_sd_bas__"
+#define PROG_FLASH_SIZE 65536*16
 
 strlib::String buffer;
+LittleFS_Program flashfs;
 
 void *plugin_lib_open(const char *name) {
   void *result = nullptr;
@@ -50,6 +53,8 @@ void *plugin_lib_address(void *handle, const char *name) {
     result = (void *)pModule->_func_count;
   } else if (strcmp(name, "sblib_func_getname") == 0) {
     result = (void *)pModule->_func_getname;
+  } else if (strcmp(name, "sblib_close") == 0) {
+    result = (void *)pModule->_close;
   }
   return result;
 }
@@ -93,6 +98,13 @@ void setup() {
   opt_verbose = 0;
   opt_graphics = 0;
   dev_init(0, 0);
+
+  if (!flashfs.begin(PROG_FLASH_SIZE)) {
+    while (1) {
+      dev_print("Error initializing FLASH file system\n");
+      delay(1000);
+    }
+  }
 }
 
 void serial_read() {
@@ -171,7 +183,7 @@ void print_error(char *source) {
 
 void interactive_main() {
   while (true) {
-    dev_print("\r\n\033[30;47mInteractive mode - waiting for data...\033[0m\r\n");
+    dev_print("\r\nWaiting for upload... ");
     serial_read();
     if (!sbasic_main(SERIAL_SD_BAS)) {
       print_error((char *)buffer.c_str());
@@ -179,34 +191,53 @@ void interactive_main() {
   }
 }
 
+void executeFile(File *f) {
+  uint32_t fileSize = f->available();
+  char *fileBuffer = new char[fileSize + 1];
+
+  f->read(fileBuffer, fileSize);
+  fileBuffer[fileSize] = '\0';
+  buffer.clear();
+  buffer.append(fileBuffer);
+
+  delete[]fileBuffer;
+
+  if (!sbasic_main(SERIAL_SD_BAS)) {
+    while (!Serial) {
+      delay(250);
+    }
+    dev_print("Error executing MAIN.BAS:\n");
+    print_error((char *)buffer.c_str());
+  } else {
+    dev_print("MAIN.BAS ended\n");
+  }
+}
+
 extern "C" int main(void) {
   setup();
 
+  // Start from SD card
   if (SD.begin(BUILTIN_SDCARD)) {
     File sdFile = SD.open("/MAIN.BAS", FILE_READ);
     if (sdFile) {
-      uint32_t fileSize = sdFile.available();
-      char *bufferSD = new char[fileSize + 1];
-
-      sdFile.read(bufferSD, fileSize);
-      bufferSD[fileSize] = '\0';
-      buffer.clear();
-      buffer.append(bufferSD);
-
-      delete[]bufferSD;
+      executeFile(&sdFile);
       sdFile.close();
-
-      if (!sbasic_main(SERIAL_SD_BAS)) {
-        while (!Serial) {
-          delay(250);
-        }
-        dev_print("Error executing main.bas from SD card:\n");
-        print_error((char *)buffer.c_str());
-      } else {
-        dev_print("main.bas from SD card ended\n");
-      }
+      goto interactive;
     }
-  } else if (main_bas_len > 0) {
+  }
+
+  // Start from LittleFS
+  if (flashfs.exists("/MAIN.BAS")) {
+    File flashFile = flashfs.open("/MAIN.BAS", FILE_READ);
+    if (flashFile) {
+      executeFile(&flashFile);
+      flashFile.close();
+      goto interactive;
+    }
+  }
+
+  // Start from memory
+  if (main_bas_len > 0) {
     if (!sbasic_main(MAIN_BAS)) {
       while (!Serial) {
         delay(250);
@@ -216,7 +247,8 @@ extern "C" int main(void) {
     } else {
       dev_print("main.bas ended");
     }
-  } else {
-    interactive_main();
   }
+
+interactive:
+  interactive_main();
 }

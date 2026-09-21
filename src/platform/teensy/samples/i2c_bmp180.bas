@@ -1,3 +1,17 @@
+' I2C: BMP180 - Pressure and temperature sensor
+' =====================================================
+'
+' This example demonstrates how to use a BMP180
+' pressure and temperature sensor with the I2C interface.
+'
+' ---------------         ----------
+'  Teensy        |       | BMP180
+'  3.3V          |-------| VIN
+'  PIN 17 (SDA1) |-------| SDA 
+'  PIN 16 (SCL1) |-------| SCL
+'  GND           |-------| GND
+'----------------         ---------
+
 import teensy
 
 const ADDRESS = 0x77

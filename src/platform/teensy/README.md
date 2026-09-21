@@ -93,16 +93,16 @@ build/modules/teensy_loader_cli/teensy_loader_cli --mcu=TEENSY40 -w -v -s build/
 SMALLBASIC for Teensy offers three ways to upload and run a program.
 
 1. Format a SD card using FAT32. Rename your program to `MAIN.BAS` and copy it to the SD card.
-2. Include your program in the firmware. Replace `main.bas` in `src/platform/teensy` by your program and build
+2. Upload your program as `MAIN.BAS` to the flash memory file system (i.e. use `console.bas`)
+3. Include your program in the firmware. Replace `main.bas` in `src/platform/teensy` by your program and build
    the firmware.
-3. Send your program via USB-serial connection to the Teensy. In Linux use ` cat YourProgram.bas > /dev/ttyACM0`
+5. Send your program via USB-serial connection to the Teensy. In Linux use ` cat YourProgram.bas > /dev/ttyACM0`
    Change `/dev/ttyACM0` to the USB-serial port of your Teensy.
-4. Goto 3.
 
 When the Teensy starts up, it will check in the above indicated order for your program. If it finds
-a SD card and the SD card contains a file `MAIN.BAS`, it will execute it. Otherwise it will check, if a program
-was included in the firmware. If no program was included, the Teensy will switch to interactive mode and waits
-for a program upload via USB-serial.
+a SD card and the SD card contains a file `MAIN.BAS`, it will execute it. Otherwise it will check flash for
+the file `MAIN.bas` and executes it. Otherwise it will check, if a program was included in the firmware. If no
+program was included, the Teensy will switch to interactive mode and waits for a program upload via USB-serial.
 
 While your program is running, the Teensy will check continuously if data is available at the USB-serial port.
 If data is available for longer than one second your running program will be terminated and the queued data of the
@@ -114,7 +114,7 @@ If an error occurred, for example a syntax error, execution will stop and you ha
 the USB-serial port.
 
 If the execution of your program comes to an end, for example when reaching the end of the program or when `STOP` is
-called, the program is terminated and the next section in the above list is performed.
+called, the program is terminated and the teensy switches to interactive mode.
 
 # Read output from your running program
 

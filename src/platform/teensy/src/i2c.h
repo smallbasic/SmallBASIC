@@ -11,5 +11,4 @@
 
 #include "common/var.h"
 
-void serial_init();
-int cmd_openserial(int argc, slib_par_t *args, var_t *retval);
+int cmd_openi2c(int argc, slib_par_t *args, var_t *retval);

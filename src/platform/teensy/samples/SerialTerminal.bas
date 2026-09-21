@@ -3,7 +3,7 @@ option base 1
 ReceiveBuffer = ""
 ComPort = "/dev/ttyACM0"
 ComSpeed = "115200"
-FileName = "serialUSB_receive_string.bas"
+FileName = "samples/console.bas"
 SendString = ""
 NumberLines = floor(YMAX / TextHeight("Qly")) - 1
 NumberRows  = floor(YMAX / TextWidth("W"))
@@ -33,93 +33,96 @@ const KeyF6 = ESC + Chr(0xF0 + 6)
 const KeyF9 = ESC + Chr(0xF0 + 9)
 const KeyF10 = ESC + Chr(0xF0 + 10)
 
+
+GetStartupParameter()
 Connect()
 PrintGUI()
 
 while(1)
-    'CheckIsConnected()
-    if(!isConnected) then Connect()
-    k = inkey
-    if(len(k))
-        select case k
-            case KeyReturn
-                Send(SendString)
-                SendHistory << SendString
-                SendHistoryIndex = ubound(SendHistory)
-                SendString = ""
-            case KeyEsc
-                SendString = ""
-            case KeyLeft
-            case KeyRight
-            case KeyDown
-                SendHistoryIndex = iff(SendHistoryIndex < ubound(SendHistory), SendHistoryIndex + 1, SendHistoryIndex)
-                SendString = SendHistory[SendHistoryIndex]
-            case KeyUp
-                SendHistoryIndex = iff(SendHistoryIndex > 0, SendHistoryIndex - 1, 0)
-                SendString = SendHistory[SendHistoryIndex]    
-            case KeyBackspace
-                SendString = chop(SendString)
-            case KeyF1
-                color 15,0
-                locate NumberLines - 1,0
-                print "\e[K";
-                Input "Enter COM port: ", ComPort
-                if(isConnected) then close #1
-                isConnected = 0
-            case KeyF2
-                color 15,0
-                locate NumberLines - 1,0
-                print "\e[K";
-                Input "Enter COM speed: ", ComSpeed
-                if(isConnected) then close #1
-                isConnected = 0
-            case KeyF3
-                'color 15,0
-                'locate NumberLines - 1,0
-                'print "\e[K";
-                'Input "Enter file name: ", FileName
-                showpage(1)
-                FileName = FileSelectDialog(0, 50, 50, XMAX - 100, YMAX - 100, 0)
-            case KeyF4
-                tsave "teensylog_" + ticks() + ".txt", ReceiveArray
-            case KeyF6
-                UploadFile()
-            case KeyF9
-                if(isConnected)
-                  close #1
-                  isConnected = 0
-                endif
-                ReceiveBuffer = ""
-                ReceiveArray = []
-            case KeyF10
-                if(isConnected) then close #1
-                stop
-           case else
-                SendString = SendString + k
-        end select
-        PrintGUI()
-    endif
-    
-    if(isConnected)
-      l = lof(1)
-      if(l)
-        ReceiveBuffer =  ReceiveBuffer + INPUT(l, 1)
-        split ReceiveBuffer, "\n", ReceiveArray
-        if(len(ReceiveArray) > NumberLines - 1)
-          n = len(ReceiveArray) - NumberLines + 1
-          delete ReceiveArray, 1, n
+  if(!isConnected) then Connect()
+  k = inkey
+  if(len(k))
+    select case k
+      case KeyReturn
+        Send(SendString)
+        SendHistory << SendString
+        SendHistoryIndex = ubound(SendHistory)
+        SendString = ""
+      case KeyEsc
+        SendString = ""
+      case KeyLeft
+      case KeyRight
+      case KeyDown
+        if(SendHistoryIndex > 0)
+          SendHistoryIndex = iff(SendHistoryIndex < ubound(SendHistory), SendHistoryIndex + 1, SendHistoryIndex)
+          SendString = SendHistory[SendHistoryIndex]
         endif
-        PrintGUI()
+      case KeyUp
+        if(SendHistoryIndex > 0)
+          SendString = SendHistory[SendHistoryIndex]
+          SendHistoryIndex = iff(SendHistoryIndex > 1, SendHistoryIndex - 1, 1)
+        endif
+      case KeyBackspace
+        SendString = chop(SendString)
+      case KeyF1
+        color 15,0
+        locate NumberLines - 1,0
+        print "\e[K";
+        Input "Enter COM port: ", ComPort
+        Input "Enter COM speed: ", ComSpeed
+        if(isConnected) then close #1
+        isConnected = 0
+      case KeyF3
+        if(instr(sbver(), "SDL"))
+          showpage(1)
+          FileName_temp = FileSelectDialog(0, 50, 50, XMAX - 100, YMAX - 100, 0)
+          if(FileName_temp != -1) then FileName = FileName_temp
+        else
+          color 15,0
+          repeat
+            locate NumberLines - 1,0
+            print "\e[K";
+            Input "Enter file name for upload: ", FileName
+          until(exist(FileName))
+        endif
+      case KeyF4
+        tsave "teensylog_" + ticks() + ".txt", ReceiveArray
+      case KeyF6
+        UploadFile()
+      case KeyF9
+        ReceiveBuffer = ""
+        ReceiveArray = []
+      case KeyF10
+        if(isConnected) then close #1
+        stop
+      case else
+        if(asc(k) > 31 AND asc(k) < 127)
+          SendString = SendString + k
+        endif
+    end select
+    PrintGUI()
+  endif
+
+  if(isConnected)
+    l = lof(1)
+    if(l)
+      ReceiveBuffer =  ReceiveBuffer + INPUT(l, 1)
+      split ReceiveBuffer, "\n", ReceiveArray
+      if(len(ReceiveArray) > NumberLines - 1)
+        n = len(ReceiveArray) - NumberLines + 1
+        delete ReceiveArray, 1, n
       endif
+      PrintGUI()
     endif
-    
-    delay(20)
-    showpage
+  endif
+  
+  delay(20)
+  showpage
 wend
 
 sub CheckIsConnected()
   local result
-  
+
   if(!isConnected) then return
 
   result = lof(1)
@@ -141,11 +144,12 @@ sub Connect()
     isConnected = 0
   end try
   PrintGUI()
+  print #1, "PRINT SBVER"
 end
 
 
 sub Send(s)
-  ReceiveBuffer = ReceiveBuffer + "\e[33m" + "> " + s + "\e[30m\n"
+  ' ReceiveBuffer = ReceiveBuffer + "\e[33m" + "> " + s + "\e[30m\n"
   print #1, s
 end
 
@@ -160,21 +164,17 @@ sub UploadFile()
 end
 
 sub PrintGUI()
-    color 7,1
+    color 15,0
     cls
-    
+
     for s in ReceiveArray
-      print "\e[0m";
-      color 14,1
-      print s
+      print s + "\e[0m"
     next
-    
-    print "\e[0m"
-    
+
     color 0, 7
     locate 0, 0
-    print "TEENSY Serial Terminal v1.0     |\e[35mF1\e[30m Port|\e[35mF2\e[30m Speed|\e[35mF3\e[30m File|\e[35mF4\e[30m Save|\e[35mF6\e[30m Upload|\e[35mF9\e[30m Reset|\e[35mF10\e[30m Quit\e[K"
-    
+    print "TEENSY Terminal v1.1 |\e[35mF1\e[30m Setup|\e[35mF3\e[30m File|\e[35mF4\e[30m Save|\e[35mF6\e[30m Upload|\e[35mF9\e[30m Clear|\e[35mF10\e[30m Quit\e[K"
+
     color 15, 0
     locate NumberLines - 1, 0
     print "Send: "; SendString; "\e[K";"\e[7m \e[27m"
@@ -187,6 +187,16 @@ sub PrintGUI()
     else
       print "\e[31mDisconnected\e[K";
     endif
+end
+
+sub GetStartupParameter()
+  local p
+  p = command()
+  split p, " ", parameters
+  
+  if(ubound(parameters) > 0)
+    FileName = parameters[1]
+  endif
 end
 
 
@@ -220,29 +230,29 @@ func FileSelectDialog(Type, x, y, w, h, ButtonSize)
     color 15,0
     cls
     color TextColor, BGColor
-       
-    
+
+
     Directory = cwd()
-    
+
     if(ButtonSize == 0) then ButtonSize = 3 * Textwidth("W")    
-    
+
     func cmpfunc_strings(x, y)
-        x = lower(x)
-        y = lower(y)
-        
-        if x == y
-            return 0
-        elseif x > y
-            return 1
-        else
-            return -1
-        endif
+      x = lower(x)
+      y = lower(y)
+
+      if x == y
+        return 0
+      elseif x > y
+        return 1
+      else
+        return -1
+      endif
     end
-    
+
     func GetFileList()
         local FileList
         FileList = files("*")
-        
+
         for ii = 1 to ubound(FileList)
             if(isdir(FileList[ii])) then FileList[ii] = enclose(FileList[ii], "[]")                
         next
@@ -412,4 +422,6 @@ func FileSelectDialog(Type, x, y, w, h, ButtonSize)
     return ReturnValue
 
 end
+
+
 

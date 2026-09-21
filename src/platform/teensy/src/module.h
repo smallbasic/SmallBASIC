@@ -45,6 +45,7 @@ typedef struct {
   sblib_count_fn _proc_count;
   sblib_getname_fn _proc_getname;
   sblib_free_fn _free;
+  sblib_close_fn _close;
 } ModuleConfig;
 
 ModuleConfig *get_teensy_module();

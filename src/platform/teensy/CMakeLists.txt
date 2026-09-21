@@ -42,6 +42,7 @@ set(CMAKE_EXE_LINKER_FLAGS "-Os -Wl,--gc-sections,--relax ${SPECS} ${CPU_OPTIONS
 set(CMAKE_CXX_COMPILER arm-none-eabi-g++)
 set(CMAKE_C_COMPILER arm-none-eabi-gcc)
 set(CMAKE_SIZE arm-none-eabi-size)
+set(CMAKE_OBJCOPY arm-none-eabi-objcopy)
 
 # Include the module directories
 add_subdirectory(libs)
@@ -58,6 +59,7 @@ include_directories(${MODULES}/USBHost_t36)
 include_directories(${MODULES}/Wire)
 include_directories(${MODULES}/SD/src)
 include_directories(${MODULES}/SdFat/src)
+include_directories(${MODULES}/LittleFS/src)
 
 # include config.h and common headers
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../..)
@@ -71,6 +73,10 @@ set(SOURCES
   src/module.cpp
   src/teensy.cpp
   src/ssd1306.cpp
+  src/i2c.cpp
+  src/serial.cpp
+  src/pinio.cpp
+  src/fs.cpp
 )
 
 # Add executable with the list of source files

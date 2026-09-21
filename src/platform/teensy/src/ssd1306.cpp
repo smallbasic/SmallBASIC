@@ -393,7 +393,8 @@ static ModuleConfig ssd1306Module = {
   ._proc_exec = ssd1306_proc_exec,
   ._proc_count = ssd1306_proc_count,
   ._proc_getname = ssd1306_proc_getname,
-  ._free = nullptr
+  ._free = nullptr,
+  ._close = nullptr
 };
 
 ModuleConfig *get_ssd1306_module() {

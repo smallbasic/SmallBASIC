@@ -6,6 +6,13 @@ value = 0
 
 teensy.SetInteractive(1)
 
+print
+print "Receive a string over serial connection"
+print "Send following strings: "
+print "led   -> turn onboard LED on or off"
+print "quit  -> exit program"
+print
+
 while(1)
   if(usbSerial.ready()) then
     s = usbSerial.receive()

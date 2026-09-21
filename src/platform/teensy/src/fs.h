@@ -11,5 +11,5 @@
 
 #include "common/var.h"
 
-void serial_init();
-int cmd_openserial(int argc, slib_par_t *args, var_t *retval);
+int cmd_fs(int argc, slib_par_t *args, var_t *retval);
+int fs_close(void);

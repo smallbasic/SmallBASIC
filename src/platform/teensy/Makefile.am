@@ -25,6 +25,11 @@ build/smallbasic.elf : \
 	src/device.cpp \
 	src/teensy.cpp \
 	src/ssd1306.cpp \
+	src/fs.cpp \
+	src/i2c.cpp \
+	src/serial.cpp \
+	src/pinio.cpp \
+	src/module.cpp \
 	src/main_bas.h
 	@cd build && make -j 32
 

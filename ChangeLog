@@ -1,3 +1,7 @@
+2026-09-26 (12.34)
+	TEENSY: Add flash and SD card file system
+	WINDOWS: Remove __p__environ warning when building
+
 2026-04-28 (12.34)
 	COMMON: implement plugin_refresh_id for variable lifecycle handling
 	COMMON: fix bug with comma in string assigned as local #283

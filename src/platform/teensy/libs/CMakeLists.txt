@@ -16,6 +16,7 @@ set(USB_DIR ${MODULES_DIR}/USBHost_t36)
 set(WIRE_DIR ${MODULES_DIR}/Wire)
 set(SD_DIR ${MODULES_DIR}/SD/src)
 set(SDFAT_DIR ${MODULES_DIR}/SdFat/src)
+set(LITTLEFS_DIR ${MODULES_DIR}/LittleFS/src)
 
 set(SOURCES
   ${ADC_DIR}/ADC.cpp
@@ -162,6 +163,10 @@ set(SOURCES
   ${SDFAT_DIR}/common/FsUtf.cpp
   ${SDFAT_DIR}/common/PrintBasic.cpp
   ${SDFAT_DIR}/common/upcase.cpp
+  ${LITTLEFS_DIR}/LittleFS.cpp
+  ${LITTLEFS_DIR}/LittleFS_NAND.cpp
+  ${LITTLEFS_DIR}/littlefs/lfs.c
+  ${LITTLEFS_DIR}/littlefs/lfs_util.c
 )
 
 add_library(libs STATIC ${SOURCES})
@@ -176,4 +181,5 @@ target_include_directories(libs PRIVATE ${TEENSY_DIR})
 target_include_directories(libs PRIVATE ${WIRE_DIR})
 target_include_directories(libs PRIVATE ${SD_DIR})
 target_include_directories(libs PRIVATE ${SDFAT_DIR})
+target_include_directories(libs PRIVATE ${LITTLEFS_DIR})
 

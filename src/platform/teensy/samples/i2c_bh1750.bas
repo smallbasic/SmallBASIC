@@ -1,3 +1,17 @@
+' I2C: BH1750 - Ambient Light Sensor
+' =====================================================
+'
+' This example demonstrates how to use a BH1750 ambient
+' light sensor with the I2C interface.
+'
+' ---------------         ----------
+'  Teensy        |       | BH1750
+'  3.3V          |-------| VCC
+'  PIN 17 (SDA1) |-------| SDA 
+'  PIN 16 (SCL1) |-------| SCL
+'  GND           |-------| GND
+'----------------         ---------
+
 import teensy
 
 const ADDRESS = 0x23

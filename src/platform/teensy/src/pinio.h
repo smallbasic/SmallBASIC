@@ -11,5 +11,7 @@
 
 #include "common/var.h"
 
-void serial_init();
-int cmd_openserial(int argc, slib_par_t *args, var_t *retval);
+int cmd_opendigitalinput(int argc, slib_par_t *args, var_t *retval);
+int cmd_opendigitaloutput(int argc, slib_par_t *args, var_t *retval);
+int cmd_openanaloginput(int argc, slib_par_t *args, var_t *retval);
+int cmd_openanalogoutput(int argc, slib_par_t *args, var_t *retval);

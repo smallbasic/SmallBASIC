@@ -23,8 +23,6 @@
 #include <dir.h>
 #endif
 
-extern char **environ;
-
 #define BUFSIZE 1024
 
 #if defined(_Win32)
@@ -126,6 +124,8 @@ int dev_run(const char *cmd, var_t *r, int wait) {
 }
 
 #else
+extern char **environ;
+
 int dev_run(const char *cmd, var_t *r, int wait) {
   int result = 1;
   if (r != NULL) {
