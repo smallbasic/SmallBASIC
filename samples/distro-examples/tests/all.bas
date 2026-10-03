@@ -13,6 +13,7 @@ a=[1,1;2,-1,-2;1,-2,2,1;1,-3,1,3;3,-1,-2]
 b=[44,3,4,5,6]
 inva=[1,-1,1;2,-1,2;3,2,-1]
 def expression(x) = x * 0.1
+def ReturnArray() = [10,20,30]
 DATA 1,"a"
 
 print "ACCESS:" +IFF(ACCESS ("/etc/hosts") != 0, "<> 0", "0")
@@ -100,8 +101,8 @@ print "VIEW:" ':VIEW [x1,y1,x2,y2 [,color [,border-color]]]
 print "WINDOW:" ':WINDOW [x1,y1,x2,y2]
 print "WRITE:" ':WRITE #fileN; var1 [, ...]
 print "ABS:" + ABS (-12.2222)
-print "ABSMAX:" + ABSMAX (1,2,3,4,5,6,7,8,9)
-print "ABSMIN:" + ABSMIN (1,2,3,4,5,6,7,8,9)
+print "ABSMAX:" + ABSMAX (ReturnArray(), [1,2,-30], 1,2,3)
+print "ABSMIN:" + ABSMIN (ReturnArray(), [1,2,-30], 1,2,3)
 print "ACOS:" + ACOS (x)
 print "ACOSH:" + ACOSH (x)
 print "ACOT:" + ACOT (x)
@@ -176,9 +177,9 @@ print "LOG:" + LOG (x)
 print "LOG10:" + LOG10 (x)
 print "LOWER:" + LOWER (s)
 print "LTRIM:" + LTRIM (s)
-print "MAX:" + MAX (1,2,3,4,5,6,7,8,9)
+print "MAX:" + MAX (ReturnArray(), [1,2,30], 1,2,3, x)
 print "MID:" + MID (s,2,4)
-print "MIN:" + MIN (1,2,3,4,5,6,7,8,9)
+print "MIN:" + MIN (ReturnArray(), [1,2,-30], 1,2,3, x)
 print "OCT:" + OCT (x)
 print "PEN:" + PEN (1)
 print "POINT:" + POINT (1,2)
@@ -215,16 +216,16 @@ print "SPACE:" + SPACE (2)+ "<"
 print "SPC:" + SPC (2) + "<"
 print "SQR:" + SQR (x)
 print "SQUEEZE:" + SQUEEZE (s)
-print "STATMEAN:" + STATMEAN (1,2,3,4,5,6,7,8,9)
-print "STATMEANDEV:" + STATMEANDEV (1,2,3,4,5,6,7,8,9)
-print "STATMEDIAN:" + STATMEDIAN(1,2,3,4,5,6,7,8,9)
-print "STATSPREADP:" + STATSPREADP (1,2,3,4,5,6,7,8,9)
-print "STATSPREADS:" + STATSPREADS (1,2,3,4,5,6,7,8,9)
-print "STATSTD:" + STATSTD (1,2,3,4,5,6,7,8,9)
+print "STATMEAN:" + STATMEAN (ReturnArray(), [1,2,-30], 1,2,3, x)
+print "STATMEANDEV:" + STATMEANDEV (ReturnArray(), [1,2,-30], 1,2,3, x)
+print "STATMEDIAN:" + STATMEDIAN (ReturnArray(), [1,2,-30], 1,2,3, x)
+print "STATSPREADP:" + STATSPREADP (ReturnArray(), [1,2,-30], 1,2,3, x)
+print "STATSPREADS:" + STATSPREADS (ReturnArray(), [1,2,-30], 1,2,3, x)
+print "STATSTD:" + STATSTD (ReturnArray(), [1,2,-30], 1,2,3, x)
 print "STR:" + STR (5)
 print "STRING:"; STRING(5, "Strings")
-print "SUM:" + SUM (1,2,3,4,5,6,7,8,9)
-print "SUMSQ:" + SUMSQ (1,2,3,4,5,6,7,8,9)
+print "SUM:" + SUM (ReturnArray(), [1,2,-30], 1,2,3)
+print "SUMSQ:" + SUMSQ (ReturnArray(), [1,2,-30], 1,2,3)
 print "TAB:" + TAB (8) + "HERE"
 print "TAN:" + TAN (x)
 print "TANH:" + TANH (x)
