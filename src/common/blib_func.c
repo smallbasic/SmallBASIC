@@ -2600,6 +2600,7 @@ void cmd_genfunc(long funcCode, var_t *r) {
               return;
             }
           }
+          v_free(&arg);
           break;
         }
 
@@ -2693,6 +2694,7 @@ void cmd_genfunc(long funcCode, var_t *r) {
               return;
             }
           }
+          v_free(&arg);
           break;
         }
 
