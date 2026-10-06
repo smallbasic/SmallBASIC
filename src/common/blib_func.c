@@ -2583,6 +2583,27 @@ void cmd_genfunc(long funcCode, var_t *r) {
         // default --- expression
         v_init(&arg);
         eval(&arg);
+
+        if (!prog_error && arg.type == V_ARRAY) {
+          count = v_asize(&arg);
+          for (int i = 0; i < count; i++) {
+            var_t *elem_p = v_elem(&arg, i);
+            if (!prog_error) {
+              if (first) {
+                dar_first(funcCode, r, elem_p);
+                first = 0;
+              } else {
+                dar_next(funcCode, r, elem_p);
+              }
+              tcount++;
+            } else {
+              return;
+            }
+          }
+          v_free(&arg);
+          break;
+        }
+
         if (!prog_error) {
           if (first) {
             dar_first(funcCode, r, &arg);
@@ -2656,6 +2677,27 @@ void cmd_genfunc(long funcCode, var_t *r) {
         // default --- expression
         v_init(&arg);
         eval(&arg);
+
+        if (!prog_error && arg.type == V_ARRAY) {
+          count = v_asize(&arg);
+          for (int i = 0; i < count; i++) {
+            var_t *elem_p = v_elem(&arg, i);
+            if (!prog_error) {
+              if (tcount >= len) {
+                len += BUF_LEN;
+                dar = (var_num_t*) realloc(dar, sizeof(var_num_t) * len);
+              }
+              dar[tcount] = v_getval(elem_p);
+              tcount++;
+            } else {
+              free(dar);
+              return;
+            }
+          }
+          v_free(&arg);
+          break;
+        }
+
         if (!prog_error) {
           if (tcount >= len) {
             len += BUF_LEN;

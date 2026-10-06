@@ -1,3 +1,6 @@
+2026-10-04 (12.34)
+	COMMON: Fix min(), max() bug #134
+
 2026-09-26 (12.34)
 	TEENSY: Add flash and SD card file system
 	WINDOWS: Remove __p__environ warning when building
