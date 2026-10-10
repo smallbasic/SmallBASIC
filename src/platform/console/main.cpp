@@ -246,7 +246,7 @@ bool process_options(int argc, char *argv[], char **runFile, bool *tmpFile, bool
   int option_count = 1;
   while (result) {
     int option_index = 0;
-    int c = getopt_long(argc, argv, "vkfximt:s:o:c:h::", OPTIONS, &option_index);
+    int c = getopt_long(argc, argv, "vkfxitm:s:o:c:h::", OPTIONS, &option_index);
     if (c == -1 && !option_index) {
       // no more options
       for (int i = option_count; i < argc; i++) {
